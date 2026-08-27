@@ -2,455 +2,209 @@
 
 > Status: research hypothesis, not an ADR.
 >
-> This document intentionally avoids committing to a programming language, database, wire protocol, or final package layout.
-
-## Synthesis
-
-The surveyed systems repeatedly converge on several useful boundaries:
-
-| Concern | NanoBot | Hermes | OpenClaw | Letta | Ember direction |
-|---|---|---|---|---|---|
-| Inner execution loop | `AgentRunner` | `AIAgent` | reusable agent core / harness | agent runtime | keep a small explicit kernel |
-| Turn/interface orchestration | `AgentLoop` | entry points around `AIAgent` | gateway/runtime facade | API/server | separate from cognition loop |
-| Persistent identity | `SOUL.md` | `SOUL.md` | workspace state | persisted agent state / identities | first-class typed state |
-| Active memory | durable Markdown | bounded `MEMORY.md` + `USER.md` | curated core | memory blocks | small budgeted projection |
-| Large history | JSONL history | SQLite + FTS5 sessions | episodic notes/transcripts + index | archival memory | immutable/append-friendly evidence store |
-| Memory consolidation | Dream | agent-managed bounded memory | gated dreaming | agent memory operations | bounded reflection + validation |
-| Provenance | history/versioning | limited | first-class trust metadata | resource metadata | first-class evidence metadata |
-| Delegation | subagents/tools | isolated child agents | native runtimes + ACP | multi-agent/tools | specialist runtime capability |
-| Future-facing state | cron | cron | standing intents + cron | schedules | explicit intents/open threads |
-| Initiative | jobs/events | gateway + cron | triggers/intents | schedules | dedicated attention policy |
-
-The strongest composite hypothesis is:
-
-> Ember should combine a NanoBot-sized execution spine with Letta-like persistent agent state, OpenClaw-like memory provenance, and Hermes-like prompt/context discipline.
-
-That does **not** mean implementing all features from all four systems.
-
-## Proposed conceptual layers
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ Interfaces                                                   │
-│ CLI first; messaging / voice later                           │
-└─────────────────────────────┬────────────────────────────────┘
-                              │ input / output
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│ Interaction Runtime                                          │
-│ sessions, turn lifecycle, cancellation, streaming, delivery │
-└─────────────────────────────┬────────────────────────────────┘
-                              │ prepared turn
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│ Agent Kernel                                                  │
-│ perceive → assemble context → model → act → observe → finish │
-└───────────────┬──────────────────────┬───────────────────────┘
-                │                      │
-                ▼                      ▼
-┌──────────────────────────┐  ┌───────────────────────────────┐
-│ Continuity               │  │ Capabilities                  │
-│ identity                 │  │ local tools                   │
-│ self model               │  │ MCP                           │
-│ relationship model       │  │ delegated runtimes            │
-│ memory                   │  │   Codex                       │
-│ open threads / intents   │  │   ACP agents                  │
-└──────────────┬───────────┘  └───────────────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────────────────────────────┐
-│ Evidence / Event Layer                                       │
-│ transcripts, observations, actions, state-change provenance │
-└──────────────────────────────────────────────────────────────┘
-```
-
-The key rule is that **the model sees a projection of this architecture, not the architecture itself**.
-
-## 1. Agent Kernel
-
-The kernel should remain intentionally small.
-
-Its conceptual responsibilities are:
-
-```text
-receive prepared input
-      ↓
-request context projection
-      ↓
-invoke model
-      ↓
-model requests capability?
-   ├── yes → execute/delegate → observation → continue
-   └── no  → final response
-      ↓
-commit turn outcome/events
-```
-
-It should not directly contain:
-
-- provider-specific authentication;
-- SQLite queries;
-- Telegram formatting;
-- Codex thread internals;
-- memory ranking algorithms;
-- project-specific skills;
-- Home Assistant logic.
-
-The kernel coordinates interfaces to those systems.
-
-### Candidate invariant
-
-We should consider a soft complexity budget for the kernel itself. The exact number is premature, but the intent is important: a developer should be able to read the core execution path in one sitting.
-
-## 2. Persistent Agent State
-
-Ember's canonical persistent state should be richer than one system prompt.
-
-A candidate domain decomposition:
-
-```text
-AgentState
-├── Identity
-│   ├── core principles
-│   ├── communication/personality traits
-│   └── protected boundaries
-│
-├── SelfModel
-│   ├── mutable preferences
-│   ├── learned tendencies
-│   └── current self-description
-│
-├── Relationships
-│   └── RelationshipState
-│       ├── person identity
-│       ├── durable shared context
-│       ├── interaction preferences
-│       └── relationship-specific memories
-│
-├── Memory
-│   ├── curated semantic memory
-│   ├── episodic references
-│   └── provenance
-│
-├── OpenThreads
-│   ├── unresolved questions
-│   ├── promises/follow-ups
-│   └── active intentions
-│
-└── CapabilityState
-    ├── available capabilities
-    ├── permissions
-    └── runtime bindings
-```
-
-This is a semantic model, not a proposed class tree. Some of these concepts may eventually share physical storage.
-
-### Write policy matters
-
-Not every part of `AgentState` should have equal mutability.
-
-For example:
-
-- `Identity.core principles` may require explicit human approval to change;
-- the `SelfModel` may evolve through reflection;
-- user corrections should immediately supersede conflicting user-model memories;
-- relationship state may have stricter provenance requirements than temporary project facts.
-
-This is an area where Ember should be more deliberate than generic memory-block systems.
-
-## 3. Evidence before memory
-
-We should strongly consider an append-friendly evidence layer as the ground beneath derived memory.
-
-Candidate event types might include:
-
-```text
-UserMessageObserved
-AssistantMessageProduced
-ToolCalled
-ToolResultObserved
-DelegationStarted
-DelegationCompleted
-ExternalEventObserved
-MemoryCandidateExtracted
-MemoryPromoted
-MemorySuperseded
-IdentityStateChanged
-ThreadOpened
-ThreadResolved
-```
-
-This does **not** require full event sourcing as an implementation architecture.
-
-The useful property is simpler:
-
-> Important derived state should retain enough links to evidence that we can explain and correct it.
-
-For example:
-
-```text
-MemoryEntry
-├── content
-├── semantic type
-├── confidence
-├── origin class
-├── observed_at
-├── source_event_ids[]
-├── supersedes[]
-└── status
-```
-
-This gives Ember a better answer to "why do you remember this?" than cosine similarity against anonymous snippets.
-
-## 4. Memory pipeline
-
-The initial memory architecture should remain simpler than current OpenClaw while retaining its best invariants.
-
-Candidate flow:
-
-```text
-turn/event
-   ↓
-append evidence
-   ↓
-cheap candidate extraction
-   ↓
-Episodic / candidate store
-   ↓
-reflection trigger
-   ↓
-deterministic eligibility
-   ↓
-bounded model interpretation
-   ↓
-validation + provenance checks
-   ↓
-curated memory / user / relationship / self-model update
-```
-
-### Memory categories
-
-At minimum we should keep these concepts separate even if storage initially shares tables:
-
-- **semantic**: durable facts and learned information;
-- **episodic**: references to meaningful experiences/events;
-- **user/relationship**: facts whose meaning depends on a particular person/relationship;
-- **decisions**: conclusions plus rationale/evidence;
-- **open threads**: unresolved future-facing state.
-
-Raw transcripts remain evidence, not memory.
-
-### Recall lanes
-
-A sensible initial strategy could have two lanes:
-
-1. **cheap lane**: curated active memory + exact/full-text lookup + deterministic relevance;
-2. **deep lane**: semantic or model-assisted recall only when cheap recall is insufficient.
-
-We should not start by requiring a vector database for every turn.
-
-## 5. Context Assembler
-
-Context assembly deserves its own subsystem rather than becoming string concatenation inside the kernel.
-
-A candidate projection order inspired by Hermes:
-
-```text
-stable
-  identity principles
-  operating policy
-  model/tool guidance
-  selected skills
-
-situational
-  current interface
-  current project/workspace
-  current task/session
-
-continuity
-  selected user/relationship state
-  curated memories
-  open relevant threads
-
-per-turn ephemeral
-  recalled evidence
-  external events
-  temporary capability output
-```
-
-These layers may map differently to model-provider caching APIs. The semantic distinction should exist regardless of provider.
-
-### Important rule
-
-The context assembler is allowed to *select and project* persistent state. It should not silently redefine canonical identity or memory while doing so.
-
-## 6. Capabilities
-
-Capabilities should expose what Ember can do without forcing the core to know implementation details.
-
-Candidate categories:
-
-```text
-Capability
-├── ToolCapability
-│   ├── local built-in
-│   └── MCP
-│
-└── AgentRuntimeCapability
-    ├── Codex native adapter
-    └── ACP adapter
-```
-
-A delegated agent runtime is deliberately not modelled as just another stateless function call. It may own:
+> This document intentionally stays at the level of behavior, meaning, and responsibility. It does not propose classes, structures, event names, schemas, protocols, storage layouts, or package boundaries.
 
-- a canonical thread;
-- native tools;
-- native compaction;
-- cancellation semantics;
-- approvals;
-- streaming events.
+## Why this document exists
 
-The adapter should therefore expose a runtime ownership contract similar in spirit to OpenClaw's harness model.
+The projects studied so far solve many of the same practical problems in different ways. The useful question for Ember is not which implementation to copy, but which **semantic boundaries** repeatedly prove valuable.
 
-### First specialist target
+Several themes recur:
 
-Coding work should be delegated rather than reimplemented.
+- the conversation-facing part of an agent and the inner model/tool loop benefit from being separable;
+- short-term conversation history and long-term memory are different things;
+- identity and durable personal context should survive individual sessions;
+- only a small portion of remembered information needs to be present all the time;
+- larger history can remain searchable and be brought back only when relevant;
+- specialist agents can own specialist work instead of Ember reproducing their internal workflows;
+- proactive behavior needs a notion of attention and restraint, not merely schedules and notifications.
 
-An early Ember should be able to recognize a coding task and run something conceptually like:
+A useful working hypothesis is therefore:
 
-```text
-Ember context + task
-        ↓
-Codex runtime
-        ↓
-execution events / result
-        ↓
-Ember interprets result
-        ↓
-reply / memory / follow-up
-```
+> Ember should have a small understandable execution core, durable continuity that exists outside any one model call, disciplined context selection, and the ability to compose specialist capabilities without absorbing them into itself.
 
-The exact Codex integration path should be researched separately before implementation.
+This is a direction for further research, not an implementation plan.
 
-## 7. Initiative and attention
+## The main semantic areas
 
-This is one of the main areas where Ember should deliberately experiment rather than copy existing projects.
+At this stage it is enough to distinguish several responsibilities without deciding how many modules, processes, files, tables, or types they will eventually become.
 
-Most current systems model autonomy primarily through schedules, background jobs, or message events.
+### Interaction
 
-Ember should investigate an explicit attention stage:
-
-```text
-Event
-  ↓
-Eligibility gate
-  ↓
-Attention evaluation
-  ↓
-Outcome
-  ├── ignore
-  ├── remember only
-  ├── act silently
-  ├── schedule/defer
-  └── contact user
-```
+Ember needs some way to receive what is happening and communicate back. The CLI will be the first such surface, but it should not define what Ember is.
 
-### Deterministic vs model responsibilities
+A future message arriving through Telegram, a voice interaction, or a terminal conversation should all reach the same continuing agent rather than create separate identities.
 
-Deterministic code should probably own:
+### Conversation and action
 
-- permissions;
-- quiet periods / interruption budgets;
-- event deduplication;
-- urgency ceilings;
-- cooldowns;
-- lifecycle and retry rules.
+During an interaction Ember needs to understand the current situation, decide what context matters, ask a model for judgment, use capabilities when appropriate, observe what happened, and eventually respond or choose another outcome.
 
-The model can help judge:
+The important research question is the behavior of this loop, not its future code shape.
 
-- relevance;
-- semantic urgency;
-- whether context makes an event worth surfacing;
-- how to communicate it.
+### Continuity
 
-This keeps "initiative" from becoming an unconstrained background chatbot.
+Some information must outlive a conversation or process if Ember is to remain meaningfully continuous over time.
 
-## 8. Sessions
+This may include, conceptually:
 
-A session is a conversational/execution scope, not the identity of Ember.
+- a stable sense of identity and values;
+- an evolving understanding of itself;
+- an understanding of the people with whom it has ongoing relationships;
+- durable memories;
+- unfinished matters that may become relevant later;
+- knowledge of what it is currently able and allowed to do.
 
-Sessions should contain transient state such as:
+These kinds of information need not have the same mutability, trust rules, or lifetime.
 
-- transcript references;
-- selected workspace/project;
-- active model/runtime;
-- current task context;
-- streaming/execution state;
-- temporary recalled context.
+### Evidence and history
 
-Stopping a session should not erase the persistent agent.
+Ember should retain enough of what actually happened to support later recall, correction, and explanation.
 
-## 9. Interface boundary
+Examples of things that may become evidence include:
 
-CLI should be the first public surface because it keeps early development observable and cheap.
+- the user said something;
+- Ember replied;
+- Ember used a tool and observed the result;
+- a specialist agent was asked to do some work and later returned a result;
+- something relevant happened in an external system;
+- a remembered fact was later corrected;
+- an unfinished matter was resolved.
 
-The conceptual dependency should remain:
+The important point is not to define a catalogue of technical events. It is to preserve the distinction between **what happened** and **what Ember later concludes from it**.
 
-```text
-CLI → interaction runtime → agent kernel
-```
+### Memory
 
-not:
+Memory is not simply stored conversation history.
 
-```text
-agent kernel → terminal implementation
-```
+A useful distinction is:
 
-This preserves room for future messaging and voice surfaces without forking the agent.
+- **history** preserves what happened;
+- **memory** preserves what remains worth knowing;
+- **context** is the small selection that matters right now.
 
-## 10. Observability
+A long conversation might therefore remain available as history without being injected into every future model call. Later reflection may decide that one part of it deserves to become durable memory, while most of it does not.
 
-A personal agent with memory and initiative needs first-class observability earlier than a normal chatbot.
+Memory should also retain enough provenance to answer questions such as:
 
-We should eventually be able to inspect:
+- Where did this belief come from?
+- Was it said directly by the user, inferred by Ember, or learned from an external source?
+- Is there newer information that contradicts it?
+- Is this still relevant?
 
-- active session state;
-- current context projection;
-- model/tool/delegation events;
-- memory candidates and promotions;
-- provenance for durable memory;
-- identity/self-model changes;
-- open threads;
-- why an event did or did not trigger an interruption.
+Exactly how that provenance is represented is deliberately left open.
 
-This may initially be plain CLI output and structured logs rather than a dedicated UI.
+### Context
 
-## Explicit non-decisions
+The model cannot see Ember's entire past and persistent state on every turn. Ember therefore needs to select what the model should know now.
 
-The research does **not** yet establish:
+Conceptually, context may draw from several kinds of information:
 
-- Go vs Rust vs another implementation language;
-- SQLite vs another canonical persistence store;
-- whether evidence should be fully event-sourced;
-- embeddings/vector storage choice;
-- exact schema for identity or relationships;
-- model-provider abstraction shape;
-- Codex native app-server vs ACP integration details;
-- plugin architecture;
-- process model for background reflection;
-- whether Ember initially runs as a foreground CLI process or a small local daemon with CLI client.
+- relatively stable identity and behavioral principles;
+- the current situation and interface;
+- the current project or task;
+- relevant relationship and user knowledge;
+- a small amount of important long-term memory;
+- unfinished matters relevant to the present conversation;
+- older history recalled specifically because the current situation calls for it;
+- recent observations from tools or external systems.
 
-Those deserve focused decisions rather than being smuggled into an initial scaffold.
+The model sees a **projection** of Ember's state and history. That projection must not silently become the source of truth for the state itself.
+
+### Capabilities
+
+Ember should be able to affect and inspect the outside world without having to implement every integration internally.
+
+Some capabilities may be simple tools. Others may be sophisticated specialist systems with their own state and execution behavior.
+
+For example, coding work can be handed to Codex. Ember does not need to imitate Codex's repository search, patching, shell execution, sandboxing, and coding-specific reasoning. Instead, Ember needs to know when delegation makes sense, what context to provide, how to observe the outcome, and what that outcome means to the ongoing interaction.
+
+The same principle should apply to future specialist agents and external services.
+
+### Attention and initiative
+
+This is one of the areas where Ember should deliberately leave room for invention.
+
+Current agent systems often express autonomy mainly through schedules, background jobs, or direct reactions to incoming events. For Ember, a more useful question is:
+
+> When something happens without the user explicitly asking about it, should Ember care?
+
+For example, after learning that Codex finished a task, Ember might:
+
+- decide that nothing further matters;
+- remember the result for later;
+- inspect the result more closely;
+- take another safe action;
+- defer attention until a better moment;
+- tell the user because the result is useful or important.
+
+The interesting research problem is the judgment between those outcomes and the boundaries around that judgment.
+
+Permissions, interruption limits, quiet periods, repeated-event suppression, and similar hard boundaries are likely better handled deterministically. Relevance and meaning are places where model judgment may add value. The exact mechanism remains open.
+
+### Sessions
+
+A session is temporary conversational or working context. It is not Ember's identity.
+
+Ending a session should not erase what Ember has durably learned, nor should starting a new interface create a new agent by accident.
+
+What should persist across sessions, what should expire, and what should merely remain searchable are central continuity questions that need dedicated research.
+
+### Observability and correction
+
+A personal agent that remembers, acts, and sometimes initiates interaction needs to be inspectable.
+
+It should eventually be possible to understand things such as:
+
+- what Ember currently remembers;
+- why it remembers something;
+- what information was considered relevant to a particular interaction;
+- what external actions or delegations took place;
+- what changed in its longer-term understanding;
+- why an external occurrence did or did not result in an interruption;
+- how an incorrect memory or conclusion can be corrected.
+
+This requirement is semantic. It does not yet imply structured logs, an event store, a database history table, or any particular UI.
+
+## Questions deliberately left unanswered
+
+The research so far does **not** establish:
+
+- which programming language Ember should use;
+- whether Ember should usually run in the foreground or as a long-lived local process;
+- which persistence technology should hold durable state;
+- whether history is represented as files, database records, an event log, or something else;
+- whether semantic embeddings are necessary at all, and if so where;
+- how identity, relationships, memories, and unfinished matters should be represented internally;
+- how model providers should be abstracted;
+- whether Codex should be reached through its native app-server interface, ACP, or another supported boundary;
+- how extensions should be packaged;
+- how background reflection should be scheduled or triggered.
+
+Those are implementation and architecture decisions to make only after their semantic requirements are clearer.
+
+## Research language rule
+
+Until that point, Ember's own design notes should prefer sentences such as:
+
+- "the user sent a message";
+- "Ember asked a specialist agent to work on the task";
+- "the specialist agent finished and returned a result";
+- "Ember decided that part of the conversation was worth remembering";
+- "new information contradicted an older memory";
+- "something happened that might deserve the user's attention".
+
+They should avoid prematurely translating those statements into class names, event names, schemas, method signatures, or storage records.
+
+Concrete implementation names are still useful when documenting **how an existing project works**, because there they are observations rather than design commitments for Ember.
 
 ## Proposed next research sequence
 
-Before writing the agent loop, investigate these questions in order:
+Before writing the execution loop, investigate these questions in roughly this order:
 
-1. **Continuity model**: define what must persist and which state is allowed to evolve automatically.
-2. **Evidence and memory model**: define raw history, provenance, promotion, correction, and supersession.
-3. **Runtime ownership**: define the contract for local tools vs delegated agents, especially Codex.
-4. **Context assembly**: define how persistent state is projected into bounded model context.
-5. **Initiative model**: define events, attention, interruption, and non-action.
-6. **Operational shape**: foreground CLI vs daemon + CLI, then choose language/runtime based on the resulting requirements.
+1. **Continuity:** what exactly must survive for tomorrow's Ember to be a meaningful continuation of today's?
+2. **Memory and evidence:** what should be remembered, what should merely remain recoverable history, and how can corrections and provenance work?
+3. **Delegation:** what does Ember need to know and control when specialist systems such as Codex perform work on its behalf?
+4. **Context:** how should Ember decide which pieces of its much larger persistent world belong in the present model call?
+5. **Attention and initiative:** when should Ember act, defer, remember, speak, or deliberately do nothing without an explicit request?
+6. **Operational needs:** only then determine what those semantics imply for process lifetime, persistence, language, and concrete architecture.
 
-Only after those questions should package layout and implementation language become architecture decisions.
+The goal of this phase is to understand the creature before naming its bones. 🔥
