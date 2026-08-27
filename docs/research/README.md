@@ -6,10 +6,18 @@ The goal is not to rank projects or copy one wholesale. Each note asks the same 
 
 1. What problem does the project solve?
 2. How does its architecture approach that problem?
-3. Which boundaries appear to work well?
+3. Which semantic boundaries appear to work well?
 4. Which parts are consequences of product breadth rather than agent quality?
-5. What should Ember borrow?
-6. What should Ember deliberately design differently?
+5. What ideas should Ember borrow?
+6. What should Ember deliberately explore differently?
+
+## Research vocabulary
+
+When describing an **existing project**, use its real implementation vocabulary when that helps explain how it works. Names such as `AgentRunner`, concrete tools, files, stores, or runtime abstractions are observations about that project's implementation.
+
+When translating those observations into **ideas for Ember**, return to natural language and semantic descriptions. Prefer statements such as "the agent remembers a durable fact", "the user corrected an earlier belief", or "specialist work was delegated and later returned" over proposed class names, event names, schemas, package names, or storage shapes.
+
+During this phase, implementation-shaped vocabulary can accidentally turn a research hypothesis into an unexamined design commitment. Ember's representation should emerge from the semantics, not lead them.
 
 Reviewed systems:
 
