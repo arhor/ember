@@ -16,7 +16,7 @@ Its value for Ember is not merely that it is small. NanoBot shows how far a rela
 
 ## How does it solve it?
 
-The most useful boundary is the split between two loops:
+The most useful implementation boundary is the split between two loops:
 
 ```text
 Channel
@@ -32,7 +32,7 @@ AgentRunner       provider/tool execution loop
 
 `AgentLoop` owns routing, effective session/workspace, context construction, hooks, and outbound messages. `AgentRunner` owns model calls, tool calls, retries, streaming, context governance, and runtime limits.
 
-This is a clean separation between **one user-facing turn** and **one model-facing execution loop**.
+This gives NanoBot a clean separation between **one user-facing turn** and **one model-facing execution loop**.
 
 NanoBot also distinguishes two filesystem scopes:
 
@@ -43,7 +43,7 @@ This lets one persistent agent move between projects without moving its identity
 
 ## Memory model
 
-NanoBot's memory pipeline is deliberately layered:
+NanoBot's implementation separates current conversation, compressed history, and curated long-term files:
 
 ```text
 session.messages
@@ -53,7 +53,7 @@ session.messages
 Consolidator
       │
       ▼
-memory/history.jsonl       append-only compressed evidence
+memory/history.jsonl
       │
       │ scheduled reflection
       ▼
@@ -64,96 +64,73 @@ Dream
       └── memory/MEMORY.md
 ```
 
-The important distinction is that `history.jsonl` is *material for memory*, not final memory itself.
+The important semantic distinction is that `history.jsonl` is *material for memory*, not final memory itself.
 
 `Dream` periodically reads recent history plus current durable files and makes bounded edits to the long-term state. NanoBot can also version these durable changes through Git, giving memory an audit and restore path.
 
 ## What works well?
 
-### 1. AgentLoop / AgentRunner separation
+### Separation between interaction and inner execution
 
-This is probably the strongest pattern to borrow directly.
+The implementation uses `AgentLoop` and `AgentRunner`, but the transferable idea for Ember is simpler: dealing with a user-facing interaction is not the same responsibility as repeatedly asking a model to reason, use a tool, observe the result, and continue.
 
-Ember will need a boundary between:
+Keeping those concerns distinct should make it easier to add different interfaces without changing the basic reasoning-and-action cycle.
 
-- interaction/session orchestration;
-- the inner model/tool loop.
+### Personal continuity is separate from project context
 
-Keeping those distinct makes it possible to add CLI, events, or other interfaces without contaminating the core execution loop.
+NanoBot's agent workspace and project workspace map well onto Ember's goals.
 
-### 2. Agent workspace vs project workspace
+Working inside a repository should not make personal identity and long-term memory belong to that repository. One continuing agent should be able to move between projects while preserving its own history and relationships.
 
-This maps almost perfectly onto Ember's goals.
+### History is not durable memory
 
-Identity and personal memory should not become repository-local merely because the current task happens inside a repository.
+The `history.jsonl -> Dream -> durable files` pipeline captures a useful semantic staging step: lived experience can remain available without every part of it immediately becoming a permanent belief.
 
-### 3. History is not durable memory
+### Memory changes are inspectable
 
-NanoBot's `history.jsonl -> Dream -> durable files` pipeline is conceptually stronger than writing every extracted fact straight into a vector store.
+Versioning long-term memory with Git is a simple but powerful implementation choice. Ember may eventually use something entirely different, but the important property is that automatic memory evolution should be understandable and correctable.
 
-It creates a staging boundary where experiences can be interpreted before they enter always-relevant memory.
+### The reasoning loop does not need to own every capability's lifecycle
 
-### 4. Memory changes are inspectable
-
-Versioning long-term memory with Git is a simple but powerful idea. Ember may use a different mechanism, but the property is important: automatic memory evolution should be observable and correctable.
-
-### 5. Application-owned infrastructure lifecycle
-
-NanoBot keeps MCP connection lifecycle outside the core loop. Composition roots own connection setup and shutdown and share a tool registry with the agent.
-
-This is a healthy direction for Ember: the agent should *use* capabilities without owning every transport lifecycle internally.
+NanoBot keeps MCP connection setup and shutdown outside the inner loop. The semantic lesson is that Ember can **use** a capability without becoming responsible for every implementation detail of how that capability stays alive.
 
 ## What may scale poorly for Ember?
 
-### 1. Durable identity is still primarily Markdown
+### Durable identity is still primarily mutable prose
 
-`SOUL.md`, `USER.md`, and `MEMORY.md` are elegant because they are inspectable, but they conflate several semantic concerns into mutable prose.
+`SOUL.md`, `USER.md`, and `MEMORY.md` are elegant because they are inspectable, but Ember likely needs stronger semantic distinctions between stable identity, evolving self-understanding, relationships, remembered facts, experiences, and unfinished matters.
 
-For Ember we probably want stronger distinctions between:
+That observation does not imply a particular storage shape. Plain files may still turn out to be useful.
 
-- identity principles;
-- self-model;
-- relationship/user state;
-- semantic facts;
-- episodes;
-- open threads;
-- provenance.
+### Dream can change a broad range of long-term meaning at once
 
-Plain files may remain a useful projection or editing surface without being the complete domain model.
+The Dream idea is attractive, but Ember should investigate more explicit limits on what reflection is allowed to revise. A reflection about one conversation should not casually redefine deeply stable identity or relationship principles.
 
-### 2. Dream performs broad interpretive mutation
+### Provenance is less central than in some larger systems
 
-The Dream idea is excellent, but Ember should explore narrower typed outputs and stronger validation around what a reflection pass is allowed to change.
+NanoBot preserves history and versions, which helps reconstruction, but Ember's goals make the question "why do I remember this?" unusually important. We should investigate stronger links between remembered conclusions and the experiences from which they came.
 
-A model should not be able to rewrite high-value identity state merely because one reflection prompt inferred that it should.
+## What should Ember borrow conceptually?
 
-### 3. Memory provenance is relatively coarse
+- keep the reasoning-and-action cycle small and understandable;
+- keep personal continuity separate from whatever project is currently open;
+- let history remain history before deciding that something deserves to become durable memory;
+- move expensive reflection away from the immediate reply path when possible;
+- make important long-term changes inspectable and correctable;
+- let capabilities remain externally owned where that reduces coupling.
 
-NanoBot preserves history and versions, which helps reconstruction, but Ember should make source evidence a first-class property of remembered information rather than relying mostly on file history and prose.
+## What should Ember explore differently?
 
-## What should Ember borrow?
-
-- the separation between turn orchestration and model/tool execution;
-- separate agent-owned and project-owned state roots;
-- an append-only intermediate history/evidence layer;
-- background consolidation rather than constant inline memory mutation;
-- inspectable and reversible durable-memory changes;
-- external ownership of capability lifecycle such as MCP connections;
-- an explicit goal of keeping the core loop small.
-
-## What should Ember deliberately do differently?
-
-- model identity as persistent domain state rather than only a `SOUL.md` prompt fragment;
-- distinguish multiple memory semantics rather than one general `MEMORY.md`;
-- attach provenance and supersession metadata structurally;
-- make reflection outputs typed and bounded;
-- add an explicit event/attention model for initiative;
-- treat specialist agent delegation as a first-class capability boundary rather than growing local tools until Ember becomes a specialist itself.
+- distinguish stable identity, evolving self-understanding, relationship knowledge, memories, and unfinished matters by meaning rather than treating them as one undifferentiated body of prose;
+- preserve enough evidence to explain where important remembered beliefs came from;
+- place stricter limits around what background reflection may change;
+- investigate attention and initiative as a question of meaning and relevance, not merely scheduled jobs;
+- prefer specialist delegation for specialist work instead of steadily expanding Ember's own local toolset.
 
 ## Ember takeaway
 
-NanoBot is the best reference for **how little core machinery is actually required**.
+NanoBot is the best reference in this set for **how little core machinery may actually be required**.
 
 The lesson is not "copy NanoBot and add more features." It is:
 
-> Preserve a compact execution spine, then put richer continuity semantics around it without allowing those semantics to collapse back into one giant prompt.
+> Preserve a compact execution spine, then place richer continuity semantics around it without allowing those semantics to collapse back into one giant prompt.
