@@ -13,119 +13,90 @@ Sources:
 
 Letta is explicitly built around stateful agents. Its central idea is that an agent is not only a model invocation plus transcript; it has durable state that can be reconstructed, inspected, and manipulated independently of a single conversation turn.
 
-This makes Letta useful to Ember less as an execution-loop reference and more as a reference for **persistent agent state as a first-class domain model**.
+This makes Letta useful to Ember less as an execution-loop reference and more as a reference for **persistence being part of the agent's identity rather than merely conversation history**.
 
 ## Agent state
 
-Letta exposes an `AgentState` persisted in its database. The API describes this state as containing the information necessary to recreate a persisted agent.
+Letta exposes a persisted `AgentState` containing the information necessary to recreate an agent. Related persisted resources include memory blocks, identities, tools, archives, files/sources, and approval state.
 
-Relationships around an agent include, among other things:
-
-- memory blocks;
-- identities;
-- tools;
-- archives;
-- files/sources;
-- approval state.
-
-This is an important contrast with systems where most persistent semantics are inferred from a workspace directory and one transcript.
+For Ember, the important observation is not the `AgentState` structure itself. It is that Letta treats "the agent that continues to exist" as something distinct from one transcript or one prompt.
 
 ## Memory blocks
 
-Memory blocks are structured, persistent sections of context that can be attached to or detached from an agent.
+Letta implements persistent memory as structured blocks that can exist independently and be attached to or detached from an agent. Blocks have their own metadata and lifecycle.
 
-A block can exist independently of the agent and can be shared across agents. Blocks have metadata such as label, size limit, read-only state, tags, and other lifecycle properties.
+This gives Letta a useful property: access to remembered information does not necessarily imply that the information is permanently embedded inside one monolithic agent record.
 
-Conceptually:
-
-```text
-Block
-  │
-  ├── exists independently
-  ├── persists independently
-  └── can be attached/detached
-            │
-            ▼
-          Agent
-```
-
-This gives memory a useful property: **access to memory is a relationship**, not necessarily ownership by one agent object.
-
-Letta also exposes archival memory separately from always-visible memory blocks, allowing large retrieved information to remain outside active context until needed.
+Letta also separates archival memory from always-visible memory blocks, reinforcing the idea that a large body of recoverable knowledge does not need to occupy the model's attention all the time.
 
 ## What works well?
 
-### 1. Persistent agent state is explicit
+### The continuing agent is explicit
 
 This aligns strongly with Ember's vision.
 
-The persisted thing should be more than a transcript. A future model invocation should be able to reconstruct the same logical agent from durable state.
+What survives should be more than a transcript. A later model invocation should be able to continue from durable identity, memory, relationships, and other relevant state rather than reconstructing the agent accidentally from chat history alone.
 
-### 2. Memory has independent identity and lifecycle
+### Remembered information can have an independent lifecycle
 
-A memory object does not have to be embedded forever inside one monolithic agent record.
+Letta's implementation suggests a broader semantic possibility for Ember: some information may remain durable while its relevance to the current conversation, project, or specialist task changes over time.
 
-For Ember this suggests useful possibilities:
+For example, Ember may know something without needing to show it to every model call, and it may temporarily expose selected context to a specialist without exposing everything personal it knows.
 
-- attach project-specific context temporarily;
-- maintain relationship or identity blocks under stricter write policies;
-- share selected knowledge with delegated or auxiliary processes without exposing all personal memory;
-- revoke access without deleting the underlying information.
+### Active context and archival knowledge are different concepts
 
-### 3. Active context and archival storage are different concepts
+This reinforces the same lesson found in Hermes, NanoBot, and OpenClaw: information that is always present should be small and deliberate, while much larger history can remain available on demand.
 
-This reinforces the same lesson found in Hermes, NanoBot, and OpenClaw: always-visible state should be small and deliberate.
+### Capabilities need not define identity
 
-### 4. Tools and capabilities are relationships too
-
-Letta's attach/detach model for tools is conceptually attractive for Ember's capability layer. An agent can have a dynamic capability set without those capabilities becoming part of its identity.
+Letta's attach/detach approach to tools reinforces a useful semantic distinction for Ember: what Ember **can currently do** is not the same as **who Ember is**.
 
 ## What may scale poorly for Ember?
 
-### 1. Server-centric domain complexity
+### Letta solves a broader server problem
 
 Letta is a platform for managing many persisted agents. Ember initially targets one deeply continuous personal agent.
 
-We do not need to inherit multi-tenant resource-management abstractions merely because they make sense for a server product.
+We should not inherit multi-agent resource-management abstractions simply because they are natural for a server product.
 
-### 2. Generic blocks can still become semantic buckets
+### Generic blocks do not answer Ember-specific continuity questions
 
-Blocks are a stronger primitive than one giant prompt file, but a block model alone does not answer Ember-specific questions about:
+Blocks are stronger than one giant prompt file, but the abstraction alone does not tell us how to think about:
 
-- episodic vs semantic memory;
-- self-model vs relationship model;
-- provenance;
-- contradiction and supersession;
-- open threads and intentions;
-- what an agent is allowed to update about its own identity.
+- remembered experiences versus durable facts;
+- self-understanding versus understanding of another person;
+- where a belief came from;
+- what happens when two memories conflict;
+- unfinished matters and intentions;
+- what Ember is allowed to revise about its own identity.
 
-Ember should use typed semantics where those distinctions matter instead of representing every concept as "a block with a label."
+These distinctions should be understood semantically before deciding how to represent them.
 
-### 3. Persistence is not continuity by itself
+### Persistence is necessary but not sufficient for continuity
 
-Saving enough fields to recreate an agent object is necessary, but Ember also cares about *how* identity and relationship state evolve over time and how those changes remain evidence-backed.
+Saving enough information to recreate an agent is only part of the problem. Ember also cares about how identity, relationships, and memory evolve over time, and whether important changes remain understandable and evidence-backed.
 
-## What should Ember borrow?
+## What should Ember borrow conceptually?
 
-- treat persistent agent state as a first-class domain object;
-- distinguish canonical state from the prompt projection shown to a model;
-- let active memory/context be attachable and budgeted rather than globally injected;
-- separate active memory from larger archival/evidence stores;
-- model capabilities as relationships that can be attached, removed, or constrained;
-- consider access control to memory independently from memory ownership.
+- treat the continuing agent as something durable beyond one transcript or model call;
+- keep canonical continuity separate from whatever subset is shown to the model right now;
+- allow remembered information to remain durable without always occupying active context;
+- distinguish always-relevant context from larger recoverable history;
+- keep capabilities conceptually separate from identity;
+- consider who may access particular remembered information independently from who originally created it.
 
-## What should Ember deliberately do differently?
+## What should Ember explore differently?
 
-- optimize first for one persistent personal agent rather than a general multi-agent management server;
-- create stronger domain types than generic memory blocks where identity and continuity require them;
-- preserve source evidence and supersession relationships explicitly;
-- keep an inspectable event/history layer beneath derived state;
-- design initiative and attention as part of the agent lifecycle, not merely another scheduled message source.
+- optimize first for one persistent personal agent rather than a general multi-agent management service;
+- understand identity, relationships, experiences, memories, and unfinished matters in their own terms before selecting generic storage abstractions for them;
+- preserve enough evidence to explain where important remembered beliefs came from and how they were corrected;
+- keep a recoverable account of what happened beneath later interpretations of it;
+- treat attention and initiative as part of continuity, not merely another source of scheduled messages.
 
 ## Ember takeaway
 
 Letta is the strongest reference in this set for the idea that:
 
-> The persistent agent itself is a domain object, while the prompt is only one runtime representation of that object.
+> The agent that continues over time is something durable, while the prompt is only a temporary view assembled for one act of cognition.
 
 That idea should probably sit near the center of Ember.
