@@ -16,7 +16,7 @@ For Ember, OpenClaw is most valuable where it has already had to define ownershi
 
 ## Agent runtime ownership
 
-OpenClaw separates four concepts that are easy to collapse accidentally:
+OpenClaw separates four implementation concepts that are easy to collapse accidentally:
 
 ```text
 provider       how a model is authenticated/discovered
@@ -29,169 +29,134 @@ This becomes especially important when Codex is involved.
 
 The OpenClaw runtime can own the loop itself, or a specialist runtime such as Codex can own the model/tool loop while OpenClaw projects context into it and mirrors the result back into its own surrounding state.
 
-The key architectural question is therefore not merely "which model?" but:
+The semantic lesson for Ember is simple:
 
-> Who owns this execution loop and its canonical thread/tool state?
+> When specialist work is delegated, be clear about which system actually owns the specialist conversation, tools, and execution state.
 
-OpenClaw makes that ownership part of the runtime contract.
+Ember should not pretend to control internals that in reality belong to Codex or another specialist system.
 
 ## Reusable core vs product wiring
 
-Current OpenClaw separates:
+Current OpenClaw separates reusable agent-loop concerns from OpenClaw-specific wiring, sessions, resources, tools, hooks, providers, and runtime selection.
 
-- reusable agent-core contracts and loop primitives;
-- OpenClaw-specific runtime wiring;
-- session/resource loading;
-- tools and policy;
-- hooks and context pruning;
-- model/provider transport;
-- harness registry and runtime selection.
-
-This is a useful response to a codebase that has grown large: execution semantics and product integration need explicit boundaries.
+This is a useful response to a codebase that has grown large: the behavior of the agent and the breadth of the surrounding product need explicit boundaries.
 
 ## Memory architecture
 
 OpenClaw's current memory model is considerably more sophisticated than a flat vector store or one `MEMORY.md`.
 
-It uses tiers:
+It distinguishes several meanings:
 
-```text
-instructions   human-owned, always loaded
-curated core   MEMORY.md / USER.md
- episodic      daily notes + transcripts, searched on demand
-prospective    standing intents + scheduled work
-review         DREAMS.md / consolidation reports
-```
+- human-authored instructions;
+- small curated information intended to remain readily available;
+- larger episodic notes and transcripts that are searched only when needed;
+- future-facing intentions and scheduled work;
+- review material produced while consolidating memory.
 
-The most important boundary is curated vs episodic memory. Large episodic evidence does not enter the prompt automatically. It must pass a promotion process before becoming curated core memory.
+The most important boundary is between curated and episodic memory. Large amounts of experience do not automatically become always-visible context. They must earn promotion into the small curated set.
 
 ### Provenance
 
-OpenClaw records structured origin metadata such as:
+OpenClaw records where remembered information came from and treats owner-provided, agent-derived, external/untrusted, and system-generated information differently.
 
-- owner-authored;
-- agent-derived;
-- untrusted/external;
-- system/scaffolding;
-- session kind;
-- observed time;
-- supersession lineage.
+A notable rule is that provenance affects whether information is even eligible for promotion. Untrusted external material cannot become trusted long-term personal memory merely because a model found it convincing.
 
-A notable rule is that provenance is enforced at the **write path**. Untrusted or system-derived content is structurally ineligible for automatic promotion into curated memory rather than merely being assigned a lower model score.
-
-The system also tries to prevent recall loops: information injected from memory is marked so that repeated recall does not get re-extracted as a new memory.
+The system also tries to prevent recall loops: something that was merely recalled from existing memory should not be rediscovered as a new memory simply because it appeared in the model's context again.
 
 ### Dreaming and promotion
 
-OpenClaw moves expensive curation away from the interactive reply path.
+OpenClaw moves expensive curation away from the immediate reply path.
 
-The rough flow is:
+Conceptually, experience accumulates first, candidates are considered under hard eligibility rules, a model helps interpret what is worth retaining, and the result is checked before it changes curated memory.
 
-```text
-interactive evidence
-        ↓
-episodic tier + provenance
-        ↓
-deterministic eligibility/ranking
-        ↓
-bounded model consolidation
-        ↓
-structural validation
-        ↓
-MEMORY.md / USER.md
-```
+The transferable lesson is not the exact machinery. It is the separation between:
 
-This is an excellent example of deterministic code surrounding model judgment.
+1. what happened;
+2. what may be worth remembering;
+3. what is allowed to become trusted long-term memory.
 
 ### Two-lane recall
 
-OpenClaw also separates cheap and expensive recall:
+OpenClaw also separates cheap and expensive recall.
 
-1. deterministic/bootstrap/search/trigger mechanisms with no additional model call;
-2. a deeper recall agent only when the user appears to be asking about the past and cheap retrieval did not produce a strong result.
+Common or obvious retrieval can happen without another model call. A deeper recall process is used only when the user appears to be asking about the past and simpler retrieval did not find enough.
 
-This is a strong cost/quality pattern for Ember.
+This cost/quality distinction is attractive for Ember without committing to any specific index or retrieval technology.
 
 ## What works well?
 
-### 1. Runtime ownership is explicit
+### Ownership of delegated execution is explicit
 
-This is the clearest architectural lesson for Ember's future Codex/ACP integration.
+This is the clearest lesson for Ember's future Codex and ACP integration.
 
-If Codex owns the coding loop, Ember should not pretend it owns every native shell, edit, compaction, or canonical-thread behavior inside that run.
+If Codex is doing the coding work, Ember should focus on preparing relevant context, asking for the work, observing progress and completion where possible, and understanding the result. It should not duplicate or fake ownership of Codex's native shell, editing, compaction, or thread behavior.
 
-Instead Ember should define an adapter contract around preparation, context projection, observation, cancellation, result interpretation, and state mirroring where supported.
+### Model choice and execution ownership are different questions
 
-### 2. Provider/model/runtime are orthogonal
+Choosing a model does not necessarily determine who runs the specialist workflow. That conceptual separation will likely matter for Ember even if the eventual implementation looks very different from OpenClaw.
 
-Ember should avoid encoding "Codex" as a fake model provider or treating an ACP transport as identity.
-
-A model choice and an execution-runtime choice are different decisions.
-
-### 3. Memory provenance is structural
+### Memory origin affects trust
 
 This is one of the strongest patterns found in the research.
 
-Ember wants a personal and evolving memory system, which makes accidental poisoning more serious, not less. Origin and trust should therefore be persistent fields rather than prose caveats.
+A personal and evolving memory system is especially vulnerable to quietly turning external information into personal belief. Ember should preserve enough provenance to distinguish direct user knowledge, its own inference, and untrusted external material.
 
-### 4. Promotion is gated
+### Promotion is gated
 
-The `deterministic eligibility -> bounded model judgment -> validation` pattern is highly reusable.
+Language-model judgment is useful for deciding meaning, but hard boundaries should determine what the model is even permitted to promote or change.
 
-### 5. Episodic and prospective state are distinct
+### Past-facing memory and future-facing intentions are different
 
-OpenClaw's standing intents point toward something Ember needs: future-facing state should not be forced into the same abstraction as past-facing memory.
+An unfinished intention is not simply another fact about history. Ember should keep that semantic distinction even if both eventually share some storage mechanism.
 
-An unfinished intention is not simply a fact about history.
+### Memory failure does not block replies
 
-### 6. Memory failure does not block replies
-
-Optional cognition should degrade gracefully.
+Optional reflection and recall should improve continuity when available, not make ordinary conversation brittle.
 
 ## What may scale poorly for Ember?
 
-### 1. Product breadth dominates the repository
+### Product breadth dominates the repository
 
 OpenClaw solves many problems Ember intentionally does not need to own initially: many channels, plugins, UI surfaces, compatibility layers, deployment concerns, and legacy migration.
 
 Its size is therefore a warning against copying implementation structure wholesale.
 
-### 2. Memory has accumulated substantial policy complexity
+### Memory has become a substantial platform of its own
 
-The current system is thoughtful, but it demonstrates how quickly long-term memory becomes its own platform: tiers, ranking, triggers, dreaming phases, provenance, project scope, promotion, deletion semantics, and recall agents.
+The current system has accumulated tiers, ranking, triggers, dreaming phases, provenance, project scope, deletion semantics, and deeper recall behavior.
 
-Ember should adopt the invariants before adopting the machinery.
+Ember should borrow the hard-earned semantic invariants before borrowing the machinery.
 
-### 3. Plain files remain an important persistence surface
+### Human-readable files carry a lot of semantic weight
 
-Inspectability is excellent, but Ember may benefit from a typed canonical store with human-readable projections rather than encoding every semantic distinction into Markdown comments and SQLite indexes around those files.
+OpenClaw's inspectability is excellent, but its exact combination of Markdown files, annotations, and indexes is one representation choice among many. Ember should not decide during research whether the same representation is right for its own identity and relationship goals.
 
-## What should Ember borrow?
+## What should Ember borrow conceptually?
 
-- explicit separation of provider, model, and execution runtime;
-- a runtime ownership/compatibility contract for specialist agents;
-- curated vs episodic vs prospective state distinctions;
-- structural provenance and trust classification;
-- recall-loop prevention;
-- deterministic gates around model-driven memory promotion;
-- cheap first-lane retrieval and expensive escalation only when needed;
-- background consolidation that cannot block interactive replies;
-- explicit supersession instead of merely accumulating contradictory facts.
+- distinguish model choice from ownership of a specialist execution workflow;
+- respect the state owned by systems to which work is delegated;
+- distinguish curated memory, larger episodic history, and future-facing intentions;
+- preserve where remembered information came from and how trustworthy that origin is;
+- prevent recalled information from recursively creating duplicate memory;
+- put hard eligibility rules around model-driven long-term changes;
+- try cheap recall before expensive recall;
+- keep background consolidation optional for interactive conversation;
+- allow newer information to replace or correct older beliefs rather than only accumulating both.
 
-## What should Ember deliberately do differently?
+## What should Ember explore differently?
 
-- keep the number of runtime types and compatibility paths very small initially;
-- treat Codex/ACP delegation as optional capabilities around a compact core;
-- start with fewer memory mechanisms and add them only when measurements justify them;
-- model identity and relationships explicitly rather than treating `USER.md`/`MEMORY.md` as sufficient representations;
-- develop an attention/initiative model that is broader than cron and standing intents;
-- prefer a typed domain model with inspectable projections if that gives us cleaner provenance and evolution semantics.
+- keep specialist-runtime variety very small at first;
+- treat Codex and other specialists as optional capabilities around a compact personal agent;
+- begin with fewer memory mechanisms and add complexity only when evidence justifies it;
+- investigate identity and relationships as meanings in their own right rather than assuming `USER.md` and `MEMORY.md` are sufficient;
+- develop a richer account of attention and initiative than schedules and standing intentions alone;
+- choose the eventual representation of continuity only after these semantics are clearer.
 
 ## Ember takeaway
 
 OpenClaw is the strongest reference for two areas:
 
-1. **external agent-runtime ownership**;
+1. **respecting ownership when specialist systems execute work**;
 2. **memory safety and provenance**.
 
 Its implementation breadth is not the template. Its hard-earned boundaries are.
