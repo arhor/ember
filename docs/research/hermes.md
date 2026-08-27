@@ -19,29 +19,13 @@ It is useful to Ember as a reference for a project that has already crossed the 
 
 The center is `AIAgent`, which owns prompt construction, provider resolution, model calls, tool dispatch, retries, compression, callbacks, and persistence.
 
-Around it are relatively explicit subsystems:
-
-```text
-entry points
-   │
-   ▼
-AIAgent
-   ├── prompt builder
-   ├── provider resolver
-   ├── context engine / compressor
-   ├── tool registry
-   └── persistence
-          │
-          ├── SQLite sessions + FTS5
-          ├── bounded memory
-          └── external memory providers
-```
+Around it are relatively explicit subsystems for prompt assembly, providers, tools, context compression, sessions, memory, and external interfaces.
 
 Hermes deliberately keeps the same agent core behind CLI, messaging gateway, ACP, and other surfaces.
 
 ## Prompt assembly
 
-One particularly strong idea is the explicit prompt tiering:
+One particularly strong implementation idea is the explicit prompt tiering:
 
 ```text
 stable
@@ -54,9 +38,9 @@ volatile
   memory snapshot, user profile, timestamp/session/provider data
 ```
 
-The ordering is designed around both semantics and prompt-cache stability.
+The ordering is designed around both meaning and prompt-cache stability.
 
-Hermes also distinguishes cached system-prompt state from API-call-time ephemeral additions. This is important because not every useful piece of context deserves to mutate the long-lived prompt prefix.
+Hermes also distinguishes cached system-prompt state from additions that exist only for one model call. The transferable lesson is that information with different lifetimes should not be casually flattened into one giant prompt.
 
 ## Memory model
 
@@ -65,111 +49,92 @@ Hermes uses two small always-visible curated stores:
 - `MEMORY.md` for durable agent/work/environment facts;
 - `USER.md` for user preferences and profile information.
 
-Both have strict character budgets and are frozen into the system prompt at session start. Mid-session writes persist immediately but do not mutate the cached prompt snapshot.
+Both have strict character budgets and are frozen into the system prompt at session start. Past conversation history lives separately in SQLite and is searchable through FTS5 via `session_search`.
 
-Past conversation history lives separately in SQLite and is searchable through FTS5 via `session_search`.
-
-This creates a simple two-speed memory model:
+The useful semantic distinction is therefore:
 
 ```text
-small curated memory     always present
-large session history    retrieved on demand
+small amount of important remembered information    usually present
+large conversation history                          recovered when needed
 ```
 
 ## Delegation model
 
 Hermes' `delegate_task` implementation is especially relevant.
 
-A delegated child receives:
+A delegated child receives a fresh conversation rather than the parent's whole transcript, gets only the capabilities appropriate for the task, and returns a focused result rather than flooding the parent conversation with every intermediate step.
 
-- a fresh conversation with no parent transcript;
-- its own task identity and terminal session;
-- inherited toolsets with dangerous/shared-state capabilities removed;
-- focused context built for the delegated goal.
+Shared-state actions such as modifying memory, scheduling work, messaging the user, or recursively delegating are restricted by default.
 
-The parent sees only the delegation call and the final result, not the child's full intermediate trajectory.
-
-Shared-state capabilities such as memory writes, scheduling, messaging, and recursive delegation are restricted by default.
-
-This is a strong example of **context isolation as architecture**, not merely prompt wording.
+The semantic lesson is **delegation should narrow context and authority**, not merely clone the parent agent with all of its privileges.
 
 ## What works well?
 
-### 1. Platform-agnostic core
+### One continuing agent can appear through several interfaces
 
-CLI and messaging concerns stay outside `AIAgent`. Ember should preserve this property from the beginning.
+CLI and messaging concerns stay outside `AIAgent`. Ember should preserve the underlying property: changing how the user reaches the agent should not create a different identity.
 
-### 2. Prompt tiers are explicit
+### Context has different lifetimes
 
-The stable/context/volatile split gives us a useful vocabulary for Ember's future context assembler.
+Hermes' stable/context/volatile tiers provide a useful way to think about Ember's future context without yet deciding how Ember will represent it.
 
-It also reinforces a deeper principle: identity state, project context, memory, and ephemeral events have different lifecycles and should not be concatenated casually.
+Identity, current project information, remembered knowledge, and one-turn observations do not mean the same thing and should not share a lifecycle by accident.
 
-### 3. Bounded always-on memory
+### Always-visible memory is deliberately small
 
-Hermes accepts that always-in-context memory is expensive and therefore keeps it intentionally tiny.
+Hermes accepts that every piece of persistent memory included on every turn has a recurring token and attention cost. That budget discipline is worth keeping regardless of storage technology.
 
-The exact Markdown implementation is not necessarily right for Ember, but the budget discipline is.
+### Large history remains searchable
 
-### 4. Searchable raw sessions remain separate
+Cheap full-text session search is a compelling baseline. Not every attempt to remember the past needs embeddings or another model call.
 
-Using FTS5 for cheap exact-ish recall before invoking heavier semantic or model-assisted retrieval is a compelling baseline.
+### Delegated work is isolated
 
-Not every recall query needs embeddings or a dedicated LLM call.
+Fresh context and reduced authority are valuable even if Ember ultimately delegates to external specialist systems rather than copies of itself.
 
-### 5. Delegated contexts are isolated
+### Long-running actions can be interrupted and observed
 
-Fresh child context plus explicit capability restrictions is a pattern worth keeping even if Ember delegates to external runtimes rather than spawning copies of itself.
-
-### 6. Interruptibility and observable execution
-
-Hermes treats cancellation and visible tool execution as design principles. These become increasingly important once an agent can act autonomously or run long delegated tasks.
+Once an agent can act or delegate work, the user needs to see what is happening and retain the ability to stop it.
 
 ## What may scale poorly for Ember?
 
-### 1. `AIAgent` owns too many responsibilities
+### Too many responsibilities converge in the central implementation
 
-Hermes' own architecture documentation describes `run_agent.py` as a large central file. Prompt, provider, tools, retry, persistence, compression, and callbacks all converge there.
+Hermes' own documentation describes `run_agent.py` as a large central file. Its breadth shows why Ember should try to preserve a narrower conceptual center even as capabilities grow.
 
-For Ember we should preserve a narrower kernel and let orchestration policies compose around it.
+### Built-in tool breadth creates pressure on the agent itself
 
-### 2. Tool breadth becomes architecture pressure
+Seventy-plus tools and many execution backends are useful product features, but Ember does not need to measure maturity by how many specialized abilities live locally.
 
-Seventy-plus tools and many terminal/browser backends are useful product features, but they increase the number of states the central agent must understand.
+### Curated memory is intentionally shallow
 
-Ember should prefer external capability standards and specialist runtimes instead of measuring maturity by built-in tool count.
+Two bounded text files work well for high-value facts, but Ember's goals raise additional questions about experiences, relationships, evolving self-understanding, contradiction, and provenance.
 
-### 3. Curated memory is intentionally shallow
+### Some implementation wiring is implicit
 
-Two bounded text files work very well for high-value facts, but Ember's goals require richer semantics around episodes, provenance, contradiction, relationships, and evolving self-model state.
+Hermes uses convenient import-time registration patterns. That is a useful implementation observation, but there is no reason for Ember to choose an equivalent mechanism during research.
 
-### 4. Import-time registry patterns are convenient but implicit
+## What should Ember borrow conceptually?
 
-Hermes tools self-register during import. Ember should consider more explicit construction to keep dependencies visible and testable.
+- one continuing agent across interfaces;
+- explicit distinctions between long-lived, situational, and ephemeral context;
+- strict budgets for information that is always shown to the model;
+- cheap searchable history before more expensive recall methods;
+- interruption and visible progress for long-running work;
+- narrowed context and authority when work is delegated;
+- model/provider concerns that do not define personal identity.
 
-## What should Ember borrow?
+## What should Ember explore differently?
 
-- one core across interfaces;
-- stable/context/volatile prompt tiers;
-- separation of cached prompt state from per-turn ephemeral context;
-- strict budgets for always-visible memory;
-- cheap searchable session history as a first retrieval lane;
-- explicit cancellation and execution observability;
-- isolated delegation contexts;
-- capability restrictions for delegated work;
-- provider/runtime resolution as a separable concern.
-
-## What should Ember deliberately do differently?
-
-- keep the central agent loop narrower than Hermes' `AIAgent`;
-- avoid accumulating a huge built-in tool catalog;
-- give identity, relationships, episodes, and durable knowledge separate semantics;
-- make provenance part of persisted state;
-- treat external specialist runtimes as preferred delegation targets for specialist work;
-- make initiative/attention an explicit subsystem rather than expressing autonomy mostly through cron and gateway events.
+- keep the basic reasoning-and-action cycle narrower as the project grows;
+- resist turning every useful external ability into a built-in tool;
+- distinguish identity, relationships, experiences, and durable knowledge by meaning;
+- preserve enough provenance to explain important remembered beliefs;
+- prefer specialist systems for specialist work;
+- investigate initiative as a question of attention and relevance rather than primarily schedules and gateway events.
 
 ## Ember takeaway
 
 Hermes is a valuable reference for **operational maturity**.
 
-The goal is not to reproduce its breadth. The useful lesson is to copy the boundaries that survived that breadth: prompt tiers, platform independence, bounded active memory, searchable history, cancellation, and delegation isolation.
+The goal is not to reproduce its breadth. The useful lesson is to keep the ideas that survived that breadth: context discipline, interface independence, bounded active memory, searchable history, interruptibility, and delegation isolation.
