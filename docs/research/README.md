@@ -22,6 +22,7 @@ During this phase, implementation-shaped vocabulary can accidentally turn a rese
 Concern-driven notes:
 
 - [Continuity and Identity Semantics](continuity-and-identity.md) — what it means for Ember to remain the same continuing agent across time, restarts, interfaces, and model changes.
+  - [Portable evidence map and references](continuity-and-identity-references.md) — maps the note's evidence-labelled conclusions to durable paper, benchmark, DOI, project, and local-research links that remain usable outside the original Deep Research session.
 
 Source material:
 
