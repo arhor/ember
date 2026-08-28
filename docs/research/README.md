@@ -23,10 +23,13 @@ Concern-driven notes:
 
 - [Continuity and Identity Semantics](continuity-and-identity.md) — what it means for Ember to remain the same continuing agent across time, restarts, interfaces, and model changes.
   - [Portable evidence map and references](continuity-and-identity-references.md) — maps the note's evidence-labelled conclusions to durable paper, benchmark, DOI, project, and local-research links that remain usable outside the original Deep Research session.
+- [Memory and Remembering Semantics](memory-and-remembering.md) — what it means for Ember to remember, how experience becomes durable meaning, and how memory remains attributable, scoped, correctable, supersedable, forgettable, and useful over time.
+  - [Portable evidence map and references](memory-and-remembering-references.md) — maps the memory note's evidence-labelled conclusions to durable papers, benchmarks, DOI and project links, and local research that remain usable outside the original Deep Research session.
 
 Source material:
 
 - [Continuity and Identity Deep Research](source-material/continuity-and-identity-deep-research.md) — preserved original Deep Research export behind the continuity synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
+- [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
 
 Reviewed systems:
 
