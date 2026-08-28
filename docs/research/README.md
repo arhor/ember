@@ -19,6 +19,15 @@ When translating those observations into **ideas for Ember**, return to natural 
 
 During this phase, implementation-shaped vocabulary can accidentally turn a research hypothesis into an unexamined design commitment. Ember's representation should emerge from the semantics, not lead them.
 
+Concern-driven notes:
+
+- [Continuity and Identity Semantics](continuity-and-identity.md) — what it means for Ember to remain the same continuing agent across time, restarts, interfaces, and model changes.
+  - [Portable evidence map and references](continuity-and-identity-references.md) — maps the note's evidence-labelled conclusions to durable paper, benchmark, DOI, project, and local-research links that remain usable outside the original Deep Research session.
+
+Source material:
+
+- [Continuity and Identity Deep Research](source-material/continuity-and-identity-deep-research.md) — preserved original Deep Research export behind the continuity synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
+
 Reviewed systems:
 
 - [NanoBot](nanobot.md) — compact execution core and layered memory consolidation.
