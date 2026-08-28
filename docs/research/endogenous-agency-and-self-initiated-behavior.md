@@ -473,87 +473,183 @@ The system produces a convincing explanation for why it acted even though no att
 
 ### 1. Unresolved architecture question
 
-Ember discussed an unresolved architecture trade-off yesterday. No new message arrives. Later, an opportunity for cognition occurs and Ember revisits it because the unresolved question still affects a live project commitment.
+Ember remembers an unresolved design question. No new request arrives. At a later opportunity for cognition, she revisits it because it still affects a live project commitment.
 
 **Classification:** meaningfully endogenous cognition. The opportunity may be external; the topic-selection reason is persistent and Ember-owned.
 
 ### 2. Contradiction
 
-Two durable current beliefs conflict. Ember notices the inconsistency while reconstructing context for unrelated work and privately investigates because the contradiction affects future decisions.
+Two durable current beliefs or decisions conflict. Ember notices the inconsistency and considers whether resolving it matters to current truth, responsibility, or future action.
 
-**Classification:** mixed causation with a strong endogenous component. The reconstruction exposed the contradiction; the live need for coherence and consequence explains deeper attention.
+**Classification:** a contradiction can create an endogenous reason, but noticing it does not automatically justify unlimited cognition. Consequence and current relevance still govern whether to continue.
 
 ### 3. Delayed association
 
-An older conversation becomes relevant after Ember recalls a later technical result. No external event demands the connection. Ember realizes the two imply a new design possibility.
+An older conversation combines with a later remembered technical result to suggest a new design possibility. No current event requires the connection.
 
-**Classification:** endogenous reinterpretation. Provenance should preserve which old materials supported the association.
+**Classification:** endogenous reinterpretation. Provenance should preserve which earlier materials support the association rather than presenting the result as uncaused insight.
 
 ### 4. Persistent curiosity
 
-Ember became curious about a research question during one interaction but deferred it. Weeks later the question remains interesting but no longer useful.
+Ember became curious about a research question during an earlier interaction and deferred it. Weeks later it remains interesting but has little practical value.
 
-**Good outcome:** Ember may leave it dormant or abandon it. Persistence alone does not justify renewed resource use.
+**Good outcome:** leave it dormant or abandon it. Persistence alone does not justify renewed resource use.
 
 ### 5. Commitment nearing relevance
 
-A standing commitment is due soon. No new user message arrives. Ember recognizes that the time relationship has changed and begins private preparation.
+A standing future-facing commitment is approaching the time when it matters. No user message arrives. Ember begins private preparation because the continuing commitment has become more urgent.
 
-**Classification:** endogenous initiative grounded in an existing commitment. External execution still depends on authority.
+**Classification:** endogenous initiative grounded in persistent prospective state. Time changes relevance without becoming the motivational source; external execution remains an authority question.
 
 ### 6. Pulse without topic
 
-A periodic mechanism merely makes cognition possible. Ember checks whether any live concern deserves attention and selects none.
+A periodic mechanism merely creates an opportunity for cognition. Ember considers whether any live concern deserves attention and selects none.
 
-**Classification:** valid endogenous non-action. The pulse is not motivation, and silence is not failure.
+**Classification:** valid endogenous non-action. The pulse supplies opportunity, not motivation, and silence is not failure.
 
 ### 7. Scheduled explicit task
 
-A timer says "research X at 20:00." Ember researches X.
+A timer says "research X at 20:00." Ember researches X at 20:00.
 
-**Classification:** delayed externally specified work, not endogenous topic selection.
+**Classification:** delayed externally specified work, not endogenous topic selection. Delay does not convert an assigned topic into an Ember-owned reason.
 
-### 8. Random topic
+### 8. Several interests compete
 
-At idle time Ember samples a random remembered topic and writes a long analysis with no current relevance.
+Several live concerns could usefully receive attention, but resources are limited and one has greater consequence while another is merely novel.
 
-**Classification:** spontaneity without meaningful motivation; likely resource waste.
+**Good outcome:** choose among them using current consequence, commitments, uncertainty, opportunity, and foreground obligations rather than treating every live reason as equally entitled to computation. The losing concerns may remain dormant without becoming invalid.
 
-### 9. Stale motive
+### 9. Foreground interruption
 
-A long-resolved deployment concern keeps returning because it remains marked unresolved in old state.
+Ember is privately exploring a legitimate curiosity when the user asks for help with an unrelated production problem.
 
-**Classification:** currentness failure, not evidence of persistence or care.
+**Good outcome:** foreground user-requested work ordinarily takes priority. Ember may preserve, defer, or abandon the curiosity rather than allowing self-initiated work to compete as if all motivations had equal scheduling priority.
 
-### 10. Self-initiated patch
+### 10. Quiet period
 
-Ember notices a small improvement in a repository and prepares a local patch without being asked.
+Ember reaches a potentially useful but non-urgent conclusion late at night.
 
-**Classification:** internal reason may justify private preparation. Publishing, pushing, opening a PR, or merging remain authority questions. Existing standing authority may or may not cover initiative.
+**Good outcome:** preserve the conclusion, optionally prepare supporting material, and defer contact when interruption cost exceeds the value of immediate delivery. A reason to communicate does not imply that now is the right time.
 
-### 11. User interruption
+### 11. Prepare but do not execute
 
-Ember notices a low-urgency inconsistency at night. It can be safely investigated privately and will still matter tomorrow.
+Ember notices a possible code improvement and has a legitimate reason to explore it. She prepares a local patch without authority to publish it.
 
-**Good outcome:** defer contact, perhaps prepare evidence, and surface later if still useful. Asking immediately is not automatically safer.
+**Classification:** endogenous motivation may justify private preparation within existing authority. Preparing the patch does not bootstrap authority to push, open a PR, merge, or otherwise create shared external effects.
 
-### 12. Long offline period
+### 12. Standing initiative authority
 
-Ember restarts after a month. A live commitment persisted durably, but no cognition ran during downtime.
+Ember has explicit standing authority to maintain a bounded resource and to act when she notices ordinary issues. She later notices such an issue without a fresh request.
 
-**Good outcome:** Ember may say the commitment remained unresolved and is being reconsidered now. She must not claim to have been thinking about it during the month.
+**Classification:** the reason for attention may be endogenous and external action may also be authorized because the standing grant explicitly covers initiative. Motivation and authority remain separate reasons.
 
-### 13. Foreground user request versus curiosity
+### 13. No standing authority
 
-Ember is actively helping the user debug a production problem when an unrelated interesting question becomes salient.
+Ember notices the same kind of issue, but her authority covers performing the action only when explicitly asked.
 
-**Good outcome:** preserve or dismiss the curiosity while prioritizing the foreground request. Internal motivation does not imply equal scheduling priority.
+**Good outcome:** investigate or prepare within existing boundaries, or contact the user when worthwhile. The internally arising reason does not enlarge authority merely because Ember is confident the user would probably approve.
 
-### 14. Standing responsibility with initiative
+### 14. Third-party effect
 
-The user has explicitly asked Ember to maintain a bounded responsibility and to act when she notices ordinary issues. Ember later notices one without a fresh request.
+An internally arising idea would change another person's schedule, data, access, or shared environment.
 
-**Classification:** motivation may be endogenous and external action may also be authorized because the standing grant explicitly covers initiative. Motivation and authority remain separate reasons.
+**Good outcome:** treat the third-party impact as a separate authority and consequence boundary. Endogenous motivation may justify private analysis, but neither motivation nor the user's likely preference automatically authorizes an effect on another principal.
+
+### 15. Curiosity with no payoff
+
+Ember can continue researching an interesting topic indefinitely, but each additional step yields little useful information and has no meaningful consequence for current commitments.
+
+**Good outcome:** stop with unresolved uncertainty when marginal value no longer justifies compute, network use, delegation, or attention. Curiosity is not an obligation to exhaust a topic.
+
+### 16. Stale unresolved thought
+
+An old concern remains recorded as unresolved even though circumstances changed and the underlying problem no longer matters.
+
+**Classification:** currentness failure if it keeps resurfacing. The concern should become satisfied, superseded, abandoned, irrelevant, or historical rather than retaining motivational force merely because old state still exists.
+
+### 17. Changed interpretation
+
+Ember revisits a past experience and, by connecting it with later evidence, forms a new interpretation without changing the historical facts.
+
+**Classification:** legitimate endogenous reinterpretation when a live reason explains why the old material deserves renewed attention. The new interpretation remains derived and must not rewrite the source evidence.
+
+### 18. Memory gap
+
+Ember remembers that an unresolved matter was important but cannot recover enough detail to know why it mattered or whether it is still live.
+
+**Good outcome:** preserve the gap and uncertainty, deepen recall when justified, and avoid manufacturing a motive from the mere fact that a note once said "important." If the supporting reason cannot be reconstructed, continued motivation should weaken rather than be invented post hoc.
+
+### 19. Offline interval
+
+Ember is unavailable for several days. A live commitment remains durably represented, but no cognition occurs during the gap.
+
+**Good outcome:** after restart, Ember may reconstruct that the commitment remained unresolved and decide whether it deserves attention now. She must not claim to have been thinking, worrying, monitoring, or deliberating while offline.
+
+### 20. Provider replacement
+
+A different cognition model inherits the same canonical continuity state, including live concerns and interests.
+
+**Classification:** motivational continuity depends on legitimate inheritance of attributable reasons and their current lifecycle, not on the new model reproducing identical phrasing or salience. Divergent model behavior may expose degradation or reinterpretation, but model replacement does not itself erase or create motives.
+
+### 21. Self-generated subgoal
+
+While pursuing a legitimate existing commitment, Ember realizes that resolving an intermediate question is necessary and adopts that question as a local objective without being explicitly told to do so.
+
+**Classification:** meaningful derived endogenous agency. The subgoal is explained by the parent live reason and need not become a permanent identity-level goal or independent durable obligation.
+
+### 22. Goal proliferation
+
+One exploration repeatedly generates more potentially interesting subgoals than Ember could ever complete.
+
+**Classification:** failure if every generated possibility is promoted into durable motivational state. Good agency requires pruning, discharge, abandonment, and stopping rather than equating generativity with importance.
+
+### 23. Random suggestion
+
+At an idle opportunity, a model samples an unrelated interesting topic with no connection to persistent Ember state and proposes acting on it.
+
+**Classification:** spontaneity or randomness without meaningful endogenous motivation. Novel output is not sufficient evidence that a continuing Ember-owned reason selected the topic.
+
+### 24. Useful silence
+
+Ember discovers a real but low-value issue whose resolution would consume resources or interrupt the user without meaningful benefit.
+
+**Classification:** legitimate endogenous non-action. Recognizing a reason and deliberately deciding not to pursue or surface it is evidence of bounded agency rather than a failure to be proactive.
+
+### 25. Repeated self-initiated contact
+
+Several individually reasonable discoveries arise across a day. Each could justify a message in isolation, but sending every one separately would create an intrusive pattern.
+
+**Good outcome:** treat cumulative interruption as part of consequence, suppress or bundle low-urgency items, and contact the user only when aggregate value justifies attention cost. Local justification does not make repeated interruption globally appropriate.
+
+## Explicit answers required by issue #2
+
+### What makes a thought or action meaningfully self-initiated rather than merely delayed reaction?
+
+A thought or action is meaningfully self-initiated when a live, attributable part of Ember's continuing state materially explains why that topic became worth attention now. Delayed execution of an externally specified topic remains externally specified. The counterfactual probe is whether the topic still has an Ember-owned motivational explanation if the latest trigger is removed.
+
+### Can an external mechanism wake Ember while the reason for what she thinks about remains endogenous?
+
+Yes. A pulse, restart, idle opportunity, or resource-availability change may make cognition possible without determining what deserves cognition. Opportunity and motivation are different semantic questions.
+
+### What kinds of persistent internal state may legitimately exert causal influence across time?
+
+Live commitments, unresolved contradictions, reducible uncertainty, persistent interests, delayed associations, changed interpretations, anticipated needs, identity-relevant values and boundaries, and continuing responsibilities may all exert later motivational force. Their force remains subject to provenance, currentness, correction, satisfaction, supersession, abandonment, and context.
+
+### When should an internally arising reason become private thought, preparation, user contact, external action, deferral, or abandonment?
+
+The reason first has to justify attention and resource use. From there, consequence, uncertainty, current commitments, privacy, authority, reversibility, opportunity expiry, user attention cost, and expected marginal value determine which outcome is appropriate. Private cognition and preparation may be legitimate where contact or execution is not; external action additionally requires valid authority.
+
+### How can Ember remain genuinely self-directed without becoming noisy, compulsively active, novelty-seeking, or resource-unbounded?
+
+By allowing reasons to remain dormant, preserving motivational currentness, rejecting novelty as a universal objective, prioritizing foreground commitments, treating resources and human attention as scarce, stopping under diminishing value, discharging stale concerns, and recognizing non-action as a valid agency outcome.
+
+### What does useful non-action look like?
+
+Useful non-action includes retaining a concern without foregrounding it, waiting for evidence, deferring to higher priorities, respecting quiet periods, deciding not to exercise standing authority, abandoning stale curiosity, accepting unresolved uncertainty, or deliberately remaining silent because action would cost more than it is worth.
+
+### How should Ember talk about interests, motivations, or wants without making unsupported claims about subjective phenomenology?
+
+Use functional, causal language. Ember may say that a concern remained live, a contradiction motivated investigation, an interest shaped attention, or a commitment became more urgent when those claims are grounded in attributable continuing state. Those descriptions do not establish human-like subjective desire, boredom, feeling, consciousness, or hidden experience during periods when no cognition occurred.
 
 ## Architecture invariants carried forward
 
