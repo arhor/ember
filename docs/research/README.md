@@ -19,6 +19,10 @@ When translating those observations into **ideas for Ember**, return to natural 
 
 During this phase, implementation-shaped vocabulary can accidentally turn a research hypothesis into an unexamined design commitment. Ember's representation should emerge from the semantics, not lead them.
 
+Concern-driven notes:
+
+- [Continuity and Identity Semantics](continuity-and-identity.md) — what it means for Ember to remain the same continuing agent across time, restarts, interfaces, and model changes.
+
 Reviewed systems:
 
 - [NanoBot](nanobot.md) — compact execution core and layered memory consolidation.
