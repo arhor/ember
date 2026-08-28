@@ -23,6 +23,10 @@ Concern-driven notes:
 
 - [Continuity and Identity Semantics](continuity-and-identity.md) — what it means for Ember to remain the same continuing agent across time, restarts, interfaces, and model changes.
 
+Source material:
+
+- [Continuity and Identity Deep Research](source-material/continuity-and-identity-deep-research.md) — preserved original Deep Research export behind the continuity synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
+
 Reviewed systems:
 
 - [NanoBot](nanobot.md) — compact execution core and layered memory consolidation.
