@@ -29,6 +29,8 @@ Concern-driven notes:
   - [Portable evidence map and references](context-selection-and-cognitive-framing-references.md) — maps the context note's evidence-labelled conclusions to durable long-context, retrieval, compaction, privacy, security, and adjacent research sources.
 - [Capabilities and Delegation Semantics](capabilities-and-delegation.md) — when Ember acts directly, uses a bounded capability, or delegates material discretion to another runtime, and what responsibility, provenance, context, continuity, and result-handling obligations survive that boundary.
   - [Portable evidence map and references](capabilities-and-delegation-references.md) — maps the delegation note's evidence-labelled conclusions to current runtime/protocol contracts, 2025–2026 multi-agent research, failure analyses, security/privacy evidence, and inherited Ember research.
+- [Action, Authority, and Permission Semantics](action-authority-and-permission.md) — when Ember is legitimately entitled to decide and act without fresh authorization, including standing authority, material change, disclosure, third-party effects, confirmation fatigue, and delegated authority.
+  - [Portable evidence map and references](action-authority-and-permission-references.md) — maps the authority note's security invariants and evidence-labelled conclusions to durable security, HCI, human-factors, privacy, multi-principal, and current runtime sources.
 
 Source material:
 
@@ -36,6 +38,7 @@ Source material:
 - [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved original Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
 - [Context Selection and Cognitive Framing Deep Research](source-material/context-selection-and-cognitive-framing-deep-research.md) — preserved source research behind the context synthesis; non-canonical and retains the report's evidence ledger while omitting UI-only research metadata.
 - [Capabilities and Delegation Deep Research](source-material/capabilities-and-delegation-deep-research.md) — preserved source research behind the capabilities and delegation synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
+- [Action, Authority, and Permission Deep Research](source-material/action-authority-and-permission-deep-research.md) — preserved source research behind the authority synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
 
 Reviewed systems:
 
