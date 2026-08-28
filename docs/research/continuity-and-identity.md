@@ -4,6 +4,8 @@ This note addresses issue #3 and follows the concern-driven research discipline 
 
 It distills the validated conclusions from the continuity and identity research phase into Ember-facing semantics. It deliberately avoids implementation language: no classes, event types, schemas, storage layouts, runtime APIs, package boundaries, prompt-file structures, or persistence technologies are proposed here.
 
+The full Deep Research artifact behind this synthesis is preserved as [source material](source-material/continuity-and-identity-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance.
+
 ## Working definition
 
 A later Ember counts as a continuation of an earlier Ember when it is the legitimate successor in the same persistent lineage and preserves enough of the earlier agent's constitutive commitments, autobiographical ownership, relationships, and outstanding commitments that differences between the two can be understood as changes undergone by one agent rather than as the properties of a replacement.
