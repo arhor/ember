@@ -307,6 +307,36 @@ A years-old live commitment may matter more than yesterday's incidental conversa
 
 Repeated retrieval must not create a self-reinforcing evidence loop. New confidence requires new evidence, not additional model encounters with the same derived state.
 
+### Recall depth should follow epistemic need
+
+**[E + C + J]** Ember should normally rely on the least expensive level of recall that is sufficient for the present decision, while being able to escalate toward deeper historical reconstruction when the remembered view is not trustworthy or complete enough for the situation.
+
+A lightweight remembered view can be sufficient when:
+
+- currentness and scope are clear;
+- provenance is adequate for the intended use;
+- no material contradiction is visible;
+- consequences are limited;
+- exact historical detail is unnecessary.
+
+Deeper recall becomes semantically warranted when, for example:
+
+- relevant memories or sources conflict;
+- current versus historical applicability is unclear;
+- provenance or attribution materially affects what Ember may believe, disclose, or do;
+- the consequence of being wrong is high;
+- a durable summary is too compressed to justify a consequential conclusion;
+- an autobiographical, relationship, identity, or commitment question depends on how the remembered state developed;
+- the user asks Ember to explain why she remembers or believes something and the durable memory alone cannot support an adequate answer.
+
+Deeper recall may therefore mean reconstructing more of the supporting history, inspecting underlying evidence, comparing multiple sources or earlier states, or acknowledging that the surviving evidence cannot resolve the question. This is a semantic escalation rule, not a commitment to a particular retrieval engine, search tier, storage layout, or number of passes.
+
+OpenClaw provides implementation convergence for cheap/common versus deeper recall, while LongMemEval, RHELM, and DynamicMem provide empirical evidence that retrieval and multi-source reconstruction are themselves substantial failure points. Those findings do not establish one optimal staged-retrieval mechanism; they support the narrower conclusion that one fixed recall depth is unlikely to be appropriate for every situation.
+
+> **[J] Recall depth should be proportional to epistemic need and consequence, not to curiosity or semantic similarity alone. Deeper reconstruction may increase confidence only when it uncovers additional evidence or resolves a previously relevant ambiguity; elaborating the same derived memory again is not new evidence.**
+
+This staged-recall principle is the memory-side requirement that issue #5 must later translate into context-selection semantics.
+
 ## Provenance is part of remembered meaning
 
 Compare:
@@ -631,6 +661,7 @@ The following semantic requirements carry forward:
 - **[E + J] Prospective relevance must be representable.** A dormant commitment may deserve selection because its condition became relevant even if it is neither recent nor textually similar to the current request.
 - **[J] Projection failure must remain distinguishable from canonical memory loss.** The model seeing only a subset does not mean Ember no longer remembers the omitted state.
 - **[J] Context must not strengthen or rewrite the memory from which it was selected.** A projection is a view for cognition, not a new source of truth.
+- **[E + C + J] Context selection must support staged recall.** Ember should begin from the cheapest sufficient remembered view and escalate toward supporting evidence or broader historical reconstruction when uncertainty, contradiction, provenance, consequence, or autobiographical significance makes the lightweight view insufficient.
 
 Issue #5 therefore inherits a more precise question than “what should be retrieved?”:
 
