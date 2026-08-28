@@ -25,11 +25,14 @@ Concern-driven notes:
   - [Portable evidence map and references](continuity-and-identity-references.md) — maps the note's evidence-labelled conclusions to durable paper, benchmark, DOI, project, and local-research links that remain usable outside the original Deep Research session.
 - [Memory and Remembering Semantics](memory-and-remembering.md) — what it means for Ember to remember, how experience becomes durable meaning, and how memory remains attributable, scoped, correctable, supersedable, forgettable, and useful over time.
   - [Portable evidence map and references](memory-and-remembering-references.md) — maps the memory note's evidence-labelled conclusions to durable papers, benchmarks, DOI and project links, and local research that remain usable outside the original Deep Research session.
+- [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md) — what should shape Ember's point of view for a particular act of cognition, including selection, exclusion, relevance, ordering, reconstruction, compaction, graceful degradation, and delegated least-context boundaries.
+  - [Portable evidence map and references](context-selection-and-cognitive-framing-references.md) — maps the context note's evidence-labelled conclusions to durable long-context, retrieval, compaction, privacy, security, and adjacent research sources.
 
 Source material:
 
 - [Continuity and Identity Deep Research](source-material/continuity-and-identity-deep-research.md) — preserved original Deep Research export behind the continuity synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
 - [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
+- [Context Selection and Cognitive Framing Deep Research](source-material/context-selection-and-cognitive-framing-deep-research.md) — preserved source research behind the context synthesis; non-canonical and retains the report's evidence ledger while omitting UI-only research metadata.
 
 Reviewed systems:
 
