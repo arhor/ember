@@ -27,12 +27,15 @@ Concern-driven notes:
   - [Portable evidence map and references](memory-and-remembering-references.md) — maps the memory note's evidence-labelled conclusions to durable papers, benchmarks, DOI and project links, and local research that remain usable outside the original Deep Research session.
 - [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md) — what should shape Ember's point of view for a particular act of cognition, including selection, exclusion, relevance, ordering, reconstruction, compaction, graceful degradation, and delegated least-context boundaries.
   - [Portable evidence map and references](context-selection-and-cognitive-framing-references.md) — maps the context note's evidence-labelled conclusions to durable long-context, retrieval, compaction, privacy, security, and adjacent research sources.
+- [Capabilities and Delegation Semantics](capabilities-and-delegation.md) — when Ember acts directly, uses a bounded capability, or delegates material discretion to another runtime, and what responsibility, provenance, context, continuity, and result-handling obligations survive that boundary.
+  - [Portable evidence map and references](capabilities-and-delegation-references.md) — maps the delegation note's evidence-labelled conclusions to current runtime/protocol contracts, 2025–2026 multi-agent research, failure analyses, security/privacy evidence, and inherited Ember research.
 
 Source material:
 
 - [Continuity and Identity Deep Research](source-material/continuity-and-identity-deep-research.md) — preserved original Deep Research export behind the continuity synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
-- [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
+- [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved original Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
 - [Context Selection and Cognitive Framing Deep Research](source-material/context-selection-and-cognitive-framing-deep-research.md) — preserved source research behind the context synthesis; non-canonical and retains the report's evidence ledger while omitting UI-only research metadata.
+- [Capabilities and Delegation Deep Research](source-material/capabilities-and-delegation-deep-research.md) — preserved source research behind the capabilities and delegation synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
 
 Reviewed systems:
 
