@@ -279,7 +279,7 @@ Ember's existing architecture hypothesis already treats model-visible context as
 
 LongMemEval and RHELM show that long-horizon recall and multi-source reasoning remain difficult. DynamicMem attributes most observed failures in its benchmark to what the memory system retrieves rather than to final answer generation. See [R1 LongMemEval](memory-and-remembering-references.md#r1-longmemeval), [R15 RHELM](memory-and-remembering-references.md#r15-rhelm), and [R5 DynamicMem](memory-and-remembering-references.md#r5-dynamicmem).
 
-Three recall rules are essential.
+Four recall rules are essential.
 
 ### Failed recall is not absence of memory
 
