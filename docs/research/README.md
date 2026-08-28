@@ -31,6 +31,8 @@ Concern-driven notes:
   - [Portable evidence map and references](capabilities-and-delegation-references.md) — maps the delegation note's evidence-labelled conclusions to current runtime/protocol contracts, 2025–2026 multi-agent research, failure analyses, security/privacy evidence, and inherited Ember research.
 - [Action, Authority, and Permission Semantics](action-authority-and-permission.md) — when Ember is legitimately entitled to decide and act without fresh authorization, including standing authority, material change, disclosure, third-party effects, confirmation fatigue, and delegated authority.
   - [Portable evidence map and references](action-authority-and-permission-references.md) — maps the authority note's security invariants and evidence-labelled conclusions to durable security, HCI, human-factors, privacy, multi-principal, and current runtime sources.
+- [Endogenous Agency and Self-Initiated Behavior Semantics](endogenous-agency-and-self-initiated-behavior.md) — what makes attention or behavior meaningfully endogenous, how continuing concerns can motivate later cognition without equating wake-up mechanisms with motivation, and how initiative remains bounded by currentness, resources, attention, and authority.
+  - [Portable evidence map and references](endogenous-agency-and-self-initiated-behavior-references.md) — maps the endogenous-agency note to durable cognitive-science, intrinsic-motivation, HCI, proactive-agent, benchmark, and inherited Ember sources.
 
 Source material:
 
@@ -39,6 +41,7 @@ Source material:
 - [Context Selection and Cognitive Framing Deep Research](source-material/context-selection-and-cognitive-framing-deep-research.md) — preserved source research behind the context synthesis; non-canonical and retains the report's evidence ledger while omitting UI-only research metadata.
 - [Capabilities and Delegation Deep Research](source-material/capabilities-and-delegation-deep-research.md) — preserved source research behind the capabilities and delegation synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
 - [Action, Authority, and Permission Deep Research](source-material/action-authority-and-permission-deep-research.md) — preserved source research behind the authority synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
+- [Endogenous Agency and Self-Initiated Behavior Deep Research](source-material/endogenous-agency-and-self-initiated-behavior-deep-research.md) — preserved source report behind issue #2; non-canonical and retains the original session-local citation markers while the portable evidence map reconstructs durable references for the synthesis.
 
 Reviewed systems:
 
