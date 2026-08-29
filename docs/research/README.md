@@ -39,7 +39,7 @@ Concern-driven notes:
 Source material:
 
 - [Continuity and Identity Deep Research](source-material/continuity-and-identity-deep-research.md) — preserved original Deep Research export behind the continuity synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
-- [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved original Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers for provenance.
+- [Memory and Remembering Deep Research](source-material/memory-and-remembering-deep-research.md) — preserved original Deep Research export behind the memory synthesis; non-canonical and retains ChatGPT-local citation markers from the original Markdown export for provenance.
 - [Context Selection and Cognitive Framing Deep Research](source-material/context-selection-and-cognitive-framing-deep-research.md) — preserved source research behind the context synthesis; non-canonical and retains the report's evidence ledger while omitting UI-only research metadata.
 - [Capabilities and Delegation Deep Research](source-material/capabilities-and-delegation-deep-research.md) — preserved source research behind the capabilities and delegation synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
 - [Action, Authority, and Permission Deep Research](source-material/action-authority-and-permission-deep-research.md) — preserved source research behind the authority synthesis; non-canonical and retains the substantive report and evidence ledger while omitting UI-only research metadata.
@@ -53,4 +53,4 @@ Reviewed systems:
 - [OpenClaw](openclaw.md) — runtime ownership, specialist harnesses, provenance-aware memory, and gated promotion.
 - [Letta](letta.md) — persisted agent state and independently attachable memory/capability resources.
 
-The current synthesis lives in [Initial Architecture Model](../architecture/initial-model.md).
+The pre-research working hypothesis lives in [Initial Architecture Model](../architecture/initial-model.md). The completed cross-cutting synthesis and current design direction lives in [Cross-Cutting Research Synthesis and Ember Design Directions](../architecture/design-directions.md).

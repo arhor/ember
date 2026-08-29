@@ -1,6 +1,8 @@
 # Initial Architecture Model
 
-> Status: research hypothesis, not an ADR.
+> Status: historical pre-synthesis research hypothesis, not an ADR.
+>
+> This document was written before the concern-driven research programme was completed. It remains useful as the hypothesis that shaped that research, but it is superseded as the current synthesis by [Cross-Cutting Research Synthesis and Ember Design Directions](design-directions.md).
 >
 > This document intentionally stays at the level of behavior, meaning, and responsibility. It does not propose classes, structures, event names, schemas, protocols, storage layouts, or package boundaries.
 
