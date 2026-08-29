@@ -1,3 +1,12 @@
+---
+summary: "Canonical semantics for what makes later Ember the same continuing agent across restarts, interfaces, model changes, partial loss, and legitimate evolution."
+read_when:
+  - "Changing restart, resume, migration, model replacement, or identity-continuity behavior"
+  - "Deciding whether remembered history, relationships, commitments, or self-understanding still belong to the same continuing Ember"
+role: research
+discovery_status: current
+---
+
 # Continuity and Identity Semantics
 
 This note addresses issue #3 and follows the concern-driven research discipline defined in issue #10.

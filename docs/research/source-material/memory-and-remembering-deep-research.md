@@ -1,3 +1,12 @@
+---
+summary: "Preserved original Deep Research report behind the canonical memory and remembering synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original memory and remembering research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind memory, currentness, and forgetting conclusions"
+role: source
+discovery_status: current
+---
+
 # Ember Research Report: Memory and Remembering Semantics
 
 ## Research frame and executive synthesis

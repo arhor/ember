@@ -1,3 +1,12 @@
+---
+summary: "Governing contract for agent-aware repository documentation discovery: metadata roles and currentness, disclosure depths, tooling, validation, and agent policy."
+read_when:
+  - "Changing documentation discovery metadata, tooling, validation, agent instructions, or disclosure behavior"
+  - "Deciding how canonical, evidence, source, superseded, or historical repository knowledge should appear to agents"
+role: design
+discovery_status: current
+---
+
 # Ember Agent-Aware Documentation Discovery Contract
 
 > Status: design contract for issue #26.
