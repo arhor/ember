@@ -54,3 +54,15 @@ Reviewed systems:
 - [Letta](letta.md) — persisted agent state and independently attachable memory/capability resources.
 
 The pre-research working hypothesis lives in [Initial Architecture Model](../architecture/initial-model.md). The completed cross-cutting synthesis and current design direction lives in [Cross-Cutting Research Synthesis and Ember Design Directions](../architecture/design-directions.md).
+
+## Architecture handoff
+
+The completed research now constrains architecture through:
+
+- [Ember Architecture](../architecture/README.md) — index of current and historical
+  architecture material;
+- [Semantic Architecture Decisions](../architecture/decisions/README.md) — the
+  first accepted, representation-neutral decisions derived from the synthesis;
+- [Ember Architecture Acceptance Scenarios](https://github.com/arhor/ember/issues/21)
+  — issue tracking reusable cross-cutting fixtures for evaluating later
+  architecture choices.
