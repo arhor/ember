@@ -36,7 +36,7 @@ The first version should:
 
 - let an agent identify a small set of likely-relevant Ember documents from a compact deterministic catalogue;
 - distinguish what a document contains from when it matters;
-- expose the document's repository knowledge role and whether it is current, superseded, or historical;
+- expose the document's repository knowledge role and whether it participates in current, superseded, or historical discovery;
 - keep current canonical material easy to discover while making evidence and preserved source material reachable through an explicit deeper mode;
 - support progressive disclosure from repository policy to catalogue to selected headings to full source;
 - make missing or malformed discovery metadata fail visibly rather than silently hiding important documents;
@@ -71,7 +71,7 @@ Ember should carry forward four parts directly:
 
 Ember should not copy OpenClaw's adjacent Mintlify metadata, publishing mirror, package-time docs map, `doc-schema-version`, or Ask Molty retrieval architecture. Those solve different problems.
 
-Ember needs one refinement that OpenClaw's ordinary docs corpus can mostly avoid: the compact projection must preserve a document's **role** and **currentness**, because Ember intentionally keeps current conclusions, evidence maps, preserved source reports, and superseded design history side by side.
+Ember needs one refinement that OpenClaw's ordinary docs corpus can mostly avoid: the compact projection must preserve a document's **role** and **discovery currentness**, because Ember intentionally keeps current conclusions, evidence maps, preserved source reports, and superseded design history side by side.
 
 ## Participating documents
 
@@ -99,17 +99,17 @@ If contributor or operational guidance grows large enough to benefit from discov
 
 ## Document roles
 
-Every participating document declares one `role`. A role describes the document's repository knowledge function, not its subject matter.
+Every participating document declares one `role`. A role describes the document's repository knowledge function, not its subject matter or currentness.
 
 | Role | Meaning | Normal discovery depth |
 |---|---|---|
-| `foundation` | Project purpose or durable design principles, such as `docs/vision.md` and `docs/principles.md`. | Default |
-| `decision` | A decision record such as an ADR. Whether it actually governs current work comes from that decision record's own lifecycle and governance, not from the role label alone. | Default |
-| `design` | Current architecture or design direction that explains how constraints fit together without necessarily being a governing decision itself. | Default |
+| `foundation` | Project purpose or durable design principles. | Default |
+| `decision` | A decision record such as an ADR. Whether it governs work comes from that decision record's own lifecycle and governance, not from the role label alone. | Default |
+| `design` | Architecture or design direction that explains how constraints fit together without necessarily being a governing decision itself. | Default |
 | `scenario` | Acceptance, evaluation, or architecture-oracle scenarios used to test observable semantics. | Default |
-| `research` | Canonical Ember research synthesis or concern note whose conclusions are part of the current research baseline. | Default |
+| `research` | A canonical Ember research synthesis or concern note. Whether it is current is expressed separately by `discovery_status`. | Default |
 | `guide` | Repository, contributor, authoring, operational, or navigation guidance under `docs/`. | Default |
-| `reference` | Supporting investigation or comparative note that informs work but is not itself a canonical Ember conclusion. Reviewed-system notes and the OpenClaw documentation investigation belong here. | Deep |
+| `reference` | Supporting investigation or comparative note that informs work but is not itself a canonical Ember conclusion. | Deep |
 | `evidence` | Portable evidence map or reference map supporting a canonical research conclusion. | Deep |
 | `source` | Preserved source research artifact retained for provenance and reconstruction. | Deep |
 
@@ -119,7 +119,7 @@ A metadata label does not manufacture the role or authority it claims. Adding `r
 
 ## Discovery status
 
-Every participating document declares one `status`:
+Every participating document declares one `discovery_status`:
 
 - `current` means the document is eligible for present-day discovery within its role. It does **not** imply that a role-specific proposal has been accepted or approved;
 - `superseded` means a newer participating document replaces it for current guidance;
@@ -127,11 +127,32 @@ Every participating document declares one `status`:
 
 A `superseded` document must also declare `superseded_by` with a repository-relative path.
 
-This status is intentionally narrower than every lifecycle concept a document may have. ADRs may have Proposed, Accepted, Rejected, or another decision lifecycle. Research may carry evidence labels. Those meanings remain in their governing conventions. Discovery `status` answers only whether the document is a current routing candidate or retained past material.
+The field is deliberately named `discovery_status`, not plain `status`. ADRs or other document conventions may legitimately have their own lifecycle field such as `status: accepted` or `status: proposed`. Those meanings are independent. Discovery currentness must not overwrite or impersonate role-specific lifecycle.
 
 If role-specific lifecycle affects authority, an agent must read the source document before relying on it as governing. The compact catalogue is not proof that a `decision` is accepted.
 
-The current `docs/architecture/initial-model.md`, for example, should be `superseded` by `docs/architecture/design-directions.md`. It remains available for historical investigation without competing with the current synthesis in ordinary routing.
+The current `docs/architecture/initial-model.md`, for example, should be `discovery_status: superseded` with `superseded_by: docs/architecture/design-directions.md`. It remains available for historical investigation without competing with the current synthesis in ordinary routing.
+
+## Representative Ember classification
+
+The contract is role-based rather than path-authority-based, but #27 should not have to rediscover the intended classification of the existing corpus. Representative assignments are:
+
+| Document class / representative path | Role | Discovery status | Depth |
+|---|---|---|---|
+| `docs/vision.md`, `docs/principles.md` | `foundation` | `current` | Default |
+| `docs/architecture/design-directions.md` | `design` | `current` | Default |
+| `docs/architecture/initial-model.md` | `design` | `superseded` | All/history only |
+| accepted or proposed ADR source files | `decision` | normally `current` while actively relevant; decision authority still comes from the ADR lifecycle | Default |
+| `docs/architecture/acceptance-scenarios.md` | `scenario` | `current` | Default |
+| architecture/research navigation README files under `docs/` | `guide` | `current` | Default |
+| canonical concern notes such as `docs/research/memory-and-remembering.md` | `research` | `current` | Default |
+| portable `*-references.md` evidence maps | `evidence` | `current` while supporting the current canonical note | Deep |
+| `docs/research/source-material/*-deep-research.md` | `source` | `current` while retained as the source artifact for current research; the content remains non-canonical | Deep |
+| reviewed-system notes such as `nanobot.md`, `hermes.md`, `openclaw.md`, `letta.md` | `reference` | `current` | Deep |
+| `docs/research/openclaw-documentation-discovery.md` | `reference` | `current` | Deep |
+| this `docs/documentation-discovery.md` contract | `design` | `current` | Default |
+
+Directory placement helps identify candidates, but the metadata remains explicit because two files in the same research directory can have different semantic roles.
 
 ## Metadata schema
 
@@ -144,7 +165,7 @@ read_when:
   - "Changing Ember's product purpose or continuity goals"
   - "Evaluating whether a proposed feature belongs in Ember's core"
 role: foundation
-status: current
+discovery_status: current
 ---
 ```
 
@@ -194,13 +215,13 @@ Hints may overlap across documents when a task genuinely crosses concerns. The g
 
 Required. One role from the table above.
 
-### `status`
+### `discovery_status`
 
 Required. One of `current`, `superseded`, or `historical`.
 
 ### `superseded_by`
 
-Required only for `status: superseded`. The value is a repository-relative path to a participating document.
+Required only for `discovery_status: superseded`. The value is a repository-relative path to a participating document.
 
 Example:
 
@@ -211,7 +232,7 @@ read_when:
   - "Tracing the architecture hypothesis that preceded the cross-cutting research synthesis"
   - "Comparing current design directions with the project's pre-research model"
 role: design
-status: superseded
+discovery_status: superseded
 superseded_by: docs/architecture/design-directions.md
 ---
 ```
@@ -222,7 +243,7 @@ The first version does **not** add:
 
 - `schema_version` or `doc-schema-version`: the corpus is small enough to migrate atomically if the contract changes;
 - `canonical: true/false`: canonicality continues to come from role semantics and existing governance rather than a free-floating boolean that can disagree with them;
-- `discovery_tier`: default versus deep discovery is derived from `role` and `status`;
+- `discovery_tier`: default versus deep discovery is derived from `role` and `discovery_status`;
 - generic approval or proposal state: role-specific lifecycle remains with ADR or document governance until a recurring cross-role need justifies another projected field;
 - topic tags, concern IDs, keywords, or task categories: `read_when` supplies task-oriented routing without a rigid ontology;
 - `related`, `depends_on`, or link graphs: normal Markdown links and existing ADR/scenario traceability already express concrete relationships;
@@ -237,7 +258,7 @@ Ember uses two ordinary discovery depths plus an explicit history/maintenance vi
 
 ### Default discovery
 
-Default discovery contains only `status: current` documents with roles:
+Default discovery contains only `discovery_status: current` documents with roles:
 
 - `foundation`;
 - `decision`;
@@ -252,7 +273,7 @@ It deliberately exposes canonical research summaries without eagerly loading res
 
 ### Deep discovery
 
-Deep discovery contains the default catalogue plus `status: current` documents with roles:
+Deep discovery contains the default catalogue plus `discovery_status: current` documents with roles:
 
 - `reference`;
 - `evidence`;
@@ -296,7 +317,7 @@ Every catalogue or heading view is a deterministic projection. None is a new can
 
 ### Layer 1: repository policy
 
-`AGENTS.md` explains when to consult discovery, how to interpret role/status, how to escalate, and how to handle conflicts. It must not duplicate a manually maintained docs tree.
+`AGENTS.md` explains when to consult discovery, how to interpret role/discovery status, how to escalate, and how to handle conflicts. It must not duplicate a manually maintained docs tree.
 
 ### Layer 2: compact catalogue
 
@@ -307,6 +328,8 @@ docs/architecture/decisions/0002-preserve-persistent-meaning.md [decision, curre
   Summary: Semantic constraints for persistent meaning, including provenance, scope, currentness, correction, and forgetting.
   Read when: Changing how corrected or superseded memory governs later behavior; designing persistence for current versus historical remembered meaning
 ```
+
+The compact display may shorten the field label to `current`, but the source metadata field remains `discovery_status`.
 
 No body text, generated semantic score, keyword extraction, or model-generated summary belongs here.
 
@@ -386,9 +409,9 @@ Use repository governance instead:
 - canonical `research` records established research conclusions and rationale, but a later accepted decision may deliberately choose among research-supported options;
 - `guide` governs repository or operational procedure in its stated scope but does not override semantic foundations or decisions;
 - `reference`, `evidence`, and `source` may justify, challenge, or explain current conclusions but do not silently override them;
-- `superseded` and `historical` documents do not govern current work.
+- `discovery_status: superseded` and `historical` documents do not govern current work.
 
-Role/status from the compact catalogue is enough to decide what to inspect, not enough to prove every role-specific authority fact. When authority matters, read the relevant source document.
+Role/discovery status from the compact catalogue is enough to decide what to inspect, not enough to prove every role-specific authority fact. When authority matters, read the relevant source document.
 
 If sources that should be mutually consistent actually conflict, treat that as a repository inconsistency. Identify both sources and resolve or surface the inconsistency rather than silently choosing one.
 
@@ -437,7 +460,7 @@ The concrete invocation may be a repository script, build task, or executable wr
 - emits current default-depth documents;
 - sorts entries lexicographically by normalized repository-relative path;
 - preserves author order inside `read_when`;
-- emits path, role, status, summary, applicability hints, and `superseded_by` when relevant;
+- emits path, role, discovery status, summary, applicability hints, and `superseded_by` when relevant;
 - writes only to stdout/stderr and does not modify repository files.
 
 ### `docs:list --deep`
@@ -500,10 +523,10 @@ For every participating document:
 - `read_when` exists, is a non-empty list, and every item is a non-empty string;
 - exact duplicate `read_when` entries inside one document are rejected after trimming whitespace;
 - `role` is one allowed value;
-- `status` is one allowed value;
-- `status: superseded` requires `superseded_by`;
+- `discovery_status` is one allowed value;
+- `discovery_status: superseded` requires `superseded_by`;
 - `superseded_by` points to an existing participating document and cannot point to itself;
-- a supersession target has status `current` or `superseded`, never `historical`;
+- a supersession target has discovery status `current` or `superseded`, never `historical`;
 - supersession chains are acyclic and every chain terminates at a `current` document;
 - `superseded_by` is absent for `current` and `historical` documents;
 - generated/excluded paths are explicit and test-covered;
@@ -633,7 +656,7 @@ Signals that may justify a richer mechanism later include:
 
 - the compact catalogue itself becomes a meaningful context burden;
 - ordinary tasks routinely leave too many plausible documents;
-- role/status cannot express a recurring authority distinction;
+- role/discovery status cannot express a recurring authority distinction;
 - non-accepted decision records become common enough that their lifecycle needs compact projection;
 - contributors repeatedly need cross-corpus search over code, issues, and docs rather than repository documentation discovery;
 - heading projections are insufficient to narrow large documents;
@@ -666,7 +689,7 @@ The following are deferred from #27 unless implementation exposes a concrete blo
 1. **Inventory the actual merged `docs/` corpus.** Reconcile this design with whichever ADRs and acceptance scenarios have landed by then and identify genuinely generated Markdown exclusions.
 2. **Add frontmatter to participating documents.** Classify current documents using the roles above. Mark the initial architecture model superseded by the current design synthesis. Keep evidence maps and source artifacts in the deep tier through metadata roles rather than path-only assumptions.
 3. **Implement deterministic catalogue and validation tooling.** Support default, deep, all/history, selected-headings, and full-check behaviors with stable ordering and explicit failures.
-4. **Add focused deterministic tests.** Cover parsing, role/status validation, supersession targets/chains, missing metadata, depth filtering, deterministic ordering, selected heading extraction, fenced-code handling, exclusions, and repository-root failure behavior.
+4. **Add focused deterministic tests.** Cover parsing, role/discovery-status validation, supersession targets/chains, missing metadata, depth filtering, deterministic ordering, selected heading extraction, fenced-code handling, exclusions, and repository-root failure behavior.
 5. **Run task-oriented evaluation without inventing semantic matching.** Use structural assertions for tier membership and metadata invariants, then exercise the seven realistic tasks against the generated catalogue and record qualitative findings. Do not add task-query/ranking code or whole-corpus snapshots merely to make model judgment look deterministic.
 6. **Add root agent policy.** Introduce or update `AGENTS.md` with compact rules for when to consult discovery, progressive disclosure, conflict handling, fallback, and the reminder that current-context omission is not repository absence. Do not copy the docs tree into it.
 7. **Wire `docs:check` into routine validation.** If CI exists, make metadata contract violations fail it. Otherwise document the command as a required repository validation surface so CI can adopt it when introduced.
@@ -680,9 +703,9 @@ For Ember v1:
 - use human-authored Markdown frontmatter;
 - keep OpenClaw's `summary` / `read_when` distinction;
 - add `role` because Ember has materially different repository knowledge classes;
-- add discovery `status` plus conditional `superseded_by` because current and historical architecture intentionally coexist;
+- add `discovery_status` plus conditional `superseded_by` because current and historical architecture intentionally coexist, while avoiding collision with ADR or other role-specific `status`;
 - keep role-specific authority and lifecycle in their governing source conventions rather than pretending discovery metadata can replace them;
-- derive discovery depth from `role + status` rather than adding another field;
+- derive discovery depth from `role + discovery_status` rather than adding another field;
 - default to current foundations, decisions, design, scenarios, canonical research, and guides;
 - require deep discovery for supporting references, evidence maps, and preserved source artifacts;
 - require the all/history view for superseded and historical material;
