@@ -20,7 +20,7 @@ A document's repository role, its `discovery_status`, and any role-specific life
 
 ## Commands
 
-Run discovery from the repository root with Node.js built-ins only. Ember intentionally does not introduce `package.json`, an npm dependency graph, or a package installation step solely for this feature. Using Node for this repository utility does not adopt Node.js as Ember's implementation runtime.
+Run discovery from the repository root with Node.js built-ins only. Use Node.js 24.x locally for the same runtime exercised by CI; CI pins Node 24 explicitly. Ember intentionally does not introduce `package.json`, an npm dependency graph, or a package installation step solely for this feature. Using Node for this repository utility does not adopt Node.js as Ember's implementation runtime.
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.
@@ -134,19 +134,20 @@ A superseded document must point through `superseded_by` to another participatin
 
 Do not use `discovery_status` as a substitute for role-specific lifecycle. For example, an ADR may simultaneously have `role: decision`, `discovery_status: current`, and its own `status: proposed`. The first two make it discoverable; only the ADR lifecycle says whether it governs.
 
-## Supported frontmatter syntax
+## Ember frontmatter subset
 
-Because Ember has not yet adopted an implementation runtime or dependency ecosystem, the discovery tool uses a deliberately small parser implemented with Node.js built-ins instead of pretending to implement arbitrary YAML. This tooling choice does not establish an Ember application runtime.
+Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an **Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: Ember has not adopted an implementation runtime or dependency ecosystem, so v1 keeps the parser small, inspectable, and zero-dependency rather than approximating arbitrary YAML. This tooling choice does not establish an Ember application runtime.
 
-Supported syntax is limited to what the v1 contract needs:
+The accepted grammar is limited to what the v1 contract needs:
 
 - a `---` opening delimiter on the first line and a `---` closing delimiter;
 - top-level `key: scalar` fields;
 - non-empty plain or quoted scalar strings;
 - block lists with exactly two spaces before `-`;
-- additional simple scalar fields belonging to another document lifecycle, such as `status: accepted`.
+- additional simple scalar fields belonging to another document lifecycle, such as `status: accepted`;
+- plain scalars are treated as literal strings; YAML implicit typing and comment semantics are not part of this grammar.
 
-Unsupported YAML constructs, including inline collections, nested mappings, anchors, folded/literal multiline scalars, and arbitrary indentation, are rejected with diagnostics. If Ember later adopts a project runtime with a normal YAML parser, replacing this narrow parser can be considered without changing the discovery semantics.
+Features outside that grammar, including inline collections, nested mappings, anchors, folded/literal multiline scalars, and arbitrary indentation, are rejected when encountered. If Ember later adopts a project runtime with a normal YAML parser, replacing this narrow parser can be considered, but the discovery contract and its observable behavior should remain unchanged.
 
 ## Default, deep, and history disclosure
 
