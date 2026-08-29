@@ -20,6 +20,8 @@ Current architecture material:
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
+- [Minimal Continuity Slice Contributor Guide](minimal-continuity-slice-runbook.md)
+  explains how to run, inspect, correct, test, and reproduce that experiment.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 
