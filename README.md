@@ -11,6 +11,7 @@ The project is currently in the research and architecture phase.
 - [Initial architecture model](docs/architecture/initial-model.md)
 - [Cross-cutting design directions](docs/architecture/design-directions.md)
 - [Architecture acceptance scenarios](docs/architecture/acceptance-scenarios.md)
+- [Minimal continuity vertical slice](docs/architecture/minimal-continuity-slice.md)
 - Architecture research:
   - [NanoBot](docs/research/nanobot.md)
   - [Hermes](docs/research/hermes.md)
