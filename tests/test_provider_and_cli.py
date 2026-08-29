@@ -303,6 +303,17 @@ class CliIntegrationTests(unittest.TestCase):
         # Then
         self.assertEqual((2, True), (checked.returncode, "schema v1" in checked.stderr))
 
+    def test_cli_check_should_report_typed_failure_when_state_is_invalid_utf8(self):
+        # Given
+        invalid_utf8 = b"\xff\xfe"
+        # When
+        with TemporaryDirectory() as directory:
+            state_path = Path(directory, "ember.json")
+            state_path.write_bytes(invalid_utf8)
+            checked = command(["check", "--state", str(state_path)])
+        # Then
+        self.assertEqual((2, True, False), (checked.returncode, "not valid UTF-8" in checked.stderr, "Traceback" in checked.stderr))
+
 
 if __name__ == "__main__":
     unittest.main()

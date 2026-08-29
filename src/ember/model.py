@@ -155,7 +155,7 @@ def validate_state(state: dict[str, Any]) -> None:
         if _nonempty(ev_id):
             all_ids.append(ev_id)
             evidence_by_id[ev_id] = ev
-        require(ev.get("source_role") in SOURCE_ROLES, f"{path}.source_role is unsupported")
+        require(_one_of(ev.get("source_role"), SOURCE_ROLES), f"{path}.source_role is unsupported")
         require(_nonempty(ev.get("source_actor")), f"{path}.source_actor must be non-empty")
         require(_nonempty(ev.get("scope")), f"{path}.scope must be non-empty")
         _timestamp(ev.get("occurred_at"), f"{path}.occurred_at", errors)
@@ -163,10 +163,16 @@ def validate_state(state: dict[str, Any]) -> None:
         _ordered(ev.get("occurred_at"), ev.get("observed_at"), f"{path} occurrence must not follow observation", errors)
         derived = ev.get("derived_from_evidence_ids")
         require(isinstance(derived, list) and all(_nonempty(value) for value in derived), f"{path}.derived_from_evidence_ids must be IDs")
+        if "related_meaning_id" in ev:
+            require(_nonempty(ev.get("related_meaning_id")), f"{path}.related_meaning_id must be an ID")
+        if "cognition_id" in ev:
+            require(_nonempty(ev.get("cognition_id")), f"{path}.cognition_id must be an ID")
+        if "provider_label" in ev:
+            require(_nonempty(ev.get("provider_label")), f"{path}.provider_label must be non-empty")
         mode = ev.get("payload_mode")
-        require(mode in {"retained_optional", "descriptor_only"}, f"{path}.payload_mode is invalid")
+        require(_one_of(mode, {"retained_optional", "descriptor_only"}), f"{path}.payload_mode is invalid")
         if mode == "retained_optional":
-            require(ev.get("availability") in {"available", "unavailable"}, f"{path}.availability is invalid")
+            require(_one_of(ev.get("availability"), {"available", "unavailable"}), f"{path}.availability is invalid")
             if ev.get("availability") == "available":
                 require(isinstance(ev.get("payload"), str), f"{path}.payload must be retained while available")
                 require("unavailable_reason" not in ev, f"{path}.unavailable_reason is invalid while available")
@@ -197,7 +203,7 @@ def validate_state(state: dict[str, Any]) -> None:
             require(_nonempty(ev.get("provider_label")), f"{path} provider expression needs provider_label")
             require(derived == [], f"{path} provider expression cannot derive new evidence")
             require("related_meaning_id" not in ev, f"{path} provider expression cannot attach detail")
-        if ev.get("source_role") in {"runtime_observation", "fixture_fault"}:
+        if _one_of(ev.get("source_role"), {"runtime_observation", "fixture_fault"}):
             require(ev.get("source_actor") == "runtime", f"{path} runtime evidence actor must be runtime")
             require(mode == "descriptor_only", f"{path} runtime evidence must be descriptor-only")
         if ev.get("source_role") == "fixture_fault":
@@ -223,7 +229,7 @@ def validate_state(state: dict[str, Any]) -> None:
             all_ids.append(meaning_id)
             meaning_by_id[meaning_id] = meaning
         kind = meaning.get("kind")
-        require(kind in MEANING_KINDS, f"{path}.kind is unsupported")
+        require(_one_of(kind, MEANING_KINDS), f"{path}.kind is unsupported")
         require(_nonempty(meaning.get("owner")), f"{path}.owner must be explicit")
         require(_nonempty(meaning.get("slot")), f"{path}.slot must be non-empty")
         require(_nonempty(meaning.get("scope")), f"{path}.scope must be explicit")
@@ -235,17 +241,19 @@ def validate_state(state: dict[str, Any]) -> None:
         _timestamp(meaning.get("applicable_from"), f"{path}.applicable_from", errors)
         if meaning.get("applicable_until") is not None:
             _timestamp(meaning.get("applicable_until"), f"{path}.applicable_until", errors)
-        require(meaning.get("currentness") in CURRENTNESS, f"{path}.currentness is invalid")
+        require(_one_of(meaning.get("currentness"), CURRENTNESS), f"{path}.currentness is invalid")
         require("uncertainty" in meaning, f"{path}.uncertainty must be explicit")
         require("supersedes" in meaning and "superseded_by" in meaning, f"{path} supersession links must be explicit")
+        require(meaning.get("supersedes") is None or _nonempty(meaning.get("supersedes")), f"{path}.supersedes must be an ID or null")
+        require(meaning.get("superseded_by") is None or _nonempty(meaning.get("superseded_by")), f"{path}.superseded_by must be an ID or null")
         if kind == "relationship":
             require(meaning.get("owner") == f"relationship:{principal}", f"{path} relationship owner is invalid")
             require(meaning.get("slot") == "relationship", f"{path} relationship slot must be fixed")
             require(meaning.get("currentness") == "current", f"{path} relationship must remain current in v1")
             require(meaning.get("prospective_lifecycle") == "none", f"{path} relationship lifecycle is unsupported")
-        elif kind in {"fact", "preference"}:
+        elif _one_of(kind, {"fact", "preference"}):
             require(meaning.get("owner") == f"user:{principal}", f"{path} {kind} owner must be the supported user")
-            require(meaning.get("currentness") in {"current", "superseded"}, f"{path} {kind} currentness is invalid")
+            require(_one_of(meaning.get("currentness"), {"current", "superseded"}), f"{path} {kind} currentness is invalid")
             require(meaning.get("prospective_lifecycle") == "none", f"{path} {kind} prospective lifecycle is invalid")
             require(meaning.get("applicable_until") is None, f"{path} {kind} applicability interval cannot be rewritten in v1")
         elif kind == "commitment":
@@ -255,7 +263,7 @@ def validate_state(state: dict[str, Any]) -> None:
             require(meaning.get("currentness") == "current", f"{path} live commitment must be current")
             require(meaning.get("applicable_until") is None, f"{path} live commitment cannot have an applicability end")
         elif kind == "episode_meta":
-            require(meaning.get("owner") in {"ember", f"relationship:{principal}"}, f"{path} episode owner is invalid")
+            require(_one_of(meaning.get("owner"), {"ember", f"relationship:{principal}"}), f"{path} episode owner is invalid")
             require(meaning.get("currentness") == "current", f"{path} episode meta must be current")
             require(meaning.get("prospective_lifecycle") == "none", f"{path} episode meta lifecycle is invalid")
         if meaning.get("currentness") == "current":
@@ -265,7 +273,7 @@ def validate_state(state: dict[str, Any]) -> None:
             require(meaning.get("superseded_by") is None, f"{path} current meaning cannot have a successor")
         if meaning.get("currentness") == "superseded":
             require(_nonempty(meaning.get("superseded_by")), f"{path} superseded meaning needs a successor")
-        if kind not in {"fact", "preference"}:
+        if not _one_of(kind, {"fact", "preference"}):
             require(meaning.get("supersedes") is None and meaning.get("superseded_by") is None, f"{path} kind does not support supersession")
 
     for index, item in enumerate(runtimes):
@@ -294,7 +302,14 @@ def validate_state(state: dict[str, Any]) -> None:
             require(_nonempty(runtime.get("stop_reason")), f"{path}.stop_reason required for clean stop")
         else:
             require(runtime.get("stop_reason") is None, f"{path}.stop_reason without clean stop")
-        require(isinstance(runtime.get("recovery_account"), dict), f"{path}.recovery_account must be an object")
+        recovery_account = runtime.get("recovery_account")
+        require(isinstance(recovery_account, dict), f"{path}.recovery_account must be an object")
+        if isinstance(recovery_account, dict):
+            require(
+                recovery_account.get("previous_runtime") is None or _nonempty(recovery_account.get("previous_runtime")),
+                f"{path}.recovery_account.previous_runtime must be an ID or null",
+            )
+            require(_nonempty(recovery_account.get("current_runtime")), f"{path}.recovery_account.current_runtime must be an ID")
 
     for index, item in enumerate(cognitions):
         path = f"cognition_episodes[{index}]"
@@ -313,27 +328,32 @@ def validate_state(state: dict[str, Any]) -> None:
         if _nonempty(cognition_id):
             all_ids.append(cognition_id)
             cognition_by_id[cognition_id] = cognition
-        require(cognition.get("runtime_id") in runtime_by_id, f"{path}.runtime_id is absent")
+        require(_nonempty(cognition.get("runtime_id")), f"{path}.runtime_id must be an ID")
         require(cognition.get("principal") == principal, f"{path}.principal mismatch")
         require(_nonempty(cognition.get("active_scope")), f"{path}.active_scope must be explicit")
-        require(cognition.get("purpose") in {"ordinary", "explain"}, f"{path}.purpose is invalid")
+        require(_one_of(cognition.get("purpose"), {"ordinary", "explain"}), f"{path}.purpose is invalid")
         require(_nonempty(cognition.get("provider_label")), f"{path}.provider_label is required")
         _timestamp(cognition.get("started_at"), f"{path}.started_at", errors)
         _timestamp(cognition.get("last_durable_observation_at"), f"{path}.last_durable_observation_at", errors)
         _ordered(cognition.get("started_at"), cognition.get("last_durable_observation_at"), f"{path} durable observation precedes cognition start", errors)
-        require(cognition.get("status") in {"started", "completed", "failed", "timed_out", "outcome_unknown"}, f"{path}.status is invalid")
-        require(isinstance(cognition.get("selected_meaning_ids"), list), f"{path}.selected_meaning_ids must be a list")
-        require(isinstance(cognition.get("selected_evidence_ids"), list), f"{path}.selected_evidence_ids must be a list")
-        require(isinstance(cognition.get("used_meaning_ids"), list), f"{path}.used_meaning_ids must be a list")
+        require(_one_of(cognition.get("status"), {"started", "completed", "failed", "timed_out", "outcome_unknown"}), f"{path}.status is invalid")
+        require(isinstance(cognition.get("selected_meaning_ids"), list) and all(_nonempty(value) for value in cognition.get("selected_meaning_ids", [])), f"{path}.selected_meaning_ids must be an ID list")
+        require(isinstance(cognition.get("selected_evidence_ids"), list) and all(_nonempty(value) for value in cognition.get("selected_evidence_ids", [])), f"{path}.selected_evidence_ids must be an ID list")
+        require(isinstance(cognition.get("used_meaning_ids"), list) and all(_nonempty(value) for value in cognition.get("used_meaning_ids", [])), f"{path}.used_meaning_ids must be an ID list")
         require(_nonempty(cognition.get("input_evidence_id")), f"{path}.input_evidence_id is required")
-        require(cognition.get("delivery_status") in {"not_attempted", "pending", "displayed"}, f"{path}.delivery_status is invalid")
+        require(_one_of(cognition.get("delivery_status"), {"not_attempted", "pending", "displayed"}), f"{path}.delivery_status is invalid")
         if cognition.get("status") == "completed":
             require(_nonempty(cognition.get("expression_evidence_id")), f"{path} completed cognition needs expression evidence")
-            require(cognition.get("delivery_status") in {"pending", "displayed"}, f"{path} completed cognition needs delivery state")
+            require(_one_of(cognition.get("delivery_status"), {"pending", "displayed"}), f"{path} completed cognition needs delivery state")
         else:
             require(cognition.get("expression_evidence_id") is None, f"{path} incomplete cognition cannot claim expression")
             require(cognition.get("delivery_status") == "not_attempted", f"{path} incomplete cognition cannot claim delivery")
             require(cognition.get("used_meaning_ids") == [], f"{path} incomplete cognition cannot claim used meanings")
+
+    # Cross-reference validation assumes the record shapes checked above. Fail
+    # closed here so malformed JSON can never escape as a raw Python exception.
+    if errors:
+        raise ValidationError("; ".join(dict.fromkeys(errors)))
 
     require(len(all_ids) == len(set(all_ids)), "all canonical IDs must be unique")
 
@@ -461,6 +481,10 @@ def _object(value: Any, path: str, errors: list[str]) -> dict[str, Any]:
 
 def _nonempty(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _one_of(value: Any, allowed: set[str]) -> bool:
+    return isinstance(value, str) and value in allowed
 
 
 def _id(value: Any, prefix: str) -> bool:

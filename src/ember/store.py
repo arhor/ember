@@ -43,11 +43,13 @@ class StateStore:
             raw = self.path.read_text(encoding="utf-8")
         except FileNotFoundError as error:
             raise StoreUnavailable(f"continuity store is unavailable: {self.path}") from error
+        except UnicodeDecodeError as error:
+            raise StoreUnavailable(f"continuity store is not valid UTF-8: {error}") from error
         except OSError as error:
             raise StoreUnavailable(f"cannot read continuity store {self.path}: {error}") from error
         try:
             state = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        except json.JSONDecodeError as error:
             raise StoreUnavailable(f"continuity store is not complete valid UTF-8 JSON: {error}") from error
         validate_state(state)
         return state

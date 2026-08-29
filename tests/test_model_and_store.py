@@ -9,7 +9,9 @@ import unittest
 from unittest import mock
 
 from ember.errors import DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable, ValidationError
-from ember.model import initial_state, validate_state
+from ember.model import initial_state, new_id, validate_state
+from ember.runtime import start_runtime
+from ember.semantics import user_evidence
 from ember.store import StateStore
 from tests.support import PRINCIPAL, populated_state
 
@@ -158,6 +160,41 @@ class StateValidatorTests(unittest.TestCase):
         # Then
         self.assertIn("discharge is unsupported", str(error))
 
+    def test_state_validator_should_return_typed_failure_when_nested_json_shapes_are_malformed(self):
+        # Given
+        base, ids = populated_state()
+        with_cognition, runtime_id = start_runtime(base, PRINCIPAL, "project:ember/docs", timestamp="2026-08-29T10:00:00Z")
+        input_evidence = user_evidence(with_cognition, PRINCIPAL, "project:ember/docs", "input", timestamp="2026-08-29T10:00:00Z")
+        with_cognition["operations"]["cognition_episodes"].append({"cognition_id": new_id("cognition"), "runtime_id": runtime_id, "principal": PRINCIPAL, "active_scope": "project:ember/docs", "provider_label": "provider", "purpose": "ordinary", "started_at": "2026-08-29T10:00:00Z", "last_durable_observation_at": "2026-08-29T10:00:00Z", "status": "started", "selected_meaning_ids": [], "selected_evidence_ids": [], "used_meaning_ids": [], "input_evidence_id": input_evidence["evidence_id"], "expression_evidence_id": None, "delivery_status": "not_attempted"})
+        variants = []
+        for field, value in (("source_evidence_ids", None), ("source_evidence_ids", [["nested"]])):
+            candidate = deepcopy(base)
+            next(item for item in candidate["meanings"] if item["meaning_id"] == ids["fact"])[field] = value
+            variants.append(candidate)
+        candidate = deepcopy(base)
+        candidate["evidence"][0]["derived_from_evidence_ids"] = None
+        variants.append(candidate)
+        for field in ("selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids"):
+            candidate = deepcopy(with_cognition)
+            candidate["operations"]["cognition_episodes"][0][field] = None
+            variants.append(candidate)
+        candidate = deepcopy(base)
+        candidate["operations"]["runtime_episodes"] = ["not-an-object"]
+        variants.append(candidate)
+        candidate = deepcopy(base)
+        candidate["operations"]["cognition_episodes"] = [7]
+        variants.append(candidate)
+        candidate = deepcopy(base)
+        candidate["meanings"][0]["currentness"] = []
+        variants.append(candidate)
+        candidate = deepcopy(base)
+        candidate["evidence"][0]["payload_mode"] = {}
+        variants.append(candidate)
+        # When
+        failures = [self._validation_error(candidate) for candidate in variants]
+        # Then
+        self.assertEqual([ValidationError] * len(variants), [type(error) for error in failures])
+
     def _validation_error(self, state):
         try:
             validate_state(state)
@@ -262,6 +299,22 @@ class StateStoreTests(unittest.TestCase):
                 error = None
         # Then
         self.assertIsInstance(error, StoreUnavailable)
+
+    def test_state_store_should_report_unavailable_when_canonical_file_is_invalid_utf8(self):
+        # Given
+        invalid_utf8 = b"\xff\xfe"
+        # When
+        with TemporaryDirectory() as directory:
+            path = Path(directory, "ember.json")
+            path.write_bytes(invalid_utf8)
+            try:
+                StateStore(path).load()
+            except StoreUnavailable as caught:
+                error = caught
+            else:
+                error = None
+        # Then
+        self.assertIn("not valid UTF-8", str(error))
 
 
 if __name__ == "__main__":
