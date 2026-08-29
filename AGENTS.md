@@ -7,7 +7,7 @@ Ember keeps durable repository knowledge under `docs/` with explicit discovery m
 Before coding, design, review, or documentation work that can change or judge Ember's durable semantics or architecture, run:
 
 ```bash
-python3 scripts/docs_discovery.py list
+node scripts/docs-discovery.mjs list
 ```
 
 This includes work involving continuity, identity, memory, currentness, context selection, agency, delegation, authority, permissions, sessions, surfaces, long-running work, persistence, or cross-cutting capability behavior. A purely local implementation detail with already-established behavior may skip discovery when it cannot plausibly affect observable semantics or documented contracts.
@@ -17,19 +17,19 @@ Use each entry's `summary` and `read_when` as natural-language routing hints. Re
 Select the smallest plausible set of current documents and read their source before relying on them. For a long selected document, inspect its structure first when useful:
 
 ```bash
-python3 scripts/docs_discovery.py list --headings docs/path/to/document.md
+node scripts/docs-discovery.mjs list --headings docs/path/to/document.md
 ```
 
 Use deeper discovery when the task asks why a conclusion exists, challenges evidence, needs provenance, reconstructs research, or compares a reviewed external system:
 
 ```bash
-python3 scripts/docs_discovery.py list --deep
+node scripts/docs-discovery.mjs list --deep
 ```
 
 Use the history view when investigating superseded guidance, repository evolution, or documentation governance:
 
 ```bash
-python3 scripts/docs_discovery.py list --all
+node scripts/docs-discovery.mjs list --all
 ```
 
 `role`, `discovery_status`, and any role-specific lifecycle are separate concepts. In particular, `role: decision` does not mean an ADR is accepted, and `discovery_status: current` does not confer governing authority. When authority or lifecycle matters, read the source document and follow Ember's existing documentation and research governance.
@@ -41,8 +41,8 @@ If no `read_when` hint obviously matches, inspect nearby summaries, then selecte
 When adding or materially changing a participating `docs/**/*.md` document, update its discovery metadata as part of the same change and run:
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_docs_discovery.py' -v
-python3 scripts/docs_discovery.py check
+node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+node scripts/docs-discovery.mjs check
 ```
 
 See `docs/documentation-discovery.md` for the governing contract and `docs/documentation-discovery-guide.md` for authoring and command guidance. Do not duplicate the documentation tree here.

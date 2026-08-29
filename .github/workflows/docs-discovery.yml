@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - "docs/**"
-      - "scripts/docs_discovery.py"
-      - "tests/test_docs_discovery*.py"
+      - "scripts/docs-discovery.mjs"
+      - "tests/docs-discovery*.test.mjs"
       - "AGENTS.md"
       - ".github/workflows/docs-discovery.yml"
   push:
@@ -13,8 +13,8 @@ on:
       - master
     paths:
       - "docs/**"
-      - "scripts/docs_discovery.py"
-      - "tests/test_docs_discovery*.py"
+      - "scripts/docs-discovery.mjs"
+      - "tests/docs-discovery*.test.mjs"
       - "AGENTS.md"
       - ".github/workflows/docs-discovery.yml"
 
@@ -26,18 +26,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Show Python version
-        run: python3 --version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Show Node.js version
+        run: node --version
       - name: Run documentation discovery tests
-        run: python3 -m unittest discover -s tests -p 'test_docs_discovery*.py' -v
+        run: node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
       - name: Validate documentation discovery metadata
-        run: python3 scripts/docs_discovery.py check
+        run: node scripts/docs-discovery.mjs check
       - name: Exercise deterministic projections
         run: |
-          python3 scripts/docs_discovery.py list > /tmp/docs-default.txt
-          python3 scripts/docs_discovery.py list --deep > /tmp/docs-deep.txt
-          python3 scripts/docs_discovery.py list --all > /tmp/docs-all.txt
-          python3 scripts/docs_discovery.py list --headings \
+          node scripts/docs-discovery.mjs list > /tmp/docs-default.txt
+          node scripts/docs-discovery.mjs list --deep > /tmp/docs-deep.txt
+          node scripts/docs-discovery.mjs list --all > /tmp/docs-all.txt
+          node scripts/docs-discovery.mjs list --headings \
             docs/architecture/design-directions.md \
             docs/research/memory-and-remembering.md \
             > /tmp/docs-headings.txt

@@ -20,23 +20,23 @@ A document's repository role, its `discovery_status`, and any role-specific life
 
 ## Commands
 
-Run discovery from the repository root with the Python standard library only. Ember intentionally does not introduce a package manager or dependency graph solely for this feature.
+Run discovery from the repository root with Node.js built-ins only. Ember intentionally does not introduce `package.json`, an npm dependency graph, or a package installation step solely for this feature. Using Node for this repository utility does not adopt Node.js as Ember's implementation runtime.
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.
-python3 scripts/docs_discovery.py list
+node scripts/docs-discovery.mjs list
 
 # Default catalogue plus current supporting references, evidence maps, and source artifacts.
-python3 scripts/docs_discovery.py list --deep
+node scripts/docs-discovery.mjs list --deep
 
 # Every participating document, including superseded and historical material.
-python3 scripts/docs_discovery.py list --all
+node scripts/docs-discovery.mjs list --all
 
 # H1-H4 structure for documents already selected from the catalogue.
-python3 scripts/docs_discovery.py list --headings docs/research/memory-and-remembering.md
+node scripts/docs-discovery.mjs list --headings docs/research/memory-and-remembering.md
 
 # Full-corpus metadata and lifecycle validation.
-python3 scripts/docs_discovery.py check
+node scripts/docs-discovery.mjs check
 ```
 
 The catalogue is deterministic and ephemeral. It is written to standard output and is not checked into the repository.
@@ -47,7 +47,7 @@ V1 participation is simple:
 
 - every human-authored `docs/**/*.md` file participates;
 - root bootstrap files such as `README.md` and `AGENTS.md` do not;
-- generated Markdown may be excluded only through the explicit `EXCLUDED_PATHS` set in `scripts/docs_discovery.py` and corresponding tests.
+- generated Markdown may be excluded only through the explicit `EXCLUDED_PATHS` set in `scripts/docs-discovery.mjs` and corresponding tests.
 
 There are currently no generated Markdown exclusions.
 
@@ -136,7 +136,7 @@ Do not use `discovery_status` as a substitute for role-specific lifecycle. For e
 
 ## Supported frontmatter syntax
 
-Because Ember has not yet adopted an implementation runtime or dependency ecosystem, the discovery tool uses a deliberately small parser instead of pretending to implement arbitrary YAML.
+Because Ember has not yet adopted an implementation runtime or dependency ecosystem, the discovery tool uses a deliberately small parser implemented with Node.js built-ins instead of pretending to implement arbitrary YAML. This tooling choice does not establish an Ember application runtime.
 
 Supported syntax is limited to what the v1 contract needs:
 
@@ -163,7 +163,7 @@ The three catalogue modes answer different questions.
 Heading projection is deliberately a second step after document selection:
 
 ```bash
-python3 scripts/docs_discovery.py list --headings \
+node scripts/docs-discovery.mjs list --headings \
   docs/architecture/design-directions.md \
   docs/research/context-selection-and-cognitive-framing.md
 ```
@@ -189,8 +189,8 @@ Do not copy identical hints across a directory merely to satisfy validation. A d
 Run:
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_docs_discovery.py' -v
-python3 scripts/docs_discovery.py check
+node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+node scripts/docs-discovery.mjs check
 ```
 
 `check` validates syntax, required fields, role/status values, exact duplicate hints within a document, supersession targets and chains, participation, and explicit exclusions. Exact duplicate hints across documents are reported as maintenance warnings because legitimate overlap is possible.
