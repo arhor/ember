@@ -1,3 +1,12 @@
+---
+summary: "Portable evidence map supporting canonical memory and remembering semantics with durable sources for currentness, provenance, updating, forgetting, and memory safety."
+read_when:
+  - "Checking the evidence behind a memory, currentness, or provenance conclusion without reconstructing the full research session"
+  - "Challenging claims about corrections, historical evidence, prospective memory, forgetting, or persistent memory corruption"
+role: evidence
+discovery_status: current
+---
+
 # Memory and Remembering Evidence Map
 
 This document is the portable evidence companion to [Memory and Remembering Semantics](memory-and-remembering.md).

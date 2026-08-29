@@ -1,3 +1,13 @@
+---
+summary: "Current cross-cutting synthesis of Ember's semantic architecture constraints across continuity, memory, context, delegation, authority, agency, and operations."
+read_when:
+  - "Designing or reviewing architecture that crosses multiple Ember semantic concerns"
+  - "Translating the completed research programme into implementation boundaries or deciding which hypotheses are ready to harden"
+  - "Changing provenance, currentness, scope, authority, or continuity across subsystem boundaries"
+role: design
+discovery_status: current
+---
+
 # Cross-Cutting Research Synthesis and Ember Design Directions
 
 > Status: canonical synthesis of the concern-driven research programme in issues #2 through #8, produced for issue #9.

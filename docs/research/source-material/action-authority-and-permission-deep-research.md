@@ -1,3 +1,12 @@
+---
+summary: "Preserved Deep Research report behind the canonical action, authority, and permission synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original authority research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind permission, disclosure, and authority conclusions"
+role: source
+discovery_status: current
+---
+
 # Action, Authority, and Permission Semantics for Ember
 
 > **Source-material status:** non-canonical research artifact preserved behind the issue #7 synthesis. This file preserves the substantive Deep Research report and its evidence ledger while omitting UI-only research metadata and normalizing session-local citation markup into durable links where practical. The canonical Ember-facing conclusions live in [Action, Authority, and Permission Semantics](../action-authority-and-permission.md), and the portable bibliography lives in the [evidence map](../action-authority-and-permission-references.md).

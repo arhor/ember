@@ -1,3 +1,13 @@
+---
+summary: "Canonical semantics separating direct action, bounded capability use, and delegation, including runtime ownership, delegation envelopes, context disclosure, provenance, and reintegration."
+read_when:
+  - "Deciding whether work should be performed directly, through a bounded capability, or delegated to a specialist"
+  - "Changing specialist context, runtime ownership, delegation continuity, result verification, or reintegration"
+  - "Deciding what information may be disclosed to a delegate or what authority can cross a delegation boundary"
+role: research
+discovery_status: current
+---
+
 # Capabilities and Delegation Semantics
 
 This note addresses issue #6 and follows the concern-driven research discipline defined in issue #10.

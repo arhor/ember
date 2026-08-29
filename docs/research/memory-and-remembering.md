@@ -1,3 +1,12 @@
+---
+summary: "Canonical semantics for persistent remembered meaning, including provenance, ownership, scope, currentness, correction, supersession, forgetting, and historical evidence."
+read_when:
+  - "Changing how remembered information is promoted, corrected, superseded, forgotten, scoped, or attributed"
+  - "Designing current-versus-historical belief, preference, relationship, commitment, or provenance behavior"
+role: research
+discovery_status: current
+---
+
 # Memory and Remembering Semantics
 
 This note addresses issue #4 and follows the concern-driven research discipline defined in issue #10.

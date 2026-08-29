@@ -1,3 +1,12 @@
+---
+summary: "Canonical semantics for selecting bounded cognitive projections while preserving scope, permission, provenance, currentness, uncertainty, and authority."
+read_when:
+  - "Changing what persistent or external information participates in a model or specialist context"
+  - "Designing compaction, reconstruction, least-sufficient context, privacy boundaries, or behavior when relevant information is omitted"
+role: research
+discovery_status: current
+---
+
 # Context Selection and Cognitive Framing Semantics
 
 This note addresses issue #5 and follows the concern-driven research discipline defined in issue #10.
