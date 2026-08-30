@@ -80,7 +80,6 @@ jobs:
           printf 'node26-current-js-oracle\t%s\n' "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Install locked Node TypeScript experiment dependencies
-        continue-on-error: true
         working-directory: experiments/runtime-evaluation
         shell: bash
         run: |
@@ -108,6 +107,8 @@ jobs:
           }
           probe node26-ts-typecheck ./node_modules/.bin/tsc -p tsconfig.json
           probe node26-ts-tests "$NODE26" --test test/*.test.ts
+          probe node26-ts-diagnostics ./node_modules/.bin/tsc -p tsconfig.diagnostics.json
+          probe node26-lsp "$NODE26" scripts/typescript-language-service.mjs
           probe node26-mcp "$NODE26" ecosystem/mcp-node.ts
 
       - name: Record Deno TypeScript and built-in-tooling results
@@ -126,12 +127,25 @@ jobs:
             set -e
             printf '%s\t%s\n' "$label" "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
           }
+          coverage="$RUNNER_TEMP/deno-ts-coverage"
           probe deno-check-core "$DENO" check src/*.ts test/*.test.ts
-          probe deno-check-mcp "$DENO" check ecosystem/mcp-deno.ts
+          probe deno-ts-diagnostics "$DENO" check diagnostics/type-errors.ts
           probe deno-test "$DENO" test -A test/*.test.ts
+          rm -rf "$coverage"
+          probe deno-coverage-test "$DENO" test -A --coverage="$coverage" test/*.test.ts
+          probe deno-coverage-report "$DENO" coverage "$coverage"
           probe deno-lint "$DENO" lint
           probe deno-fmt "$DENO" fmt --check
+          probe deno-lsp "$NODE26" scripts/deno-lsp-probe.mjs "$DENO"
+          probe deno-check-mcp "$DENO" check ecosystem/mcp-deno.ts
           probe deno-mcp "$DENO" run ecosystem/mcp-deno.ts
+
+      - name: Capture Deno-formatted experiment sources
+        if: always()
+        working-directory: experiments/runtime-evaluation
+        shell: bash
+        run: |
+          "$DENO" fmt src test ecosystem/mcp-deno.ts permission-probe.ts
 
       - name: Probe unchanged current JavaScript suite under Deno without changing the oracle
         shell: bash
@@ -273,6 +287,12 @@ jobs:
           echo '--- probe statuses ---'
           cat "$RUNNER_TEMP/runtime-status.tsv"
 
+      - name: Assert declared evaluation outcomes
+        if: always()
+        shell: bash
+        run: |
+          "$NODE24" experiments/runtime-evaluation/scripts/assert-status.mjs "$RUNNER_TEMP/runtime-status.tsv"
+
       - name: Upload raw evaluation evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -290,3 +310,7 @@ jobs:
             ${{ runner.temp }}/deno-*.err
             ${{ runner.temp }}/permission-*.out
             ${{ runner.temp }}/permission-*.err
+            experiments/runtime-evaluation/src
+            experiments/runtime-evaluation/test
+            experiments/runtime-evaluation/ecosystem/mcp-deno.ts
+            experiments/runtime-evaluation/permission-probe.ts
