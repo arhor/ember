@@ -192,12 +192,12 @@ jobs:
         shell: bash
         run: |
           metrics="$RUNNER_TEMP/runtime-measurements.jsonl"
-          control_state="$RUNNER_TEMP/node24-control.json"
-          node26_state="$RUNNER_TEMP/node26-control.json"
-          deno_state="$RUNNER_TEMP/deno-idle.json"
-          EMBER_TEST_NOW=2026-08-30T12:00:00Z "$NODE24" bin/ember.mjs init --state "$control_state" --name Ember --principal user-1
-          EMBER_TEST_NOW=2026-08-30T12:00:00Z "$NODE26" bin/ember.mjs init --state "$node26_state" --name Ember --principal user-1
-          "$DENO" run -A bin/ember.mjs init --state "$deno_state" --name Ember --principal user-1 || true
+          template_state="$RUNNER_TEMP/measurement-template.json"
+          node24_state="$RUNNER_TEMP/node24-measurement.json"
+          node26_state="$RUNNER_TEMP/node26-measurement.json"
+          deno_state="$RUNNER_TEMP/deno-measurement.json"
+          EMBER_TEST_NOW=2026-08-30T12:00:00Z "$NODE24" bin/ember.mjs init \
+            --state "$template_state" --name Ember --principal user-1
           run_measure() {
             local label="$1"
             shift
@@ -207,39 +207,52 @@ jobs:
             set -e
             printf '%s\t%s\n' "measure-$label" "$status" >> "$RUNNER_TEMP/runtime-status.tsv"
           }
-          run_measure node24-js-cold-check --repeat 7 -- "$NODE24" bin/ember.mjs check --state "$control_state"
-          run_measure node26-js-cold-check --repeat 7 -- "$NODE26" bin/ember.mjs check --state "$node26_state"
+          run_measure node24-js-cold-check --repeat 7 --reset-file "$template_state" "$node24_state" -- \
+            "$NODE24" bin/ember.mjs check --state "$node24_state"
+          run_measure node26-js-cold-check --repeat 7 --reset-file "$template_state" "$node26_state" -- \
+            "$NODE26" bin/ember.mjs check --state "$node26_state"
+          run_measure deno-current-js-cold-check --repeat 7 --reset-file "$template_state" "$deno_state" -- \
+            "$DENO" run -A bin/ember.mjs check --state "$deno_state"
           run_measure node24-js-full-tests --repeat 3 -- "$NODE24" --test test/*.mjs tests/*.test.mjs
           run_measure node26-js-full-tests --repeat 3 -- "$NODE26" --test test/*.mjs tests/*.test.mjs
           run_measure node24-js-restart-oracle --repeat 3 -- "$NODE24" --test test/longitudinal-acceptance.test.mjs
           run_measure node26-js-restart-oracle --repeat 3 -- "$NODE26" --test test/longitudinal-acceptance.test.mjs
           run_measure deno-current-js-restart-oracle --repeat 3 -- "$DENO" test -A test/longitudinal-acceptance.test.mjs
-          run_measure node24-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE24" bin/ember.mjs run \
-            --state "$control_state" --principal user-1 --scope project:ember/docs \
+          run_measure node24-js-idle-cli --repeat 5 --reset-file "$template_state" "$node24_state" \
+            --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE24" bin/ember.mjs run \
+            --state "$node24_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$NODE24" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
-          run_measure node26-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE26" bin/ember.mjs run \
+          run_measure node26-js-idle-cli --repeat 5 --reset-file "$template_state" "$node26_state" \
+            --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE26" bin/ember.mjs run \
             --state "$node26_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$NODE26" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
-          run_measure deno-current-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$DENO" run -A bin/ember.mjs run \
+          run_measure deno-current-js-idle-cli --repeat 5 --reset-file "$template_state" "$deno_state" \
+            --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$DENO" run -A bin/ember.mjs run \
             --state "$deno_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$DENO" --provider-arg run --provider-arg -A \
             --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
-          run_measure node24-js-provider-cycle --repeat 5 --stdin-text 'hello from measurement\n:quit\n' -- "$NODE24" bin/ember.mjs run \
-            --state "$control_state" --principal user-1 --scope project:ember/docs \
+          run_measure node24-js-provider-cycle --repeat 7 --reset-file "$template_state" "$node24_state" \
+            --stdin-text 'hello from measurement\n:quit\n' -- "$NODE24" bin/ember.mjs run \
+            --state "$node24_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$NODE24" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
-          run_measure node26-js-provider-cycle --repeat 5 --stdin-text 'hello from measurement\n:quit\n' -- "$NODE26" bin/ember.mjs run \
+          run_measure node26-js-provider-cycle --repeat 7 --reset-file "$template_state" "$node26_state" \
+            --stdin-text 'hello from measurement\n:quit\n' -- "$NODE26" bin/ember.mjs run \
             --state "$node26_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$NODE26" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
-          run_measure deno-current-js-provider-cycle --repeat 5 --stdin-text 'hello from measurement\n:quit\n' -- "$DENO" run -A bin/ember.mjs run \
+          run_measure deno-current-js-provider-cycle --repeat 7 --reset-file "$template_state" "$deno_state" \
+            --stdin-text 'hello from measurement\n:quit\n' -- "$DENO" run -A bin/ember.mjs run \
             --state "$deno_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$DENO" --provider-arg run --provider-arg -A \
             --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
-          run_measure node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" --test test/model-semantics.test.ts test/runtime-workload.test.ts
-          run_measure node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- node_modules/.bin/tsc -p tsconfig.json
+          run_measure node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- \
+            "$NODE26" --test test/model-semantics.test.ts test/runtime-workload.test.ts
+          run_measure node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- \
+            node_modules/.bin/tsc -p tsconfig.json
           run_measure deno-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- env \
             EMBER_EVAL_PROVIDER_COMMAND="$DENO" EMBER_EVAL_PROVIDER_PREFIX_ARGS='["run","-A"]' \
             "$DENO" test -A test/model-semantics.test.ts test/runtime-workload.test.ts
-          run_measure deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" check test/runtime-workload.test.ts
+          run_measure deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- \
+            "$DENO" check test/runtime-workload.test.ts
           echo '--- measurements ---'
           cat "$metrics"
 
@@ -253,8 +266,7 @@ jobs:
             echo "deno_bytes=$(stat -c %s "$DENO")"
             echo "experiment_node_modules_kib=$(du -sk experiments/runtime-evaluation/node_modules | cut -f1)"
             echo "deno_cache_kib=$(du -sk "$HOME/.cache/deno" 2>/dev/null | cut -f1 || echo 0)"
-            echo "node24_initial_store_bytes=$(stat -c %s "$RUNNER_TEMP/node24-control.json")"
-            echo "node26_initial_store_bytes=$(stat -c %s "$RUNNER_TEMP/node26-control.json")"
+            echo "canonical_measurement_store_bytes=$(stat -c %s "$RUNNER_TEMP/measurement-template.json")"
             echo "control_package_json=$(cat package.json | tr '\n' ' ')"
           } | tee "$RUNNER_TEMP/runtime-footprint.txt"
           echo '--- probe statuses ---'
