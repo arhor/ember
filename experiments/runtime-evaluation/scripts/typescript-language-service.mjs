@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
-import ts from "typescript";
+import * as ts from "typescript";
 
 const configPath = ts.findConfigFile(process.cwd(), ts.sys.fileExists, "tsconfig.json");
 if (!configPath) throw new Error("tsconfig.json not found");
