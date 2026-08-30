@@ -880,6 +880,10 @@ One person may appear through several accounts; one device or route may represen
 
 The research phase should not end by immediately writing dozens of ADRs. A small set of semantic decisions now appears mature enough to constrain later architecture without smuggling in representation.
 
+These candidates are now recorded as the accepted
+[Semantic Architecture Decisions](decisions/README.md). The candidate descriptions
+below remain the synthesis rationale rather than a second decision source.
+
 ### ADR candidate 1: continuity belongs to Ember, not an operational locus
 
 **Decision:** Models, prompts, sessions, surfaces, processes, transports, projects, and specialist runtimes do not own Ember's identity or durable continuity. They are replaceable or temporary loci around one recognised lineage.
