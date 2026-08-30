@@ -1,3 +1,12 @@
+---
+summary: "Preserved Deep Research report behind the canonical endogenous-agency synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original endogenous-agency research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind proactive attention, motivation, and non-action conclusions"
+role: source
+discovery_status: current
+---
+
 # Endogenous Agency and Self-Initiated Behavior — Deep Research Source
 
 > **Source-material status:** non-canonical research artifact preserved behind the issue #2 synthesis. This file preserves the substantive Deep Research report and its session-local citation markers. The canonical Ember-facing conclusions live in [Endogenous Agency and Self-Initiated Behavior Semantics](../endogenous-agency-and-self-initiated-behavior.md), and the portable bibliography lives in the [evidence map](../endogenous-agency-and-self-initiated-behavior-references.md).

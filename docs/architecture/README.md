@@ -1,3 +1,12 @@
+---
+summary: "Navigation for Ember's current semantic architecture, accepted decisions, acceptance scenarios, design experiments, and superseded architecture history."
+read_when:
+  - "Finding the current architecture sources that govern or evaluate an Ember implementation change"
+  - "Tracing how project foundations, semantic decisions, acceptance scenarios, and research relate"
+role: guide
+discovery_status: current
+---
+
 # Ember Architecture
 
 Ember's architecture is currently defined by semantic constraints rather than a
@@ -14,9 +23,8 @@ Current architecture material:
   is the canonical synthesis of the completed concern-driven research programme.
 - [Semantic Architecture Decisions](decisions/README.md) records the first
   accepted, representation-neutral constraints derived from that synthesis.
-- [Issue #21](https://github.com/arhor/ember/issues/21) tracks the forthcoming
-  Ember Architecture Acceptance Scenarios that turn cross-cutting scenarios into
-  reusable architecture acceptance fixtures.
+- [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn
+  cross-cutting semantics into reusable, representation-neutral fixtures.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 

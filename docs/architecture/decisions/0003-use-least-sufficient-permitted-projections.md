@@ -1,3 +1,12 @@
+---
+summary: "Accepted decision that cognition and delegation receive purpose-bounded, least-sufficient permitted projections rather than canonical state wholesale."
+read_when:
+  - "Changing context selection, prompt construction, disclosure, compaction, reconstruction, or delegated specialist context"
+  - "Reviewing whether context inclusion, omission, or transformation preserves provenance, scope, privacy, and authority"
+role: decision
+discovery_status: current
+---
+
 # ADR 0003: Cognition and Delegation Receive Least Sufficient Permitted Projections
 
 - **Status:** Accepted

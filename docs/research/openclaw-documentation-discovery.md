@@ -1,3 +1,12 @@
+---
+summary: "Reference investigation that extracts OpenClaw's lightweight agent-aware documentation pattern and separates it from publishing infrastructure and indexed retrieval."
+read_when:
+  - "Investigating the provenance or external precedent behind Ember's documentation-discovery contract"
+  - "Comparing lightweight metadata projection with semantic search, RAG, docs publishing, or OpenClaw's Ask Molty retrieval layer"
+role: reference
+discovery_status: current
+---
+
 # OpenClaw Agent-Aware Documentation Discovery
 
 Investigated on 2026-08-29 against `openclaw/openclaw` commit [`f5eea3197c55c0ed0e609d182bd88a7f09ec55e9`](https://github.com/openclaw/openclaw/commit/f5eea3197c55c0ed0e609d182bd88a7f09ec55e9). The separate Ask Molty retrieval system was inspected at `openclaw/ask-molty` commit [`fe1e882f5d920e4b44b0eb4e96fc8c80f8cc1a10`](https://github.com/openclaw/ask-molty/commit/fe1e882f5d920e4b44b0eb4e96fc8c80f8cc1a10).

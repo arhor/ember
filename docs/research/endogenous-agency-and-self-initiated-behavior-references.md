@@ -1,3 +1,12 @@
+---
+summary: "Portable evidence map supporting canonical endogenous-agency semantics with cognitive-science, intrinsic-motivation, HCI, proactive-agent, and benchmark sources."
+read_when:
+  - "Checking evidence behind endogenous motivation, wake-up opportunity, proactive attention, or non-action conclusions"
+  - "Challenging assumptions about curiosity, continuing concerns, resource limits, or self-initiated behavior"
+role: evidence
+discovery_status: current
+---
+
 # Endogenous Agency and Self-Initiated Behavior — Portable Evidence Map
 
 This companion maps the evidence-labelled conclusions in [Endogenous Agency and Self-Initiated Behavior Semantics](endogenous-agency-and-self-initiated-behavior.md) to sources that remain usable outside the originating Deep Research session.

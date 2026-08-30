@@ -1,3 +1,12 @@
+---
+summary: "Durable design constraints for Ember, including semantics-before-representation, continuity, provenance, bounded judgment, composable capabilities, delegation, agency, and inspectability."
+read_when:
+  - "Making an architecture or implementation choice that could trade away an established Ember design constraint"
+  - "Reviewing whether a new abstraction, integration, memory mechanism, or autonomous behavior fits the project's governing principles"
+role: foundation
+discovery_status: current
+---
+
 # Ember Design Principles
 
 These principles are intentionally stronger than implementation preferences. They are meant to constrain future design when feature pressure starts pulling the project in contradictory directions.

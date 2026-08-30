@@ -1,3 +1,12 @@
+---
+summary: "Portable evidence map supporting canonical context-selection semantics with long-context, retrieval, compaction, privacy, security, and cognitive-framing sources."
+read_when:
+  - "Checking evidence behind context selection, omission, compaction, reconstruction, or least-sufficient projection conclusions"
+  - "Challenging privacy, disclosure, authority-preservation, or long-context assumptions in the canonical context research"
+role: evidence
+discovery_status: current
+---
+
 # Context Selection and Cognitive Framing Evidence Map
 
 This document is the portable evidence companion to [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md).

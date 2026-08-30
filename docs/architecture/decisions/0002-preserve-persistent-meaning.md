@@ -1,3 +1,12 @@
+---
+summary: "Accepted decision that persistent meaning preserves provenance, ownership, scope, temporal applicability, currentness, uncertainty, supersession, and lifecycle."
+read_when:
+  - "Changing how Ember stores, promotes, corrects, supersedes, forgets, or interprets durable meaning"
+  - "Separating evidence, memory, current belief, commitment, and temporary context in an implementation"
+role: decision
+discovery_status: current
+---
+
 # ADR 0002: Persistent Meaning Preserves Provenance, Scope, Currentness, and Lifecycle
 
 - **Status:** Accepted
