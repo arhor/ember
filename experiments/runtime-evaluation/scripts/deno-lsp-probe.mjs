@@ -30,7 +30,9 @@ function send(message) {
 
 function request(method, params) {
   const id = nextId++;
-  send({ jsonrpc: "2.0", id, method, params });
+  const message = { jsonrpc: "2.0", id, method };
+  if (params !== undefined) message.params = params;
+  send(message);
   return new Promise((resolvePromise, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
@@ -114,8 +116,8 @@ const target = locations.find((location) =>
   String(location.uri ?? location.targetUri ?? "").endsWith("/src/projection.ts")
 );
 if (!target) throw new Error(`Deno LSP did not resolve buildProjection to projection.ts: ${JSON.stringify(definition)}`);
-await request("shutdown", null);
-send({ jsonrpc: "2.0", method: "exit", params: null });
+await request("shutdown");
+send({ jsonrpc: "2.0", method: "exit" });
 child.stdin.end();
 console.log(JSON.stringify({
   engine: "deno-lsp",
