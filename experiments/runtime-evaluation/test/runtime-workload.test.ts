@@ -4,7 +4,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { fixtureState, meaningId } from "../src/model.ts";
+import { cognitionId, fixtureState, meaningId } from "../src/model.ts";
 import { buildProjection } from "../src/projection.ts";
 import { invokeProvider } from "../src/provider.ts";
 import { runCognition } from "../src/runtime.ts";
@@ -46,7 +46,7 @@ test("provider subprocess uses bounded one-shot JSON and preserves projection se
   const { command, args } = providerCommand();
   const result = await invokeProvider(command, args, {
     contract_version: 1,
-    cognition_id: "cognition-provider" as ReturnType<typeof import("../src/model.ts")["cognitionId"]>,
+    cognition_id: cognitionId("cognition-provider"),
     projection,
     input: { text: input.text },
   });
@@ -61,7 +61,7 @@ test("provider timeout terminates the direct child", async () => {
   const { command, args } = providerCommand();
   await assert.rejects(() => invokeProvider(command, args, {
     contract_version: 1,
-    cognition_id: "cognition-timeout" as ReturnType<typeof import("../src/model.ts")["cognitionId"]>,
+    cognition_id: cognitionId("cognition-timeout"),
     projection,
     input: { text: input.text },
   }, { timeoutMs: 50, terminationGraceMs: 50 }), /timed out/);

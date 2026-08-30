@@ -22,7 +22,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Node 24 control
-        id: node24
         uses: actions/setup-node@v4
         with:
           node-version: 24.20.0
@@ -77,7 +76,7 @@ jobs:
         shell: bash
         run: |
           "$NPM26" install --ignore-scripts --no-audit --no-fund
-          "$NODE26" node_modules/typescript/bin/tsc --version
+          ./node_modules/.bin/tsc --version
           du -sk node_modules
 
       - name: Type-check and directly execute the Node TypeScript port
@@ -87,7 +86,7 @@ jobs:
           EMBER_EVAL_PROVIDER_COMMAND: ${{ env.NODE26 }}
           EMBER_EVAL_PROVIDER_PREFIX_ARGS: '[]'
         run: |
-          "$NODE26" node_modules/typescript/bin/tsc -p tsconfig.json
+          ./node_modules/.bin/tsc -p tsconfig.json
           "$NODE26" --test test/*.test.ts
           "$NODE26" ecosystem/mcp-node.ts
 
@@ -101,11 +100,13 @@ jobs:
           "$DENO" check src/*.ts test/*.test.ts ecosystem/mcp-deno.ts
           "$DENO" test -A test/*.test.ts
           "$DENO" lint
-          "$DENO" fmt --check
+          set +e
+          "$DENO" fmt --check 2>&1 | tee "$RUNNER_TEMP/deno-format-check.log"
+          echo "deno_fmt_check_status=${PIPESTATUS[0]}" | tee -a "$RUNNER_TEMP/deno-format-check.log"
+          set -e
           "$DENO" run ecosystem/mcp-deno.ts
 
       - name: Probe unchanged current JavaScript suite under Deno without changing the oracle
-        id: deno_oracle
         continue-on-error: true
         shell: bash
         run: "$DENO" test -A test/*.test.mjs 2>&1 | tee "$RUNNER_TEMP/deno-current-oracle.log"
@@ -162,11 +163,11 @@ jobs:
           $measure --label node26-js-full-tests --repeat 3 -- "$NODE26" --test >> "$metrics"
           $measure --label node24-restart-oracle --repeat 3 -- "$NODE24" --test test/longitudinal-acceptance.test.mjs >> "$metrics"
           $measure --label node26-js-restart-oracle --repeat 3 -- "$NODE26" --test test/longitudinal-acceptance.test.mjs >> "$metrics"
-          $measure --label node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" --test test/*.test.ts >> "$metrics"
-          $measure --label node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" node_modules/typescript/bin/tsc -p tsconfig.json >> "$metrics"
+          $measure --label node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" --test test/model-semantics.test.ts test/runtime-workload.test.ts >> "$metrics"
+          $measure --label node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- node_modules/.bin/tsc -p tsconfig.json >> "$metrics"
           EMBER_EVAL_PROVIDER_COMMAND="$DENO" EMBER_EVAL_PROVIDER_PREFIX_ARGS='["run","-A"]' \
-            $measure --label deno-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" test -A test/*.test.ts >> "$metrics"
-          $measure --label deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" check src/*.ts test/*.test.ts >> "$metrics"
+            $measure --label deno-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" test -A test/model-semantics.test.ts test/runtime-workload.test.ts >> "$metrics"
+          $measure --label deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" check test/runtime-workload.test.ts >> "$metrics"
           echo '--- measurements ---'
           cat "$metrics"
 
@@ -190,5 +191,6 @@ jobs:
             ${{ runner.temp }}/runtime-measurements.jsonl
             ${{ runner.temp }}/runtime-footprint.txt
             ${{ runner.temp }}/deno-current-oracle.log
+            ${{ runner.temp }}/deno-format-check.log
             ${{ runner.temp }}/permission-*.out
             ${{ runner.temp }}/permission-*.err

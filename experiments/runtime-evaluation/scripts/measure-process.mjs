@@ -25,15 +25,16 @@ async function runOnce(options) {
   const child = spawn(options.command[0], options.command.slice(1), { cwd: options.cwd, stdio: [options.stdinText === null ? "ignore" : "pipe", "pipe", "pipe"] });
   child.stdout.on("data", () => {});
   child.stderr.on("data", () => {});
+  const closed = new Promise((resolve) => child.once("close", (code, signal) => resolve({ code: code ?? (signal ? 128 : 1), signal })));
   if (options.stdinText !== null) setTimeout(() => child.stdin.end(options.stdinText), options.stdinDelayMs);
   let maxTreeRss = 0;
   while (child.exitCode === null && child.signalCode === null) {
     maxTreeRss = Math.max(maxTreeRss, await treeRss(child.pid));
     await new Promise((resolve) => setTimeout(resolve, 5));
   }
-  const [exitCode] = await new Promise((resolve) => child.once("close", (code, signal) => resolve([code ?? (signal ? 128 : 1)])));
+  const terminal = await closed;
   maxTreeRss = Math.max(maxTreeRss, await treeRss(child.pid));
-  return { elapsed_ms: performance.now() - start, max_tree_rss_kib: maxTreeRss, exit_code: exitCode };
+  return { elapsed_ms: performance.now() - start, max_tree_rss_kib: maxTreeRss, exit_code: terminal.code };
 }
 
 async function treeRss(rootPid) {
