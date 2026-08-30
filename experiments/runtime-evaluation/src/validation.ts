@@ -20,6 +20,10 @@ const nonempty = (value: unknown): value is string =>
 
 export function parsePersistentState(text: string): PersistentState {
   const value: unknown = JSON.parse(text);
+  return validatePersistentState(value);
+}
+
+export function validatePersistentState(value: unknown): PersistentState {
   if (!record(value)) throw new Error("state must be an object");
   if (value.schema_version !== 1) throw new Error("unsupported schema_version");
   if (!Number.isSafeInteger(value.revision) || Number(value.revision) < 0) {
@@ -46,23 +50,21 @@ export function parsePersistentState(text: string): PersistentState {
     throw new Error("state collections are invalid");
   }
   const evidence = value.evidence.map(validateEvidence);
-  const evidenceIds = new Set(evidence.map((item) => item.evidence_id));
-  if (evidenceIds.size !== evidence.length) throw new Error("evidence IDs must be unique");
+  const evidenceById = new Map(evidence.map((item) => [item.evidence_id, item]));
+  if (evidenceById.size !== evidence.length) throw new Error("evidence IDs must be unique");
   for (const item of evidence) {
-    if (
-      item.source_role === "ember_adoption" &&
-      !item.derived_from_evidence_ids.every((id) => evidenceIds.has(id))
-    ) {
-      throw new Error("adoption source evidence does not exist");
+    if (item.source_role === "ember_adoption") {
+      const source = evidenceById.get(item.derived_from_evidence_ids[0]);
+      if (!source) throw new Error("adoption source evidence does not exist");
+      if (source.source_role !== "user_command") {
+        throw new Error("Ember adoption must derive from attributable user evidence");
+      }
     }
   }
 
   const meanings = value.meanings.map(validateMeaning);
-  for (const meaning of meanings) {
-    if (!meaning.source_evidence_ids.every((id) => evidenceIds.has(id))) {
-      throw new Error("meaning source evidence does not exist");
-    }
-  }
+  validateMeaningGraph(meanings, evidenceById);
+
   const operations = value.operations;
   if (
     !record(operations) || !Array.isArray(operations.runtime_episodes) ||
@@ -99,6 +101,67 @@ export function parsePersistentState(text: string): PersistentState {
       cognition_episodes: operations.cognition_episodes,
     },
   };
+}
+
+function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: ReadonlyMap<string, Evidence>) {
+  const meaningsById = new Map(meanings.map((meaning) => [meaning.meaning_id, meaning]));
+  if (meaningsById.size !== meanings.length) throw new Error("meaning IDs must be unique");
+
+  const currentSlots = new Set<string>();
+  for (const meaning of meanings) {
+    if (!meaning.source_evidence_ids.every((id) => evidenceById.has(id))) {
+      throw new Error("meaning source evidence does not exist");
+    }
+    if (meaning.currentness === "current") {
+      const slot = `${meaning.kind}\u0000${meaning.owner}\u0000${meaning.slot}\u0000${meaning.scope}`;
+      if (currentSlots.has(slot)) throw new Error("two current meanings share one semantic slot");
+      currentSlots.add(slot);
+      if (meaning.superseded_by !== null) {
+        throw new Error("current meaning cannot already be superseded");
+      }
+    }
+    if (meaning.currentness === "superseded" && meaning.superseded_by === null) {
+      throw new Error("superseded meaning must identify its successor");
+    }
+
+    if (meaning.supersedes !== null) {
+      if (meaning.supersedes === meaning.meaning_id) throw new Error("meaning cannot supersede itself");
+      const predecessor = meaningsById.get(meaning.supersedes);
+      if (!predecessor) throw new Error("supersession predecessor does not exist");
+      assertCompatibleSupersession(predecessor, meaning);
+      if (predecessor.superseded_by !== meaning.meaning_id) {
+        throw new Error("supersession predecessor does not link back to successor");
+      }
+      if (predecessor.currentness === "current") {
+        throw new Error("supersession predecessor cannot remain current");
+      }
+    }
+
+    if (meaning.superseded_by !== null) {
+      if (meaning.superseded_by === meaning.meaning_id) throw new Error("meaning cannot supersede itself");
+      const successor = meaningsById.get(meaning.superseded_by);
+      if (!successor) throw new Error("supersession successor does not exist");
+      assertCompatibleSupersession(meaning, successor);
+      if (successor.supersedes !== meaning.meaning_id) {
+        throw new Error("supersession successor does not link back to predecessor");
+      }
+    }
+  }
+}
+
+function assertCompatibleSupersession(predecessor: Meaning, successor: Meaning): void {
+  if (
+    predecessor.kind !== successor.kind || predecessor.owner !== successor.owner ||
+    predecessor.slot !== successor.slot || predecessor.scope !== successor.scope
+  ) {
+    throw new Error("supersession must preserve kind, owner, slot, and scope");
+  }
+  if (
+    (predecessor.kind !== "fact" && predecessor.kind !== "preference") ||
+    (successor.kind !== "fact" && successor.kind !== "preference")
+  ) {
+    throw new Error("only facts and preferences may participate in supersession");
+  }
 }
 
 function validateEvidence(value: unknown): Evidence {
@@ -178,7 +241,10 @@ function validateMeaning(value: unknown): Meaning {
   ) {
     throw new Error("meaning routing fields are invalid");
   }
-  if (!Array.isArray(value.source_evidence_ids) || !value.source_evidence_ids.every(nonempty)) {
+  if (
+    !Array.isArray(value.source_evidence_ids) || value.source_evidence_ids.length === 0 ||
+    !value.source_evidence_ids.every(nonempty)
+  ) {
     throw new Error("meaning source evidence is invalid");
   }
   if (

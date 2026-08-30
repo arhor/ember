@@ -1,7 +1,7 @@
 import { access, mkdir, open, readFile, rename, unlink, type FileHandle } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { parsePersistentState } from "./validation.ts";
+import { parsePersistentState, validatePersistentState } from "./validation.ts";
 import type { PersistentState } from "./model.ts";
 
 interface Lease { handle: FileHandle; ownerToken: string }
@@ -67,7 +67,7 @@ export class EvaluationStore {
     if (lease !== this.lease) throw new Error("commit requires the cooperating writer lease");
     const current = await this.load();
     if (current.revision !== expectedRevision) throw new Error(`stale revision: expected ${expectedRevision}, found ${current.revision}`);
-    const committed = { ...candidate, revision: expectedRevision + 1 } as PersistentState;
+    const committed = validatePersistentState({ ...candidate, revision: expectedRevision + 1 });
     await this.replaceDocument(committed);
     return committed;
   }
@@ -78,13 +78,14 @@ export class EvaluationStore {
   }
 
   private async replaceDocument(state: PersistentState): Promise<void> {
+    const validated = validatePersistentState(state);
     const directory = dirname(this.path);
     const temporary = join(directory, `.${basename(this.path)}.${process.pid}.${randomUUID()}.tmp`);
     let handle: FileHandle | null = null;
     let replaced = false;
     try {
       handle = await open(temporary, "wx", 0o600);
-      await handle.writeFile(`${JSON.stringify(state, null, 2)}\n`, "utf8");
+      await handle.writeFile(`${JSON.stringify(validated, null, 2)}\n`, "utf8");
       await handle.sync();
       await handle.close();
       handle = null;

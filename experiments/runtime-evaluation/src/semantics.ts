@@ -13,6 +13,7 @@ export function supersedePreference(
   oldId: MeaningId,
   replacement: string,
 ): PersistentState {
+  if (!replacement.trim()) throw new Error("replacement preference must not be empty");
   const old = state.meanings.find((meaning): meaning is PreferenceMeaning =>
     meaning.kind === "preference" && meaning.meaning_id === oldId
   );
@@ -25,9 +26,17 @@ export function supersedePreference(
   }
 
   const successorId = meaningId(`${old.meaning_id}-successor`);
+  const successorEvidenceId = evidenceId(`evidence-${old.meaning_id.slice("meaning-".length)}-successor`);
+  if (state.meanings.some((meaning) => meaning.meaning_id === successorId)) {
+    throw new Error("successor meaning identifier already exists");
+  }
+  if (state.evidence.some((evidence) => evidence.evidence_id === successorEvidenceId)) {
+    throw new Error("successor evidence identifier already exists");
+  }
+
   const now = "2026-08-30T12:00:00.000Z";
   const successorEvidence: UserEvidence = {
-    evidence_id: evidenceId(`evidence-${old.meaning_id.slice("meaning-".length)}-successor`),
+    evidence_id: successorEvidenceId,
     source_role: "user_command",
     source_actor: old.owner,
     asserted_principal: principal,
