@@ -79,16 +79,16 @@ jobs:
           set -e
           printf 'node26-current-js-oracle\t%s\n' "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
 
-      - name: Install exact Node TypeScript experiment dependencies
+      - name: Install locked Node TypeScript experiment dependencies
         continue-on-error: true
         working-directory: experiments/runtime-evaluation
         shell: bash
         run: |
-          "$NPM26" install --ignore-scripts --no-audit --no-fund
+          "$NPM26" ci --ignore-scripts --no-audit --no-fund
           ./node_modules/.bin/tsc --version
           "$NPM26" ls --all --json > "$RUNNER_TEMP/npm-tree.json"
           du -sk node_modules
-          cp package-lock.json "$RUNNER_TEMP/generated-package-lock.json"
+          cp package-lock.json "$RUNNER_TEMP/evaluation-package-lock.json"
 
       - name: Record Node TypeScript port results
         working-directory: experiments/runtime-evaluation
@@ -283,7 +283,7 @@ jobs:
             ${{ runner.temp }}/runtime-footprint.txt
             ${{ runner.temp }}/runtime-status.tsv
             ${{ runner.temp }}/npm-tree.json
-            ${{ runner.temp }}/generated-package-lock.json
+            ${{ runner.temp }}/evaluation-package-lock.json
             ${{ runner.temp }}/node26-*.out
             ${{ runner.temp }}/node26-*.err
             ${{ runner.temp }}/deno-*.out
