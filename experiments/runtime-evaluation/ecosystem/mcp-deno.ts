@@ -7,7 +7,7 @@ const server = new Server(
   { name: "ember-runtime-evaluation", version: "0.0.0" },
   { capabilities: { tools: {} } },
 );
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
+server.setRequestHandler(ListToolsRequestSchema, () => ({
   tools: [{
     name: "probe",
     description: "Ember evaluation boundary",

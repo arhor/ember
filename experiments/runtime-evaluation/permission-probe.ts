@@ -21,15 +21,24 @@ switch (mode) {
     console.log(new TextDecoder().decode(output.stdout).trim());
     break;
   }
-  case "net":
+  case "net": {
+    const permission = await Deno.permissions.query({ name: "net", host: "127.0.0.1:9" });
+    if (permission.state !== "granted") {
+      throw new Error(`net permission is ${permission.state}`);
+    }
     try {
-      await fetch("http://127.0.0.1:9/");
+      const connection = await Deno.connect({ hostname: "127.0.0.1", port: 9 });
+      connection.close();
       console.log("connected");
     } catch (error) {
-      if (error instanceof Deno.errors.NotCapable) throw error;
-      console.log(`network permission granted; transport outcome=${error instanceof Error ? error.name : "unknown"}`);
+      console.log(
+        `network permission granted; transport outcome=${
+          error instanceof Error ? error.name : "unknown"
+        }`,
+      );
     }
     break;
+  }
   default:
     throw new Error(`unknown mode: ${mode}`);
 }

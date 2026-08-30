@@ -1,8 +1,8 @@
-import { cognitionId, type CliInput, type PersistentState, type ProviderResult } from "./model.ts";
+import { type CliInput, cognitionId, type PersistentState, type ProviderResult } from "./model.ts";
 import { buildProjection } from "./projection.ts";
 import { invokeProvider } from "./provider.ts";
 
-export async function runCognition(
+export function runCognition(
   command: string,
   args: readonly string[],
   state: PersistentState,

@@ -70,11 +70,17 @@ jobs:
           "$NODE24" scripts/docs-discovery.mjs check
           PATH="$(dirname "$NODE24"):$PATH" npm run check
 
-      - name: Validate unchanged JavaScript implementation on Node 26
+      - name: Record unchanged JavaScript implementation on Node 26
+        shell: bash
         run: |
+          set +e
           "$NODE26" --test test/*.mjs tests/*.test.mjs
+          status=$?
+          set -e
+          printf 'node26-current-js-oracle\t%s\n' "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Install exact Node TypeScript experiment dependencies
+        continue-on-error: true
         working-directory: experiments/runtime-evaluation
         shell: bash
         run: |
@@ -83,17 +89,25 @@ jobs:
           "$NPM26" ls --all --json > "$RUNNER_TEMP/npm-tree.json"
           du -sk node_modules
 
-      - name: Type-check and directly execute the Node TypeScript port
+      - name: Record Node TypeScript port results
         working-directory: experiments/runtime-evaluation
         shell: bash
         env:
           EMBER_EVAL_PROVIDER_COMMAND: ${{ env.NODE26 }}
           EMBER_EVAL_PROVIDER_PREFIX_ARGS: '[]'
         run: |
-          ./node_modules/.bin/tsc -p tsconfig.json
-          "$NODE26" --test test/*.test.ts
-          "$NODE26" ecosystem/mcp-node.ts
-          printf 'node26-ts-port\t0\nnode26-mcp\t0\n' >> "$RUNNER_TEMP/runtime-status.tsv"
+          probe() {
+            local label="$1"
+            shift
+            set +e
+            "$@" > >(tee "$RUNNER_TEMP/$label.out") 2> >(tee "$RUNNER_TEMP/$label.err" >&2)
+            local status=$?
+            set -e
+            printf '%s\t%s\n' "$label" "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
+          }
+          probe node26-ts-typecheck ./node_modules/.bin/tsc -p tsconfig.json
+          probe node26-ts-tests "$NODE26" --test test/*.test.ts
+          probe node26-mcp "$NODE26" ecosystem/mcp-node.ts
 
       - name: Record Deno TypeScript and built-in-tooling results
         working-directory: experiments/runtime-evaluation
@@ -111,7 +125,8 @@ jobs:
             set -e
             printf '%s\t%s\n' "$label" "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
           }
-          probe deno-check "$DENO" check src/*.ts test/*.test.ts ecosystem/mcp-deno.ts
+          probe deno-check-core "$DENO" check src/*.ts test/*.test.ts
+          probe deno-check-mcp "$DENO" check ecosystem/mcp-deno.ts
           probe deno-test "$DENO" test -A test/*.test.ts
           probe deno-lint "$DENO" lint
           probe deno-fmt "$DENO" fmt --check
@@ -134,7 +149,7 @@ jobs:
           {
             "$DENO" run -A bin/ember.mjs init --state "$state" --name Ember --principal user-1 &&
             "$DENO" run -A bin/ember.mjs check --state "$state" &&
-            printf ':ask hello from Deno\n:quit\n' | "$DENO" run -A bin/ember.mjs run \
+            printf 'hello from Deno\n:quit\n' | "$DENO" run -A bin/ember.mjs run \
               --state "$state" --principal user-1 --scope project:ember/docs \
               --provider-command "$DENO" --provider-arg run --provider-arg -A \
               --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
@@ -173,6 +188,7 @@ jobs:
           printf 'deno-permissions\t0\n' >> "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Record same-host operational measurements
+        if: always()
         shell: bash
         run: |
           metrics="$RUNNER_TEMP/runtime-measurements.jsonl"
@@ -197,26 +213,38 @@ jobs:
           run_measure node26-js-full-tests --repeat 3 -- "$NODE26" --test test/*.mjs tests/*.test.mjs
           run_measure node24-js-restart-oracle --repeat 3 -- "$NODE24" --test test/longitudinal-acceptance.test.mjs
           run_measure node26-js-restart-oracle --repeat 3 -- "$NODE26" --test test/longitudinal-acceptance.test.mjs
+          run_measure deno-current-js-restart-oracle --repeat 3 -- "$DENO" test -A test/longitudinal-acceptance.test.mjs
           run_measure node24-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE24" bin/ember.mjs run \
             --state "$control_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$NODE24" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
           run_measure node26-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE26" bin/ember.mjs run \
             --state "$node26_state" --principal user-1 --scope project:ember/docs \
             --provider-command "$NODE26" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          run_measure deno-current-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$DENO" run -A bin/ember.mjs run \
+            --state "$deno_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$DENO" --provider-arg run --provider-arg -A \
+            --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          run_measure node24-js-provider-cycle --repeat 5 --stdin-text 'hello from measurement\n:quit\n' -- "$NODE24" bin/ember.mjs run \
+            --state "$control_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$NODE24" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          run_measure node26-js-provider-cycle --repeat 5 --stdin-text 'hello from measurement\n:quit\n' -- "$NODE26" bin/ember.mjs run \
+            --state "$node26_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$NODE26" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          run_measure deno-current-js-provider-cycle --repeat 5 --stdin-text 'hello from measurement\n:quit\n' -- "$DENO" run -A bin/ember.mjs run \
+            --state "$deno_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$DENO" --provider-arg run --provider-arg -A \
+            --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
           run_measure node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" --test test/model-semantics.test.ts test/runtime-workload.test.ts
           run_measure node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- node_modules/.bin/tsc -p tsconfig.json
           run_measure deno-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- env \
             EMBER_EVAL_PROVIDER_COMMAND="$DENO" EMBER_EVAL_PROVIDER_PREFIX_ARGS='["run","-A"]' \
             "$DENO" test -A test/model-semantics.test.ts test/runtime-workload.test.ts
           run_measure deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" check test/runtime-workload.test.ts
-          run_measure deno-current-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$DENO" run -A bin/ember.mjs run \
-            --state "$deno_state" --principal user-1 --scope project:ember/docs \
-            --provider-command "$DENO" --provider-arg run --provider-arg -A \
-            --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
           echo '--- measurements ---'
           cat "$metrics"
 
       - name: Record footprint evidence
+        if: always()
         shell: bash
         run: |
           {
@@ -242,6 +270,8 @@ jobs:
             ${{ runner.temp }}/runtime-footprint.txt
             ${{ runner.temp }}/runtime-status.tsv
             ${{ runner.temp }}/npm-tree.json
+            ${{ runner.temp }}/node26-*.out
+            ${{ runner.temp }}/node26-*.err
             ${{ runner.temp }}/deno-*.out
             ${{ runner.temp }}/deno-*.err
             ${{ runner.temp }}/permission-*.out
