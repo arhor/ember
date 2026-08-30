@@ -1,3 +1,12 @@
+---
+summary: "Reference investigation of Letta's persisted agent state, independently attachable memory blocks, archival knowledge, and separation of capabilities from identity."
+read_when:
+  - "Comparing Ember with a stateful-agent platform when reasoning about durable agent state or memory lifecycle"
+  - "Investigating detachable memory, active-versus-archival context, or capability separation through Letta"
+role: reference
+discovery_status: current
+---
+
 # Letta Architecture Notes
 
 Reviewed against the current Letta documentation available on 2026-08-27.

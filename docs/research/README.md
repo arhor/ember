@@ -1,3 +1,12 @@
+---
+summary: "Research governance and navigation for Ember's canonical concern notes, evidence maps, preserved source artifacts, reviewed systems, and cross-cutting synthesis."
+read_when:
+  - "Adding or reviewing Ember research artifacts and needing the canonical, evidence, and source hierarchy"
+  - "Tracing which research note, evidence map, or preserved source artifact owns a research concern"
+role: guide
+discovery_status: current
+---
+
 # Architecture Research
 
 This directory records source-level reconnaissance of existing agent systems before Ember commits to its own implementation architecture.

@@ -1,3 +1,12 @@
+---
+summary: "Preserved Deep Research report behind the canonical capabilities and delegation synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original capabilities and delegation research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind delegation and specialist-boundary conclusions"
+role: source
+discovery_status: current
+---
+
 # Capabilities, Delegation, and Runtime Ownership for Ember
 
 > **Source-material status:** non-canonical research artifact preserved behind the issue #6 synthesis. This file preserves the substantive Deep Research report and its evidence ledger while omitting UI-only research metadata and normalizing session-local citation markup into durable links where practical. The canonical Ember-facing conclusions live in [Capabilities and Delegation Semantics](../capabilities-and-delegation.md), and the portable bibliography lives in the [evidence map](../capabilities-and-delegation-references.md).

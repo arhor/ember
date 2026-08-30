@@ -1,3 +1,12 @@
+---
+summary: "Preserved Deep Research report behind the canonical context-selection synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original context-selection research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind projection, compaction, and privacy conclusions"
+role: source
+discovery_status: current
+---
+
 # Ember Research Report: Context Selection and Cognitive Framing
 
 > **Source-material status:** non-canonical research artifact preserved behind the issue #5 synthesis. This file preserves the substantive Deep Research report and its evidence ledger. UI-only research metadata is omitted. The canonical Ember-facing conclusions live in [Context Selection and Cognitive Framing Semantics](../context-selection-and-cognitive-framing.md), and the portable bibliography lives in the [evidence map](../context-selection-and-cognitive-framing-references.md).

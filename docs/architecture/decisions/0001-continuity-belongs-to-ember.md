@@ -1,3 +1,12 @@
+---
+summary: "Accepted decision that Ember owns one continuing lineage independently of models, prompts, sessions, surfaces, processes, transports, and specialist runtimes."
+read_when:
+  - "Changing restart, resume, migration, provider replacement, backup, restore, fork, or identity-continuity behavior"
+  - "Deciding whether an operational locus or copied state can own or establish Ember's continuity"
+role: decision
+discovery_status: current
+---
+
 # ADR 0001: Continuity Belongs to Ember, Not an Operational Locus
 
 - **Status:** Accepted

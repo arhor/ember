@@ -1,3 +1,12 @@
+---
+summary: "Reference investigation of Hermes' mature runtime, prompt lifetime tiers, searchable session history, and delegation that narrows context and shared-state authority."
+read_when:
+  - "Comparing Ember with a mature multi-surface agent runtime or evaluating operational complexity trade-offs"
+  - "Investigating prompt lifetime tiers, searchable history, or isolated specialist delegation through Hermes"
+role: reference
+discovery_status: current
+---
+
 # Hermes Architecture Notes
 
 Reviewed against Hermes Agent commit `0dfba37b11ff2ca908ae2df85b55f4f4c9b7fd8b`.
