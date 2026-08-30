@@ -56,12 +56,13 @@ async function runOnce(options) {
 
 async function treeRss(rootPid) {
   if (!rootPid) return 0;
+  const rootRss = await rss(rootPid);
   const processes = new Map();
   let entries;
   try {
     entries = await readdir("/proc", { withFileTypes: true });
   } catch {
-    return await rss(rootPid);
+    return rootRss;
   }
   for (const entry of entries) {
     if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
@@ -83,8 +84,10 @@ async function treeRss(rootPid) {
       }
     }
   }
-  let total = 0;
-  for (const pid of wanted) total += await rss(pid);
+  let total = rootRss;
+  for (const pid of wanted) {
+    if (pid !== rootPid) total += await rss(pid);
+  }
   return total;
 }
 
