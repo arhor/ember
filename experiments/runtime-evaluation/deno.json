@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "include": ["src", "test", "ecosystem/mcp-deno.ts", "permission-probe.ts"]
+  },
+  "lint": {
+    "include": ["src", "test", "ecosystem/mcp-deno.ts", "permission-probe.ts"]
+  }
+}

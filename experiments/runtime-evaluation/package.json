@@ -1,0 +1,17 @@
+{
+  "name": "@arhor/ember-runtime-evaluation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "test:node": "node --test test/*.test.ts",
+    "ecosystem:node": "node ecosystem/mcp-node.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "typescript": "7.0.2"
+  }
+}
