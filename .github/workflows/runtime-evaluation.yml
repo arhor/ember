@@ -223,6 +223,7 @@ jobs:
             "$DENO" run -A bin/ember.mjs check --state "$deno_state"
           run_measure node24-js-full-tests --repeat 3 -- "$NODE24" --test test/*.mjs tests/*.test.mjs
           run_measure node26-js-full-tests --repeat 3 -- "$NODE26" --test test/*.mjs tests/*.test.mjs
+          run_measure deno-current-js-full-tests --repeat 3 -- "$DENO" test -A test/*.mjs tests/*.test.mjs
           run_measure node24-js-restart-oracle --repeat 3 -- "$NODE24" --test test/longitudinal-acceptance.test.mjs
           run_measure node26-js-restart-oracle --repeat 3 -- "$NODE26" --test test/longitudinal-acceptance.test.mjs
           run_measure deno-current-js-restart-oracle --repeat 3 -- "$DENO" test -A test/longitudinal-acceptance.test.mjs
