@@ -88,6 +88,7 @@ jobs:
           ./node_modules/.bin/tsc --version
           "$NPM26" ls --all --json > "$RUNNER_TEMP/npm-tree.json"
           du -sk node_modules
+          cp package-lock.json "$RUNNER_TEMP/generated-package-lock.json"
 
       - name: Record Node TypeScript port results
         working-directory: experiments/runtime-evaluation
@@ -282,6 +283,7 @@ jobs:
             ${{ runner.temp }}/runtime-footprint.txt
             ${{ runner.temp }}/runtime-status.tsv
             ${{ runner.temp }}/npm-tree.json
+            ${{ runner.temp }}/generated-package-lock.json
             ${{ runner.temp }}/node26-*.out
             ${{ runner.temp }}/node26-*.err
             ${{ runner.temp }}/deno-*.out
