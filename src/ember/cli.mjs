@@ -2,6 +2,7 @@ import { createInterface } from "node:readline";
 import { EmberError, ValidationError } from "./errors.mjs";
 import { cloneState, initialState, nowUtc } from "./model.mjs";
 import { explanationView, inspectionView } from "./projection.mjs";
+import { MAX_PROVIDER_TIMEOUT_SECONDS } from "./provider.mjs";
 import { startRuntime, stopRuntime, runCognition } from "./runtime.mjs";
 import { attachDetail, rememberEpisode, rememberFact, rememberPreference, rememberRelationship, supersede, undertake, withholdDetail } from "./semantics.mjs";
 import { StateStore } from "./store.mjs";
@@ -56,7 +57,7 @@ export function parseArgs(argv){
   const required=flag=>{if(typeof values[flag]!=="string"||!values[flag])throw new ValidationError(`${flag} is required`);return values[flag];};
   const base={command};
   if(command==="init")return{...base,state:required("--state"),name:required("--name"),principal:required("--principal")};
-  if(command==="run"){const timeout=Number(required("--provider-timeout-seconds"));if(!Number.isFinite(timeout)||timeout<=0)throw new ValidationError("--provider-timeout-seconds must be a positive finite number");return{...base,state:required("--state"),principal:required("--principal"),scope:required("--scope"),providerCommand:required("--provider-command"),providerArgs:values["--provider-arg"]??[],providerTimeoutSeconds:timeout};}
+  if(command==="run"){const timeout=Number(required("--provider-timeout-seconds"));if(!Number.isFinite(timeout)||timeout<=0)throw new ValidationError("--provider-timeout-seconds must be a positive finite number");if(timeout>MAX_PROVIDER_TIMEOUT_SECONDS)throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS}`);return{...base,state:required("--state"),principal:required("--principal"),scope:required("--scope"),providerCommand:required("--provider-command"),providerArgs:values["--provider-arg"]??[],providerTimeoutSeconds:timeout};}
   if(command==="inspect")return{...base,state:required("--state"),principal:required("--principal"),json:values["--json"]===true};
   if(command==="explain")return{...base,state:required("--state"),principal:required("--principal"),meaningId:positionals[0]};
   if(command==="correct")return{...base,state:required("--state"),principal:required("--principal"),meaningId:positionals[0],text:required("--text"),reason:required("--reason")};
