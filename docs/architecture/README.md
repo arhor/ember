@@ -1,17 +1,21 @@
 ---
-summary: "Navigation for Ember's current semantic architecture, accepted decisions, acceptance scenarios, design experiments, and superseded architecture history."
+summary: "Navigation for Ember's current semantic architecture, accepted implementation decisions, acceptance scenarios, design evidence, and superseded architecture history."
 read_when:
   - "Finding the current architecture sources that govern or evaluate an Ember implementation change"
-  - "Tracing how project foundations, semantic decisions, acceptance scenarios, and research relate"
+  - "Tracing how project foundations, semantic decisions, runtime decisions, acceptance scenarios, and research relate"
 role: guide
 discovery_status: current
 ---
 
 # Ember Architecture
 
-Ember's canonical architecture is defined by semantic constraints rather than a
-settled runtime or persistence design. The first continuity slice now adds one
-provisional executable representation for a deliberately narrow experiment.
+Ember's canonical architecture is defined first by representation-neutral semantic
+constraints. Implementation decisions may select concrete representations only
+beneath that baseline.
+
+The first continuity slice remains the executable control representation until
+issue #40 migrates it, while ADR 0006 now records TypeScript on Node.js 26 as the
+selected implementation language/runtime for that adoption work.
 
 Project foundations:
 
@@ -22,19 +26,25 @@ Current architecture material:
 
 - [Cross-Cutting Research Synthesis and Ember Design Directions](design-directions.md)
   is the canonical synthesis of the completed concern-driven research programme.
-- [Semantic Architecture Decisions](decisions/README.md) records the first
-  accepted, representation-neutral constraints derived from that synthesis.
+- [Ember Architecture Decisions](decisions/README.md) records the accepted
+  representation-neutral semantic baseline and subordinate implementation
+  decisions.
+- [ADR 0006: Adopt TypeScript on Node.js 26 as Ember's Implementation Runtime](decisions/0006-adopt-typescript-on-nodejs-26.md)
+  records the selected language, runtime line, source/type-checking model, minimal
+  toolchain, dependency policy, rejected alternatives, and revisit triggers.
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
-  cross-cutting scenarios into a representation-neutral architecture oracle.
+  cross-cutting scenarios into a representation-neutral architecture oracle that
+  implementation choices must preserve.
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
-  no-install validation, foreground CLI, restart probe, lock recovery, and
-  optional live-provider smoke procedure for that executable experiment.
+  validation, foreground CLI, restart probe, lock recovery, and optional
+  live-provider smoke procedure for that executable experiment.
 - [TypeScript Runtime Evaluation](typescript-runtime-evaluation.md) records issue
   #38's evidence comparing the Node.js 24 JavaScript control with TypeScript on
-  Node.js 26 and Deno 2.9 without selecting the final implementation stack.
+  Node.js 26 and Deno 2.9. It remains evidence for ADR 0006 rather than a source of
+  semantic authority.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 
@@ -44,7 +54,8 @@ Historical material:
   It remains useful as research history but does not override the synthesis or
   accepted decisions.
 
-Implementation architecture should follow these semantic constraints. The
-continuity slice makes provisional concrete choices only for its three-fixture
-experiment; it does not settle Ember's long-term language, persistence, process
-topology, protocols, or package boundaries.
+Implementation architecture must preserve the semantic baseline. ADR 0006 settles
+the implementation language/runtime direction for the next adoption step, but it
+does not settle persistence technology, daemon/process topology, delegation
+protocols, memory retrieval architecture, or package boundaries beyond the
+minimal runtime/toolchain policy it explicitly records.
