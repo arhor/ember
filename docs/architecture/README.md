@@ -9,8 +9,9 @@ discovery_status: current
 
 # Ember Architecture
 
-Ember's architecture is currently defined by semantic constraints rather than a
-chosen runtime or persistence design.
+Ember's canonical architecture is defined by semantic constraints rather than a
+settled runtime or persistence design. The first continuity slice now adds one
+provisional executable representation for a deliberately narrow experiment.
 
 Project foundations:
 
@@ -23,8 +24,11 @@ Current architecture material:
   is the canonical synthesis of the completed concern-driven research programme.
 - [Semantic Architecture Decisions](decisions/README.md) records the first
   accepted, representation-neutral constraints derived from that synthesis.
-- [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn
-  cross-cutting semantics into reusable, representation-neutral fixtures.
+- [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
+  cross-cutting scenarios into a representation-neutral architecture oracle.
+- [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
+  deliberately narrow first executable design derived from the accepted ADRs and
+  minimal acceptance subset.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 
@@ -34,6 +38,7 @@ Historical material:
   It remains useful as research history but does not override the synthesis or
   accepted decisions.
 
-Implementation architecture should follow these semantic constraints. Language,
-persistence, process topology, protocols, package boundaries, and other concrete
-representations remain open until evidence or a later decision justifies them.
+Implementation architecture should follow these semantic constraints. The
+continuity slice makes provisional concrete choices only for its three-fixture
+experiment; it does not settle Ember's long-term language, persistence, process
+topology, protocols, or package boundaries.

@@ -4,6 +4,7 @@ read_when:
   - "Adding or materially changing a Markdown document under docs/"
   - "Running documentation discovery or diagnosing metadata validation failures"
   - "Authoring summaries or read_when hints, or deciding which discovery role or status a document should declare"
+  - "Distinguishing the discovery utility's Node.js tooling from Ember application-runtime decisions"
 role: guide
 discovery_status: current
 ---
@@ -20,7 +21,7 @@ A document's repository role, its `discovery_status`, and any role-specific life
 
 ## Commands
 
-Run discovery from the repository root with Node.js built-ins only. Use Node.js 24.x locally for the same runtime exercised by CI; CI pins Node 24 explicitly. Ember intentionally does not introduce `package.json`, an npm dependency graph, or a package installation step solely for this feature. Using Node for this repository utility does not adopt Node.js as Ember's implementation runtime.
+Run discovery from the repository root with Node.js built-ins only. Use Node.js 24.x locally for the same runtime exercised by CI; CI pins Node 24 explicitly. The discovery utility itself requires no `package.json`, npm dependency graph, or package installation step. Its earlier adoption of Node as repository tooling did not choose Ember's application runtime; the minimal continuity experiment makes that separate choice explicitly in its own design.
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.

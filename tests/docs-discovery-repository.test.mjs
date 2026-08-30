@@ -36,6 +36,14 @@ test("complete repository corpus is valid without duplicate hint warnings", () =
 test("representative roles and supersession match governance", () => {
   assert.equal(byPath.get("docs/vision.md").role, "foundation");
   assert.equal(byPath.get("docs/architecture/design-directions.md").role, "design");
+  assert.equal(byPath.get("docs/architecture/README.md").role, "guide");
+  assert.equal(byPath.get("docs/architecture/decisions/README.md").role, "guide");
+  assert.equal(
+    byPath.get("docs/architecture/decisions/0001-continuity-belongs-to-ember.md").role,
+    "decision",
+  );
+  assert.equal(byPath.get("docs/architecture/acceptance-scenarios.md").role, "scenario");
+  assert.equal(byPath.get("docs/architecture/minimal-continuity-slice.md").role, "design");
 
   const initial = byPath.get("docs/architecture/initial-model.md");
   assert.equal(initial.role, "design");
@@ -56,7 +64,16 @@ test("default, deep, and history views keep distinct purposes", () => {
     new Set([
       "docs/vision.md",
       "docs/principles.md",
+      "docs/architecture/README.md",
       "docs/architecture/design-directions.md",
+      "docs/architecture/decisions/README.md",
+      "docs/architecture/decisions/0001-continuity-belongs-to-ember.md",
+      "docs/architecture/decisions/0002-preserve-persistent-meaning.md",
+      "docs/architecture/decisions/0003-use-least-sufficient-permitted-projections.md",
+      "docs/architecture/decisions/0004-separate-capability-from-authority.md",
+      "docs/architecture/decisions/0005-distinguish-operational-continuity.md",
+      "docs/architecture/acceptance-scenarios.md",
+      "docs/architecture/minimal-continuity-slice.md",
       "docs/documentation-discovery.md",
       "docs/documentation-discovery-guide.md",
       "docs/research/README.md",
