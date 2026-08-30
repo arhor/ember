@@ -9,191 +9,322 @@ discovery_status: current
 
 # Documentation Discovery Evaluation
 
-> Evaluation date: 2026-08-29.
+> Initial evaluation: 2026-08-29.
 >
-> This note evaluates the repository implementation of [the documentation-discovery contract](documentation-discovery.md) for issue #27. It records deterministic structural evidence and a qualitative routing review. It does not claim that deterministic code can infer task-to-document relevance.
+> Completion audit: 2026-08-30 against `master` after the semantic ADRs,
+> architecture acceptance catalogue, continuity design, and executable slice were
+> merged through issues #20-#23.
+>
+> This note evaluates the repository implementation of
+> [the documentation-discovery contract](documentation-discovery.md) for issues
+> #27 and #35. It records deterministic structural evidence and a qualitative
+> routing review. It does not claim that deterministic code can infer
+> task-to-document relevance.
 
 ## Evaluation method
 
-The contract deliberately gives the discovery utility no task query. Evaluation therefore separates two things:
+The contract deliberately gives the discovery utility no task query. Evaluation
+therefore separates two things:
 
-1. **structural evidence**: the deterministic catalogue exposes the expected document classes at the intended depths and validates the metadata contract;
-2. **qualitative routing review**: a reader is given a realistic task plus the catalogue and judges which summaries and applicability hints make plausible source documents stand out, which documents can remain unopened, and when escalation to headings, deep evidence, or history is understandable.
+1. **structural evidence**: the deterministic catalogue exposes the expected
+   document classes at the intended depths and validates the metadata contract;
+2. **qualitative routing review**: a reader is given a realistic task plus the
+   catalogue and judges which summaries and applicability hints make plausible
+   source documents stand out, which documents can remain unopened, and when
+   escalation to headings, deep evidence, or history is understandable.
 
-No semantic matcher, keyword scorer, embedding model, ranking algorithm, or hidden expected-result table was added to make these scenarios appear deterministic.
+No semantic matcher, keyword scorer, embedding model, ranking algorithm, or
+hidden expected-result table was added to make these scenarios appear
+deterministic.
 
-## Corpus state used for evaluation
+## Corpus state used for the completion audit
 
-Issue #26 was merged at master commit `c512df45362354d72ba65cd86603e8e551b4eabc`. At the start of #27, that merged corpus contained 32 human-authored `docs/**/*.md` files and no adopted implementation runtime or dependency ecosystem.
+The initial #27 evaluation was performed before the architecture baseline had
+finished landing. At that time PR #29 (semantic ADRs) and PR #30 (architecture
+acceptance scenarios) were still unmerged, so two routing cases could only be
+reviewed against the research/design documents that existed on the base branch.
 
-Two architecture changes existed as open pull requests rather than merged repository knowledge:
+That repository-state limitation is now gone. The completion audit uses current
+`master` after PRs #29, #30, #33, and #34 landed. Repository validation reports
+44 participating `docs/**/*.md` documents. The newly available architecture
+knowledge includes:
 
-- [PR #29](https://github.com/arhor/ember/pull/29) proposes the first five semantic ADRs and architecture indexes;
-- [PR #30](https://github.com/arhor/ember/pull/30) proposes the architecture acceptance-scenario catalogue and depends on #29.
+- five accepted semantic ADRs under `docs/architecture/decisions/`, participating
+  as `role: decision` while their own ADR bodies retain lifecycle authority;
+- `docs/architecture/acceptance-scenarios.md` participating as `role: scenario`;
+- the current minimal continuity design and runbook participating according to
+  their document responsibilities;
+- the previously adopted foundations, canonical research, guides, evidence maps,
+  preserved source reports, and the superseded initial architecture model.
 
-Because neither PR had landed, #27 does not copy their unmerged content into the current corpus or pretend that their decision/scenario artifacts already govern Ember. The discovery tooling supports `decision` and `scenario` roles, and any newly merged `docs/**/*.md` file is required to carry valid metadata once #27's validation is present.
+All human-authored participating Markdown remains subject to the same metadata
+validation. There are still no generated Markdown exclusions in v1.
 
-After the #27 adoption files are included, the evaluated corpus has 34 participating documents:
-
-- **13 default entries**: current foundations, design, canonical research, and guides;
-- **33 deep entries**: the default set plus current references, evidence maps, preserved source reports, and this evaluation;
-- **34 all/history entries**: the deep set plus the superseded initial architecture model.
-
-There are no generated Markdown exclusions in v1.
+The completion audit also confirms the intended separation between discovery and
+authority: `role: decision` does not make an ADR accepted, and
+`discovery_status: current` does not make a document governing. Those judgments
+remain in the source document and Ember's existing documentation/research
+governance.
 
 ## Structural expectations
 
-The migration was reviewed against document responsibility rather than directory alone:
+The corpus continues to be classified by document responsibility rather than by
+directory alone:
 
 - `docs/vision.md` and `docs/principles.md` are current `foundation` documents;
-- `docs/architecture/design-directions.md` and the discovery contract are current `design` documents;
-- `docs/architecture/initial-model.md` is `design` but `superseded`, pointing to the current synthesis;
+- current cross-cutting and executable architecture notes are `design` documents;
+- `docs/architecture/initial-model.md` remains `design` but `superseded`, pointing
+  to the current synthesis;
+- semantic ADRs are current `decision` documents, with acceptance status owned by
+  the ADR body rather than discovery metadata;
+- `docs/architecture/acceptance-scenarios.md` is the canonical current `scenario`
+  catalogue;
 - canonical concern notes are current `research` documents in default discovery;
-- portable `*-references.md` maps are current `evidence` documents in deep discovery;
-- preserved Deep Research exports are current `source` documents in deep discovery while remaining explicitly non-canonical in their source text;
-- NanoBot, Hermes, OpenClaw, Letta, and the OpenClaw documentation-discovery investigation are current `reference` documents in deep discovery;
-- research navigation and the contributor discovery guide are current `guide` documents.
+- portable `*-references.md` maps are current `evidence` documents in deep
+  discovery;
+- preserved Deep Research exports are current `source` documents in deep
+  discovery while remaining explicitly non-canonical in their source text;
+- reviewed-system and OpenClaw documentation-discovery investigations are current
+  `reference` documents in deep discovery;
+- repository navigation and contributor instructions are `guide` documents.
 
-This classification preserves the pre-existing research hierarchy instead of manufacturing authority from metadata.
+This classification preserves the pre-existing research and architecture
+hierarchy instead of manufacturing authority from routing metadata.
 
 ## Scenario 1: continuity and restart work
 
-**Task:** Change how Ember resumes after a complete process restart and long inactivity.
+**Task:** Change how Ember resumes after a complete process restart and long
+inactivity.
 
-**Obvious default candidates from the catalogue:**
+**Obvious current candidates from the compact catalogue:**
 
-- `docs/architecture/design-directions.md`, whose hints cover cross-cutting continuity/currentness and architecture boundaries;
-- `docs/research/continuity-and-identity.md`, whose hints explicitly cover restart, resume, migration, model replacement, and identity continuity;
-- `docs/research/operational-model-sessions-and-surfaces.md`, whose hints cover restart/recovery, downtime gaps, resumption, and currentness reconciliation;
-- `docs/principles.md` when the change risks making process/session lifetime define Ember lifetime.
+- `docs/architecture/decisions/0001-continuity-belongs-to-ember.md`, whose hints
+  explicitly cover restart, resume, migration, provider replacement, and
+  identity-continuity behavior;
+- `docs/architecture/decisions/0005-distinguish-operational-continuity.md`, whose
+  hints explicitly cover downtime, recovery, truthful gaps, and currentness
+  reconciliation;
+- `docs/architecture/acceptance-scenarios.md` when the change must be checked
+  against the canonical restart/recovery fixtures;
+- `docs/architecture/minimal-continuity-slice.md` when the task changes or reviews
+  the concrete first executable continuity experiment;
+- `docs/architecture/design-directions.md` for the cross-cutting synthesis;
+- `docs/research/continuity-and-identity.md` and
+  `docs/research/operational-model-sessions-and-surfaces.md` when the task needs
+  the canonical research reasoning behind those decisions.
 
-**Material that need not be opened eagerly:** memory, delegation, authority, and endogenous-agency bodies; all evidence maps; all source reports; reviewed-system references.
+**Material that need not be opened eagerly:** unrelated authority/delegation or
+endogenous-agency research, all evidence maps, all preserved source reports, and
+reviewed-system references.
 
-**Current-corpus limitation:** the continuity and operational ADRs and restart/recovery acceptance fixtures expected by #26 are not yet merged. PRs #29/#30 contain those future classes, so this evaluation can confirm routing of the currently adopted design/research layer but not pretend the absent decision/scenario sources were discovered.
-
-**Finding:** the available routing hints discriminate restart/continuity work cleanly without deep discovery.
+**Finding:** the post-#29/#30 corpus now supplies the previously missing governing
+`decision` and `scenario` layers. A human/model can start from the compact
+catalogue, identify the current decisions and fixtures, and deepen into design or
+research only when the task requires explanation or implementation detail. The
+mechanism still performs no semantic ranking; relevance remains reader judgment.
 
 ## Scenario 2: memory and currentness work
 
-**Task:** Change how a corrected preference supersedes older remembered state while preserving history.
+**Task:** Change how a corrected preference supersedes older remembered state
+while preserving history.
 
 **Obvious default candidates:**
 
-- `docs/research/memory-and-remembering.md` for correction, supersession, historical evidence, ownership, scope, and currentness;
-- `docs/research/context-selection-and-cognitive-framing.md` when the old and current states must be projected without losing temporal or authority distinctions;
-- `docs/architecture/design-directions.md` for the cross-cutting currentness invariant.
+- `docs/research/memory-and-remembering.md` for correction, supersession,
+  historical evidence, ownership, scope, and currentness;
+- `docs/research/context-selection-and-cognitive-framing.md` when old and current
+  state must be projected without losing temporal or authority distinctions;
+- the relevant semantic ADRs and `docs/architecture/design-directions.md` when
+  the change crosses an accepted architecture invariant.
 
-**Not eager:** authority and endogenous-agency research, reviewed-system references, evidence maps, and preserved source reports.
+**Not eager:** unrelated authority/endogenous-agency research, reviewed-system
+references, evidence maps, and preserved source reports.
 
-**Finding:** the memory and context hints are complementary rather than duplicated. One describes durable remembered meaning; the other describes what may participate in a bounded act of cognition.
+**Finding:** the memory and context hints remain complementary rather than
+duplicated. One describes durable remembered meaning; the other describes what
+may participate in a bounded act of cognition.
 
 ## Scenario 3: delegation and privacy
 
-**Task:** Decide whether relationship information relevant to Ember may be included in a coding specialist's delegated context.
+**Task:** Decide whether relationship information relevant to Ember may be
+included in a coding specialist's delegated context.
 
 **Obvious default candidates:**
 
-- `docs/research/context-selection-and-cognitive-framing.md` for purpose-bounded, least-sufficient, permission-preserving projection;
-- `docs/research/capabilities-and-delegation.md` for the delegation envelope, specialist context, runtime ownership, and disclosure across delegation boundaries;
-- `docs/research/action-authority-and-permission.md` for access-versus-disclosure authority and the rule that delegation cannot amplify authority;
-- `docs/architecture/design-directions.md` where scope, recipient, provenance, and authority cross subsystem boundaries.
+- `docs/research/context-selection-and-cognitive-framing.md` for purpose-bounded,
+  least-sufficient, permission-preserving projection;
+- `docs/research/capabilities-and-delegation.md` for the delegation envelope,
+  specialist context, runtime ownership, and disclosure across delegation
+  boundaries;
+- `docs/research/action-authority-and-permission.md` for access-versus-disclosure
+  authority and the rule that delegation cannot amplify authority;
+- the corresponding semantic decisions and
+  `docs/architecture/design-directions.md` where the task changes architecture.
 
-**Not eager:** continuity source research, all reviewed-system notes, every evidence map, or all canonical concerns.
+**Not eager:** continuity source research, reviewed-system notes, every evidence
+map, or all canonical concerns.
 
-**Finding:** this is a useful stress case for overlap. Three canonical notes surface for different reasons, and their summaries/hints explain those reasons rather than collapsing them into a generic `privacy` tag.
+**Finding:** this remains a useful overlap stress case. Several canonical sources
+surface for distinct semantic reasons, and their summaries/hints explain those
+reasons rather than collapsing them into a generic `privacy` tag.
 
 ## Scenario 4: authority after circumstances change
 
-**Task:** Allow Ember to perform an external action under a standing grant after circumstances have changed.
+**Task:** Allow Ember to perform an external action under a standing grant after
+circumstances have changed.
 
 **Obvious default candidates:**
 
-- `docs/research/action-authority-and-permission.md` for standing authority, revocation, changed circumstances, external action, and fresh approval;
-- `docs/research/memory-and-remembering.md` where a formerly valid grant must remain historical evidence without acting as current mandate;
-- `docs/research/operational-model-sessions-and-surfaces.md` only when delayed work, retries, recovery, or stale observations are part of the changed circumstances;
-- `docs/architecture/design-directions.md` for the cross-cutting currentness/authority constraint.
+- `docs/research/action-authority-and-permission.md` for standing authority,
+  revocation, changed circumstances, external action, and fresh approval;
+- `docs/research/memory-and-remembering.md` where a formerly valid grant must
+  remain historical evidence without acting as current mandate;
+- `docs/research/operational-model-sessions-and-surfaces.md` when delayed work,
+  retries, recovery, or stale observations are involved;
+- the relevant accepted semantic decisions and cross-cutting design directions.
 
 **Not eager:** reviewed-system references or source artifacts.
 
-**Finding:** the catalogue does not mistake technical capability for authority and does not need a rule engine to make the relevant distinction visible.
+**Finding:** the catalogue does not mistake technical capability for authority
+and does not need a rule engine to make the relevant distinction visible.
 
 ## Scenario 5: architecture acceptance work
 
-**Task:** Add a fixture for a new concurrency/currentness failure case.
+**Task:** Add or review a fixture for a new concurrency/currentness failure case.
 
-**Current merged candidates:** `docs/architecture/design-directions.md` plus the canonical concern notes implicated by the fixture, especially memory/currentness and operational concurrency when applicable.
+**Primary current candidate:**
 
-**Expected future primary candidate:** `docs/architecture/acceptance-scenarios.md` with `role: scenario` once PR #30 is merged. The governing ADRs from #29 should likewise participate as `decision` documents while retaining their independent ADR lifecycle.
+- `docs/architecture/acceptance-scenarios.md`, whose metadata explicitly says to
+  read it when designing, implementing, or reviewing behavior that must preserve
+  Ember's cross-cutting semantic contracts and when selecting executable fixtures.
 
-**Not eager:** all canonical research merely because a scenario traces to several concerns, and never the whole deep/source tier.
+**Governing decision candidates:** the accepted ADRs implicated by the fixture.
+For concurrency/currentness work, the operational-continuity decision is an
+obvious candidate; memory/context/authority decisions should be opened only when
+the scenario actually crosses those axes.
 
-**Finding:** this scenario cannot be fully exercised against a scenario catalogue that is not on the base branch. That is a repository-state limitation, not evidence for semantic search or a broader discovery contract. Once the scenario document lands, missing metadata will be a deterministic validation failure rather than a silent omission.
+**Supporting material when needed:** `docs/architecture/design-directions.md` and
+specific canonical research notes provide rationale, but the task does not require
+loading the whole research corpus merely because the scenario catalogue traces
+back to completed research.
+
+**Finding:** the previously missing repository-state proof now succeeds. The
+catalogue exposes the canonical `scenario` source and the accepted `decision`
+sources as distinct document responsibilities. Discovery metadata does not turn
+scenario order into authority and does not flatten ADR lifecycle into routing
+status.
 
 ## Scenario 6: ordinary local implementation/debugging
 
-**Task:** Fix a local parser bug whose expected behavior is already established by nearby tests and does not alter Ember semantics.
+**Task:** Fix a local parser bug whose expected behavior is already established by
+nearby tests and does not alter Ember semantics.
 
-`AGENTS.md` explicitly permits discovery to be skipped for such a task. If the bug is in the documentation-discovery utility itself, `docs/documentation-discovery-guide.md` and the governing contract are sufficient procedural/design sources without loading the semantic research corpus.
+`AGENTS.md` explicitly permits discovery to be skipped for such a task. If the bug
+is in the documentation-discovery utility itself,
+`docs/documentation-discovery-guide.md` and the governing contract are sufficient
+procedural/design sources without loading the semantic research corpus.
 
-**Finding:** success includes staying out of the way. The policy does not turn every code edit into an excuse to inject all canonical semantic research.
+**Finding:** this previously successful case still holds after the architecture
+baseline expanded the catalogue. Success includes staying out of the way; adding
+ADRs and scenarios did not turn every local edit into an excuse to inject all
+canonical semantics.
 
 ## Scenario 7: investigate why a memory conclusion exists
 
-**Task:** Determine why memory research concluded that current belief must remain distinct from historical evidence, deeply enough to challenge the conclusion or verify its basis.
+**Task:** Determine why memory research concluded that current belief must remain
+distinct from historical evidence, deeply enough to challenge the conclusion or
+verify its basis.
 
-The intended progression is visible directly in metadata:
+The intended progression remains visible directly in metadata:
 
-1. default discovery surfaces `docs/research/memory-and-remembering.md` as the canonical `research` synthesis;
-2. deep discovery adds `docs/research/memory-and-remembering-references.md` as the `evidence` map for checking durable sources;
-3. deep discovery also makes `docs/research/source-material/memory-and-remembering-deep-research.md` reachable as preserved `source` material when reconstruction of the original investigation is actually necessary.
+1. default discovery surfaces `docs/research/memory-and-remembering.md` as the
+   canonical `research` synthesis;
+2. deep discovery adds `docs/research/memory-and-remembering-references.md` as the
+   `evidence` map for checking durable sources;
+3. deep discovery also makes
+   `docs/research/source-material/memory-and-remembering-deep-research.md`
+   reachable as preserved `source` material when reconstruction of the original
+   investigation is actually necessary.
 
-The evidence/source roles do not become canonical merely because this task asks a strong "why" question.
+The evidence/source roles do not become canonical merely because this task asks a
+strong "why" question.
 
-**Finding:** the default/deep split provides the intended evidence escape hatch without putting the entire research trail into ordinary coding context.
+**Finding:** the default/deep split continues to provide the intended evidence
+escape hatch without putting the entire research trail into ordinary coding
+context.
 
 ## Metadata quality review
 
-A manual pass after migration checked the interface quality of the metadata, not only parser validity.
+A completion pass after the architecture baseline landed checked the interface
+quality of the expanded metadata set, not only parser validity.
 
-### Summaries
+### Summaries and applicability hints
 
-Summaries were written to distinguish neighboring responsibilities. Examples of deliberate separation include:
+Summaries continue to distinguish neighboring responsibilities. ADR metadata
+states the accepted semantic decision it routes toward without replacing the ADR
+status field. Scenario metadata describes the catalogue as an architecture oracle
+rather than as another decision source. Design documents say when their concrete
+representation matters and explicitly avoid claiming long-term runtime authority.
 
-- memory research describes durable remembered meaning and lifecycle;
-- context research describes bounded cognitive projection;
-- delegation research describes material discretion, runtime ownership, and the delegation envelope;
-- authority research describes legitimate decision-space and disclosure/approval boundaries;
-- operational research describes sessions, surfaces, recovery, delivery, and long-running work.
+Applicability hints remain task/decision oriented rather than directory-wide topic
+tags. The new continuity ADRs distinguish identity/restart concerns from
+operational recovery/delivery/currentness concerns, while the acceptance catalogue
+advertises fixture-selection and semantic-review work.
 
-Evidence maps and preserved source reports say explicitly that they support or reconstruct the corresponding canonical note rather than restating its authority.
+### Role, discovery status, and lifecycle
 
-### Applicability hints
+`role`, `discovery_status`, and role-specific lifecycle remain independent:
 
-Hints are phrased as tasks and decisions, not topic keywords. Directory-wide copy/paste was avoided. Deep evidence/source hints explain when provenance, challenge, audit, or reconstruction justifies escalation.
-
-Overlap is intentional only where a real task crosses concerns. The specialist-context scenario, for example, should reasonably surface context, delegation, and authority documents for different semantic reasons.
-
-### Role/currentness/lifecycle
-
-The initial architecture model is the only current-corpus superseded document and points to the current cross-cutting synthesis. Preserved research exports remain `discovery_status: current` because they are still the retained source artifacts for current research, while `role: source` and their own prose preserve their non-canonical evidentiary function.
-
-No metadata field attempts to encode whether a future `decision` is accepted. That remains the ADR's own lifecycle.
+- an ADR is accepted because its source body says `Status: Accepted`, not because
+  discovery labels it `decision` or `current`;
+- the scenario catalogue is canonical because its source document and architecture
+  governance say so, not because it is frequently retrieved;
+- preserved research exports remain `source` material even though they are still
+  discoverable as current evidence artifacts;
+- the superseded initial architecture model remains historical even though it can
+  still be reached through history discovery.
 
 ### Routing contradictions
 
-No contradictory routing claim was found during the migration review. The main intentional overlaps correspond to cross-cutting tasks rather than generic "read this for everything" hints.
+No contradictory routing claim was found in the completion pass. Overlap continues
+to correspond to genuinely cross-cutting tasks rather than universal "read this
+for everything" hints.
+
+## Structural validation and CI
+
+The repository-local workflow is the deterministic hard gate for this audit. On a
+documentation-discovery change it:
+
+1. runs the focused and repository-level Node.js discovery tests;
+2. runs `node scripts/docs-discovery.mjs check` over the participating corpus;
+3. exercises default, deep, and all/history projections;
+4. exercises selected-document heading projection.
+
+The completion-audit change for issue #35 is required to pass that workflow against
+the post-#29/#30 corpus. A green run demonstrates parser/metadata/inclusion and
+projection integrity. It does **not** prove task relevance, which is why the
+qualitative scenarios above remain a separate part of the evidence.
 
 ## Contract findings
 
-Implementation did **not** expose a concrete flaw requiring a semantic change to #26.
+The post-architecture re-evaluation did **not** expose a concrete flaw requiring a
+semantic or tooling change to #26.
 
-The narrow parser choice validates one contract provision: with no adopted Ember runtime, a self-contained standard-library implementation is sufficient as long as the accepted frontmatter subset is explicit and unsupported YAML is rejected rather than silently misparsed.
+The architecture additions instead validate two contract boundaries:
 
-The absence of merged ADR/scenario artifacts is not a contract flaw. It is useful evidence for why participation is defined over all human-authored `docs/**/*.md`: when those documents do land, they cannot silently remain outside discovery merely because their authors forgot to opt in.
+- participation over human-authored `docs/**/*.md` prevents new ADR/scenario
+  knowledge from silently escaping discovery;
+- keeping `role`, `discovery_status`, and source-owned lifecycle separate allows
+  the catalogue to route to accepted decisions and canonical scenarios without
+  becoming a competing authority system.
+
+No task query, semantic matching, ranking, embeddings, external retrieval service,
+or runtime Ember context machinery is needed to close this completion gap.
 
 ## Overall result
 
-The adopted layer remains deliberately boring machinery around meaningful source documents:
+The adopted layer remains deliberately boring machinery around meaningful source
+documents:
 
 ```text
 agent policy
@@ -204,4 +335,9 @@ agent policy
                   -> deep evidence/source or history only when needed
 ```
 
-The implementation improves repository knowledge visibility without becoming a second authority system or a miniature retrieval platform.
+The post-#29/#30 audit closes the repository-state limitation recorded by the
+initial #27 evaluation. Continuity/restart work can now route through actual
+accepted decisions, canonical scenarios, design, and research, while architecture
+acceptance work has an explicit primary scenario source and governing decisions.
+The mechanism improves repository knowledge visibility without becoming a second
+authority system or a miniature retrieval platform.
