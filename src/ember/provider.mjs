@@ -2,11 +2,12 @@ import { spawn } from "node:child_process";
 import { basename } from "node:path";
 import { ProviderError } from "./errors.mjs";
 
-export const CONTRACT_VERSION=1,MAX_STDOUT_BYTES=1024*1024,MAX_STDERR_BYTES=64*1024;
+export const CONTRACT_VERSION=1,MAX_STDOUT_BYTES=1024*1024,MAX_STDERR_BYTES=64*1024,MAX_PROVIDER_TIMEOUT_SECONDS=2_147_483_647/1000;
 const decoder=new TextDecoder("utf-8",{fatal:true});
 
 export async function invokeProvider(command,arguments_,request,{timeoutSeconds,spawnImpl=spawn,terminationGraceMs=100,finalTerminationMs=500}={}){
   if(!Number.isFinite(timeoutSeconds)||timeoutSeconds<=0)throw new ProviderError("provider timeout must be a positive finite number");
+  if(timeoutSeconds>MAX_PROVIDER_TIMEOUT_SECONDS)throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
   let child;try{child=spawnImpl(command,[...arguments_],{shell:false,stdio:["pipe","pipe","pipe"]});}catch(error){throw new ProviderError(`provider is unavailable: ${error.message}`,{cause:error});}
   const stdout=[],stderr=[];let stdoutBytes=0,stderrBytes=0,oversized=false,timedOut=false,spawnError=null,closed=false,exitCode=null,exitSignal=null,settled=false,terminationStarted=false,killTimer=null,finalTimer=null;
   let resolveDone;const done=new Promise(resolve=>{resolveDone=resolve;});
