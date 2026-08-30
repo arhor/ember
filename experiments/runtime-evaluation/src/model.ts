@@ -176,7 +176,8 @@ function branded<Name extends string>(value: string, prefix: string): Brand<Name
 export const lineageId = (value: string): LineageId => branded<"LineageId">(value, "lineage-");
 export const meaningId = (value: string): MeaningId => branded<"MeaningId">(value, "meaning-");
 export const evidenceId = (value: string): EvidenceId => branded<"EvidenceId">(value, "evidence-");
-export const cognitionId = (value: string): CognitionId => branded<"CognitionId">(value, "cognition-");
+export const cognitionId = (value: string): CognitionId =>
+  branded<"CognitionId">(value, "cognition-");
 
 export function describeMeaning(meaning: Meaning): string {
   switch (meaning.kind) {
@@ -282,16 +283,72 @@ export function fixtureState(): PersistentState {
       established_at: learned,
       constitutive_boundaries: [{
         boundary_id: "minimal-continuity-v1",
-        text: "Ember owns this lineage across temporary cognition loci and must not fabricate experience during inactive intervals.",
+        text:
+          "Ember owns this lineage across temporary cognition loci and must not fabricate experience during inactive intervals.",
       }],
     },
     evidence: [relationship, fact, preference, commitmentRequest, commitmentAdoption, episode],
     meanings: [
-      { ...base(relationship.evidence_id, "user_testimony"), meaning_id: meaningId("meaning-relationship"), kind: "relationship", owner: "relationship:user-1", slot: "relationship", scope: "relationship:user-1", content: "Continuing collaborators", prospective_lifecycle: "none", supersedes: null, superseded_by: null },
-      { ...base(fact.evidence_id, "user_testimony"), meaning_id: meaningId("meaning-fact"), kind: "fact", owner: "user:user-1", slot: "home-server", scope: "relationship:user-1", content: "Home server is a Raspberry Pi 5", prospective_lifecycle: "none", supersedes: null, superseded_by: null },
-      { ...base(preference.evidence_id, "user_testimony"), meaning_id: meaningId("meaning-preference-a"), kind: "preference", owner: "user:user-1", slot: "docs-rationale-detail", scope: "project:ember/docs", content: "Prefer concise architectural rationale", prospective_lifecycle: "none", supersedes: null, superseded_by: null },
-      { ...base(commitmentAdoption.evidence_id, "ember_commitment"), meaning_id: meaningId("meaning-commitment"), kind: "commitment", owner: "ember", slot: "restart-provenance-check", scope: "project:ember/docs", content: "Check restart reconstruction preserves provenance", prospective_lifecycle: "live", supersedes: null, superseded_by: null },
-      { ...base(episode.evidence_id, "user_testimony"), meaning_id: meaningId("meaning-episode"), kind: "episode_meta", owner: "relationship:user-1", slot: "first-continuity-experiment", scope: "relationship:user-1", content: "The first continuity experiment received a nickname", prospective_lifecycle: "none", supersedes: null, superseded_by: null },
+      {
+        ...base(relationship.evidence_id, "user_testimony"),
+        meaning_id: meaningId("meaning-relationship"),
+        kind: "relationship",
+        owner: "relationship:user-1",
+        slot: "relationship",
+        scope: "relationship:user-1",
+        content: "Continuing collaborators",
+        prospective_lifecycle: "none",
+        supersedes: null,
+        superseded_by: null,
+      },
+      {
+        ...base(fact.evidence_id, "user_testimony"),
+        meaning_id: meaningId("meaning-fact"),
+        kind: "fact",
+        owner: "user:user-1",
+        slot: "home-server",
+        scope: "relationship:user-1",
+        content: "Home server is a Raspberry Pi 5",
+        prospective_lifecycle: "none",
+        supersedes: null,
+        superseded_by: null,
+      },
+      {
+        ...base(preference.evidence_id, "user_testimony"),
+        meaning_id: meaningId("meaning-preference-a"),
+        kind: "preference",
+        owner: "user:user-1",
+        slot: "docs-rationale-detail",
+        scope: "project:ember/docs",
+        content: "Prefer concise architectural rationale",
+        prospective_lifecycle: "none",
+        supersedes: null,
+        superseded_by: null,
+      },
+      {
+        ...base(commitmentAdoption.evidence_id, "ember_commitment"),
+        meaning_id: meaningId("meaning-commitment"),
+        kind: "commitment",
+        owner: "ember",
+        slot: "restart-provenance-check",
+        scope: "project:ember/docs",
+        content: "Check restart reconstruction preserves provenance",
+        prospective_lifecycle: "live",
+        supersedes: null,
+        superseded_by: null,
+      },
+      {
+        ...base(episode.evidence_id, "user_testimony"),
+        meaning_id: meaningId("meaning-episode"),
+        kind: "episode_meta",
+        owner: "relationship:user-1",
+        slot: "first-continuity-experiment",
+        scope: "relationship:user-1",
+        content: "The first continuity experiment received a nickname",
+        prospective_lifecycle: "none",
+        supersedes: null,
+        superseded_by: null,
+      },
     ],
     operations: { runtime_episodes: [], cognition_episodes: [] },
   };

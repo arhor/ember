@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import {
-  evidenceId,
-  lineageId,
-  meaningId,
   type EmberAdoptionEvidence,
   type Evidence,
+  evidenceId,
+  lineageId,
   type Meaning,
+  meaningId,
   type PersistentState,
   type UserEvidence,
 } from "./model.ts";
@@ -103,7 +103,10 @@ export function validatePersistentState(value: unknown): PersistentState {
   };
 }
 
-function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: ReadonlyMap<string, Evidence>) {
+function validateMeaningGraph(
+  meanings: readonly Meaning[],
+  evidenceById: ReadonlyMap<string, Evidence>,
+) {
   const meaningsById = new Map(meanings.map((meaning) => [meaning.meaning_id, meaning]));
   if (meaningsById.size !== meanings.length) throw new Error("meaning IDs must be unique");
 
@@ -113,7 +116,8 @@ function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: Readon
       throw new Error("meaning source evidence does not exist");
     }
     if (meaning.currentness === "current") {
-      const slot = `${meaning.kind}\u0000${meaning.owner}\u0000${meaning.slot}\u0000${meaning.scope}`;
+      const slot =
+        `${meaning.kind}\u0000${meaning.owner}\u0000${meaning.slot}\u0000${meaning.scope}`;
       if (currentSlots.has(slot)) throw new Error("two current meanings share one semantic slot");
       currentSlots.add(slot);
       if (meaning.superseded_by !== null) {
@@ -125,7 +129,9 @@ function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: Readon
     }
 
     if (meaning.supersedes !== null) {
-      if (meaning.supersedes === meaning.meaning_id) throw new Error("meaning cannot supersede itself");
+      if (meaning.supersedes === meaning.meaning_id) {
+        throw new Error("meaning cannot supersede itself");
+      }
       const predecessor = meaningsById.get(meaning.supersedes);
       if (!predecessor) throw new Error("supersession predecessor does not exist");
       assertCompatibleSupersession(predecessor, meaning);
@@ -138,7 +144,9 @@ function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: Readon
     }
 
     if (meaning.superseded_by !== null) {
-      if (meaning.superseded_by === meaning.meaning_id) throw new Error("meaning cannot supersede itself");
+      if (meaning.superseded_by === meaning.meaning_id) {
+        throw new Error("meaning cannot supersede itself");
+      }
       const successor = meaningsById.get(meaning.superseded_by);
       if (!successor) throw new Error("supersession successor does not exist");
       assertCompatibleSupersession(meaning, successor);

@@ -1,10 +1,13 @@
-import { access, mkdir, open, readFile, rename, unlink, type FileHandle } from "node:fs/promises";
+import { access, type FileHandle, mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { parsePersistentState, validatePersistentState } from "./validation.ts";
 import type { PersistentState } from "./model.ts";
 
-interface Lease { handle: FileHandle; ownerToken: string }
+interface Lease {
+  handle: FileHandle;
+  ownerToken: string;
+}
 
 export class EvaluationStore {
   readonly path: string;
@@ -24,7 +27,9 @@ export class EvaluationStore {
         await access(this.path);
         throw new Error(`continuity store already exists: ${this.path}`);
       } catch (error) {
-        if (error instanceof Error && error.message.startsWith("continuity store already exists")) throw error;
+        if (error instanceof Error && error.message.startsWith("continuity store already exists")) {
+          throw error;
+        }
         if (errorCode(error) !== "ENOENT") throw error;
       }
       await this.replaceDocument(state);
@@ -48,7 +53,10 @@ export class EvaluationStore {
       throw error;
     }
     const ownerToken = randomUUID();
-    await handle.writeFile(`${JSON.stringify({ lock_version: 1, owner_token: ownerToken, pid: process.pid })}\n`, "utf8");
+    await handle.writeFile(
+      `${JSON.stringify({ lock_version: 1, owner_token: ownerToken, pid: process.pid })}\n`,
+      "utf8",
+    );
     await handle.sync();
     this.lease = { handle, ownerToken };
     return this.lease;
@@ -63,10 +71,16 @@ export class EvaluationStore {
     await unlink(this.lockPath);
   }
 
-  async commit(expectedRevision: number, candidate: PersistentState, lease: Lease = this.requireLease()): Promise<PersistentState> {
+  async commit(
+    expectedRevision: number,
+    candidate: PersistentState,
+    lease: Lease = this.requireLease(),
+  ): Promise<PersistentState> {
     if (lease !== this.lease) throw new Error("commit requires the cooperating writer lease");
     const current = await this.load();
-    if (current.revision !== expectedRevision) throw new Error(`stale revision: expected ${expectedRevision}, found ${current.revision}`);
+    if (current.revision !== expectedRevision) {
+      throw new Error(`stale revision: expected ${expectedRevision}, found ${current.revision}`);
+    }
     const committed = validatePersistentState({ ...candidate, revision: expectedRevision + 1 });
     await this.replaceDocument(committed);
     return committed;
@@ -101,13 +115,20 @@ export class EvaluationStore {
 
 async function syncDirectory(directory: string): Promise<void> {
   const handle = await open(directory, "r");
-  try { await handle.sync(); } finally { await handle.close(); }
+  try {
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
 }
 
 function errorCode(error: unknown): string | undefined {
-  return typeof error === "object" && error !== null && "code" in error ? String((error as { code?: unknown }).code) : undefined;
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : undefined;
 }
 
 function isOwner(value: unknown, token: string): boolean {
-  return typeof value === "object" && value !== null && "owner_token" in value && (value as { owner_token?: unknown }).owner_token === token;
+  return typeof value === "object" && value !== null && "owner_token" in value &&
+    (value as { owner_token?: unknown }).owner_token === token;
 }

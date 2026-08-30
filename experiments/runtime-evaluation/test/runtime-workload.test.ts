@@ -94,12 +94,13 @@ test("provider timeout terminates the direct child", async () => {
   const input = { text: "hang", scope: "project:ember/docs", surface: "cli" as const };
   const projection = buildProjection(state, "ordinary", input);
   const { command, args } = providerCommand();
-  await assert.rejects(() => invokeProvider(command, args, {
-    contract_version: 1,
-    cognition_id: cognitionId("cognition-timeout"),
-    projection,
-    input: { text: input.text },
-  }, { timeoutMs: 50, terminationGraceMs: 50 }), /timed out/);
+  await assert.rejects(() =>
+    invokeProvider(command, args, {
+      contract_version: 1,
+      cognition_id: cognitionId("cognition-timeout"),
+      projection,
+      input: { text: input.text },
+    }, { timeoutMs: 50, terminationGraceMs: 50 }), /timed out/);
 });
 
 test("restart reconstruction preserves corrected scoped meaning for a fresh provider", async () => {

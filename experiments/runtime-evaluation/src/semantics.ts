@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import {
   evidenceId,
-  meaningId,
   type MeaningId,
+  meaningId,
   type PersistentState,
   type PreferenceMeaning,
   type UserEvidence,
@@ -26,7 +26,9 @@ export function supersedePreference(
   }
 
   const successorId = meaningId(`${old.meaning_id}-successor`);
-  const successorEvidenceId = evidenceId(`evidence-${old.meaning_id.slice("meaning-".length)}-successor`);
+  const successorEvidenceId = evidenceId(
+    `evidence-${old.meaning_id.slice("meaning-".length)}-successor`,
+  );
   if (state.meanings.some((meaning) => meaning.meaning_id === successorId)) {
     throw new Error("successor meaning identifier already exists");
   }
