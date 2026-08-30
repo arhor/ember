@@ -72,6 +72,5 @@ The completed research now constrains architecture through:
   architecture material;
 - [Semantic Architecture Decisions](../architecture/decisions/README.md) — the
   first accepted, representation-neutral decisions derived from the synthesis;
-- [Ember Architecture Acceptance Scenarios](https://github.com/arhor/ember/issues/21)
-  — issue tracking reusable cross-cutting fixtures for evaluating later
-  architecture choices.
+- [Ember Architecture Acceptance Scenarios](../architecture/acceptance-scenarios.md)
+  — reusable cross-cutting fixtures for evaluating later architecture choices.
