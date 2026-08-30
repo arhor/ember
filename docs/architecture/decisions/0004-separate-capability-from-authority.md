@@ -1,3 +1,12 @@
+---
+summary: "Accepted decision separating technical capability from live attributable authority and forbidding authority amplification through context, trust, delegation, or reachability."
+read_when:
+  - "Changing when Ember or a specialist may act, disclose information, use credentials, or rely on standing permission"
+  - "Reviewing authority propagation, revocation, changed circumstances, nested delegation, or consequential external effects"
+role: decision
+discovery_status: current
+---
+
 # ADR 0004: Capability and Authority Are Independent, and Authority Cannot Self-Amplify
 
 - **Status:** Accepted

@@ -1,3 +1,12 @@
+---
+summary: "Canonical semantics for sessions, surfaces, concurrent interactions, long-running work, delivery and retry, downtime, recovery, and partial failure around one continuing Ember."
+read_when:
+  - "Changing restart or recovery, session, surface, transport, or multi-interface behavior"
+  - "Designing long-running work, retries, duplicate delivery, concurrent interaction, downtime gaps, or resumption/currentness reconciliation"
+role: research
+discovery_status: current
+---
+
 # Operational Model, Sessions, and Surfaces Semantics
 
 This note addresses issue #8 and follows the concern-driven research discipline defined in issue #10.

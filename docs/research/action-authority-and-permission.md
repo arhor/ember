@@ -1,3 +1,13 @@
+---
+summary: "Canonical semantics for capability versus legitimate authority, standing grants, permission and consent, disclosure, changed circumstances, delegation, and fresh authorization."
+read_when:
+  - "Changing when Ember may perform an external action without fresh user approval"
+  - "Handling standing authority, revocation, changed circumstances, third-party effects, disclosure, or delegated authority"
+  - "Reviewing whether technical capability is being mistaken for permission"
+role: research
+discovery_status: current
+---
+
 # Action, Authority, and Permission Semantics
 
 This note addresses issue #7 and follows the concern-driven research discipline defined in issue #10.

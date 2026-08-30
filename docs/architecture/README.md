@@ -1,3 +1,12 @@
+---
+summary: "Navigation for Ember's current semantic architecture, accepted decisions, acceptance scenarios, design experiments, and superseded architecture history."
+read_when:
+  - "Finding the current architecture sources that govern or evaluate an Ember implementation change"
+  - "Tracing how project foundations, semantic decisions, acceptance scenarios, and research relate"
+role: guide
+discovery_status: current
+---
+
 # Ember Architecture
 
 Ember's canonical architecture is defined by semantic constraints rather than a
@@ -20,8 +29,9 @@ Current architecture material:
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
-- [Minimal Continuity Slice Contributor Guide](minimal-continuity-slice-runbook.md)
-  explains how to run, inspect, correct, test, and reproduce that experiment.
+- [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
+  no-install validation, foreground CLI, restart probe, lock recovery, and
+  optional live-provider smoke procedure for that executable experiment.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 

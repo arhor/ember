@@ -1,3 +1,12 @@
+---
+summary: "Reference investigation of NanoBot's compact agent loop, agent-versus-project workspace separation, memory consolidation, and inspectable small-runtime patterns."
+read_when:
+  - "Comparing Ember with a compact agent runtime before choosing execution-loop or memory-consolidation machinery"
+  - "Investigating agent-versus-project workspace separation or small-core trade-offs through NanoBot"
+role: reference
+discovery_status: current
+---
+
 # NanoBot Architecture Notes
 
 Reviewed against NanoBot commit `29025f5a8bfaeed8a8c0daf22c770afd9d023dd0`.

@@ -1,3 +1,12 @@
+---
+summary: "Preserved original Deep Research report behind the canonical continuity and identity synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original continuity and identity research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind continuity and identity conclusions"
+role: source
+discovery_status: current
+---
+
 # Archived Deep Research Artifact
 
 > **Status:** source material, not a canonical statement of Ember semantics.

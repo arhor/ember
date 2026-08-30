@@ -1,3 +1,12 @@
+---
+summary: "Project purpose and success criteria for Ember as a persistent personal agent whose continuity outlives models, sessions, processes, and interfaces."
+read_when:
+  - "Evaluating whether a proposed feature belongs in Ember's core purpose"
+  - "Changing assumptions about persistent identity, continuity, interfaces, capabilities, or the long-term product direction"
+role: foundation
+discovery_status: current
+---
+
 # Ember Vision
 
 ## Purpose

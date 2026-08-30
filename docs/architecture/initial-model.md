@@ -1,3 +1,13 @@
+---
+summary: "Pre-research architecture hypothesis retained to show how Ember's design assumptions evolved before the cross-cutting synthesis."
+read_when:
+  - "Tracing the architecture hypothesis that preceded the cross-cutting research synthesis"
+  - "Comparing current design directions with the project's pre-research model"
+role: design
+discovery_status: superseded
+superseded_by: docs/architecture/design-directions.md
+---
+
 # Initial Architecture Model
 
 > Status: historical pre-synthesis research hypothesis, not an ADR.
