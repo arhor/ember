@@ -58,7 +58,8 @@ jobs:
           free -h
 
       - name: Run repository documentation discovery
-        run: "$NODE24" scripts/docs-discovery.mjs list
+        run: |
+          "$NODE24" scripts/docs-discovery.mjs list
 
       - name: Validate unchanged JavaScript control on Node 24
         shell: bash
@@ -69,7 +70,8 @@ jobs:
           PATH="$(dirname "$NODE24"):$PATH" npm run check
 
       - name: Validate unchanged JavaScript implementation on Node 26
-        run: "$NODE26" --test
+        run: |
+          "$NODE26" --test
 
       - name: Install exact Node TypeScript experiment dependencies
         working-directory: experiments/runtime-evaluation
@@ -109,7 +111,8 @@ jobs:
       - name: Probe unchanged current JavaScript suite under Deno without changing the oracle
         continue-on-error: true
         shell: bash
-        run: "$DENO" test -A test/*.test.mjs 2>&1 | tee "$RUNNER_TEMP/deno-current-oracle.log"
+        run: |
+          "$DENO" test -A test/*.test.mjs 2>&1 | tee "$RUNNER_TEMP/deno-current-oracle.log"
 
       - name: Probe current production CLI directly under Deno
         shell: bash
