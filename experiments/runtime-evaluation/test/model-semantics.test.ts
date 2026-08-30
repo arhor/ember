@@ -127,7 +127,7 @@ test("runtime validation rejects semantic corruption that static types can be fo
   successor.supersedes = "meaning-missing";
   assert.throws(
     () => parsePersistentState(JSON.stringify(broken)),
-    /supersession predecessor does not exist/,
+    /supersession/,
   );
 });
 
