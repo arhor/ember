@@ -1,3 +1,12 @@
+---
+summary: "Index and cross-ADR validation matrix for Ember's accepted representation-neutral semantic architecture decisions."
+read_when:
+  - "Checking which accepted semantic decisions constrain an architecture or implementation change"
+  - "Validating restart, memory correction, delegation, authority, delivery, or recovery behavior across multiple ADRs"
+role: guide
+discovery_status: current
+---
+
 # Semantic Architecture Decisions
 
 These ADRs form the stable semantic boundary between Ember's completed research

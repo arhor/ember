@@ -1,3 +1,12 @@
+---
+summary: "Preserved Deep Research report behind the canonical operational-model synthesis; non-canonical source material retained for provenance and reconstruction."
+read_when:
+  - "Reconstructing the original operational-model research after the canonical note and evidence map are insufficient"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind sessions, surfaces, recovery, retry, and delivery conclusions"
+role: source
+discovery_status: current
+---
+
 # Operational Model, Sessions, and Surfaces - Research Source
 
 > **Source-material status:** non-canonical research artifact preserved behind the issue #8 synthesis. The canonical Ember-facing conclusions live in [Operational Model, Sessions, and Surfaces Semantics](../operational-model-sessions-and-surfaces.md), and the portable bibliography lives in the [evidence map](../operational-model-sessions-and-surfaces-references.md).

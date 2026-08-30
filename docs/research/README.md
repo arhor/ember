@@ -1,3 +1,12 @@
+---
+summary: "Research governance and navigation for Ember's canonical concern notes, evidence maps, preserved source artifacts, reviewed systems, and cross-cutting synthesis."
+read_when:
+  - "Adding or reviewing Ember research artifacts and needing the canonical, evidence, and source hierarchy"
+  - "Tracing which research note, evidence map, or preserved source artifact owns a research concern"
+role: guide
+discovery_status: current
+---
+
 # Architecture Research
 
 This directory records source-level reconnaissance of existing agent systems before Ember commits to its own implementation architecture.
@@ -63,6 +72,5 @@ The completed research now constrains architecture through:
   architecture material;
 - [Semantic Architecture Decisions](../architecture/decisions/README.md) — the
   first accepted, representation-neutral decisions derived from the synthesis;
-- [Ember Architecture Acceptance Scenarios](https://github.com/arhor/ember/issues/21)
-  — issue tracking reusable cross-cutting fixtures for evaluating later
-  architecture choices.
+- [Ember Architecture Acceptance Scenarios](../architecture/acceptance-scenarios.md)
+  — reusable cross-cutting fixtures for evaluating later architecture choices.

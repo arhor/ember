@@ -1,3 +1,12 @@
+---
+summary: "Accepted decision separating continuing work, semantic occurrence, delivery, external effects, and current applicability across sessions, surfaces, retries, downtime, and recovery."
+read_when:
+  - "Changing session, surface, delivery, retry, cancellation, long-running work, downtime, or recovery behavior"
+  - "Handling duplicate occurrence, ambiguous effect, stale completion, truthful gap, or currentness reconciliation"
+role: decision
+discovery_status: current
+---
+
 # ADR 0005: Operational Continuity Distinguishes Work, Occurrence, Delivery, Effects, and Currentness
 
 - **Status:** Accepted

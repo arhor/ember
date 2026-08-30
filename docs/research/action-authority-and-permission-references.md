@@ -1,3 +1,12 @@
+---
+summary: "Portable evidence map supporting canonical authority semantics with security, HCI, privacy, multi-principal, human-factors, and runtime sources."
+read_when:
+  - "Checking evidence behind standing authority, fresh approval, revocation, disclosure, or changed-circumstance conclusions"
+  - "Challenging capability-versus-authority, delegated-authority, consent, or confirmation-fatigue assumptions"
+role: evidence
+discovery_status: current
+---
+
 # Action, Authority, and Permission Evidence Map
 
 This document is the portable evidence companion to [Action, Authority, and Permission Semantics](action-authority-and-permission.md).

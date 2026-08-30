@@ -1,3 +1,12 @@
+---
+summary: "Navigation for Ember's current semantic architecture, accepted decisions, acceptance scenarios, design experiments, and superseded architecture history."
+read_when:
+  - "Finding the current architecture sources that govern or evaluate an Ember implementation change"
+  - "Tracing how project foundations, semantic decisions, acceptance scenarios, and research relate"
+role: guide
+discovery_status: current
+---
+
 # Ember Architecture
 
 Ember's canonical architecture is defined by semantic constraints rather than a

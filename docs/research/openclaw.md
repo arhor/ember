@@ -1,3 +1,12 @@
+---
+summary: "Reference investigation of OpenClaw's runtime ownership boundaries, curated-versus-episodic memory, provenance-gated promotion, and specialist-runtime integration."
+read_when:
+  - "Comparing Ember with OpenClaw when designing specialist runtime ownership or memory promotion"
+  - "Investigating curated versus episodic memory, provenance gates, or cheap-versus-deep recall patterns"
+role: reference
+discovery_status: current
+---
+
 # OpenClaw Architecture Notes
 
 Reviewed against OpenClaw commit `19be0f6dc0942e56ec52f1ad9871511f37f404c9`.

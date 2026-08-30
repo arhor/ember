@@ -1,3 +1,13 @@
+---
+summary: "Proposed Node.js design for Ember's minimal restart-continuity experiment, including durable meaning, bounded projection, lifecycle truth, provider isolation, and deterministic acceptance."
+read_when:
+  - "Implementing or reviewing the first executable continuity slice from issues #22 and #23"
+  - "Choosing the experiment's Node.js runtime, JSON persistence, single-writer boundary, provider protocol, CLI, or deterministic tests"
+  - "Checking how AS-CONT-01, AS-MEM-01, and AS-MEM-04 map to one restart-surviving vertical slice"
+role: design
+discovery_status: current
+---
+
 # Minimal Continuity Vertical Slice
 
 > Status: proposed executable design for issue
@@ -236,18 +246,31 @@ No shell is used and no provider process or session is reused. Exit code zero,
 supported contract version, one non-empty reply, at most 1 MiB of stdout, and
 valid JSON are required. Extra stdout, malformed or oversized output, non-zero
 exit, or expiry of the explicitly configured positive timeout fails the cognition
-episode. Ember reads at most 64 KiB of stderr for the current CLI diagnostic but
-does not write it to the canonical document or promote it to evidence or meaning.
-The timeout terminates the
-subprocess and records only the outcome the runtime can justify; it does not
-trigger an automatic retry.
+episode. Ember retains at most 64 KiB of stderr for the current CLI diagnostic,
+continues draining and discarding excess bytes so the child cannot block on that
+pipe, and never writes stderr to canonical state or promotes it to evidence or
+meaning.
+
+Timeout and oversized stdout use a bounded direct-child shutdown on supported
+Linux: stop collecting response bytes, close the local pipe readers, send
+`SIGTERM`, wait a short fixed grace period, then send `SIGKILL` if the child is
+still live. The adapter itself has a final deadline; it does not wait without
+bound for a `close` event. A signal error or missing terminal observation records
+`outcome_unknown`/termination-unconfirmed rather than claiming the provider did
+nothing. This contains neither child-created descendants nor ambient effects; a
+descendant-process sandbox or process-group policy is deferred. No failure path
+triggers an automatic retry.
 
 ### CLI surface
 
 One foreground CLI is sufficient because the slice tests process and cognition
 replacement, not surface diversity.
 
-The executable command is `ember` with these commands:
+The command examples below use `ember`. In a repository checkout, the exact
+no-install entry point is the executable, Node-shebang-bearing `bin/ember.mjs`;
+`node bin/ember.mjs` is the portable direct invocation. The `package.json` bin
+mapping makes the shorter name available only after an optional link or install.
+Its command surface is:
 
 - `ember init --state PATH --name Ember --principal user-1` creates one new
   lineage bound to the slice's one supported local principal and refuses to
@@ -262,9 +285,17 @@ The executable command is `ember` with these commands:
   creates corrective evidence attributed to the asserted local principal and a
   validated superseding `fact` or `preference` rather than editing history; other
   meaning kinds are refused because their revision semantics are outside the
-  slice; and
+  slice;
 - `ember check --state PATH` validates the complete canonical document without a
-  provider.
+  provider and reports lock metadata/liveness without rendering retained
+  payloads;
+- `ember lock-status --state PATH` reports the lock owner token, PID, hostname,
+  acquisition time, and the bounded liveness diagnosis without mutating either
+  the lock or canonical state; and
+- `ember quarantine-stale-lock --state PATH --owner-token TOKEN --confirm-quiescent`
+  refuses unless the operator explicitly asserts quiescence, the token still
+  matches, and a same-host PID probe returns `ESRCH`; it renames rather than
+  deletes the lock and never treats age as proof of staleness.
 
 Inside `ember run`, explicit colon commands provide the minimal promotion path:
 
@@ -321,29 +352,70 @@ add B, mark A `superseded`, and link both directions. Under the supported local
 same-filesystem contract, readers observe either the prior complete file or the
 replacement complete file, never a deliberately split A/B transition. This does
 not promise transactional durability across every filesystem, device, or crash
-point. The
-format is directly inspectable, diffable in fixture failures, available in the
-Python standard library, and replaceable behind two store operations:
+point. The format is directly inspectable, diffable in fixture failures,
+available through Node.js built-ins, and replaceable behind a small store
+boundary:
 
 ```text
 load() -> ValidatedState
-commit(expected_revision, ValidatedState) -> new_revision
+acquireWriteLease() -> ExclusiveLock
+commit(ExclusiveLock, expected_revision, ValidatedState) -> new_revision
+releaseWriteLease(ExclusiveLock)
 ```
 
-`commit` acquires an advisory exclusive lock against cooperating Ember writers,
-checks the expected revision,
-validates the complete candidate state, writes a temporary file in the same
-directory, flushes and synchronizes it, atomically replaces the canonical file,
-and synchronizes the directory. Validation and failures before replacement leave
-the previous document authoritative. Failure after replacement begins but before
-directory synchronization has an indeterminate durability outcome: the runtime
-records no stronger success claim, and recovery reloads and validates whichever
-complete revision the canonical path actually exposes. On the supported local
-filesystem, atomic replacement prevents a cooperating reader from observing a
-partially written canonical JSON document; it does not manufacture certainty
-about post-crash durability, defend against non-cooperating same-user mutation,
-or generalise to copied or network filesystems. Read-only inspection does not
-require the writer lock.
+Node.js has no built-in `flock`, so the slice does not claim an advisory kernel
+lock. A mutating process first creates a same-directory lock file with exclusive
+creation (`fs.open(lockPath, "wx", 0o600)`) and keeps its file handle for the
+write lease. The lock contains a version, random owner token, PID, hostname, and
+acquisition time; the owner writes and synchronizes that metadata before treating
+the lease as acquired. A crash during lock initialization therefore leaves a
+malformed lock that later writers conservatively refuse. All supported mutation
+paths cooperate with this protocol; read-only inspection does not require the
+lease. The lock is operational coordination, not canonical evidence that Ember
+performed cognition or observation during its lifetime.
+
+If writing or synchronizing the metadata fails while the creating process still
+owns the handle, it closes the handle and makes a best-effort cleanup of the path
+before returning failure. A process crash can still leave empty or partial bytes.
+Because such a lock has no trustworthy owner token, the supported quarantine
+command cannot pretend to verify it: after independently establishing global
+quiescence, the operator must move the malformed file aside as an explicit manual
+maintenance action. Until then, every supported writer refuses it.
+
+If the lock path already exists, acquisition fails closed. The diagnostic may
+probe a same-host PID with `process.kill(pid, 0)` only after validating it as a
+positive safe integer. Zero, negative, fractional, oversized, or otherwise
+malformed PIDs are never passed to `process.kill`, because Node assigns broader
+process or process-group meanings to some such values. A live valid PID,
+permission failure, different host, malformed record, or other indeterminate
+result remains locked. `ESRCH` permits only an *apparently stale* diagnosis. Ember never treats
+age alone as staleness and never automatically deletes a lock. After the operator
+has independently quiesced all Ember writers, a maintenance path may re-read the
+same owner token, confirm the same-host PID is still absent, and rename the lock
+to a uniquely named quarantine artifact before a later acquisition. PID reuse can
+therefore cause a safe availability failure—an unrelated live process may keep an
+actually stale lock from quarantine—but cannot justify concurrent writers. The
+quiescence requirement and quarantine artifacts are explicit limitations of this
+cooperative experiment, not distributed locking.
+
+Clean release re-reads and verifies the owner token before closing the handle and
+unlinking the lock; a mismatch fails closed and preserves the lock for diagnosis.
+The supported protocol assumes no concurrent manual lock maintenance and cannot
+defend against non-cooperating same-user mutation.
+
+With a valid lease, `commit` checks the expected revision, validates the complete
+candidate state, writes a uniquely named temporary file in the same directory,
+flushes it with `FileHandle.sync()`, closes it, atomically replaces the canonical
+path with `fs.rename()`, and opens and synchronizes the parent directory on the
+supported local Linux filesystem. Validation and failures before replacement
+leave the previous document authoritative. Failure after replacement begins but
+before directory synchronization has an indeterminate durability outcome: the
+runtime records no stronger success claim, and recovery reloads and validates
+whichever complete revision the canonical path actually exposes. Atomic rename
+prevents a cooperating reader from observing a partially written canonical JSON
+document on that filesystem; it does not manufacture certainty about post-crash
+durability, generalise to Windows rename behavior, copied stores, or network
+filesystems, or make Node's buffered streams durable by themselves.
 
 This is not event sourcing. Current and historical meanings coexist in the
 document, while explicit links preserve the change that matters to the fixture.
@@ -472,8 +544,11 @@ Before every commit and after every load, ordinary code enforces at least:
     `used_meaning_ids`; unknown fields are rejected, so a result cannot request
     state mutation, evidence creation, or lineage revision. Ambient subprocess
     isolation is explicitly not claimed;
-16. a commit's expected revision still matches after the provider call; and
-17. a projection can reference only meanings and evidence selected from the
+16. every mutation holds an exclusive-create lease whose owner token still
+    matches at commit and clean release; stale-lock quarantine requires explicit
+    operator-asserted quiescence, the expected token, and a same-host absent PID;
+17. a commit's expected revision still matches after the provider call; and
+18. a projection can reference only meanings and evidence selected from the
     validated revision it records.
 
 Exact scope equality for supersession is intentionally conservative. Overlapping
@@ -601,12 +676,13 @@ current input, and explicit selection purpose.
 
 ### Initial start
 
-1. `ember init` creates a new document with format version, revision, the asserted
-   single supported principal, random lineage ID, display name, and the one
-   fixture-level constitutive boundary: Ember owns continuity across temporary
-   loci and must not fabricate experience during inactive intervals.
+1. `ember init` first acquires the exclusive-create lease, then creates a new
+   document with format version, revision, the asserted single supported
+   principal, random lineage ID, display name, and the one fixture-level
+   constitutive boundary: Ember owns continuity across temporary loci and must
+   not fabricate experience during inactive intervals.
 2. It refuses to overwrite or merge an existing lineage.
-3. `ember run` acquires the writer lock, validates the entire document, adds a
+3. `ember run` acquires the exclusive-create write lease, validates the entire document, adds a
    runtime episode with `started_at`, commits it, and begins the foreground loop.
 4. Each semantic command constructs its one source occurrence and validated
    meaning transition in one candidate revision; the store either exposes that
@@ -622,10 +698,12 @@ current input, and explicit selection purpose.
 
 ### Clean full stop
 
-`:quit` stops accepting input, commits the runtime's `last_durable_observation_at`,
-`clean_stop_at`, and `stop_reason=explicit_cli_exit`, releases the lock, and exits.
-The test verifies the operating-system process is gone. No worker, provider
-thread, scheduler, or daemon remains. Only the continuity document persists.
+`:quit` stops accepting input, commits the runtime's
+`last_durable_observation_at`, `clean_stop_at`, and
+`stop_reason=explicit_cli_exit`, token-checks and releases the lock, and exits.
+The test verifies the operating-system process is gone and the lock path is
+absent. No worker, provider thread, scheduler, or daemon remains. Only the
+continuity document persists.
 
 Under this explicit topology, the later runtime can truthfully state that the
 supported Ember runtime performed no cognition or observation between the clean
@@ -635,7 +713,7 @@ unchanged.
 ### Restart after elapsed downtime
 
 1. A fresh operating-system process and fresh provider adapter instance acquire
-   the same store's lock.
+   a new exclusive-create lease for the same store.
 2. The runtime validates the complete document before claiming lineage or current
    state.
 3. It records a new runtime start and derives the recovery account from the prior
@@ -652,9 +730,16 @@ unchanged.
 
 ### Abrupt termination or crash
 
-An abrupt stop cannot commit a trustworthy stop time. The store can preserve only
-the complete canonical revision actually exposed by recovery, while the next
-process observes an open prior runtime episode. It records
+An abrupt stop cannot commit a trustworthy stop time and normally leaves the lock
+file behind. A later mutating process fails closed rather than pretending the
+owner is gone. After an operator independently establishes quiescence and the
+same-host PID probe reports `ESRCH`, the maintenance command may quarantine the
+token-matched lock; only then can a fresh process acquire a new lease. PID reuse
+or indeterminate liveness may leave the store unavailable until the conflict is
+resolved outside the supported experiment.
+
+The store can preserve only the complete canonical revision actually exposed by
+recovery, while the next process observes an open prior runtime episode. It records
 `uncertain_interruption_boundary` beginning at the prior episode's
 `last_durable_observation_at` and preserves any started-but-not-terminal cognition
 episode as `outcome_unknown`. It makes no negative claim about cognition,
@@ -717,15 +802,52 @@ boundary.
 
 | Choice | Minimal required property | Why this choice now | Rejected or deferred alternative | What it does not commit |
 |---|---|---|---|---|
-| Python 3.12+ standard library | One small CLI with JSON, process invocation, locking, UTC time, hashing, and deterministic tests. | Lowest implementation and dependency surface for the experiment; supports rapid inspection on the intended local Linux environment. | Go or Rust improve single-binary deployment but add implementation cost before runtime performance or distribution is a measured problem. Node adds no required property. | Ember's long-term implementation language or package layout. The JSON contract and fixture remain portable. |
+| JavaScript on Node.js 24.x, built-ins only | One small CLI with JSON, direct process invocation, exclusive file creation, UTC time, hashing, random IDs, and deterministic tests. | The user explicitly selected JavaScript for this experiment. Node 24 provides every selected property without runtime or development dependencies, compilation, or bundling. Ember's existing documentation-discovery utility already proves Node 24 is available, but that utility did not itself choose Ember's runtime; this design does. | TypeScript would add a compile step before static typing has demonstrated value. Bun or Deno would add another runtime. Go or Rust improve single-binary deployment but add implementation cost before distribution or performance is a measured problem. | Ember's long-term implementation language, package ecosystem, or distribution form. The JSON and provider contracts remain portable. |
 | One canonical JSON document | Atomic preservation of the tiny linked semantic state and direct inspection. | Simpler than schema migrations and queries for one writer and a few records; whole-state validation is easy. | SQLite earns its transaction/concurrency/query strengths when multiple writers, scale, or partial updates become real requirements. Markdown is a useful derived view but weak canonical validation. JSONL/event sourcing introduces replay semantics explicitly deferred. | Long-term persistence, indexing, backup, or migration strategy. Store access stays behind load/commit. |
-| Advisory lock + revision + atomic replace | Prevent concurrent supported writers, stale commits, and partially written supersession state. | These are the minimum integrity guarantees once B and A must change coherently around a provider call; post-replace durability failure remains explicitly indeterminate. | A daemon, database transaction manager, broker, or distributed lock has no selected-scenario need. | Multi-process, multi-host, or fork semantics. Multiple writable copies are unsupported. |
+| Exclusive-create lock file + revision + atomic replace | Prevent concurrent cooperating writers, stale commits, and partially written supersession state on one supported local Linux filesystem. | Node has no built-in `flock`; `open(..., "wx")`, an owner token, fail-closed liveness diagnosis, explicit stale quarantine, full-state revision checking, file sync, rename, and directory sync are the smallest truthful built-in-only boundary. | An npm lock package, daemon, database transaction manager, broker, or distributed lock adds machinery with no selected-scenario need. | Hostile same-user containment, automatic crash-lock recovery, multi-host locking, Windows durability equivalence, or fork semantics. Multiple writable copies are unsupported. |
 | Foreground CLI process | One user-facing path and a process that demonstrably stops. | Directly exercises AS-CONT-01 without background lifecycle or delivery complexity. | Daemon/service, Telegram, voice, web, and multiple surfaces are explicit non-goals. | Future runtime topology or surface protocol. |
 | Two-mode deterministic projection | Governing current state by default and explicit bounded historical/gap reconstruction. | Passes the three fixtures without recency, embedding, broad search, or maximal context. | Embeddings, vector search, reranking, compaction, and natural-language retrieval wait for measured failure. | Future context algorithm or provider prompt layout. |
 | One-shot provider subprocess contract | Cognition without letting provider session state own continuity. | One JSON request/result and a fresh direct-argv process are sufficient for the slice and easy to fake deterministically. | A provider hierarchy, conversation-resume API, agent protocol, tools, or delegated runtime is unnecessary. | Provider vendor, model, SDK, structured-output technique, future adapter family, or hostile-process sandbox. |
 | Explicit CLI promotion | A remembered item must be derived from accountable evidence. | Avoids pretending automatic significance and memory consolidation are solved; maximally inspectable baseline. | Automatic model promotion, reflection, consolidation, and background memory work remain experiments. | Permanent manual memory management. Later candidate mutations can be measured against this baseline. |
 | RFC 3339 UTC times and random stable IDs | Distinguish named times and correlate records without using text or list position as identity. | Standard, readable, available without services. | Content hashes alone collapse identical real occurrences; sequential list position turns representation order into semantics. | Global ordering, distributed clocks, occurrence deduplication, or unique lineage proof. |
 | Schema version 1 and monotonic revision | Refuse unknown representations and detect stale writes. | Smallest migration/currentness foothold needed for a durable experimental artifact. | A migration framework is premature; v1 load either succeeds completely or fails clearly. | Compatibility policy beyond the first implementation. |
+
+### Minimal JavaScript representation
+
+Issue #23 should use native ECMAScript modules in `.mjs` files so module behavior
+is explicit without transpilation or a repository-wide `type` switch:
+
+```text
+bin/ember.mjs
+src/ember/*.mjs
+test/*.test.mjs
+test/fixtures/providers/*.mjs
+package.json
+```
+
+`package.json` is a zero-dependency runtime manifest: it marks the package
+private, declares Node 24, exposes the `ember` bin, and supplies thin `test` and
+`check` scripts. It has no runtime or development dependencies and creates no
+required install step. Contributors and CI can invoke the source directly with
+`node bin/ember.mjs` and tests with `node --test`; there is no build, bundle,
+code-generation, or transpilation phase.
+
+The implementation uses only `node:fs/promises`, `node:path`, `node:os`,
+`node:crypto`, `node:child_process`, `node:process`, `node:util`, `node:test`, and
+`node:assert/strict` as their responsibilities require. Provider execution uses
+`spawn(command, args, {shell: false})`, bounded byte collectors for stdout and
+stderr, and a bounded direct-child termination path. The runtime must drain both
+streams concurrently so a noisy child cannot deadlock before size enforcement;
+it does not claim descendant-process containment.
+An injected clock and ID source keep deterministic tests independent of wall
+time and randomness.
+
+CI pins Node 24.x, runs `node --test`, then runs the documentation-discovery tests
+and `node scripts/docs-discovery.mjs check`. No `npm install` or build artifact is
+needed. The contributor runbook records direct CLI commands, the supported local
+Linux filesystem assumption, how to inspect or quarantine an apparently stale
+lock under quiescence, the full stop/restart probe, and the fact that a live-model
+smoke test is optional and non-gating.
 
 The choices are falsifiable. SQLite should replace JSON if atomic whole-document
 writes, inspection, or one-writer scope become limiting. A daemon should replace
@@ -829,7 +951,10 @@ and a provider can express continuity without owning it.
 | Crash after the payload-free expression occurrence commits but before CLI display | Inspection shows the expression occurrence and selection manifest; no meaning or reply payload was retained. `delivery_status=pending` means delivery is unknown, not that the response was seen. |
 | Crash after CLI display but before the delivery-status commit | The human may have seen all or part of the transient reply, while canonical `delivery_status=pending` still means unknown. Recovery never replays the unavailable reply or upgrades the delivery claim. |
 | Replace became visible but directory synchronization failed or crashed | Commit durability is indeterminate. Recovery reloads and validates the complete canonical revision actually present and does not claim that either revision definitely survived before observing it. |
-| Second writer or copied store | Refuse the concurrent writer. A later independent copy is outside supported topology and must not be described as uniquely the same Ember. |
+| Existing live, unknown, or cross-host lock | Refuse mutation and report only the bounded lock diagnosis; do not break it by age or convenience. |
+| Malformed or partially initialized lock | Refuse every supported writer. The token-based command cannot quarantine unverifiable ownership; only explicit manual quarantine after independently established quiescence can restore availability. |
+| Apparently stale same-host lock | Require operator-asserted quiescence, exact token match, and `ESRCH`; quarantine rather than delete. PID reuse may preserve a stale lock as an availability failure. |
+| Second writer or copied store | Exclusive creation refuses the concurrent cooperating writer. A later independent copy is outside supported topology and must not be described as uniquely the same Ember. |
 | Requested correction changes constitutive state, crosses owner/scope, or invokes unresolved deletion semantics | Refuse the operation and surface the unimplemented semantic boundary. |
 
 ## Deferred capabilities and known limitations
@@ -889,13 +1014,15 @@ the chosen representation:
 
 ## Independently testable implementation plan for issue #23
 
-Each step ends in deterministic tests and can be reviewed without requiring the
-later steps.
+Each step ends in deterministic `node:test` coverage and can be reviewed without
+requiring the later steps. Implementation remains native `.mjs`; no compile or
+bundle step is introduced.
 
 ### 1. State model and invariant validator
 
-Implement schema v1 data structures and whole-state validation. Test a valid
-minimal fixture plus failures for duplicate current slots, missing or invalid
+Create the private zero-dependency Node 24 manifest and native ESM module
+boundaries, then implement schema v1 data structures and whole-state validation.
+Test a valid minimal fixture plus failures for duplicate current slots, missing or invalid
 kind-specific slots, broken evidence links, mismatched owner/scope supersession,
 cycles, invalid prospective lifecycle, unavailable payload leakage, principal
 mismatch in commands, owners, evidence, or runtime/cognition episodes,
@@ -903,11 +1030,18 @@ constitutive state in `meanings`, and attempted constitutive mutation.
 
 ### 2. Atomic file store
 
-Implement create-only initialization, locked `load`, and
-`commit(expected_revision)` using same-directory atomic replacement. Test
-round-trip, stale revision, failed validation, simulated interrupted temporary
-write, post-replace durability uncertainty, and refusal to overwrite an existing
-lineage.
+Implement create-only initialization, unlocked read-only `load`, exclusive-create
+write leases, token-checked release, fail-closed lock diagnosis, explicit
+quiescent stale-lock quarantine, and `commit(lease, expected_revision)` using
+same-directory file sync, atomic rename, and directory sync on local Linux. Test
+round-trip, concurrent refusal, safe-PID validation, PID
+alive/`ESRCH`/permission/foreign-host cases, token mismatch, PID-reuse
+availability failure, partial metadata write cleanup, fail-closed malformed lock,
+retained quarantine artifacts,
+stale revision, failed validation, interrupted temporary write, post-replace
+durability uncertainty, and refusal to overwrite an existing lineage. Tests must
+not call this an advisory lock or claim equivalent guarantees on network
+filesystems or Windows.
 
 ### 3. Evidence and explicit semantic operations
 
@@ -951,9 +1085,11 @@ transcript replay.
 
 ### 8. One-shot provider boundary
 
-Implement the versioned one-request/one-result stdin/stdout contract using direct
-argv invocation without a shell and without deliberately passing the store path.
-Use scripted providers to test a fresh process after restart, explicit
+Implement the versioned one-request/one-result stdin/stdout contract with
+`node:child_process.spawn`, an argument array, `shell: false`, concurrent bounded
+stdout/stderr drains, bounded `SIGTERM`/`SIGKILL` direct-child shutdown, and no
+deliberately passed store path. Test termination-unconfirmed results and document
+that descendants are not contained. Use `.mjs` scripted providers to test a fresh process after restart, explicit
 principal/scope in the request and cognition evidence, timeout/non-zero/extra or
 oversized output/malformed or empty result handling, selection manifests, and the
 fact that the supported provider result cannot mutate canonical state. Assert
@@ -963,23 +1099,30 @@ isolation is not provided.
 
 ### 9. CLI and inspect/correct integration
 
-Implement the exact command surface and deterministic human/JSON inspection.
-Use subprocess tests with temporary stores for init, run commands, explain,
-correct, check, clean quit, and restart. Verify inspect remains available when the
-provider fails.
+Implement the exact command surface, executable Node-shebang CLI, package bin,
+thin package scripts, and
+deterministic human/JSON inspection. Use Node child-process tests with temporary
+stores for init, run commands, explain, correct, check, lock status, stale-lock
+quarantine, clean quit, and restart. Verify inspect remains available when the
+provider fails. Assert that direct `node bin/ember.mjs` execution requires no
+install or build step.
 
 ### 10. Longitudinal acceptance probe
 
-Run `minimal-continuity-v1` end to end with a deterministic clock and scripted
-provider in separate operating-system processes. Assert all semantic state,
+Run `minimal-continuity-v1` end to end under `node --test` with a deterministic
+clock and scripted provider in separate operating-system processes. Assert all semantic state,
 recovery, projection, inspection, and response requirements from the ten-point
 review. The test must delete every in-memory/provider-thread object and never feed
-the previous transcript into restart.
+the previous transcript into restart. Add CI pinned to Node 24.x that runs the
+complete Node test suite plus documentation discovery tests and validation,
+without dependency installation or a build phase.
 
 ### 11. Manual model smoke test and contributor guide
 
-Document the local store assumption, command sequence, inspection/correction
-path, fixture meanings, restart proof, and known limitations. Run the same
+Write the contributor runbook with the Node 24 prerequisite, direct CLI and test
+commands, local Linux store assumption, no-build/no-install workflow, lock
+diagnosis and quiescent quarantine procedure, inspection/correction path, fixture
+meanings, restart proof, and known limitations. Run the same
 projection through one configured live cognition adapter as a non-deterministic
 smoke test, clearly separating it from CI acceptance. Record any provider-specific
 presentation changes outside canonical state.

@@ -1,3 +1,13 @@
+---
+summary: "Canonical representation-neutral acceptance catalogue for continuity, memory, context, delegation, authority, agency, and operational semantics."
+read_when:
+  - "Designing, implementing, or reviewing behavior that must preserve Ember's cross-cutting semantic contracts"
+  - "Selecting executable fixtures for restart continuity, memory/currentness, context, delegation, authority, agency, or operations"
+  - "Evaluating whether an architecture outcome is truthful despite uncertainty, missing state, stale inputs, or absent authority"
+role: scenario
+discovery_status: current
+---
+
 # Ember Architecture Acceptance Scenarios
 
 > Status: canonical, representation-neutral architecture acceptance catalogue.
@@ -23,13 +33,15 @@ The fields mean:
 - **Semantics** — what Ember may know or infer, what is current, what may participate in context, what authority exists, and what Ember may truthfully claim;
 - **Then** — acceptable observable outcomes, including qualified or non-action outcomes;
 - **Must not** — prohibited semantic failures;
-- **Trace** — the planned semantic ADR(s) and canonical research establishing the constraint.
+- **Trace** — the accepted semantic ADR(s) and canonical research establishing the constraint.
 
 The catalogue deliberately does not prescribe how evidence is stored, how context is assembled, how occurrences are correlated, or how a fixture becomes executable.
 
 ## Decision traceability
 
-The ADR links below target the five decisions being produced concurrently by issue #20. The scenario contract follows those decision topics without depending on their representation.
+The ADR links below target the five accepted semantic decisions produced by issue
+#20. The scenario contract follows those decisions without depending on their
+representation.
 
 | ADR | Decision |
 |---|---|

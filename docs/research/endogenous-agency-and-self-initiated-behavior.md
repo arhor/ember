@@ -1,3 +1,12 @@
+---
+summary: "Canonical semantics for endogenous attention and self-initiated behavior, separating wake-up opportunity from motivation and bounding initiative by currentness, resources, attention, and authority."
+read_when:
+  - "Changing proactive or background behavior that can occur without a new user request"
+  - "Designing wake-ups, deferred concerns, curiosity, standing intentions, non-action, or resource limits without turning scheduling into motivation"
+role: research
+discovery_status: current
+---
+
 # Endogenous Agency and Self-Initiated Behavior Semantics
 
 This note addresses issue #2 and follows the concern-driven research discipline defined in issue #10.

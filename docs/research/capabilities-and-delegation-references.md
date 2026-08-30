@@ -1,3 +1,12 @@
+---
+summary: "Portable evidence map supporting canonical delegation semantics with runtime contracts, protocols, multi-agent research, failure analyses, and privacy evidence."
+read_when:
+  - "Checking evidence behind direct-action, capability-use, or delegation boundaries and runtime ownership"
+  - "Challenging specialist-context, provenance, verification, privacy, or delegation-continuity conclusions"
+role: evidence
+discovery_status: current
+---
+
 # Capabilities and Delegation Evidence Map
 
 This document is the portable evidence companion to [Capabilities and Delegation Semantics](capabilities-and-delegation.md).

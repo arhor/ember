@@ -1,3 +1,12 @@
+---
+summary: "Portable evidence map supporting the canonical continuity and identity synthesis with durable claim-to-source references."
+read_when:
+  - "Checking the evidence behind a continuity or identity conclusion without reconstructing the full Deep Research session"
+  - "Challenging or revisiting lineage, model-replacement, relationship, commitment, or degraded-continuity conclusions"
+role: evidence
+discovery_status: current
+---
+
 # Continuity and Identity Evidence Map
 
 This document is the portable evidence companion to [Continuity and Identity Semantics](continuity-and-identity.md).
