@@ -56,6 +56,7 @@ jobs:
           uname -a
           lscpu | sed -n '1,20p'
           free -h
+          : > "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Run repository documentation discovery
         run: |
@@ -64,14 +65,14 @@ jobs:
       - name: Validate unchanged JavaScript control on Node 24
         shell: bash
         run: |
-          "$NODE24" --test
+          "$NODE24" --test test/*.mjs tests/*.test.mjs
           "$NODE24" --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
           "$NODE24" scripts/docs-discovery.mjs check
           PATH="$(dirname "$NODE24"):$PATH" npm run check
 
       - name: Validate unchanged JavaScript implementation on Node 26
         run: |
-          "$NODE26" --test
+          "$NODE26" --test test/*.mjs tests/*.test.mjs
 
       - name: Install exact Node TypeScript experiment dependencies
         working-directory: experiments/runtime-evaluation
@@ -79,6 +80,7 @@ jobs:
         run: |
           "$NPM26" install --ignore-scripts --no-audit --no-fund
           ./node_modules/.bin/tsc --version
+          "$NPM26" ls --all --json > "$RUNNER_TEMP/npm-tree.json"
           du -sk node_modules
 
       - name: Type-check and directly execute the Node TypeScript port
@@ -91,39 +93,55 @@ jobs:
           ./node_modules/.bin/tsc -p tsconfig.json
           "$NODE26" --test test/*.test.ts
           "$NODE26" ecosystem/mcp-node.ts
+          printf 'node26-ts-port\t0\nnode26-mcp\t0\n' >> "$RUNNER_TEMP/runtime-status.tsv"
 
-      - name: Check and execute the Deno TypeScript port
+      - name: Record Deno TypeScript and built-in-tooling results
         working-directory: experiments/runtime-evaluation
         shell: bash
         env:
           EMBER_EVAL_PROVIDER_COMMAND: ${{ env.DENO }}
           EMBER_EVAL_PROVIDER_PREFIX_ARGS: '["run","-A"]'
         run: |
-          "$DENO" check src/*.ts test/*.test.ts ecosystem/mcp-deno.ts
-          "$DENO" test -A test/*.test.ts
-          "$DENO" lint
-          set +e
-          "$DENO" fmt --check 2>&1 | tee "$RUNNER_TEMP/deno-format-check.log"
-          echo "deno_fmt_check_status=${PIPESTATUS[0]}" | tee -a "$RUNNER_TEMP/deno-format-check.log"
-          set -e
-          "$DENO" run ecosystem/mcp-deno.ts
+          probe() {
+            local label="$1"
+            shift
+            set +e
+            "$@" > >(tee "$RUNNER_TEMP/$label.out") 2> >(tee "$RUNNER_TEMP/$label.err" >&2)
+            local status=$?
+            set -e
+            printf '%s\t%s\n' "$label" "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
+          }
+          probe deno-check "$DENO" check src/*.ts test/*.test.ts ecosystem/mcp-deno.ts
+          probe deno-test "$DENO" test -A test/*.test.ts
+          probe deno-lint "$DENO" lint
+          probe deno-fmt "$DENO" fmt --check
+          probe deno-mcp "$DENO" run ecosystem/mcp-deno.ts
 
       - name: Probe unchanged current JavaScript suite under Deno without changing the oracle
-        continue-on-error: true
         shell: bash
         run: |
-          "$DENO" test -A test/*.test.mjs 2>&1 | tee "$RUNNER_TEMP/deno-current-oracle.log"
+          set +e
+          "$DENO" test -A test/*.mjs tests/*.test.mjs > >(tee "$RUNNER_TEMP/deno-current-oracle.out") 2> >(tee "$RUNNER_TEMP/deno-current-oracle.err" >&2)
+          status=$?
+          set -e
+          printf 'deno-current-js-oracle\t%s\n' "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Probe current production CLI directly under Deno
         shell: bash
         run: |
           state="$RUNNER_TEMP/deno-current-cli.json"
-          "$DENO" run -A bin/ember.mjs init --state "$state" --name Ember --principal user-1
-          "$DENO" run -A bin/ember.mjs check --state "$state"
-          printf ':ask hello from Deno\n:quit\n' | "$DENO" run -A bin/ember.mjs run \
-            --state "$state" --principal user-1 --scope project:ember/docs \
-            --provider-command "$DENO" --provider-arg run --provider-arg -A \
-            --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          set +e
+          {
+            "$DENO" run -A bin/ember.mjs init --state "$state" --name Ember --principal user-1 &&
+            "$DENO" run -A bin/ember.mjs check --state "$state" &&
+            printf ':ask hello from Deno\n:quit\n' | "$DENO" run -A bin/ember.mjs run \
+              --state "$state" --principal user-1 --scope project:ember/docs \
+              --provider-command "$DENO" --provider-arg run --provider-arg -A \
+              --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          } > >(tee "$RUNNER_TEMP/deno-current-cli.out") 2> >(tee "$RUNNER_TEMP/deno-current-cli.err" >&2)
+          status=$?
+          set -e
+          printf 'deno-current-js-cli\t%s\n' "$status" | tee -a "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Exercise Deno permission boundaries
         working-directory: experiments/runtime-evaluation
@@ -135,21 +153,24 @@ jobs:
           output="$RUNNER_TEMP/permission-output.txt"
           printf 'readable\n' > "$target"
           expect_denied() {
-            if "$DENO" run --no-prompt permission-probe.ts "$@" >"$RUNNER_TEMP/permission-$1.out" 2>"$RUNNER_TEMP/permission-$1.err"; then
-              echo "expected $1 denial but command succeeded" >&2
+            local label="$1"
+            shift
+            if "$DENO" run --no-prompt permission-probe.ts "$@" >"$RUNNER_TEMP/permission-$label.out" 2>"$RUNNER_TEMP/permission-$label.err"; then
+              echo "expected $label denial but command succeeded" >&2
               return 1
             fi
           }
-          expect_denied env
+          expect_denied env-denied env
           "$DENO" run --no-prompt --allow-env=EMBER_EVAL_PERMISSION_SENTINEL permission-probe.ts env
-          expect_denied read "$target"
+          expect_denied read-denied read "$target"
           "$DENO" run --no-prompt --allow-read="$target" permission-probe.ts read "$target"
-          expect_denied write "$output"
+          expect_denied write-denied write "$output"
           "$DENO" run --no-prompt --allow-write="$output" permission-probe.ts write "$output"
-          expect_denied run "$NODE26"
+          expect_denied run-denied run "$NODE26"
           "$DENO" run --no-prompt --allow-run="$NODE26" permission-probe.ts run "$NODE26"
-          expect_denied net
+          expect_denied net-denied net
           "$DENO" run --no-prompt --allow-net=127.0.0.1:9 permission-probe.ts net
+          printf 'deno-permissions\t0\n' >> "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Record same-host operational measurements
         shell: bash
@@ -157,20 +178,41 @@ jobs:
           metrics="$RUNNER_TEMP/runtime-measurements.jsonl"
           control_state="$RUNNER_TEMP/node24-control.json"
           node26_state="$RUNNER_TEMP/node26-control.json"
+          deno_state="$RUNNER_TEMP/deno-idle.json"
           EMBER_TEST_NOW=2026-08-30T12:00:00Z "$NODE24" bin/ember.mjs init --state "$control_state" --name Ember --principal user-1
           EMBER_TEST_NOW=2026-08-30T12:00:00Z "$NODE26" bin/ember.mjs init --state "$node26_state" --name Ember --principal user-1
-          measure="$NODE24 experiments/runtime-evaluation/scripts/measure-process.mjs"
-          $measure --label node24-cold-check --repeat 7 -- "$NODE24" bin/ember.mjs check --state "$control_state" >> "$metrics"
-          $measure --label node26-js-cold-check --repeat 7 -- "$NODE26" bin/ember.mjs check --state "$node26_state" >> "$metrics"
-          $measure --label node24-full-tests --repeat 3 -- "$NODE24" --test >> "$metrics"
-          $measure --label node26-js-full-tests --repeat 3 -- "$NODE26" --test >> "$metrics"
-          $measure --label node24-restart-oracle --repeat 3 -- "$NODE24" --test test/longitudinal-acceptance.test.mjs >> "$metrics"
-          $measure --label node26-js-restart-oracle --repeat 3 -- "$NODE26" --test test/longitudinal-acceptance.test.mjs >> "$metrics"
-          $measure --label node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" --test test/model-semantics.test.ts test/runtime-workload.test.ts >> "$metrics"
-          $measure --label node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- node_modules/.bin/tsc -p tsconfig.json >> "$metrics"
-          EMBER_EVAL_PROVIDER_COMMAND="$DENO" EMBER_EVAL_PROVIDER_PREFIX_ARGS='["run","-A"]' \
-            $measure --label deno-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" test -A test/model-semantics.test.ts test/runtime-workload.test.ts >> "$metrics"
-          $measure --label deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" check test/runtime-workload.test.ts >> "$metrics"
+          "$DENO" run -A bin/ember.mjs init --state "$deno_state" --name Ember --principal user-1 || true
+          run_measure() {
+            local label="$1"
+            shift
+            set +e
+            "$NODE24" experiments/runtime-evaluation/scripts/measure-process.mjs --label "$label" "$@" >> "$metrics"
+            local status=$?
+            set -e
+            printf '%s\t%s\n' "measure-$label" "$status" >> "$RUNNER_TEMP/runtime-status.tsv"
+          }
+          run_measure node24-js-cold-check --repeat 7 -- "$NODE24" bin/ember.mjs check --state "$control_state"
+          run_measure node26-js-cold-check --repeat 7 -- "$NODE26" bin/ember.mjs check --state "$node26_state"
+          run_measure node24-js-full-tests --repeat 3 -- "$NODE24" --test test/*.mjs tests/*.test.mjs
+          run_measure node26-js-full-tests --repeat 3 -- "$NODE26" --test test/*.mjs tests/*.test.mjs
+          run_measure node24-js-restart-oracle --repeat 3 -- "$NODE24" --test test/longitudinal-acceptance.test.mjs
+          run_measure node26-js-restart-oracle --repeat 3 -- "$NODE26" --test test/longitudinal-acceptance.test.mjs
+          run_measure node24-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE24" bin/ember.mjs run \
+            --state "$control_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$NODE24" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          run_measure node26-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$NODE26" bin/ember.mjs run \
+            --state "$node26_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$NODE26" --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
+          run_measure node26-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- "$NODE26" --test test/model-semantics.test.ts test/runtime-workload.test.ts
+          run_measure node26-ts-typecheck --repeat 5 --cwd experiments/runtime-evaluation -- node_modules/.bin/tsc -p tsconfig.json
+          run_measure deno-ts-tests --repeat 5 --cwd experiments/runtime-evaluation -- env \
+            EMBER_EVAL_PROVIDER_COMMAND="$DENO" EMBER_EVAL_PROVIDER_PREFIX_ARGS='["run","-A"]' \
+            "$DENO" test -A test/model-semantics.test.ts test/runtime-workload.test.ts
+          run_measure deno-ts-check --repeat 5 --cwd experiments/runtime-evaluation -- "$DENO" check test/runtime-workload.test.ts
+          run_measure deno-current-js-idle-cli --repeat 5 --stdin-delay-ms 250 --stdin-text ':quit\n' -- "$DENO" run -A bin/ember.mjs run \
+            --state "$deno_state" --principal user-1 --scope project:ember/docs \
+            --provider-command "$DENO" --provider-arg run --provider-arg -A \
+            --provider-arg test-fixtures/providers/scripted-provider.mjs --provider-timeout-seconds 2
           echo '--- measurements ---'
           cat "$metrics"
 
@@ -182,8 +224,13 @@ jobs:
             echo "node26_bytes=$(stat -c %s "$NODE26")"
             echo "deno_bytes=$(stat -c %s "$DENO")"
             echo "experiment_node_modules_kib=$(du -sk experiments/runtime-evaluation/node_modules | cut -f1)"
+            echo "deno_cache_kib=$(du -sk "$HOME/.cache/deno" 2>/dev/null | cut -f1 || echo 0)"
+            echo "node24_initial_store_bytes=$(stat -c %s "$RUNNER_TEMP/node24-control.json")"
+            echo "node26_initial_store_bytes=$(stat -c %s "$RUNNER_TEMP/node26-control.json")"
             echo "control_package_json=$(cat package.json | tr '\n' ' ')"
           } | tee "$RUNNER_TEMP/runtime-footprint.txt"
+          echo '--- probe statuses ---'
+          cat "$RUNNER_TEMP/runtime-status.tsv"
 
       - name: Upload raw evaluation evidence
         if: always()
@@ -193,7 +240,9 @@ jobs:
           path: |
             ${{ runner.temp }}/runtime-measurements.jsonl
             ${{ runner.temp }}/runtime-footprint.txt
-            ${{ runner.temp }}/deno-current-oracle.log
-            ${{ runner.temp }}/deno-format-check.log
+            ${{ runner.temp }}/runtime-status.tsv
+            ${{ runner.temp }}/npm-tree.json
+            ${{ runner.temp }}/deno-*.out
+            ${{ runner.temp }}/deno-*.err
             ${{ runner.temp }}/permission-*.out
             ${{ runner.temp }}/permission-*.err
