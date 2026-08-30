@@ -32,6 +32,9 @@ Current architecture material:
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   no-install validation, foreground CLI, restart probe, lock recovery, and
   optional live-provider smoke procedure for that executable experiment.
+- [TypeScript Runtime Evaluation](typescript-runtime-evaluation.md) records issue
+  #38's evidence comparing the Node.js 24 JavaScript control with TypeScript on
+  Node.js 26 and Deno 2.9 without selecting the final implementation stack.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 
