@@ -44,6 +44,7 @@ test("representative roles and supersession match governance", () => {
   );
   assert.equal(byPath.get("docs/architecture/acceptance-scenarios.md").role, "scenario");
   assert.equal(byPath.get("docs/architecture/minimal-continuity-slice.md").role, "design");
+  assert.equal(byPath.get("docs/architecture/minimal-continuity-runbook.md").role, "guide");
 
   const initial = byPath.get("docs/architecture/initial-model.md");
   assert.equal(initial.role, "design");
@@ -74,6 +75,7 @@ test("default, deep, and history views keep distinct purposes", () => {
       "docs/architecture/decisions/0005-distinguish-operational-continuity.md",
       "docs/architecture/acceptance-scenarios.md",
       "docs/architecture/minimal-continuity-slice.md",
+      "docs/architecture/minimal-continuity-runbook.md",
       "docs/documentation-discovery.md",
       "docs/documentation-discovery-guide.md",
       "docs/research/README.md",

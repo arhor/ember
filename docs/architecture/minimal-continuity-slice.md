@@ -490,7 +490,7 @@ The first schema admits only these kinds:
 | `relationship` | Owner `relationship:<principal>`; fixed slot `relationship`; stored currentness `current`; never owner `ember`. Relationship revision is outside this slice. |
 | `fact` | Explicit owner `user:<principal>`; non-empty slot supplied by `:remember fact`; stored currentness `current` or `superseded`; source role remains testimony, observation, or inference. |
 | `preference` | Explicit owner `user:<principal>`; non-empty semantic slot supplied by `:prefer`; exact scope; stored currentness `current` or `superseded`; prospective lifecycle `none`. |
-| `commitment` | Owner `ember`; non-empty purpose slot supplied by `:undertake`; stored currentness `current` while prospective lifecycle is `live`, or `historical` after a named discharge state. The meaning cites an Ember-adoption occurrence, which in turn cites the requesting command. |
+| `commitment` | Owner `ember`; non-empty purpose slot supplied by `:undertake`; stored currentness `current` and prospective lifecycle `live`. The meaning cites an Ember-adoption occurrence, which in turn cites the requesting command. Named fulfilment, cancellation, supersession, and other discharge transitions are deliberately deferred from schema v1. |
 | `episode_meta` | Owner `ember` or `relationship:<principal>`; non-empty episode-role slot supplied by `:remember episode`; stored currentness `current`; points to evidence that may be available or unavailable. Episode-meta revision is outside this slice. |
 
 `historical` in inspection is a presentation group, not a synonym silently
@@ -773,7 +773,7 @@ redelivery.
 - lineage and the one fixture constitutive boundary;
 - current meanings by owner, slot, and scope;
 - historical and superseded meanings;
-- live and discharged commitments;
+- live commitments (discharge transitions and discharged inspection are deferred);
 - unavailable evidence gaps;
 - runtime starts, clean stops, uncertain interruption boundaries, and provider
   episode outcomes; and
@@ -821,7 +821,7 @@ is explicit without transpilation or a repository-wide `type` switch:
 bin/ember.mjs
 src/ember/*.mjs
 test/*.test.mjs
-test/fixtures/providers/*.mjs
+test-fixtures/providers/*.mjs
 package.json
 ```
 
@@ -1089,7 +1089,8 @@ Implement the versioned one-request/one-result stdin/stdout contract with
 `node:child_process.spawn`, an argument array, `shell: false`, concurrent bounded
 stdout/stderr drains, bounded `SIGTERM`/`SIGKILL` direct-child shutdown, and no
 deliberately passed store path. Test termination-unconfirmed results and document
-that descendants are not contained. Use `.mjs` scripted providers to test a fresh process after restart, explicit
+that descendants are not contained. Keep `.mjs` scripted providers outside
+Node's default `test/` discovery tree, and use them to test a fresh process after restart, explicit
 principal/scope in the request and cognition evidence, timeout/non-zero/extra or
 oversized output/malformed or empty result handling, selection manifests, and the
 fact that the supported provider result cannot mutate canonical state. Assert

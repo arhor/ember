@@ -29,6 +29,9 @@ Current architecture material:
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
+- [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
+  no-install validation, foreground CLI, restart probe, lock recovery, and
+  optional live-provider smoke procedure for that executable experiment.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 

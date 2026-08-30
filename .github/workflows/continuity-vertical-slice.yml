@@ -1,0 +1,47 @@
+name: Continuity vertical slice
+
+on:
+  pull_request:
+    paths:
+      - "bin/**"
+      - "src/ember/**"
+      - "test/**"
+      - "test-fixtures/**"
+      - "tests/docs-discovery*.test.mjs"
+      - "scripts/docs-discovery.mjs"
+      - "docs/**"
+      - "package.json"
+      - ".github/workflows/continuity-vertical-slice.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "bin/**"
+      - "src/ember/**"
+      - "test/**"
+      - "test-fixtures/**"
+      - "tests/docs-discovery*.test.mjs"
+      - "scripts/docs-discovery.mjs"
+      - "docs/**"
+      - "package.json"
+      - ".github/workflows/continuity-vertical-slice.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Show Node.js version
+        run: node --version
+      - name: Run complete Node.js test suite
+        run: node --test
+      - name: Run documentation discovery tests explicitly
+        run: node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+      - name: Validate JavaScript syntax and documentation metadata
+        run: npm run check
