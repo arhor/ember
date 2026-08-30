@@ -46,6 +46,7 @@ const required = [
   "measure-deno-current-js-cold-check",
   "measure-node24-js-full-tests",
   "measure-node26-js-full-tests",
+  "measure-deno-current-js-full-tests",
   "measure-node24-js-restart-oracle",
   "measure-node26-js-restart-oracle",
   "measure-deno-current-js-restart-oracle",
