@@ -1,0 +1,133 @@
+name: Issue 40 finalize contributor docs
+
+on:
+  push:
+    branches:
+      - issue-40-adopt-typescript-node26
+    paths:
+      - ".github/workflows/issue-40-finalize-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-40-adopt-typescript-node26
+      - name: Update runtime adoption documentation
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"expected text not found in {path}: {old[:80]!r}")
+              p.write_text(text.replace(old, new))
+
+          Path("README.md").write_text('''# Ember
+
+Ember is an experimental persistent personal agent runtime focused on continuity, memory, agency, and composable capabilities.
+
+The initial research programme and representation-neutral semantic architecture are established. The repository now also contains a deliberately narrow executable continuity slice implemented as native ESM TypeScript on Node.js 26, following [ADR 0006](docs/architecture/decisions/0006-adopt-typescript-on-nodejs-26.md).
+
+## Quick start
+
+The supported development/runtime baseline is Node.js **26.8.1 or newer within 26.x** and npm. TypeScript is executed directly by Node; there is no transpilation or generated JavaScript tree.
+
+```sh
+npm ci
+npm run check
+npm test
+```
+
+Run the continuity CLI directly from source:
+
+```sh
+node bin/ember.ts --help
+```
+
+The CLI requires an explicit command rather than exposing a standalone help command; see the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md) for complete `init`, `run`, inspection, recovery, and provider examples.
+
+## Design and architecture
+
+- [Vision](docs/vision.md)
+- [Design principles](docs/principles.md)
+- [Architecture index](docs/architecture/README.md)
+- [Cross-cutting design directions](docs/architecture/design-directions.md)
+- [Architecture acceptance scenarios](docs/architecture/acceptance-scenarios.md)
+- [Minimal continuity vertical slice](docs/architecture/minimal-continuity-slice.md)
+- [Minimal continuity runbook](docs/architecture/minimal-continuity-runbook.md)
+- [TypeScript runtime decision](docs/architecture/decisions/0006-adopt-typescript-on-nodejs-26.md)
+- [Architecture research](docs/research/README.md)
+''')
+
+          replace(
+              "docs/architecture/README.md",
+              "The first continuity slice remains the executable control representation until\nissue #40 migrates it, while ADR 0006 now records TypeScript on Node.js 26 as the\nselected implementation language/runtime for that adoption work.",
+              "The first continuity slice is implemented as native ESM TypeScript on Node.js 26.\nADR 0006 governs that representation, while the accepted semantic ADRs and\nacceptance scenarios continue to govern its meaning."
+          )
+
+          replace(
+              "docs/architecture/minimal-continuity-runbook.md",
+              "The slice supports Node.js 24.x on a local Linux filesystem. It uses only Node.js\nbuilt-ins: there is no dependency installation, build, bundle, generated code, or\nbackground service.",
+              "The slice supports Node.js 26, with **26.8.1** as the reviewed minimum, on a local\nLinux filesystem. Production execution uses Node.js built-ins and native erasable\nTypeScript directly. A fresh checkout installs only the locked development checker\nand Node ambient types with `npm ci`; there is no transpilation, bundle, generated\nJavaScript tree, or background service."
+          )
+          replace(
+              "docs/architecture/minimal-continuity-runbook.md",
+              "```sh\nnode --version\nnode --test\nnode --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs\nnode scripts/docs-discovery.mjs check\nnpm run check\n```\n\n`node bin/ember.mjs` is the exact no-install entry point. The shorter `ember`\nname is available only after an optional package link or install.",
+              "```sh\nnode --version\nnpm ci\nnpm run check\nnpm test\n```\n\n`node bin/ember.ts` is the exact direct-source entry point. Node.js 26 executes\nthe erasable TypeScript without a loader or build step. The shorter `ember` name\nis available after an optional package link or install."
+          )
+          runbook = Path("docs/architecture/minimal-continuity-runbook.md")
+          text = runbook.read_text().replace("bin/ember.mjs", "bin/ember.ts").replace(
+              "test-fixtures/providers/scripted-provider.mjs",
+              "test-fixtures/providers/scripted-provider.ts",
+          )
+          runbook.write_text(text)
+
+          replace(
+              "docs/architecture/minimal-continuity-slice.md",
+              'summary: "Proposed Node.js design for Ember\'s minimal restart-continuity experiment, including durable meaning, bounded projection, lifecycle truth, provider isolation, and deterministic acceptance."',
+              'summary: "Current executable design for Ember\'s minimal restart-continuity slice, including durable meaning, bounded projection, lifecycle truth, provider isolation, and deterministic acceptance."'
+          )
+          replace(
+              "docs/architecture/minimal-continuity-slice.md",
+              '  - "Choosing the experiment\'s Node.js runtime, JSON persistence, single-writer boundary, provider protocol, CLI, or deterministic tests"',
+              '  - "Reviewing the slice\'s JSON persistence, single-writer boundary, provider protocol, CLI, runtime representation, or deterministic tests"'
+          )
+          replace(
+              "docs/architecture/minimal-continuity-slice.md",
+              "> Status: proposed executable design for issue\n> [#22](https://github.com/arhor/ember/issues/22), derived from the accepted\n> semantic ADRs and the canonical minimal acceptance subset.\n>\n> This is an experimental representation for the first continuity probe, not a\n> new semantic ADR and not a general Ember runtime architecture.",
+              "> Status: current executable design, originally defined for issue\n> [#22](https://github.com/arhor/ember/issues/22) and migrated to the implementation\n> runtime selected by [ADR 0006](decisions/0006-adopt-typescript-on-nodejs-26.md)\n> through issue #40.\n>\n> This remains a deliberately narrow representation for the first continuity\n> probe, not a new semantic ADR and not a general Ember runtime architecture."
+          )
+          replace(
+              "docs/architecture/minimal-continuity-slice.md",
+              "The command examples below use `ember`. In a repository checkout, the exact\nno-install entry point is the executable, Node-shebang-bearing `bin/ember.mjs`;\n`node bin/ember.mjs` is the portable direct invocation. The `package.json` bin\nmapping makes the shorter name available only after an optional link or install.",
+              "The command examples below use `ember`. In a repository checkout, install the\nlocked development toolchain with `npm ci`; the exact source entry point is the\nNode-shebang-bearing `bin/ember.ts`. Node.js 26 executes that erasable TypeScript\ndirectly without transpilation, and `node bin/ember.ts` is the portable direct\ninvocation. The `package.json` bin mapping makes the shorter name available after\nan optional link or install."
+          )
+          replace(
+              "docs/architecture/minimal-continuity-slice.md",
+              "| JavaScript on Node.js 24.x, built-ins only | One small CLI with JSON, direct process invocation, exclusive file creation, UTC time, hashing, random IDs, and deterministic tests. | The user explicitly selected JavaScript for this experiment. Node 24 provides every selected property without runtime or development dependencies, compilation, or bundling. Ember's existing documentation-discovery utility already proves Node 24 is available, but that utility did not itself choose Ember's runtime; this design does. | TypeScript would add a compile step before static typing has demonstrated value. Bun or Deno would add another runtime. Go or Rust improve single-binary deployment but add implementation cost before distribution or performance is a measured problem. | Ember's long-term implementation language, package ecosystem, or distribution form. The JSON and provider contracts remain portable. |",
+              "| TypeScript on Node.js 26.8.1, native ESM, direct source execution | One small CLI with JSON, direct process invocation, exclusive file creation, UTC time, hashing, random IDs, deterministic tests, and static checking at internal boundaries. | ADR 0006 adopted TypeScript on Node.js 26 after issue #38 demonstrated direct `.ts` execution, useful boundary diagnostics, and compatibility with this slice. Production execution still uses Node core; TypeScript and Node declarations are locked development dependencies only. | JavaScript on Node.js 24 was the original control representation and is superseded for production. Deno remains evaluation evidence, not a second supported runtime. | Persistence technology, process topology, provider semantics, authority, or distribution form; those remain governed separately. |"
+          )
+
+          replace(
+              "docs/architecture/typescript-runtime-evaluation.md",
+              "The authoritative command sequence is\n`.github/workflows/runtime-evaluation.yml`. The experiment README contains\nshorter candidate-specific local commands.",
+              "The authoritative #38 command sequence is preserved in repository history at\ncommit `6c9649bfd5de2d1ac30499af5407592508801b44` and canonical workflow run\n`#33331965679`. Issue #40 retires the comparison workflow from active CI after\nadoption; the experiment README retains shorter candidate-specific local commands."
+          )
+          PY
+
+          git rm .github/workflows/issue-40-finalize-docs.yml
+      - name: Commit documentation updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs .github/workflows/issue-40-finalize-docs.yml
+          git commit -m "docs: adopt TypeScript runtime across contributor guidance"
+          git push origin HEAD:issue-40-adopt-typescript-node26
