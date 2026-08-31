@@ -14,7 +14,7 @@
   "include": [
     "bin/**/*.ts",
     "experiments/external-agent-runtime/**/*.ts",
-    "scripts/live-codex-smoke.ts",
+    "scripts/**/*.ts",
     "src/**/*.ts",
     "type-tests/**/*.ts"
   ]

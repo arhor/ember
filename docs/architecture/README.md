@@ -41,6 +41,9 @@ Current architecture material:
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
+- [Longitudinal Continuity Harness](longitudinal-continuity-harness.md) explains
+  the repository-owned multi-episode scenario format, deterministic and opt-in
+  live runners, external-thread controls, and evidence-layer interpretation.
 - [TypeScript Runtime Evaluation](typescript-runtime-evaluation.md) records issue
   #38's evidence comparing the Node.js 24 JavaScript control with TypeScript on
   Node.js 26 and Deno 2.9. It remains evidence for ADR 0006 rather than a source of

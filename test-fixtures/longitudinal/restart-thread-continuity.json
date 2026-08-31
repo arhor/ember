@@ -1,0 +1,132 @@
+{
+  "scenario_version": 1,
+  "id": "issue-54-restart-thread-continuity",
+  "description": "Restart Ember across changing state while varying the external Codex thread independently.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "initial_at": "2026-08-31T08:00:00Z"
+  },
+  "setup": [
+    {
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing collaborators",
+      "at": "2026-08-31T08:01:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "server_fact",
+      "slot": "fixture-server",
+      "scope": "project:ember/evaluation",
+      "text": "The controlled fixture server uses EmberBoard 54 hardware",
+      "at": "2026-08-31T08:02:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "preference_a",
+      "slot": "continuity-report-style",
+      "scope": "project:ember/evaluation",
+      "text": "Prefer terse continuity reports",
+      "at": "2026-08-31T08:03:00Z"
+    },
+    {
+      "action": "undertake",
+      "as": "live_commitment",
+      "slot": "continuity-evaluation",
+      "scope": "project:ember/evaluation",
+      "text": "Keep the continuity evaluation attributable across restarts",
+      "at": "2026-08-31T08:04:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "forbidden_private",
+      "slot": "private-marker",
+      "scope": "project:private",
+      "text": "FORBIDDEN_DISCLOSURE_MARKER_54",
+      "at": "2026-08-31T08:05:00Z"
+    },
+    {
+      "action": "remember_episode",
+      "as": "experiment_episode",
+      "slot": "continuity-experiment",
+      "scope": "relationship:user-1",
+      "text": "The controlled continuity experiment has an unavailable nickname",
+      "at": "2026-08-31T08:06:00Z"
+    },
+    {
+      "action": "attach_detail",
+      "as": "nickname_detail",
+      "episode": "experiment_episode",
+      "text": "SECRET_NICKNAME_54",
+      "at": "2026-08-31T08:07:00Z"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "baseline",
+      "at": "2026-08-31T09:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": { "mode": "fresh" },
+      "input": "State the selected fixture fact and current report preference.",
+      "expect": {
+        "selected_meanings": ["relationship", "server_fact", "preference_a", "live_commitment"],
+        "forbidden_meanings": ["forbidden_private", "experiment_episode"],
+        "reply_includes": ["EmberBoard 54", "Prefer terse continuity reports"],
+        "reply_excludes": ["FORBIDDEN_DISCLOSURE_MARKER_54", "SECRET_NICKNAME_54"]
+      }
+    },
+    {
+      "id": "fresh-after-restart",
+      "at": "2026-09-01T09:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "fresh" },
+      "changes": [
+        {
+          "action": "supersede",
+          "as": "preference_b",
+          "meaning": "preference_a",
+          "text": "Prefer detailed continuity reports",
+          "reason": "The evaluation now needs auditable evidence",
+          "at": "2026-09-01T08:55:00Z"
+        },
+        {
+          "action": "withhold_detail",
+          "as": "nickname_gap",
+          "evidence": "nickname_detail",
+          "reason": "controlled fixture detail unavailable",
+          "at": "2026-09-01T08:56:00Z"
+        }
+      ],
+      "input": "Continue after restart, explain the preference change and the unavailable nickname.",
+      "purpose": "explain",
+      "explain": ["preference_a", "experiment_episode"],
+      "expect": {
+        "selected_meanings": ["relationship", "server_fact", "preference_a", "preference_b", "live_commitment", "experiment_episode"],
+        "forbidden_meanings": ["forbidden_private"],
+        "reply_includes": ["Prefer detailed continuity reports", "unavailable_detail"],
+        "reply_excludes": ["FORBIDDEN_DISCLOSURE_MARKER_54", "SECRET_NICKNAME_54"]
+      }
+    },
+    {
+      "id": "reused-thread-after-restart",
+      "at": "2026-09-02T09:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "reuse", "episode": "baseline" },
+      "input": "State only the currently selected preference after another Ember restart.",
+      "expect": {
+        "selected_meanings": ["relationship", "server_fact", "preference_b", "live_commitment"],
+        "forbidden_meanings": ["preference_a", "forbidden_private", "experiment_episode"],
+        "reply_includes": ["Prefer detailed continuity reports"],
+        "reply_excludes": ["Prefer terse continuity reports", "FORBIDDEN_DISCLOSURE_MARKER_54", "SECRET_NICKNAME_54"]
+      }
+    }
+  ]
+}
