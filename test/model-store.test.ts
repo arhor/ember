@@ -2,12 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable, ValidationError } from "../src/ember/errors.mjs";
-import { cloneState, initialState, newId, validateState } from "../src/ember/model.mjs";
-import { startRuntime } from "../src/ember/runtime.mjs";
-import { userEvidence } from "../src/ember/semantics.mjs";
-import { StateStore } from "../src/ember/store.mjs";
-import { captureError, populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.mjs";
+import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable, ValidationError } from "../src/ember/errors.ts";
+import { cloneState, initialState, newId, validateState } from "../src/ember/model.ts";
+import { startRuntime } from "../src/ember/runtime.ts";
+import { userEvidence } from "../src/ember/semantics.ts";
+import { StateStore } from "../src/ember/store.ts";
+import { captureError, populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 test("state validator should accept state when schema and invariants are complete",()=>{
   // Given

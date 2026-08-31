@@ -4,14 +4,14 @@ import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough, Writable } from "node:stream";
-import { parseArgs } from "../src/ember/cli.mjs";
-import { ProviderError } from "../src/ember/errors.mjs";
-import { cloneState, initialState, validateState } from "../src/ember/model.mjs";
-import { buildProjection } from "../src/ember/projection.mjs";
-import { invokeProvider, validateProviderResult } from "../src/ember/provider.mjs";
-import { runCognition, startRuntime } from "../src/ember/runtime.mjs";
-import { StateStore } from "../src/ember/store.mjs";
-import { captureError, command, emptyRequest, populatedState, PRINCIPAL, PROVIDER, readJson, ROOT, SCOPE, tempDir } from "./support.mjs";
+import { parseArgs } from "../src/ember/cli.ts";
+import { ProviderError } from "../src/ember/errors.ts";
+import { cloneState, initialState, validateState } from "../src/ember/model.ts";
+import { buildProjection } from "../src/ember/projection.ts";
+import { invokeProvider, validateProviderResult } from "../src/ember/provider.ts";
+import { runCognition, startRuntime } from "../src/ember/runtime.ts";
+import { StateStore } from "../src/ember/store.ts";
+import { captureError, command, emptyRequest, populatedState, PRINCIPAL, PROVIDER, readJson, ROOT, SCOPE, tempDir } from "./support.ts";
 
 async function providerError(mode,request=emptyRequest(),timeoutSeconds=1){return captureError(()=>invokeProvider(process.execPath,[PROVIDER,"--mode",mode],request,{timeoutSeconds}));}
 async function startedStore(){const directory=await tempDir(),path=join(directory,"ember.json"),store=new StateStore(path),{state}=populatedState();await store.create(state);const lease=await store.acquireWriteLease(),loaded=await store.load(),started=startRuntime(loaded,PRINCIPAL,SCOPE,{timestamp:"2026-08-29T10:00:00Z"}),committed=await store.commit(loaded.revision,started.state);return{directory,path,store,lease,state:committed,runtimeId:started.runtimeId};}

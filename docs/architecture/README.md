@@ -13,9 +13,9 @@ Ember's canonical architecture is defined first by representation-neutral semant
 constraints. Implementation decisions may select concrete representations only
 beneath that baseline.
 
-The first continuity slice remains the executable control representation until
-issue #40 migrates it, while ADR 0006 now records TypeScript on Node.js 26 as the
-selected implementation language/runtime for that adoption work.
+The first continuity slice is implemented as native ESM TypeScript on Node.js 26.
+ADR 0006 governs that representation, while the accepted semantic ADRs and
+acceptance scenarios continue to govern its meaning.
 
 Project foundations:
 
@@ -45,6 +45,9 @@ Current architecture material:
   #38's evidence comparing the Node.js 24 JavaScript control with TypeScript on
   Node.js 26 and Deno 2.9. It remains evidence for ADR 0006 rather than a source of
   semantic authority.
+- [TypeScript Runtime Adoption Validation](typescript-adoption-validation.md)
+  records issue #40's selected-stack confidence result, post-migration comparison,
+  and runtime capability boundary.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 
@@ -55,7 +58,7 @@ Historical material:
   accepted decisions.
 
 Implementation architecture must preserve the semantic baseline. ADR 0006 settles
-the implementation language/runtime direction for the next adoption step, but it
-does not settle persistence technology, daemon/process topology, delegation
-protocols, memory retrieval architecture, or package boundaries beyond the
-minimal runtime/toolchain policy it explicitly records.
+the current implementation language/runtime baseline, but it does not settle
+persistence technology, daemon/process topology, delegation protocols, memory
+retrieval architecture, or package boundaries beyond the minimal runtime/toolchain
+policy it explicitly records.

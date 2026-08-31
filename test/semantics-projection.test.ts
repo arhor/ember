@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ValidationError } from "../src/ember/errors.mjs";
-import { cloneState, newId, validateState } from "../src/ember/model.mjs";
-import { buildProjection, inspectionView } from "../src/ember/projection.mjs";
-import { startRuntime, stopRuntime } from "../src/ember/runtime.mjs";
-import { findMeaning, supersede, userEvidence, withholdDetail } from "../src/ember/semantics.mjs";
-import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.mjs";
+import { ValidationError } from "../src/ember/errors.ts";
+import { cloneState, newId, validateState } from "../src/ember/model.ts";
+import { buildProjection, inspectionView } from "../src/ember/projection.ts";
+import { startRuntime, stopRuntime } from "../src/ember/runtime.ts";
+import { findMeaning, supersede, userEvidence, withholdDetail } from "../src/ember/semantics.ts";
+import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 test("commitment should preserve user request and Ember adoption when created",()=>{
   // Given
