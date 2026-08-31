@@ -1,0 +1,157 @@
+{
+  "scenario_version": 1,
+  "id": "issue-56-supersession-commitment-gap",
+  "description": "Exercise current versus superseded meaning, a live Ember commitment, an unavailable detail gap, and truthful restart recovery against real cognition.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "initial_at": "2026-08-31T10:00:00Z"
+  },
+  "setup": [
+    {
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing evaluation collaborators",
+      "at": "2026-08-31T10:01:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "sensor_fact",
+      "slot": "fixture-sensor-reading",
+      "scope": "project:ember/evaluation",
+      "text": "Fixture sensor S56 reads 73 units",
+      "at": "2026-08-31T10:02:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "preference_a",
+      "slot": "evaluation-report-style",
+      "scope": "project:ember/evaluation",
+      "text": "Prefer terse semantic reports",
+      "at": "2026-08-31T10:03:00Z"
+    },
+    {
+      "action": "undertake",
+      "as": "live_commitment",
+      "slot": "semantic-evaluation",
+      "scope": "project:ember/evaluation",
+      "text": "Keep semantic evaluation findings attributable across restarts",
+      "at": "2026-08-31T10:04:00Z"
+    },
+    {
+      "action": "remember_episode",
+      "as": "nickname_episode",
+      "slot": "evaluation-nickname",
+      "scope": "relationship:user-1",
+      "text": "The evaluation episode had a synthetic nickname whose detail may become unavailable",
+      "at": "2026-08-31T10:05:00Z"
+    },
+    {
+      "action": "attach_detail",
+      "as": "nickname_detail",
+      "episode": "nickname_episode",
+      "text": "HIDDEN_NICKNAME_56",
+      "at": "2026-08-31T10:06:00Z"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "baseline-currentness",
+      "at": "2026-08-31T11:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": { "mode": "fresh" },
+      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>.",
+      "expect": {
+        "selected_meanings": ["relationship", "sensor_fact", "preference_a", "live_commitment"],
+        "forbidden_meanings": ["nickname_episode"],
+        "reply_includes": [
+          "CURRENT_PREFERENCE=Prefer terse semantic reports",
+          "LIVE_COMMITMENT=Keep semantic evaluation findings attributable across restarts",
+          "COMMITMENT_LIFECYCLE=live",
+          "FACT_EPISTEMIC_ROLE=user_testimony",
+          "FACT_SOURCE_ROLE=user_command",
+          "FACT_DIRECTLY_OBSERVED_BY_EMBER=no"
+        ],
+        "reply_excludes": [
+          "FACT_DIRECTLY_OBSERVED_BY_EMBER=yes",
+          "HIDDEN_NICKNAME_56"
+        ]
+      }
+    },
+    {
+      "id": "explain-after-restart",
+      "at": "2026-09-01T11:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "fresh" },
+      "changes": [
+        {
+          "action": "supersede",
+          "as": "preference_b",
+          "meaning": "preference_a",
+          "text": "Prefer detailed semantic reports",
+          "reason": "The evaluation now needs auditable semantic evidence",
+          "at": "2026-09-01T10:55:00Z"
+        },
+        {
+          "action": "withhold_detail",
+          "as": "nickname_gap",
+          "evidence": "nickname_detail",
+          "reason": "controlled fixture detail unavailable",
+          "at": "2026-09-01T10:56:00Z"
+        }
+      ],
+      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<current preference content>; HISTORICAL_PREFERENCE=<superseded preference content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; COMMITMENT_APPLICABILITY=<applicability>; NICKNAME_STATUS=<gap_kind or none>; NICKNAME_VALUE=<projected detail, UNAVAILABLE, or NONE according to projection>; FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; DOWNTIME_COGNITION=<recovery_account.ember_cognition_during_interval>.",
+      "purpose": "explain",
+      "explain": ["preference_a", "nickname_episode"],
+      "expect": {
+        "selected_meanings": ["relationship", "sensor_fact", "preference_a", "preference_b", "live_commitment", "nickname_episode"],
+        "forbidden_meanings": [],
+        "reply_includes": [
+          "CURRENT_PREFERENCE=Prefer detailed semantic reports",
+          "HISTORICAL_PREFERENCE=Prefer terse semantic reports",
+          "LIVE_COMMITMENT=Keep semantic evaluation findings attributable across restarts",
+          "COMMITMENT_LIFECYCLE=live",
+          "COMMITMENT_APPLICABILITY=last_known_live_needs_currentness_check",
+          "NICKNAME_STATUS=unavailable_detail",
+          "NICKNAME_VALUE=UNAVAILABLE",
+          "FACT_EPISTEMIC_ROLE=user_testimony",
+          "FACT_SOURCE_ROLE=user_command",
+          "FACT_DIRECTLY_OBSERVED_BY_EMBER=no",
+          "DOWNTIME_COGNITION=none_in_supported_runtime"
+        ],
+        "reply_excludes": [
+          "CURRENT_PREFERENCE=Prefer terse semantic reports",
+          "NICKNAME_VALUE=HIDDEN_NICKNAME_56",
+          "FACT_DIRECTLY_OBSERVED_BY_EMBER=yes"
+        ]
+      }
+    },
+    {
+      "id": "ordinary-current-only",
+      "at": "2026-09-02T11:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "fresh" },
+      "input": "Using only the ordinary permitted projection, produce a semantic audit with exactly these fields and copy content verbatim: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>.",
+      "expect": {
+        "selected_meanings": ["relationship", "sensor_fact", "preference_b", "live_commitment"],
+        "forbidden_meanings": ["preference_a", "nickname_episode"],
+        "reply_includes": [
+          "CURRENT_PREFERENCE=Prefer detailed semantic reports",
+          "LIVE_COMMITMENT=Keep semantic evaluation findings attributable across restarts",
+          "COMMITMENT_LIFECYCLE=live"
+        ],
+        "reply_excludes": [
+          "Prefer terse semantic reports",
+          "HIDDEN_NICKNAME_56"
+        ]
+      }
+    }
+  ]
+}
