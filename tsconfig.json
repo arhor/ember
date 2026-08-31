@@ -13,6 +13,7 @@
   },
   "include": [
     "bin/**/*.ts",
+    "experiments/external-agent-runtime/**/*.ts",
     "src/**/*.ts",
     "type-tests/**/*.ts"
   ]
