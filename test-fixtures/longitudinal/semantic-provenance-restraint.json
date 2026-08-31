@@ -40,7 +40,7 @@
       "cognition_backend": "codex",
       "restart_ember": false,
       "external_thread": { "mode": "fresh" },
-      "input": "Audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<first source_evidence source_role>; FACT_OWNER=<owner>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no>; COMMITMENT_EPISTEMIC_ROLE=<epistemic_role>; COMMITMENT_SOURCE_ROLE=<first source_evidence source_role>; COMMITMENT_OWNER=<owner>; COMMITMENT_IS_EMBER_OWNED=<yes|no>. Do not describe the reported beacon event as Ember's direct experience.",
+      "input": "Audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<first source_evidence source_role>; FACT_OWNER=<owner>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; COMMITMENT_EPISTEMIC_ROLE=<epistemic_role>; COMMITMENT_SOURCE_ROLE=<first source_evidence source_role>; COMMITMENT_OWNER=<owner>; COMMITMENT_IS_EMBER_OWNED=<yes|no according to ownership and epistemic role>.",
       "expect": {
         "selected_meanings": ["relationship", "reported_fact", "owned_commitment"],
         "forbidden_meanings": [],
@@ -68,7 +68,7 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": { "mode": "fresh" },
-      "input": "After restart, audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<first source_evidence source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no>; COMMITMENT_EPISTEMIC_ROLE=<epistemic_role>; COMMITMENT_SOURCE_ROLE=<first source_evidence source_role>; COMMITMENT_OWNER=<owner>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; COMMITMENT_APPLICABILITY=<applicability>; DOWNTIME_COGNITION=<recovery_account.ember_cognition_during_interval>. Do not upgrade testimony into observation and do not invent cognition during downtime.",
+      "input": "After restart, audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<first source_evidence source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; COMMITMENT_EPISTEMIC_ROLE=<epistemic_role>; COMMITMENT_SOURCE_ROLE=<first source_evidence source_role>; COMMITMENT_OWNER=<owner>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; COMMITMENT_APPLICABILITY=<applicability>; DOWNTIME_COGNITION=<recovery_account.ember_cognition_during_interval>.",
       "expect": {
         "selected_meanings": ["relationship", "reported_fact", "owned_commitment"],
         "forbidden_meanings": [],
