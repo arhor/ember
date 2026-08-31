@@ -58,7 +58,7 @@ Historical material:
   accepted decisions.
 
 Implementation architecture must preserve the semantic baseline. ADR 0006 settles
-the implementation language/runtime direction for the next adoption step, but it
-does not settle persistence technology, daemon/process topology, delegation
-protocols, memory retrieval architecture, or package boundaries beyond the
-minimal runtime/toolchain policy it explicitly records.
+the current implementation language/runtime baseline, but it does not settle
+persistence technology, daemon/process topology, delegation protocols, memory
+retrieval architecture, or package boundaries beyond the minimal runtime/toolchain
+policy it explicitly records.
