@@ -13,6 +13,7 @@ import {
   type Meaning,
   type MeaningId,
   type PreferenceMeaning,
+  type UnavailableUserDetailEvidence,
 } from "./model.ts";
 
 export function userEvidence(
@@ -233,16 +234,9 @@ export function withholdDetail(
   if (reason.toLowerCase().includes("delet")) throw new ValidationError("privacy deletion semantics are unsupported by fixture fault");
   if (!reason.trim() || reason.includes(ev.payload)) throw new ValidationError("unavailability reason must not reveal detail");
 
-  const unavailable: Evidence = {
-    evidence_id: ev.evidence_id,
-    source_role: "user_command",
-    source_actor: ev.source_actor,
-    asserted_principal: ev.asserted_principal,
-    occurred_at: ev.occurred_at,
-    observed_at: ev.observed_at,
-    derived_from_evidence_ids: [],
-    scope: ev.scope,
-    payload_mode: "retained_optional",
+  const { payload: _payload, content_digest: _contentDigest, availability: _availability, ...retained } = ev;
+  const unavailable: UnavailableUserDetailEvidence = {
+    ...retained,
     availability: "unavailable",
     related_meaning_id: ev.related_meaning_id,
     unavailable_reason: reason,
