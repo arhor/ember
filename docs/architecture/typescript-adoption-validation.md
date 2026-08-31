@@ -66,20 +66,28 @@ On GitHub Actions Ubuntu 24.04 with Node.js 26.8.1 and TypeScript 7.0.2:
 - `npm ci` completed from the committed lockfile;
 - `npm run check` passed TypeScript static checking and documentation-discovery
   validation;
-- `npm test` passed **98/98 actual tests** with zero failures;
+- `npm test` passed **100/100 tests** with zero failures;
 - the complete restart/continuity scenario remained green;
 - store corruption, durability uncertainty, locking, stale revision, provider
   timeout/output failure, delivery uncertainty, supersession, provenance,
   unavailable-detail gaps, and CLI correction/inspection scenarios remained green.
 
+The final reviewed suite contains the **98 actual acceptance tests** preserved from
+the JavaScript baseline plus two narrow migration-compatibility guards added after
+an independent cold review found representation-induced edge cases. One guard
+ensures ordinary projections do not resolve otherwise-unused explanation IDs; the
+other ensures fixture-only detail withholding preserves unrelated valid evidence
+metadata while removing only the unavailable payload and digest.
+
 Issue #38 reported 99/99 Node test-runner entries for the JavaScript control. That
 count included `test/support.mjs` as a zero-test discovered module; it separately
 recorded 98 actual tests for the same explicit corpus. The adopted command targets
-`*.test.ts` explicitly and therefore reports the 98 actual tests rather than the
-old support-module entry. No acceptance scenario was removed to obtain the result.
+`*.test.ts` explicitly, so the preserved baseline is those 98 actual tests. No
+acceptance scenario was removed to obtain the result.
 
-The selected-stack confidence run is GitHub Actions run `33362480436`. The
-post-migration measurement run is `33362598022`.
+The final selected-stack confidence run is GitHub Actions run `33363449272`. The
+post-migration measurement run is `33362598022`; it measured the preserved 98-test
+baseline before the two narrow review guards were added.
 
 ## Post-migration comparison with issue #38
 
@@ -92,7 +100,7 @@ rather than a controlled microbenchmark.
 | Workload | #38 Node 26 JavaScript control | #40 adopted TypeScript | Observation |
 | --- | ---: | ---: | --- |
 | Cold `ember check`, 7 samples | 124.07 ms / 53.9 MiB | 177.11 ms / 95.0 MiB | Direct TypeScript source has a visible startup/RSS cost in this short process. |
-| Full continuity + docs corpus, 3 samples | 2394.00 ms / 301.7 MiB | 5187.48 ms / 534.5 MiB | The process-heavy feedback loop is materially slower and heavier after direct-source migration. |
+| Full continuity + docs corpus, 3 samples | 2394.00 ms / 301.7 MiB | 5187.48 ms / 534.5 MiB | The process-heavy feedback loop is materially slower and heavier after direct-source migration. The #40 sample used the preserved 98-test baseline before the two later compatibility guards. |
 | Restart oracle, 3 samples | 912.56 ms / 171.9 MiB | 1739.82 ms / 315.5 MiB | Fresh-process reconstruction remains correct but is costlier in this hosted-runner sample. |
 | Idle CLI, 5 samples | 334.86 ms / 57.1 MiB | 278.57 ms / 97.0 MiB | Timing contains the intentional 250 ms stdin delay; RSS is the useful comparison and is higher for TypeScript. |
 | Scripted provider cycle, 7 samples | 173.12 ms / 57.7 MiB | 269.52 ms / 167.7 MiB | Local scripted-provider orchestration is slower/heavier; real network/model latency is expected to dominate later. |
