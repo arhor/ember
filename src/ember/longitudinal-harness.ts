@@ -132,6 +132,7 @@ export async function runLongitudinalScenario(
       }
       const canonicalBefore = inspectionView(state);
       const thread = resolveThread(episode.external_thread, episodeThreads);
+      const previouslyObservedThreadIds = new Set(episodeThreads.values());
       let observedRequest: ProviderRequest | null = null;
       let observedResult: ProviderResult | null = null;
       let reply = "";
@@ -168,6 +169,12 @@ export async function runLongitudinalScenario(
         observation("lineage remains canonical", canonicalBefore.lineage.lineage_id, request.projection.lineage.lineage_id, canonicalBefore.lineage.lineage_id === request.projection.lineage.lineage_id),
         observation("raw transcript excluded", false, request.projection.selection.raw_transcript_included, request.projection.selection.raw_transcript_included === false),
       ];
+      if (thread.mode === "fresh") {
+        emberAssertions.push(
+          observation("fresh provider thread observed", "non-null thread id", providerThreadId, providerThreadId !== null),
+          observation("fresh provider thread is new", "thread id absent from earlier episodes", providerThreadId, providerThreadId !== null && !previouslyObservedThreadIds.has(providerThreadId)),
+        );
+      }
       if (episode.restart_ember && reports.length > 0) {
         emberAssertions.push(observation("Ember runtime restarted", "different runtime id", runtimeId, reports.at(-1)!.runtime_id !== runtimeId));
       }

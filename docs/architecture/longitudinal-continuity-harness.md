@@ -107,7 +107,8 @@ Every episode records four evidence layers:
    evidence after cognition.
 
 `ember_assertions` check exact selection, forbidden-ID exclusion, lineage,
-transcript exclusion, runtime restart, and requested thread identity. These are
+transcript exclusion, runtime restart, a non-null previously unseen ID for every
+fresh provider thread, and exact requested identity for a reused thread. These are
 deterministic architecture checks. `model_observations` check reply substrings.
 They are empirical observations, even when a scripted provider makes them stable
 in CI. The top-level `ember_assertions_passed` and

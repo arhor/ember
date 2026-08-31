@@ -284,6 +284,7 @@ export async function invokeCodexProvider(
     try { stdoutText = decoder.decode(Buffer.concat(stdout)); } catch (error) { throw new ProviderError("Codex JSONL output is not UTF-8", { ...errorOptions("failed"), cause: error }); }
     const parsed = parseCodexJsonl(stdoutText);
     if (observedThreadId !== undefined && parsed.externalThreadId !== observedThreadId) throw new ProviderError("Codex JSONL contains inconsistent thread identifiers", errorOptions("failed"));
+    if (thread.mode === "resume" && parsed.externalThreadId !== undefined && parsed.externalThreadId !== thread.externalThreadId) throw new ProviderError("Codex resumed a different thread than requested", errorOptions("failed"));
     validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
     return parsed.externalThreadId === undefined
       ? parsed.result

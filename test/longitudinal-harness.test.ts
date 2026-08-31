@@ -33,6 +33,7 @@ test("longitudinal harness should separate Ember projection assertions from mode
   assert.equal(report.episodes.length, 3);
   assert.notEqual(report.episodes[0].runtime_id, report.episodes[1].runtime_id);
   assert.notEqual(report.episodes[1].runtime_id, report.episodes[2].runtime_id);
+  assert.notEqual(report.episodes[1].provider_thread_id, report.episodes[0].provider_thread_id);
   assert.equal(report.episodes[2].provider_thread_id, report.episodes[0].provider_thread_id);
   assert.equal(report.episodes[2].external_thread.mode, "reuse");
   assert.equal(report.episodes[2].projection.meanings.some(item => item.content === "Prefer terse continuity reports"), false);
@@ -83,4 +84,46 @@ test("longitudinal harness should preserve passing Ember evidence when empirical
   assert.equal(report.model_observations_passed, false);
   assert.equal(report.episodes.every(episode => episode.ember_assertions.every(item => item.passed)), true);
   assert.equal(report.episodes.some(episode => episode.model_observations.some(item => !item.passed)), true);
+});
+
+test("longitudinal harness should fail Ember freshness assertions when two fresh episodes return the same thread", async () => {
+  // Given
+  const directory = await tempDir();
+  const scenario = await loadLongitudinalScenario(SCENARIO);
+
+  // When
+  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => ({
+    contract_version: 1,
+    reply: [...invocation.request.projection.meanings.map(item => item.content), ...invocation.request.projection.gaps.map(item => item.gap_kind)].join(" | "),
+    used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+    operational: { external_thread_id: invocation.thread.mode === "reuse" ? invocation.thread.externalThreadId : "duplicate-fresh-thread" },
+  }));
+
+  // Then
+  assert.equal(report.ember_assertions_passed, false);
+  assert.equal(report.episodes[0].ember_assertions.find(item => item.assertion === "fresh provider thread is new")?.passed, true);
+  assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh provider thread is new")?.passed, false);
+});
+
+test("longitudinal harness should fail Ember freshness assertions when a fresh episode omits its thread", async () => {
+  // Given
+  const directory = await tempDir();
+  const scenario = await loadLongitudinalScenario(SCENARIO);
+
+  // When
+  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => {
+    const result = {
+      contract_version: 1 as const,
+      reply: [...invocation.request.projection.meanings.map(item => item.content), ...invocation.request.projection.gaps.map(item => item.gap_kind)].join(" | "),
+      used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+    };
+    if (invocation.episodeId === "fresh-after-restart") return result;
+    return { ...result, operational: { external_thread_id: invocation.thread.mode === "reuse" ? invocation.thread.externalThreadId : "baseline-thread" } };
+  });
+
+  // Then
+  assert.equal(report.ember_assertions_passed, false);
+  assert.equal(report.episodes[1].provider_thread_id, null);
+  assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh provider thread observed")?.passed, false);
+  assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh provider thread is new")?.passed, false);
 });

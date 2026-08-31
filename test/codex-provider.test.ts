@@ -158,6 +158,25 @@ test("Codex provider should reject an unvalidated final result when JSONL is oth
   assert.match(error.message, /outside its projection/);
 });
 
+test("Codex provider should reject success when resumed thread differs from requested thread", async () => {
+  // Given
+  const { request } = requestFixture();
+  const fixture = childDouble({ output: successfulJsonl() });
+  const cwd = await tempDir();
+
+  // When
+  const error = await captureError(() => invokeCodexProvider("codex", [], request, {
+    timeoutSeconds: 1,
+    cwd,
+    thread: { mode: "resume", externalThreadId: "requested-thread-54" },
+    spawnImpl: () => { fixture.complete(); return fixture.child; },
+  }));
+
+  // Then
+  assert.equal(error instanceof ProviderError, true);
+  assert.match(error.message, /resumed a different thread than requested/);
+});
+
 test("Codex provider should terminate boundedly when JSONL exceeds the output limit", async () => {
   // Given
   const { request } = requestFixture();
