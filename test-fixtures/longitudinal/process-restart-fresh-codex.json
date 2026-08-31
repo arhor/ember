@@ -1,0 +1,88 @@
+{
+  "scenario_version": 1,
+  "id": "issue-55-process-restart-fresh-codex",
+  "description": "Validate Ember-owned continuity across a complete CLI process restart while each cognition uses a deliberately fresh Codex thread.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "initial_at": "2026-08-30T08:00:00Z"
+  },
+  "setup": [
+    {
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing collaborators",
+      "at": "2026-08-30T09:00:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "server_fact",
+      "slot": "fixture-server",
+      "scope": "project:ember/evaluation",
+      "text": "The controlled fixture server uses EmberBoard 55 hardware",
+      "at": "2026-08-30T09:00:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "report_preference",
+      "slot": "process-restart-report-style",
+      "scope": "project:ember/evaluation",
+      "text": "Prefer concise process-restart reports",
+      "at": "2026-08-30T09:00:00Z"
+    },
+    {
+      "action": "undertake",
+      "as": "live_commitment",
+      "slot": "process-restart-continuity",
+      "scope": "project:ember/evaluation",
+      "text": "Keep the process-restart continuity proof attributable after downtime",
+      "at": "2026-08-30T09:00:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "forbidden_private",
+      "slot": "private-marker",
+      "scope": "project:private",
+      "text": "FORBIDDEN_PROCESS_RESTART_55",
+      "at": "2026-08-30T09:00:00Z"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "baseline-process",
+      "at": "2026-08-30T09:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": { "mode": "fresh" },
+      "input": "State the exact selected fixture fact and current report preference.",
+      "expect": {
+        "selected_meanings": ["relationship", "server_fact", "report_preference", "live_commitment"],
+        "forbidden_meanings": ["forbidden_private"],
+        "reply_includes": ["EmberBoard 55", "Prefer concise process-restart reports"],
+        "reply_excludes": ["FORBIDDEN_PROCESS_RESTART_55"]
+      }
+    },
+    {
+      "id": "fresh-after-process-restart",
+      "at": "2026-08-31T09:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "fresh" },
+      "input": "After this complete Ember process restart, state the exact selected fixture fact, current report preference, and live commitment. Also include the literal ember_cognition_during_interval value from the recovery account, and do not invent activity during downtime.",
+      "expect": {
+        "selected_meanings": ["relationship", "server_fact", "report_preference", "live_commitment"],
+        "forbidden_meanings": ["forbidden_private"],
+        "reply_includes": [
+          "EmberBoard 55",
+          "Prefer concise process-restart reports",
+          "Keep the process-restart continuity proof attributable after downtime",
+          "none_in_supported_runtime"
+        ],
+        "reply_excludes": ["FORBIDDEN_PROCESS_RESTART_55"]
+      }
+    }
+  ]
+}
