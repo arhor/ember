@@ -19,7 +19,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
-          cache: npm
       - name: Generate lockfile from selected toolchain
         run: npm install --package-lock-only --ignore-scripts
       - name: Commit generated lockfile
