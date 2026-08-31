@@ -1,0 +1,55 @@
+name: Issue 40 restore acceptance formatting
+
+on:
+  push:
+    branches:
+      - issue-40-adopt-typescript-node26
+    paths:
+      - ".github/workflows/issue-40-restore-test-format.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-40-adopt-typescript-node26
+          fetch-depth: 0
+      - name: Restore oracle formatting from migration base
+        shell: bash
+        run: |
+          python3 <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          pairs = [
+              ("test/longitudinal-acceptance.test.mjs", "test/longitudinal-acceptance.test.ts"),
+              ("test/model-store.test.mjs", "test/model-store.test.ts"),
+              ("test/provider-cli.test.mjs", "test/provider-cli.test.ts"),
+              ("test/provider-timeout.test.mjs", "test/provider-timeout.test.ts"),
+              ("test/semantics-projection.test.mjs", "test/semantics-projection.test.ts"),
+              ("test/support.mjs", "test/support.ts"),
+              ("test-fixtures/providers/scripted-provider.mjs", "test-fixtures/providers/scripted-provider.ts"),
+          ]
+
+          for source, destination in pairs:
+              text = subprocess.check_output(
+                  ["git", "show", f"6c9649bfd5de2d1ac30499af5407592508801b44:{source}"],
+                  text=True,
+              )
+              text = text.replace('.mjs"', '.ts"')
+              if destination == "test/support.ts":
+                  text = text.replace("ember-js-test-", "ember-ts-test-")
+              Path(destination).write_text(text)
+          PY
+          git rm .github/workflows/issue-40-restore-test-format.yml
+      - name: Commit mechanical test migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add test test-fixtures
+          git commit -m "test: keep acceptance oracle migration mechanical"
+          git push origin HEAD:issue-40-adopt-typescript-node26
