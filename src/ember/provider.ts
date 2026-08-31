@@ -76,7 +76,8 @@ export async function invokeProvider(
   let stdoutBytes = 0;
   let stderrBytes = 0;
   let oversized = false;
-  let terminationReason: "timeout" | "explicit_cancellation" | "output_limit" | null = null;
+  type TerminationReason = "timeout" | "explicit_cancellation" | "output_limit" | "provider_failure";
+  let terminationReason: TerminationReason | null = null;
   let spawnError: Error | null = null;
   let closed = false;
   let exitCode: number | null = null;
@@ -89,7 +90,7 @@ export async function invokeProvider(
   const done = new Promise<{ unconfirmed: boolean }>(resolve => { resolveDone = resolve; });
   const onStdinError = () => {};
   const closePipes = () => { child.stdin?.destroy(); child.stdout?.destroy(); child.stderr?.destroy(); };
-  const terminate = (reason: Exclude<typeof terminationReason, null>) => {
+  const terminate = (reason: TerminationReason) => {
     if (settled || terminationReason !== null) return;
     terminationReason = reason;
     closePipes();
@@ -135,7 +136,7 @@ export async function invokeProvider(
   if (signal?.aborted) onAbort();
   const wire = Buffer.from(JSON.stringify(request), "utf8");
   child.stdin.on("error", onStdinError);
-  try { child.stdin.end(wire); } catch (error) { spawnError = error instanceof Error ? error : new Error(String(error)); terminate(); }
+  try { child.stdin.end(wire); } catch (error) { spawnError = error instanceof Error ? error : new Error(String(error)); terminate("provider_failure"); }
 
   const terminal = await done;
   clearTimeout(timer);
@@ -151,7 +152,9 @@ export async function invokeProvider(
 
   const diagnostic = decodeDiagnostic(Buffer.concat(stderr));
   if (terminal.unconfirmed) {
-    const reason = terminationReason ?? "output_limit";
+    const firstReason = terminationReason as TerminationReason | null;
+    if (firstReason === "provider_failure") throw new ProviderError("provider I/O failed; direct-child termination unconfirmed", { outcome: "outcome_unknown", terminationConfirmed: false, cause: spawnError ?? undefined });
+    const reason = firstReason ?? "output_limit";
     throw new ProviderError(`${reason === "explicit_cancellation" ? "provider cancellation requested" : reason === "timeout" ? "provider timed out" : oversized ? "provider stdout exceeds 1 MiB" : "provider termination was not observed"}; direct-child termination unconfirmed`, { outcome: "outcome_unknown", terminationConfirmed: false, termination: { reason, directChildExitObserved: false } });
   }
   if (spawnError) throw new ProviderError(`provider is unavailable: ${spawnError.message}`, { cause: spawnError });
