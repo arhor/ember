@@ -14,8 +14,6 @@
   "include": [
     "bin/**/*.ts",
     "src/**/*.ts",
-    "test/**/*.ts",
-    "test-fixtures/**/*.ts",
     "type-tests/**/*.ts"
   ]
 }
