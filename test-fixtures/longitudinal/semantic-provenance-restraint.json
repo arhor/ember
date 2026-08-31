@@ -20,7 +20,7 @@
       "as": "reported_fact",
       "slot": "reported-fixture-event",
       "scope": "project:ember/evaluation",
-      "text": "The user reports that fixture beacon B56 flashed amber at noon",
+      "text": "Fixture beacon B56 flashed amber at noon",
       "at": "2026-08-31T12:02:00Z"
     },
     {
