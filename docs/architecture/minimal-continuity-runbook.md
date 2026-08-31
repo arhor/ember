@@ -274,6 +274,13 @@ Codex runtime remains an external same-user process, not Ember's authority or
 continuity owner. Its own sandbox is defense in depth; direct-child termination
 handling cannot confirm remote cancellation or contain already-created effects.
 
+For repeatable multi-episode evaluation with controlled state changes, Ember
+restarts, and explicit fresh/reused external threads, use the separate
+[Longitudinal Continuity Harness](longitudinal-continuity-harness.md). Its
+deterministic runner is CI-safe; its live Codex mode is independently opt-in and
+reports Ember state/projection assertions separately from empirical model
+observations.
+
 ## Known operational boundary
 
 The experiment supports one cooperating foreground writer and one canonical JSON

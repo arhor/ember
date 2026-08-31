@@ -14,7 +14,9 @@
     "test": "node --test test/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
     "test:continuity": "node --test test/*.test.ts",
     "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
-    "smoke:codex": "node scripts/live-codex-smoke.ts"
+    "smoke:codex": "node scripts/live-codex-smoke.ts",
+    "eval:continuity": "node scripts/run-longitudinal-scenario.ts",
+    "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node scripts/run-longitudinal-scenario.ts --provider codex"
   },
   "devDependencies": {
     "@types/node": "26.4.0",

@@ -67,6 +67,10 @@ export interface InvokeCodexOptions extends Omit<InvokeProviderOptions, "spawnIm
   cwd?: string;
   environment?: NodeJS.ProcessEnv;
   spawnImpl?: CodexSpawn;
+  thread?:
+    | { mode: "ephemeral" }
+    | { mode: "fresh_persistent" }
+    | { mode: "resume"; externalThreadId: string };
 }
 
 export function buildCodexPrompt(request: ProviderRequest): string {
@@ -89,6 +93,37 @@ export function codexEnvironment(source: NodeJS.ProcessEnv = process.env): NodeJ
   return environment;
 }
 
+export function buildCodexArguments(
+  argumentPrefix: string[],
+  runtimeCwd: string,
+  schemaPath: string,
+  thread: NonNullable<InvokeCodexOptions["thread"]>,
+): string[] {
+  const common = [
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--disable", "plugins",
+    "--disable", "apps",
+    "-c", "skills.include_instructions=false",
+    "--skip-git-repo-check",
+    "--json",
+    "--output-schema", schemaPath,
+  ];
+  if (thread.mode === "resume") {
+    if (!validExternalId(thread.externalThreadId)) throw new ProviderError("Codex resume thread identifier is invalid");
+    return [...argumentPrefix, "exec", "resume", ...common, "-c", 'sandbox_mode="read-only"', thread.externalThreadId, "-"];
+  }
+  return [
+    ...argumentPrefix,
+    "exec",
+    ...(thread.mode === "ephemeral" ? ["--ephemeral"] : []),
+    ...common,
+    "--sandbox", "read-only",
+    "-C", runtimeCwd,
+    "-",
+  ];
+}
+
 export async function invokeCodexProvider(
   command: string,
   argumentPrefix: string[],
@@ -101,6 +136,7 @@ export async function invokeCodexProvider(
     spawnImpl = spawn as unknown as CodexSpawn,
     terminationGraceMs = 500,
     finalTerminationMs = 1_000,
+    thread = { mode: "ephemeral" },
   }: InvokeCodexOptions,
 ): Promise<ProviderResult> {
   if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) throw new ProviderError("provider timeout must be a positive finite number");
@@ -117,22 +153,7 @@ export async function invokeCodexProvider(
     await writeFile(schemaPath, RESULT_SCHEMA, { encoding: "utf8", mode: 0o600, flag: "wx" });
     let child: CodexChild;
     try {
-      child = spawnImpl(command, [
-        ...argumentPrefix,
-        "exec",
-        "--ephemeral",
-        "--ignore-user-config",
-        "--ignore-rules",
-        "--disable", "plugins",
-        "--disable", "apps",
-        "-c", "skills.include_instructions=false",
-        "--skip-git-repo-check",
-        "--sandbox", "read-only",
-        "--json",
-        "--output-schema", schemaPath,
-        "-C", runtimeCwd,
-        "-",
-      ], {
+      child = spawnImpl(command, buildCodexArguments(argumentPrefix, runtimeCwd, schemaPath, thread), {
         cwd: runtimeCwd,
         env: codexEnvironment(environment),
         shell: false,
