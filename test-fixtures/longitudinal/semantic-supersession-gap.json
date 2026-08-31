@@ -20,7 +20,7 @@
       "as": "sensor_fact",
       "slot": "fixture-sensor-reading",
       "scope": "project:ember/evaluation",
-      "text": "The user reports that fixture sensor S56 reads 73 units",
+      "text": "Fixture sensor S56 reads 73 units",
       "at": "2026-08-31T10:02:00Z"
     },
     {
