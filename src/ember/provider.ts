@@ -22,6 +22,9 @@ export interface ProviderResult {
   contract_version: 1;
   reply: string;
   used_meaning_ids: MeaningId[];
+  operational?: {
+    external_thread_id: string;
+  };
 }
 
 interface ProviderChild {
@@ -39,6 +42,7 @@ type SpawnImpl = (command: string, args: string[], options: { shell: false; stdi
 
 export interface InvokeProviderOptions {
   timeoutSeconds: number;
+  signal?: AbortSignal;
   spawnImpl?: SpawnImpl;
   terminationGraceMs?: number;
   finalTerminationMs?: number;
@@ -55,10 +59,11 @@ export async function invokeProvider(
   command: string,
   arguments_: string[],
   request: ProviderRequest,
-  { timeoutSeconds, spawnImpl = spawn as unknown as SpawnImpl, terminationGraceMs = 100, finalTerminationMs = 500 }: InvokeProviderOptions,
+  { timeoutSeconds, signal, spawnImpl = spawn as unknown as SpawnImpl, terminationGraceMs = 100, finalTerminationMs = 500 }: InvokeProviderOptions,
 ): Promise<ProviderResult> {
   if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) throw new ProviderError("provider timeout must be a positive finite number");
   if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS) throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
+  if (signal?.aborted) throw new ProviderError("provider cancellation requested before invocation", { outcome: "cancellation_requested", termination: { reason: "explicit_cancellation", directChildExitObserved: false } });
   let child: ProviderChild;
   try {
     child = spawnImpl(command, [...arguments_], { shell: false, stdio: ["pipe", "pipe", "pipe"] });
@@ -71,13 +76,13 @@ export async function invokeProvider(
   let stdoutBytes = 0;
   let stderrBytes = 0;
   let oversized = false;
-  let timedOut = false;
+  type TerminationReason = "timeout" | "explicit_cancellation" | "output_limit" | "provider_failure";
+  let terminationReason: TerminationReason | null = null;
   let spawnError: Error | null = null;
   let closed = false;
   let exitCode: number | null = null;
   let exitSignal: NodeJS.Signals | null = null;
   let settled = false;
-  let terminationStarted = false;
   let killTimer: NodeJS.Timeout | null = null;
   let finalTimer: NodeJS.Timeout | null = null;
 
@@ -85,9 +90,9 @@ export async function invokeProvider(
   const done = new Promise<{ unconfirmed: boolean }>(resolve => { resolveDone = resolve; });
   const onStdinError = () => {};
   const closePipes = () => { child.stdin?.destroy(); child.stdout?.destroy(); child.stderr?.destroy(); };
-  const terminate = () => {
-    if (settled || terminationStarted) return;
-    terminationStarted = true;
+  const terminate = (reason: TerminationReason) => {
+    if (settled || terminationReason !== null) return;
+    terminationReason = reason;
     closePipes();
     try { child.kill("SIGTERM"); } catch {}
     killTimer = setTimeout(() => { if (!closed) { try { child.kill("SIGKILL"); } catch {} } }, terminationGraceMs);
@@ -102,7 +107,7 @@ export async function invokeProvider(
   const onStdout = (chunk: Buffer) => {
     stdoutBytes += chunk.length;
     if (stdoutBytes <= MAX_STDOUT_BYTES) stdout.push(chunk);
-    else if (!oversized) { oversized = true; terminate(); }
+    else if (!oversized) { oversized = true; terminate("output_limit"); }
   };
   const onStderr = (chunk: Buffer) => {
     if (stderrBytes < MAX_STDERR_BYTES) {
@@ -125,13 +130,17 @@ export async function invokeProvider(
   child.stderr.on("data", onStderr);
   child.on("error", onSpawnError);
   child.on("close", onClose);
-  const timer = setTimeout(() => { timedOut = true; terminate(); }, timeoutSeconds * 1000);
+  const timer = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
+  const onAbort = () => terminate("explicit_cancellation");
+  signal?.addEventListener("abort", onAbort, { once: true });
+  if (signal?.aborted) onAbort();
   const wire = Buffer.from(JSON.stringify(request), "utf8");
   child.stdin.on("error", onStdinError);
-  try { child.stdin.end(wire); } catch (error) { spawnError = error instanceof Error ? error : new Error(String(error)); terminate(); }
+  try { child.stdin.end(wire); } catch (error) { spawnError = error instanceof Error ? error : new Error(String(error)); terminate("provider_failure"); }
 
   const terminal = await done;
   clearTimeout(timer);
+  signal?.removeEventListener("abort", onAbort);
   if (killTimer) clearTimeout(killTimer);
   if (finalTimer) clearTimeout(finalTimer);
   child.stdin.off("error", onStdinError);
@@ -143,11 +152,15 @@ export async function invokeProvider(
 
   const diagnostic = decodeDiagnostic(Buffer.concat(stderr));
   if (terminal.unconfirmed) {
-    throw new ProviderError(`${timedOut ? "provider timed out" : oversized ? "provider stdout exceeds 1 MiB" : "provider termination was not observed"}; direct-child termination unconfirmed`, { outcome: "outcome_unknown", terminationConfirmed: false });
+    const firstReason = terminationReason as TerminationReason | null;
+    if (firstReason === "provider_failure") throw new ProviderError("provider I/O failed; direct-child termination unconfirmed", { outcome: "outcome_unknown", terminationConfirmed: false, cause: spawnError ?? undefined });
+    const reason = firstReason ?? "output_limit";
+    throw new ProviderError(`${reason === "explicit_cancellation" ? "provider cancellation requested" : reason === "timeout" ? "provider timed out" : oversized ? "provider stdout exceeds 1 MiB" : "provider termination was not observed"}; direct-child termination unconfirmed`, { outcome: "outcome_unknown", terminationConfirmed: false, termination: { reason, directChildExitObserved: false } });
   }
   if (spawnError) throw new ProviderError(`provider is unavailable: ${spawnError.message}`, { cause: spawnError });
-  if (timedOut) throw new ProviderError(`provider timed out${diagnostic ? `: ${diagnostic}` : ""}`, { outcome: "timed_out" });
-  if (oversized || stdoutBytes > MAX_STDOUT_BYTES) throw new ProviderError("provider stdout exceeds 1 MiB");
+  if (terminationReason === "explicit_cancellation") throw new ProviderError("provider cancellation requested; direct child exit observed but remote work or effects remain unconfirmed", { outcome: "cancellation_requested", termination: { reason: "explicit_cancellation", directChildExitObserved: true } });
+  if (terminationReason === "timeout") throw new ProviderError(`provider timed out${diagnostic ? `: ${diagnostic}` : ""}`, { outcome: "timed_out", termination: { reason: "timeout", directChildExitObserved: true } });
+  if (oversized || stdoutBytes > MAX_STDOUT_BYTES) throw new ProviderError("provider stdout exceeds 1 MiB", { termination: { reason: "output_limit", directChildExitObserved: true } });
   if (exitCode !== 0) throw new ProviderError(`provider exited with ${exitSignal ? `signal ${exitSignal}` : `status ${exitCode}`}${diagnostic ? `: ${diagnostic}` : ""}`);
 
   let text: string;
@@ -162,12 +175,20 @@ export function validateProviderResult(result: unknown, selected: ReadonlySet<Me
   if (result === null || typeof result !== "object" || Array.isArray(result)) throw new ProviderError("provider result must be an object");
   const object = result as Record<string, unknown>;
   const fields = Object.keys(object).sort();
-  if (JSON.stringify(fields) !== JSON.stringify(["contract_version", "reply", "used_meaning_ids"].sort())) throw new ProviderError("provider result contains missing or unsupported fields");
+  const requiredFields = ["contract_version", "reply", "used_meaning_ids"].sort();
+  const allowedFields = [...requiredFields, "operational"].sort();
+  if (JSON.stringify(fields) !== JSON.stringify(requiredFields) && JSON.stringify(fields) !== JSON.stringify(allowedFields)) throw new ProviderError("provider result contains missing or unsupported fields");
   if (!Number.isSafeInteger(object.contract_version) || object.contract_version !== 1) throw new ProviderError("provider result contract_version is unsupported");
   if (typeof object.reply !== "string" || !object.reply.trim()) throw new ProviderError("provider reply must be non-empty");
   if (!Array.isArray(object.used_meaning_ids) || !object.used_meaning_ids.every(v => typeof v === "string")) throw new ProviderError("used_meaning_ids must be a string list");
   if (new Set(object.used_meaning_ids).size !== object.used_meaning_ids.length) throw new ProviderError("used_meaning_ids must not contain duplicates");
   if (!object.used_meaning_ids.every(id => selected.has(id as string))) throw new ProviderError("provider claimed a meaning outside its projection");
+  if ("operational" in object) {
+    if (object.operational === null || typeof object.operational !== "object" || Array.isArray(object.operational)) throw new ProviderError("provider operational evidence must be an object");
+    const operational = object.operational as Record<string, unknown>;
+    if (JSON.stringify(Object.keys(operational).sort()) !== JSON.stringify(["external_thread_id"])) throw new ProviderError("provider operational evidence contains missing or unsupported fields");
+    if (typeof operational.external_thread_id !== "string" || !operational.external_thread_id.trim() || operational.external_thread_id.length > 512 || /[\u0000-\u001f\u007f]/.test(operational.external_thread_id)) throw new ProviderError("provider external thread ID is invalid");
+  }
 }
 
 export function providerLabel(command: string) {

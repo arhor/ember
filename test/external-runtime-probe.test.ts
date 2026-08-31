@@ -32,10 +32,11 @@ test("external runtime probe should report only direct-child termination when ca
 
 test("external runtime probe should force direct-child termination when graceful cancellation is ignored", async () => {
   // Given
-  const script = "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)";
+  const child = new EventEmitter() as EventEmitter & { stdout: PassThrough; stderr: PassThrough; kill: (signal?: NodeJS.Signals | number) => boolean };
+  Object.assign(child, { stdout: new PassThrough(), stderr: new PassThrough(), kill: (signal?: NodeJS.Signals | number) => { if (signal === "SIGKILL") setImmediate(() => child.emit("close", null, "SIGKILL")); return true; } });
 
   // When
-  const result = await runProbe({ command: process.execPath, arguments_: ["-e", script], cwd: process.cwd(), timeoutMs: 2_000, cancelAfterMs: 50 });
+  const result = await runProbe({ command: "fixture", arguments_: [], cwd: process.cwd(), timeoutMs: 2_000, cancelAfterMs: 5, terminationGraceMs: 5, finalTerminationMs: 50, spawnImpl: () => child });
 
   // Then
   assert.deepEqual([result.termination_reason, result.direct_child_exit_observed, result.exit_signal], ["explicit_cancel", true, "SIGKILL"]);

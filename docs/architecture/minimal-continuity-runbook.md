@@ -1,9 +1,10 @@
 ---
-summary: "Contributor runbook for operating, inspecting, validating, and manually probing Ember's Node.js minimal continuity slice."
+summary: "Contributor runbook for operating, inspecting, validating, and running scripted or live Codex cognition through Ember's Node.js minimal continuity slice."
 read_when:
   - "Running or reviewing the executable minimal continuity slice from issue #23"
   - "Diagnosing its local JSON store, cooperative lock, provider process, or restart probe"
   - "Performing the optional live-provider smoke test without treating it as acceptance evidence"
+  - "Running the supported production Codex exec cognition backend with an existing local login"
 role: guide
 discovery_status: current
 ---
@@ -179,18 +180,99 @@ supported command; availability can be restored only by manual quarantine after
 independent quiescence verification. PID reuse intentionally preserves an
 availability failure rather than risking concurrent writers.
 
-## Optional live-provider smoke test
+## Supported live Codex cognition
 
-A live adapter may replace the scripted provider if it implements the versioned
-single-request/single-result JSON protocol from the design. Configure it only as
-a direct executable plus argument vector; the runtime never invokes a shell.
+Issue [#46](https://github.com/arhor/ember/issues/46) promotes Codex `exec` into
+the normal CLI path. Use an installed Codex CLI with its existing ChatGPT login;
+Ember does not read, copy, persist, or broker the login credential:
+
+```sh
+codex login status
+
+node bin/ember.ts run \
+  --state /tmp/ember-continuity.json \
+  --principal user-1 \
+  --scope project:ember/docs \
+  --provider codex \
+  --provider-timeout-seconds 120
+```
+
+The isolated invocation deliberately ignores `config.toml`, so its supported
+default authentication route is Codex's packaged `file` store in
+`$CODEX_HOME/auth.json`. If the existing login uses another runtime-owned store,
+pass the matching Codex overrides before `exec` and probe that same route first:
+
+```sh
+codex login status -c 'cli_auth_credentials_store="keyring"'
+
+node bin/ember.ts run \
+  --state /tmp/ember-continuity.json \
+  --principal user-1 \
+  --scope project:ember/docs \
+  --provider codex \
+  --codex-arg -c \
+  --codex-arg 'cli_auth_credentials_store="keyring"' \
+  --provider-timeout-seconds 120
+```
+
+`auto` is also supported. When the login was created with Codex's
+`secret_auth_storage` feature, pass and probe `--enable secret_auth_storage` as
+an additional `--codex-arg`. These options select Codex-owned credential
+storage; Ember still never reads or copies credential material. Other custom
+auth routing (managed login/workspace restrictions or alternate ChatGPT base
+URLs) is not inferred from ignored user configuration and must likewise be
+supplied explicitly through `--codex-arg` and validated with the installed
+runtime before use.
+
+Ordinary input now flows through Ember's current bounded projection and
+`runCognition` reintegration path. `--provider codex` defaults to the `codex`
+executable on `PATH`; `--codex-command PATH` can select another installed binary.
+The production adapter starts a fresh ephemeral Codex thread for every turn in a
+new temporary cwd containing only Ember's generated result schema. It ignores
+project rules and user configuration, uses the read-only Codex sandbox, forwards
+only a small allowlist of process environment needed to locate the runtime and
+its runtime-owned login, and never forwards `OPENAI_API_KEY`. It also disables
+Apps/Connectors, plugins, and skill instructions so account-derived connector
+context and user-level `$CODEX_HOME/skills` or `$HOME/.agents/skills` metadata
+cannot augment the model-visible episode.
+
+Codex JSONL and stdout are bounded to 1 MiB, stderr diagnostics to 64 KiB, and the
+final response is checked both by Codex's output schema and Ember's independent
+`ProviderResult` validator. An external thread ID, when present, is retained only
+on the cognition episode as operational evidence. It is not projected as memory,
+used as lineage, or resumed. The adapter never retries automatically.
+
+Press `Ctrl-C` during a model turn to request cancellation of that invocation.
+Ember records `cancellation_requested` only after observing the direct child exit;
+it does not claim remote cancellation, rollback, or absence of effects. A timeout
+is recorded separately as `timed_out`. If direct-child termination cannot be
+observed after bounded `SIGTERM`/`SIGKILL` handling, the outcome remains
+`outcome_unknown`.
+
+Run the opt-in synthetic production smoke path without placing a subscription in
+CI:
+
+```sh
+npm run smoke:codex
+```
+
+The smoke creates temporary synthetic canonical state containing one deliberately
+out-of-scope marker and a temporary user-level skill containing another marker,
+invokes the production adapter, checks that neither marker appears in the answer,
+checks bounded selection and descriptor-only reintegration, prints a sanitized
+summary plus the transient reply, and removes its temporary store. The user-skill
+marker check is a regression smoke, not proof of nonvisibility; the explicit
+`skills.include_instructions=false` control supplies that boundary. The smoke
+requires network access and a working local Codex login using the default
+file-store route.
 
 This smoke test is non-deterministic and non-gating. It can reveal provider
 presentation or integration problems, but it cannot replace the canonical state,
 projection, lifecycle, and scripted-response assertions in CI. Never place API
 keys, provider output, stderr, or transcript text in the canonical store. The
-provider is a trusted same-user subprocess, not a sandbox; it retains ambient OS
-capabilities, and direct-child timeout handling does not contain descendants.
+Codex runtime remains an external same-user process, not Ember's authority or
+continuity owner. Its own sandbox is defense in depth; direct-child termination
+handling cannot confirm remote cancellation or contain already-created effects.
 
 ## Known operational boundary
 

@@ -184,6 +184,11 @@ outcome, not the reply text or a provider transcript. That descriptor is not
 promoted to durable remembered meaning. The reply bytes exist only long enough
 to validate and attempt the current CLI delivery.
 
+An adapter may additionally attach one bounded opaque external thread identifier.
+The runtime records it only on the cognition episode as operational evidence; it
+is never a meaning, projection input, provider-resume key, Ember lineage, or
+identity token.
+
 The request contains no store path, mutation API, authority grant, raw transcript
 by default, provider-thread history, or permission to revise lineage. Its response
 or vendor response ID is not an identity token.
@@ -262,6 +267,27 @@ nothing. This contains neither child-created descendants nor ambient effects; a
 descendant-process sandbox or process-group policy is deferred. No failure path
 triggers an automatic retry.
 
+The supported production Codex adapter invokes `codex exec` directly behind this
+same seam. It creates a fresh minimal temporary cwd containing only the generated
+result schema, uses an ephemeral thread, ignores implicit project rules and user
+configuration, disables Apps/Connectors, plugin, and skill-instruction context,
+and supplies only the current `ProviderRequest`. Authentication remains in the installed Codex
+runtime. The packaged file credential store is the default supported route;
+non-default runtime-owned stores or auth routing must be selected explicitly as
+Codex arguments and probed with the installed runtime. Ember forwards a minimal environment
+allowlist for executable/login discovery and deliberately excludes API keys and
+unrelated ambient variables. Codex JSONL is independently parsed and bounded;
+the schema-constrained agent message still passes Ember's ordinary result
+validator. This is one-shot cognition, not specialist delegation, provider-owned
+memory, or a general external-runtime framework.
+
+Timeout, explicit cancellation request, observed direct-child exit, and
+unconfirmed termination remain separate. A user `SIGINT` during cognition
+requests cancellation. Observed direct-child exit permits the narrower terminal
+status `cancellation_requested` or `timed_out`, while the adapter still states
+that remote work or effects are unconfirmed. Failure to observe direct-child exit
+becomes `outcome_unknown`. No path retries automatically.
+
 ### CLI surface
 
 One foreground CLI is sufficient because the slice tests process and cognition
@@ -278,7 +304,7 @@ Its command surface is:
 - `ember init --state PATH --name Ember --principal user-1` creates one new
   lineage bound to the slice's one supported local principal and refuses to
   overwrite an existing store;
-- `ember run --state PATH --principal user-1 --scope project:ember/docs --provider-command PATH [--provider-arg ARG]... --provider-timeout-seconds N` starts the foreground interaction loop and records its principal, active scope, and runtime episode;
+- `ember run --state PATH --principal user-1 --scope project:ember/docs --provider-command PATH [--provider-arg ARG]... --provider-timeout-seconds N` starts the foreground interaction loop through the versioned process provider; `--provider codex [--codex-command PATH]` selects the supported production Codex backend through the same cognition seam;
 - `ember inspect --state PATH --principal user-1 [--json]` displays recognised lineage, current and
   historical meanings, provenance, supersession, prospective lifecycle, gaps,
   and runtime evidence;
@@ -451,7 +477,7 @@ The top-level split is semantic:
 | `lineage` | Stable random `lineage_id`, display name, establishment time, and the individually identified constitutive boundary. | AS-CONT-01 needs recognised succession and constitutive state outside the provider. |
 | `evidence` | Stable occurrence ID, source role and source actor (`user:<principal>`, `ember`, or runtime), asserted local principal where an interaction has one, occurrence and observation times, derivation links, scope, payload mode, optional availability state and payload, and digest while a retained payload is available. | ADR-0002 requires attributable source evidence and AS-MEM-04 requires unavailable to differ from absent. |
 | `meanings` | Stable ID, narrow kind, owner, slot, scope, content, evidence references, learned/applicability times, currentness, prospective lifecycle, uncertainty, and semantic links. | The fixture needs relationship, fact, preference change, commitment, and episode meta-memory without treating raw interaction as memory. |
-| `operations` | Runtime and cognition episode IDs, start/last-durable-observation/clean-stop times, provider label, selected meaning IDs, expression-occurrence status, delivery status, and known outcome. | ADR-0005 requires truthful operational claims, separation of occurrence from delivery, and inspection of why a projection was built. |
+| `operations` | Runtime and cognition episode IDs, start/last-durable-observation/clean-stop times, provider label, selected meaning IDs, optional external thread ID, bounded termination reason/direct-child observation, expression-occurrence status, delivery status, and known outcome. | ADR-0005 requires truthful operational claims, separation of occurrence from delivery, and inspection of why a projection was built. External IDs remain operational evidence only. |
 
 Random IDs provide stable correlation inside the one supported store. They do not
 prove unique metaphysical lineage, establish ordering, or resolve copies and
@@ -544,9 +570,13 @@ Before every commit and after every load, ordinary code enforces at least:
 14. deletion requests and a `deleted` status are rejected because privacy
     deletion semantics are outside this slice;
 15. the provider result schema admits only `contract_version`, `reply`, and
-    `used_meaning_ids`; unknown fields are rejected, so a result cannot request
-    state mutation, evidence creation, or lineage revision. Ambient subprocess
-    isolation is explicitly not claimed;
+    `used_meaning_ids`, plus an adapter-attached bounded operational envelope
+    containing only an external thread ID; unknown fields are rejected, so a
+    result cannot request state mutation, evidence creation, or lineage revision.
+    The external ID remains cognition-operation evidence and ambient subprocess
+    isolation is explicitly not claimed. A bounded termination record separately
+    preserves timeout, explicit cancellation request, output-limit shutdown, and
+    whether direct-child exit was observed;
 16. every mutation holds an exclusive-create lease whose owner token still
     matches at commit and clean release; stale-lock quarantine requires explicit
     operator-asserted quiescence, the expected token, and a same-host absent PID;
@@ -760,7 +790,7 @@ AS-MEM-04 gap.
 Timeout, malformed result, or provider unavailability through the supported
 provider contract leaves semantic meaning unchanged. The cognition episode
 records only the outcome justified by the
-adapter (`failed`, `timed_out`, or `outcome_unknown`). The CLI reports degraded
+adapter (`failed`, `timed_out`, `cancellation_requested`, or `outcome_unknown`). The CLI reports degraded
 cognition, and inspect/check/correct remain usable without a provider.
 
 The Ember provider contract offers no tool or external-action capability, but the
@@ -949,7 +979,7 @@ and a provider can express continuity without owning it.
 | Missing canonical file after initialization was expected | Report continuity store unavailable; do not silently initialize a new Ember. |
 | Optional detail payload unavailable with valid descriptor/meta-memory | Produce typed AS-MEM-04 gap and continue within bounded uncertainty. |
 | Evidence reference absent or digest/availability invariants inconsistent | Treat as canonical corruption, not ordinary failed recall. |
-| Provider unavailable, malformed, oversized, timed out, exits non-zero, emits extra stdout, or returns empty reply | Record only justified attempt status; leave semantic state unchanged; keep inspect/check/correct usable; never retry automatically. |
+| Provider unavailable, malformed, oversized, timed out, explicitly cancellation-requested, exits non-zero, emits extra stdout, or returns empty reply | Record only justified attempt status; leave semantic state unchanged; keep inspect/check/correct usable; never retry automatically. Cancellation request, direct-child exit, remote effects, and rollback remain distinct. |
 | Crash after provider start but before terminal record | Preserve `outcome_unknown`; the provider may have completed and other unpersisted observation may have occurred after `last_durable_observation_at`. Do not claim otherwise or reconstruct/display a reply on restart. |
 | Crash after the payload-free expression occurrence commits but before CLI display | Inspection shows the expression occurrence and selection manifest; no meaning or reply payload was retained. `delivery_status=pending` means delivery is unknown, not that the response was seen. |
 | Crash after CLI display but before the delivery-status commit | The human may have seen all or part of the transient reply, while canonical `delivery_status=pending` still means unknown. Recovery never replays the unavailable reply or upgrades the delivery claim. |

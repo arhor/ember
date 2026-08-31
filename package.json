@@ -13,7 +13,8 @@
     "check": "tsc -p tsconfig.json && node scripts/docs-discovery.mjs check",
     "test": "node --test test/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
     "test:continuity": "node --test test/*.test.ts",
-    "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs"
+    "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
+    "smoke:codex": "node scripts/live-codex-smoke.ts"
   },
   "devDependencies": {
     "@types/node": "26.4.0",

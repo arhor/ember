@@ -27,23 +27,35 @@ export class ConcurrentWriter extends EmberError {
   }
 }
 
-export type ProviderOutcome = "failed" | "timed_out" | "outcome_unknown";
+export type ProviderOutcome = "failed" | "timed_out" | "cancellation_requested" | "outcome_unknown";
+export type ProviderTerminationReason = "timeout" | "explicit_cancellation" | "output_limit";
+
+export interface ProviderTermination {
+  reason: ProviderTerminationReason;
+  directChildExitObserved: boolean;
+}
 
 export interface ProviderErrorOptions extends ErrorOptions {
   outcome?: ProviderOutcome;
   terminationConfirmed?: boolean;
+  externalThreadId?: string;
+  termination?: ProviderTermination;
 }
 
 export class ProviderError extends EmberError {
   readonly outcome: ProviderOutcome;
   readonly terminationConfirmed: boolean;
+  readonly externalThreadId: string | null;
+  readonly termination: ProviderTermination | null;
 
   constructor(
     message: string,
-    { outcome = "failed", terminationConfirmed = true, cause }: ProviderErrorOptions = {},
+    { outcome = "failed", terminationConfirmed = true, externalThreadId, termination, cause }: ProviderErrorOptions = {},
   ) {
     super(message, { cause });
     this.outcome = outcome;
     this.terminationConfirmed = terminationConfirmed;
+    this.externalThreadId = externalThreadId ?? null;
+    this.termination = termination ?? null;
   }
 }
