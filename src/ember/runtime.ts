@@ -71,6 +71,7 @@ export interface RunCognitionOptions {
   command: string;
   arguments_?: string[];
   timeoutSeconds: number;
+  signal?: AbortSignal;
   output?: Writable | ((text: string) => void | Promise<void>);
   purpose?: CognitionPurpose;
   explainIds?: Array<MeaningId | string>;
@@ -92,6 +93,7 @@ export async function runCognition(
     command,
     arguments_: args = [],
     timeoutSeconds,
+    signal,
     output = process.stdout,
     purpose = "ordinary",
     explainIds = [],
@@ -123,13 +125,15 @@ export async function runCognition(
     input_evidence_id: input.evidence_id,
     expression_evidence_id: null,
     delivery_status: "not_attempted",
+    external_provider_thread_id: null,
+    provider_termination: null,
   });
   state = await store.commit(state.revision, started);
 
   const request: ProviderRequest = { contract_version: CONTRACT_VERSION, cognition_id: cognitionId, projection, input: { text } };
   let result;
   try {
-    result = await provider(command, args, request, { timeoutSeconds });
+    result = await provider(command, args, request, { timeoutSeconds, signal });
   } catch (error) {
     if (!(error instanceof ProviderError)) throw error;
     const current = await store.load();
@@ -138,6 +142,8 @@ export async function runCognition(
     const cognition = findCognition(failed, cognitionId);
     const at = nowUtc();
     cognition.status = error.outcome;
+    cognition.external_provider_thread_id = error.externalThreadId;
+    cognition.provider_termination = error.termination === null ? null : { reason: error.termination.reason, direct_child_exit_observed: error.termination.directChildExitObserved };
     cognition.last_durable_observation_at = at;
     findRuntime(failed, runtimeId).last_durable_observation_at = at;
     state = await store.commit(current.revision, failed);
@@ -164,7 +170,7 @@ export async function runCognition(
     provider_label: label,
   };
   completed.evidence.push(expression);
-  Object.assign(cognition, { status: "completed", last_durable_observation_at: at, used_meaning_ids: result.used_meaning_ids, expression_evidence_id: expressionId, delivery_status: "pending" });
+  Object.assign(cognition, { status: "completed", last_durable_observation_at: at, used_meaning_ids: result.used_meaning_ids, expression_evidence_id: expressionId, delivery_status: "pending", external_provider_thread_id: result.operational?.external_thread_id ?? null });
   findRuntime(completed, runtimeId).last_durable_observation_at = at;
   state = await store.commit(current.revision, completed);
   await hooks.afterExpressionCommit?.(state);

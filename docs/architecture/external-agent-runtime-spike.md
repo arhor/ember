@@ -2,6 +2,7 @@
 summary: "Completed issue #44 spike evaluating subscription-backed Codex, Claude Code, and Cursor runtimes and proving a bounded Ember-to-Codex cognition round-trip."
 read_when:
   - "Investigating or implementing issue #44 external agent runtime integration"
+  - "Reviewing the evidence behind issue #46's production Codex cognition backend"
   - "Comparing Codex, Claude Code, or Cursor as a live cognition or specialist runtime for Ember"
   - "Designing a replaceable boundary between Ember cognition and an already-authenticated local agent runtime"
 role: design
@@ -19,6 +20,11 @@ discovery_status: current
 **Repository baseline:** `master` at `a1e3f0aa21fa13722e4b2a10eed46c22d77070ea`
 
 **Result:** complete local spike; production implementation deferred to a focused follow-up.
+
+**Graduation:** issue [#46](https://github.com/arhor/ember/issues/46) later promoted
+only the recommended Codex one-shot path into production. The experiments remain
+historical design evidence; supported operation is documented in the
+[minimal continuity runbook](minimal-continuity-runbook.md#supported-live-codex-cognition).
 
 Ember can perform real subscription-backed cognition through an already-authorized
 external agent runtime without transferring continuity or canonical-state ownership

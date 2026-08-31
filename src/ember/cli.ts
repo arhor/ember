@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 import { EmberError, ValidationError } from "./errors.ts";
+import { invokeCodexProvider } from "./codex-provider.ts";
 import { cloneState, initialState, nowUtc, type EmberState, type MeaningId, type RuntimeId } from "./model.ts";
 import { explanationView, inspectionView } from "./projection.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "./provider.ts";
@@ -16,7 +17,7 @@ interface CliIo {
 
 type CliArgs =
   | { command: "init"; state: string; name: string; principal: string }
-  | { command: "run"; state: string; principal: string; scope: string; providerCommand: string; providerArgs: string[]; providerTimeoutSeconds: number }
+  | { command: "run"; state: string; principal: string; scope: string; providerKind: "process" | "codex"; providerCommand: string; providerArgs: string[]; providerTimeoutSeconds: number }
   | { command: "inspect"; state: string; principal: string; json: boolean }
   | { command: "explain"; state: string; principal: string; meaningId: string }
   | { command: "correct"; state: string; principal: string; meaningId: string; text: string; reason: string }
@@ -109,7 +110,7 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
       try {
         if (line.startsWith(":")) {
           if (line.startsWith(":ask ")) {
-            const result = await ask(args, store, state, started.runtimeId, line, io.output);
+            const result = await withSigintCancellation(signal => ask(args, store, state, started.runtimeId, line, io.output, signal));
             state = result.state;
             if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
           } else {
@@ -118,7 +119,7 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
             io.output.write(`${result.id}\n`);
           }
         } else {
-          const result = await runCognition(store, state, {
+          const result = await withSigintCancellation(signal => runCognition(store, state, {
             runtimeId: started.runtimeId,
             principal: args.principal,
             scope: args.scope,
@@ -126,8 +127,10 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
             command: args.providerCommand,
             arguments_: args.providerArgs,
             timeoutSeconds: args.providerTimeoutSeconds,
+            signal,
+            provider: args.providerKind === "codex" ? invokeCodexProvider : undefined,
             output: io.output,
-          });
+          }));
           state = result.state;
           if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
         }
@@ -165,7 +168,7 @@ async function semanticCommand(store: StateStore, state: EmberState, runtimeId: 
   return { state: await store.commit(state.revision, candidate), id };
 }
 
-async function ask(args: Extract<CliArgs, { command: "run" }>, store: StateStore, state: EmberState, runtimeId: RuntimeId, line: string, output: Writable) {
+async function ask(args: Extract<CliArgs, { command: "run" }>, store: StateStore, state: EmberState, runtimeId: RuntimeId, line: string, output: Writable, signal: AbortSignal) {
   const parts = splitCommand(line);
   if (parts.length < 4 || parts[0] !== ":ask" || parts[1] !== "--explain") throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
   const ids = parts[2].split(",").filter(Boolean);
@@ -178,6 +181,8 @@ async function ask(args: Extract<CliArgs, { command: "run" }>, store: StateStore
     command: args.providerCommand,
     arguments_: args.providerArgs,
     timeoutSeconds: args.providerTimeoutSeconds,
+    signal,
+    provider: args.providerKind === "codex" ? invokeCodexProvider : undefined,
     output,
     purpose: "explain",
     explainIds: ids,
@@ -249,7 +254,7 @@ export function parseArgs(argv: string[]): CliArgs {
   const command = argv[0];
   const specs: Record<string, CommandSpec> = {
     init: { flags: ["--state", "--name", "--principal"], positionals: 0 },
-    run: { flags: ["--state", "--principal", "--scope", "--provider-command", "--provider-arg", "--provider-timeout-seconds"], repeatable: ["--provider-arg"], positionals: 0 },
+    run: { flags: ["--state", "--principal", "--scope", "--provider", "--provider-command", "--provider-arg", "--codex-command", "--codex-arg", "--provider-timeout-seconds"], repeatable: ["--provider-arg", "--codex-arg"], positionals: 0 },
     inspect: { flags: ["--state", "--principal", "--json"], booleans: ["--json"], positionals: 0 },
     explain: { flags: ["--state", "--principal"], positionals: 1 },
     correct: { flags: ["--state", "--principal", "--text", "--reason"], positionals: 1 },
@@ -289,13 +294,31 @@ export function parseArgs(argv: string[]): CliArgs {
     const timeout = Number(required("--provider-timeout-seconds"));
     if (!Number.isFinite(timeout) || timeout <= 0) throw new ValidationError("--provider-timeout-seconds must be a positive finite number");
     if (timeout > MAX_PROVIDER_TIMEOUT_SECONDS) throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS}`);
-    return { command, state: required("--state"), principal: required("--principal"), scope: required("--scope"), providerCommand: required("--provider-command"), providerArgs: Array.isArray(values["--provider-arg"]) ? values["--provider-arg"] as string[] : [], providerTimeoutSeconds: timeout };
+    const provider = values["--provider"];
+    if (provider !== undefined && provider !== "codex") throw new ValidationError("--provider currently supports only codex");
+    if (provider === "codex") {
+      if (values["--provider-command"] !== undefined || values["--provider-arg"] !== undefined) throw new ValidationError("--provider-command and --provider-arg cannot be combined with --provider codex");
+      return { command, state: required("--state"), principal: required("--principal"), scope: required("--scope"), providerKind: "codex", providerCommand: typeof values["--codex-command"] === "string" ? values["--codex-command"] : "codex", providerArgs: Array.isArray(values["--codex-arg"]) ? values["--codex-arg"] as string[] : [], providerTimeoutSeconds: timeout };
+    }
+    if (values["--codex-command"] !== undefined || values["--codex-arg"] !== undefined) throw new ValidationError("--codex-command and --codex-arg require --provider codex");
+    return { command, state: required("--state"), principal: required("--principal"), scope: required("--scope"), providerKind: "process", providerCommand: required("--provider-command"), providerArgs: Array.isArray(values["--provider-arg"]) ? values["--provider-arg"] as string[] : [], providerTimeoutSeconds: timeout };
   }
   if (command === "inspect") return { command, state: required("--state"), principal: required("--principal"), json: values["--json"] === true };
   if (command === "explain") return { command, state: required("--state"), principal: required("--principal"), meaningId: positionals[0] };
   if (command === "correct") return { command, state: required("--state"), principal: required("--principal"), meaningId: positionals[0], text: required("--text"), reason: required("--reason") };
   if (command === "check" || command === "lock-status") return { command, state: required("--state") };
   return { command: "quarantine-stale-lock", state: required("--state"), ownerToken: required("--owner-token"), confirmQuiescent: values["--confirm-quiescent"] === true };
+}
+
+async function withSigintCancellation<T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  process.once("SIGINT", cancel);
+  try {
+    return await operation(controller.signal);
+  } finally {
+    process.off("SIGINT", cancel);
+  }
 }
 
 function isOperationalSystemError(error: unknown): error is Error & { code: string } {

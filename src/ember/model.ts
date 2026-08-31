@@ -12,7 +12,7 @@ export type CognitionId = Brand<"CognitionId">;
 export type Currentness = "current" | "superseded" | "historical";
 export type MeaningKind = "relationship" | "fact" | "preference" | "commitment" | "episode_meta";
 export type SourceRole = "user_command" | "ember_adoption" | "ember_expression_via_provider" | "runtime_observation" | "fixture_fault";
-export type CognitionStatus = "started" | "completed" | "failed" | "timed_out" | "outcome_unknown";
+export type CognitionStatus = "started" | "completed" | "failed" | "timed_out" | "cancellation_requested" | "outcome_unknown";
 export type DeliveryStatus = "not_attempted" | "pending" | "displayed";
 export type CognitionPurpose = "ordinary" | "explain";
 
@@ -214,6 +214,11 @@ export interface CognitionEpisode {
   input_evidence_id: EvidenceId;
   expression_evidence_id: EvidenceId | null;
   delivery_status: DeliveryStatus;
+  external_provider_thread_id?: string | null;
+  provider_termination?: {
+    reason: "timeout" | "explicit_cancellation" | "output_limit";
+    direct_child_exit_observed: boolean;
+  } | null;
 }
 
 export interface EmberState {
@@ -489,11 +494,12 @@ export function validateState(state: unknown): asserts state is EmberState {
   });
 
   const cognitionFields = ["cognition_id", "runtime_id", "principal", "active_scope", "provider_label", "purpose", "started_at", "last_durable_observation_at", "status", "selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids", "input_evidence_id", "expression_evidence_id", "delivery_status"];
+  const cognitionFieldsWithOperationalEvidence = [...cognitionFields, "external_provider_thread_id", "provider_termination"];
   cognitions.forEach((raw, index) => {
     const p = `cognition_episodes[${index}]`;
     const c = isObject(raw) ? raw : {};
     require(isObject(raw), `${p} must be an object`);
-    require(exactKeys(c, cognitionFields), `${p} fields do not match schema v1`);
+    require(exactKeys(c, cognitionFields) || exactKeys(c, cognitionFieldsWithOperationalEvidence), `${p} fields do not match schema v1`);
     require(validId(c.cognition_id, "cognition-"), `${p}.cognition_id is invalid`);
     if (nonempty(c.cognition_id)) { allIds.push(c.cognition_id); cognitionById.set(c.cognition_id, c); }
     require(nonempty(c.runtime_id), `${p}.runtime_id must be an ID`);
@@ -503,7 +509,15 @@ export function validateState(state: unknown): asserts state is EmberState {
     require(nonempty(c.provider_label), `${p}.provider_label is required`);
     require(timestamp(c.started_at), `${p}.started_at must be RFC 3339 UTC`);
     require(timestamp(c.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
-    require(["started", "completed", "failed", "timed_out", "outcome_unknown"].includes(c.status), `${p}.status is invalid`);
+    require(["started", "completed", "failed", "timed_out", "cancellation_requested", "outcome_unknown"].includes(c.status), `${p}.status is invalid`);
+    if ("external_provider_thread_id" in c && c.external_provider_thread_id !== null) require(typeof c.external_provider_thread_id === "string" && c.external_provider_thread_id.length > 0 && c.external_provider_thread_id.length <= 512 && !/[\u0000-\u001f\u007f]/.test(c.external_provider_thread_id), `${p}.external_provider_thread_id is invalid`);
+    if ("provider_termination" in c && c.provider_termination !== null) {
+      require(isObject(c.provider_termination) && exactKeys(c.provider_termination, ["reason", "direct_child_exit_observed"]), `${p}.provider_termination is invalid`);
+      if (isObject(c.provider_termination)) {
+        require(["timeout", "explicit_cancellation", "output_limit"].includes(c.provider_termination.reason), `${p}.provider_termination.reason is invalid`);
+        require(typeof c.provider_termination.direct_child_exit_observed === "boolean", `${p}.provider_termination.direct_child_exit_observed is invalid`);
+      }
+    }
     for (const f of ["selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids"]) require(Array.isArray(c[f]) && c[f].every(nonempty), `${p}.${f} must be an ID list`);
     require(nonempty(c.input_evidence_id), `${p}.input_evidence_id is required`);
     require(["not_attempted", "pending", "displayed"].includes(c.delivery_status), `${p}.delivery_status is invalid`);
