@@ -2,12 +2,21 @@
   "name": "@arhor/ember",
   "version": "0.0.0",
   "private": true,
-  "engines": { "node": ">=24" },
-  "bin": { "ember": "bin/ember.mjs" },
+  "type": "module",
+  "engines": {
+    "node": ">=26.8.1 <27"
+  },
+  "bin": {
+    "ember": "bin/ember.ts"
+  },
   "scripts": {
-    "test": "node --test",
-    "test:continuity": "node --test test/*.test.mjs",
-    "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
-    "check": "node --check bin/ember.mjs && for file in src/ember/*.mjs test/*.mjs test-fixtures/providers/*.mjs; do node --check \"$file\"; done && node scripts/docs-discovery.mjs check"
+    "check": "tsc -p tsconfig.json && node scripts/docs-discovery.mjs check",
+    "test": "node --test test/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
+    "test:continuity": "node --test test/*.test.ts",
+    "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "typescript": "7.0.2"
   }
 }
