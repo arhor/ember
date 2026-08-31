@@ -2,6 +2,7 @@
 
 import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
+import type { Readable } from "node:stream";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const API_KEY_NAMES = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "CURSOR_API_KEY"] as const;
@@ -12,14 +13,27 @@ export interface ProbeOptions {
   cwd: string;
   timeoutMs: number;
   cancelAfterMs?: number;
+  terminationGraceMs?: number;
+  finalTerminationMs?: number;
+  spawnImpl?: SpawnProbe;
 }
+
+interface ProbeChild {
+  stdout: Readable;
+  stderr: Readable;
+  kill(signal?: NodeJS.Signals | number): boolean;
+  once(event: "error", listener: (error: Error) => void): this;
+  once(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
+}
+
+type SpawnProbe = (command: string, arguments_: string[], options: { cwd: string; env: NodeJS.ProcessEnv; shell: false; stdio: ["ignore", "pipe", "pipe"] }) => ProbeChild;
 
 export interface ProbeSummary {
   command: string;
   duration_ms: number;
   exit_code: number | null;
   exit_signal: NodeJS.Signals | null;
-  cancellation_requested: boolean;
+  termination_reason: "explicit_cancel" | "timeout" | null;
   direct_child_exit_observed: boolean;
   stdout_bytes: number;
   stderr_bytes: number;
@@ -34,7 +48,8 @@ export async function runProbe(options: ProbeOptions): Promise<ProbeSummary> {
   const environment = { ...process.env };
   for (const name of API_KEY_NAMES) delete environment[name];
 
-  const child = spawn(options.command, options.arguments_, {
+  const spawnImpl = options.spawnImpl ?? spawn as unknown as SpawnProbe;
+  const child = spawnImpl(options.command, options.arguments_, {
     cwd: options.cwd,
     env: environment,
     shell: false,
@@ -45,8 +60,10 @@ export async function runProbe(options: ProbeOptions): Promise<ProbeSummary> {
   const stderr: Buffer[] = [];
   let stdoutBytes = 0;
   let stderrBytes = 0;
-  let cancellationRequested = false;
+  let terminationReason: ProbeSummary["termination_reason"] = null;
   let forceKillTimer: NodeJS.Timeout | undefined;
+  let finalTerminationTimer: NodeJS.Timeout | undefined;
+  let settled = false;
 
   child.stdout.on("data", (chunk: Buffer) => {
     stdoutBytes += chunk.length;
@@ -57,23 +74,36 @@ export async function runProbe(options: ProbeOptions): Promise<ProbeSummary> {
     retainBounded(stderr, chunk);
   });
 
-  const cancelTimer = options.cancelAfterMs === undefined ? undefined : setTimeout(() => {
-    cancellationRequested = true;
-    child.kill("SIGTERM");
-    forceKillTimer = setTimeout(() => child.kill("SIGKILL"), 500);
-  }, options.cancelAfterMs);
-  const timeoutTimer = setTimeout(() => {
-    cancellationRequested = true;
-    child.kill("SIGTERM");
-    forceKillTimer = setTimeout(() => child.kill("SIGKILL"), 500);
-  }, options.timeoutMs);
-
-  const terminal = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve, reject) => {
+  let resolveTerminal!: (terminal: { code: number | null; signal: NodeJS.Signals | null; observed: boolean }) => void;
+  const terminalPromise = new Promise<{ code: number | null; signal: NodeJS.Signals | null; observed: boolean }>((resolve, reject) => {
+    resolveTerminal = resolve;
     child.once("error", reject);
-    child.once("close", (code, signal) => resolve({ code, signal }));
-  }).finally(() => {
+    child.once("close", (code, signal) => {
+      if (settled) return;
+      settled = true;
+      resolve({ code, signal, observed: true });
+    });
+  });
+  const requestTermination = (reason: Exclude<ProbeSummary["termination_reason"], null>) => {
+    if (terminationReason !== null || settled) return;
+    terminationReason = reason;
+    child.kill("SIGTERM");
+    forceKillTimer = setTimeout(() => child.kill("SIGKILL"), options.terminationGraceMs ?? 500);
+    finalTerminationTimer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.stdout.destroy();
+      child.stderr.destroy();
+      resolveTerminal({ code: null, signal: null, observed: false });
+    }, options.finalTerminationMs ?? 1_000);
+  };
+  const cancelTimer = options.cancelAfterMs === undefined ? undefined : setTimeout(() => requestTermination("explicit_cancel"), options.cancelAfterMs);
+  const timeoutTimer = setTimeout(() => requestTermination("timeout"), options.timeoutMs);
+
+  const terminal = await terminalPromise.finally(() => {
     if (cancelTimer !== undefined) clearTimeout(cancelTimer);
     if (forceKillTimer !== undefined) clearTimeout(forceKillTimer);
+    if (finalTerminationTimer !== undefined) clearTimeout(finalTerminationTimer);
     clearTimeout(timeoutTimer);
   });
 
@@ -84,8 +114,8 @@ export async function runProbe(options: ProbeOptions): Promise<ProbeSummary> {
     duration_ms: Math.round(performance.now() - started),
     exit_code: terminal.code,
     exit_signal: terminal.signal,
-    cancellation_requested: cancellationRequested,
-    direct_child_exit_observed: true,
+    termination_reason: terminationReason,
+    direct_child_exit_observed: terminal.observed,
     stdout_bytes: stdoutBytes,
     stderr_bytes: stderrBytes,
     stdout_truncated: stdoutBytes > MAX_OUTPUT_BYTES,

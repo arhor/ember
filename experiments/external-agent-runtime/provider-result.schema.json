@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "reply", "used_meaning_ids"],
+  "properties": {
+    "contract_version": { "type": "integer", "const": 1 },
+    "reply": { "type": "string", "minLength": 1 },
+    "used_meaning_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
