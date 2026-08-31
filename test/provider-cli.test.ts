@@ -57,6 +57,22 @@ test("provider adapter should report timeout when fresh process exceeds limit",a
   // Then
   assert.equal(error.outcome,"timed_out");
 });
+test("provider adapter should preserve timeout when cancellation follows termination",async()=>{
+  // Given
+  const controller=new AbortController(),child=new EventEmitter();Object.assign(child,{stdin:new PassThrough(),stdout:new PassThrough(),stderr:new PassThrough(),kill:()=>{setTimeout(()=>child.emit("close",null,"SIGTERM"),10);return true;}});
+  // When
+  const pending=captureError(()=>invokeProvider("fixture",[],emptyRequest(),{timeoutSeconds:0.005,signal:controller.signal,spawnImpl:()=>child,terminationGraceMs:50,finalTerminationMs:100}));setTimeout(()=>controller.abort(),7);const error=await pending;
+  // Then
+  assert.deepEqual([error.outcome,error.termination],["timed_out",{reason:"timeout",directChildExitObserved:true}]);
+});
+test("provider adapter should preserve output limit when cancellation follows termination",async()=>{
+  // Given
+  const controller=new AbortController(),child=new EventEmitter();Object.assign(child,{stdin:new PassThrough(),stdout:new PassThrough(),stderr:new PassThrough(),kill:()=>{setTimeout(()=>child.emit("close",null,"SIGTERM"),10);return true;}});
+  // When
+  const pending=captureError(()=>invokeProvider("fixture",[],emptyRequest(),{timeoutSeconds:1,signal:controller.signal,spawnImpl:()=>{setImmediate(()=>{child.stdout.write(Buffer.alloc(1024*1024+1));setTimeout(()=>controller.abort(),1);});return child;},terminationGraceMs:50,finalTerminationMs:100}));const error=await pending;
+  // Then
+  assert.deepEqual([error.outcome,error.termination],["failed",{reason:"output_limit",directChildExitObserved:true}]);
+});
 test("provider adapter should close local pipes and report unknown when termination is unconfirmed",async()=>{
   // Given
   const child=new EventEmitter(),signals=[];Object.assign(child,{stdin:new PassThrough(),stdout:new PassThrough(),stderr:new PassThrough(),kill:signal=>{signals.push(signal);return true;}});
@@ -176,6 +192,22 @@ test("state validator should reject cognition when scope differs from owning run
   const error=await captureError(()=>validateState(result.state));
   // Then
   assert.match(error.message,/scope differs from owning runtime/);
+});
+test("state validator should reject provider termination when status contradicts it",async()=>{
+  // Given
+  const fixture=await startedStore(),result=await runCognition(fixture.store,fixture.state,{runtimeId:fixture.runtimeId,principal:PRINCIPAL,scope:SCOPE,text:"one",command:process.execPath,arguments_:[PROVIDER],timeoutSeconds:1,output:()=>{}});await fixture.store.releaseWriteLease(fixture.lease);const variants=[];for(const [status,reason,observed] of [["completed","timeout",true],["timed_out","explicit_cancellation",true],["failed","output_limit",false]]){const state=cloneState(result.state),episode=state.operations.cognition_episodes.at(-1);episode.status=status;episode.provider_termination={reason,direct_child_exit_observed:observed};if(status!=="completed"){episode.expression_evidence_id=null;episode.delivery_status="not_attempted";episode.used_meaning_ids=[];state.evidence=state.evidence.filter(e=>e.source_role!=="ember_expression_via_provider");}variants.push(state);}
+  // When
+  const errors=await Promise.all(variants.map(state=>captureError(()=>validateState(state))));
+  // Then
+  assert.ok(errors.every(error=>/provider_termination contradicts cognition status/.test(error.message)));
+});
+test("state validator should accept cancellation when invocation ends before child exit is observable",async()=>{
+  // Given
+  const fixture=await startedStore(),result=await runCognition(fixture.store,fixture.state,{runtimeId:fixture.runtimeId,principal:PRINCIPAL,scope:SCOPE,text:"one",command:process.execPath,arguments_:[PROVIDER],timeoutSeconds:1,output:()=>{}}),state=cloneState(result.state),episode=state.operations.cognition_episodes.at(-1);await fixture.store.releaseWriteLease(fixture.lease);episode.status="cancellation_requested";episode.provider_termination={reason:"explicit_cancellation",direct_child_exit_observed:false};episode.expression_evidence_id=null;episode.delivery_status="not_attempted";episode.used_meaning_ids=[];state.evidence=state.evidence.filter(e=>e.source_role!=="ember_expression_via_provider");
+  // When
+  const validated=()=>validateState(state);
+  // Then
+  assert.doesNotThrow(validated);
 });
 test("CLI run should reject timeout before runtime start when value is infinite",async()=>{
   // Given

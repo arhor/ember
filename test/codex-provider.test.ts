@@ -92,6 +92,8 @@ test("Codex provider should disclose only the bounded request when invoked with 
   assert.equal(invocation.options.cwd === ROOT, false);
   assert.deepEqual(invocation.cwdEntries, ["provider-result.schema.json"]);
   assert.deepEqual(invocation.options.env, { PATH: "/safe/bin", HOME: "/safe/home" });
+  assert.equal(invocation.arguments_.includes("plugins"), true);
+  assert.equal(invocation.arguments_.includes("skills.include_instructions=false"), true);
   assert.deepEqual(invocation.arguments_.slice(-3, -1), ["-C", invocation.options.cwd]);
 });
 
@@ -279,6 +281,17 @@ test("CLI parser should select the production Codex backend when the supported p
   // Then
   assert.equal(parsed.command, "run");
   assert.deepEqual(parsed, { command: "run", state: "/tmp/ember.json", principal: PRINCIPAL, scope: SCOPE, providerKind: "codex", providerCommand: "codex", providerArgs: [], providerTimeoutSeconds: 120 });
+});
+
+test("CLI parser should preserve runtime-owned authentication overrides when Codex uses a non-default store", () => {
+  // Given
+  const arguments_ = ["run", "--state", "/tmp/ember.json", "--principal", PRINCIPAL, "--scope", SCOPE, "--provider", "codex", "--codex-arg", "-c", "--codex-arg", 'cli_auth_credentials_store="keyring"', "--provider-timeout-seconds", "120"];
+
+  // When
+  const parsed = parseArgs(arguments_);
+
+  // Then
+  assert.deepEqual(parsed.providerArgs, ["-c", 'cli_auth_credentials_store="keyring"']);
 });
 
 test("CLI run should complete bounded cognition when the production Codex backend is selected", async () => {

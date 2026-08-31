@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { invokeCodexProvider } from "../src/ember/codex-provider.ts";
@@ -13,7 +13,13 @@ import { StateStore } from "../src/ember/store.ts";
 const PRINCIPAL = "user-1";
 const SCOPE = `relationship:${PRINCIPAL}`;
 const EXCLUDED_MARKER = "OUT_OF_SCOPE_MARKER_46";
+const USER_SKILL_MARKER = "USER_SKILL_MARKER_46";
 const directory = await mkdtemp(join(tmpdir(), "ember-live-codex-"));
+const probeHome = join(directory, "home");
+const skillDirectory = join(probeHome, ".agents", "skills", "ember-context-probe");
+await mkdir(skillDirectory, { recursive: true });
+await writeFile(join(skillDirectory, "SKILL.md"), `---\nname: ember-context-probe\ndescription: ${USER_SKILL_MARKER}\n---\n\n${USER_SKILL_MARKER}\n`);
+const codexHome = process.env.CODEX_HOME ?? (process.env.HOME ? join(process.env.HOME, ".codex") : undefined);
 const statePath = join(directory, "ember.json");
 const state = initialState("Ember", PRINCIPAL);
 const relationshipId = rememberRelationship(state, PRINCIPAL, SCOPE, SCOPE, "Synthetic issue-46 collaborator fixture");
@@ -35,7 +41,7 @@ try {
     text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
     command: "codex",
     timeoutSeconds: 120,
-    provider: invokeCodexProvider,
+    provider: (command, arguments_, request, options) => invokeCodexProvider(command, arguments_, request, { ...options, environment: { ...process.env, HOME: probeHome, ...(codexHome ? { CODEX_HOME: codexHome } : {}) } }),
     output: text => { reply += text; },
   });
   if (result.providerFailure) throw new Error(result.providerFailure);
@@ -44,6 +50,7 @@ try {
   assert.deepEqual(new Set(cognition.selected_meaning_ids), new Set([relationshipId, factId]));
   assert.equal(canonical.includes(EXCLUDED_MARKER), true);
   assert.equal(reply.includes(EXCLUDED_MARKER), false);
+  assert.equal(reply.includes(USER_SKILL_MARKER), false);
   assert.equal(canonical.includes(reply.trim()), false);
   assert.match(reply, /EmberBoard 46/);
   const stopped = stopRuntime(result.state, started.runtimeId, { reason: "live_smoke_complete" });
@@ -54,6 +61,7 @@ try {
     used_meaning_count: cognition.used_meaning_ids.length,
     external_thread_recorded_as_operational_evidence: cognition.external_provider_thread_id !== null,
     out_of_scope_marker_disclosed: false,
+    user_skill_marker_disclosed: false,
     reply_retained_in_canonical_state: false,
     cognition_status: cognition.status,
     delivery_status: cognition.delivery_status,

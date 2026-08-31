@@ -76,14 +76,12 @@ export async function invokeProvider(
   let stdoutBytes = 0;
   let stderrBytes = 0;
   let oversized = false;
-  let timedOut = false;
-  let cancellationRequested = false;
+  let terminationReason: "timeout" | "explicit_cancellation" | "output_limit" | null = null;
   let spawnError: Error | null = null;
   let closed = false;
   let exitCode: number | null = null;
   let exitSignal: NodeJS.Signals | null = null;
   let settled = false;
-  let terminationStarted = false;
   let killTimer: NodeJS.Timeout | null = null;
   let finalTimer: NodeJS.Timeout | null = null;
 
@@ -91,9 +89,9 @@ export async function invokeProvider(
   const done = new Promise<{ unconfirmed: boolean }>(resolve => { resolveDone = resolve; });
   const onStdinError = () => {};
   const closePipes = () => { child.stdin?.destroy(); child.stdout?.destroy(); child.stderr?.destroy(); };
-  const terminate = () => {
-    if (settled || terminationStarted) return;
-    terminationStarted = true;
+  const terminate = (reason: Exclude<typeof terminationReason, null>) => {
+    if (settled || terminationReason !== null) return;
+    terminationReason = reason;
     closePipes();
     try { child.kill("SIGTERM"); } catch {}
     killTimer = setTimeout(() => { if (!closed) { try { child.kill("SIGKILL"); } catch {} } }, terminationGraceMs);
@@ -108,7 +106,7 @@ export async function invokeProvider(
   const onStdout = (chunk: Buffer) => {
     stdoutBytes += chunk.length;
     if (stdoutBytes <= MAX_STDOUT_BYTES) stdout.push(chunk);
-    else if (!oversized) { oversized = true; terminate(); }
+    else if (!oversized) { oversized = true; terminate("output_limit"); }
   };
   const onStderr = (chunk: Buffer) => {
     if (stderrBytes < MAX_STDERR_BYTES) {
@@ -131,8 +129,8 @@ export async function invokeProvider(
   child.stderr.on("data", onStderr);
   child.on("error", onSpawnError);
   child.on("close", onClose);
-  const timer = setTimeout(() => { timedOut = true; terminate(); }, timeoutSeconds * 1000);
-  const onAbort = () => { cancellationRequested = true; terminate(); };
+  const timer = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
+  const onAbort = () => terminate("explicit_cancellation");
   signal?.addEventListener("abort", onAbort, { once: true });
   if (signal?.aborted) onAbort();
   const wire = Buffer.from(JSON.stringify(request), "utf8");
@@ -153,12 +151,12 @@ export async function invokeProvider(
 
   const diagnostic = decodeDiagnostic(Buffer.concat(stderr));
   if (terminal.unconfirmed) {
-    const reason = cancellationRequested ? "explicit_cancellation" : timedOut ? "timeout" : "output_limit";
-    throw new ProviderError(`${cancellationRequested ? "provider cancellation requested" : timedOut ? "provider timed out" : oversized ? "provider stdout exceeds 1 MiB" : "provider termination was not observed"}; direct-child termination unconfirmed`, { outcome: "outcome_unknown", terminationConfirmed: false, termination: { reason, directChildExitObserved: false } });
+    const reason = terminationReason ?? "output_limit";
+    throw new ProviderError(`${reason === "explicit_cancellation" ? "provider cancellation requested" : reason === "timeout" ? "provider timed out" : oversized ? "provider stdout exceeds 1 MiB" : "provider termination was not observed"}; direct-child termination unconfirmed`, { outcome: "outcome_unknown", terminationConfirmed: false, termination: { reason, directChildExitObserved: false } });
   }
   if (spawnError) throw new ProviderError(`provider is unavailable: ${spawnError.message}`, { cause: spawnError });
-  if (cancellationRequested) throw new ProviderError("provider cancellation requested; direct child exit observed but remote work or effects remain unconfirmed", { outcome: "cancellation_requested", termination: { reason: "explicit_cancellation", directChildExitObserved: true } });
-  if (timedOut) throw new ProviderError(`provider timed out${diagnostic ? `: ${diagnostic}` : ""}`, { outcome: "timed_out", termination: { reason: "timeout", directChildExitObserved: true } });
+  if (terminationReason === "explicit_cancellation") throw new ProviderError("provider cancellation requested; direct child exit observed but remote work or effects remain unconfirmed", { outcome: "cancellation_requested", termination: { reason: "explicit_cancellation", directChildExitObserved: true } });
+  if (terminationReason === "timeout") throw new ProviderError(`provider timed out${diagnostic ? `: ${diagnostic}` : ""}`, { outcome: "timed_out", termination: { reason: "timeout", directChildExitObserved: true } });
   if (oversized || stdoutBytes > MAX_STDOUT_BYTES) throw new ProviderError("provider stdout exceeds 1 MiB", { termination: { reason: "output_limit", directChildExitObserved: true } });
   if (exitCode !== 0) throw new ProviderError(`provider exited with ${exitSignal ? `signal ${exitSignal}` : `status ${exitCode}`}${diagnostic ? `: ${diagnostic}` : ""}`);
 

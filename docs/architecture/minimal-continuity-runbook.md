@@ -197,6 +197,33 @@ node bin/ember.ts run \
   --provider-timeout-seconds 120
 ```
 
+The isolated invocation deliberately ignores `config.toml`, so its supported
+default authentication route is Codex's packaged `file` store in
+`$CODEX_HOME/auth.json`. If the existing login uses another runtime-owned store,
+pass the matching Codex overrides before `exec` and probe that same route first:
+
+```sh
+codex login status -c 'cli_auth_credentials_store="keyring"'
+
+node bin/ember.ts run \
+  --state /tmp/ember-continuity.json \
+  --principal user-1 \
+  --scope project:ember/docs \
+  --provider codex \
+  --codex-arg -c \
+  --codex-arg 'cli_auth_credentials_store="keyring"' \
+  --provider-timeout-seconds 120
+```
+
+`auto` is also supported. When the login was created with Codex's
+`secret_auth_storage` feature, pass and probe `--enable secret_auth_storage` as
+an additional `--codex-arg`. These options select Codex-owned credential
+storage; Ember still never reads or copies credential material. Other custom
+auth routing (managed login/workspace restrictions or alternate ChatGPT base
+URLs) is not inferred from ignored user configuration and must likewise be
+supplied explicitly through `--codex-arg` and validated with the installed
+runtime before use.
+
 Ordinary input now flows through Ember's current bounded projection and
 `runCognition` reintegration path. `--provider codex` defaults to the `codex`
 executable on `PATH`; `--codex-command PATH` can select another installed binary.
@@ -204,7 +231,9 @@ The production adapter starts a fresh ephemeral Codex thread for every turn in a
 new temporary cwd containing only Ember's generated result schema. It ignores
 project rules and user configuration, uses the read-only Codex sandbox, forwards
 only a small allowlist of process environment needed to locate the runtime and
-its runtime-owned login, and never forwards `OPENAI_API_KEY`.
+its runtime-owned login, and never forwards `OPENAI_API_KEY`. It also disables
+plugins and skill instructions so user-level `$CODEX_HOME/skills` and
+`$HOME/.agents/skills` metadata cannot augment the model-visible episode.
 
 Codex JSONL and stdout are bounded to 1 MiB, stderr diagnostics to 64 KiB, and the
 final response is checked both by Codex's output schema and Ember's independent
@@ -227,10 +256,11 @@ npm run smoke:codex
 ```
 
 The smoke creates temporary synthetic canonical state containing one deliberately
-out-of-scope marker, invokes the production adapter, asserts bounded selection and
-descriptor-only reintegration, prints a sanitized summary plus the transient
-reply, and removes its temporary store. It requires network access and a working
-local Codex login.
+out-of-scope marker and a temporary user-level skill containing another marker,
+invokes the production adapter, asserts neither marker is disclosed, checks
+bounded selection and descriptor-only reintegration, prints a sanitized summary
+plus the transient reply, and removes its temporary store. It requires network
+access and a working local Codex login using the default file-store route.
 
 This smoke test is non-deterministic and non-gating. It can reveal provider
 presentation or integration problems, but it cannot replace the canonical state,

@@ -270,8 +270,11 @@ triggers an automatic retry.
 The supported production Codex adapter invokes `codex exec` directly behind this
 same seam. It creates a fresh minimal temporary cwd containing only the generated
 result schema, uses an ephemeral thread, ignores implicit project rules and user
-configuration, and supplies only the current `ProviderRequest`. Authentication
-remains in the installed Codex runtime. Ember forwards a minimal environment
+configuration, disables plugin and skill-instruction context, and supplies only
+the current `ProviderRequest`. Authentication remains in the installed Codex
+runtime. The packaged file credential store is the default supported route;
+non-default runtime-owned stores or auth routing must be selected explicitly as
+Codex arguments and probed with the installed runtime. Ember forwards a minimal environment
 allowlist for executable/login discovery and deliberately excludes API keys and
 unrelated ambient variables. Codex JSONL is independently parsed and bounded;
 the schema-constrained agent message still passes Ember's ordinary result

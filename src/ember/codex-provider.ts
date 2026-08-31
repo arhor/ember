@@ -123,6 +123,8 @@ export async function invokeCodexProvider(
         "--ephemeral",
         "--ignore-user-config",
         "--ignore-rules",
+        "--disable", "plugins",
+        "-c", "skills.include_instructions=false",
         "--skip-git-repo-check",
         "--sandbox", "read-only",
         "--json",

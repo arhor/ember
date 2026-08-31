@@ -516,6 +516,14 @@ export function validateState(state: unknown): asserts state is EmberState {
       if (isObject(c.provider_termination)) {
         require(["timeout", "explicit_cancellation", "output_limit"].includes(c.provider_termination.reason), `${p}.provider_termination.reason is invalid`);
         require(typeof c.provider_termination.direct_child_exit_observed === "boolean", `${p}.provider_termination.direct_child_exit_observed is invalid`);
+        const reason = c.provider_termination.reason;
+        const observed = c.provider_termination.direct_child_exit_observed;
+        const consistent = c.status === "timed_out" ? reason === "timeout" && observed === true
+          : c.status === "cancellation_requested" ? reason === "explicit_cancellation"
+          : c.status === "failed" ? reason === "output_limit" && observed === true
+          : c.status === "outcome_unknown" ? observed === false
+          : false;
+        require(consistent, `${p}.provider_termination contradicts cognition status`);
       }
     }
     for (const f of ["selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids"]) require(Array.isArray(c[f]) && c[f].every(nonempty), `${p}.${f} must be an ID list`);
