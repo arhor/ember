@@ -1,8 +1,8 @@
 ---
-summary: "Proposed Node.js design for Ember's minimal restart-continuity experiment, including durable meaning, bounded projection, lifecycle truth, provider isolation, and deterministic acceptance."
+summary: "Current executable design for Ember's minimal restart-continuity slice, including durable meaning, bounded projection, lifecycle truth, provider isolation, and deterministic acceptance."
 read_when:
   - "Implementing or reviewing the first executable continuity slice from issues #22 and #23"
-  - "Choosing the experiment's Node.js runtime, JSON persistence, single-writer boundary, provider protocol, CLI, or deterministic tests"
+  - "Reviewing the slice's JSON persistence, single-writer boundary, provider protocol, CLI, runtime representation, or deterministic tests"
   - "Checking how AS-CONT-01, AS-MEM-01, and AS-MEM-04 map to one restart-surviving vertical slice"
 role: design
 discovery_status: current
@@ -10,12 +10,13 @@ discovery_status: current
 
 # Minimal Continuity Vertical Slice
 
-> Status: proposed executable design for issue
-> [#22](https://github.com/arhor/ember/issues/22), derived from the accepted
-> semantic ADRs and the canonical minimal acceptance subset.
+> Status: current executable design, originally defined for issue
+> [#22](https://github.com/arhor/ember/issues/22) and migrated to the implementation
+> runtime selected by [ADR 0006](decisions/0006-adopt-typescript-on-nodejs-26.md)
+> through issue #40.
 >
-> This is an experimental representation for the first continuity probe, not a
-> new semantic ADR and not a general Ember runtime architecture.
+> This remains a deliberately narrow representation for the first continuity
+> probe, not a new semantic ADR and not a general Ember runtime architecture.
 
 ## Scope and success criterion
 
@@ -266,10 +267,12 @@ triggers an automatic retry.
 One foreground CLI is sufficient because the slice tests process and cognition
 replacement, not surface diversity.
 
-The command examples below use `ember`. In a repository checkout, the exact
-no-install entry point is the executable, Node-shebang-bearing `bin/ember.mjs`;
-`node bin/ember.mjs` is the portable direct invocation. The `package.json` bin
-mapping makes the shorter name available only after an optional link or install.
+The command examples below use `ember`. In a repository checkout, install the
+locked development toolchain with `npm ci`; the exact source entry point is the
+Node-shebang-bearing `bin/ember.ts`. Node.js 26 executes that erasable TypeScript
+directly without transpilation, and `node bin/ember.ts` is the portable direct
+invocation. The `package.json` bin mapping makes the shorter name available after
+an optional link or install.
 Its command surface is:
 
 - `ember init --state PATH --name Ember --principal user-1` creates one new
@@ -802,7 +805,7 @@ boundary.
 
 | Choice | Minimal required property | Why this choice now | Rejected or deferred alternative | What it does not commit |
 |---|---|---|---|---|
-| JavaScript on Node.js 24.x, built-ins only | One small CLI with JSON, direct process invocation, exclusive file creation, UTC time, hashing, random IDs, and deterministic tests. | The user explicitly selected JavaScript for this experiment. Node 24 provides every selected property without runtime or development dependencies, compilation, or bundling. Ember's existing documentation-discovery utility already proves Node 24 is available, but that utility did not itself choose Ember's runtime; this design does. | TypeScript would add a compile step before static typing has demonstrated value. Bun or Deno would add another runtime. Go or Rust improve single-binary deployment but add implementation cost before distribution or performance is a measured problem. | Ember's long-term implementation language, package ecosystem, or distribution form. The JSON and provider contracts remain portable. |
+| TypeScript on Node.js 26.8.1, native ESM, direct source execution | One small CLI with JSON, direct process invocation, exclusive file creation, UTC time, hashing, random IDs, deterministic tests, and static checking at internal boundaries. | ADR 0006 adopted TypeScript on Node.js 26 after issue #38 demonstrated direct `.ts` execution, useful boundary diagnostics, and compatibility with this slice. Production execution still uses Node core; TypeScript and Node declarations are locked development dependencies only. | JavaScript on Node.js 24 was the original control representation and is superseded for production. Deno remains evaluation evidence, not a second supported runtime. | Persistence technology, process topology, provider semantics, authority, or distribution form; those remain governed separately. |
 | One canonical JSON document | Atomic preservation of the tiny linked semantic state and direct inspection. | Simpler than schema migrations and queries for one writer and a few records; whole-state validation is easy. | SQLite earns its transaction/concurrency/query strengths when multiple writers, scale, or partial updates become real requirements. Markdown is a useful derived view but weak canonical validation. JSONL/event sourcing introduces replay semantics explicitly deferred. | Long-term persistence, indexing, backup, or migration strategy. Store access stays behind load/commit. |
 | Exclusive-create lock file + revision + atomic replace | Prevent concurrent cooperating writers, stale commits, and partially written supersession state on one supported local Linux filesystem. | Node has no built-in `flock`; `open(..., "wx")`, an owner token, fail-closed liveness diagnosis, explicit stale quarantine, full-state revision checking, file sync, rename, and directory sync are the smallest truthful built-in-only boundary. | An npm lock package, daemon, database transaction manager, broker, or distributed lock adds machinery with no selected-scenario need. | Hostile same-user containment, automatic crash-lock recovery, multi-host locking, Windows durability equivalence, or fork semantics. Multiple writable copies are unsupported. |
 | Foreground CLI process | One user-facing path and a process that demonstrably stops. | Directly exercises AS-CONT-01 without background lifecycle or delivery complexity. | Daemon/service, Telegram, voice, web, and multiple surfaces are explicit non-goals. | Future runtime topology or surface protocol. |

@@ -13,9 +13,9 @@ Ember's canonical architecture is defined first by representation-neutral semant
 constraints. Implementation decisions may select concrete representations only
 beneath that baseline.
 
-The first continuity slice remains the executable control representation until
-issue #40 migrates it, while ADR 0006 now records TypeScript on Node.js 26 as the
-selected implementation language/runtime for that adoption work.
+The first continuity slice is implemented as native ESM TypeScript on Node.js 26.
+ADR 0006 governs that representation, while the accepted semantic ADRs and
+acceptance scenarios continue to govern its meaning.
 
 Project foundations:
 

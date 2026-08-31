@@ -631,9 +631,10 @@ This evaluation does **not** establish that:
 
 ## Reproduction
 
-The authoritative command sequence is
-`.github/workflows/runtime-evaluation.yml`. The experiment README contains
-shorter candidate-specific local commands.
+The authoritative #38 command sequence is preserved in repository history at
+commit `6c9649bfd5de2d1ac30499af5407592508801b44` and canonical workflow run
+`#33331965679`. Issue #40 retires the comparison workflow from active CI after
+adoption; the experiment README retains shorter candidate-specific local commands.
 
 When reproducing or extending this evaluation:
 

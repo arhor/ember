@@ -16,22 +16,24 @@ expand that design's semantic scope or its supported deployment boundary.
 
 ## Prerequisites and validation
 
-The slice supports Node.js 24.x on a local Linux filesystem. It uses only Node.js
-built-ins: there is no dependency installation, build, bundle, generated code, or
-background service.
+The slice supports Node.js 26, with **26.8.1** as the reviewed minimum, on a local
+Linux filesystem. Production execution uses Node.js built-ins and native erasable
+TypeScript directly. A fresh checkout installs only the locked development checker
+and Node ambient types with `npm ci`; there is no transpilation, bundle, generated
+JavaScript tree, or background service.
 
 From the repository root, run the complete gate:
 
 ```sh
 node --version
-node --test
-node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
-node scripts/docs-discovery.mjs check
+npm ci
 npm run check
+npm test
 ```
 
-`node bin/ember.mjs` is the exact no-install entry point. The shorter `ember`
-name is available only after an optional package link or install.
+`node bin/ember.ts` is the exact direct-source entry point. Node.js 26 executes
+the erasable TypeScript without a loader or build step. The shorter `ember` name
+is available after an optional package link or install.
 
 ## Initialize and inspect a store
 
@@ -39,13 +41,13 @@ Use an explicit local state path, principal, scope, direct provider command, and
 positive finite timeout:
 
 ```sh
-node bin/ember.mjs init \
+node bin/ember.ts init \
   --state /tmp/ember-continuity.json \
   --name Ember \
   --principal user-1
 
-node bin/ember.mjs check --state /tmp/ember-continuity.json
-node bin/ember.mjs inspect \
+node bin/ember.ts check --state /tmp/ember-continuity.json
+node bin/ember.ts inspect \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --json
@@ -64,12 +66,12 @@ The repository fixture lives outside Node's default `test/` discovery tree so
 and waits on its stdin.
 
 ```sh
-node bin/ember.mjs run \
+node bin/ember.ts run \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --scope project:ember/docs \
   --provider-command "$(command -v node)" \
-  --provider-arg test-fixtures/providers/scripted-provider.mjs \
+  --provider-arg test-fixtures/providers/scripted-provider.ts \
   --provider-timeout-seconds 2
 ```
 
@@ -82,15 +84,15 @@ projection in a new process:
 probe_dir=$(mktemp -d)
 state_path="$probe_dir/ember.json"
 provider_path="$(command -v node)"
-run=(node bin/ember.mjs run
+run=(node bin/ember.ts run
   --state "$state_path"
   --principal user-1
   --scope project:ember/docs
   --provider-command "$provider_path"
-  --provider-arg test-fixtures/providers/scripted-provider.mjs
+  --provider-arg test-fixtures/providers/scripted-provider.ts
   --provider-timeout-seconds 2)
 
-node bin/ember.mjs init \
+node bin/ember.ts init \
   --state "$state_path" --name Ember --principal user-1
 
 printf '%s\n' \
@@ -101,7 +103,7 @@ printf '%s\n' \
   ':remember episode first-continuity-experiment relationship:user-1 relationship:user-1 The first continuity experiment received a nickname' \
   ':quit' | "${run[@]}"
 
-node bin/ember.mjs inspect \
+node bin/ember.ts inspect \
   --state "$state_path" --principal user-1 --json > "$probe_dir/before.json"
 preference_a=$(node --input-type=module -e '
   import {readFileSync} from "node:fs";
@@ -136,7 +138,7 @@ printf ':fixture-withhold %s\n:quit\n' "$detail_id" | \
 # Let real elapsed time pass if desired, then start a wholly new CLI/provider pair.
 printf ':ask --explain %s,%s,%s Continue from durable state and explain the unavailable nickname\n:quit\n' \
   "$fact_id" "$preference_a" "$episode_id" | "${run[@]}"
-node bin/ember.mjs inspect \
+node bin/ember.ts inspect \
   --state "$state_path" --principal user-1 --json
 ```
 
@@ -157,7 +159,7 @@ malformed lock fails closed. Never delete it merely because it is old.
 Inspect without mutation:
 
 ```sh
-node bin/ember.mjs lock-status --state /tmp/ember-continuity.json
+node bin/ember.ts lock-status --state /tmp/ember-continuity.json
 ```
 
 Only after independently establishing that no writer can be running, copy the
@@ -165,7 +167,7 @@ exact same-host owner token from `lock-status` and quarantine an apparently stal
 lock:
 
 ```sh
-node bin/ember.mjs quarantine-stale-lock \
+node bin/ember.ts quarantine-stale-lock \
   --state /tmp/ember-continuity.json \
   --owner-token EXACT_TOKEN \
   --confirm-quiescent
