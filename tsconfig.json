@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "types": ["node"]
+  },
+  "include": [
+    "bin/**/*.ts",
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "test-fixtures/**/*.ts",
+    "type-tests/**/*.ts"
+  ]
+}
