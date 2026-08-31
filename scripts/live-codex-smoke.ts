@@ -61,7 +61,7 @@ try {
     used_meaning_count: cognition.used_meaning_ids.length,
     external_thread_recorded_as_operational_evidence: cognition.external_provider_thread_id !== null,
     out_of_scope_marker_disclosed: false,
-    user_skill_marker_disclosed: false,
+    user_skill_marker_present_in_reply: false,
     reply_retained_in_canonical_state: false,
     cognition_status: cognition.status,
     delivery_status: cognition.delivery_status,

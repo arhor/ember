@@ -232,8 +232,9 @@ new temporary cwd containing only Ember's generated result schema. It ignores
 project rules and user configuration, uses the read-only Codex sandbox, forwards
 only a small allowlist of process environment needed to locate the runtime and
 its runtime-owned login, and never forwards `OPENAI_API_KEY`. It also disables
-plugins and skill instructions so user-level `$CODEX_HOME/skills` and
-`$HOME/.agents/skills` metadata cannot augment the model-visible episode.
+Apps/Connectors, plugins, and skill instructions so account-derived connector
+context and user-level `$CODEX_HOME/skills` or `$HOME/.agents/skills` metadata
+cannot augment the model-visible episode.
 
 Codex JSONL and stdout are bounded to 1 MiB, stderr diagnostics to 64 KiB, and the
 final response is checked both by Codex's output schema and Ember's independent
@@ -257,10 +258,13 @@ npm run smoke:codex
 
 The smoke creates temporary synthetic canonical state containing one deliberately
 out-of-scope marker and a temporary user-level skill containing another marker,
-invokes the production adapter, asserts neither marker is disclosed, checks
-bounded selection and descriptor-only reintegration, prints a sanitized summary
-plus the transient reply, and removes its temporary store. It requires network
-access and a working local Codex login using the default file-store route.
+invokes the production adapter, checks that neither marker appears in the answer,
+checks bounded selection and descriptor-only reintegration, prints a sanitized
+summary plus the transient reply, and removes its temporary store. The user-skill
+marker check is a regression smoke, not proof of nonvisibility; the explicit
+`skills.include_instructions=false` control supplies that boundary. The smoke
+requires network access and a working local Codex login using the default
+file-store route.
 
 This smoke test is non-deterministic and non-gating. It can reveal provider
 presentation or integration problems, but it cannot replace the canonical state,

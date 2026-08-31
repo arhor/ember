@@ -124,6 +124,7 @@ export async function invokeCodexProvider(
         "--ignore-user-config",
         "--ignore-rules",
         "--disable", "plugins",
+        "--disable", "apps",
         "-c", "skills.include_instructions=false",
         "--skip-git-repo-check",
         "--sandbox", "read-only",

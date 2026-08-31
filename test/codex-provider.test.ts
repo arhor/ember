@@ -92,7 +92,8 @@ test("Codex provider should disclose only the bounded request when invoked with 
   assert.equal(invocation.options.cwd === ROOT, false);
   assert.deepEqual(invocation.cwdEntries, ["provider-result.schema.json"]);
   assert.deepEqual(invocation.options.env, { PATH: "/safe/bin", HOME: "/safe/home" });
-  assert.equal(invocation.arguments_.includes("plugins"), true);
+  assert.notEqual(invocation.arguments_.findIndex((value, index) => value === "--disable" && invocation.arguments_[index + 1] === "plugins"), -1);
+  assert.notEqual(invocation.arguments_.findIndex((value, index) => value === "--disable" && invocation.arguments_[index + 1] === "apps"), -1);
   assert.equal(invocation.arguments_.includes("skills.include_instructions=false"), true);
   assert.deepEqual(invocation.arguments_.slice(-3, -1), ["-C", invocation.options.cwd]);
 });

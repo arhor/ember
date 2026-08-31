@@ -270,8 +270,8 @@ triggers an automatic retry.
 The supported production Codex adapter invokes `codex exec` directly behind this
 same seam. It creates a fresh minimal temporary cwd containing only the generated
 result schema, uses an ephemeral thread, ignores implicit project rules and user
-configuration, disables plugin and skill-instruction context, and supplies only
-the current `ProviderRequest`. Authentication remains in the installed Codex
+configuration, disables Apps/Connectors, plugin, and skill-instruction context,
+and supplies only the current `ProviderRequest`. Authentication remains in the installed Codex
 runtime. The packaged file credential store is the default supported route;
 non-default runtime-owned stores or auth routing must be selected explicitly as
 Codex arguments and probed with the installed runtime. Ember forwards a minimal environment
