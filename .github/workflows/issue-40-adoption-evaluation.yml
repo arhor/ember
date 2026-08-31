@@ -1,0 +1,70 @@
+name: Issue 40 TypeScript adoption evaluation
+
+on:
+  push:
+    branches:
+      - issue-40-adopt-typescript-node26
+    paths:
+      - ".github/workflows/issue-40-adoption-evaluation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - name: Install selected toolchain
+        run: npm ci
+      - name: Record selected versions
+        run: |
+          node --version
+          npm --version
+          ./node_modules/.bin/tsc --version
+      - name: Run confidence gates once
+        run: |
+          npm run check
+          npm test
+      - name: Measure adopted production path
+        shell: bash
+        run: |
+          metrics="$RUNNER_TEMP/adoption-measurements.jsonl"
+          template="$RUNNER_TEMP/template.json"
+          working="$RUNNER_TEMP/working.json"
+          EMBER_TEST_NOW=2026-08-31T06:00:00Z node bin/ember.ts init \
+            --state "$template" --name Ember --principal user-1
+
+          measure() {
+            node experiments/runtime-evaluation/scripts/measure-process.mjs "$@" >> "$metrics"
+          }
+
+          measure --label node26-ts-cold-check --repeat 7 \
+            --reset-file "$template" "$working" -- \
+            node bin/ember.ts check --state "$working"
+          measure --label node26-ts-full-tests --repeat 3 -- \
+            node --test test/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+          measure --label node26-ts-restart-oracle --repeat 3 -- \
+            node --test test/longitudinal-acceptance.test.ts
+          measure --label node26-ts-idle-cli --repeat 5 \
+            --reset-file "$template" "$working" --stdin-delay-ms 250 --stdin-text ':quit\n' -- \
+            node bin/ember.ts run --state "$working" --principal user-1 \
+            --scope project:ember/docs --provider-command node \
+            --provider-arg test-fixtures/providers/scripted-provider.ts \
+            --provider-timeout-seconds 2
+          measure --label node26-ts-provider-cycle --repeat 7 \
+            --reset-file "$template" "$working" --stdin-text 'hello from measurement\n:quit\n' -- \
+            node bin/ember.ts run --state "$working" --principal user-1 \
+            --scope project:ember/docs --provider-command node \
+            --provider-arg test-fixtures/providers/scripted-provider.ts \
+            --provider-timeout-seconds 2
+          measure --label node26-ts-typecheck --repeat 5 -- \
+            ./node_modules/.bin/tsc -p tsconfig.json
+
+          cat "$metrics"
+          du -sk node_modules
