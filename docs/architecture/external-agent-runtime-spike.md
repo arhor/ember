@@ -15,13 +15,11 @@ discovery_status: current
 **Issue:** [#44](https://github.com/arhor/ember/issues/44)  
 **Reconnaissance date:** 2026-08-31  
 **Repository baseline examined:** `master` at `a1e3f0aa21fa13722e4b2a10eed46c22d77070ea`  
-**Phase:** cloud reconnaissance complete; authenticated local experiments pending.
+**Phase:** local CLI experiments complete; production integration recommendation recorded.
 
-This note deliberately stops before selecting or implementing a production runtime
-abstraction. It records what can be established from Ember's current architecture
-and current official runtime documentation, then defines a reproducible local
-experiment plan for a machine where Codex, Claude Code, and Cursor are installed
-and already authenticated.
+This note records the cloud reconnaissance and the 2026-08-31 local experiments.
+It stops before implementing a production runtime abstraction because the measured
+evidence supports one narrow next task, not a general provider hierarchy.
 
 The local experiments are the decisive evidence for #44. In particular, this
 cloud phase cannot prove that a particular installed version reuses the expected
@@ -92,13 +90,114 @@ model.
 The first local implementation should therefore prefer an experiment-local adapter
 or harness over changing `ProviderInvoker` prematurely.
 
-## Preliminary candidate map
+## Local experiment result
+
+### Host and authentication inventory
+
+- Host: macOS 26.5.2 (`Darwin 25.5.0`), Apple silicon (`arm64`).
+- Node.js: `v26.8.1`; npm: `11.19.0`.
+- Codex: `codex-cli 0.151.0`; `codex login status` reported `Logged in using
+  ChatGPT`.
+- Claude Code: `2.1.241`; `claude auth status` reported no active login. A live
+  headless attempt reached initialization but failed because the cached OAuth
+  session was expired and could not be refreshed.
+- Cursor Agent and `cursor-agent`: `2026.08.11-e8db854`; `agent status` reported a
+  logged-in browser account. The account identifier is intentionally omitted.
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `CURSOR_API_KEY` were absent. The
+  harness also removed them from child environments.
+
+The installed binaries were invoked through their documented CLI surfaces. No
+credential cache was opened, copied, or inspected.
+
+### Common no-tool cognition probe
+
+The three candidates received the same trivial request in `/private/tmp`, outside
+the Ember repository:
+
+```text
+Return exactly this JSON object and nothing else:
+{"probe":"ember-runtime","answer":42}
+```
+
+| Candidate / surface | Result | Structured evidence | Observed duration | Subscription/login classification |
+| --- | --- | --- | --- | --- |
+| Codex `exec --json` | Success, exit 0, exact JSON result | `thread.started`, `turn.started`, `item.completed`, `turn.completed`; thread ID and usage exposed | 7.3 s wall clock | **Supported and observed:** ChatGPT login, with API-key variables absent |
+| Cursor `agent -p --output-format stream-json --mode ask --sandbox enabled` | Success, exit 0, exact JSON result | init, user, assistant, result; session ID, selected model, login auth source, usage, and request ID exposed | 10.0 s wall clock; runtime reported 3.1 s API duration | **Supported and observed:** `apiKeySource: login`, with API-key variables absent |
+| Claude Code `-p --output-format stream-json --safe-mode --permission-mode plan --tools ''` | Authentication failure, exit 1 | init and terminal result were structured; tools were empty, permission mode was `plan`, and the failure was typed `authentication_failed` | 3.4 s wall clock | **Not currently viable on this host:** cached OAuth expired; no API-key fallback attempted |
+
+Prompt-enforced JSON was sufficient for the connectivity probe, but only Claude's
+CLI exposed a first-class `--json-schema` option in the installed help. Production
+code must still validate any returned payload independently.
+
+### Session and resume observations
+
+- Codex created a persisted exec thread and `codex exec resume` reused the same
+  thread ID for a second exact JSON result. Resume required its own cwd/trust
+  option when invoked from `/private/tmp`.
+- Cursor `--resume <session-id>` reused the same session ID and returned a second
+  exact JSON result. Its second result showed cache reuse.
+- Claude session/resume was not tested because authentication failed before a
+  model turn.
+
+These are runtime-owned operational continuities. Neither identifier was written
+into Ember canonical state or treated as Ember identity.
+
+### Cancellation observations
+
+The experiment harness sent `SIGTERM` to the direct CLI child after 750 ms during
+a harmless no-tool request:
+
+- Codex had emitted `thread.started` and `turn.started`, then the direct child
+  exited with status 0. It emitted no completion or cancellation acknowledgement.
+- Cursor emitted no event before the signal and the direct child exited with
+  status 143.
+
+Both observations establish only that the local direct child exited. They do not
+establish remote rollback, absence of model work, descendant termination, or an
+acknowledged runtime cancellation. Rich protocol-level cancellation remains a
+specialist-runtime concern; automatic retry would be unjustified.
+
+### Context and permission observations
+
+Codex ran with a read-only sandbox and Cursor ran in Ask mode with sandboxing
+enabled. Claude initialized with an empty tool list before authentication failed.
+No probe attempted a tool action or repository mutation.
+
+A real repository-cwd probe was rejected because automatic instruction discovery
+could disclose repository content to the external services. A synthetic directory
+containing only an `AGENTS.md` marker was used instead. Both Codex and Cursor knew
+the marker without using tools, proving that cwd/project discovery can enlarge the
+explicit prompt. Therefore a production one-shot cognition adapter should use a
+dedicated minimal working directory by default, not the Ember repository root.
+
+Cursor ACP is present (`agent acp`) and the installed help confirms the stdio
+server entry point, but a bespoke ACP client was not added merely to duplicate the
+successful one-shot CLI result. ACP remains the better candidate for a later
+specialist-runtime experiment needing permission requests and protocol-level
+cancellation. The Codex SDK/App Server and Claude Agent SDK were likewise not made
+dependencies: the CLI evidence answered the one-shot question, while Claude's
+expired OAuth made SDK subscription reuse impossible to establish in this run.
+
+### Experiment-only code
+
+`experiments/external-agent-runtime/probe.ts` is a dependency-free harness that:
+
+- spawns an explicit command/argument vector with `shell: false`;
+- removes the three common API-key variables;
+- bounds retained stdout and stderr to 1 MiB each;
+- records JSONL event types, duration, exit code/signal, and truncation;
+- can request direct-child termination while labelling only what was observed.
+
+It is intentionally outside `src/ember/`. Its tests cover structured lifecycle
+summarization and truthful direct-child cancellation reporting.
+
+## Observed candidate map
 
 | Candidate | Supported automation surface found | Existing-login path documented | Structured lifecycle surface | Preliminary read |
 | --- | --- | --- | --- | --- |
-| Codex | `codex exec`, Codex SDK, App Server | **Yes.** Codex documents ChatGPT sign-in for subscription access and cached CLI login reuse. | JSONL from `exec`; richer local App Server; SDK threads | Strongest first candidate. Multiple officially supported integration depths. |
-| Claude Code | `claude -p`, JSON / `stream-json`; Agent SDK is referenced for programmatic use | Claude Code itself is locally authenticated, but this reconnaissance did **not** establish from official docs that the Agent SDK necessarily reuses a Claude.ai subscription login. | CLI `stream-json`, sessions/resume, permission modes | Strong CLI experiment candidate. Treat SDK/subscription reuse as an explicit local question rather than an assumption. |
-| Cursor | Agent CLI print mode; **ACP server over stdio/JSON-RPC** | **Yes for the CLI/ACP path.** Cursor documents browser login stored locally and ACP pre-authentication via existing CLI auth. | `stream-json`; ACP session/update, permission requests, cancel | Strong candidate. ACP is especially relevant because it exposes a purpose-built client integration protocol. |
+| Codex | `codex exec`, Codex SDK, App Server | **Yes, observed:** ChatGPT login powered headless CLI execution without an API-key environment variable. | JSONL from `exec`; thread resume observed; SDK/App Server not needed for the one-shot proof | Best first live cognition candidate. |
+| Claude Code | `claude -p`, JSON / `stream-json`; Agent SDK is referenced for programmatic use | **Currently unavailable:** local OAuth was expired and refresh failed. CLI subscription reuse is plausible but not operational on this host; SDK reuse remains unproven. | Structured init and typed authentication failure observed | Do not substitute API billing. Re-test CLI after the user restores login. |
+| Cursor | Agent CLI print mode; ACP server over stdio/JSON-RPC | **Yes, observed:** browser login powered headless CLI execution and reported `apiKeySource: login`. | `stream-json` and session resume observed; ACP executable present but not client-probed | Viable second one-shot backend; ACP belongs in a later specialist experiment. |
 
 This table is reconnaissance, not a ranking of model quality.
 
@@ -291,6 +390,55 @@ The evidence already suggests at least two possible levels:
 
 Do not force both into one interface during #44. The first live Ember cognition may
 need only the first level even if later coding delegation needs the second.
+
+## Comparison and recommendation
+
+| Dimension | Codex CLI | Claude Code CLI | Cursor Agent CLI |
+| --- | --- | --- | --- |
+| Authentication reuse | ChatGPT subscription login observed | OAuth cache present but expired; refresh failed | Browser login observed |
+| Official automation surface | `codex exec` | `claude -p` | `agent -p` |
+| Headless invocation | Successful | Reached auth failure headlessly | Successful |
+| Structured I/O | JSONL events; prompt/schema-controlled result | JSON/stream JSON and schema option; typed auth failure observed | Stream JSON with final result |
+| Runtime ownership | Agent loop, model, thread, tools, cwd policy | Agent loop, model, session, tools, permissions | Agent loop, model, session, tools, cwd policy |
+| Context control | Explicit cwd, but `AGENTS.md` auto-discovery observed | Safe mode/tool controls available; live context probe blocked by auth | Workspace explicit, but `AGENTS.md` auto-discovery observed |
+| Tool control | Read-only sandbox used; CLI still represents an agent runtime | Empty tool set and plan mode observed at init | Ask mode and sandbox used; `-p` otherwise warns it has write/shell tools |
+| Session semantics | Thread ID and resume observed | Supported by CLI, not live-tested | Session ID and resume observed |
+| Cancellation/failure | Direct child exited 0 without terminal event after SIGTERM | Typed authentication failure; cancellation not tested | Direct child exited 143 without events after SIGTERM |
+| Model control/discovery | CLI accepts model selection; probe did not force a model | Init exposed `claude-opus-5[1m]` before auth failure | Init exposed `GPT-5.6 Sol 272K Low` |
+| Startup/latency | 7.3 s first trivial probe | 3.4 s to auth failure | 10.0 s wall; 3.1 s reported API duration |
+| Portability cost | Thin CLI-specific argument/event decoder | Thin decoder possible after login repair | Thin CLI-specific argument/event decoder |
+| Subscription practicality | Proven useful now | Blocked until user restores OAuth | Proven useful now |
+
+### Smallest boundary earned by the evidence
+
+Codex and Cursor justify a common **one-shot cognition episode** boundary, but not
+a common specialist runtime protocol:
+
+```text
+Ember-owned bounded input + dedicated minimal cwd + invocation policy
+  -> runtime-specific CLI adapter
+  -> bounded lifecycle evidence + candidate textual/structured result
+```
+
+The shared contract should expose terminal evidence and runtime/session identifiers
+as optional operational metadata while keeping each adapter's event decoder and
+permission arguments explicit. It should not promise cancellation acknowledgement,
+tool equivalence, model identity, resumability, or a uniform permission model.
+
+The first implementation task should add a **Codex `exec` one-shot cognition
+adapter** behind a small Ember-facing episode boundary. Codex is preferred because
+its ChatGPT subscription path was directly reported by the runtime, its JSONL
+lifecycle is compact, and it completed and resumed successfully with read-only and
+ephemeral options. The adapter should default to an isolated minimal cwd, validate
+the final response, retain only bounded operational evidence, and avoid automatic
+retry after ambiguous termination.
+
+A second, separate task may add Cursor's one-shot adapter against the same narrow
+boundary. ACP and Codex App Server belong in a later specialist-runtime task only
+when Ember needs protocol-level permissions, progress, or cancellation. Claude
+Code should be re-probed after the user restores OAuth; no production Claude task
+is justified by this run. Thus the spike graduates into one first implementation
+task plus explicitly separate follow-ups, not a three-provider framework.
 
 ## Local experiment plan
 
@@ -546,22 +694,22 @@ The order is about reducing uncertainty cheaply, not a vendor preference.
 
 The local continuation is complete enough for review when it has:
 
-- [ ] run repository documentation discovery and read the selected governing docs;
-- [ ] recorded installed versions and sanitized authentication mode for all three
+- [x] run repository documentation discovery and read the selected governing docs;
+- [x] recorded installed versions and sanitized authentication mode for all three
       candidates;
-- [ ] tested a real no-side-effect cognition request through every viable supported
+- [x] tested a real no-side-effect cognition request through every viable supported
       local surface;
-- [ ] verified or classified subscription/login reuse independently for each
+- [x] verified or classified subscription/login reuse independently for each
       candidate;
-- [ ] captured structured output/lifecycle behavior without credentials;
-- [ ] tested session/resume behavior where relevant;
-- [ ] tested cancellation semantics without overclaiming what cancellation proves;
-- [ ] tested the narrowest practical context/tool/permission configuration;
-- [ ] updated the preliminary comparison table with observed evidence;
-- [ ] stated whether one common cognition boundary has actually been earned;
-- [ ] recommended the smallest implementation follow-up;
-- [ ] run `npm test` and `npm run check` after any repository changes;
-- [ ] run documentation-discovery validation for this document and any other
+- [x] captured structured output/lifecycle behavior without credentials;
+- [x] tested session/resume behavior where relevant;
+- [x] tested cancellation semantics without overclaiming what cancellation proves;
+- [x] tested the narrowest practical context/tool/permission configuration;
+- [x] updated the preliminary comparison table with observed evidence;
+- [x] stated whether one common cognition boundary has actually been earned;
+- [x] recommended the smallest implementation follow-up;
+- [x] run `npm test` and `npm run check` after any repository changes;
+- [x] run documentation-discovery validation for this document and any other
       participating docs changed by the spike.
 
 ## Explicitly deferred
@@ -601,19 +749,17 @@ This reconnaissance does not justify:
 - Cursor ACP integration: <https://cursor.com/docs/cli/acp>
 - Cursor CLI configuration/permissions: <https://cursor.com/docs/cli/reference/configuration>
 
-## Cloud-phase limitations
+## Residual limitations
 
-This reconnaissance was prepared without access to the user's authenticated local
-agent installations. It therefore intentionally leaves the following claims open
-until the local continuation:
-
-- exact installed runtime versions and executable names;
-- whether environment configuration overrides cached login state;
-- actual subscription/account attribution for each probe;
-- Claude Agent SDK subscription-login reuse;
-- exact event schemas emitted by the installed versions;
-- observed cancellation and process-tree behavior;
-- effective cwd/project instruction loading and tool permissions;
-- startup/resource measurements on the target host.
-
-Those are not paperwork gaps. They are the experiment.
+- Claude subscription-backed execution and Agent SDK authentication reuse remain
+  unproven until the user restores the expired OAuth login.
+- The experiment observed CLI event shapes but did not freeze complete vendor
+  schemas or test every error path.
+- Direct-child termination did not establish remote or descendant cancellation.
+- Context discovery was tested with a harmless synthetic `AGENTS.md`, not by
+  disclosing the Ember repository to the external runtimes.
+- Resource usage beyond reported token/cache fields and wall-clock startup was not
+  benchmarked because model quality and performance benchmarking are non-goals.
+- Codex App Server, Codex SDK, Cursor ACP, and Claude Agent SDK remain richer
+  specialist/programmatic follow-ups rather than dependencies of the one-shot
+  experiment.
