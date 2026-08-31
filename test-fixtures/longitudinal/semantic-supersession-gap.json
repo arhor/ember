@@ -63,7 +63,7 @@
       "cognition_backend": "codex",
       "restart_ember": false,
       "external_thread": { "mode": "fresh" },
-      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no>. Do not add unsupported facts.",
+      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>.",
       "expect": {
         "selected_meanings": ["relationship", "sensor_fact", "preference_a", "live_commitment"],
         "forbidden_meanings": ["nickname_episode"],
@@ -105,7 +105,7 @@
           "at": "2026-09-01T10:56:00Z"
         }
       ],
-      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<current preference content>; HISTORICAL_PREFERENCE=<superseded preference content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; COMMITMENT_APPLICABILITY=<applicability>; NICKNAME_STATUS=<gap_kind or none>; NICKNAME_VALUE=<UNAVAILABLE if the detail cannot be recovered, otherwise the projected detail>; FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no>; DOWNTIME_COGNITION=<recovery_account.ember_cognition_during_interval>. Do not guess missing detail and do not upgrade user testimony into Ember direct experience.",
+      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<current preference content>; HISTORICAL_PREFERENCE=<superseded preference content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>; COMMITMENT_APPLICABILITY=<applicability>; NICKNAME_STATUS=<gap_kind or none>; NICKNAME_VALUE=<projected detail, UNAVAILABLE, or NONE according to projection>; FACT_EPISTEMIC_ROLE=<epistemic_role>; FACT_SOURCE_ROLE=<source_role>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; DOWNTIME_COGNITION=<recovery_account.ember_cognition_during_interval>.",
       "purpose": "explain",
       "explain": ["preference_a", "nickname_episode"],
       "expect": {
@@ -138,7 +138,7 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": { "mode": "fresh" },
-      "input": "Using only the ordinary permitted projection, produce a semantic audit with exactly these fields and copy content verbatim: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>. Do not mention a superseded preference or unavailable private detail unless it is present in this projection.",
+      "input": "Using only the ordinary permitted projection, produce a semantic audit with exactly these fields and copy content verbatim: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospective_lifecycle>.",
       "expect": {
         "selected_meanings": ["relationship", "sensor_fact", "preference_b", "live_commitment"],
         "forbidden_meanings": ["preference_a", "nickname_episode"],
