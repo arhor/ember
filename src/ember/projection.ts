@@ -49,7 +49,7 @@ export interface Projection {
   selection: {
     meaning_ids: MeaningId[];
     evidence_ids: EvidenceId[];
-    explicit_explain_ids: MeaningId[];
+    explicit_explain_ids: string[];
     raw_transcript_included: false;
   };
 }
@@ -73,7 +73,7 @@ export function buildProjection(
   if (!["ordinary", "explain"].includes(purpose)) throw new ValidationError("projection purpose must be ordinary or explain");
   const runtime = findRuntime(state, runtimeId);
   const selected = new Map<MeaningId, Meaning>();
-  const explicit = [...new Set(explainIds.map(id => findMeaning(state, id).meaning_id))];
+  const explicit = [...new Set(explainIds)];
 
   for (const m of state.meanings) {
     if (m.kind === "relationship" && m.owner === `relationship:${principal}`) selected.set(m.meaning_id, m);
@@ -83,7 +83,7 @@ export function buildProjection(
   if (purpose === "explain") {
     for (const id of explicit) {
       const m = findMeaning(state, id);
-      selected.set(id, m);
+      selected.set(m.meaning_id, m);
       for (const linked of [m.supersedes, m.superseded_by]) if (linked) selected.set(linked, findMeaning(state, linked));
     }
   }
