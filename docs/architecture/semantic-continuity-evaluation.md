@@ -157,22 +157,57 @@ provider behavior.
 
 ### Authenticated real-model findings
 
-**Not yet recorded in this branch.** Issue #56 is not complete until both named
-scenarios have been run against an authenticated real cognition backend and the
-aggregate/qualitative outcome is recorded here, including any failing or
-nondeterministic observation rather than only the final passing attempt.
+On 2026-08-31, both named scenarios were run through the authenticated Codex
+backend with installed `codex-cli 0.151.0`. No `--codex-arg` model override was
+supplied, so model selection was the Codex CLI default rather than an explicitly
+selected model. Each episode used the scenario's fresh external-thread setting.
+Raw reports remain local and are not repository artifacts.
 
-When recording a run, include:
+| Scenario | Episode | Ember assertions | Model observations |
+|---|---|---:|---:|
+| `issue-56-supersession-commitment-gap` | `baseline-currentness` | 6/6 passed | 8/8 passed |
+| `issue-56-supersession-commitment-gap` | `explain-after-restart` | 7/7 passed | 14/14 passed |
+| `issue-56-supersession-commitment-gap` | `ordinary-current-only` | 7/7 passed | 5/5 passed |
+| `issue-56-provenance-epistemic-restraint` | `provenance-baseline` | 6/6 passed | 11/11 passed |
+| `issue-56-provenance-epistemic-restraint` | `provenance-after-restart` | 7/7 passed | 12/12 passed |
+| **Aggregate** | **5 episodes** | **33/33 passed** | **50/50 passed** |
 
-- date, installed Codex CLI version, and whether model selection was default or
-  explicit;
-- scenario ID and episode IDs;
-- aggregate Ember assertion and model-observation counts;
-- which semantic observations failed or varied across repetitions;
-- whether canonical state and projection were correct at each failure;
-- whether the failure was therefore classified as state, projection, provider
-  behavior, or still ambiguous; and
-- any follow-up issue created from the evidence.
+The supersession scenario's canonical state retained the earlier preference as
+superseded history while the replacement remained current. Its explain projection
+included both states with those distinct currentness values; its later ordinary
+projection excluded the superseded preference. The live Ember-owned commitment
+remained `live` in canonical state across both restarts and was projected after
+restart with `last_known_live_needs_currentness_check`. The withheld synthetic
+detail became an `unavailable_detail` gap, and neither the projection nor the
+model reply exposed or reconstructed the unavailable value. Both restart replies
+reported `none_in_supported_runtime` rather than inventing cognition during
+downtime.
+
+The provenance scenario's canonical state preserved the neutral fixture statement
+as user-owned `user_testimony` and the commitment as an Ember-owned live
+`ember_commitment`. Before and after restart, the projection preserved
+`user_command` as the fact's source role and `ember_adoption` as the commitment's
+first source role. The model kept those provenance classes distinct, attributed
+ownership correctly, and answered that Ember had not directly observed the
+user-testimony event.
+
+There were no failed or varying model observations in the completed authenticated
+runs, so no model-behavior, canonical-state, projection, or ambiguous semantic
+failure was observed and no repetition was needed to obtain a passing attempt.
+Canonical state and projection were correct for every evaluated episode.
+
+Two initial command invocations failed before provider execution because the local
+managed sandbox denied initialization of the authenticated Codex client. They
+produced no report, model reply, canonical-state evidence layer, or projected
+metadata, and the unchanged commands completed once run with the required host
+access. Within the required semantic failure taxonomy these attempts are
+**ambiguous**, because no semantic evidence layers existed to classify; the
+available diagnostic identifies an execution-environment restriction rather than
+a state, projection, or model-behavior defect.
+
+No follow-up issue is warranted from this evidence. One successful run cannot
+establish universal provider determinism, but this evaluation encountered no
+nondeterministic semantic observation to preserve or investigate.
 
 Do not paste raw model replies, generated Ember IDs, external provider thread IDs,
 credential paths, or account-local information into this document.
