@@ -44,6 +44,9 @@ Current architecture material:
 - [Longitudinal Continuity Harness](longitudinal-continuity-harness.md) explains
   the repository-owned multi-episode scenario format, deterministic and opt-in
   live runners, external-thread controls, and evidence-layer interpretation.
+- [Process-Restart Continuity Evaluation](process-restart-continuity-evaluation.md)
+  records issue #55's true CLI-process restart probe, fresh-Codex-thread oracle,
+  sanitized report contract, and live evidence procedure.
 - [TypeScript Runtime Evaluation](typescript-runtime-evaluation.md) records issue
   #38's evidence comparing the Node.js 24 JavaScript control with TypeScript on
   Node.js 26 and Deno 2.9. It remains evidence for ADR 0006 rather than a source of
