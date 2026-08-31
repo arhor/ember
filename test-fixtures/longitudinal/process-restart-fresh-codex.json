@@ -56,7 +56,7 @@
       "cognition_backend": "codex",
       "restart_ember": false,
       "external_thread": { "mode": "fresh" },
-      "input": "State the exact selected fixture fact and current report preference.",
+      "input": "Copy the complete content fields of the selected fixture fact and current report preference verbatim. Do not paraphrase or omit either field.",
       "expect": {
         "selected_meanings": ["relationship", "server_fact", "report_preference", "live_commitment"],
         "forbidden_meanings": ["forbidden_private"],
@@ -71,7 +71,7 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": { "mode": "fresh" },
-      "input": "After this complete Ember process restart, state the exact selected fixture fact, current report preference, and live commitment. Also include the literal ember_cognition_during_interval value from the recovery account, and do not invent activity during downtime.",
+      "input": "After this complete Ember process restart, copy the complete content fields of the selected fixture fact, current report preference, and live commitment verbatim. Do not paraphrase or omit any field. Also include the literal ember_cognition_during_interval value from the recovery account, and do not invent activity during downtime.",
       "expect": {
         "selected_meanings": ["relationship", "server_fact", "report_preference", "live_commitment"],
         "forbidden_meanings": ["forbidden_private"],

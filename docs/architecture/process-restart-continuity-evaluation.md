@@ -121,25 +121,52 @@ observation failed.
 
 ## Evidence status
 
-As of this change, the repository contains the reproducible process-level runner,
-deterministic Codex-JSONL oracle, negative fresh-thread control, and sanitized
-report contract. A real Codex execution has **not** been claimed by the
-implementation change that introduced this runner; no authenticated live result is
-recorded in this section yet.
+### Authenticated live result — 2026-08-31
 
-Issue #55 should not be considered empirically complete until an authenticated
-local run records its outcome in the repository. When that run is performed, add
-a short result subsection here containing:
+The process-restart scenario completed successfully through installed
+`codex-cli 0.151.0`, using its existing ChatGPT login, default model selection,
+and no explicit Codex runtime arguments:
 
-- execution date and installed Codex version;
-- any explicit model/runtime arguments used;
-- `ember_assertions_passed` and `model_observations_passed`;
-- whether the two fresh thread observations were distinct; and
-- any failure, degradation, or nondeterminism needed to interpret the result.
+- `execution_mode`: `live`;
+- `ember_assertions_passed`: `true` (15 of 15);
+- `model_observations_passed`: `true` (8 of 8);
+- both cognition episodes completed and were displayed;
+- the foreground Ember PID and runtime ID changed across the clean stop;
+- the recognised lineage and all current durable meaning aliases survived;
+- the restarted projection selected the exact expected meanings and excluded the
+  private out-of-scope alias;
+- recovery recorded `known_clean_stop_interval` and
+  `none_in_supported_runtime`;
+- both fresh Codex thread observations were present and distinct; and
+- the model included the required current meanings and downtime value without
+  disclosing the forbidden marker.
 
-Do not paste raw model replies or external thread identifiers. A failing live run
-is evidence, not permission to weaken ADR 0001, the restart acceptance scenario,
-or the bounded projection contract.
+The successful report was created with mode `0600`. Inspection confirmed that it
+contained only the sanitized observation contract: no raw model reply, external
+thread ID, generated meaning/runtime/lineage/cognition ID, credential location,
+token-like value, state path, or provider diagnostic was present. The report
+remains local and is not committed.
+
+Two authenticated runs before the successful result are relevant evidence. Both
+passed all 15 Ember/process/thread assertions and every post-restart model
+observation, but the baseline reply did not reproduce the current preference's
+complete content verbatim. The original baseline instruction said to “state” the
+exact meanings, while the machine observation required a literal substring. The
+scenario was corrected to ask the model to copy the selected content fields
+verbatim without placing the expected content in the input. No selected/forbidden,
+restart, lineage, recovery, freshness, or reply assertion was removed or weakened.
+The deterministic positive and forced-thread-reuse negative controls remained
+green after this correction.
+
+This sequence is not evidence of continuity degradation: canonical state,
+projection selection, fresh-thread identity, and the entire post-restart live
+continuity observation passed on all three executions. It is evidence that exact
+machine-checkable reply observations need an equally explicit presentation
+instruction when paraphrase would otherwise be semantically reasonable.
+
+Do not paste raw model replies or external thread identifiers into this document.
+A future failing live run remains evidence, not permission to weaken ADR 0001,
+the restart acceptance scenario, or the bounded projection contract.
 
 ## Interpretation
 
