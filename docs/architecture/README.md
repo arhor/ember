@@ -45,6 +45,9 @@ Current architecture material:
   #38's evidence comparing the Node.js 24 JavaScript control with TypeScript on
   Node.js 26 and Deno 2.9. It remains evidence for ADR 0006 rather than a source of
   semantic authority.
+- [TypeScript Runtime Adoption Validation](typescript-adoption-validation.md)
+  records issue #40's selected-stack confidence result, post-migration comparison,
+  and runtime capability boundary.
 - [Architecture Research](../research/README.md) contains the canonical concern
   notes and their evidence maps.
 
