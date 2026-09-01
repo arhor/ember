@@ -552,9 +552,18 @@ If an ADR resolves any of these more strongly, reconcile the decision and fixtur
 | Memory and currentness 6–10 | AS-MEM-01 through AS-MEM-05 |
 | Context and disclosure 11–14 | AS-CTX-01 through AS-CTX-04 |
 | Delegation and responsibility 15–19 | AS-DEL-01 through AS-DEL-05 |
-| Specialist-delegation subset for issue #58 | AS-DEL-00 through AS-DEL-08 |
 | Authority and initiative 20–24 | AS-AUTH-01 through AS-AUTH-05 |
 | Endogenous agency and attention 25–30 | AS-AGY-01 through AS-AGY-06 |
 | Operational occurrence, delivery, and concurrency 31–36 | AS-OPS-01 through AS-OPS-06 |
 
 The one-to-one map is intentional: consolidation would make the catalogue shorter, but would also make it easier for an implementation to pass one semantic axis while silently dropping another.
+
+### Additional acceptance subsets
+
+Later issues may define focused subsets that add fixtures or overlap the original
+issue #21 mapping. These subsets are traceability and evaluation oracles, not new
+one-to-one partitions of the catalogue.
+
+| Source | Focused subset |
+|---|---|
+| Specialist delegation for issue #58 | AS-DEL-00 through AS-DEL-08 |
