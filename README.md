@@ -31,13 +31,14 @@ The adopted runtime is organized around explicit module boundaries rather than o
 
 - `src/core/` owns canonical state types, semantic operations, projections, and shared domain errors;
 - `src/runtime/` owns runtime lifecycle and cognition orchestration;
-- `src/providers/` owns the provider contract, generic process transport, concrete provider adapters, and bounded specialist execution;
+- `src/providers/` owns the one-shot cognition provider contract, generic process transport, concrete provider adapters, and provider evidence helpers;
+- `src/delegation/` owns bounded specialist-delegation boundaries, kept conceptually separate from one-shot cognition providers;
 - `src/persistence/` owns durable state storage;
 - `src/cli/` owns the command-line interface;
 - `eval/` contains longitudinal and process-restart evaluation harnesses rather than production runtime code;
 - narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under `tests/`.
 
-Older research and evaluation records may preserve source paths that were accurate when those artifacts were produced; the layout above describes the current implementation.
+Older research and evaluation records may preserve source paths that were accurate when those artifacts were produced; the layout above describes the current implementation. Current design documents should use current implementation paths.
 
 ## Design and architecture
 

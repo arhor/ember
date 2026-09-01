@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { lstat, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { createSpecialistEpisode, runCodexSpecialist } from "../src/providers/codex-specialist.ts";
+import { createSpecialistEpisode, runCodexSpecialist } from "../src/delegation/codex-specialist.ts";
 
 if (process.env.EMBER_RUN_LIVE_SPECIALIST !== "1") {
   process.stderr.write("Set EMBER_RUN_LIVE_SPECIALIST=1 to run the opt-in Codex specialist scenario.\n");
