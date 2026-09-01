@@ -67,7 +67,7 @@ describe required meanings rather than requiring a public or generalized schema.
 | `context_projection` | Only the task facts, constraints, and source/currentness labels needed by this specialist; never a canonical store path or implicit memory dump |
 | `authority_envelope` | Attributable principal and grant, purpose, permitted actions and disclosures, targets/recipients, material limits, and conditions requiring escalation |
 | `workspace` | An explicit canonical path, expected repository identity or baseline when relevant, and whether existing user changes must be preserved |
-| `runtime_policy` | Codex command/version evidence, sandbox mode, permitted tools/network, configuration isolation, timeout/resource bounds, and session mode |
+| `runtime_policy` | Codex command/version evidence, narrowest runtime-enforceable sandbox/tool/network controls compatible with the task, configuration isolation, timeout/resource bounds, and session mode |
 | `currentness_basis` | Objective/version or other observation against which a late result must be checked |
 
 The working directory is both capability and disclosure. It is never inherited
@@ -97,14 +97,20 @@ read-only isolated directory.
 For the first specialist slice, Ember launches a Codex-specific `codex exec`
 adapter with:
 
-- a fresh persistent Codex thread so a runtime identifier can be retained as
-  operational evidence, without making thread recovery a correctness condition;
+- an ephemeral Codex thread, retaining the emitted thread identifier only as
+  operational evidence and leaving no runtime-local session to resume;
 - the explicitly selected repository working directory;
-- an explicitly selected sandbox and tool policy no broader than both the task
-  need and Ember's authority envelope;
+- the narrowest runtime-enforceable sandbox and tool policy compatible with the
+  task;
 - user configuration, plugins, apps, skills, and ambient environment disabled or
   filtered unless the episode explicitly selects them; and
 - JSONL boundary events plus a schema-constrained final specialist report.
+
+Codex CLI controls are coarser than Ember's semantic authority envelope. Residual
+technical reach inside the selected sandbox or workspace remains capability only;
+it does not authorize Codex to use that reach. The prompt communicates the finer
+authority limits, and Ember still reconciles observed and possible effects rather
+than claiming that CLI policy exactly enforced every semantic constraint.
 
 The final report contains at least a summary, claimed objective disposition,
 artifacts changed or inspected, checks run and their results, known effects,
@@ -118,6 +124,11 @@ identifier. If issue #60 demonstrates that a live approval must be suspended and
 resumed, or that reliable steering/progress cannot be represented from CLI events,
 that is concrete pressure to reconsider App Server. The present design must not
 simulate capabilities the CLI does not establish.
+
+Persistent or resumable Codex threads are likewise deferred until recovery of the
+same runtime-local episode becomes a concrete requirement. Specialist replacement
+remains a new Ember episode rather than an implicit continuation through retained
+Codex state.
 
 ## Boundary observations and durable state
 
