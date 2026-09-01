@@ -275,8 +275,8 @@ requirements above.
 `src/ember/codex-specialist.ts` implements this design as a deliberately separate
 Codex-specific boundary. `createSpecialistEpisode` validates and freezes the
 explicit objective, acceptance constraints, bounded context, authority envelope,
-canonical workspace path, and currentness basis. `runCodexSpecialist` creates the
-episode record with exclusive creation before launch, invokes one ephemeral
+canonical workspace path, runtime command/policy, and currentness basis.
+`runCodexSpecialist` creates the episode record with exclusive creation before launch, invokes one ephemeral
 `codex exec` in that exact workspace with `workspace-write`, filtered environment,
 disabled user configuration/plugins/apps/skills, bounded JSONL and timeout, and a
 strict report schema. Runtime and report state remain separate from the initially

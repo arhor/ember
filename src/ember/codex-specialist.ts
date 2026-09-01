@@ -28,6 +28,17 @@ export interface SpecialistEpisodeSpec {
     escalation_conditions: string[];
   };
   workspace: { path: string; expected_identity: string; preserve_existing_changes: boolean };
+  runtime_policy: {
+    command: string;
+    argument_prefix: string[];
+    sandbox: "workspace-write";
+    network: "no_additional_grant";
+    configuration: "isolated";
+    environment: "allowlisted_runtime_auth";
+    timeout_seconds: number;
+    stdout_limit_bytes: typeof MAX_OUTPUT_BYTES;
+    session_mode: "ephemeral";
+  };
   currentness_basis: string;
 }
 
@@ -73,10 +84,7 @@ type SpecialistSpawn = (command: string, args: string[], options: { cwd: string;
 
 export interface RunCodexSpecialistOptions {
   recordPath: string;
-  command?: string;
-  argumentPrefix?: string[];
   environment?: NodeJS.ProcessEnv;
-  timeoutSeconds?: number;
   signal?: AbortSignal;
   now?: () => string;
   spawnImpl?: SpecialistSpawn;
@@ -116,7 +124,7 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   validateSpec(specInput);
   const spec = structuredClone(specInput);
   const now = options.now ?? (() => new Date().toISOString());
-  const timeoutSeconds = options.timeoutSeconds ?? 300;
+  const timeoutSeconds = spec.runtime_policy.timeout_seconds;
   if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutSeconds > 3600) throw new Error("specialist timeout must be between 0 and 3600 seconds");
   const workspace = resolve(spec.workspace.path);
   if (workspace !== spec.workspace.path) throw new Error("specialist workspace path must be absolute and canonical");
@@ -130,10 +138,10 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   if (Buffer.byteLength(prompt) > MAX_TEXT_BYTES) throw new Error("specialist prompt exceeds 256 KiB");
   record.observations.push({ observed_at: now(), kind: "launch_attempted" });
   await persistRecord(options.recordPath, record);
-  const args = [...(options.argumentPrefix ?? []), "exec", "--ephemeral", "--ignore-user-config", "--disable", "plugins", "--disable", "apps", "-c", "skills.include_instructions=false", "--skip-git-repo-check", "--json", "--output-schema", schemaPath, "--sandbox", "workspace-write", "-C", workspace, "-"];
+  const args = [...spec.runtime_policy.argument_prefix, "exec", "--ephemeral", "--ignore-user-config", "--disable", "plugins", "--disable", "apps", "-c", "skills.include_instructions=false", "--skip-git-repo-check", "--json", "--output-schema", schemaPath, "--sandbox", spec.runtime_policy.sandbox, "-C", workspace, "-"];
   let child: SpecialistChild;
   try {
-    child = (options.spawnImpl ?? spawn as unknown as SpecialistSpawn)(options.command ?? "codex", args, { cwd: workspace, env: codexEnvironment(options.environment), shell: false, stdio: ["pipe", "pipe", "pipe"] });
+    child = (options.spawnImpl ?? spawn as unknown as SpecialistSpawn)(spec.runtime_policy.command, args, { cwd: workspace, env: codexEnvironment(options.environment), shell: false, stdio: ["pipe", "pipe", "pipe"] });
   } catch (error) {
     record.runtime_state = "lost"; record.report_state = "ambiguous";
     record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: errorMessage(error) });
@@ -143,20 +151,23 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   record.observations.push({ observed_at: now(), kind: "child_started" });
   await persistRecord(options.recordPath, record);
   const stdout: Buffer[] = [], stderr: Buffer[] = [];
-  let outputBytes = 0, closed = false, exitCode: number | null = null, exitSignal: NodeJS.Signals | null = null, spawnErrorMessage: string | null = null, termination: "timeout" | "cancel" | "output_limit" | null = null;
+  let outputBytes = 0, closed = false, exitCode: number | null = null, exitSignal: NodeJS.Signals | null = null, spawnErrorMessage: string | null = null, stdinErrorMessage: string | null = null, termination: "timeout" | "cancel" | "output_limit" | "stdin_error" | null = null;
   let resolveDone!: (confirmed: boolean) => void;
   const done = new Promise<boolean>(resolve_ => { resolveDone = resolve_; });
   let finalTimer: NodeJS.Timeout | undefined;
   const terminate = (reason: NonNullable<typeof termination>) => {
     if (termination || closed) return; termination = reason;
-    record.runtime_state = "cancellation_requested";
-    record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
+    if (reason !== "stdin_error") {
+      record.runtime_state = "cancellation_requested";
+      record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
+    }
     child.stdin.destroy(); try { child.kill("SIGTERM"); } catch {}
     setTimeout(() => { if (!closed) try { child.kill("SIGKILL"); } catch {} }, options.terminationGraceMs ?? 500);
     finalTimer = setTimeout(() => { if (!closed) resolveDone(false); }, options.finalTerminationMs ?? 1000);
   };
   child.stdout.on("data", (chunk: Buffer) => { outputBytes += chunk.length; if (outputBytes <= MAX_OUTPUT_BYTES) stdout.push(chunk); else terminate("output_limit"); });
   child.stderr.on("data", (chunk: Buffer) => { if (Buffer.concat(stderr).length < 64 * 1024) stderr.push(chunk.subarray(0, 64 * 1024 - Buffer.concat(stderr).length)); });
+  child.stdin.on("error", error => { stdinErrorMessage = error.message; terminate("stdin_error"); });
   child.on("error", error => { spawnErrorMessage = error.message; });
   child.on("close", (code, signal) => { closed = true; exitCode = code; exitSignal = signal; if (finalTimer) clearTimeout(finalTimer); resolveDone(true); });
   const timeout = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
@@ -167,11 +178,11 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   clearTimeout(timeout); options.signal?.removeEventListener("abort", abort); if (finalTimer) clearTimeout(finalTimer);
   record.runtime_state = exitObserved ? "exited" : "lost";
   if (exitObserved) record.observations.push({ observed_at: now(), kind: "child_exit_observed", detail: JSON.stringify({ exitCode, exitSignal }) });
-  if (termination || !exitObserved || spawnErrorMessage || exitCode !== 0) {
+  if (termination || !exitObserved || spawnErrorMessage || stdinErrorMessage || exitCode !== 0) {
     record.report_state = "ambiguous";
     record.possible_effects.push("Workspace or external effects may have occurred before the specialist boundary ended.");
     const diagnostic = decoder.decode(Buffer.concat(stderr)).slice(0, 4096) || codexErrorDiagnostic(Buffer.concat(stdout));
-    record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`) });
+    record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: stdinErrorMessage ?? termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`) });
   } else {
     try {
       const parsed = parseJsonl(decoder.decode(Buffer.concat(stdout)));
@@ -230,13 +241,18 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
 
 function validateSpec(spec: SpecialistEpisodeSpec) {
   if (spec.contract_version !== 1 || !bounded(spec.episode_id, 512) || !bounded(spec.objective, 32_768) || !bounded(spec.currentness_basis, 8192)) throw new Error("specialist episode specification is invalid");
-  if (!Array.isArray(spec.acceptance) || !spec.acceptance.length || !spec.authority_envelope || !spec.workspace || !spec.workspace.path) throw new Error("specialist episode specification is incomplete");
+  if (!Array.isArray(spec.acceptance) || !spec.acceptance.length || !spec.authority_envelope || !spec.workspace || !spec.workspace.path || !spec.runtime_policy) throw new Error("specialist episode specification is incomplete");
+  const policy = spec.runtime_policy;
+  if (!bounded(policy.command, 4096) || !stringArray(policy.argument_prefix) || policy.sandbox !== "workspace-write" || policy.network !== "no_additional_grant" || policy.configuration !== "isolated" || policy.environment !== "allowlisted_runtime_auth" || !Number.isFinite(policy.timeout_seconds) || policy.timeout_seconds <= 0 || policy.timeout_seconds > 3600 || policy.stdout_limit_bytes !== MAX_OUTPUT_BYTES || policy.session_mode !== "ephemeral") throw new Error("specialist runtime policy is invalid");
 }
 function validateReport(value: SpecialistReport) {
-  if (!recordLike(value) || value.contract_version !== 1 || !bounded(value.summary, 32_768) || !["completed", "blocked", "failed"].includes(value.objective_disposition)) throw new Error("specialist report is invalid");
-  for (const name of ["artifacts_changed", "artifacts_inspected", "checks", "known_effects", "possible_effects", "blockers", "requested_follow_up"] as const) if (!Array.isArray(value[name])) throw new Error(`specialist report ${name} is invalid`);
+  const fields = ["artifacts_changed", "artifacts_inspected", "blockers", "checks", "contract_version", "known_effects", "objective_disposition", "possible_effects", "requested_follow_up", "summary"];
+  if (!recordLike(value) || JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(fields) || value.contract_version !== 1 || !bounded(value.summary, 32_768) || !["completed", "blocked", "failed"].includes(value.objective_disposition)) throw new Error("specialist report is invalid");
+  for (const name of ["artifacts_changed", "artifacts_inspected", "known_effects", "possible_effects", "blockers", "requested_follow_up"] as const) if (!stringArray(value[name])) throw new Error(`specialist report ${name} is invalid`);
+  if (!Array.isArray(value.checks) || !value.checks.every(check => recordLike(check) && JSON.stringify(Object.keys(check).sort()) === JSON.stringify(["command", "outcome"]) && typeof check.command === "string" && typeof check.outcome === "string")) throw new Error("specialist report checks is invalid");
 }
 function bounded(value: unknown, bytes: number): value is string { return typeof value === "string" && value.trim().length > 0 && Buffer.byteLength(value) <= bytes; }
+function stringArray(value: unknown): value is string[] { return Array.isArray(value) && value.every(item => typeof item === "string"); }
 function recordLike(value: unknown): value is Record<string, any> { return value !== null && typeof value === "object" && !Array.isArray(value); }
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : String(error); }
 function codexErrorDiagnostic(bytes: Uint8Array): string {
