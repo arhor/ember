@@ -85,7 +85,12 @@ test("Codex specialist should persist explicit runtime policy without forwarding
 test("Codex specialist should preserve effect uncertainty when cancellation is requested", async () => {
   // Given
   const fixture = await episodeFixture(); const controller = new AbortController();
-  const child = new EventEmitter() as any; child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough(); child.kill = (signal: string) => { queueMicrotask(() => child.emit("close", null, signal)); return true; };
+  let durableStateAtSignal: unknown;
+  const child = new EventEmitter() as any; child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough(); child.kill = (signal: string) => {
+    durableStateAtSignal = JSON.parse(readFileSync(fixture.recordPath, "utf8"));
+    queueMicrotask(() => child.emit("close", null, signal));
+    return true;
+  };
   fixture.spec.runtime_policy.timeout_seconds = 2;
 
   // When
@@ -96,6 +101,8 @@ test("Codex specialist should preserve effect uncertainty when cancellation is r
   assert.deepEqual([record.runtime_state, record.report_state, record.ember_disposition], ["exited", "ambiguous", "unresolved"]);
   assert.match(record.possible_effects.join(" "), /may have occurred/);
   assert.equal(record.observations.some(item => item.kind === "cancellation_requested"), true);
+  assert.equal((durableStateAtSignal as any).runtime_state, "cancellation_requested");
+  assert.equal((durableStateAtSignal as any).observations.some((item: any) => item.kind === "cancellation_requested"), true);
 });
 
 test("Codex specialist should record an ambiguous boundary failure when prompt delivery emits EPIPE", async () => {

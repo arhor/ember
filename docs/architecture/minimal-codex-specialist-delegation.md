@@ -273,7 +273,7 @@ requirements above.
 ## Implemented issue-60 slice
 
 `src/ember/codex-specialist.ts` implements this design as a deliberately separate
-Codex-specific boundary. `createSpecialistEpisode` validates and freezes the
+Codex-specific boundary. `createSpecialistEpisode` validates and captures the
 explicit objective, acceptance constraints, bounded context, authority envelope,
 canonical workspace path, runtime command/policy, and currentness basis.
 `runCodexSpecialist` creates the episode record with exclusive creation before launch, invokes one ephemeral

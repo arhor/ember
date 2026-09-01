@@ -155,15 +155,19 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   let resolveDone!: (confirmed: boolean) => void;
   const done = new Promise<boolean>(resolve_ => { resolveDone = resolve_; });
   let finalTimer: NodeJS.Timeout | undefined;
+  let terminationPersistence: Promise<void> | null = null;
   const terminate = (reason: NonNullable<typeof termination>) => {
     if (termination || closed) return; termination = reason;
     if (reason !== "stdin_error") {
       record.runtime_state = "cancellation_requested";
       record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
     }
-    child.stdin.destroy(); try { child.kill("SIGTERM"); } catch {}
-    setTimeout(() => { if (!closed) try { child.kill("SIGKILL"); } catch {} }, options.terminationGraceMs ?? 500);
-    finalTimer = setTimeout(() => { if (!closed) resolveDone(false); }, options.finalTerminationMs ?? 1000);
+    terminationPersistence = persistRecord(options.recordPath, record).then(() => {
+      if (closed) return;
+      child.stdin.destroy(); try { child.kill("SIGTERM"); } catch {}
+      setTimeout(() => { if (!closed) try { child.kill("SIGKILL"); } catch {} }, options.terminationGraceMs ?? 500);
+      finalTimer = setTimeout(() => { if (!closed) resolveDone(false); }, options.finalTerminationMs ?? 1000);
+    });
   };
   child.stdout.on("data", (chunk: Buffer) => { outputBytes += chunk.length; if (outputBytes <= MAX_OUTPUT_BYTES) stdout.push(chunk); else terminate("output_limit"); });
   child.stderr.on("data", (chunk: Buffer) => { if (Buffer.concat(stderr).length < 64 * 1024) stderr.push(chunk.subarray(0, 64 * 1024 - Buffer.concat(stderr).length)); });
@@ -175,6 +179,7 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   options.signal?.addEventListener("abort", abort, { once: true });
   if (options.signal?.aborted) abort(); else child.stdin.end(prompt);
   const exitObserved = await done;
+  await terminationPersistence;
   clearTimeout(timeout); options.signal?.removeEventListener("abort", abort); if (finalTimer) clearTimeout(finalTimer);
   record.runtime_state = exitObserved ? "exited" : "lost";
   if (exitObserved) record.observations.push({ observed_at: now(), kind: "child_exit_observed", detail: JSON.stringify({ exitCode, exitSignal }) });
