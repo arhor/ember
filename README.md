@@ -25,6 +25,20 @@ node bin/ember.ts init \
 
 See the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md) for complete `run`, inspection, recovery, and provider examples.
 
+## Repository layout
+
+The adopted runtime is organized around explicit module boundaries rather than one flat source directory:
+
+- `src/core/` owns canonical state types, semantic operations, projections, and shared domain errors;
+- `src/runtime/` owns runtime lifecycle and cognition orchestration;
+- `src/providers/` owns the provider contract, generic process transport, concrete provider adapters, and bounded specialist execution;
+- `src/persistence/` owns durable state storage;
+- `src/cli/` owns the command-line interface;
+- `eval/` contains longitudinal and process-restart evaluation harnesses rather than production runtime code;
+- narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under `tests/`.
+
+Older research and evaluation records may preserve source paths that were accurate when those artifacts were produced; the layout above describes the current implementation.
+
 ## Design and architecture
 
 - [Vision](docs/vision.md)
