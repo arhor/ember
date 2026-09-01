@@ -3,9 +3,57 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import { buildCodexArguments } from "../src/ember/codex-provider.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../src/ember/longitudinal-harness.ts";
+import type { ProviderResult } from "../src/ember/provider.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "restart-thread-continuity.json");
+const REPLACEMENT_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-control.json");
+
+test("backend replacement control should preserve fixed continuity checks when cognition loci are fresh", async () => {
+  // Given
+  const directory = await tempDir();
+  const scenario = await loadLongitudinalScenario(REPLACEMENT_SCENARIO);
+
+  // When
+  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => harnessOutput(invocation.cognitionBackend, {
+    contract_version: 1,
+    reply: invocation.request.projection.meanings.map(item => item.content).join(" | "),
+    used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+    operational: { external_thread_id: `fresh-${invocation.episodeId}` },
+  }));
+
+  // Then
+  assert.equal(report.ember_assertions_passed, true);
+  assert.equal(report.model_observations_passed, true);
+  assert.equal(report.episodes[0].backend_metadata.backend, "codex");
+  assert.deepEqual(report.episodes[0].backend_metadata.configuration, { deterministic: true });
+  assert.notEqual(report.episodes[0].provider_thread_id, report.episodes[1].provider_thread_id);
+  assert.equal(report.episodes[1].ember_assertions.some(item => item.assertion === "replacement continuity vector"), false);
+  assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "replacement preserves lineage and durable meaning")?.passed, true);
+  assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "replacement receives the same selected meanings")?.passed, true);
+  assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh-thread control uses the same backend")?.passed, true);
+});
+
+test("harness should reject backend metadata when it contradicts scenario routing", async () => {
+  // Given
+  const directory = await tempDir();
+  const scenario = await loadLongitudinalScenario(REPLACEMENT_SCENARIO);
+
+  // When
+  const run = runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => ({
+    ...harnessOutput("cursor", {
+      contract_version: 1,
+      reply: "wrong backend",
+      used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+    }),
+  }));
+
+  // Then
+  await assert.rejects(
+    run,
+    /backend metadata must identify selected backend: codex/,
+  );
+});
 
 test("longitudinal harness should separate Ember projection assertions from model observations", async () => {
   // Given
@@ -19,12 +67,12 @@ test("longitudinal harness should separate Ember projection assertions from mode
     const externalThreadId = invocation.thread.mode === "fresh"
       ? `thread-${invocation.episodeId}`
       : invocation.thread.externalThreadId;
-    return {
+    return harnessOutput(invocation.cognitionBackend, {
       contract_version: 1,
       reply: [...meanings, ...gaps].join(" | "),
       used_meaning_ids: invocation.request.projection.selection.meaning_ids,
       operational: { external_thread_id: externalThreadId },
-    };
+    });
   });
 
   // Then
@@ -70,7 +118,7 @@ test("longitudinal harness should preserve passing Ember evidence when empirical
   const scenario = await loadLongitudinalScenario(SCENARIO);
 
   // When
-  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => ({
+  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => harnessOutput(invocation.cognitionBackend, {
     contract_version: 1,
     reply: "MODEL_DID_NOT_FOLLOW_THE_PROJECTED_MEANINGS",
     used_meaning_ids: [],
@@ -92,7 +140,7 @@ test("longitudinal harness should fail Ember freshness assertions when two fresh
   const scenario = await loadLongitudinalScenario(SCENARIO);
 
   // When
-  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => ({
+  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => harnessOutput(invocation.cognitionBackend, {
     contract_version: 1,
     reply: [...invocation.request.projection.meanings.map(item => item.content), ...invocation.request.projection.gaps.map(item => item.gap_kind)].join(" | "),
     used_meaning_ids: invocation.request.projection.selection.meaning_ids,
@@ -117,8 +165,8 @@ test("longitudinal harness should fail Ember freshness assertions when a fresh e
       reply: [...invocation.request.projection.meanings.map(item => item.content), ...invocation.request.projection.gaps.map(item => item.gap_kind)].join(" | "),
       used_meaning_ids: invocation.request.projection.selection.meaning_ids,
     };
-    if (invocation.episodeId === "fresh-after-restart") return result;
-    return { ...result, operational: { external_thread_id: invocation.thread.mode === "reuse" ? invocation.thread.externalThreadId : "baseline-thread" } };
+    if (invocation.episodeId === "fresh-after-restart") return harnessOutput(invocation.cognitionBackend, result);
+    return harnessOutput(invocation.cognitionBackend, { ...result, operational: { external_thread_id: invocation.thread.mode === "reuse" ? invocation.thread.externalThreadId : "baseline-thread" } });
   });
 
   // Then
@@ -127,3 +175,11 @@ test("longitudinal harness should fail Ember freshness assertions when a fresh e
   assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh provider thread observed")?.passed, false);
   assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh provider thread is new")?.passed, false);
 });
+
+function harnessOutput(backend: string, result: ProviderResult) {
+  return wrapResult(backend, result);
+}
+
+function wrapResult(backend: string, result: ProviderResult) {
+  return { result, backend_metadata: { backend, adapter: "test-provider", version: "1", configuration: { deterministic: true } } };
+}
