@@ -156,13 +156,17 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   const done = new Promise<boolean>(resolve_ => { resolveDone = resolve_; });
   let finalTimer: NodeJS.Timeout | undefined;
   let terminationPersistence: Promise<void> | null = null;
+  let terminationPersistenceError: string | null = null;
   const terminate = (reason: NonNullable<typeof termination>) => {
     if (termination || closed) return; termination = reason;
     if (reason !== "stdin_error") {
       record.runtime_state = "cancellation_requested";
       record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
     }
-    terminationPersistence = persistRecord(options.recordPath, record).then(() => {
+    terminationPersistence = persistRecord(options.recordPath, record).catch(error => {
+      terminationPersistenceError = errorMessage(error);
+      record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: `Cancellation intent could not be persisted before signalling: ${terminationPersistenceError}` });
+    }).then(() => {
       if (closed) return;
       child.stdin.destroy(); try { child.kill("SIGTERM"); } catch {}
       setTimeout(() => { if (!closed) try { child.kill("SIGKILL"); } catch {} }, options.terminationGraceMs ?? 500);
@@ -187,7 +191,7 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
     record.report_state = "ambiguous";
     record.possible_effects.push("Workspace or external effects may have occurred before the specialist boundary ended.");
     const diagnostic = decoder.decode(Buffer.concat(stderr)).slice(0, 4096) || codexErrorDiagnostic(Buffer.concat(stdout));
-    record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: stdinErrorMessage ?? termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`) });
+    if (!terminationPersistenceError) record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: stdinErrorMessage ?? termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`) });
   } else {
     try {
       const parsed = parseJsonl(decoder.decode(Buffer.concat(stdout)));
@@ -203,7 +207,11 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
       record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: errorMessage(error) });
     }
   }
-  await persistRecord(options.recordPath, record);
+  try {
+    await persistRecord(options.recordPath, record);
+  } catch (error) {
+    if (!terminationPersistenceError) throw error;
+  }
   await rm(runtimeDir, { recursive: true, force: true });
   return structuredClone(record);
 }

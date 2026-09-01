@@ -315,6 +315,11 @@ evidence, and removes the fixture. It never targets the Ember worktree by defaul
 - Cancellation observes only the direct child. Timeout, cancellation, output
   overflow, invalid report, or process loss remain ambiguous about prior effects
   and do not retry.
+- Cancellation intent is persisted before signalling. If that durability write
+  fails, the foreground supervisor records the failure in its returned evidence,
+  still performs bounded best-effort direct-child termination to avoid abandoning
+  a live runtime, and returns an ambiguous result; the last durable record may
+  remain stale and recovery must preserve that gap.
 - The record file is a minimal foreground supervisor artifact, not a scheduler.
   It survives the initiating call and preserves the episode boundary, but issue
   #60 does not add detached execution or process reattachment.
