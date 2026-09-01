@@ -75,14 +75,19 @@ harness verifies that the reported backend matches the selected backend and
 rejects thread/session/conversation identifiers in configuration. External thread
 IDs remain in their dedicated operational report field.
 
+The live Codex runner records a bounded JSON rendering of explicit arguments and
+a separate model-selection summary. Model, profile, model-provider, reasoning,
+verbosity, and service-tier values remain visible so materially different runs can
+be distinguished. Credential-like configuration, unknown option values, and
+positional values are redacted; user configuration remains ignored by the adapter.
+
 ## Scenario vocabulary
 
 A version-1 scenario contains:
 
 - stable scenario and Ember identity metadata;
 - an optional `backend_replacement` comparison naming an earlier control, a later
-  replacement, whether it is a same-backend control or cross-provider result, and
-  the continuity vector being evaluated;
+  replacement, and whether it is a same-backend control or cross-provider result;
 - ordered setup actions and at least two ordered episodes;
 - explicit UTC time on every state change and episode;
 - an episode `cognition_backend` label, which lets a provider implementation route
@@ -105,10 +110,14 @@ content synthetic, add the relevant semantic vector, then run the deterministic
 runner and tests. A backend-switch scenario can assign different
 `cognition_backend` values; its provider callback must route each label explicitly
 and preserve the same bounded `ProviderRequest`/validated `ProviderResult` seam.
-Replacement comparisons require fresh external threads. They assert unchanged
-lineage and durable meaning plus the same selected meaning IDs before comparing
-model observations. A same-backend control requires equal backend names; a
-cross-provider comparison requires different names.
+Replacement comparisons require fresh external threads. The comparison exposes
+its fixed checks explicitly: unchanged lineage and durable meaning, the same
+selected meaning IDs, and the declared same- or cross-backend relationship. The
+per-episode assertions independently cover exact selection, forbidden disclosure,
+lineage ownership, raw-transcript exclusion, truthful routing, and thread
+freshness. A scenario cannot claim an additional free-form continuity dimension
+that the harness does not evaluate. A same-backend control requires equal backend
+names; a cross-provider comparison requires different names.
 
 ## Interpret the report
 

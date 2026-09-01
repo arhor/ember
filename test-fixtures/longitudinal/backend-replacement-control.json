@@ -51,14 +51,7 @@
   "backend_replacement": {
     "status": "same_backend_control",
     "control_episode": "codex-control",
-    "replacement_episode": "fresh-codex-locus",
-    "continuity_vector": [
-      "lineage_integrity",
-      "autobiographical_continuity",
-      "relationship_continuity",
-      "commitment_continuity",
-      "epistemic_restraint"
-    ]
+    "replacement_episode": "fresh-codex-locus"
   },
   "episodes": [
     {

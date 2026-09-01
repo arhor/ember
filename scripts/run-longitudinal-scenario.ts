@@ -4,6 +4,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { codexArgumentEvidence } from "../src/ember/backend-evidence.ts";
 import { invokeCodexProvider } from "../src/ember/codex-provider.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario, type HarnessProvider } from "../src/ember/longitudinal-harness.ts";
 
@@ -15,6 +16,7 @@ const directory = await mkdtemp(join(tmpdir(), "ember-longitudinal-"));
 try {
   const scenario = await loadLongitudinalScenario(options.scenario);
   const codexVersion = options.provider === "codex" ? readVersion("codex", ["--version"]) : null;
+  const codexArguments = codexArgumentEvidence(options.codexArguments);
   const provider: HarnessProvider = options.provider === "codex"
     ? async invocation => {
         if (invocation.cognitionBackend !== "codex") throw new Error(`no configured live adapter for cognition backend: ${invocation.cognitionBackend}`);
@@ -33,7 +35,7 @@ try {
               sandbox: "read-only",
               project_context: "isolated",
               user_configuration: "ignored",
-              explicit_argument_count: options.codexArguments.length,
+              ...codexArguments,
             },
           },
         };

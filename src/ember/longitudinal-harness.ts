@@ -37,7 +37,6 @@ export interface LongitudinalScenario {
     status: "same_backend_control" | "cross_provider";
     control_episode: string;
     replacement_episode: string;
-    continuity_vector: string[];
   };
   episodes: Array<{
     id: string;
@@ -289,7 +288,6 @@ function applyReplacementAssertions(scenario: LongitudinalScenario, reports: Lon
   const controlDurable = durableContinuityView(control.canonical_before);
   const replacementDurable = durableContinuityView(replacement.canonical_before);
   replacement.ember_assertions.push(
-    observation("replacement continuity vector", comparison.continuity_vector, comparison.continuity_vector, comparison.continuity_vector.length > 0),
     observation("replacement preserves lineage and durable meaning", controlDurable, replacementDurable, sameJson(controlDurable, replacementDurable)),
     observation("replacement receives the same selected meanings", control.projection.selection.meaning_ids, replacement.projection.selection.meaning_ids, sameJson(control.projection.selection.meaning_ids, replacement.projection.selection.meaning_ids)),
     observation(
@@ -360,7 +358,7 @@ function validateScenario(value: unknown): asserts value is LongitudinalScenario
   }
   if (scenario.backend_replacement) {
     const comparison = scenario.backend_replacement;
-    if (!["same_backend_control", "cross_provider"].includes(comparison.status) || !Array.isArray(comparison.continuity_vector) || comparison.continuity_vector.length === 0 || !comparison.continuity_vector.every(item => typeof item === "string" && item.trim())) throw new Error("backend replacement comparison is invalid");
+    if (!["same_backend_control", "cross_provider"].includes(comparison.status)) throw new Error("backend replacement comparison is invalid");
     const controlIndex = scenario.episodes.findIndex(item => item.id === comparison.control_episode);
     const replacementIndex = scenario.episodes.findIndex(item => item.id === comparison.replacement_episode);
     if (controlIndex < 0 || replacementIndex <= controlIndex) throw new Error("backend replacement must compare an earlier control with a later replacement episode");

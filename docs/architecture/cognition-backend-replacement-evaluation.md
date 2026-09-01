@@ -24,9 +24,8 @@ claim that provider-specific cognition differences have been validated yet.
 
 ## What the control establishes
 
-The fixture evaluates lineage integrity, autobiographical continuity,
-relationship continuity, commitment continuity, and epistemic restraint before
-and after locus replacement. The harness deterministically checks that:
+The fixture evaluates the harness's fixed backend-replacement checks before and
+after locus replacement. The harness deterministically checks that:
 
 - both episodes receive the same selected meaning IDs and exclude the same private
   meaning;
@@ -60,8 +59,10 @@ EMBER_RUN_LIVE_LONGITUDINAL=1 \
 ```
 
 Live reports include the installed Codex version and bounded effective adapter
-configuration. Do not commit raw reports; replies and operational thread IDs may
-contain account-local or model-generated material.
+configuration, including sanitized explicit arguments and model-selection-relevant
+options. Credential-like and unknown values are redacted. Do not commit raw
+reports; replies and operational thread IDs may contain account-local or
+model-generated material.
 
 ## Recorded live control evidence
 

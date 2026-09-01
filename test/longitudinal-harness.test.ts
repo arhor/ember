@@ -9,10 +9,12 @@ import { ROOT, tempDir } from "./support.ts";
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "restart-thread-continuity.json");
 const REPLACEMENT_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-control.json");
 
-test("backend replacement control should preserve one continuity vector across fresh cognition loci", async () => {
+test("backend replacement control should preserve fixed continuity checks when cognition loci are fresh", async () => {
+  // Given
   const directory = await tempDir();
   const scenario = await loadLongitudinalScenario(REPLACEMENT_SCENARIO);
 
+  // When
   const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => harnessOutput(invocation.cognitionBackend, {
     contract_version: 1,
     reply: invocation.request.projection.meanings.map(item => item.content).join(" | "),
@@ -20,28 +22,35 @@ test("backend replacement control should preserve one continuity vector across f
     operational: { external_thread_id: `fresh-${invocation.episodeId}` },
   }));
 
+  // Then
   assert.equal(report.ember_assertions_passed, true);
   assert.equal(report.model_observations_passed, true);
   assert.equal(report.episodes[0].backend_metadata.backend, "codex");
   assert.deepEqual(report.episodes[0].backend_metadata.configuration, { deterministic: true });
   assert.notEqual(report.episodes[0].provider_thread_id, report.episodes[1].provider_thread_id);
+  assert.equal(report.episodes[1].ember_assertions.some(item => item.assertion === "replacement continuity vector"), false);
   assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "replacement preserves lineage and durable meaning")?.passed, true);
   assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "replacement receives the same selected meanings")?.passed, true);
   assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "fresh-thread control uses the same backend")?.passed, true);
 });
 
-test("harness should reject backend metadata that contradicts scenario routing", async () => {
+test("harness should reject backend metadata when it contradicts scenario routing", async () => {
+  // Given
   const directory = await tempDir();
   const scenario = await loadLongitudinalScenario(REPLACEMENT_SCENARIO);
 
+  // When
+  const run = runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => ({
+    ...harnessOutput("cursor", {
+      contract_version: 1,
+      reply: "wrong backend",
+      used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+    }),
+  }));
+
+  // Then
   await assert.rejects(
-    runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => ({
-      ...harnessOutput("cursor", {
-        contract_version: 1,
-        reply: "wrong backend",
-        used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-      }),
-    })),
+    run,
     /backend metadata must identify selected backend: codex/,
   );
 });
