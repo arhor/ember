@@ -21,9 +21,11 @@ discovery_status: current
 
 **Result:** complete local spike; production implementation deferred to a focused follow-up.
 
-**Graduation:** issue [#46](https://github.com/arhor/ember/issues/46) later promoted
-only the recommended Codex one-shot path into production. The experiments remain
-historical design evidence; supported operation is documented in the
+**Graduation:** issue [#46](https://github.com/arhor/ember/issues/46) promoted the
+recommended Codex one-shot path into production, and issue
+[#90](https://github.com/arhor/ember/issues/90) later added a separate Cursor
+one-shot adapter after that boundary stabilized. The experiments remain historical
+design evidence; supported operation is documented in the
 [minimal continuity runbook](minimal-continuity-runbook.md#supported-live-codex-cognition).
 
 Ember can perform real subscription-backed cognition through an already-authorized

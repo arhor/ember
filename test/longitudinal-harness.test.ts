@@ -8,6 +8,16 @@ import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "restart-thread-continuity.json");
 const REPLACEMENT_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-control.json");
+const CROSS_PROVIDER_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-cross-provider.json");
+
+test("backend replacement scenario should preserve continuity when Cursor replaces Codex", async () => {
+  // Given
+  const directory = await tempDir(); const scenario = await loadLongitudinalScenario(CROSS_PROVIDER_SCENARIO);
+  // When
+  const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async invocation => harnessOutput(invocation.cognitionBackend, { contract_version: 1, reply: invocation.request.projection.meanings.map(item => item.content).join(" | "), used_meaning_ids: invocation.request.projection.selection.meaning_ids, operational: { external_thread_id: `${invocation.cognitionBackend}-${invocation.episodeId}` } }));
+  // Then
+  assert.equal(report.ember_assertions_passed, true); assert.equal(report.model_observations_passed, true); assert.deepEqual(report.episodes.map(item => item.backend_metadata.backend), ["codex", "cursor"]); assert.equal(report.episodes[1].ember_assertions.find(item => item.assertion === "replacement uses a different backend")?.passed, true);
+});
 
 test("backend replacement control should preserve fixed continuity checks when cognition loci are fresh", async () => {
   // Given

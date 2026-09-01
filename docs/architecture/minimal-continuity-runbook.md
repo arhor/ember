@@ -1,10 +1,11 @@
 ---
-summary: "Contributor runbook for operating, inspecting, validating, and running scripted or live Codex cognition through Ember's Node.js minimal continuity slice."
+summary: "Contributor runbook for operating, inspecting, validating, and running scripted, Codex, or Cursor cognition through Ember's Node.js minimal continuity slice."
 read_when:
   - "Running or reviewing the executable minimal continuity slice from issue #23"
   - "Diagnosing its local JSON store, cooperative lock, provider process, or restart probe"
   - "Performing the optional live-provider smoke test without treating it as acceptance evidence"
   - "Running the supported production Codex exec cognition backend with an existing local login"
+  - "Running the supported production Cursor Agent cognition backend with an existing browser login"
 role: guide
 discovery_status: current
 ---
@@ -280,6 +281,68 @@ restarts, and explicit fresh/reused external threads, use the separate
 deterministic runner is CI-safe; its live Codex mode is independently opt-in and
 reports Ember state/projection assertions separately from empirical model
 observations.
+
+## Supported live Cursor cognition
+
+Issue [#90](https://github.com/arhor/ember/issues/90) adds Cursor Agent CLI as a
+separate production adapter behind the same Ember cognition seam. The adapter was
+implemented against Cursor Agent `2026.08.25-3e8eec8`, then live-verified after
+the installed runtime updated to `2026.08.31-4057e58`, and reviewed against the
+official CLI documentation current on September 1, 2026. Reuse the CLI's
+runtime-owned browser login; Ember does not accept, forward, inspect, or persist a
+`CURSOR_API_KEY`:
+
+```sh
+cursor-agent status
+
+node bin/ember.ts run \
+  --state /tmp/ember-continuity.json \
+  --principal user-1 \
+  --scope project:ember/docs \
+  --provider cursor \
+  --provider-timeout-seconds 120
+```
+
+`--provider cursor` defaults to `cursor-agent` on `PATH`. Use
+`--cursor-command PATH` to select another installed binary and repeated
+`--cursor-arg VALUE` options for explicit runtime-specific configuration such as
+model selection. Do not pass API keys through those arguments.
+
+Every turn uses Cursor print mode with the single-object JSON output format, Ask
+mode, sandboxing enabled, and a new empty temporary workspace supplied both as the
+child cwd and `--workspace`. Ember passes `--trust` only for that adapter-created
+empty workspace so headless execution cannot pause at Cursor's workspace-trust
+prompt. The prompt contains only Ember's current bounded
+`ProviderRequest`. The adapter forwards a minimal environment needed for the CLI
+and its own stored browser login while dropping `CURSOR_API_KEY`, endpoint
+overrides, and unrelated ambient values. Cursor's successful result envelope and
+session identifier are bounded, the nested candidate is parsed as JSON, and Ember
+independently validates the `ProviderResult` and claimed meaning IDs. The session
+identifier remains cognition-episode operational evidence only; ordinary CLI
+turns start fresh sessions and never use them as memory or identity.
+
+Cursor does not currently expose Codex's equivalent of `--output-schema`,
+`--ignore-user-config`, or Ember's explicit plugin/App/skill disabling controls.
+This adapter therefore does not claim those controls are equivalent. Isolation
+rests on the empty workspace, read-only Ask mode, sandboxing, the bounded prompt,
+the environment allowlist, and independent result validation. User/team Cursor
+policy may still affect runtime behavior; run it only under a trusted local Cursor
+installation and account policy.
+
+Timeout, cancellation, output-limit, and unconfirmed direct-child termination use
+the same truthful Ember outcome distinctions as the Codex adapter, without
+automatic retry. Cursor's CLI does not provide a cancellation acknowledgement, so
+direct-child exit never proves remote rollback or absence of work.
+
+Run the opt-in synthetic smoke using the installed browser-authenticated CLI:
+
+```sh
+npm run smoke:cursor
+```
+
+The smoke is local and non-gating. It checks bounded selection, exclusion of an
+out-of-scope marker, descriptor-only reintegration, and operational-only session
+evidence without committing provider output or account information.
 
 ## Known operational boundary
 
