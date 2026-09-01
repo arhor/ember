@@ -38,6 +38,10 @@ Current architecture material:
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
+- [Minimal Codex Specialist-Delegation Boundary](minimal-codex-specialist-delegation.md)
+  specifies the first Codex repository-work episode boundary: Ember-owned purpose,
+  disclosure, authority, evidence, lifecycle, and reintegration around a
+  runtime-owned specialist loop.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
