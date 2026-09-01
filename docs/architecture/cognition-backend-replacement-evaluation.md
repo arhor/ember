@@ -1,5 +1,5 @@
 ---
-summary: "Issue #57 evaluation path for replacing cognition loci across episodes, including the fresh-Codex control, bounded backend evidence, and the explicitly pending cross-provider result."
+summary: "Issue #57 evaluation path for replacing cognition loci across episodes, including the fresh-Codex control and the Codex-to-Cursor cross-provider scenario."
 read_when:
   - "Running or reviewing issue #57 cognition-backend replacement evaluation"
   - "Adding a second supported cognition adapter to the longitudinal continuity harness"
@@ -17,10 +17,12 @@ identity or memory owner. The deterministic repository scenario
 phase: the same bounded continuity vector is evaluated through two deliberately
 fresh Codex loci while canonical Ember state is unchanged.
 
-This is a same-backend fresh-thread control, not full cross-provider proof. Issue
-[#90](https://github.com/arhor/ember/issues/90), the planned Cursor production
-adapter, remains open as of this evidence. Consequently the repository does not
-claim that provider-specific cognition differences have been validated yet.
+The repository also contains
+`test-fixtures/longitudinal/backend-replacement-cross-provider.json`, which routes
+the same vector through Codex and then the production Cursor backend. Its
+deterministic form proves routing, projection, state, lineage, and evidence
+invariants without requiring either login; live model behavior remains an
+explicit opt-in observation.
 
 ## What the control establishes
 
@@ -82,15 +84,53 @@ temporary local artifact and is not repository evidence.
 This result establishes only the same-backend control. It does not change the
 cross-provider phase from pending to proven.
 
-## Completing the cross-provider phase
+## Cross-provider phase
 
-Once a second supported production adapter exists, add a fixture (or promote this
-one) with `backend_replacement.status` set to `cross_provider` and different
-`cognition_backend` values for the named control and replacement episodes. Route
-each label to its real adapter. Preserve adapter-specific version and
-configuration metadata rather than normalizing it into false equivalence.
+Run deterministic cross-provider evaluation with:
 
-Run the identical continuity vector and bounded projection expectations. Record a
-sanitized repository evidence summary that distinguishes deterministic Ember
-assertions from empirical provider observations and describes provider-specific
-differences or failures without weakening the accepted continuity semantics.
+```sh
+node scripts/run-longitudinal-scenario.ts \
+  --scenario test-fixtures/longitudinal/backend-replacement-cross-provider.json
+```
+
+Run both real adapters only with explicit opt-in and working runtime-owned logins:
+
+```sh
+EMBER_RUN_LIVE_LONGITUDINAL=1 \
+  node scripts/run-longitudinal-scenario.ts \
+  --provider codex-cursor \
+  --scenario test-fixtures/longitudinal/backend-replacement-cross-provider.json \
+  --timeout-seconds 180
+```
+
+The report preserves distinct adapter names, versions, session modes, sandbox
+claims, and configuration evidence rather than normalizing them into false
+equivalence. Cursor uses Ask mode with sandboxing and JSON terminal output; Codex
+uses read-only execution with an output schema and ignored user configuration.
+
+Do not commit raw live reports. Record only a sanitized summary distinguishing
+deterministic Ember assertions from empirical provider observations.
+
+## Recorded live cross-provider evidence
+
+On **September 1, 2026**, the live cross-provider command completed against
+`codex-cli 0.152.0` and Cursor Agent `2026.08.31-4057e58`, with no model override.
+The Codex control used the production `codex-exec` adapter with a fresh persistent
+thread, read-only sandbox, isolated cwd, and ignored user configuration. The
+Cursor replacement used the production `cursor-agent-print` adapter with a fresh
+session, Ask mode, sandboxing enabled, an isolated trusted workspace, and an
+adapter-owned policy denying shell, file, web, and MCP tool execution. Cursor's
+current CLI does not prove exclusion of runtime-owned account/team rules or MCP
+metadata, so this result makes no such context-isolation claim.
+
+All deterministic Ember assertions and empirical reply observations passed. Both
+episodes received the same four permitted meanings and excluded the private
+marker. Lineage and durable state were unchanged across replacement, backend
+routing and metadata matched the adapters actually invoked, and each runtime
+reported a fresh non-null operational identifier whose value is intentionally not
+preserved here. The mode-0600 raw report was deleted after this sanitized summary
+was recorded.
+
+This observation supports the replaceable-cognition-locus claim for this bounded
+vector. It does not claim equivalent model quality, configuration, tools,
+cancellation guarantees, or general specialist-runtime interchangeability.

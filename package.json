@@ -15,6 +15,7 @@
     "test:continuity": "node --test test/*.test.ts",
     "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
     "smoke:codex": "node scripts/live-codex-smoke.ts",
+    "smoke:cursor": "node scripts/live-cursor-smoke.ts",
     "eval:continuity": "node scripts/run-longitudinal-scenario.ts",
     "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node scripts/run-longitudinal-scenario.ts --provider codex",
     "eval:continuity:process-restart:live": "EMBER_RUN_LIVE_PROCESS_RESTART=1 node scripts/run-process-restart-scenario.ts"

@@ -6,37 +6,47 @@ import { isAbsolute, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { codexArgumentEvidence } from "../src/ember/backend-evidence.ts";
 import { invokeCodexProvider } from "../src/ember/codex-provider.ts";
+import { invokeCursorProvider } from "../src/ember/cursor-provider.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario, type HarnessProvider } from "../src/ember/longitudinal-harness.ts";
 
 const options = parseArguments(process.argv.slice(2));
-if (options.provider === "codex" && process.env.EMBER_RUN_LIVE_LONGITUDINAL !== "1") {
+if (options.provider !== "scripted" && process.env.EMBER_RUN_LIVE_LONGITUDINAL !== "1") {
   throw new Error("live execution is opt-in; set EMBER_RUN_LIVE_LONGITUDINAL=1");
 }
 const directory = await mkdtemp(join(tmpdir(), "ember-longitudinal-"));
 try {
   const scenario = await loadLongitudinalScenario(options.scenario);
-  const codexVersion = options.provider === "codex" ? readVersion("codex", ["--version"]) : null;
+  const codexVersion = options.provider === "codex" || options.provider === "codex-cursor" ? readVersion("codex", ["--version"]) : null;
+  const cursorVersion = options.provider === "cursor" || options.provider === "codex-cursor" ? readVersion("cursor-agent", ["--version"]) : null;
   const codexArguments = codexArgumentEvidence(options.codexArguments);
-  const provider: HarnessProvider = options.provider === "codex"
+  const provider: HarnessProvider = options.provider !== "scripted"
     ? async invocation => {
+        if (options.provider !== "codex-cursor" && invocation.cognitionBackend !== options.provider) throw new Error(`no configured live adapter for cognition backend: ${invocation.cognitionBackend}`);
+        if (invocation.cognitionBackend === "cursor") {
+          const session = invocation.thread.mode === "fresh" ? { mode: "fresh" as const } : { mode: "resume" as const, externalSessionId: invocation.thread.externalThreadId };
+          const result = await invokeCursorProvider("cursor-agent", options.cursorArguments, invocation.request, { timeoutSeconds: options.timeoutSeconds, session });
+          const configuration: Record<string, string | number | boolean | null> = { session_mode: session.mode, execution_mode: "ask", sandbox: "enabled", project_context: "isolated" };
+          return { result, backend_metadata: { backend: "cursor", adapter: "cursor-agent-print", version: cursorVersion!, configuration } };
+        }
         if (invocation.cognitionBackend !== "codex") throw new Error(`no configured live adapter for cognition backend: ${invocation.cognitionBackend}`);
         const thread = invocation.thread.mode === "fresh"
           ? { mode: "fresh_persistent" as const }
           : { mode: "resume" as const, externalThreadId: invocation.thread.externalThreadId };
         const result = await invokeCodexProvider("codex", options.codexArguments, invocation.request, { timeoutSeconds: options.timeoutSeconds, thread });
+        const configuration: Record<string, string | number | boolean | null> = {
+          thread_mode: thread.mode,
+          sandbox: "read-only",
+          project_context: "isolated",
+          user_configuration: "ignored",
+          ...codexArguments,
+        };
         return {
           result,
           backend_metadata: {
             backend: "codex",
             adapter: "codex-exec",
             version: codexVersion!,
-            configuration: {
-              thread_mode: thread.mode,
-              sandbox: "read-only",
-              project_context: "isolated",
-              user_configuration: "ignored",
-              ...codexArguments,
-            },
+            configuration,
           },
         };
       }
@@ -73,19 +83,21 @@ function readVersion(command: string, arguments_: string[]) {
 
 function parseArguments(arguments_: string[]) {
   let scenario = resolve("test-fixtures/longitudinal/restart-thread-continuity.json");
-  let provider: "scripted" | "codex" = "scripted";
+  let provider: "scripted" | "codex" | "cursor" | "codex-cursor" = "scripted";
   let report: string | undefined;
   let timeoutSeconds = 180;
   const codexArguments: string[] = [];
+  const cursorArguments: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const name = arguments_[index];
     const value = arguments_[index + 1];
     if (name === "--scenario" && value) { scenario = isAbsolute(value) ? value : resolve(value); index += 1; }
-    else if (name === "--provider" && (value === "scripted" || value === "codex")) { provider = value; index += 1; }
+    else if (name === "--provider" && (value === "scripted" || value === "codex" || value === "cursor" || value === "codex-cursor")) { provider = value; index += 1; }
     else if (name === "--report" && value) { report = isAbsolute(value) ? value : resolve(value); index += 1; }
     else if (name === "--timeout-seconds" && value && Number.isFinite(Number(value)) && Number(value) > 0) { timeoutSeconds = Number(value); index += 1; }
     else if (name === "--codex-arg" && value) { codexArguments.push(value); index += 1; }
-    else throw new Error("usage: run-longitudinal-scenario.ts [--scenario PATH] [--provider scripted|codex] [--report NEW_PATH] [--timeout-seconds N] [--codex-arg VALUE]");
+    else if (name === "--cursor-arg" && value) { cursorArguments.push(value); index += 1; }
+    else throw new Error("usage: run-longitudinal-scenario.ts [--scenario PATH] [--provider scripted|codex|cursor|codex-cursor] [--report NEW_PATH] [--timeout-seconds N] [--codex-arg VALUE] [--cursor-arg VALUE]");
   }
-  return { scenario, provider, report, timeoutSeconds, codexArguments };
+  return { scenario, provider, report, timeoutSeconds, codexArguments, cursorArguments };
 }

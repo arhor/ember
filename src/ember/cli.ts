@@ -2,6 +2,7 @@ import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 import { EmberError, ValidationError } from "./errors.ts";
 import { invokeCodexProvider } from "./codex-provider.ts";
+import { invokeCursorProvider } from "./cursor-provider.ts";
 import { cloneState, initialState, nowUtc, type EmberState, type MeaningId, type RuntimeId } from "./model.ts";
 import { explanationView, inspectionView } from "./projection.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "./provider.ts";
@@ -17,7 +18,7 @@ interface CliIo {
 
 type CliArgs =
   | { command: "init"; state: string; name: string; principal: string }
-  | { command: "run"; state: string; principal: string; scope: string; providerKind: "process" | "codex"; providerCommand: string; providerArgs: string[]; providerTimeoutSeconds: number }
+  | { command: "run"; state: string; principal: string; scope: string; providerKind: "process" | "codex" | "cursor"; providerCommand: string; providerArgs: string[]; providerTimeoutSeconds: number }
   | { command: "inspect"; state: string; principal: string; json: boolean }
   | { command: "explain"; state: string; principal: string; meaningId: string }
   | { command: "correct"; state: string; principal: string; meaningId: string; text: string; reason: string }
@@ -128,7 +129,7 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
             arguments_: args.providerArgs,
             timeoutSeconds: args.providerTimeoutSeconds,
             signal,
-            provider: args.providerKind === "codex" ? invokeCodexProvider : undefined,
+            provider: args.providerKind === "codex" ? invokeCodexProvider : args.providerKind === "cursor" ? invokeCursorProvider : undefined,
             output: io.output,
           }));
           state = result.state;
@@ -182,7 +183,7 @@ async function ask(args: Extract<CliArgs, { command: "run" }>, store: StateStore
     arguments_: args.providerArgs,
     timeoutSeconds: args.providerTimeoutSeconds,
     signal,
-    provider: args.providerKind === "codex" ? invokeCodexProvider : undefined,
+    provider: args.providerKind === "codex" ? invokeCodexProvider : args.providerKind === "cursor" ? invokeCursorProvider : undefined,
     output,
     purpose: "explain",
     explainIds: ids,
@@ -254,7 +255,7 @@ export function parseArgs(argv: string[]): CliArgs {
   const command = argv[0];
   const specs: Record<string, CommandSpec> = {
     init: { flags: ["--state", "--name", "--principal"], positionals: 0 },
-    run: { flags: ["--state", "--principal", "--scope", "--provider", "--provider-command", "--provider-arg", "--codex-command", "--codex-arg", "--provider-timeout-seconds"], repeatable: ["--provider-arg", "--codex-arg"], positionals: 0 },
+    run: { flags: ["--state", "--principal", "--scope", "--provider", "--provider-command", "--provider-arg", "--codex-command", "--codex-arg", "--cursor-command", "--cursor-arg", "--provider-timeout-seconds"], repeatable: ["--provider-arg", "--codex-arg", "--cursor-arg"], positionals: 0 },
     inspect: { flags: ["--state", "--principal", "--json"], booleans: ["--json"], positionals: 0 },
     explain: { flags: ["--state", "--principal"], positionals: 1 },
     correct: { flags: ["--state", "--principal", "--text", "--reason"], positionals: 1 },
@@ -295,12 +296,17 @@ export function parseArgs(argv: string[]): CliArgs {
     if (!Number.isFinite(timeout) || timeout <= 0) throw new ValidationError("--provider-timeout-seconds must be a positive finite number");
     if (timeout > MAX_PROVIDER_TIMEOUT_SECONDS) throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS}`);
     const provider = values["--provider"];
-    if (provider !== undefined && provider !== "codex") throw new ValidationError("--provider currently supports only codex");
+    if (provider !== undefined && provider !== "codex" && provider !== "cursor") throw new ValidationError("--provider supports codex or cursor");
     if (provider === "codex") {
-      if (values["--provider-command"] !== undefined || values["--provider-arg"] !== undefined) throw new ValidationError("--provider-command and --provider-arg cannot be combined with --provider codex");
+      if (values["--provider-command"] !== undefined || values["--provider-arg"] !== undefined || values["--cursor-command"] !== undefined || values["--cursor-arg"] !== undefined) throw new ValidationError("process and Cursor options cannot be combined with --provider codex");
       return { command, state: required("--state"), principal: required("--principal"), scope: required("--scope"), providerKind: "codex", providerCommand: typeof values["--codex-command"] === "string" ? values["--codex-command"] : "codex", providerArgs: Array.isArray(values["--codex-arg"]) ? values["--codex-arg"] as string[] : [], providerTimeoutSeconds: timeout };
     }
+    if (provider === "cursor") {
+      if (values["--provider-command"] !== undefined || values["--provider-arg"] !== undefined || values["--codex-command"] !== undefined || values["--codex-arg"] !== undefined) throw new ValidationError("process and Codex options cannot be combined with --provider cursor");
+      return { command, state: required("--state"), principal: required("--principal"), scope: required("--scope"), providerKind: "cursor", providerCommand: typeof values["--cursor-command"] === "string" ? values["--cursor-command"] : "cursor-agent", providerArgs: Array.isArray(values["--cursor-arg"]) ? values["--cursor-arg"] as string[] : [], providerTimeoutSeconds: timeout };
+    }
     if (values["--codex-command"] !== undefined || values["--codex-arg"] !== undefined) throw new ValidationError("--codex-command and --codex-arg require --provider codex");
+    if (values["--cursor-command"] !== undefined || values["--cursor-arg"] !== undefined) throw new ValidationError("--cursor-command and --cursor-arg require --provider cursor");
     return { command, state: required("--state"), principal: required("--principal"), scope: required("--scope"), providerKind: "process", providerCommand: required("--provider-command"), providerArgs: Array.isArray(values["--provider-arg"]) ? values["--provider-arg"] as string[] : [], providerTimeoutSeconds: timeout };
   }
   if (command === "inspect") return { command, state: required("--state"), principal: required("--principal"), json: values["--json"] === true };
