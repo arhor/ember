@@ -1,10 +1,11 @@
 import type { Writable } from "node:stream";
-import { StaleRevision, ValidationError, ProviderError } from "./errors.ts";
-import { cloneState, newId, nowUtc, validateState, type CognitionEpisode, type CognitionId, type CognitionPurpose, type EmberExpressionEvidence, type EmberState, type MeaningId, type RuntimeEpisode, type RuntimeId } from "./model.ts";
-import { buildProjection, findRuntime } from "./projection.ts";
-import { CONTRACT_VERSION, invokeProvider, providerLabel, type ProviderInvoker, type ProviderRequest } from "./provider.ts";
-import { requirePrincipal, userEvidence } from "./semantics.ts";
-import type { StateStore } from "./store.ts";
+import { StaleRevision, ValidationError, ProviderError } from "../core/errors.ts";
+import { cloneState, newId, nowUtc, validateState, type CognitionEpisode, type CognitionId, type CognitionPurpose, type EmberExpressionEvidence, type EmberState, type MeaningId, type RuntimeEpisode, type RuntimeId } from "../core/model.ts";
+import { buildProjection, findRuntime } from "../core/projection.ts";
+import { CONTRACT_VERSION, type ProviderInvoker, type ProviderRequest } from "../providers/contract.ts";
+import { invokeProvider, providerLabel } from "../providers/process.ts";
+import { requirePrincipal, userEvidence } from "../core/semantics.ts";
+import type { StateStore } from "../persistence/state-store.ts";
 
 export function startRuntime(state: EmberState, principal: string, scope: string, { timestamp = nowUtc() }: { timestamp?: string } = {}) {
   requirePrincipal(state, principal);

@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { loadLongitudinalScenario } from "../src/ember/longitudinal-harness.ts";
-import { runProcessRestartScenario } from "../src/ember/process-restart-harness.ts";
-import { CLI, ROOT, tempDir } from "./support.ts";
+import { loadLongitudinalScenario } from "../longitudinal/harness.ts";
+import { runProcessRestartScenario } from "./harness.ts";
+import { CLI, ROOT, tempDir } from "../../tests/support.ts";
 
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "process-restart-fresh-codex.json");
 const CODEX_FIXTURE = join(ROOT, "test-fixtures", "providers", "codex-jsonl-fixture.ts");

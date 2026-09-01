@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { invokeCursorProvider } from "../src/ember/cursor-provider.ts";
-import { initialState } from "../src/ember/model.ts";
-import { runCognition, startRuntime, stopRuntime } from "../src/ember/runtime.ts";
-import { rememberFact, rememberPreference, rememberRelationship } from "../src/ember/semantics.ts";
-import { StateStore } from "../src/ember/store.ts";
+import { invokeCursorProvider } from "../src/providers/cursor.ts";
+import { initialState } from "../src/core/model.ts";
+import { runCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+import { rememberFact, rememberPreference, rememberRelationship } from "../src/core/semantics.ts";
+import { StateStore } from "../src/persistence/state-store.ts";
 
 const principal = "user-1"; const scope = `relationship:${principal}`; const marker = "OUT_OF_SCOPE_MARKER_90";
 const directory = await mkdtemp(join(tmpdir(), "ember-live-cursor-")); const statePath = join(directory, "ember.json");

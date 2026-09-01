@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildProjection } from "../src/ember/projection.ts";
-import { startRuntime } from "../src/ember/runtime.ts";
-import { populatedState, PRINCIPAL, SCOPE } from "./support.ts";
+import { buildProjection } from "./projection.ts";
+import { startRuntime } from "../runtime/runtime.ts";
+import { populatedState, PRINCIPAL, SCOPE } from "../../tests/support.ts";
 
 test("ordinary projection should not resolve unused explain IDs", () => {
   // Given

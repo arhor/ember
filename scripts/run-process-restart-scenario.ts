@@ -2,8 +2,8 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
-import { loadLongitudinalScenario } from "../src/ember/longitudinal-harness.ts";
-import { runProcessRestartScenario } from "../src/ember/process-restart-harness.ts";
+import { loadLongitudinalScenario } from "../eval/longitudinal/harness.ts";
+import { runProcessRestartScenario } from "../eval/process-restart/harness.ts";
 
 if (process.env.EMBER_RUN_LIVE_PROCESS_RESTART !== "1") {
   throw new Error("live process-restart execution is opt-in; set EMBER_RUN_LIVE_PROCESS_RESTART=1");

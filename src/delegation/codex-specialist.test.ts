@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
-import { buildSpecialistPrompt, createSpecialistEpisode, runCodexSpecialist, setSpecialistDisposition } from "../src/ember/codex-specialist.ts";
-import { ROOT, tempDir } from "./support.ts";
+import { buildSpecialistPrompt, createSpecialistEpisode, runCodexSpecialist, setSpecialistDisposition } from "./codex-specialist.ts";
+import { ROOT, tempDir } from "../../tests/support.ts";
 
 const FIXTURE = join(ROOT, "test-fixtures/providers/scripted-codex-specialist.ts");
 

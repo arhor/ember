@@ -4,13 +4,14 @@ import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough, Writable } from "node:stream";
-import { parseArgs } from "../src/ember/cli.ts";
-import { ProviderError } from "../src/ember/errors.ts";
-import { cloneState, initialState, validateState } from "../src/ember/model.ts";
-import { buildProjection } from "../src/ember/projection.ts";
-import { invokeProvider, validateProviderResult } from "../src/ember/provider.ts";
-import { runCognition, startRuntime } from "../src/ember/runtime.ts";
-import { StateStore } from "../src/ember/store.ts";
+import { parseArgs } from "../src/cli/main.ts";
+import { ProviderError } from "../src/core/errors.ts";
+import { cloneState, initialState, validateState } from "../src/core/model.ts";
+import { buildProjection } from "../src/core/projection.ts";
+import { validateProviderResult } from "../src/providers/contract.ts";
+import { invokeProvider } from "../src/providers/process.ts";
+import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { StateStore } from "../src/persistence/state-store.ts";
 import { captureError, command, emptyRequest, populatedState, PRINCIPAL, PROVIDER, readJson, ROOT, SCOPE, tempDir } from "./support.ts";
 
 async function providerError(mode,request=emptyRequest(),timeoutSeconds=1){return captureError(()=>invokeProvider(process.execPath,[PROVIDER,"--mode",mode],request,{timeoutSeconds}));}
@@ -18,7 +19,7 @@ async function startedStore(){const directory=await tempDir(),path=join(director
 
 test("scripted provider should stay outside automatic discovery when repository tests run",()=>{
   // Given
-  const automaticDiscoveryRoot=join(ROOT,"test");
+  const automaticDiscoveryRoot=join(ROOT,"tests");
   // When
   const providerIsInside=PROVIDER===automaticDiscoveryRoot||PROVIDER.startsWith(`${automaticDiscoveryRoot}/`);
   // Then

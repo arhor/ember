@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { LongitudinalScenario } from "./longitudinal-harness.ts";
+import type { LongitudinalScenario } from "../longitudinal/harness.ts";
 
 type ScenarioAction = LongitudinalScenario["setup"][number];
 type ScenarioEpisode = LongitudinalScenario["episodes"][number];
