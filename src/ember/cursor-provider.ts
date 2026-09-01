@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Readable, Writable } from "node:stream";
@@ -15,11 +15,14 @@ import {
 } from "./provider.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
+const CURSOR_CONFIG_DIRECTORY = ".cursor";
+const CURSOR_CONFIG_NAME = "cli.json";
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const ENVIRONMENT_ALLOWLIST = [
   "PATH", "HOME", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "SSL_CERT_FILE",
   "SSL_CERT_DIR", "NODE_EXTRA_CA_CERTS", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME",
 ] as const;
+const TOOL_DENY_CONFIG = `${JSON.stringify({ permissions: { allow: [], deny: ["Shell(*)", "Read(*)", "Read(**)", "Write(*)", "Write(**)", "WebFetch(*)", "Mcp(*:*)"] } }, null, 2)}\n`;
 
 interface CursorChild {
   stdin: Writable;
@@ -64,12 +67,32 @@ export function cursorEnvironment(source: NodeJS.ProcessEnv = process.env): Node
 }
 
 export function buildCursorArguments(prefix: string[], runtimeCwd: string, session: NonNullable<InvokeCursorOptions["session"]>): string[] {
+  validateCursorArguments(prefix);
   const common = ["-p", "--output-format", "json", "--mode", "ask", "--sandbox", "enabled", "--trust", "--workspace", runtimeCwd];
   if (session.mode === "resume") {
     if (!validExternalId(session.externalSessionId)) throw new ProviderError("Cursor resume session identifier is invalid");
     return [...prefix, ...common, "--resume", session.externalSessionId];
   }
   return [...prefix, ...common];
+}
+
+export function validateCursorArguments(arguments_: string[]): void {
+  let modelSeen = false;
+  for (let index = 0; index < arguments_.length; index += 1) {
+    const argument = arguments_[index]!;
+    if (argument.startsWith("--model=") || argument.startsWith("-m=")) {
+      if (modelSeen || !argument.slice(argument.indexOf("=") + 1).trim()) throw new ProviderError("Cursor model selection must be supplied once with a non-empty value");
+      modelSeen = true;
+      continue;
+    }
+    if (argument === "--model" || argument === "-m") {
+      if (modelSeen || index + 1 >= arguments_.length || !arguments_[index + 1]!.trim()) throw new ProviderError("Cursor model selection must be supplied once with a non-empty value");
+      modelSeen = true;
+      index += 1;
+      continue;
+    }
+    throw new ProviderError(`unsupported Cursor adapter argument: ${argument}`);
+  }
 }
 
 export async function invokeCursorProvider(command: string, argumentPrefix: string[], request: ProviderRequest, {
@@ -86,6 +109,9 @@ export async function invokeCursorProvider(command: string, argumentPrefix: stri
   const runtimeCwd = cwd ?? await mkdtemp(join(tmpdir(), "ember-cursor-"));
   let terminationUnconfirmed = false;
   try {
+    const configDirectory = join(runtimeCwd, CURSOR_CONFIG_DIRECTORY);
+    await mkdir(configDirectory, { mode: 0o700 });
+    await writeFile(join(configDirectory, CURSOR_CONFIG_NAME), TOOL_DENY_CONFIG, { encoding: "utf8", mode: 0o600, flag: "wx" });
     let child: CursorChild;
     try {
       child = spawnImpl(command, buildCursorArguments(argumentPrefix, runtimeCwd, session), {

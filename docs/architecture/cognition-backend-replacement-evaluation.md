@@ -118,7 +118,10 @@ On **September 1, 2026**, the live cross-provider command completed against
 The Codex control used the production `codex-exec` adapter with a fresh persistent
 thread, read-only sandbox, isolated cwd, and ignored user configuration. The
 Cursor replacement used the production `cursor-agent-print` adapter with a fresh
-session, Ask mode, sandboxing enabled, and an isolated trusted empty workspace.
+session, Ask mode, sandboxing enabled, an isolated trusted workspace, and an
+adapter-owned policy denying shell, file, web, and MCP tool execution. Cursor's
+current CLI does not prove exclusion of runtime-owned account/team rules or MCP
+metadata, so this result makes no such context-isolation claim.
 
 All deterministic Ember assertions and empirical reply observations passed. Both
 episodes received the same four permitted meanings and excluded the private

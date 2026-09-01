@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
@@ -40,10 +40,11 @@ test("Cursor provider should disclose only the bounded request when invoked with
   const request = requestFixture(); const used = request.projection.selection.meaning_ids[0]; let invocation: any; let prompt = "";
   const fixture = childDouble({ output: success({ contract_version: 1, reply: "bounded answer", used_meaning_ids: [used] }) });
   // When
-  const result = await invokeCursorProvider("cursor-agent", [], request, { timeoutSeconds: 1, environment: { PATH: "/safe/bin", HOME: "/safe/home", CURSOR_API_KEY: "raw-key", PRIVATE_ENV_MARKER_90: "private" }, spawnImpl: (_command, arguments_, options) => { invocation = { arguments_, options, cwdEntries: readdirSync(options.cwd) }; fixture.stdin.on("data", chunk => { prompt += chunk.toString("utf8"); }); fixture.complete(); return fixture.child as any; } });
+  const result = await invokeCursorProvider("cursor-agent", [], request, { timeoutSeconds: 1, environment: { PATH: "/safe/bin", HOME: "/safe/home", CURSOR_API_KEY: "raw-key", PRIVATE_ENV_MARKER_90: "private" }, spawnImpl: (_command, arguments_, options) => { invocation = { arguments_, options, cwdEntries: readdirSync(options.cwd), toolPolicy: JSON.parse(readFileSync(join(options.cwd, ".cursor", "cli.json"), "utf8")) }; fixture.stdin.on("data", chunk => { prompt += chunk.toString("utf8"); }); fixture.complete(); return fixture.child as any; } });
   // Then
   assert.deepEqual(result, { contract_version: 1, reply: "bounded answer", used_meaning_ids: [used], operational: { external_thread_id: "session-operational-90" } });
-  assert.equal(prompt, buildCursorPrompt(request)); assert.equal(prompt.includes("PRIVATE_CANONICAL_MARKER_90"), false); assert.deepEqual(invocation.cwdEntries, []);
+  assert.equal(prompt, buildCursorPrompt(request)); assert.equal(prompt.includes("PRIVATE_CANONICAL_MARKER_90"), false); assert.deepEqual(invocation.cwdEntries, [".cursor"]);
+  assert.deepEqual(invocation.toolPolicy, { permissions: { allow: [], deny: ["Shell(*)", "Read(*)", "Read(**)", "Write(*)", "Write(**)", "WebFetch(*)", "Mcp(*:*)"] } });
   assert.deepEqual(invocation.options.env, { PATH: "/safe/bin", HOME: "/safe/home" }); assert.deepEqual(invocation.arguments_, ["-p", "--output-format", "json", "--mode", "ask", "--sandbox", "enabled", "--trust", "--workspace", invocation.options.cwd]);
 });
 
@@ -54,6 +55,24 @@ test("Cursor environment should omit credentials when runtime authentication is 
   const environment = cursorEnvironment(source);
   // Then
   assert.deepEqual(environment, { PATH: "/bin", HOME: "/home/user" });
+});
+
+test("Cursor provider should reject passthrough arguments that can override adapter boundaries", async () => {
+  // Given
+  const request = requestFixture(); const forbidden = [["--api-key", "secret"], ["--resume", "session"], ["--continue"], ["--workspace", "/private"], ["--mode", "plan"], ["--sandbox", "disabled"], ["--approve-mcps"]];
+  // When
+  const errors = await Promise.all(forbidden.map(arguments_ => captureError(() => invokeCursorProvider("cursor-agent", arguments_, request, { timeoutSeconds: 1 }))));
+  // Then
+  assert.equal(errors.every(error => error instanceof ProviderError && /unsupported Cursor adapter argument/.test(error.message)), true);
+});
+
+test("Cursor provider should allow only one explicit model selection argument", async () => {
+  // Given
+  const request = requestFixture(); const fixture = childDouble({ output: success({ contract_version: 1, reply: "answer", used_meaning_ids: [] }) }); const cwd = await tempDir(); let arguments_: string[] = [];
+  // When
+  await invokeCursorProvider("cursor-agent", ["--model", "composer-2"], request, { timeoutSeconds: 1, cwd, spawnImpl: (_command, values) => { arguments_ = values; fixture.complete(); return fixture.child as any; } });
+  // Then
+  assert.deepEqual(arguments_.slice(0, 2), ["--model", "composer-2"]);
 });
 
 test("Cursor provider should reject a result that claims meaning outside the projection", async () => {
@@ -105,7 +124,7 @@ test("CLI run should complete bounded cognition when Cursor backend is selected"
   // Given
   const directory = await tempDir(); const statePath = join(directory, "ember.json"); await command(["init", "--state", statePath, "--name", "Ember", "--principal", PRINCIPAL]);
   // When
-  const executed = await command(["run", "--state", statePath, "--principal", PRINCIPAL, "--scope", SCOPE, "--provider", "cursor", "--cursor-command", process.execPath, "--cursor-arg", SCRIPTED_CURSOR, "--provider-timeout-seconds", "2"], { stdin: "hello through Cursor\n:quit\n" }); const state = JSON.parse(await readFile(statePath, "utf8")); const cognition = state.operations.cognition_episodes.at(-1);
+  const executed = await command(["run", "--state", statePath, "--principal", PRINCIPAL, "--scope", SCOPE, "--provider", "cursor", "--cursor-command", SCRIPTED_CURSOR, "--provider-timeout-seconds", "2"], { stdin: "hello through Cursor\n:quit\n" }); const state = JSON.parse(await readFile(statePath, "utf8")); const cognition = state.operations.cognition_episodes.at(-1);
   // Then
   assert.deepEqual([executed.code, executed.stdout.includes("CURSOR_CLI_RESPONSE"), cognition.status, cognition.external_provider_thread_id], [0, true, "completed", "session-cli-90"]); assert.equal(JSON.stringify(state).includes("CURSOR_CLI_RESPONSE"), false);
 });

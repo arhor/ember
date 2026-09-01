@@ -304,16 +304,20 @@ node bin/ember.ts run \
 ```
 
 `--provider cursor` defaults to `cursor-agent` on `PATH`. Use
-`--cursor-command PATH` to select another installed binary and repeated
-`--cursor-arg VALUE` options for explicit runtime-specific configuration such as
-model selection. Do not pass API keys through those arguments.
+`--cursor-command PATH` to select another installed binary. Repeated
+`--cursor-arg VALUE` options support only one explicit `--model`/`-m` selection;
+the production adapter rejects every other passthrough argument. Authentication,
+endpoint, session/resume, workspace, mode, sandbox, trust, MCP, plugin, tool, and
+output controls therefore cannot override Ember's adapter policy. API keys are
+never an accepted adapter argument.
 
 Every turn uses Cursor print mode with the single-object JSON output format, Ask
 mode, sandboxing enabled, and a new empty temporary workspace supplied both as the
 child cwd and `--workspace`. Ember passes `--trust` only for that adapter-created
 empty workspace so headless execution cannot pause at Cursor's workspace-trust
-prompt. The prompt contains only Ember's current bounded
-`ProviderRequest`. The adapter forwards a minimal environment needed for the CLI
+prompt. The workspace also contains an adapter-owned `.cursor/cli.json` denying
+shell, file read/write, web-fetch, and all MCP tool execution. The prompt contains
+only Ember's current bounded `ProviderRequest`. The adapter forwards a minimal environment needed for the CLI
 and its own stored browser login while dropping `CURSOR_API_KEY`, endpoint
 overrides, and unrelated ambient values. Cursor's successful result envelope and
 session identifier are bounded, the nested candidate is parsed as JSON, and Ember
@@ -321,13 +325,19 @@ independently validates the `ProviderResult` and claimed meaning IDs. The sessio
 identifier remains cognition-episode operational evidence only; ordinary CLI
 turns start fresh sessions and never use them as memory or identity.
 
-Cursor does not currently expose Codex's equivalent of `--output-schema`,
-`--ignore-user-config`, or Ember's explicit plugin/App/skill disabling controls.
-This adapter therefore does not claim those controls are equivalent. Isolation
-rests on the empty workspace, read-only Ask mode, sandboxing, the bounded prompt,
-the environment allowlist, and independent result validation. User/team Cursor
-policy may still affect runtime behavior; run it only under a trusted local Cursor
-installation and account policy.
+Cursor does not currently expose Codex's equivalent of `--output-schema` or
+`--ignore-user-config`, nor documented flags that disable account/team rules or
+global MCP discovery while retaining the browser-owned login. Official Cursor
+documentation says user/team rules can enter Agent context and the CLI
+automatically discovers global MCP configuration. The adapter prevents discovered
+tools from executing through its deny policy, but cannot prove that account/team
+rule text or MCP names/descriptions were absent from model context. Consequently,
+the enforced guarantee is narrower: Ember supplies no canonical state beyond the
+current bounded request, isolates project files, denies tool execution, and
+validates the result; it does not claim the Cursor model context contains no other
+runtime-owned metadata or instructions. Use this backend only when the current
+Cursor account/team configuration is permitted for the cognition scope. This is a
+provider-specific limitation, not equivalence with Codex.
 
 Timeout, cancellation, output-limit, and unconfirmed direct-child termination use
 the same truthful Ember outcome distinctions as the Codex adapter, without
