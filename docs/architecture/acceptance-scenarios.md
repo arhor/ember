@@ -229,13 +229,33 @@ This subset intentionally excludes provider replacement, fork semantics, delegat
 
 ## Delegation and responsibility
 
+The specialist-delegation acceptance subset is `AS-DEL-00` through `AS-DEL-08`.
+It is the representation-neutral oracle for later specialist-runtime design and
+implementation: a passing boundary must preserve objective ownership,
+least-sufficient permitted context, authority, provenance, currentness, work and
+effect uncertainty, and truthful recovery across the whole subset. Runtime
+permission prompts, thread state, tool reach, and completion labels are evidence
+about the specialist boundary; none of them defines Ember's authority or the
+semantic result by itself.
+
+<a id="as-del-00"></a>
+
+### AS-DEL-00 — Bounded specialist delegation succeeds
+
+- **Given:** Ember owns a live objective and has selected a specialist because the work requires material local discretion. Ember establishes acceptance constraints, a least-sufficient permitted context projection, the authority actually entrusted for the role, and the evidence needed to rely on the result. The specialist owns its local cognition and execution loop.
+- **When:** The specialist performs the bounded work, reports the result and relevant evidence, and Ember evaluates it against the still-current objective and world state.
+- **Semantics:** Ember may know that she chose and bounded the delegation, which context and authority she intentionally supplied, what boundary events or artifacts she directly observed, and what the specialist reported. She must preserve objective and runtime ownership, disclosed-context scope, authority provenance, specialist attribution, result uncertainty, and any independent verification as distinct meanings. Cognition-provider output, specialist work, runtime permission, and Ember authority remain separate.
+- **Then:** Ember can accept, qualify, verify, or reject the reported result; integrate only the justified current meaning; and truthfully explain that the specialist chose the local approach while Ember retained the purpose, boundary, and reliance decision.
+- **Must not:** Give the specialist canonical state wholesale, imply that runtime capability or permission supplied authority, claim specialist-local choices or observations as Ember's direct experience, treat completion as current truth or downstream authorization, or erase the delegation boundary after successful reintegration.
+- **Trace:** [ADR-0002](decisions/0002-preserve-persistent-meaning.md), [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md), [ADR-0004](decisions/0004-separate-capability-from-authority.md), [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL working definitions](../research/capabilities-and-delegation.md#working-definitions), [DEL responsibility](../research/capabilities-and-delegation.md#responsibility-after-delegation), [DEL delegated context](../research/capabilities-and-delegation.md#delegated-context), [DEL verification](../research/capabilities-and-delegation.md#verification), [AUTH authority through delegation](../research/action-authority-and-permission.md#authority-through-delegation).
+
 <a id="as-del-01"></a>
 
 ### AS-DEL-01 — Long-running specialist work survives session end
 
 - **Given:** Ember delegated a still-live objective with constraints and permitted context; the specialist owns local execution.
 - **When:** The initiating interaction or surface ends while work continues.
-- **Semantics:** Session lifetime does not define objective lifetime. Ember owns why the work exists and later interpretation; the specialist owns local execution and observations. Authority remains bounded by the original live envelope.
+- **Semantics:** Session lifetime does not define objective lifetime. Ember may know the last credible boundary events and reports, not unobserved activity after them. Ember owns why the work exists and later interpretation; the specialist owns local execution and observations. Objective, constraints, context scope, authority provenance, credible progress, known or possible effects, and uncertainty remain preserved independently of the session. Authority remains bounded by the original live envelope.
 - **Then:** Work can continue, pause, or be recovered according to its purpose. Ember preserves objective, constraints, credible progress, known effects, and uncertainty, and can truthfully say the session ended while delegated work remained live.
 - **Must not:** Erase or automatically cancel work because a window closed, transfer Ember identity to the specialist, or claim unobserved local progress.
 - **Trace:** [ADR-0001](decisions/0001-continuity-belongs-to-ember.md), [ADR-0002](decisions/0002-preserve-persistent-meaning.md), [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md), [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL long-running work](../research/capabilities-and-delegation.md#long-running-work-and-late-results), [OPS long-running Codex work](../research/operational-model-sessions-and-surfaces.md#scenario-catalogue).
@@ -246,7 +266,7 @@ This subset intentionally excludes provider replacement, fork semantics, delegat
 
 - **Given:** A specialist works toward objective A under assumptions and preferences current at delegation time.
 - **When:** Ember or the user establishes materially different objective B before the specialist returns a successful result for A.
-- **Semantics:** A and its result remain historical and attributable. B is current where applicable. Completion order does not establish precedence, and a result may be successful yet stale. Existing authority for A does not automatically cover B.
+- **Semantics:** Ember may know that the specialist pursued A and may preserve its report as evidence about that work. A, its assumptions, and its result remain historical and attributable; B is current where applicable. Completion order does not establish precedence, and a result may be successful yet stale. Existing authority for A does not automatically cover B.
 - **Then:** Ember re-evaluates applicability, steers or restarts if supported and justified, retains useful separable work, or rejects the result for current reliance.
 - **Must not:** Rewrite the original objective, apply the result merely because it completed, call historical success current success, or silently expand authority to B.
 - **Trace:** [ADR-0002](decisions/0002-preserve-persistent-meaning.md), [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md), [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL changed objective](../research/capabilities-and-delegation.md#scenario-stress-tests), [SYN scenario D](design-directions.md#scenario-d-user-changes-a-preference-while-delegated-work-is-still-running).
@@ -268,7 +288,7 @@ This subset intentionally excludes provider replacement, fork semantics, delegat
 
 - **Given:** Delegated work may already have produced partial external effects.
 - **When:** Ember or the user requests cancellation and acknowledgement is absent, delayed, or incomplete.
-- **Semantics:** Cancellation intent, request delivery, acknowledgement, observed stop, and rollback are distinct facts. Missing acknowledgement leaves uncertainty; it proves neither continued execution nor effect absence. Further action remains inside current authority.
+- **Semantics:** Ember may know which cancellation boundary events she directly observed. Cancellation intent, request delivery, acknowledgement, observed stop, and rollback are distinct facts and remain preserved with their provenance. Missing acknowledgement leaves uncertainty; it proves neither continued execution nor effect absence. Further action remains inside current authority.
 - **Then:** Ember records what is known, preserves unresolved effects, seeks current observation when consequence warrants, and truthfully says cancellation was requested rather than completed.
 - **Must not:** Equate request with stop, stop with rollback, failure with no effects, or uncertainty with proof that effects definitely occurred.
 - **Trace:** [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL cancellation uncertainty](../research/capabilities-and-delegation.md#scenario-stress-tests), [OPS cancellation during disconnect](../research/operational-model-sessions-and-surfaces.md#scenario-catalogue).
@@ -283,6 +303,39 @@ This subset intentionally excludes provider replacement, fork semantics, delegat
 - **Then:** Ember may supply a sufficient permitted subset, translate the need, use a safer route, retain the sensitive judgment, seek legitimate authorization, or block the step.
 - **Must not:** Grant access because the specialist is trusted, capable, confident, blocked, or able to invoke broader credentials; disclose Ember's full context by default.
 - **Trace:** [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md), [ADR-0004](decisions/0004-separate-capability-from-authority.md); [DEL more-context request](../research/capabilities-and-delegation.md#scenario-stress-tests), [AUTH authority through delegation](../research/action-authority-and-permission.md#authority-through-delegation).
+
+<a id="as-del-06"></a>
+
+### AS-DEL-06 — Partial result with ambiguous effects
+
+- **Given:** A specialist has authority for bounded work that may create non-idempotent external effects. The boundary reports failure, timeout, blockage, or partial completion after some execution began, but does not establish the resulting external state.
+- **When:** Ember decides how to describe, resume, compensate, or retry the work.
+- **Semantics:** Ember may know the reported status, directly observed effects, and which effects remain possible. Objective completion, runtime status, individual external effects, rollback, and present applicability are separate meanings whose provenance and uncertainty must survive. Failure or timeout establishes neither no effect nor success.
+- **Then:** Ember preserves the partial work and ambiguous effects, inspects current state to the degree warranted before consequential repetition, and may leave the objective unresolved, blocked, or completed with uncertainty. Any compensation or retry requires its own live authority and currentness evaluation.
+- **Must not:** Claim nothing happened, claim every contemplated effect happened, equate failure with rollback, automatically retry potentially non-idempotent work, or convert uncertainty into a cleaner terminal state.
+- **Trace:** [ADR-0002](decisions/0002-preserve-persistent-meaning.md), [ADR-0004](decisions/0004-separate-capability-from-authority.md), [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL progress and side effects](../research/capabilities-and-delegation.md#progress-partial-results-failure-and-side-effects), [DEL retries](../research/capabilities-and-delegation.md#retries), [AUTH risk and recoverability](../research/action-authority-and-permission.md#risk-cost-and-reversibility).
+
+<a id="as-del-07"></a>
+
+### AS-DEL-07 — Specialist requests approval for a consequential step
+
+- **Given:** A specialist is pursuing a bounded objective and has completed zero or more earlier steps. It proposes an action gated by its runtime, or an action whose purpose, target, recipient, disclosure, cost, recoverability, or third-party effect may exceed Ember's live authority envelope.
+- **When:** The specialist emits an approval request or waits for permission to continue.
+- **Semantics:** Ember may know that the runtime reached a gated contemplated action and what prior effects the available evidence supports. The request, runtime policy, contemplated action, prior effects, Ember's semantic authority, and any authority-holder decision remain distinct and attributable. A runtime prompt can be stricter or looser than Ember's legitimate authority.
+- **Then:** Ember preserves who asks, the exact action and target, purpose, consequence, disclosure, recoverability, affected principals, prior effects, and requested scope. She may approve only inside live attributable authority, seek a meaningful decision from the legitimate authority-holder, narrow the step, choose a safer route, or leave it blocked.
+- **Must not:** Treat the runtime request as its own authority source, infer authority from technical capability or objective usefulness, assume that no prior effects occurred while approval is pending, forward a context-free confirmation ritual, or let delegation amplify authority.
+- **Trace:** [ADR-0004](decisions/0004-separate-capability-from-authority.md), [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL approvals](../research/capabilities-and-delegation.md#approvals), [AUTH meaningful approval](../research/action-authority-and-permission.md#meaningful-approval-without-permission-paralysis), [AUTH runtime approval](../research/action-authority-and-permission.md#runtime-approval-versus-semantic-authority), [AUTH authority through delegation](../research/action-authority-and-permission.md#authority-through-delegation).
+
+<a id="as-del-08"></a>
+
+### AS-DEL-08 — Specialist is lost with work unfinished
+
+- **Given:** Ember has durable evidence of a live delegated objective, its constraints, context and authority boundaries, last credible progress, and known or possible effects. The specialist thread, runtime-local state, or specialist itself becomes unavailable before a trustworthy terminal result.
+- **When:** Ember recovers the work, reports its state, or considers assigning a replacement specialist.
+- **Semantics:** Ember may know only the durable boundary evidence and present observations. Ember's continuity and ownership of the objective survive specialist loss; specialist-local cognition and unreported execution do not become recoverable by inference. Objective, last credible progress, known effects, possible effects, authority provenance, and the operational gap remain preserved.
+- **Then:** Ember truthfully reports the specialist loss and unfinished or uncertain state, reconciles current objective and authority before resumption, and may reconstruct a least-sufficient permitted projection for a replacement without claiming continuity of the lost specialist episode.
+- **Must not:** Treat specialist loss as Ember identity loss, invent missing local history, call the objective failed or untouched without evidence, assume prior authority and premises remain current, or present a replacement specialist as the same runtime-local continuation.
+- **Trace:** [ADR-0001](decisions/0001-continuity-belongs-to-ember.md), [ADR-0002](decisions/0002-preserve-persistent-meaning.md), [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md), [ADR-0005](decisions/0005-distinguish-operational-continuity.md); [DEL specialist continuity](../research/capabilities-and-delegation.md#specialist-continuity-and-thread-reuse), [DEL specialist loss](../research/capabilities-and-delegation.md#scenario-stress-tests), [DEL inherited continuity](../research/capabilities-and-delegation.md#implications-inherited-from-continuity-memory-and-context-research).
 
 ## Authority and initiative
 
@@ -499,6 +552,7 @@ If an ADR resolves any of these more strongly, reconcile the decision and fixtur
 | Memory and currentness 6–10 | AS-MEM-01 through AS-MEM-05 |
 | Context and disclosure 11–14 | AS-CTX-01 through AS-CTX-04 |
 | Delegation and responsibility 15–19 | AS-DEL-01 through AS-DEL-05 |
+| Specialist-delegation subset for issue #58 | AS-DEL-00 through AS-DEL-08 |
 | Authority and initiative 20–24 | AS-AUTH-01 through AS-AUTH-05 |
 | Endogenous agency and attention 25–30 | AS-AGY-01 through AS-AGY-06 |
 | Operational occurrence, delivery, and concurrency 31–36 | AS-OPS-01 through AS-OPS-06 |
