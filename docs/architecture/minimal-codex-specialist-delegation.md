@@ -269,3 +269,59 @@ points in advance:
 These questions may change the Codex adapter or episode storage used by issue #60.
 They do not weaken the ownership, authority, provenance, currentness, or uncertainty
 requirements above.
+
+## Implemented issue-60 slice
+
+`src/ember/codex-specialist.ts` implements this design as a deliberately separate
+Codex-specific boundary. `createSpecialistEpisode` validates and freezes the
+explicit objective, acceptance constraints, bounded context, authority envelope,
+canonical workspace path, and currentness basis. `runCodexSpecialist` creates the
+episode record with exclusive creation before launch, invokes one ephemeral
+`codex exec` in that exact workspace with `workspace-write`, filtered environment,
+disabled user configuration/plugins/apps/skills, bounded JSONL and timeout, and a
+strict report schema. Runtime and report state remain separate from the initially
+`unresolved` Ember disposition; `setSpecialistDisposition` is an explicit later
+interpretation step.
+
+Deterministic process coverage uses only a temporary controlled workspace and
+`test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
+process can perform the bounded file change, while the durable record retains the
+Codex report as attributed evidence rather than accepting it automatically. Fake
+process coverage checks explicit cwd, prompt disclosure, environment filtering,
+workspace sandbox selection, cancellation uncertainty, and absence of automatic
+retry.
+
+The opt-in live scenario is:
+
+```bash
+npm run smoke:specialist:live
+```
+
+It creates an ephemeral workspace outside Ember, asks authenticated Codex to create
+one harmless text file, independently verifies the file, prints sanitized boundary
+evidence, and removes the fixture. It never targets the Ember worktree by default.
+
+### Observed and retained runtime limitations
+
+- `codex exec` supplies no supported mid-turn authority mediation in this slice;
+  the prompt requires Codex to report `blocked` when expansion is needed.
+- Workspace-write is coarser than the semantic authority envelope. The durable
+  record therefore preserves possible effects and never treats sandbox reach as
+  authority.
+- JSONL progress events are not promoted into durable semantic claims. The
+  installed CLI can emit schema-shaped agent progress messages before its final
+  message, so the adapter validates and retains the last schema-valid agent report;
+  only child lifecycle, thread ID, and that final report cross the boundary.
+- Cancellation observes only the direct child. Timeout, cancellation, output
+  overflow, invalid report, or process loss remain ambiguous about prior effects
+  and do not retry.
+- The record file is a minimal foreground supervisor artifact, not a scheduler.
+  It survives the initiating call and preserves the episode boundary, but issue
+  #60 does not add detached execution or process reattachment.
+
+There is one deliberate narrowing from the issue-59 design: the first
+implementation does not durably record intermediate artifact/progress events or
+interactive approval requests because the selected CLI JSONL surface has not
+established sufficiently stable, context-rich events for those claims. It records
+a safely blocked final report or boundary uncertainty instead. No ownership,
+authority, provenance, or currentness constraint is relaxed.
