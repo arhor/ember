@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - chore/colocate-tsd-type-tests
+    paths:
+      - ".github/workflows/refresh-tsd-lockfile.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate:
@@ -18,8 +20,10 @@ jobs:
           node-version: 26.8.1
       - name: Refresh package lock
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Upload package lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-lock
-          path: package-lock.json
+      - name: Commit package lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git diff --cached --quiet || git commit -m "Lock tsd development dependency"
+          git push
