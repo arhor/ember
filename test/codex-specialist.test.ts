@@ -159,3 +159,20 @@ test("Codex specialist should settle ambiguously when cancellation intent cannot
   assert.match(record.observations.find(item => item.kind === "boundary_failure")?.detail ?? "", /could not be persisted before signalling/);
   assert.match(record.possible_effects.join(" "), /may have occurred/);
 });
+
+test("Codex specialist should persist an ambiguous terminal record when failure diagnostics are invalid UTF-8", async () => {
+  // Given
+  const fixture = await episodeFixture();
+  const child = new EventEmitter() as any; child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough(); child.kill = () => true;
+  child.stdin.on("finish", () => { child.stdout.end(); child.stderr.end(Buffer.from([0xff])); child.emit("close", 2, null); });
+
+  // When
+  const record = await runCodexSpecialist(fixture.spec, { recordPath: fixture.recordPath, spawnImpl: () => child });
+  const persisted = JSON.parse(await readFile(fixture.recordPath, "utf8"));
+
+  // Then
+  assert.deepEqual([record.runtime_state, record.report_state, record.ember_disposition], ["exited", "ambiguous", "unresolved"]);
+  assert.equal(persisted.report_state, "ambiguous");
+  assert.equal(persisted.observations.some((item: any) => item.kind === "child_exit_observed"), true);
+  assert.match(record.observations.find(item => item.kind === "boundary_failure")?.detail ?? "", /�/);
+});

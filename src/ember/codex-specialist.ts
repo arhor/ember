@@ -8,7 +8,8 @@ import { codexEnvironment } from "./codex-provider.ts";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const MAX_TEXT_BYTES = 256 * 1024;
-const decoder = new TextDecoder("utf-8", { fatal: true });
+const contractDecoder = new TextDecoder("utf-8", { fatal: true });
+const diagnosticDecoder = new TextDecoder("utf-8", { fatal: false });
 
 export type SpecialistRuntimeState = "not_started" | "running" | "cancellation_requested" | "exited" | "lost";
 export type SpecialistReportState = "none" | "reported_success" | "reported_failure" | "ambiguous";
@@ -190,11 +191,11 @@ export async function runCodexSpecialist(specInput: SpecialistEpisodeSpec, optio
   if (termination || !exitObserved || spawnErrorMessage || stdinErrorMessage || exitCode !== 0) {
     record.report_state = "ambiguous";
     record.possible_effects.push("Workspace or external effects may have occurred before the specialist boundary ended.");
-    const diagnostic = decoder.decode(Buffer.concat(stderr)).slice(0, 4096) || codexErrorDiagnostic(Buffer.concat(stdout));
+    const diagnostic = diagnosticDecoder.decode(Buffer.concat(stderr)).slice(0, 4096) || codexErrorDiagnostic(Buffer.concat(stdout));
     if (!terminationPersistenceError) record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: stdinErrorMessage ?? termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`) });
   } else {
     try {
-      const parsed = parseJsonl(decoder.decode(Buffer.concat(stdout)));
+      const parsed = parseJsonl(contractDecoder.decode(Buffer.concat(stdout)));
       validateReport(parsed.report);
       record.external_thread_id = parsed.threadId;
       if (parsed.threadId) record.observations.push({ observed_at: now(), kind: "thread_observed", detail: parsed.threadId });
