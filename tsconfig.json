@@ -16,11 +16,11 @@
     "eval/**/*.ts",
     "experiments/external-agent-runtime/**/*.ts",
     "scripts/**/*.ts",
-    "src/**/*.ts",
-    "type-tests/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "eval/**/*.test.ts",
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/**/*.test-d.ts"
   ]
 }
