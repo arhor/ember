@@ -1,0 +1,26 @@
+name: Refresh tsd lockfile
+
+on:
+  push:
+    branches:
+      - chore/colocate-tsd-type-tests
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+      - name: Refresh package lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Print package lock
+        run: |
+          echo "LOCKFILE_BASE64_BEGIN"
+          base64 -w0 package-lock.json
+          echo
+          echo "LOCKFILE_BASE64_END"
