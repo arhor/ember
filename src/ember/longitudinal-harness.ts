@@ -33,6 +33,12 @@ export interface LongitudinalScenario {
   description: string;
   ember: { name: string; principal: string; initial_at: string };
   setup: StateAction[];
+  backend_replacement?: {
+    status: "same_backend_control" | "cross_provider";
+    control_episode: string;
+    replacement_episode: string;
+    continuity_vector: string[];
+  };
   episodes: Array<{
     id: string;
     at: string;
@@ -61,7 +67,19 @@ export interface HarnessProviderInvocation {
   request: ProviderRequest;
 }
 
-export type HarnessProvider = (invocation: HarnessProviderInvocation) => Promise<ProviderResult>;
+export interface BackendMetadata {
+  backend: string;
+  adapter: string;
+  version: string;
+  configuration: Record<string, string | number | boolean | null>;
+}
+
+export interface HarnessProviderOutput {
+  result: ProviderResult;
+  backend_metadata: BackendMetadata;
+}
+
+export type HarnessProvider = (invocation: HarnessProviderInvocation) => Promise<HarnessProviderOutput>;
 
 interface AssertionObservation {
   assertion: string;
@@ -81,6 +99,7 @@ export interface LongitudinalReport {
     episode_id: string;
     runtime_id: string;
     cognition_backend: string;
+    backend_metadata: BackendMetadata;
     external_thread: HarnessProviderInvocation["thread"];
     provider_thread_id: string | null;
     canonical_before: ReturnType<typeof inspectionView>;
@@ -135,6 +154,7 @@ export async function runLongitudinalScenario(
       const previouslyObservedThreadIds = new Set(episodeThreads.values());
       let observedRequest: ProviderRequest | null = null;
       let observedResult: ProviderResult | null = null;
+      let observedBackendMetadata: BackendMetadata | null = null;
       let reply = "";
       const result = await withFixedTime(episode.at, () => runCognition(store, state, {
         runtimeId: runtimeId as RuntimeId,
@@ -147,17 +167,21 @@ export async function runLongitudinalScenario(
         explainIds: (episode.explain ?? []).map(alias => requireAlias(aliases, alias)),
         provider: async (_command, _arguments, request) => {
           observedRequest = request;
-          observedResult = await provider({ scenarioId: scenario.id, episodeId: episode.id, cognitionBackend: episode.cognition_backend, thread, request });
-          return observedResult;
+          const output = await provider({ scenarioId: scenario.id, episodeId: episode.id, cognitionBackend: episode.cognition_backend, thread, request });
+          validateBackendMetadata(output.backend_metadata, episode.cognition_backend);
+          observedBackendMetadata = output.backend_metadata;
+          observedResult = output.result;
+          return output.result;
         },
         output: text => { reply += text; },
       }));
-      if (result.providerFailure !== null || observedRequest === null || observedResult === null) {
+      if (result.providerFailure !== null || observedRequest === null || observedResult === null || observedBackendMetadata === null) {
         throw new Error(`episode ${episode.id} provider failed: ${result.providerFailure ?? "no provider evidence"}`);
       }
       state = result.state;
       const providerResult = observedResult as ProviderResult;
       const request = observedRequest as ProviderRequest;
+      const backendMetadata = observedBackendMetadata as BackendMetadata;
       const providerThreadId = providerResult.operational?.external_thread_id ?? null;
       if (providerThreadId !== null) episodeThreads.set(episode.id, providerThreadId);
       const expectedSelected = episode.expect.selected_meanings.map(alias => requireAlias(aliases, alias)).sort();
@@ -168,6 +192,7 @@ export async function runLongitudinalScenario(
         observation("forbidden meanings absent", [], forbiddenIds.filter(id => observedSelected.includes(id)), forbiddenIds.every(id => !observedSelected.includes(id))),
         observation("lineage remains canonical", canonicalBefore.lineage.lineage_id, request.projection.lineage.lineage_id, canonicalBefore.lineage.lineage_id === request.projection.lineage.lineage_id),
         observation("raw transcript excluded", false, request.projection.selection.raw_transcript_included, request.projection.selection.raw_transcript_included === false),
+        observation("backend routing is truthful", episode.cognition_backend, backendMetadata.backend, backendMetadata.backend === episode.cognition_backend),
       ];
       if (thread.mode === "fresh") {
         emberAssertions.push(
@@ -189,6 +214,7 @@ export async function runLongitudinalScenario(
         episode_id: episode.id,
         runtime_id: runtimeId,
         cognition_backend: episode.cognition_backend,
+        backend_metadata: backendMetadata,
         external_thread: thread,
         provider_thread_id: providerThreadId,
         canonical_before: canonicalBefore,
@@ -199,6 +225,7 @@ export async function runLongitudinalScenario(
         model_observations: modelObservations,
       });
     }
+    applyReplacementAssertions(scenario, reports);
   } finally {
     await store.releaseWriteLease(lease);
   }
@@ -254,6 +281,45 @@ function sameJson(left: unknown, right: unknown) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function applyReplacementAssertions(scenario: LongitudinalScenario, reports: LongitudinalReport["episodes"]) {
+  const comparison = scenario.backend_replacement;
+  if (!comparison) return;
+  const control = reports.find(item => item.episode_id === comparison.control_episode)!;
+  const replacement = reports.find(item => item.episode_id === comparison.replacement_episode)!;
+  const controlDurable = durableContinuityView(control.canonical_before);
+  const replacementDurable = durableContinuityView(replacement.canonical_before);
+  replacement.ember_assertions.push(
+    observation("replacement continuity vector", comparison.continuity_vector, comparison.continuity_vector, comparison.continuity_vector.length > 0),
+    observation("replacement preserves lineage and durable meaning", controlDurable, replacementDurable, sameJson(controlDurable, replacementDurable)),
+    observation("replacement receives the same selected meanings", control.projection.selection.meaning_ids, replacement.projection.selection.meaning_ids, sameJson(control.projection.selection.meaning_ids, replacement.projection.selection.meaning_ids)),
+    observation(
+      comparison.status === "cross_provider" ? "replacement uses a different backend" : "fresh-thread control uses the same backend",
+      comparison.status === "cross_provider" ? "different backend" : control.cognition_backend,
+      replacement.cognition_backend,
+      comparison.status === "cross_provider" ? control.cognition_backend !== replacement.cognition_backend : control.cognition_backend === replacement.cognition_backend,
+    ),
+  );
+}
+
+function durableContinuityView(view: ReturnType<typeof inspectionView>) {
+  return {
+    lineage: view.lineage,
+    current_meanings: view.current_meanings,
+    historical_meanings: view.historical_meanings,
+    live_commitments: view.live_commitments,
+    gaps: view.gaps,
+  };
+}
+
+function validateBackendMetadata(value: BackendMetadata, expectedBackend: string) {
+  if (!value || typeof value !== "object" || value.backend !== expectedBackend) throw new Error(`backend metadata must identify selected backend: ${expectedBackend}`);
+  if (typeof value.adapter !== "string" || !value.adapter.trim() || typeof value.version !== "string" || !value.version.trim()) throw new Error("backend metadata adapter and version must be non-empty");
+  if (!value.configuration || typeof value.configuration !== "object" || Array.isArray(value.configuration)) throw new Error("backend metadata configuration must be an object");
+  if (Object.keys(value.configuration).some(key => /(?:thread|session|conversation).*id|(?:thread|session|conversation)_id/i.test(key))) throw new Error("backend metadata configuration must not contain runtime session identifiers");
+  if (Object.values(value.configuration).some(item => item !== null && !["string", "number", "boolean"].includes(typeof item))) throw new Error("backend metadata configuration values must be scalar");
+  if (Buffer.byteLength(JSON.stringify(value), "utf8") > 16 * 1024) throw new Error("backend metadata exceeds 16 KiB");
+}
+
 function withFixedTimeSync<T>(timestamp: string, action: () => T): T {
   const previous = process.env.EMBER_TEST_NOW;
   process.env.EMBER_TEST_NOW = timestamp;
@@ -291,5 +357,18 @@ function validateScenario(value: unknown): asserts value is LongitudinalScenario
     if (!episode.external_thread || !["fresh", "reuse"].includes(episode.external_thread.mode)) throw new Error(`episode ${episode.id} thread control is invalid`);
     if (episode.external_thread.mode === "reuse" && !episodeIds.has(episode.external_thread.episode)) throw new Error(`episode ${episode.id} must reuse an earlier episode`);
     if (!episode.expect || !Array.isArray(episode.expect.selected_meanings) || !Array.isArray(episode.expect.forbidden_meanings)) throw new Error(`episode ${episode.id} expectations are invalid`);
+  }
+  if (scenario.backend_replacement) {
+    const comparison = scenario.backend_replacement;
+    if (!["same_backend_control", "cross_provider"].includes(comparison.status) || !Array.isArray(comparison.continuity_vector) || comparison.continuity_vector.length === 0 || !comparison.continuity_vector.every(item => typeof item === "string" && item.trim())) throw new Error("backend replacement comparison is invalid");
+    const controlIndex = scenario.episodes.findIndex(item => item.id === comparison.control_episode);
+    const replacementIndex = scenario.episodes.findIndex(item => item.id === comparison.replacement_episode);
+    if (controlIndex < 0 || replacementIndex <= controlIndex) throw new Error("backend replacement must compare an earlier control with a later replacement episode");
+    const control = scenario.episodes[controlIndex]!;
+    const replacement = scenario.episodes[replacementIndex]!;
+    if (control.external_thread.mode !== "fresh" || replacement.external_thread.mode !== "fresh") throw new Error("backend replacement comparison requires fresh external threads");
+    if (replacement.changes?.length) throw new Error("backend replacement episode must not change canonical meaning before comparison");
+    if (comparison.status === "same_backend_control" && control.cognition_backend !== replacement.cognition_backend) throw new Error("same-backend control must use one cognition backend");
+    if (comparison.status === "cross_provider" && control.cognition_backend === replacement.cognition_backend) throw new Error("cross-provider comparison must use different cognition backends");
   }
 }

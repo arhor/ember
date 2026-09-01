@@ -12,7 +12,7 @@ discovery_status: current
 
 The issue [#54](https://github.com/arhor/ember/issues/54) harness executes a
 repository-owned JSON scenario against one durable Ember store over multiple
-cognition episodes. It varies Ember runtime restart, cognition-backend label, and
+cognition episodes. It varies Ember runtime restart, cognition-backend selection, and
 fresh versus reused external thread independently. The harness is evaluation
 infrastructure, not a second continuity implementation: state changes use the
 minimal slice's semantic operations, projections use `buildProjection`, cognition
@@ -67,11 +67,22 @@ with that exact observed thread identifier. The ordinary production Codex adapte
 still defaults to a fresh ephemeral thread on every invocation; the harness does
 not change that default.
 
+The runner rejects a scenario backend for which the selected live runner has no
+adapter. A `cognition_backend` value is therefore routing input, not an unchecked
+report label. Every provider invocation also returns bounded backend evidence:
+backend name, adapter name, version, and scalar non-secret configuration. The
+harness verifies that the reported backend matches the selected backend and
+rejects thread/session/conversation identifiers in configuration. External thread
+IDs remain in their dedicated operational report field.
+
 ## Scenario vocabulary
 
 A version-1 scenario contains:
 
 - stable scenario and Ember identity metadata;
+- an optional `backend_replacement` comparison naming an earlier control, a later
+  replacement, whether it is a same-backend control or cross-provider result, and
+  the continuity vector being evaluated;
 - ordered setup actions and at least two ordered episodes;
 - explicit UTC time on every state change and episode;
 - an episode `cognition_backend` label, which lets a provider implementation route
@@ -94,6 +105,10 @@ content synthetic, add the relevant semantic vector, then run the deterministic
 runner and tests. A backend-switch scenario can assign different
 `cognition_backend` values; its provider callback must route each label explicitly
 and preserve the same bounded `ProviderRequest`/validated `ProviderResult` seam.
+Replacement comparisons require fresh external threads. They assert unchanged
+lineage and durable meaning plus the same selected meaning IDs before comparing
+model observations. A same-backend control requires equal backend names; a
+cross-provider comparison requires different names.
 
 ## Interpret the report
 
@@ -101,8 +116,8 @@ Every episode records four evidence layers:
 
 1. `canonical_before` is Ember's inspectable durable state before cognition.
 2. `projection` is the exact purpose-bounded request content selected by Ember.
-3. `provider_result`, external-thread control, and observed thread ID are empirical
-   provider evidence.
+3. `provider_result`, bounded backend/version/configuration metadata,
+   external-thread control, and observed thread ID are empirical provider evidence.
 4. `canonical_after` shows descriptor-only reintegration and operational episode
    evidence after cognition.
 

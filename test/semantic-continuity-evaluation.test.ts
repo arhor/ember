@@ -41,10 +41,13 @@ const semanticAuditProvider: HarnessProvider = async invocation => {
     `DOWNTIME_COGNITION=${projection.recovery_account.ember_cognition_during_interval}`,
   ];
   return {
-    contract_version: 1,
-    reply: lines.join("\n"),
-    used_meaning_ids: projection.selection.meaning_ids,
-    operational: { external_thread_id: externalThreadId },
+    result: {
+      contract_version: 1,
+      reply: lines.join("\n"),
+      used_meaning_ids: projection.selection.meaning_ids,
+      operational: { external_thread_id: externalThreadId },
+    },
+    backend_metadata: { backend: invocation.cognitionBackend, adapter: "semantic-audit-fixture", version: "1", configuration: { deterministic: true } },
   };
 };
 
