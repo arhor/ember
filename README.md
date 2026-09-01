@@ -38,7 +38,7 @@ The adopted runtime is organized around explicit module boundaries rather than o
 - `eval/` contains longitudinal and process-restart evaluation harnesses rather than production runtime code;
 - narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under `tests/`.
 
-Older research and evaluation records may preserve source paths that were accurate when those artifacts were produced; the layout above describes the current implementation. Current design documents should use current implementation paths.
+Older research/evaluation records and explicitly historical sections of current design records may preserve source paths that were accurate when those artifacts were produced. Current implementation references should use the layout above.
 
 ## Design and architecture
 
