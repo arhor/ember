@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseArgs } from "../src/ember/cli.ts";
-import { ProviderError, ValidationError } from "../src/ember/errors.ts";
-import { invokeProvider, MAX_PROVIDER_TIMEOUT_SECONDS } from "../src/ember/provider.ts";
+import { parseArgs } from "../src/cli/main.ts";
+import { ProviderError, ValidationError } from "../src/core/errors.ts";
+import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../src/providers/contract.ts";
+import { invokeProvider } from "../src/providers/process.ts";
 
 const OVERSIZED_TIMEOUT = MAX_PROVIDER_TIMEOUT_SECONDS + 1;
 

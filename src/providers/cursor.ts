@@ -3,16 +3,16 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Readable, Writable } from "node:stream";
-import { ProviderError, type ProviderErrorOptions, type ProviderOutcome } from "./errors.ts";
+import { ProviderError, type ProviderErrorOptions, type ProviderOutcome } from "../core/errors.ts";
 import {
   MAX_PROVIDER_TIMEOUT_SECONDS,
   MAX_STDERR_BYTES,
   MAX_STDOUT_BYTES,
   validateProviderResult,
-  type InvokeProviderOptions,
+  type ProviderInvocationOptions,
   type ProviderRequest,
   type ProviderResult,
-} from "./provider.ts";
+} from "./contract.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const CURSOR_CONFIG_DIRECTORY = ".cursor";
@@ -39,7 +39,7 @@ type CursorSpawn = (command: string, arguments_: string[], options: {
   cwd: string; env: NodeJS.ProcessEnv; shell: false; stdio: ["pipe", "pipe", "pipe"];
 }) => CursorChild;
 
-export interface InvokeCursorOptions extends Omit<InvokeProviderOptions, "spawnImpl"> {
+export interface InvokeCursorOptions extends ProviderInvocationOptions {
   cwd?: string;
   environment?: NodeJS.ProcessEnv;
   spawnImpl?: CursorSpawn;

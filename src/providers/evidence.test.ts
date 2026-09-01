@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { codexArgumentEvidence } from "../src/ember/backend-evidence.ts";
+import { codexArgumentEvidence } from "./evidence.ts";
 
 test("Codex argument evidence should preserve model selection when explicit configuration is supplied", () => {
   // Given

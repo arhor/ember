@@ -2,8 +2,8 @@ import { access, mkdir, open, readFile, rename, unlink, type FileHandle } from "
 import { basename, dirname, join } from "node:path";
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
-import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable } from "./errors.ts";
-import { cloneState, isRfc3339Utc, nowUtc, validateState, type EmberState } from "./model.ts";
+import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
+import { cloneState, isRfc3339Utc, nowUtc, validateState, type EmberState } from "../core/model.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 

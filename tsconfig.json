@@ -13,9 +13,14 @@
   },
   "include": [
     "bin/**/*.ts",
+    "eval/**/*.ts",
     "experiments/external-agent-runtime/**/*.ts",
     "scripts/**/*.ts",
     "src/**/*.ts",
     "type-tests/**/*.ts"
+  ],
+  "exclude": [
+    "eval/**/*.test.ts",
+    "src/**/*.test.ts"
   ]
 }

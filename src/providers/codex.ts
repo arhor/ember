@@ -3,16 +3,16 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Readable, Writable } from "node:stream";
-import { ProviderError, type ProviderErrorOptions, type ProviderOutcome } from "./errors.ts";
+import { ProviderError, type ProviderErrorOptions, type ProviderOutcome } from "../core/errors.ts";
 import {
   MAX_PROVIDER_TIMEOUT_SECONDS,
   MAX_STDERR_BYTES,
   MAX_STDOUT_BYTES,
   validateProviderResult,
-  type InvokeProviderOptions,
+  type ProviderInvocationOptions,
   type ProviderRequest,
   type ProviderResult,
-} from "./provider.ts";
+} from "./contract.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const RESULT_SCHEMA_NAME = "provider-result.schema.json";
@@ -63,10 +63,12 @@ type CodexSpawn = (
   options: { cwd: string; env: NodeJS.ProcessEnv; shell: false; stdio: ["pipe", "pipe", "pipe"] },
 ) => CodexChild;
 
-export interface InvokeCodexOptions extends Omit<InvokeProviderOptions, "spawnImpl"> {
+export interface InvokeCodexOptions extends ProviderInvocationOptions {
   cwd?: string;
   environment?: NodeJS.ProcessEnv;
   spawnImpl?: CodexSpawn;
+  terminationGraceMs?: number;
+  finalTerminationMs?: number;
   thread?:
     | { mode: "ephemeral" }
     | { mode: "fresh_persistent" }

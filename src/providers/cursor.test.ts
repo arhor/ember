@@ -5,12 +5,12 @@ import { readFileSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
-import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/ember/cursor-provider.ts";
-import { parseArgs } from "../src/ember/cli.ts";
-import { ProviderError } from "../src/ember/errors.ts";
-import { buildProjection } from "../src/ember/projection.ts";
-import { startRuntime } from "../src/ember/runtime.ts";
-import { rememberPreference } from "../src/ember/semantics.ts";
+import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/providers/cursor.ts";
+import { parseArgs } from "../src/cli/main.ts";
+import { ProviderError } from "../src/core/errors.ts";
+import { buildProjection } from "../src/core/projection.ts";
+import { startRuntime } from "../src/runtime/runtime.ts";
+import { rememberPreference } from "../src/core/semantics.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const SCRIPTED_CURSOR = join(ROOT, "test-fixtures", "providers", "scripted-cursor.ts");

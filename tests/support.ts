@@ -2,8 +2,8 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
-import { initialState } from "../src/ember/model.ts";
-import { attachDetail, rememberEpisode, rememberFact, rememberPreference, rememberRelationship, undertake } from "../src/ember/semantics.ts";
+import { initialState } from "../src/core/model.ts";
+import { attachDetail, rememberEpisode, rememberFact, rememberPreference, rememberRelationship, undertake } from "../src/core/semantics.ts";
 
 export const PRINCIPAL="user-1",SCOPE="project:ember/docs",RELATIONSHIP_SCOPE="relationship:user-1";
 export const ROOT=resolve(import.meta.dirname,".."),CLI=join(ROOT,"bin","ember.ts"),PROVIDER=join(ROOT,"test-fixtures","providers","scripted-provider.ts");

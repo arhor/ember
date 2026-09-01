@@ -11,8 +11,8 @@
   },
   "scripts": {
     "check": "tsc -p tsconfig.json && node scripts/docs-discovery.mjs check",
-    "test": "node --test test/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
-    "test:continuity": "node --test test/*.test.ts",
+    "test": "node --test src/core/*.test.ts src/providers/*.test.ts eval/longitudinal/*.test.ts eval/process-restart/*.test.ts tests/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
+    "test:continuity": "node --test src/core/*.test.ts src/providers/*.test.ts eval/longitudinal/*.test.ts eval/process-restart/*.test.ts tests/*.test.ts",
     "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
     "smoke:codex": "node scripts/live-codex-smoke.ts",
     "smoke:cursor": "node scripts/live-cursor-smoke.ts",

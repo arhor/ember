@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateState } from "../src/ember/model.ts";
-import { withholdDetail } from "../src/ember/semantics.ts";
+import { validateState } from "../src/core/model.ts";
+import { withholdDetail } from "../src/core/semantics.ts";
 import { populatedState, PRINCIPAL } from "./support.ts";
 
 test("withholding optional detail should preserve unrelated valid evidence metadata", () => {

@@ -4,8 +4,8 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { buildCodexPrompt, invokeCodexExec } from "../experiments/external-agent-runtime/codex-provider.ts";
 import { runProbe } from "../experiments/external-agent-runtime/probe.ts";
-import { buildProjection } from "../src/ember/projection.ts";
-import { startRuntime } from "../src/ember/runtime.ts";
+import { buildProjection } from "../src/core/projection.ts";
+import { startRuntime } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 test("external runtime probe should summarize JSONL lifecycle when child exits successfully", async () => {

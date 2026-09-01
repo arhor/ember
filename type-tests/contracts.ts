@@ -1,5 +1,5 @@
-import type { EmberState, EvidenceId, MeaningId } from "../src/ember/model.ts";
-import type { Projection } from "../src/ember/projection.ts";
+import type { EmberState, EvidenceId, MeaningId } from "../src/core/model.ts";
+import type { Projection } from "../src/core/projection.ts";
 
 declare const evidenceId: EvidenceId;
 declare const meaningId: MeaningId;
