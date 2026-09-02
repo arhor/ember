@@ -46,7 +46,11 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     const baselineEpisode = meaningWith(baseline.projection.meanings, "optional exact detail");
     assert.deepEqual(baseline.projection.gaps, []);
     assert.equal(baselineEpisode.requested_detail_evidence?.[0]?.payload, DETAIL);
+    assert.deepEqual(baseline.context_evaluation.declared.irrelevant, ["irrelevant_permitted"]);
+    assert.deepEqual(baseline.context_evaluation.declared.unavailable, []);
+    assert.deepEqual(baseline.context_evaluation.declared.forbidden, ["intentionally_withheld_private"]);
     assert.deepEqual(baseline.context_evaluation.inclusion_candidates.irrelevant_selected, ["irrelevant_permitted"]);
+    assert.deepEqual(baseline.context_evaluation.inclusion_candidates.forbidden_selected, []);
     assert.equal(baseline.canonical_before.current_meanings.some(item => item.content.includes(PRIVATE)), true);
     assert.equal(baseline.projection.meanings.some(item => item.content.includes(PRIVATE)), false);
 
@@ -58,9 +62,12 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     assert.match(unavailable.projection.gaps[0]!.claim, /cannot be recovered/);
     const unavailableEpisode = meaningWith(unavailable.projection.meanings, "optional exact detail");
     assert.equal(unavailableEpisode.requested_detail_evidence, undefined);
+    assert.deepEqual(unavailable.context_evaluation.declared.unavailable, ["degraded_episode"]);
+    assert.deepEqual(unavailable.context_evaluation.declared.forbidden, ["intentionally_withheld_private"]);
     assert.deepEqual(unavailable.context_evaluation.degradation_signals.unavailable_selected, ["degraded_episode"]);
     assert.deepEqual(unavailable.context_evaluation.degradation_signals.unavailable_with_projection_gap, ["degraded_episode"]);
     assert.deepEqual(unavailable.context_evaluation.inclusion_candidates.irrelevant_selected, ["irrelevant_permitted"]);
+    assert.deepEqual(unavailable.context_evaluation.inclusion_candidates.forbidden_selected, []);
     assert.equal(unavailable.canonical_before.current_meanings.some(item => item.content.includes(PRIVATE)), true);
     assert.equal(unavailable.projection.meanings.some(item => item.content.includes(PRIVATE)), false);
     assert.equal(JSON.stringify(unavailable.projection).includes(DETAIL), false);
@@ -71,8 +78,11 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     assert.equal(ordinary.canonical_before.gaps.length, 1);
     assert.deepEqual(ordinary.projection.gaps, []);
     assert.equal(ordinary.projection.meanings.some(item => item.content.includes("optional exact detail")), false);
+    assert.deepEqual(ordinary.context_evaluation.declared.irrelevant, ["irrelevant_permitted", "degraded_episode"]);
+    assert.deepEqual(ordinary.context_evaluation.declared.unavailable, ["degraded_episode"]);
     assert.deepEqual(ordinary.context_evaluation.degradation_signals.unavailable_selected, []);
     assert.deepEqual(ordinary.context_evaluation.inclusion_candidates.irrelevant_selected, ["irrelevant_permitted"]);
+    assert.deepEqual(ordinary.context_evaluation.inclusion_candidates.forbidden_selected, []);
     assert.equal(ordinary.canonical_before.current_meanings.some(item => item.content.includes(PRIVATE)), true);
     assert.equal(ordinary.projection.meanings.some(item => item.content.includes(PRIVATE)), false);
     assert.equal(JSON.stringify(ordinary.projection).includes(DETAIL), false);
