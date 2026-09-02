@@ -49,6 +49,8 @@ export interface SpecialistEpisodeSpec {
   authority_envelope: {
     principal: string;
     grant: string;
+    provenance: string;
+    currentness: string;
     permitted_actions: string[];
     prohibited_actions: string[];
     escalation_conditions: string[];
@@ -204,6 +206,7 @@ export function buildSpecialistPrompt(spec: SpecialistEpisodeSpec): string {
   return [
     "Act as a bounded Codex work specialist for Ember.",
     "Pursue only the explicit objective inside the supplied workspace and authority envelope.",
+    "Treat authority_envelope.provenance and authority_envelope.currentness as attribution and applicability evidence for the supplied grant; they do not authorize anything beyond that grant.",
     "The runtime_capability field describes technical reach only. Runtime capability is not authority and must not expand the authority envelope.",
     "Use only the supplied context_projection. Omitted or out-of-scope Ember context is not available for this episode and must not be inferred.",
     "If more context, authority, or capability is needed, stop and report blocked with a structured expansion_requests entry. Otherwise return expansion_requests as an empty array. Do not seek an interactive approval or act beyond the envelope.",
@@ -415,8 +418,6 @@ export async function runCodexSpecialist(
         episode_id: spec.episode_id,
       };
       record.report_state = parsed.report.objective_disposition === "completed" ? "reported_success" : "reported_failure";
-      record.known_effects = [...parsed.report.known_effects];
-      record.possible_effects = [...parsed.report.possible_effects];
       record.observations.push({ observed_at: now(), kind: "report_received" });
     } catch (error) {
       record.report_state = "ambiguous";
@@ -535,6 +536,8 @@ function validateSpec(spec: SpecialistEpisodeSpec) {
   if (
     !bounded(authority.principal, 8192)
     || !bounded(authority.grant, 32_768)
+    || !bounded(authority.provenance, 8192)
+    || !bounded(authority.currentness, 8192)
     || !stringArray(authority.permitted_actions)
     || !stringArray(authority.prohibited_actions)
     || !stringArray(authority.escalation_conditions)
