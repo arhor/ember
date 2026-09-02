@@ -68,7 +68,7 @@ describe required meanings rather than requiring a public or generalized schema.
 | `authority_envelope` | Attributable principal and grant, purpose, permitted actions and disclosures, targets/recipients, material limits, and conditions requiring escalation |
 | `workspace` | An explicit canonical path, expected repository identity or baseline when relevant, and whether existing user changes must be preserved |
 | `runtime_policy` | Codex command/version evidence, narrowest runtime-enforceable sandbox/tool/network controls compatible with the task, configuration isolation, timeout/resource bounds, and session mode |
-| `currentness_basis` | Objective/version or other observation against which a late result must be checked |
+| `currentness_basis` | Machine-comparable `objective_revision` and `context_revision` captured at launch, against which a late result must be checked |
 
 The working directory is both capability and disclosure. It is never inherited
 from the Ember process by accident. Selecting a repository workspace intentionally
@@ -283,13 +283,36 @@ strict report schema. Runtime and report state remain separate from the initiall
 `unresolved` Ember disposition; `setSpecialistDisposition` is an explicit later
 interpretation step.
 
+Issue #62 adds the production checkpoint implemented by
+`reconcileSpecialistResult`. Before Ember may mark a result `accepted`, it compares
+the immutable launch basis with a current checkpoint containing the objective
+revision, relevant-context revision, and objective lifecycle status:
+
+| Current checkpoint | Applicability | Ember disposition |
+| --- | --- | --- |
+| Objective and context revisions match; objective is current | `still_applicable` | Remains `unresolved` pending verification and explicit acceptance |
+| Objective is superseded or its revision changed | `stale` | `stale` |
+| Objective still matches but relevant context or requirements changed | `requires_re_evaluation` | `requires_re_evaluation` |
+| Objective is cancelled | `rejected` | `rejected` |
+
+The durable `currentness_evaluation` records the comparison time, launch basis,
+current checkpoint, classification, and reason. Another process can therefore
+inspect applicability after restart without consulting a Codex thread. The
+original report, `reported_success` state, and specialist provenance remain intact
+when the current disposition becomes stale, requires re-evaluation, or rejected:
+they establish historical evidence for the old premise, never current objective
+completion. `setSpecialistDisposition(..., "accepted")` fails closed until the
+record contains a `still_applicable` evaluation; acceptance remains a separate
+Ember verification decision.
+
 Deterministic process coverage uses only a temporary controlled workspace and
 `test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
 process can perform the bounded file change, while the durable record retains the
 Codex report as attributed evidence rather than accepting it automatically. Fake
 process coverage checks explicit cwd, prompt disclosure, environment filtering,
-workspace sandbox selection, cancellation uncertainty, and absence of automatic
-retry.
+workspace sandbox selection, cancellation uncertainty, absence of automatic
+retry, requirement change during work, and a successful result arriving after
+objective supersession.
 
 The opt-in live scenario is:
 

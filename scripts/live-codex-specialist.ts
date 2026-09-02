@@ -60,7 +60,10 @@ if (process.env.EMBER_RUN_LIVE_SPECIALIST !== "1") {
       stdout_limit_bytes: 1024 * 1024,
       session_mode: "ephemeral",
     },
-    currentness_basis: "live validation objective as launched",
+    currentness_basis: {
+      objective_revision: "live-validation-objective-1",
+      context_revision: "live-validation-context-1",
+    },
   });
 
   try {
