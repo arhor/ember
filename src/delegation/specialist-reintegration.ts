@@ -157,10 +157,10 @@ async function reintegrateAtCurrentRevision(
       outcome = "withheld";
       resultingDisposition = "requires_re_evaluation";
       reason = `${reconciled.currentness_evaluation!.reason}; Ember has not yet recorded a semantic re-evaluation against the changed context`;
-    } else if (resultShape === "partial" && options.decision.disposition === "accepted") {
+    } else if (options.decision.disposition === "accepted" && resultShape !== "complete") {
       outcome = "withheld";
       resultingDisposition = "requires_re_evaluation";
-      reason = "a partial specialist result cannot establish full objective completion; Ember may qualify or reject the usable remainder after re-evaluation";
+      reason = `${resultShape} specialist result cannot establish full objective completion; Ember may qualify or reject the usable evidence after re-evaluation`;
     } else {
       reconciled = await reconcileSpecialistResult(recordPath, currentness, {
         now,
@@ -176,9 +176,9 @@ async function reintegrateAtCurrentRevision(
   } else if (!options.decision) {
     outcome = "withheld";
     reason = "the specialist report is current but remains evidence awaiting an Ember-owned semantic decision";
-  } else if (resultShape === "partial" && options.decision.disposition === "accepted") {
+  } else if (options.decision.disposition === "accepted" && resultShape !== "complete") {
     outcome = "withheld";
-    reason = "a partial specialist result cannot establish full objective completion; Ember may qualify or reject the usable remainder";
+    reason = `${resultShape} specialist result cannot establish full objective completion; Ember may qualify or reject the usable evidence`;
   } else {
     reconciled = await reconcileSpecialistResult(recordPath, currentness, {
       now,
@@ -226,9 +226,7 @@ export async function inspectSpecialistReintegration(recordPath: string): Promis
 }
 
 function classifyResult(record: SpecialistEpisodeRecord): SpecialistResultShape {
-  if (record.recovery.effect_state === "effects_possible" || record.report?.possible_effects.length) {
-    return "ambiguous_effect";
-  }
+  if (record.recovery.effect_state === "effects_possible") return "ambiguous_effect";
   if (record.report?.objective_disposition === "completed") return "complete";
   if (!record.report) return "failed";
   if (
