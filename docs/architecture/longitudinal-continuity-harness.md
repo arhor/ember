@@ -77,9 +77,10 @@ provider replies and external thread identifiers are operational evidence and ma
 contain model-generated or account-local information.
 
 Fresh live harness episodes use persistent external threads only because a later
-episode may name one for explicit reuse. The ordinary production provider adapters
-keep their own defaults; the harness does not make external session lifetime part
-of Ember continuity.
+episode may name one for explicit reuse. When a scenario reuses a Codex thread,
+the runner resumes the exact observed thread ID. The ordinary production Codex
+adapter still defaults to a fresh ephemeral thread on every invocation; the
+harness does not make external session lifetime part of Ember continuity.
 
 The runner rejects a scenario backend for which the selected live runner has no
 adapter. A `cognition_backend` value is therefore routing input, not an unchecked
@@ -88,6 +89,12 @@ backend name, adapter name, version, and scalar non-secret configuration. The
 harness verifies that the reported backend matches the selected backend and
 rejects thread/session/conversation identifiers in configuration. External thread
 IDs remain in their dedicated operational report field.
+
+The live Codex runner records a bounded JSON rendering of explicit arguments and
+a separate model-selection summary. Model, profile, model-provider, reasoning,
+verbosity, and service-tier values remain visible so materially different runs can
+be distinguished. Credential-like configuration, unknown option values, and
+positional values are redacted; user configuration remains ignored by the adapter.
 
 ## Scenario vocabulary
 
@@ -102,7 +109,8 @@ A version-1 scenario contains:
   earlier episode);
 - ordinary or explain projection purpose, with meaning/evidence aliases instead
   of generated repository IDs;
-- exact expected selected meanings and forbidden meanings;
+- exact expected selected/forbidden meaning aliases, plus optional
+  generated-history groups for either set;
 - optional relevant, irrelevant, superseded, and unavailable classifications;
 - optional reply substrings expected present or absent;
 - optionally, a `backend_replacement` comparison naming an earlier control and a
@@ -133,16 +141,18 @@ hand-authored setup. The report records `history.generated_action_count` and the
 expanded alias groups so two runs can compare stable scenario identities even
 though repository IDs are intentionally generated afresh.
 
-A meaning list can reference an entire generated group with:
+Context-classification lists can reference an entire generated group with:
 
 ```json
 { "group": "ambient_project_history" }
 ```
 
-Group references are allowed anywhere the episode declares selected, forbidden,
-relevant, irrelevant, superseded, or unavailable meanings. This keeps long
-pressure fixtures readable without making the production model understand
-evaluator groups.
+The exact `selected_meanings` and `forbidden_meanings` fields deliberately remain
+plain alias arrays because specialized consumers such as the process-restart
+harness share the scenario contract. Add generated groups to those exact sets with
+`selected_meaning_groups` or `forbidden_meaning_groups` instead. This keeps long
+pressure fixtures readable without making production code or specialized harnesses
+understand evaluator-only group-reference objects.
 
 Explicit setup/change actions continue to mirror the currently supported semantic
 operations: `remember_relationship`, `remember_fact`, `remember_preference`,
@@ -160,12 +170,13 @@ rename `withhold_detail` to deletion merely to make a fixture pass.
 
 ### Context classification
 
-An episode can annotate its expected context with four additive lists alongside
-the existing exact `selected_meanings` and `forbidden_meanings`:
+An episode can annotate its expected context with additive classifications
+alongside the existing exact selection and exclusion contract:
 
 ```json
 {
-  "selected_meanings": ["current_preference", { "group": "ambient_project_history" }],
+  "selected_meanings": ["current_preference"],
+  "selected_meaning_groups": ["ambient_project_history"],
   "relevant_meanings": ["current_preference"],
   "irrelevant_meanings": [{ "group": "ambient_project_history" }],
   "superseded_meanings": ["old_preference"],
