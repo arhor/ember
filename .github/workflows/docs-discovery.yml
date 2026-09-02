@@ -5,7 +5,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/docs-discovery.mjs"
-      - "tests/docs-discovery*.test.mjs"
+      - "tests/docs-discovery*.test.ts"
       - "AGENTS.md"
       - ".github/workflows/docs-discovery.yml"
   push:
@@ -14,7 +14,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/docs-discovery.mjs"
-      - "tests/docs-discovery*.test.mjs"
+      - "tests/docs-discovery*.test.ts"
       - "AGENTS.md"
       - ".github/workflows/docs-discovery.yml"
 
@@ -32,7 +32,7 @@ jobs:
       - name: Show Node.js version
         run: node --version
       - name: Run documentation discovery tests
-        run: node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+        run: npm run test:docs
       - name: Validate documentation discovery metadata
         run: node scripts/docs-discovery.mjs check
       - name: Exercise deterministic projections
