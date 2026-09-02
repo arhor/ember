@@ -14,7 +14,10 @@ const report = {
   artifacts_inspected: [],
   checks: [{ command: "read specialist-result.txt", outcome: "controlled specialist work" }],
   known_effects: ["Created specialist-result.txt in the selected workspace."],
-  possible_effects: [], blockers: [], requested_follow_up: [],
+  possible_effects: [],
+  blockers: [],
+  requested_follow_up: [],
+  expansion_requests: [],
 };
 process.stdout.write(`${JSON.stringify({ type: "thread.started", thread_id: "thread-operational-60" })}\n`);
 process.stdout.write(`${JSON.stringify({ type: "turn.started" })}\n`);
