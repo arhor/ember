@@ -112,7 +112,7 @@ export interface SpecialistReport {
 
 export interface SpecialistObservation {
   observed_at: string;
-  kind: "specification_persisted" | "launch_attempted" | "child_started" | "thread_observed" | "cancellation_requested" | "timeout_observed" | "child_exit_observed" | "report_received" | "boundary_failure" | "recovery_reconciled";
+  kind: "specification_persisted" | "launch_attempted" | "child_started" | "thread_observed" | "cancellation_requested" | "timeout_observed" | "output_limit_observed" | "child_exit_observed" | "report_received" | "boundary_failure" | "recovery_reconciled";
   detail?: string;
 }
 
@@ -369,13 +369,21 @@ export async function runCodexSpecialist(
   const terminate = (reason: NonNullable<typeof termination>) => {
     if (termination || closed) return;
     termination = reason;
-    if (reason !== "stdin_error") {
-      record.runtime_state = reason === "timeout" ? "timed_out" : "cancellation_requested";
-      record.observations.push({
-        observed_at: now(),
-        kind: reason === "timeout" ? "timeout_observed" : "cancellation_requested",
-        detail: reason,
-      });
+    record.termination = {
+      reason: reason === "cancel" ? "explicit_cancellation"
+        : reason === "timeout" ? "timeout"
+          : reason === "output_limit" ? "output_limit" : "boundary_failure",
+      direct_child_exit_observed: false,
+      all_specialist_work_stopped: "unknown",
+    };
+    if (reason === "cancel") {
+      record.runtime_state = "cancellation_requested";
+      record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
+    } else if (reason === "timeout") {
+      record.runtime_state = "timed_out";
+      record.observations.push({ observed_at: now(), kind: "timeout_observed", detail: reason });
+    } else if (reason === "output_limit") {
+      record.observations.push({ observed_at: now(), kind: "output_limit_observed", detail: reason });
     }
     terminationPersistence = persistRecord(options.recordPath, record)
       .catch((error) => {
@@ -442,15 +450,7 @@ export async function runCodexSpecialist(
   if (finalTimer) clearTimeout(finalTimer);
 
   record.runtime_state = exitObserved ? "exited" : "lost";
-  if (termination) {
-    record.termination = {
-      reason: termination === "cancel" ? "explicit_cancellation"
-        : termination === "timeout" ? "timeout"
-          : termination === "output_limit" ? "output_limit" : "boundary_failure",
-      direct_child_exit_observed: exitObserved,
-      all_specialist_work_stopped: "unknown",
-    };
-  }
+  if (record.termination) record.termination.direct_child_exit_observed = exitObserved;
   if (exitObserved) {
     record.observations.push({
       observed_at: now(),
@@ -530,10 +530,12 @@ export async function recordSpecialistProcessLoss(
     throw new Error("specialist process loss can be recorded only for a nonterminal attempt");
   }
   const observedAt = (options.now ?? (() => new Date().toISOString()))();
+  const priorRuntimeState = record.runtime_state;
   record.runtime_state = "lost";
   record.report_state = "ambiguous";
   record.termination ??= {
-    reason: "boundary_failure",
+    reason: priorRuntimeState === "cancellation_requested" ? "explicit_cancellation"
+      : priorRuntimeState === "timed_out" ? "timeout" : "boundary_failure",
     direct_child_exit_observed: false,
     all_specialist_work_stopped: "unknown",
   };
