@@ -48,7 +48,7 @@ Current architecture material:
   specialist-report provenance for issue #61.
 - [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
-  Server, and the SDK, and records why issue #64 retains the CLI boundary.
+  Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
