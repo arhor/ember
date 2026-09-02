@@ -35,47 +35,53 @@ canonical-state model.
 `src/delegation/specialist-reintegration.ts` layers one explicit semantic decision
 path over the existing episode record and issue-62 currentness checkpoint:
 
-1. **Require attributed result evidence.** Reintegration starts only after an
+1. **Require a live canonical checkpoint.** The caller supplies Ember's
+   `StateStore` plus a `SpecialistReintegrationCheckpoint` derived from current
+   canonical state. Reintegration acquires the cooperating StateStore writer lease
+   (or reuses the caller's existing lease), reloads canonical state, and rejects the
+   decision if its `ember_revision` is no longer current. The lease stays held
+   through the specialist decision/audit write so a cooperating canonical writer
+   cannot move the checked revision underneath the decision.
+2. **Require attributed result evidence.** Reintegration proceeds only after an
    observed specialist exit and a schema-valid final report with
    `report_provenance`. The report remains Codex-owned evidence throughout the
    decision.
-2. **Check the present, not the launch snapshot.** The caller supplies a
-   `SpecialistReintegrationCheckpoint` derived from current Ember state. It records
-   the current canonical `ember_revision`, objective revision and lifecycle,
-   relevant-context revision, plus an attributable current-authority assessment.
-   The objective/context portion is passed through `reconcileSpecialistResult` and
-   compared with the immutable launch basis. The launch authority record remains
-   historical evidence; it cannot substitute for the current authority checkpoint.
-3. **Classify what actually returned.** The existing durable report/effect fields
+3. **Compare current meaning with the launch basis.** The checkpoint also records
+   objective revision and lifecycle, relevant-context revision, plus an attributable
+   current-authority assessment. The objective/context portion is passed through
+   `reconcileSpecialistResult` and compared with the immutable launch basis. The
+   launch authority record remains historical evidence; it cannot substitute for
+   the current authority checkpoint.
+4. **Classify what actually returned.** The existing durable report/effect fields
    are interpreted as `complete`, `partial`, `failed`, or `ambiguous_effect` for
    the reintegration decision. This does not modify the Codex report contract.
-4. **Conserve evidence.** Optional corroborating specialist records are grouped by
+5. **Conserve evidence.** Optional corroborating specialist records are grouped by
    a fingerprint of their disclosed context provenance, scope, currentness, and
    context revision. Repeated attempts from the same derivation basis remain one
    correlated source group. The implementation never asserts independence merely
    because multiple episode IDs exist.
-5. **Require an Ember-owned semantic decision.** A current report with no Ember
+6. **Require an Ember-owned semantic decision.** A current report with no Ember
    decision is `withheld`. Positive integration requires an explicit reasoned
    `accepted` or `qualified` decision. A partial result cannot establish full
    completion through `accepted`; Ember may instead qualify the useful remainder
    or reject it.
-6. **Respect authority and effect uncertainty.** Revoked, superseded, or uncertain
+7. **Respect authority and effect uncertainty.** Revoked, superseded, or uncertain
    current authority blocks positive integration even when the report itself is
    technically correct. `effects_possible` likewise blocks positive integration
    until the independent issue-63 recovery path reconciles the present external
    state. Ember may still reject a report while authority or effects are unresolved;
    rejection does not claim restored authority, non-effect, or rollback.
-7. **Gate canonical mutation.** Reintegration never copies specialist claims into
+8. **Gate canonical mutation.** Reintegration never copies specialist claims into
    canonical meaning. The durable decision marks a canonical mutation only as
    `eligible_after_ember_decision`, with the reintegration decision ID that a later
    semantic mutation can cite. Withheld or rejected results remain `not_eligible`.
 
 This is intentionally stricter than the adjacent one-shot `runCognition` path.
-`runCognition` can reject a provider response when its optimistic canonical revision
-changed. A specialist can outlive the initiating moment and may already have caused
-external effects, so reintegration additionally preserves the exact current Ember
-revision used for the decision, objective/context applicability, current authority,
-provenance, partiality, effect state, and evidential correlation.
+Both paths use canonical revision/currentness as a concurrency boundary, but a
+specialist can outlive the initiating moment and may already have caused external
+effects. Reintegration therefore additionally preserves objective/context
+applicability, current authority, provenance, partiality, effect state, and
+evidential correlation.
 
 ## Current reintegration checkpoint
 
@@ -83,13 +89,19 @@ The issue-65 checkpoint is an inspection record, not a new authority source:
 
 | Field | Meaning |
 | --- | --- |
-| `ember_revision` | The canonical Ember state revision from which the reintegration assessment was derived |
+| `ember_revision` | The canonical Ember state revision from which the reintegration assessment was derived; verified against the live `StateStore` before specialist interpretation begins |
 | `objective_revision` | The current objective revision compared with the immutable launch basis |
 | `context_revision` | The current relevant-context revision compared with the immutable launch basis |
 | `objective_status` | Whether the delegated objective is still `current`, `superseded`, or `cancelled` |
 | `authority.status` | Whether current attributable authority is `current`, `revoked`, `superseded`, or `uncertain` |
 | `authority.provenance` | The current source Ember relied on to assess authority, retained for later explanation |
 | `authority.reason` | Why that source is or is not presently applicable to reliance on the result |
+
+The StateStore revision check does not magically derive objective, context, or
+authority semantics from a numeric counter. It guarantees that those assessments
+were made against the canonical revision Ember still holds fixed while persisting
+the reintegration decision. Producing the semantic assessments remains the caller's
+Ember-owned responsibility.
 
 `authority.provenance` is intentionally absent from the evidence-correlation
 fingerprint. Authority governs legitimate reliance; it is not evidential support
@@ -100,6 +112,7 @@ independent.
 
 | Condition | Reintegration outcome | Ember disposition / meaning |
 | --- | --- | --- |
+| Checkpoint names a non-current canonical Ember revision | no decision persisted | Caller must rebuild the checkpoint from current canonical state |
 | Current, complete result; no semantic decision yet | `withheld` | Report remains attributable evidence; no canonical mutation is eligible |
 | Current objective/context/authority, complete result; reasoned Ember acceptance | `integrated` | `accepted`; a later canonical mutation may cite the decision ID |
 | Current authority revoked, superseded, or uncertain | `withheld` for positive reliance | The report remains evidence, but the old launch grant does not authorize present reliance |
@@ -120,7 +133,9 @@ For a positive current result, the final `accepted` or `qualified` disposition i
 written through `reconcileSpecialistResult` itself. This preserves issue #62's
 atomic final currentness-plus-disposition transition. The companion audit is then
 appended only if the persisted disposition still matches the result being audited;
-a competing disposition change fails instead of being overwritten.
+a competing specialist disposition change fails instead of being overwritten.
+The surrounding StateStore lease independently keeps the canonical Ember revision
+stable for the whole decision.
 
 ## Durable inspection after restart
 
@@ -182,7 +197,7 @@ Instead, the reintegration audit exposes a narrow gate:
 specialist report
       |
       v
-current Ember revision + objective/context + authority
+live StateStore revision + objective/context + authority
       |
       v
 effect + provenance + correlation checks
@@ -206,10 +221,12 @@ canonical authority. A downstream outward action still requires its own current
 ## Deterministic acceptance coverage
 
 `src/delegation/specialist-reintegration.test.ts` exercises the final boundary with
-persisted version-3 episode fixtures:
+a real temporary `StateStore` and persisted version-3 episode fixtures:
 
-- current success records the exact current Ember revision, remains withheld until
-  a reasoned Ember decision, then becomes inspectably integrated;
+- a stale numeric Ember revision is rejected before currentness or audit state is
+  written;
+- current success records the verified current Ember revision, remains withheld
+  until a reasoned Ember decision, then becomes inspectably integrated;
 - revoked current authority withholds otherwise-current technical success;
 - stale technical success remains historical and does not complete the superseding
   objective;
