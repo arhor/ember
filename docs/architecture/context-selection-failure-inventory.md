@@ -115,11 +115,13 @@ counterfactual consequence of omission and explicitly separates context quality 
 retrieval quality. Scope and currentness are necessary constraints, not sufficient
 relevance criteria.
 
-**Impact:** unnecessary material is exposed to cognition even when the scenario
-oracle says it cannot change the justified task result. This creates avoidable
-privacy surface, distraction, anchoring, position/interference, and context-cost
-pressure. The deterministic evidence establishes the unnecessary exposure, while
-actual answer degradation remains an empirical model question.
+**Severity / impact:** the #70 rubric classifies the observed condition as
+`potential` inclusion harm with systematic `reduce` selection pressure. Unnecessary
+material is exposed to cognition even when the scenario oracle says it cannot change
+the justified task result. This creates avoidable privacy surface, distraction,
+anchoring, position/interference, and context-cost pressure. Actual answer degradation
+remains an empirical model question and is not promoted to `material` harm by this
+inventory.
 
 **Implementation-neutral missing capability:** Ember needs a way to discriminate
 purpose-relevant participation among already permitted current meanings inside the
@@ -130,14 +132,15 @@ why a meaning participated or did not participate.
 
 **What this does not establish:** it does not establish that the missing capability
 must use semantic search, embeddings, a vector database, reranking, SQL indexes,
-model-generated summaries, or any other particular representation. All 101 observed
-irrelevant items across these fixture families are already available to the current
-selector. The demonstrated problem is choosing participation, not locating absent
-state.
+model-generated summaries, or any other particular representation. The 101 distinct
+authored ambient/irrelevant fixture items across these scenario families are already
+available to the current selector. The demonstrated problem is choosing participation,
+not locating absent state.
 
 ### MODEL-01: exact-slot unresolved conflict cannot be represented directly
 
-**Status:** confirmed modeling boundary exposed by #67; not a retrieval failure.
+**Status:** confirmed executable modeling boundary exposed by #67; not a retrieval
+failure.
 
 **Class:** storage / modeling.
 
@@ -146,7 +149,9 @@ keeps two contradictory migration reports current by assigning them different re
 slots. The evaluation documents why this is necessary: v1 semantics permit only one
 current meaning for an exact `kind + owner + slot + scope` tuple. `rememberFact`
 therefore cannot preserve two simultaneously current candidate values in the same
-exact fact slot.
+exact fact slot. `tests/model-store.test.ts` independently regression-tests the
+invariant by requiring validation to reject two current meanings that share an exact
+slot.
 
 The fixture successfully preserves contradiction because it models two attributable
 reports, not because the exact-slot limitation disappeared.
@@ -156,10 +161,12 @@ conflict to remain representable without recency silently becoming correction,
 without forced synthesis, and without losing provenance. ADR 0003 requires both
 relevant sides to participate when resolution matters.
 
-**Impact:** if the real semantic state is "the value of this one fact slot is
-contested by two current candidates," the present canonical model cannot encode that
-state directly. A retrieval layer cannot later select a candidate that canonical
-state was forced to overwrite, re-slot, or otherwise fail to represent.
+**Severity / impact:** this is a representation-layer semantic blocker when the real
+state requires multiple current candidates for one exact slot. It is not assigned a
+#70 membership-harm score because the current model cannot honestly instantiate that
+state for projection evaluation. Forcing such a case through overwrite, false
+supersession, or invented slot separation could materially corrupt currentness or the
+meaning of the disagreement.
 
 **Implementation-neutral missing capability:** when observed scenarios require it,
 canonical state needs a representation for unresolved competing current candidates or
@@ -185,8 +192,9 @@ but outside the permitted projection. Those are intentionally different conditio
 The #69 evaluation then probes deletion explicitly. The current model has no
 forgotten/deleted lifecycle for meaning or evidence, and the fixture-only
 `withholdDetail` operation rejects deletion-shaped use rather than relabeling
-unavailability as deletion. This preserves the negative result instead of producing a
-false green scenario.
+unavailability as deletion. The #69 regression test verifies that rejection leaves
+state unchanged. This preserves the negative result instead of producing a false
+green scenario.
 
 **Governing expectation:** ADR 0002 treats forgetting as a legitimate lifecycle
 outcome, requires privacy/security deletion to account for reconstructable
@@ -194,10 +202,14 @@ derivatives, and requires failed recall, unavailable evidence, absent memory,
 forgetting, and deletion to remain distinguishable. AS-MEM-05 applies that semantic
 pressure to privacy deletion.
 
-**Impact:** Ember cannot yet truthfully express "this was deliberately forgotten" or
-"this content was deleted and must not be reconstructable" as canonical state. That
-becomes boundary-sensitive when a real deletion obligation exists because leaving the
-content merely unavailable or merely unselected does not satisfy the same semantics.
+**Severity / impact:** this is a boundary-sensitive semantic blocker when a real
+forgetting or deletion obligation exists. The #70 classifier does not assign it a
+`boundary_violation` because the corpus deliberately cannot instantiate deletion yet,
+and this inventory does not fabricate that measurement. The practical impact is
+nevertheless serious: Ember cannot truthfully express "this was deliberately
+forgotten" or "this content was deleted and must not be reconstructable" as canonical
+state. Leaving the content merely unavailable or merely unselected does not satisfy
+the same semantics.
 
 **Implementation-neutral missing capability:** canonical memory needs explicit
 forgetting/deletion lifecycle semantics, including the scope of deletion, what event
