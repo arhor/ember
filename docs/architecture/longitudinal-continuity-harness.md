@@ -173,7 +173,7 @@ not privacy deletion.
 The richer provenance promotion path is intentionally narrow: it applies to fact
 propositions in the minimal slice. Relationship, preference, episode, and commitment
 semantics retain their existing ownership rules. Issue #69 still owns
- deleted/forgotten versus unavailable/withheld distinctions. Do not encode an
+deleted/forgotten versus unavailable/withheld distinctions. Do not encode an
 unsupported lifecycle as provenance metadata, and do not rename `withhold_detail`
 to deletion merely to make a fixture pass.
 

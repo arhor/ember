@@ -63,8 +63,12 @@ provenance semantics without inventing retrieval or persistence machinery.
 Evidence derivation is an acyclic graph. A projected meaning carries its immediate
 source evidence plus the complete transitive ancestry of that evidence. Thus a
 later inference can be traced through a delegated report to the original external
-claim instead of losing the root after one hop. Validation rejects derivation
-cycles and source/epistemic-role mismatches.
+claim instead of losing the root after one hop. The minimal v1 representation also
+requires every derivation edge and every meaning-to-source edge to stay within one
+evidence scope, preventing selected derived facts from laundering ancestor evidence
+across a context boundary. Semantic operations reject cross-scope derivation before
+mutating state, while canonical validation provides defense in depth. Validation
+also rejects derivation cycles and source/epistemic-role mismatches.
 
 ## Scenario map
 

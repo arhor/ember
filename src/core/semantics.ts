@@ -101,8 +101,12 @@ function attributedOwner(prefix: "external" | "delegate", label: string): `exter
   return `${prefix}:${label.trim()}` as `external:${string}` | `delegate:${string}`;
 }
 
-function resolveEvidenceIds(state: EmberState, ids: Array<EvidenceId | string>): EvidenceId[] {
-  return [...new Set(ids.map(id => findEvidence(state, id).evidence_id))];
+function resolveEvidenceIds(state: EmberState, ids: Array<EvidenceId | string>, scope: string): EvidenceId[] {
+  const resolved = ids.map(id => findEvidence(state, id));
+  for (const evidence of resolved) {
+    if (evidence.scope !== scope) throw new ValidationError("evidence derivation cannot cross scope");
+  }
+  return [...new Set(resolved.map(evidence => evidence.evidence_id))];
 }
 
 function rememberAttributedFact(
@@ -179,7 +183,7 @@ export function rememberDelegatedReport(
     source_actor: owner,
     occurred_at: at,
     observed_at: at,
-    derived_from_evidence_ids: resolveEvidenceIds(state, derivedFrom),
+    derived_from_evidence_ids: resolveEvidenceIds(state, derivedFrom, scope),
     scope,
     payload_mode: "descriptor_only",
   };
@@ -194,7 +198,7 @@ export function rememberInference(
   text: string,
   derivedFrom: Array<EvidenceId | string>,
 ): MeaningId {
-  const derived = resolveEvidenceIds(state, derivedFrom);
+  const derived = resolveEvidenceIds(state, derivedFrom, scope);
   if (derived.length === 0) throw new ValidationError("Ember inference requires at least one source evidence occurrence");
   const at = nowUtc();
   const evidence: EmberInferenceEvidence = {

@@ -665,7 +665,11 @@ export function validateState(state: unknown): asserts state is EmberState {
     require(allIds.length === new Set(allIds).size, "all canonical IDs must be unique");
 
     for (const [id, ev] of evById) {
-        for (const parent of ev.derived_from_evidence_ids) require(evById.has(parent), `${id} derives from absent evidence ${parent}`);
+        for (const parent of ev.derived_from_evidence_ids) {
+            const source = evById.get(parent);
+            require(!!source, `${id} derives from absent evidence ${parent}`);
+            if (source) require(source.scope === ev.scope, `${id} derivation crosses evidence scope`);
+        }
         if (ev.related_meaning_id !== undefined) require(meaningById.has(ev.related_meaning_id), `${id} relates to absent meaning ${ev.related_meaning_id}`);
         if (ev.cognition_id !== undefined) require(cognitionById.has(ev.cognition_id), `${id} refers to absent cognition ${ev.cognition_id}`);
         if (ev.payload_mode === "retained_optional" && ev.availability === "unavailable") {
@@ -700,6 +704,7 @@ export function validateState(state: unknown): asserts state is EmberState {
             }
         }
         const refs = m.source_evidence_ids.map((ref: string) => evById.get(ref));
+        require(refs.every((ev: Dynamic | undefined) => ev?.scope === m.scope), `${id} source evidence scope mismatch`);
         if (m.kind === "commitment") {
             const adoptions = refs.filter((ev: Dynamic | undefined) => ev?.source_role === "ember_adoption");
             require(adoptions.length >= 1, `${id} commitment needs Ember adoption evidence`);
@@ -730,22 +735,20 @@ export function validateState(state: unknown): asserts state is EmberState {
         }
     }
 
-    for (const start of evById.keys()) {
-        const visiting = new Set<string>();
-        const visited = new Set<string>();
-        const visit = (cursor: string): void => {
-            if (visiting.has(cursor)) {
-                require(false, `evidence derivation cycle contains ${cursor}`);
-                return;
-            }
-            if (visited.has(cursor)) return;
-            visiting.add(cursor);
-            for (const parent of evById.get(cursor)?.derived_from_evidence_ids ?? []) visit(parent);
-            visiting.delete(cursor);
-            visited.add(cursor);
-        };
-        visit(start);
-    }
+    const visitedEvidence = new Set<string>();
+    const visitingEvidence = new Set<string>();
+    const visitEvidence = (cursor: string): void => {
+        if (visitingEvidence.has(cursor)) {
+            require(false, `evidence derivation cycle contains ${cursor}`);
+            return;
+        }
+        if (visitedEvidence.has(cursor)) return;
+        visitingEvidence.add(cursor);
+        for (const parent of evById.get(cursor)?.derived_from_evidence_ids ?? []) visitEvidence(parent);
+        visitingEvidence.delete(cursor);
+        visitedEvidence.add(cursor);
+    };
+    for (const start of evById.keys()) visitEvidence(start);
 
     for (const id of meaningById.keys()) {
         const seen = new Set<string>();
