@@ -63,7 +63,7 @@
       "cognition_backend": "codex",
       "restart_ember": false,
       "external_thread": { "mode": "fresh" },
-      "input": "Explain the degraded-context episode while its optional detail is still recoverable. Keep unrelated permitted context separate from private context that is outside this projection.",
+      "input": "Explain the degraded-context episode while its optional detail is still recoverable. Keep unrelated permitted context separate from private context that is outside this projection. Include the literal token DEGRADED_CONTEXT_TARGET_69.",
       "purpose": "explain",
       "explain": ["degraded_episode"],
       "expect": {
@@ -109,7 +109,7 @@
           "at": "2026-09-03T08:55:00Z"
         }
       ],
-      "input": "Explain the degraded-context episode after restart. The projection may carry a gap. Do not guess missing content or claim seamless recall. If a gap is present, include the literal token unavailable_detail.",
+      "input": "Explain the degraded-context episode after restart. The projection may carry a gap. Do not guess missing content or claim seamless recall. If a gap is present, include the literal token unavailable_detail. Also include the literal token DEGRADED_CONTEXT_TARGET_69.",
       "purpose": "explain",
       "explain": ["degraded_episode"],
       "expect": {
@@ -153,7 +153,7 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": { "mode": "fresh" },
-      "input": "State the current degraded-context evaluation target without historical reconstruction.",
+      "input": "State the current degraded-context evaluation target without historical reconstruction. Include the literal token DEGRADED_CONTEXT_TARGET_69.",
       "expect": {
         "selected_meanings": [
           "relationship",
