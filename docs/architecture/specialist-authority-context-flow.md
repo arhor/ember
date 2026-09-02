@@ -1,5 +1,5 @@
 ---
-summary: "Issue #61 hardening of the Codex specialist boundary: scoped least-sufficient disclosure, authority separated from runtime capability, structured expansion requests, and specialist report provenance."
+summary: "Issue #61 hardening of the Codex specialist boundary: scoped least-sufficient disclosure, attributable authority separated from runtime capability, structured expansion requests, and specialist report provenance."
 read_when:
   - "Changing context, authority, runtime capability, or escalation behavior for Codex specialist delegation"
   - "Reviewing AS-DEL-05 or AS-DEL-07 against the production specialist boundary"
@@ -38,13 +38,20 @@ be serialized into the same bounded prompt:
 | --- | --- | --- |
 | Objective | `objective` plus `acceptance` and `currentness_basis` | The work Ember is asking Codex to pursue and how Ember will later judge applicability |
 | Selected context | `context_projection[]` with `content`, `provenance`, `scope`, and `currentness` | Which task-relevant meaning Ember intentionally disclosed, how it is scoped, and how it may be interpreted |
-| Authority | `authority_envelope` with attributable `principal`, `grant`, permitted/prohibited actions, and escalation conditions | The semantic decision-space intentionally entrusted for this episode |
+| Authority | `authority_envelope` with attributable `principal`, `grant`, `provenance`, `currentness`, permitted/prohibited actions, and escalation conditions | The semantic decision-space intentionally entrusted for this episode and the source/currentness basis Ember used to treat it as live |
 | Runtime capability | `runtime_capability` plus the concrete `runtime_policy` | Technical reach and enforcement evidence available to the Codex attempt, never legitimacy by itself |
 
-`principal` and `grant` preserve the authority's attribution at this narrow boundary:
-the record must say whose authority is being exercised and what grant was actually
-entrusted. The episode must not infer a broader grant from credentials, workspace
-reach, available tools, runtime configuration, or the objective's usefulness.
+`principal` and `grant` say whose authority is being exercised and what decision-space
+was entrusted. `provenance` records the source Ember relied on for that grant, while
+`currentness` records why that source is still applicable to this attempt. These are
+inspectable attribution and applicability evidence, not magic permission strings:
+Ember remains responsible for establishing before launch that the source is
+legitimate, belongs to the stated principal, and still fits the current purpose and
+circumstances.
+
+The episode must not infer a broader grant from credentials, workspace reach,
+available tools, runtime configuration, the objective's usefulness, or the mere
+presence of an authority-looking statement in repository or model context.
 
 The runtime capability description intentionally does not pretend to know more than
 Ember has established. For example, `filesystem.mode: read_write` records that the
@@ -111,9 +118,9 @@ semantics.
 
 ## Requests for expansion
 
-A valid specialist report may contain `expansion_requests`. Each request is evidence
-that Codex believes the current boundary is insufficient, not an authorization or
-an automatic escalation.
+A valid specialist report contains `expansion_requests`; the array is empty when no
+expansion is requested. Each request is evidence that Codex believes the current
+boundary is insufficient, not an authorization or an automatic escalation.
 
 The first boundary distinguishes three request kinds:
 
@@ -151,7 +158,7 @@ does not invent reliable mid-turn steering or interactive approval mediation.
 
 ## Specialist provenance
 
-A schema-valid report now receives explicit record-level provenance:
+A schema-valid report receives explicit record-level provenance:
 
 ```text
 source_role: specialist_report
@@ -164,6 +171,13 @@ blockers, and expansion requests. Those are Codex-attributed claims unless Ember
 later creates separate direct verification evidence. The opaque Codex thread ID
 remains operational metadata and does not become evidential ownership.
 
+The episode record deliberately does not copy `report.known_effects` or
+`report.possible_effects` into the top-level `known_effects` / `possible_effects`
+arrays. Top-level effects are reserved for conclusions owned by the Ember/process
+boundary, such as uncertainty after cancellation, process loss, or invalid report
+handling. Specialist effect claims remain under `report_provenance` instead of being
+silently promoted into unattributed Ember evidence.
+
 `reported_success` and `reported_failure` remain specialist-report states.
 `ember_disposition` remains independently `unresolved` until Ember interprets the
 report against current objective, authority, world state, and any independent
@@ -171,22 +185,26 @@ verification.
 
 ## Deterministic acceptance coverage
 
-The production tests now exercise the two issue-61 adversarial boundaries directly:
+The production tests exercise the issue-61 adversarial boundaries directly:
 
 - **AS-DEL-05 excessive context:** a known private/out-of-scope sentinel is absent
   from the serialized prompt while the selected project-scoped marker is present.
   Codex may return a structured `additional_context` request, which is preserved
   without any automatic disclosure or disposition change.
-- **AS-DEL-07 excessive authority:** the test runtime advertises technical
-  workspace `read_write` capability while Ember's authority envelope permits only
-  inspection. The specialist reports blocked and requests `additional_authority`;
-  the original authority record remains narrow and no file mutation occurs.
+- **AS-DEL-07 excessive authority:** the serialized prompt contains technical
+  workspace `read_write` capability alongside an attributable, intentionally
+  read-only authority envelope. The specialist reports blocked and requests
+  `additional_authority`; the original authority record remains narrow and no file
+  mutation occurs.
+- **Specialist effect provenance:** the ordinary bounded-write fixture returns a
+  specialist claim about its file effect; that claim remains inside the attributed
+  report while the top-level boundary effect arrays stay empty.
 
 The existing controlled process fixture continues to prove the ordinary bounded
 write path, and the opt-in `npm run smoke:specialist:live` scenario continues to use
-an ephemeral workspace outside Ember. The live harness now records the same scoped
-context, runtime capability, and specialist report provenance as the deterministic
-boundary.
+an ephemeral workspace outside Ember. The live harness records the same scoped
+context, attributable/current authority, runtime capability, and specialist report
+provenance as the deterministic boundary.
 
 ## Non-goals and remaining limits
 
