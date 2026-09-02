@@ -290,7 +290,7 @@ revision, relevant-context revision, and objective lifecycle status:
 
 | Current checkpoint | Applicability | Ember disposition |
 | --- | --- | --- |
-| Objective and context revisions match; objective is current | `still_applicable` | Remains `unresolved` pending verification and explicit acceptance |
+| Objective and context revisions match; objective is current | `still_applicable` | Remains `unresolved`, or atomically receives the supplied verified disposition |
 | Objective is superseded or its revision changed | `stale` | `stale` |
 | Objective still matches but relevant context or requirements changed | `requires_re_evaluation` | `requires_re_evaluation` |
 | Objective is cancelled | `rejected` | `rejected` |
@@ -298,12 +298,22 @@ revision, relevant-context revision, and objective lifecycle status:
 The durable `currentness_evaluation` records the comparison time, launch basis,
 current checkpoint, classification, and reason. Another process can therefore
 inspect applicability after restart without consulting a Codex thread. The
-original report, `reported_success` state, and specialist provenance remain intact
+Reconciliation is permitted only after a final report and observed child exit, so
+an in-flight adapter cannot overwrite the decision with its older local record.
+Calling reconciliation again from `requires_re_evaluation` is permitted, giving
+the re-evaluation an explicit path to acceptance, qualification, or rejection.
+That follow-up must supply the same current checkpoint and records a reasoned
+resolution alongside the original `requires_re_evaluation` classification.
+The current checkpoint and an optional verified final disposition are written in
+the same transition; direct `setSpecialistDisposition(..., "accepted")` is
+forbidden, preventing acceptance based on an older stored checkpoint.
+
+The original report, `reported_success` state, and specialist provenance remain intact
 when the current disposition becomes stale, requires re-evaluation, or rejected:
 they establish historical evidence for the old premise, never current objective
-completion. `setSpecialistDisposition(..., "accepted")` fails closed until the
-record contains a `still_applicable` evaluation; acceptance remains a separate
-Ember verification decision.
+completion. The specialist episode specification and record use schema version 2
+because the structured derivation basis is intentionally incompatible with the
+free-form version-1 basis.
 
 Deterministic process coverage uses only a temporary controlled workspace and
 `test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child

@@ -31,6 +31,11 @@ export interface SpecialistCurrentnessEvaluation {
   checked_against: SpecialistCurrentnessCheckpoint;
   applicability: SpecialistApplicability;
   reason: string;
+  resolution?: {
+    decided_at: string;
+    disposition: "accepted" | "qualified" | "rejected";
+    reason: string;
+  };
 }
 
 export interface SpecialistContextItem {
@@ -59,7 +64,7 @@ export interface SpecialistExpansionRequest {
 }
 
 export interface SpecialistEpisodeSpec {
-  contract_version: 1;
+  contract_version: 2;
   episode_id: string;
   objective: string;
   acceptance: string[];
@@ -116,7 +121,7 @@ export interface SpecialistReportProvenance {
 }
 
 export interface SpecialistEpisodeRecord {
-  record_version: 1;
+  record_version: 2;
   specification: SpecialistEpisodeSpec;
   runtime_state: SpecialistRuntimeState;
   report_state: SpecialistReportState;
@@ -213,7 +218,7 @@ export function createSpecialistEpisode(
   input: Omit<SpecialistEpisodeSpec, "contract_version" | "episode_id"> & { episode_id?: string },
 ): SpecialistEpisodeSpec {
   const spec: SpecialistEpisodeSpec = {
-    contract_version: 1,
+    contract_version: 2,
     episode_id: input.episode_id ?? `delegation-${randomUUID()}`,
     ...input,
   };
@@ -252,7 +257,7 @@ export async function runCodexSpecialist(
   if (workspace !== spec.workspace.path) throw new Error("specialist workspace path must be absolute and canonical");
 
   const record: SpecialistEpisodeRecord = {
-    record_version: 1,
+    record_version: 2,
     specification: spec,
     runtime_state: "not_started",
     report_state: "none",
@@ -460,9 +465,7 @@ export async function setSpecialistDisposition(
 ): Promise<SpecialistEpisodeRecord> {
   const record = JSON.parse(await readFile(recordPath, "utf8")) as SpecialistEpisodeRecord;
   if (record.ember_disposition !== "unresolved") throw new Error("specialist episode has already been dispositioned");
-  if (disposition === "accepted" && record.currentness_evaluation?.applicability !== "still_applicable") {
-    throw new Error("specialist result must be reconciled as still applicable before acceptance");
-  }
+  if (disposition === "accepted") throw new Error("acceptance requires reconcileSpecialistResult with a current checkpoint");
   record.ember_disposition = disposition;
   await persistRecord(recordPath, record);
   return record;
@@ -471,13 +474,23 @@ export async function setSpecialistDisposition(
 export async function reconcileSpecialistResult(
   recordPath: string,
   checkpoint: SpecialistCurrentnessCheckpoint,
-  options: { now?: () => string } = {},
+  options: {
+    now?: () => string;
+    disposition?: "accepted" | "qualified" | "rejected";
+    re_evaluation?: { disposition: "accepted" | "qualified" | "rejected"; reason: string };
+  } = {},
 ): Promise<SpecialistEpisodeRecord> {
   validateCheckpoint(checkpoint);
   const record = JSON.parse(await readFile(recordPath, "utf8")) as SpecialistEpisodeRecord;
   validateSpec(record.specification);
-  if (record.ember_disposition !== "unresolved") throw new Error("specialist episode has already been dispositioned");
+  if (record.runtime_state !== "exited" || !["reported_success", "reported_failure"].includes(record.report_state)) {
+    throw new Error("specialist result can be reconciled only after a final report and observed exit");
+  }
+  if (!["unresolved", "requires_re_evaluation"].includes(record.ember_disposition)) {
+    throw new Error("specialist episode has already been dispositioned");
+  }
 
+  const priorEvaluation = record.currentness_evaluation;
   const startedFrom = record.specification.currentness_basis;
   let applicability: SpecialistApplicability;
   let reason: string;
@@ -502,9 +515,36 @@ export async function reconcileSpecialistResult(
     applicability,
     reason,
   };
-  if (applicability !== "still_applicable") record.ember_disposition = applicability;
+  const reEvaluationCompletes = priorEvaluation?.applicability === "requires_re_evaluation"
+    && sameCheckpoint(priorEvaluation.checked_against, checkpoint)
+    && options.re_evaluation
+    && bounded(options.re_evaluation.reason, 8192);
+  if (options.re_evaluation && !reEvaluationCompletes) {
+    throw new Error("re-evaluation must resolve the same changed-context checkpoint previously recorded");
+  }
+  if (reEvaluationCompletes) {
+    record.currentness_evaluation.resolution = {
+      decided_at: record.currentness_evaluation.checked_at,
+      disposition: options.re_evaluation!.disposition,
+      reason: options.re_evaluation!.reason,
+    };
+    record.ember_disposition = options.re_evaluation!.disposition;
+  } else if (applicability === "still_applicable") {
+    record.ember_disposition = options.disposition ?? "unresolved";
+  } else {
+    if (options.disposition === "accepted") {
+      throw new Error("stale, rejected, or changed-context specialist result cannot be accepted");
+    }
+    record.ember_disposition = options.disposition === "rejected" ? "rejected" : applicability;
+  }
   await persistRecord(recordPath, record);
   return structuredClone(record);
+}
+
+function sameCheckpoint(left: SpecialistCurrentnessCheckpoint, right: SpecialistCurrentnessCheckpoint) {
+  return left.objective_revision === right.objective_revision
+    && left.context_revision === right.context_revision
+    && left.objective_status === right.objective_status;
 }
 
 async function persistRecord(path: string, record: SpecialistEpisodeRecord, exclusive = false) {
@@ -561,7 +601,7 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
 
 function validateSpec(spec: SpecialistEpisodeSpec) {
   if (
-    spec.contract_version !== 1
+    spec.contract_version !== 2
     || !bounded(spec.episode_id, 512)
     || !bounded(spec.objective, 32_768)
     || !validDerivationBasis(spec.currentness_basis)
