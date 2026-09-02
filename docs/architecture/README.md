@@ -59,6 +59,9 @@ Current architecture material:
 - [Longitudinal Continuity Harness](longitudinal-continuity-harness.md) explains
   the repository-owned multi-episode scenario format, deterministic and opt-in
   live runners, external-thread controls, and evidence-layer interpretation.
+- [Context Selection Failure Inventory](context-selection-failure-inventory.md)
+  synthesizes issues #66-#70 into current selection failures, memory-modeling gaps,
+  negative evidence, and implementation-neutral requirements for issue #72.
 - [Longitudinal Provenance Evaluation](longitudinal-provenance-evaluation.md)
   records issue #68 evidence for testimony, inference, external claims, direct
   observation, delegated reports, derivation roots, and historical provenance.
