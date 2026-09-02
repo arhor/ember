@@ -32,6 +32,14 @@ The same fixture can be layered onto the opt-in live longitudinal provider runne
 Deterministic projection assertions and empirical model observations remain separate,
 so a model wording failure cannot rewrite canonical currentness evidence.
 
+The baseline, changed-preference, and corrected-fact episodes deliberately share one
+external provider thread. A live provider therefore encounters preference A and fact
+A before Ember later projects preference B and corrected fact B into that same
+provider history. The `reply_excludes` stale markers consequently test empirical
+stale-state resurrection rather than merely confirming that a fresh model invocation
+received a clean projection. The explicit historical reconstruction episode uses a
+fresh provider thread so intentional historical inclusion remains a separate probe.
+
 ## Scenario map
 
 The fixture grows 24 irrelevant same-scope history items before establishing the
@@ -41,14 +49,16 @@ reappear merely because history is long or similar.
 | Episode | Currentness pressure | Deterministic oracle |
 | --- | --- | --- |
 | `baseline-with-unresolved-conflict` | Preference A, fact A, and two contradictory migration reports coexist. | Both reports remain distinct current meanings with distinct source occurrences; neither is silently declared the correction of the other. |
-| `changed-preference` | Preference A is explicitly superseded by preference B. | Ordinary projection selects B, preserves A as historical, and forbids A from governing current cognition. |
-| `corrected-fact` | Fact A is explicitly corrected by fact B. | Ordinary projection selects B, preserves A as historical, and does not resurrect A. |
-| `explicit-history-reconstruction` | Cognition explicitly asks why preference and fact changed. | Explain projection includes both historical and current linked meanings, while the ordinary currentness rule remains unchanged. |
+| `changed-preference` | Preference A is explicitly superseded by preference B while the provider thread still contains A. | Ordinary projection selects B, preserves A as historical, forbids A from governing current cognition, and reuses the baseline provider thread. |
+| `corrected-fact` | Fact A is explicitly corrected by fact B while the same provider thread still contains A. | Ordinary projection selects B, preserves A as historical, does not resurrect A, and continues the reused provider thread. |
+| `explicit-history-reconstruction` | Cognition explicitly asks why preference and fact changed. | Explain projection includes both historical and current linked meanings on a fresh provider thread, while the ordinary currentness rule remains unchanged. |
 
-The scripted provider simply renders selected meaning content. Therefore marker
-presence or absence is a direct diagnostic of the projection it received. Optional
-real-model runs add a second empirical question: even with the correct projection,
-does cognition accidentally revive a stale preference or fact?
+The scripted provider simply renders selected meaning content and truthfully mirrors
+fresh-versus-reused thread IDs. Therefore marker presence or absence is a direct
+diagnostic of the projection it received while thread assertions verify the intended
+stale-history pressure topology. Optional real-model runs add a second empirical
+question: even with the correct projection, does cognition accidentally revive a
+stale preference or fact retained in its external thread history?
 
 ## Findings
 
@@ -115,8 +125,8 @@ state as an unrelated fact.
 
 The fixture leaves four reusable evidence classes:
 
-1. stale preference exclusion after explicit change;
-2. stale fact exclusion after correction;
+1. stale preference exclusion after explicit change despite provider-thread history;
+2. stale fact exclusion after correction despite provider-thread history;
 3. coexistence of contradictory reports without implicit supersession;
 4. deliberate inclusion of superseded history only for explicit reconstruction.
 
