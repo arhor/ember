@@ -58,15 +58,17 @@ existing version-3 specialist episode record:
    complete in the isolated candidate, Ember appends the issue-65 audit and replaces
    the primary episode with one atomic rename. A failure before that rename leaves
    the original episode unchanged. Reintegration also re-reads the original before
-   replacement and aborts if another writer changed it meanwhile.
+   replacement and aborts if it observes that another writer has changed it. This is
+   an optimistic conflict check, not a shared interprocess lock for all specialist
+   record writers.
 9. **Gate later canonical mutation.** Only an `integrated` audit decision carries
    `canonical_mutation.eligibility = eligible_after_ember_decision`. Withheld and
    rejected results are always `not_eligible`.
 
 This keeps issue #62 as the single implementation of specialist objective/context
 currentness while making the larger issue-65 transition crash-consistent. There is
-no interval in which a terminal specialist disposition has been committed to the
-primary episode but the reintegration audit has not.
+no interval in which this reintegration writer has committed a terminal specialist
+disposition to the primary episode without the matching reintegration audit.
 
 ## Current checkpoint
 
