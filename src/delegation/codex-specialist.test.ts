@@ -188,7 +188,7 @@ test("currentness reconciliation should reject an in-flight episode", async () =
     runtime_state: "running",
     report_state: "none",
     ember_disposition: "unresolved",
-    recovery: { effect_state: "no_effect_established", retry_state: "not_applicable", reconciliation_required: null },
+    recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
     known_effects: [],
     possible_effects: [],
     observations: [],
@@ -383,10 +383,79 @@ test("cancellation after a workspace mutation may begin should survive restart a
 
   const reconciled = await reconcileInterruptedSpecialist(fixture.recordPath, {
     effects_absent: false,
+    continued_work_ruled_out: false,
     detail: "Observed partial-effect.txt after restart; the effect must be resolved before retry.",
   });
   assert.equal(reconciled.recovery.effect_state, "effects_known");
   assert.equal(reconciled.recovery.retry_state, "prohibited_pending_reconciliation");
+});
+
+test("effect absence alone should not permit retry while continued specialist work remains unknown", async () => {
+  const fixture = await episodeFixture();
+  const interrupted = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "lost",
+    report_state: "ambiguous",
+    ember_disposition: "unresolved",
+    termination: { reason: "explicit_cancellation", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+    recovery: {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe effects and continued work.",
+    },
+    known_effects: [],
+    possible_effects: ["A detached descendant may still create an effect."],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(interrupted)}\n`);
+
+  const stillBlocked = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: true,
+    continued_work_ruled_out: false,
+    detail: "No effect is visible yet, but descendant termination cannot be established.",
+  });
+
+  assert.equal(stillBlocked.recovery.effect_state, "no_effect_established");
+  assert.equal(stillBlocked.recovery.continued_work_state, "unknown");
+  assert.equal(stillBlocked.recovery.retry_state, "prohibited_pending_reconciliation");
+  assert.equal(stillBlocked.termination?.all_specialist_work_stopped, "unknown");
+  assert.match(stillBlocked.recovery.reconciliation_required ?? "", /continued specialist work/);
+});
+
+test("retry should become safe only after effects and continued work are both reconciled", async () => {
+  const fixture = await episodeFixture();
+  const interrupted = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "lost",
+    report_state: "ambiguous",
+    ember_disposition: "unresolved",
+    termination: { reason: "timeout", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+    recovery: {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe effects and continued work.",
+    },
+    known_effects: [],
+    possible_effects: ["Effects may have occurred."],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(interrupted)}\n`);
+
+  const safe = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: true,
+    continued_work_ruled_out: true,
+    detail: "Workspace and remote targets are unchanged, and no descendant or remote work remains active.",
+  });
+
+  assert.equal(safe.recovery.retry_state, "safe_without_reconciliation");
+  assert.equal(safe.recovery.continued_work_state, "stopped_or_harmless");
+  assert.equal(safe.termination?.all_specialist_work_stopped, "established");
 });
 
 test("unconfirmed direct-child termination should persist unknown stop and effect state", async () => {
@@ -415,7 +484,7 @@ test("process-loss recovery should convert a committed running attempt to durabl
     runtime_state: "running",
     report_state: "none",
     ember_disposition: "unresolved",
-    recovery: { effect_state: "no_effect_established", retry_state: "not_applicable", reconciliation_required: null },
+    recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
     known_effects: [],
     possible_effects: [],
     observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: "child_started" }],
@@ -446,7 +515,7 @@ for (const interrupted of [
       report_state: "none",
       ember_disposition: "unresolved",
       termination: { reason: interrupted.reason, direct_child_exit_observed: false, all_specialist_work_stopped: "unknown" },
-      recovery: { effect_state: "no_effect_established", retry_state: "not_applicable", reconciliation_required: null },
+      recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
       known_effects: [],
       possible_effects: [],
       observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: interrupted.observation }],

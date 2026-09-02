@@ -333,10 +333,15 @@ when the requested work was expected to be harmless. Ember must observe the curr
 workspace plus any reachable remote or descendant targets and establish that
 repetition is safe before a consequential retry. `reconcileInterruptedSpecialist`
 records that additional observation. It permits retry only when the observation
-establishes effect absence; observed effects keep retry prohibited until they are
-resolved or deliberately accounted for. A pre-aborted episode is the narrower
-case: no child is launched, non-effect is established at the boundary, and no
-external-effect reconciliation is required.
+establishes both that relevant effects are absent and that continued specialist
+work capable of producing later effects has stopped or been made harmless. Effect
+absence alone leaves retry prohibited while specialist-wide stop remains unknown;
+observed effects likewise keep retry prohibited until they are resolved or
+deliberately accounted for. Both observations are durable in the recovery state;
+when a termination record exists, the latter also advances
+`all_specialist_work_stopped` from `unknown` to `established`. A pre-aborted episode
+is the narrower case: no child is launched, non-effect is established at the
+boundary, and no external-effect reconciliation is required.
 
 Deterministic process coverage uses only a temporary controlled workspace and
 `test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
