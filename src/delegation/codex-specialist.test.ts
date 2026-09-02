@@ -511,6 +511,11 @@ test("Codex specialist should reject malformed external evidence when report arr
   assert.equal(record.report_state, "ambiguous");
   assert.equal(record.report, undefined);
   assert.match(record.observations.find((item) => item.kind === "boundary_failure")?.detail ?? "", /report is invalid/);
+  assert.deepEqual([record.recovery.effect_state, record.recovery.retry_state], [
+    "effects_possible", "prohibited_pending_reconciliation",
+  ]);
+  assert.match(record.recovery.reconciliation_required ?? "", /Observe the current workspace/);
+  assert.equal((await inspectSpecialistEpisode(fixture.recordPath)).recovery.retry_state, "prohibited_pending_reconciliation");
 });
 
 test("Codex specialist should settle ambiguously when cancellation intent cannot be persisted", async () => {

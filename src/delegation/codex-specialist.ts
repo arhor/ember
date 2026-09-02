@@ -500,6 +500,11 @@ export async function runCodexSpecialist(
     } catch (error) {
       record.report_state = "ambiguous";
       record.possible_effects.push("The specialist process exited successfully but its report could not be validated.");
+      record.recovery = {
+        effect_state: "effects_possible",
+        retry_state: "prohibited_pending_reconciliation",
+        reconciliation_required: "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
+      };
       record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: errorMessage(error) });
     }
   }
