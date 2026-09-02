@@ -21,6 +21,7 @@
     "eval:memory-context": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/memory-context-pressure.json",
     "eval:currentness": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/currentness-pressure.json",
     "eval:provenance": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/provenance-pressure.json",
+    "eval:degraded-context": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/degraded-context-pressure.json",
     "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node scripts/run-longitudinal-scenario.ts --provider codex",
     "eval:continuity:process-restart:live": "EMBER_RUN_LIVE_PROCESS_RESTART=1 node scripts/run-process-restart-scenario.ts"
   },
