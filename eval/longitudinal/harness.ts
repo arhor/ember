@@ -17,6 +17,8 @@ import { StateStore } from "../../src/persistence/state-store.ts";
 
 type ThreadControl = { mode: "fresh" } | { mode: "reuse"; episode: string };
 
+export type MeaningReference = string | { group: string };
+
 type StateAction =
   | { action: "remember_relationship"; as: string; scope: string; text: string; at: string }
   | { action: "remember_fact"; as: string; slot: string; scope: string; text: string; at: string }
@@ -27,11 +29,36 @@ type StateAction =
   | { action: "supersede"; as: string; meaning: string; text: string; reason?: string; at: string }
   | { action: "withhold_detail"; as: string; evidence: string; reason: string; at: string };
 
+interface FactSeriesGenerator {
+  generate: "remember_fact_series";
+  as: string;
+  count: number;
+  slot_prefix: string;
+  scope: string;
+  text_prefix: string;
+  start_at: string;
+  interval_seconds: number;
+}
+
+type HistoryGenerator = FactSeriesGenerator;
+
+interface MeaningExpectations {
+  selected_meanings: MeaningReference[];
+  forbidden_meanings: MeaningReference[];
+  relevant_meanings?: MeaningReference[];
+  irrelevant_meanings?: MeaningReference[];
+  superseded_meanings?: MeaningReference[];
+  unavailable_meanings?: MeaningReference[];
+  reply_includes?: string[];
+  reply_excludes?: string[];
+}
+
 export interface LongitudinalScenario {
   scenario_version: 1;
   id: string;
   description: string;
   ember: { name: string; principal: string; initial_at: string };
+  history?: HistoryGenerator[];
   setup: StateAction[];
   backend_replacement?: {
     status: "same_backend_control" | "cross_provider";
@@ -49,12 +76,7 @@ export interface LongitudinalScenario {
     input: string;
     purpose?: "ordinary" | "explain";
     explain?: string[];
-    expect: {
-      selected_meanings: string[];
-      forbidden_meanings: string[];
-      reply_includes?: string[];
-      reply_excludes?: string[];
-    };
+    expect: MeaningExpectations;
   }>;
 }
 
@@ -87,11 +109,38 @@ interface AssertionObservation {
   observed: unknown;
 }
 
+interface ContextEvaluation {
+  declared: {
+    relevant: string[];
+    irrelevant: string[];
+    superseded: string[];
+    unavailable: string[];
+    forbidden: string[];
+  };
+  selected_meanings: string[];
+  omission_candidates: {
+    relevant_not_selected: string[];
+  };
+  inclusion_candidates: {
+    irrelevant_selected: string[];
+    superseded_selected: string[];
+    forbidden_selected: string[];
+  };
+  degradation_signals: {
+    unavailable_selected: string[];
+    unavailable_with_projection_gap: string[];
+  };
+}
+
 export interface LongitudinalReport {
   report_version: 1;
   scenario_id: string;
   description: string;
   lineage_id: string;
+  history: {
+    generated_action_count: number;
+    groups: Record<string, string[]>;
+  };
   ember_assertions_passed: boolean;
   model_observations_passed: boolean;
   episodes: Array<{
@@ -103,11 +152,22 @@ export interface LongitudinalReport {
     provider_thread_id: string | null;
     canonical_before: ReturnType<typeof inspectionView>;
     projection: Projection;
+    context_evaluation: ContextEvaluation;
     provider_result: ProviderResult;
     canonical_after: ReturnType<typeof inspectionView>;
     ember_assertions: AssertionObservation[];
     model_observations: AssertionObservation[];
   }>;
+}
+
+interface ExpandedHistory {
+  actions: StateAction[];
+  groups: Map<string, string[]>;
+}
+
+interface ResolvedReferences {
+  aliases: string[];
+  ids: string[];
 }
 
 export async function loadLongitudinalScenario(path: string): Promise<LongitudinalScenario> {
@@ -122,8 +182,10 @@ export async function runLongitudinalScenario(
   provider: HarnessProvider,
 ): Promise<LongitudinalReport> {
   validateScenario(scenario);
+  const history = expandHistory(scenario.history ?? []);
   const aliases = new Map<string, string>();
   let state = initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at);
+  applyActions(state, history.actions, scenario.ember.principal, aliases);
   applyActions(state, scenario.setup, scenario.ember.principal, aliases);
   const store = new StateStore(statePath);
   await store.create(state);
@@ -183,9 +245,11 @@ export async function runLongitudinalScenario(
       const backendMetadata = observedBackendMetadata as BackendMetadata;
       const providerThreadId = providerResult.operational?.external_thread_id ?? null;
       if (providerThreadId !== null) episodeThreads.set(episode.id, providerThreadId);
-      const expectedSelected = episode.expect.selected_meanings.map(alias => requireAlias(aliases, alias)).sort();
+      const expectedSelected = resolveReferences(episode.expect.selected_meanings, aliases, history.groups).ids.sort();
       const observedSelected = request.projection.selection.meaning_ids.map(String).sort();
-      const forbiddenIds = episode.expect.forbidden_meanings.map(alias => requireAlias(aliases, alias));
+      const forbidden = resolveReferences(episode.expect.forbidden_meanings, aliases, history.groups);
+      const forbiddenIds = forbidden.ids;
+      const contextEvaluation = evaluateContext(episode.expect, aliases, history.groups, canonicalBefore, request.projection);
       const emberAssertions: AssertionObservation[] = [
         observation("selected meanings", expectedSelected, observedSelected, sameJson(expectedSelected, observedSelected)),
         observation("forbidden meanings absent", [], forbiddenIds.filter(id => observedSelected.includes(id)), forbiddenIds.every(id => !observedSelected.includes(id))),
@@ -193,6 +257,7 @@ export async function runLongitudinalScenario(
         observation("raw transcript excluded", false, request.projection.selection.raw_transcript_included, request.projection.selection.raw_transcript_included === false),
         observation("backend routing is truthful", episode.cognition_backend, backendMetadata.backend, backendMetadata.backend === episode.cognition_backend),
       ];
+      appendClassificationAssertions(emberAssertions, episode.expect, aliases, history.groups, canonicalBefore);
       if (thread.mode === "fresh") {
         emberAssertions.push(
           observation("fresh provider thread observed", "non-null thread id", providerThreadId, providerThreadId !== null),
@@ -218,6 +283,7 @@ export async function runLongitudinalScenario(
         provider_thread_id: providerThreadId,
         canonical_before: canonicalBefore,
         projection: request.projection,
+        context_evaluation: contextEvaluation,
         provider_result: providerResult,
         canonical_after: inspectionView(state),
         ember_assertions: emberAssertions,
@@ -233,10 +299,38 @@ export async function runLongitudinalScenario(
     scenario_id: scenario.id,
     description: scenario.description,
     lineage_id: state.lineage.lineage_id,
+    history: {
+      generated_action_count: history.actions.length,
+      groups: Object.fromEntries(history.groups),
+    },
     ember_assertions_passed: reports.every(report => report.ember_assertions.every(item => item.passed)),
     model_observations_passed: reports.every(report => report.model_observations.every(item => item.passed)),
     episodes: reports,
   };
+}
+
+function expandHistory(generators: HistoryGenerator[]): ExpandedHistory {
+  const actions: StateAction[] = [];
+  const groups = new Map<string, string[]>();
+  for (const generator of generators) {
+    const aliases: string[] = [];
+    const start = Date.parse(generator.start_at);
+    for (let index = 0; index < generator.count; index += 1) {
+      const ordinal = String(index + 1).padStart(4, "0");
+      const alias = `${generator.as}.${ordinal}`;
+      aliases.push(alias);
+      actions.push({
+        action: "remember_fact",
+        as: alias,
+        slot: `${generator.slot_prefix}-${ordinal}`,
+        scope: generator.scope,
+        text: `${generator.text_prefix} ${ordinal}`,
+        at: new Date(start + (index * generator.interval_seconds * 1000)).toISOString(),
+      });
+    }
+    groups.set(generator.as, aliases);
+  }
+  return { actions, groups };
 }
 
 function applyActions(state: EmberState, actions: StateAction[], principal: string, aliases: Map<string, string>) {
@@ -257,6 +351,82 @@ function applyActions(state: EmberState, actions: StateAction[], principal: stri
     aliases.set(item.as, id);
   }
   validateState(state);
+}
+
+function evaluateContext(
+  expectations: MeaningExpectations,
+  aliases: Map<string, string>,
+  groups: Map<string, string[]>,
+  canonicalBefore: ReturnType<typeof inspectionView>,
+  projection: Projection,
+): ContextEvaluation {
+  const relevant = resolveReferences(expectations.relevant_meanings ?? [], aliases, groups);
+  const irrelevant = resolveReferences(expectations.irrelevant_meanings ?? [], aliases, groups);
+  const superseded = resolveReferences(expectations.superseded_meanings ?? [], aliases, groups);
+  const unavailable = resolveReferences(expectations.unavailable_meanings ?? [], aliases, groups);
+  const forbidden = resolveReferences(expectations.forbidden_meanings, aliases, groups);
+  const selectedIds = new Set(projection.selection.meaning_ids.map(String));
+  const projectionGapIds = new Set(projection.gaps.map(item => String(item.meaning_id)));
+  const aliasById = new Map([...aliases].map(([alias, id]) => [id, alias]));
+
+  return {
+    declared: {
+      relevant: relevant.aliases,
+      irrelevant: irrelevant.aliases,
+      superseded: superseded.aliases,
+      unavailable: unavailable.aliases,
+      forbidden: forbidden.aliases,
+    },
+    selected_meanings: projection.selection.meaning_ids.map(id => aliasById.get(String(id)) ?? String(id)),
+    omission_candidates: {
+      relevant_not_selected: filterAliases(relevant, id => !selectedIds.has(id)),
+    },
+    inclusion_candidates: {
+      irrelevant_selected: filterAliases(irrelevant, id => selectedIds.has(id)),
+      superseded_selected: filterAliases(superseded, id => selectedIds.has(id)),
+      forbidden_selected: filterAliases(forbidden, id => selectedIds.has(id)),
+    },
+    degradation_signals: {
+      unavailable_selected: filterAliases(unavailable, id => selectedIds.has(id)),
+      unavailable_with_projection_gap: filterAliases(unavailable, id => projectionGapIds.has(id)),
+    },
+  };
+}
+
+function appendClassificationAssertions(
+  assertions: AssertionObservation[],
+  expectations: MeaningExpectations,
+  aliases: Map<string, string>,
+  groups: Map<string, string[]>,
+  canonicalBefore: ReturnType<typeof inspectionView>,
+) {
+  if (expectations.superseded_meanings) {
+    const declared = resolveReferences(expectations.superseded_meanings, aliases, groups);
+    const supersededIds = new Set(canonicalBefore.historical_meanings.filter(item => item.currentness === "superseded").map(item => String(item.meaning_id)));
+    const observed = filterAliases(declared, id => supersededIds.has(id));
+    assertions.push(observation("declared superseded meanings are superseded", declared.aliases, observed, sameJson(declared.aliases, observed)));
+  }
+  if (expectations.unavailable_meanings) {
+    const declared = resolveReferences(expectations.unavailable_meanings, aliases, groups);
+    const unavailableIds = new Set(canonicalBefore.gaps.map(item => String(item.meaning_id)));
+    const observed = filterAliases(declared, id => unavailableIds.has(id));
+    assertions.push(observation("declared unavailable meanings have unavailable evidence", declared.aliases, observed, sameJson(declared.aliases, observed)));
+  }
+}
+
+function filterAliases(references: ResolvedReferences, include: (id: string) => boolean) {
+  return references.aliases.filter((_, index) => include(references.ids[index]!));
+}
+
+function resolveReferences(references: MeaningReference[], aliases: Map<string, string>, groups: Map<string, string[]>): ResolvedReferences {
+  const expanded = references.flatMap(reference => {
+    if (typeof reference === "string") return [reference];
+    const members = groups.get(reference.group);
+    if (!members) throw new Error(`unknown scenario meaning group: ${reference.group}`);
+    return members;
+  });
+  const uniqueAliases = [...new Set(expanded)];
+  return { aliases: uniqueAliases, ids: uniqueAliases.map(alias => requireAlias(aliases, alias)) };
 }
 
 function resolveThread(control: ThreadControl, threads: Map<string, string>): HarnessProviderInvocation["thread"] {
@@ -342,7 +512,12 @@ function validateScenario(value: unknown): asserts value is LongitudinalScenario
   if (scenario.scenario_version !== 1 || typeof scenario.id !== "string" || !scenario.id.trim() || typeof scenario.description !== "string") throw new Error("longitudinal scenario header is invalid");
   if (!scenario.ember || typeof scenario.ember.name !== "string" || typeof scenario.ember.principal !== "string" || typeof scenario.ember.initial_at !== "string") throw new Error("longitudinal scenario Ember identity is invalid");
   if (!Array.isArray(scenario.setup) || !Array.isArray(scenario.episodes) || scenario.episodes.length < 2) throw new Error("longitudinal scenario requires setup and at least two episodes");
+  if (scenario.history !== undefined && !Array.isArray(scenario.history)) throw new Error("longitudinal scenario history must be an array");
   const aliases = new Set<string>();
+  const historyGroups = new Set<string>();
+  for (const generator of scenario.history ?? []) {
+    validateHistoryGenerator(generator, aliases, historyGroups);
+  }
   const episodeIds = new Set<string>();
   for (const action of [...scenario.setup, ...scenario.episodes.flatMap(episode => episode.changes ?? [])]) {
     if (!action || typeof action !== "object" || typeof action.action !== "string" || typeof action.as !== "string" || typeof action.at !== "string") throw new Error("longitudinal scenario action is invalid");
@@ -355,6 +530,12 @@ function validateScenario(value: unknown): asserts value is LongitudinalScenario
     if (!episode.external_thread || !["fresh", "reuse"].includes(episode.external_thread.mode)) throw new Error(`episode ${episode.id} thread control is invalid`);
     if (episode.external_thread.mode === "reuse" && !episodeIds.has(episode.external_thread.episode)) throw new Error(`episode ${episode.id} must reuse an earlier episode`);
     if (!episode.expect || !Array.isArray(episode.expect.selected_meanings) || !Array.isArray(episode.expect.forbidden_meanings)) throw new Error(`episode ${episode.id} expectations are invalid`);
+    for (const field of ["selected_meanings", "forbidden_meanings", "relevant_meanings", "irrelevant_meanings", "superseded_meanings", "unavailable_meanings"] as const) {
+      const references = episode.expect[field];
+      if (references === undefined) continue;
+      if (!Array.isArray(references)) throw new Error(`episode ${episode.id} ${field} must be an array`);
+      for (const reference of references) validateMeaningReference(reference, historyGroups, episode.id, field);
+    }
   }
   if (scenario.backend_replacement) {
     const comparison = scenario.backend_replacement;
@@ -369,4 +550,31 @@ function validateScenario(value: unknown): asserts value is LongitudinalScenario
     if (comparison.status === "same_backend_control" && control.cognition_backend !== replacement.cognition_backend) throw new Error("same-backend control must use one cognition backend");
     if (comparison.status === "cross_provider" && control.cognition_backend === replacement.cognition_backend) throw new Error("cross-provider comparison must use different cognition backends");
   }
+}
+
+function validateHistoryGenerator(value: unknown, aliases: Set<string>, groups: Set<string>) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("longitudinal history generator is invalid");
+  const generator = value as Partial<HistoryGenerator>;
+  if (generator.generate !== "remember_fact_series" || typeof generator.as !== "string" || !generator.as.trim()) throw new Error("longitudinal history generator header is invalid");
+  if (groups.has(generator.as)) throw new Error(`duplicate longitudinal history group: ${generator.as}`);
+  if (!Number.isInteger(generator.count) || generator.count! < 1 || generator.count! > 5_000) throw new Error("longitudinal history generator count must be an integer from 1 to 5000");
+  if (![generator.slot_prefix, generator.scope, generator.text_prefix, generator.start_at].every(item => typeof item === "string" && item.trim())) throw new Error("longitudinal history generator text fields must be non-empty");
+  if (!Number.isInteger(generator.interval_seconds) || generator.interval_seconds! < 1) throw new Error("longitudinal history generator interval_seconds must be a positive integer");
+  if (!Number.isFinite(Date.parse(generator.start_at!))) throw new Error("longitudinal history generator start_at must be a valid timestamp");
+  groups.add(generator.as);
+  for (let index = 0; index < generator.count!; index += 1) {
+    const alias = `${generator.as}.${String(index + 1).padStart(4, "0")}`;
+    if (aliases.has(alias)) throw new Error(`duplicate scenario alias: ${alias}`);
+    aliases.add(alias);
+  }
+}
+
+function validateMeaningReference(reference: unknown, groups: Set<string>, episodeId: string, field: string) {
+  if (typeof reference === "string" && reference.trim()) return;
+  if (reference && typeof reference === "object" && !Array.isArray(reference)) {
+    const keys = Object.keys(reference);
+    const group = (reference as { group?: unknown }).group;
+    if (keys.length === 1 && typeof group === "string" && group.trim() && groups.has(group)) return;
+  }
+  throw new Error(`episode ${episodeId} ${field} contains an invalid meaning reference`);
 }
