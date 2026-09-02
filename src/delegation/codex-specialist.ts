@@ -124,7 +124,7 @@ export interface SpecialistTermination {
 
 export interface SpecialistRecoveryState {
   effect_state: SpecialistEffectState;
-  continued_work_state: "not_applicable" | "unknown" | "stopped_or_harmless";
+  continued_work_state: "not_applicable" | "unknown" | "stopped" | "made_harmless";
   retry_state: SpecialistRetryState;
   reconciliation_required: string | null;
 }
@@ -539,6 +539,9 @@ export async function recordSpecialistProcessLoss(
   if (!["running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
     throw new Error("specialist process loss can be recorded only for a nonterminal attempt");
   }
+  if (!record.observations.some((item) => item.kind === "launch_attempted")) {
+    throw new Error("specialist process loss cannot be recorded before launch was attempted");
+  }
   const observedAt = (options.now ?? (() => new Date().toISOString()))();
   const priorRuntimeState = record.runtime_state;
   record.runtime_state = "lost";
@@ -563,11 +566,11 @@ export async function recordSpecialistProcessLoss(
 
 export async function reconcileInterruptedSpecialist(
   recordPath: string,
-  observation: { effects_absent: boolean; continued_work_ruled_out: boolean; detail: string },
+  observation: { effects_absent: boolean; continued_work: "unknown" | "stopped" | "made_harmless"; detail: string },
   options: { now?: () => string } = {},
 ): Promise<SpecialistEpisodeRecord> {
   if (typeof observation.effects_absent !== "boolean"
-    || typeof observation.continued_work_ruled_out !== "boolean"
+    || !["unknown", "stopped", "made_harmless"].includes(observation.continued_work)
     || !bounded(observation.detail, 32_768)) throw new Error("specialist recovery observation is invalid");
   const record = await inspectSpecialistEpisode(recordPath);
   if (record.recovery.retry_state !== "prohibited_pending_reconciliation") {
@@ -578,14 +581,15 @@ export async function reconcileInterruptedSpecialist(
     kind: "recovery_reconciled",
     detail: observation.detail,
   });
-  if (observation.continued_work_ruled_out && record.termination) {
+  if (observation.continued_work === "stopped" && record.termination) {
     record.termination.all_specialist_work_stopped = "established";
   }
-  if (observation.continued_work_ruled_out) record.recovery.continued_work_state = "stopped_or_harmless";
-  if (observation.effects_absent && observation.continued_work_ruled_out) {
+  record.recovery.continued_work_state = observation.continued_work;
+  const continuedEffectsRuledOut = observation.continued_work !== "unknown";
+  if (observation.effects_absent && continuedEffectsRuledOut) {
     record.recovery = {
       effect_state: "no_effect_established",
-      continued_work_state: "stopped_or_harmless",
+      continued_work_state: observation.continued_work,
       retry_state: "safe_without_reconciliation",
       reconciliation_required: null,
     };
@@ -594,7 +598,7 @@ export async function reconcileInterruptedSpecialist(
     record.recovery.reconciliation_required = "Establish that continued specialist work capable of producing further effects has stopped or been made harmless before consequential retry.";
   } else {
     record.recovery.effect_state = "effects_known";
-    record.recovery.reconciliation_required = observation.continued_work_ruled_out
+    record.recovery.reconciliation_required = continuedEffectsRuledOut
       ? "Resolve or account for the observed effects before consequential retry."
       : "Resolve or account for observed effects and establish that continued specialist work has stopped or been made harmless before consequential retry.";
   }
@@ -695,7 +699,7 @@ function validatePersistedRecord(record: SpecialistEpisodeRecord) {
   validateSpec(record.specification);
   if (!recordLike(record.recovery)
     || !["no_effect_established", "effects_possible", "effects_known"].includes(record.recovery.effect_state)
-    || !["not_applicable", "unknown", "stopped_or_harmless"].includes(record.recovery.continued_work_state)
+    || !["not_applicable", "unknown", "stopped", "made_harmless"].includes(record.recovery.continued_work_state)
     || !["not_applicable", "safe_without_reconciliation", "prohibited_pending_reconciliation"].includes(record.recovery.retry_state)
     || !(record.recovery.reconciliation_required === null || typeof record.recovery.reconciliation_required === "string")) {
     throw new Error("specialist episode recovery state is invalid");

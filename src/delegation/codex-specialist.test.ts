@@ -314,6 +314,14 @@ test("cancellation before specialist launch should not spawn or imply effects", 
     "cancellation_requested", "no_effect_established", "safe_without_reconciliation",
   ]);
   assert.equal(record.observations.some((item) => item.kind === "launch_attempted"), false);
+  const restartedInspection = await inspectSpecialistEpisode(fixture.recordPath);
+  await assert.rejects(
+    recordSpecialistProcessLoss(fixture.recordPath, "Ember restarted"),
+    /before launch was attempted/,
+  );
+  assert.deepEqual([restartedInspection.runtime_state, restartedInspection.recovery.effect_state, restartedInspection.recovery.retry_state], [
+    "cancellation_requested", "no_effect_established", "safe_without_reconciliation",
+  ]);
 });
 
 test("timeout should remain distinct from explicit cancellation", async () => {
@@ -383,7 +391,7 @@ test("cancellation after a workspace mutation may begin should survive restart a
 
   const reconciled = await reconcileInterruptedSpecialist(fixture.recordPath, {
     effects_absent: false,
-    continued_work_ruled_out: false,
+    continued_work: "unknown",
     detail: "Observed partial-effect.txt after restart; the effect must be resolved before retry.",
   });
   assert.equal(reconciled.recovery.effect_state, "effects_known");
@@ -414,7 +422,7 @@ test("effect absence alone should not permit retry while continued specialist wo
 
   const stillBlocked = await reconcileInterruptedSpecialist(fixture.recordPath, {
     effects_absent: true,
-    continued_work_ruled_out: false,
+    continued_work: "unknown",
     detail: "No effect is visible yet, but descendant termination cannot be established.",
   });
 
@@ -449,13 +457,46 @@ test("retry should become safe only after effects and continued work are both re
 
   const safe = await reconcileInterruptedSpecialist(fixture.recordPath, {
     effects_absent: true,
-    continued_work_ruled_out: true,
+    continued_work: "stopped",
     detail: "Workspace and remote targets are unchanged, and no descendant or remote work remains active.",
   });
 
   assert.equal(safe.recovery.retry_state, "safe_without_reconciliation");
-  assert.equal(safe.recovery.continued_work_state, "stopped_or_harmless");
+  assert.equal(safe.recovery.continued_work_state, "stopped");
   assert.equal(safe.termination?.all_specialist_work_stopped, "established");
+});
+
+test("making continued work harmless should permit retry without claiming it stopped", async () => {
+  const fixture = await episodeFixture();
+  const interrupted = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "lost",
+    report_state: "ambiguous",
+    ember_disposition: "unresolved",
+    termination: { reason: "explicit_cancellation", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+    recovery: {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe effects and continued work.",
+    },
+    known_effects: [],
+    possible_effects: ["A detached descendant may still be running."],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(interrupted)}\n`);
+
+  const safe = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: true,
+    continued_work: "made_harmless",
+    detail: "No effect exists and the surviving descendant's write capability has been revoked.",
+  });
+
+  assert.equal(safe.recovery.retry_state, "safe_without_reconciliation");
+  assert.equal(safe.recovery.continued_work_state, "made_harmless");
+  assert.equal(safe.termination?.all_specialist_work_stopped, "unknown");
 });
 
 test("unconfirmed direct-child termination should persist unknown stop and effect state", async () => {
@@ -487,7 +528,10 @@ test("process-loss recovery should convert a committed running attempt to durabl
     recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
     known_effects: [],
     possible_effects: [],
-    observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: "child_started" }],
+    observations: [
+      { observed_at: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
+      { observed_at: "2026-09-02T10:00:00.000Z", kind: "child_started" },
+    ],
   };
   await mkdir(join(fixture.root, "episodes"));
   await writeFile(fixture.recordPath, `${JSON.stringify(running)}\n`);
@@ -518,7 +562,10 @@ for (const interrupted of [
       recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
       known_effects: [],
       possible_effects: [],
-      observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: interrupted.observation }],
+      observations: [
+        { observed_at: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
+        { observed_at: "2026-09-02T10:00:00.000Z", kind: interrupted.observation },
+      ],
     };
     await mkdir(join(fixture.root, "episodes"));
     await writeFile(fixture.recordPath, `${JSON.stringify(record)}\n`);

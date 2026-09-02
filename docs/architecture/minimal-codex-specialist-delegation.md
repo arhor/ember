@@ -337,11 +337,14 @@ establishes both that relevant effects are absent and that continued specialist
 work capable of producing later effects has stopped or been made harmless. Effect
 absence alone leaves retry prohibited while specialist-wide stop remains unknown;
 observed effects likewise keep retry prohibited until they are resolved or
-deliberately accounted for. Both observations are durable in the recovery state;
-when a termination record exists, the latter also advances
-`all_specialist_work_stopped` from `unknown` to `established`. A pre-aborted episode
-is the narrower case: no child is launched, non-effect is established at the
-boundary, and no external-effect reconciliation is required.
+deliberately accounted for. Both observations are durable in the recovery state,
+which distinguishes continued work that is `stopped` from work that was
+`made_harmless`. Only independently established specialist-wide stop advances
+`all_specialist_work_stopped` from `unknown` to `established`; removing a surviving
+descendant's ability to cause relevant effects can make repetition safe without
+claiming that descendant stopped. A pre-aborted episode is the narrower case: no
+launch was attempted, non-effect is established at the boundary, and process-loss
+recovery cannot later convert it into an in-flight ambiguity.
 
 Deterministic process coverage uses only a temporary controlled workspace and
 `test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
