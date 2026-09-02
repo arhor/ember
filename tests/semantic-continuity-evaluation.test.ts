@@ -5,9 +5,9 @@ import {
   loadLongitudinalScenario,
   runLongitudinalScenario,
   type HarnessProvider,
-} from "./harness.ts";
-import type { ProjectedMeaning } from "../../src/core/projection.ts";
-import { ROOT, tempDir } from "../../tests/support.ts";
+} from "../eval/longitudinal/harness.ts";
+import type { ProjectedMeaning } from "../src/core/projection.ts";
+import { ROOT, tempDir } from "./support.ts";
 
 const SUPERSESSION_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "semantic-supersession-gap.json");
 const PROVENANCE_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "semantic-provenance-restraint.json");

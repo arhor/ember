@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { buildCodexArguments } from "../../src/providers/codex.ts";
-import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
-import type { ProviderResult } from "../../src/providers/contract.ts";
-import { ROOT, tempDir } from "../../tests/support.ts";
+import { buildCodexArguments } from "../src/providers/codex.ts";
+import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
+import type { ProviderResult } from "../src/providers/contract.ts";
+import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "restart-thread-continuity.json");
 const REPLACEMENT_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-control.json");

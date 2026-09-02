@@ -41,7 +41,7 @@ If no `read_when` hint obviously matches, inspect nearby summaries, then selecte
 When adding or materially changing a participating `docs/**/*.md` document, update its discovery metadata as part of the same change and run:
 
 ```bash
-node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+npm run test:docs
 node scripts/docs-discovery.mjs check
 ```
 

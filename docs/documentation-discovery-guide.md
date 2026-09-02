@@ -191,7 +191,7 @@ Do not copy identical hints across a directory merely to satisfy validation. A d
 Run:
 
 ```bash
-node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs
+npm run test:docs
 node scripts/docs-discovery.mjs check
 ```
 
