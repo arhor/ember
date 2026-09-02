@@ -156,17 +156,17 @@ test("provenance derivation should not cross evidence scopes or partially mutate
 test("canonical validation should reject cross-scope provenance edges", () => {
     // Given
     const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
-    const root = rememberDelegatedReport(state, "user-1", "codex-a", "root", "project:ember/provenance", "Root", []);
-    const rootEvidenceId = findMeaning(state, root).source_evidence_ids[0]!;
-    const child = rememberDelegatedReport(state, "user-1", "codex-b", "child", "project:ember/provenance", "Child", [rootEvidenceId]);
-    const rootEvidence = findEvidence(state, rootEvidenceId);
+    const privateRoot = rememberDelegatedReport(state, "user-1", "codex-private", "private-root", "project:private", "Private root", []);
+    const privateEvidenceId = findMeaning(state, privateRoot).source_evidence_ids[0]!;
+    const publicChild = rememberDelegatedReport(state, "user-1", "codex-public", "public-child", "project:public", "Public child", []);
+    const publicEvidenceId = findMeaning(state, publicChild).source_evidence_ids[0]!;
+    const publicEvidence = findEvidence(state, publicEvidenceId);
 
     // When
-    rootEvidence.scope = "project:private";
+    (publicEvidence.derived_from_evidence_ids as EvidenceId[]).push(privateEvidenceId);
 
     // Then
-    assert.throws(() => validateState(state), /derivation crosses evidence scope|source evidence scope mismatch/);
-    assert.ok(findMeaning(state, child));
+    assert.throws(() => validateState(state), /derivation crosses evidence scope/);
 });
 
 function meaningWith(meanings: ProjectedMeaning[], marker: string): ProjectedMeaning {
