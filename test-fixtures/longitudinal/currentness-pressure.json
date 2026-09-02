@@ -1,0 +1,312 @@
+{
+  "scenario_version": 1,
+  "id": "issue-67-currentness-pressure",
+  "description": "Exercise changed preferences, corrected facts, unresolved contradictory reports, and explicit historical reconstruction under longitudinal pressure.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "initial_at": "2026-09-02T08:00:00Z"
+  },
+  "history": [
+    {
+      "generate": "remember_fact_series",
+      "as": "ambient_currentness_history",
+      "count": 24,
+      "slot_prefix": "ambient-currentness",
+      "scope": "project:ember/currentness",
+      "text_prefix": "Synthetic currentness pressure history item",
+      "start_at": "2026-09-02T08:01:00Z",
+      "interval_seconds": 30
+    }
+  ],
+  "setup": [
+    {
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing collaborators",
+      "at": "2026-09-02T08:20:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "preference_old",
+      "slot": "change-report-style",
+      "scope": "project:ember/currentness",
+      "text": "CURRENTNESS_PREF_OLD: Prefer terse change reports",
+      "at": "2026-09-02T08:21:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "fact_old",
+      "slot": "release-train-day",
+      "scope": "project:ember/currentness",
+      "text": "CURRENTNESS_FACT_OLD: The release train is Friday",
+      "at": "2026-09-02T08:22:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "conflict_report_a",
+      "slot": "migration-status-report-a",
+      "scope": "project:ember/currentness",
+      "text": "CONFLICT_REPORT_A: The migration completed successfully",
+      "at": "2026-09-02T08:23:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "conflict_report_b",
+      "slot": "migration-status-report-b",
+      "scope": "project:ember/currentness",
+      "text": "CONFLICT_REPORT_B: The migration did not complete successfully",
+      "at": "2026-09-02T08:24:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "private_forbidden",
+      "slot": "currentness-private-marker",
+      "scope": "project:private",
+      "text": "FORBIDDEN_CURRENTNESS_MARKER_67",
+      "at": "2026-09-02T08:25:00Z"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "baseline-with-unresolved-conflict",
+      "at": "2026-09-02T09:00:00Z",
+      "scope": "project:ember/currentness",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": {
+        "mode": "fresh"
+      },
+      "input": "State the exact current preference and fact marker tokens, then repeat both migration report marker tokens without resolving their contradiction.",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "preference_old",
+          "fact_old",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "selected_meaning_groups": [
+          "ambient_currentness_history"
+        ],
+        "relevant_meanings": [
+          "preference_old",
+          "fact_old",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_currentness_history"
+          }
+        ],
+        "superseded_meanings": [],
+        "unavailable_meanings": [],
+        "forbidden_meanings": [
+          "private_forbidden"
+        ],
+        "reply_includes": [
+          "CURRENTNESS_PREF_OLD",
+          "CURRENTNESS_FACT_OLD",
+          "CONFLICT_REPORT_A",
+          "CONFLICT_REPORT_B"
+        ],
+        "reply_excludes": [
+          "FORBIDDEN_CURRENTNESS_MARKER_67"
+        ]
+      }
+    },
+    {
+      "id": "changed-preference",
+      "at": "2026-09-03T09:00:00Z",
+      "scope": "project:ember/currentness",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": {
+        "mode": "reuse",
+        "episode": "baseline-with-unresolved-conflict"
+      },
+      "changes": [
+        {
+          "action": "supersede",
+          "as": "preference_new",
+          "meaning": "preference_old",
+          "text": "CURRENTNESS_PREF_NEW: Prefer detailed change reports",
+          "reason": "The user explicitly changed the reporting preference",
+          "at": "2026-09-03T08:55:00Z"
+        }
+      ],
+      "input": "State the exact current preference marker token and both unresolved migration report marker tokens. Do not resurrect the old preference.",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "preference_new",
+          "fact_old",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "selected_meaning_groups": [
+          "ambient_currentness_history"
+        ],
+        "relevant_meanings": [
+          "preference_new",
+          "fact_old",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_currentness_history"
+          }
+        ],
+        "superseded_meanings": [
+          "preference_old"
+        ],
+        "unavailable_meanings": [],
+        "forbidden_meanings": [
+          "preference_old",
+          "private_forbidden"
+        ],
+        "reply_includes": [
+          "CURRENTNESS_PREF_NEW",
+          "CURRENTNESS_FACT_OLD",
+          "CONFLICT_REPORT_A",
+          "CONFLICT_REPORT_B"
+        ],
+        "reply_excludes": [
+          "CURRENTNESS_PREF_OLD",
+          "FORBIDDEN_CURRENTNESS_MARKER_67"
+        ]
+      }
+    },
+    {
+      "id": "corrected-fact",
+      "at": "2026-09-04T09:00:00Z",
+      "scope": "project:ember/currentness",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": {
+        "mode": "reuse",
+        "episode": "changed-preference"
+      },
+      "changes": [
+        {
+          "action": "supersede",
+          "as": "fact_new",
+          "meaning": "fact_old",
+          "text": "CURRENTNESS_FACT_NEW: The release train is Thursday",
+          "reason": "The earlier schedule was corrected",
+          "at": "2026-09-04T08:55:00Z"
+        }
+      ],
+      "input": "State the exact current preference and release-train fact marker tokens and repeat both unresolved migration report markers. Do not use stale values.",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "preference_new",
+          "fact_new",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "selected_meaning_groups": [
+          "ambient_currentness_history"
+        ],
+        "relevant_meanings": [
+          "preference_new",
+          "fact_new",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_currentness_history"
+          }
+        ],
+        "superseded_meanings": [
+          "preference_old",
+          "fact_old"
+        ],
+        "unavailable_meanings": [],
+        "forbidden_meanings": [
+          "preference_old",
+          "fact_old",
+          "private_forbidden"
+        ],
+        "reply_includes": [
+          "CURRENTNESS_PREF_NEW",
+          "CURRENTNESS_FACT_NEW",
+          "CONFLICT_REPORT_A",
+          "CONFLICT_REPORT_B"
+        ],
+        "reply_excludes": [
+          "CURRENTNESS_PREF_OLD",
+          "CURRENTNESS_FACT_OLD",
+          "FORBIDDEN_CURRENTNESS_MARKER_67"
+        ]
+      }
+    },
+    {
+      "id": "explicit-history-reconstruction",
+      "at": "2026-09-05T09:00:00Z",
+      "scope": "project:ember/currentness",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": {
+        "mode": "fresh"
+      },
+      "input": "Explain the preference and release-train corrections by naming both old and new marker tokens, while keeping both migration reports unresolved.",
+      "purpose": "explain",
+      "explain": [
+        "preference_old",
+        "fact_old"
+      ],
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "preference_old",
+          "preference_new",
+          "fact_old",
+          "fact_new",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "selected_meaning_groups": [
+          "ambient_currentness_history"
+        ],
+        "relevant_meanings": [
+          "preference_old",
+          "preference_new",
+          "fact_old",
+          "fact_new",
+          "conflict_report_a",
+          "conflict_report_b"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_currentness_history"
+          }
+        ],
+        "superseded_meanings": [
+          "preference_old",
+          "fact_old"
+        ],
+        "unavailable_meanings": [],
+        "forbidden_meanings": [
+          "private_forbidden"
+        ],
+        "reply_includes": [
+          "CURRENTNESS_PREF_OLD",
+          "CURRENTNESS_PREF_NEW",
+          "CURRENTNESS_FACT_OLD",
+          "CURRENTNESS_FACT_NEW",
+          "CONFLICT_REPORT_A",
+          "CONFLICT_REPORT_B"
+        ],
+        "reply_excludes": [
+          "FORBIDDEN_CURRENTNESS_MARKER_67"
+        ]
+      }
+    }
+  ]
+}
