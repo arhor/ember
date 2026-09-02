@@ -15,9 +15,15 @@ import {
 import { tempDir } from "../../tests/support.ts";
 
 const CURRENT_CHECKPOINT = {
+  ember_revision: 65,
   objective_revision: "objective-1",
   context_revision: "context-1",
   objective_status: "current" as const,
+  authority: {
+    status: "current" as const,
+    provenance: "current user authority observed in Ember revision 65",
+    reason: "The original bounded grant still applies to reliance on this result.",
+  },
 };
 
 function specialistReport(overrides: Partial<SpecialistReport> = {}): SpecialistReport {
@@ -141,12 +147,13 @@ test("current specialist success should require and persist an Ember-owned reint
   assert.equal(pending.latest_decision?.outcome, "withheld");
   assert.equal(pending.latest_decision?.resulting_disposition, "unresolved");
   assert.equal(pending.latest_decision?.canonical_mutation.eligibility, "not_eligible");
+  assert.equal(pending.latest_decision?.checkpoint.ember_revision, 65);
   assert.deepEqual(pending.latest_decision?.report_provenance, fixture.record.report_provenance);
 
   const accepted = await reintegrateSpecialistResult(fixture.recordPath, CURRENT_CHECKPOINT, {
     decision: {
       disposition: "accepted",
-      reason: "Ember evaluated the current objective, attributed report, and known workspace effect as sufficient.",
+      reason: "Ember evaluated the current objective, attributed report, authority, and known workspace effect as sufficient.",
     },
     now: () => "2026-09-02T15:01:00.000Z",
   });
@@ -162,6 +169,8 @@ test("late successful specialist result should be withheld as stale against curr
   const fixture = await recordFixture();
 
   const inspection = await reintegrateSpecialistResult(fixture.recordPath, {
+    ...CURRENT_CHECKPOINT,
+    ember_revision: 66,
     objective_revision: "objective-2",
     context_revision: "context-2",
     objective_status: "superseded",
@@ -176,6 +185,31 @@ test("late successful specialist result should be withheld as stale against curr
   assert.equal(inspection.record.ember_disposition, "stale");
   assert.match(inspection.latest_decision?.reason ?? "", /historical specialist success/);
   assert.deepEqual(inspection.latest_decision?.report_provenance, fixture.record.report_provenance);
+});
+
+test("revoked current authority should withhold otherwise-current specialist success", async () => {
+  const fixture = await recordFixture();
+
+  const withheld = await reintegrateSpecialistResult(fixture.recordPath, {
+    ...CURRENT_CHECKPOINT,
+    ember_revision: 67,
+    authority: {
+      status: "revoked",
+      provenance: "user revocation observed in Ember revision 67",
+      reason: "The user revoked the grant before reintegration.",
+    },
+  }, {
+    decision: {
+      disposition: "accepted",
+      reason: "The specialist output itself looks correct.",
+    },
+  });
+
+  assert.equal(withheld.latest_decision?.outcome, "withheld");
+  assert.equal(withheld.record.ember_disposition, "unresolved");
+  assert.equal(withheld.latest_decision?.canonical_mutation.eligibility, "not_eligible");
+  assert.equal(withheld.latest_decision?.checkpoint.authority.status, "revoked");
+  assert.match(withheld.latest_decision?.reason ?? "", /revoked/);
 });
 
 test("partial specialist result should not establish completion but may be integrated as qualified evidence", async () => {
@@ -247,6 +281,24 @@ test("ambiguous-effect success should remain withheld until effects are independ
   assert.equal(accepted.record.ember_disposition, "accepted");
 });
 
+test("explicit rejection should not pretend ambiguous specialist effects are absent", async () => {
+  const fixture = await recordFixture({
+    report: specialistReport({ possible_effects: ["A remote effect may have started."] }),
+  });
+
+  const rejected = await reintegrateSpecialistResult(fixture.recordPath, CURRENT_CHECKPOINT, {
+    decision: {
+      disposition: "rejected",
+      reason: "Ember rejects the report as a basis for current objective completion.",
+    },
+  });
+
+  assert.equal(rejected.latest_decision?.outcome, "rejected");
+  assert.equal(rejected.record.ember_disposition, "rejected");
+  assert.equal(rejected.record.recovery.effect_state, "effects_possible");
+  assert.equal(rejected.latest_decision?.canonical_mutation.eligibility, "not_eligible");
+});
+
 test("specialist attempts derived from the same evidence should remain one correlated source group", async () => {
   const primary = await recordFixture({ episodeId: "episode-65-a" });
   const repeated = await recordFixture({ episodeId: "episode-65-b" });
@@ -268,9 +320,9 @@ test("specialist attempts derived from the same evidence should remain one corre
 test("changed relevant context should remain withheld until Ember records a current-context re-evaluation", async () => {
   const fixture = await recordFixture();
   const changedCheckpoint = {
-    objective_revision: "objective-1",
+    ...CURRENT_CHECKPOINT,
+    ember_revision: 68,
     context_revision: "context-2",
-    objective_status: "current" as const,
   };
 
   const withheld = await reintegrateSpecialistResult(fixture.recordPath, changedCheckpoint, {
