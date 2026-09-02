@@ -311,18 +311,54 @@ forbidden, preventing acceptance based on an older stored checkpoint.
 The original report, `reported_success` state, and specialist provenance remain intact
 when the current disposition becomes stale, requires re-evaluation, or rejected:
 they establish historical evidence for the old premise, never current objective
-completion. The specialist episode specification and record use schema version 2
-because the structured derivation basis is intentionally incompatible with the
-free-form version-1 basis.
+completion. The specialist episode specification uses schema version 2 because the
+structured derivation basis is intentionally incompatible with the free-form
+version-1 basis. Issue #63 advances the record to version 3 to add durable
+termination and recovery dimensions without changing the specialist report
+contract.
+
+The version-3 record keeps explicit cancellation and timeout as different
+observations. When termination begins it separately records the initiating reason,
+whether the direct child's exit was observed, and that the stop state of remote or
+descendant work remains unknown. Direct-child exit is therefore never presented as
+specialist-wide stop acknowledgement or rollback evidence. `inspectSpecialistEpisode`
+loads and validates this inspection surface after restart. When restart establishes
+that a previously committed `launch_attempted`, `running`,
+`cancellation_requested`, or `timed_out` attempt lost its supervisor,
+`recordSpecialistProcessLoss` converts it to durable `lost`/`ambiguous` state
+without inventing a child exit. This includes the crash window where spawn may have
+succeeded before `child_started` reached disk; only pre-launch cancellation, which
+has no `launch_attempted` evidence, remains safely outside process-loss recovery.
+
+Effect and retry recovery are likewise explicit. An attempt interrupted after
+launch records `effects_possible` and `prohibited_pending_reconciliation`, even
+when the requested work was expected to be harmless. Ember must observe the current
+workspace plus any reachable remote or descendant targets and establish that
+repetition is safe before a consequential retry. `reconcileInterruptedSpecialist`
+records that additional observation. It permits retry only when the observation
+establishes both that relevant effects are absent and that continued specialist
+work capable of producing later effects has stopped or been made harmless. Effect
+absence alone leaves retry prohibited while specialist-wide stop remains unknown;
+observed effects likewise keep retry prohibited until they are resolved or
+deliberately accounted for. Both observations are durable in the recovery state,
+which distinguishes continued work that is `stopped` from work that was
+`made_harmless`. Only independently established specialist-wide stop advances
+`all_specialist_work_stopped` from `unknown` to `established`; removing a surviving
+descendant's ability to cause relevant effects can make repetition safe without
+claiming that descendant stopped. A pre-aborted episode is the narrower case: no
+launch was attempted, non-effect is established at the boundary, and process-loss
+recovery cannot later convert it into an in-flight ambiguity.
 
 Deterministic process coverage uses only a temporary controlled workspace and
 `test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
 process can perform the bounded file change, while the durable record retains the
 Codex report as attributed evidence rather than accepting it automatically. Fake
 process coverage checks explicit cwd, prompt disclosure, environment filtering,
-workspace sandbox selection, cancellation uncertainty, absence of automatic
-retry, requirement change during work, and a successful result arriving after
-objective supersession.
+workspace sandbox selection, cancellation before launch, timeout distinct from
+explicit cancellation, cancellation during harmless work and after a mutation may
+have begun, unconfirmed direct-child termination, restart after supervisor loss,
+the retry prohibition and reconciliation path, requirement change during work,
+and a successful result arriving after objective supersession.
 
 The opt-in live scenario is:
 
@@ -346,8 +382,10 @@ evidence, and removes the fixture. It never targets the Ember worktree by defaul
   message, so the adapter validates and retains the last schema-valid agent report;
   only child lifecycle, thread ID, and that final report cross the boundary.
 - Cancellation observes only the direct child. Timeout, cancellation, output
-  overflow, invalid report, or process loss remain ambiguous about prior effects
-  and do not retry.
+  overflow, invalid report, or process loss remain ambiguous about prior effects.
+  Automatic consequential retry is prohibited until current workspace and any
+  reachable remote or descendant state have been reconciled sufficiently to
+  establish that repetition is safe.
 - Cancellation intent is persisted before signalling. If that durability write
   fails, the foreground supervisor records the failure in its returned evidence,
   still performs bounded best-effort direct-child termination to avoid abandoning

@@ -11,10 +11,12 @@ const MAX_TEXT_BYTES = 256 * 1024;
 const contractDecoder = new TextDecoder("utf-8", { fatal: true });
 const diagnosticDecoder = new TextDecoder("utf-8", { fatal: false });
 
-export type SpecialistRuntimeState = "not_started" | "running" | "cancellation_requested" | "exited" | "lost";
+export type SpecialistRuntimeState = "not_started" | "running" | "cancellation_requested" | "timed_out" | "exited" | "lost";
 export type SpecialistReportState = "none" | "reported_success" | "reported_failure" | "ambiguous";
 export type SpecialistDisposition = "unresolved" | "blocked" | "accepted" | "qualified" | "rejected" | "stale" | "requires_re_evaluation";
 export type SpecialistApplicability = "still_applicable" | "stale" | "requires_re_evaluation" | "rejected";
+export type SpecialistEffectState = "no_effect_established" | "effects_possible" | "effects_known";
+export type SpecialistRetryState = "not_applicable" | "safe_without_reconciliation" | "prohibited_pending_reconciliation";
 
 export interface SpecialistDerivationBasis {
   objective_revision: string;
@@ -110,8 +112,21 @@ export interface SpecialistReport {
 
 export interface SpecialistObservation {
   observed_at: string;
-  kind: "specification_persisted" | "launch_attempted" | "child_started" | "thread_observed" | "cancellation_requested" | "child_exit_observed" | "report_received" | "boundary_failure";
+  kind: "specification_persisted" | "launch_attempted" | "child_started" | "thread_observed" | "cancellation_requested" | "timeout_observed" | "output_limit_observed" | "child_exit_observed" | "report_received" | "boundary_failure" | "recovery_reconciled";
   detail?: string;
+}
+
+export interface SpecialistTermination {
+  reason: "explicit_cancellation" | "timeout" | "output_limit" | "boundary_failure";
+  direct_child_exit_observed: boolean;
+  all_specialist_work_stopped: "unknown" | "established";
+}
+
+export interface SpecialistRecoveryState {
+  effect_state: SpecialistEffectState;
+  continued_work_state: "not_applicable" | "unknown" | "stopped" | "made_harmless";
+  retry_state: SpecialistRetryState;
+  reconciliation_required: string | null;
 }
 
 export interface SpecialistReportProvenance {
@@ -121,7 +136,7 @@ export interface SpecialistReportProvenance {
 }
 
 export interface SpecialistEpisodeRecord {
-  record_version: 2;
+  record_version: 3;
   specification: SpecialistEpisodeSpec;
   runtime_state: SpecialistRuntimeState;
   report_state: SpecialistReportState;
@@ -130,6 +145,8 @@ export interface SpecialistEpisodeRecord {
   report?: SpecialistReport;
   report_provenance?: SpecialistReportProvenance;
   currentness_evaluation?: SpecialistCurrentnessEvaluation;
+  termination?: SpecialistTermination;
+  recovery: SpecialistRecoveryState;
   known_effects: string[];
   possible_effects: string[];
   observations: SpecialistObservation[];
@@ -257,17 +274,32 @@ export async function runCodexSpecialist(
   if (workspace !== spec.workspace.path) throw new Error("specialist workspace path must be absolute and canonical");
 
   const record: SpecialistEpisodeRecord = {
-    record_version: 2,
+    record_version: 3,
     specification: spec,
     runtime_state: "not_started",
     report_state: "none",
     ember_disposition: "unresolved",
+    recovery: {
+      effect_state: "no_effect_established",
+      continued_work_state: "not_applicable",
+      retry_state: "not_applicable",
+      reconciliation_required: null,
+    },
     known_effects: [],
     possible_effects: [],
     observations: [],
   };
   record.observations.push({ observed_at: now(), kind: "specification_persisted" });
   await persistRecord(options.recordPath, record, true);
+
+  if (options.signal?.aborted) {
+    record.runtime_state = "cancellation_requested";
+    record.report_state = "ambiguous";
+    record.recovery.retry_state = "safe_without_reconciliation";
+    record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: "before launch" });
+    await persistRecord(options.recordPath, record);
+    return structuredClone(record);
+  }
 
   const runtimeDir = await mkdtemp(join(tmpdir(), "ember-specialist-"));
   const schemaPath = join(runtimeDir, "specialist-report.schema.json");
@@ -339,9 +371,21 @@ export async function runCodexSpecialist(
   const terminate = (reason: NonNullable<typeof termination>) => {
     if (termination || closed) return;
     termination = reason;
-    if (reason !== "stdin_error") {
+    record.termination = {
+      reason: reason === "cancel" ? "explicit_cancellation"
+        : reason === "timeout" ? "timeout"
+          : reason === "output_limit" ? "output_limit" : "boundary_failure",
+      direct_child_exit_observed: false,
+      all_specialist_work_stopped: "unknown",
+    };
+    if (reason === "cancel") {
       record.runtime_state = "cancellation_requested";
       record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
+    } else if (reason === "timeout") {
+      record.runtime_state = "timed_out";
+      record.observations.push({ observed_at: now(), kind: "timeout_observed", detail: reason });
+    } else if (reason === "output_limit") {
+      record.observations.push({ observed_at: now(), kind: "output_limit_observed", detail: reason });
     }
     terminationPersistence = persistRecord(options.recordPath, record)
       .catch((error) => {
@@ -408,6 +452,7 @@ export async function runCodexSpecialist(
   if (finalTimer) clearTimeout(finalTimer);
 
   record.runtime_state = exitObserved ? "exited" : "lost";
+  if (record.termination) record.termination.direct_child_exit_observed = exitObserved;
   if (exitObserved) {
     record.observations.push({
       observed_at: now(),
@@ -419,6 +464,12 @@ export async function runCodexSpecialist(
   if (termination || !exitObserved || spawnErrorMessage || stdinErrorMessage || exitCode !== 0) {
     record.report_state = "ambiguous";
     record.possible_effects.push("Workspace or external effects may have occurred before the specialist boundary ended.");
+    record.recovery = {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
+    };
     const diagnostic = diagnosticDecoder.decode(Buffer.concat(stderr)).slice(0, 4096) || codexErrorDiagnostic(Buffer.concat(stdout));
     if (!terminationPersistenceError) {
       record.observations.push({
@@ -442,10 +493,23 @@ export async function runCodexSpecialist(
         episode_id: spec.episode_id,
       };
       record.report_state = parsed.report.objective_disposition === "completed" ? "reported_success" : "reported_failure";
+      record.recovery.effect_state = parsed.report.known_effects.length > 0 ? "effects_known"
+        : parsed.report.possible_effects.length > 0 ? "effects_possible" : "no_effect_established";
+      if (record.recovery.effect_state !== "no_effect_established") {
+        record.recovery.continued_work_state = "unknown";
+        record.recovery.retry_state = "prohibited_pending_reconciliation";
+        record.recovery.reconciliation_required = "Independently observe reported or possible effects before consequential retry.";
+      }
       record.observations.push({ observed_at: now(), kind: "report_received" });
     } catch (error) {
       record.report_state = "ambiguous";
       record.possible_effects.push("The specialist process exited successfully but its report could not be validated.");
+    record.recovery = {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
+    };
       record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: errorMessage(error) });
     }
   }
@@ -456,6 +520,89 @@ export async function runCodexSpecialist(
     if (!terminationPersistenceError) throw error;
   }
   await rm(runtimeDir, { recursive: true, force: true });
+  return structuredClone(record);
+}
+
+export async function inspectSpecialistEpisode(recordPath: string): Promise<SpecialistEpisodeRecord> {
+  const record = JSON.parse(await readFile(recordPath, "utf8")) as SpecialistEpisodeRecord;
+  validatePersistedRecord(record);
+  return structuredClone(record);
+}
+
+export async function recordSpecialistProcessLoss(
+  recordPath: string,
+  detail: string,
+  options: { now?: () => string } = {},
+): Promise<SpecialistEpisodeRecord> {
+  if (!bounded(detail, 32_768)) throw new Error("specialist process-loss observation is invalid");
+  const record = await inspectSpecialistEpisode(recordPath);
+  if (!["not_started", "running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
+    throw new Error("specialist process loss can be recorded only for a nonterminal attempt");
+  }
+  if (!record.observations.some((item) => item.kind === "launch_attempted")) {
+    throw new Error("specialist process loss cannot be recorded before launch was attempted");
+  }
+  const observedAt = (options.now ?? (() => new Date().toISOString()))();
+  const priorRuntimeState = record.runtime_state;
+  record.runtime_state = "lost";
+  record.report_state = "ambiguous";
+  record.termination ??= {
+    reason: priorRuntimeState === "cancellation_requested" ? "explicit_cancellation"
+      : priorRuntimeState === "timed_out" ? "timeout" : "boundary_failure",
+    direct_child_exit_observed: false,
+    all_specialist_work_stopped: "unknown",
+  };
+  record.possible_effects.push("Workspace, descendant, remote, or other external effects may have continued across process loss.");
+  record.recovery = {
+    effect_state: "effects_possible",
+    continued_work_state: "unknown",
+    retry_state: "prohibited_pending_reconciliation",
+    reconciliation_required: "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
+  };
+  record.observations.push({ observed_at: observedAt, kind: "boundary_failure", detail: `Supervisor process loss: ${detail}` });
+  await persistRecord(recordPath, record);
+  return structuredClone(record);
+}
+
+export async function reconcileInterruptedSpecialist(
+  recordPath: string,
+  observation: { effects_absent: boolean; continued_work: "unknown" | "stopped" | "made_harmless"; detail: string },
+  options: { now?: () => string } = {},
+): Promise<SpecialistEpisodeRecord> {
+  if (typeof observation.effects_absent !== "boolean"
+    || !["unknown", "stopped", "made_harmless"].includes(observation.continued_work)
+    || !bounded(observation.detail, 32_768)) throw new Error("specialist recovery observation is invalid");
+  const record = await inspectSpecialistEpisode(recordPath);
+  if (record.recovery.retry_state !== "prohibited_pending_reconciliation") {
+    throw new Error("specialist episode does not require effect reconciliation");
+  }
+  record.observations.push({
+    observed_at: (options.now ?? (() => new Date().toISOString()))(),
+    kind: "recovery_reconciled",
+    detail: observation.detail,
+  });
+  if (observation.continued_work === "stopped" && record.termination) {
+    record.termination.all_specialist_work_stopped = "established";
+  }
+  record.recovery.continued_work_state = observation.continued_work;
+  const continuedEffectsRuledOut = observation.continued_work !== "unknown";
+  if (observation.effects_absent && continuedEffectsRuledOut) {
+    record.recovery = {
+      effect_state: "no_effect_established",
+      continued_work_state: observation.continued_work,
+      retry_state: "safe_without_reconciliation",
+      reconciliation_required: null,
+    };
+  } else if (observation.effects_absent) {
+    record.recovery.effect_state = "no_effect_established";
+    record.recovery.reconciliation_required = "Establish that continued specialist work capable of producing further effects has stopped or been made harmless before consequential retry.";
+  } else {
+    record.recovery.effect_state = "effects_known";
+    record.recovery.reconciliation_required = continuedEffectsRuledOut
+      ? "Resolve or account for the observed effects before consequential retry."
+      : "Resolve or account for observed effects and establish that continued specialist work has stopped or been made harmless before consequential retry.";
+  }
+  await persistRecord(recordPath, record);
   return structuredClone(record);
 }
 
@@ -545,6 +692,18 @@ function sameCheckpoint(left: SpecialistCurrentnessCheckpoint, right: Specialist
   return left.objective_revision === right.objective_revision
     && left.context_revision === right.context_revision
     && left.objective_status === right.objective_status;
+}
+
+function validatePersistedRecord(record: SpecialistEpisodeRecord) {
+  if (!recordLike(record) || record.record_version !== 3) throw new Error("specialist episode record is invalid");
+  validateSpec(record.specification);
+  if (!recordLike(record.recovery)
+    || !["no_effect_established", "effects_possible", "effects_known"].includes(record.recovery.effect_state)
+    || !["not_applicable", "unknown", "stopped", "made_harmless"].includes(record.recovery.continued_work_state)
+    || !["not_applicable", "safe_without_reconciliation", "prohibited_pending_reconciliation"].includes(record.recovery.retry_state)
+    || !(record.recovery.reconciliation_required === null || typeof record.recovery.reconciliation_required === "string")) {
+    throw new Error("specialist episode recovery state is invalid");
+  }
 }
 
 async function persistRecord(path: string, record: SpecialistEpisodeRecord, exclusive = false) {

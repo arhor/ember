@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
-import { buildSpecialistPrompt, createSpecialistEpisode, reconcileSpecialistResult, runCodexSpecialist, setSpecialistDisposition } from "./codex-specialist.ts";
+import { buildSpecialistPrompt, createSpecialistEpisode, inspectSpecialistEpisode, reconcileInterruptedSpecialist, reconcileSpecialistResult, recordSpecialistProcessLoss, runCodexSpecialist, setSpecialistDisposition } from "./codex-specialist.ts";
 import { ROOT, tempDir } from "../../tests/support.ts";
 
 const FIXTURE = join(ROOT, "test-fixtures/providers/scripted-codex-specialist.ts");
@@ -183,11 +183,12 @@ test("re-evaluated result should support a later atomic currentness check and ac
 test("currentness reconciliation should reject an in-flight episode", async () => {
   const fixture = await episodeFixture();
   const record = {
-    record_version: 2,
+    record_version: 3,
     specification: fixture.spec,
     runtime_state: "running",
     report_state: "none",
     ember_disposition: "unresolved",
+    recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
     known_effects: [],
     possible_effects: [],
     observations: [],
@@ -274,6 +275,7 @@ test("Codex specialist should preserve effect uncertainty when cancellation is r
     queueMicrotask(() => child.emit("close", null, signal));
     return true;
   };
+  child.stdin.on("finish", () => controller.abort());
   fixture.spec.runtime_policy.timeout_seconds = 2;
 
   const promise = runCodexSpecialist(fixture.spec, {
@@ -283,7 +285,6 @@ test("Codex specialist should preserve effect uncertainty when cancellation is r
     finalTerminationMs: 20,
     spawnImpl: () => child,
   });
-  controller.abort();
   const record = await promise;
 
   assert.deepEqual([record.runtime_state, record.report_state, record.ember_disposition], ["exited", "ambiguous", "unresolved"]);
@@ -291,7 +292,317 @@ test("Codex specialist should preserve effect uncertainty when cancellation is r
   assert.equal(record.observations.some((item) => item.kind === "cancellation_requested"), true);
   assert.equal((durableStateAtSignal as any).runtime_state, "cancellation_requested");
   assert.equal((durableStateAtSignal as any).observations.some((item: any) => item.kind === "cancellation_requested"), true);
+  assert.equal((durableStateAtSignal as any).termination.reason, "explicit_cancellation");
+  assert.deepEqual(record.termination, { reason: "explicit_cancellation", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" });
+  assert.equal(record.recovery.retry_state, "prohibited_pending_reconciliation");
 });
+
+test("cancellation before specialist launch should not spawn or imply effects", async () => {
+  const fixture = await episodeFixture();
+  const controller = new AbortController();
+  controller.abort();
+  let spawnCalls = 0;
+
+  const record = await runCodexSpecialist(fixture.spec, {
+    recordPath: fixture.recordPath,
+    signal: controller.signal,
+    spawnImpl: () => { spawnCalls += 1; throw new Error("must not spawn"); },
+  });
+
+  assert.equal(spawnCalls, 0);
+  assert.deepEqual([record.runtime_state, record.recovery.effect_state, record.recovery.retry_state], [
+    "cancellation_requested", "no_effect_established", "safe_without_reconciliation",
+  ]);
+  assert.equal(record.observations.some((item) => item.kind === "launch_attempted"), false);
+  const restartedInspection = await inspectSpecialistEpisode(fixture.recordPath);
+  await assert.rejects(
+    recordSpecialistProcessLoss(fixture.recordPath, "Ember restarted"),
+    /before launch was attempted/,
+  );
+  assert.deepEqual([restartedInspection.runtime_state, restartedInspection.recovery.effect_state, restartedInspection.recovery.retry_state], [
+    "cancellation_requested", "no_effect_established", "safe_without_reconciliation",
+  ]);
+});
+
+test("timeout should remain distinct from explicit cancellation", async () => {
+  const fixture = await episodeFixture();
+  const child = new EventEmitter() as any;
+  child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
+  child.kill = (signal: string) => { queueMicrotask(() => child.emit("close", null, signal)); return true; };
+  fixture.spec.runtime_policy.timeout_seconds = 0.005;
+
+  const record = await runCodexSpecialist(fixture.spec, {
+    recordPath: fixture.recordPath, terminationGraceMs: 5, finalTerminationMs: 20, spawnImpl: () => child,
+  });
+
+  assert.equal(record.observations.some((item) => item.kind === "timeout_observed"), true);
+  assert.equal(record.observations.some((item) => item.kind === "cancellation_requested"), false);
+  assert.equal(record.termination?.reason, "timeout");
+});
+
+test("output limit should not invent an explicit cancellation observation", async () => {
+  const fixture = await episodeFixture();
+  const child = new EventEmitter() as any;
+  child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
+  child.kill = (signal: string) => { queueMicrotask(() => child.emit("close", null, signal)); return true; };
+  child.stdin.on("finish", () => child.stdout.write(Buffer.alloc(1024 * 1024 + 1)));
+
+  const record = await runCodexSpecialist(fixture.spec, {
+    recordPath: fixture.recordPath, terminationGraceMs: 5, finalTerminationMs: 20, spawnImpl: () => child,
+  });
+
+  assert.equal(record.termination?.reason, "output_limit");
+  assert.equal(record.observations.some((item) => item.kind === "output_limit_observed"), true);
+  assert.equal(record.observations.some((item) => item.kind === "cancellation_requested"), false);
+});
+
+test("cancellation during harmless work should not claim stop or non-effect", async () => {
+  const fixture = await episodeFixture();
+  const controller = new AbortController();
+  const child = new EventEmitter() as any;
+  child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
+  child.kill = (signal: string) => { queueMicrotask(() => child.emit("close", null, signal)); return true; };
+  child.stdin.on("finish", () => controller.abort());
+
+  const record = await runCodexSpecialist(fixture.spec, {
+    recordPath: fixture.recordPath, signal: controller.signal, terminationGraceMs: 5, finalTerminationMs: 20, spawnImpl: () => child,
+  });
+
+  assert.equal(record.termination?.all_specialist_work_stopped, "unknown");
+  assert.equal(record.recovery.effect_state, "effects_possible");
+});
+
+test("cancellation after a workspace mutation may begin should survive restart and prohibit retry", async () => {
+  const fixture = await episodeFixture();
+  const controller = new AbortController();
+  const child = new EventEmitter() as any;
+  child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
+  child.kill = (signal: string) => { queueMicrotask(() => child.emit("close", null, signal)); return true; };
+  child.stdin.on("finish", () => { writeFile(join(fixture.workspace, "partial-effect.txt"), "possible effect\n").then(() => controller.abort()); });
+
+  await runCodexSpecialist(fixture.spec, {
+    recordPath: fixture.recordPath, signal: controller.signal, terminationGraceMs: 5, finalTerminationMs: 20, spawnImpl: () => child,
+  });
+  const restartedInspection = await inspectSpecialistEpisode(fixture.recordPath);
+
+  assert.equal(await readFile(join(fixture.workspace, "partial-effect.txt"), "utf8"), "possible effect\n");
+  assert.equal(restartedInspection.recovery.retry_state, "prohibited_pending_reconciliation");
+  assert.match(restartedInspection.recovery.reconciliation_required ?? "", /Observe the current workspace/);
+
+  const reconciled = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: false,
+    continued_work: "unknown",
+    detail: "Observed partial-effect.txt after restart; the effect must be resolved before retry.",
+  });
+  assert.equal(reconciled.recovery.effect_state, "effects_known");
+  assert.equal(reconciled.recovery.retry_state, "prohibited_pending_reconciliation");
+});
+
+test("effect absence alone should not permit retry while continued specialist work remains unknown", async () => {
+  const fixture = await episodeFixture();
+  const interrupted = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "lost",
+    report_state: "ambiguous",
+    ember_disposition: "unresolved",
+    termination: { reason: "explicit_cancellation", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+    recovery: {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe effects and continued work.",
+    },
+    known_effects: [],
+    possible_effects: ["A detached descendant may still create an effect."],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(interrupted)}\n`);
+
+  const stillBlocked = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: true,
+    continued_work: "unknown",
+    detail: "No effect is visible yet, but descendant termination cannot be established.",
+  });
+
+  assert.equal(stillBlocked.recovery.effect_state, "no_effect_established");
+  assert.equal(stillBlocked.recovery.continued_work_state, "unknown");
+  assert.equal(stillBlocked.recovery.retry_state, "prohibited_pending_reconciliation");
+  assert.equal(stillBlocked.termination?.all_specialist_work_stopped, "unknown");
+  assert.match(stillBlocked.recovery.reconciliation_required ?? "", /continued specialist work/);
+});
+
+test("retry should become safe only after effects and continued work are both reconciled", async () => {
+  const fixture = await episodeFixture();
+  const interrupted = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "lost",
+    report_state: "ambiguous",
+    ember_disposition: "unresolved",
+    termination: { reason: "timeout", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+    recovery: {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe effects and continued work.",
+    },
+    known_effects: [],
+    possible_effects: ["Effects may have occurred."],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(interrupted)}\n`);
+
+  const safe = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: true,
+    continued_work: "stopped",
+    detail: "Workspace and remote targets are unchanged, and no descendant or remote work remains active.",
+  });
+
+  assert.equal(safe.recovery.retry_state, "safe_without_reconciliation");
+  assert.equal(safe.recovery.continued_work_state, "stopped");
+  assert.equal(safe.termination?.all_specialist_work_stopped, "established");
+});
+
+test("making continued work harmless should permit retry without claiming it stopped", async () => {
+  const fixture = await episodeFixture();
+  const interrupted = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "lost",
+    report_state: "ambiguous",
+    ember_disposition: "unresolved",
+    termination: { reason: "explicit_cancellation", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+    recovery: {
+      effect_state: "effects_possible",
+      continued_work_state: "unknown",
+      retry_state: "prohibited_pending_reconciliation",
+      reconciliation_required: "Observe effects and continued work.",
+    },
+    known_effects: [],
+    possible_effects: ["A detached descendant may still be running."],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(interrupted)}\n`);
+
+  const safe = await reconcileInterruptedSpecialist(fixture.recordPath, {
+    effects_absent: true,
+    continued_work: "made_harmless",
+    detail: "No effect exists and the surviving descendant's write capability has been revoked.",
+  });
+
+  assert.equal(safe.recovery.retry_state, "safe_without_reconciliation");
+  assert.equal(safe.recovery.continued_work_state, "made_harmless");
+  assert.equal(safe.termination?.all_specialist_work_stopped, "unknown");
+});
+
+test("unconfirmed direct-child termination should persist unknown stop and effect state", async () => {
+  const fixture = await episodeFixture();
+  const controller = new AbortController();
+  const signals: string[] = [];
+  const child = new EventEmitter() as any;
+  child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
+  child.kill = (signal: string) => { signals.push(signal); return true; };
+  child.stdin.on("finish", () => controller.abort());
+
+  const record = await runCodexSpecialist(fixture.spec, {
+    recordPath: fixture.recordPath, signal: controller.signal, terminationGraceMs: 5, finalTerminationMs: 20, spawnImpl: () => child,
+  });
+
+  assert.deepEqual(signals, ["SIGTERM", "SIGKILL"]);
+  assert.deepEqual([record.runtime_state, record.termination?.direct_child_exit_observed, record.termination?.all_specialist_work_stopped], ["lost", false, "unknown"]);
+  assert.equal((await inspectSpecialistEpisode(fixture.recordPath)).recovery.retry_state, "prohibited_pending_reconciliation");
+});
+
+test("process-loss recovery should convert a committed running attempt to durable ambiguity", async () => {
+  const fixture = await episodeFixture();
+  const running = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "running",
+    report_state: "none",
+    ember_disposition: "unresolved",
+    recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
+    known_effects: [],
+    possible_effects: [],
+    observations: [
+      { observed_at: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
+      { observed_at: "2026-09-02T10:00:00.000Z", kind: "child_started" },
+    ],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(running)}\n`);
+
+  const recovered = await recordSpecialistProcessLoss(fixture.recordPath, "Ember restarted without an attachable child");
+  const restartedInspection = await inspectSpecialistEpisode(fixture.recordPath);
+
+  assert.deepEqual([recovered.runtime_state, recovered.report_state], ["lost", "ambiguous"]);
+  assert.equal(restartedInspection.termination?.direct_child_exit_observed, false);
+  assert.equal(restartedInspection.termination?.all_specialist_work_stopped, "unknown");
+  assert.equal(restartedInspection.recovery.retry_state, "prohibited_pending_reconciliation");
+  assert.match(restartedInspection.possible_effects.join(" "), /continued across process loss/);
+});
+
+test("process-loss recovery should preserve ambiguity after launch attempt but before child-start commit", async () => {
+  const fixture = await episodeFixture();
+  const launching = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "not_started",
+    report_state: "none",
+    ember_disposition: "unresolved",
+    recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
+    known_effects: [],
+    possible_effects: [],
+    observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: "launch_attempted" }],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(launching)}\n`);
+
+  const recovered = await recordSpecialistProcessLoss(fixture.recordPath, "Ember restarted before child start was committed");
+
+  assert.deepEqual([recovered.runtime_state, recovered.report_state], ["lost", "ambiguous"]);
+  assert.equal(recovered.recovery.effect_state, "effects_possible");
+  assert.equal(recovered.recovery.continued_work_state, "unknown");
+  assert.equal(recovered.recovery.retry_state, "prohibited_pending_reconciliation");
+  assert.equal(recovered.termination?.reason, "boundary_failure");
+  assert.equal(recovered.termination?.direct_child_exit_observed, false);
+});
+
+for (const interrupted of [
+  { runtimeState: "cancellation_requested", reason: "explicit_cancellation", observation: "cancellation_requested" },
+  { runtimeState: "timed_out", reason: "timeout", observation: "timeout_observed" },
+] as const) {
+  test(`process-loss recovery should preserve committed ${interrupted.reason} reason`, async () => {
+    const fixture = await episodeFixture();
+    const record = {
+      record_version: 3,
+      specification: fixture.spec,
+      runtime_state: interrupted.runtimeState,
+      report_state: "none",
+      ember_disposition: "unresolved",
+      termination: { reason: interrupted.reason, direct_child_exit_observed: false, all_specialist_work_stopped: "unknown" },
+      recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
+      known_effects: [],
+      possible_effects: [],
+      observations: [
+        { observed_at: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
+        { observed_at: "2026-09-02T10:00:00.000Z", kind: interrupted.observation },
+      ],
+    };
+    await mkdir(join(fixture.root, "episodes"));
+    await writeFile(fixture.recordPath, `${JSON.stringify(record)}\n`);
+
+    const recovered = await recordSpecialistProcessLoss(fixture.recordPath, "Ember restarted before child exit was observed");
+
+    assert.equal(recovered.termination?.reason, interrupted.reason);
+    assert.equal(recovered.termination?.direct_child_exit_observed, false);
+    assert.equal(recovered.termination?.all_specialist_work_stopped, "unknown");
+  });
+}
 
 test("Codex specialist should record an ambiguous boundary failure when prompt delivery emits EPIPE", async () => {
   const fixture = await episodeFixture();
@@ -342,6 +653,11 @@ test("Codex specialist should reject malformed external evidence when report arr
   assert.equal(record.report_state, "ambiguous");
   assert.equal(record.report, undefined);
   assert.match(record.observations.find((item) => item.kind === "boundary_failure")?.detail ?? "", /report is invalid/);
+  assert.deepEqual([record.recovery.effect_state, record.recovery.retry_state], [
+    "effects_possible", "prohibited_pending_reconciliation",
+  ]);
+  assert.match(record.recovery.reconciliation_required ?? "", /Observe the current workspace/);
+  assert.equal((await inspectSpecialistEpisode(fixture.recordPath)).recovery.retry_state, "prohibited_pending_reconciliation");
 });
 
 test("Codex specialist should settle ambiguously when cancellation intent cannot be persisted", async () => {
