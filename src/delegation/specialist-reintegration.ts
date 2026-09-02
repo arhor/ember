@@ -12,6 +12,17 @@ import {
 export type SpecialistReintegrationOutcome = "integrated" | "withheld" | "rejected";
 export type SpecialistResultShape = "complete" | "partial" | "failed" | "ambiguous_effect";
 
+export interface SpecialistAuthorityCheckpoint {
+  status: "current" | "revoked" | "superseded" | "uncertain";
+  provenance: string;
+  reason: string;
+}
+
+export interface SpecialistReintegrationCheckpoint extends SpecialistCurrentnessCheckpoint {
+  ember_revision: number;
+  authority: SpecialistAuthorityCheckpoint;
+}
+
 export interface SpecialistSemanticDecision {
   disposition: "accepted" | "qualified" | "rejected";
   reason: string;
@@ -33,7 +44,7 @@ export interface SpecialistReintegrationDecision {
   resulting_disposition: SpecialistDisposition;
   result_shape: SpecialistResultShape;
   reason: string;
-  checkpoint: SpecialistCurrentnessCheckpoint;
+  checkpoint: SpecialistReintegrationCheckpoint;
   report_provenance: SpecialistReportProvenance;
   corroboration: {
     considered_episode_ids: string[];
@@ -63,7 +74,7 @@ interface PersistedSpecialistRecord extends SpecialistEpisodeRecord {
 
 export async function reintegrateSpecialistResult(
   recordPath: string,
-  checkpoint: SpecialistCurrentnessCheckpoint,
+  checkpoint: SpecialistReintegrationCheckpoint,
   options: {
     decision?: SpecialistSemanticDecision;
     corroboratingRecordPaths?: string[];
@@ -72,11 +83,17 @@ export async function reintegrateSpecialistResult(
 ): Promise<SpecialistReintegrationInspection> {
   const before = await inspectSpecialistEpisode(recordPath);
   requireFinalAttributedReport(before);
+  validateReintegrationCheckpoint(checkpoint);
   validateDecision(options.decision);
 
   const resultShape = classifyResult(before);
   const now = options.now ?? (() => new Date().toISOString());
-  let reconciled = await reconcileSpecialistResult(recordPath, checkpoint, { now });
+  const currentness = toCurrentnessCheckpoint(checkpoint);
+  const explicitRejection = options.decision?.disposition === "rejected";
+  let reconciled = await reconcileSpecialistResult(recordPath, currentness, {
+    now,
+    disposition: explicitRejection ? "rejected" : undefined,
+  });
   const applicability = reconciled.currentness_evaluation?.applicability;
   if (!applicability) throw new Error("specialist currentness evaluation was not recorded");
 
@@ -92,14 +109,17 @@ export async function reintegrateSpecialistResult(
     outcome = "rejected";
     resultingDisposition = "rejected";
     reason = reconciled.currentness_evaluation!.reason;
-  } else if (options.decision?.disposition === "rejected") {
+  } else if (explicitRejection) {
     outcome = "rejected";
     resultingDisposition = "rejected";
-    reason = options.decision.reason;
+    reason = options.decision!.reason;
   } else if (applicability === "stale") {
     outcome = "withheld";
     resultingDisposition = "stale";
     reason = `${reconciled.currentness_evaluation!.reason}; historical specialist success is preserved but is not current completion`;
+  } else if (checkpoint.authority.status !== "current") {
+    outcome = "withheld";
+    reason = `current authority is ${checkpoint.authority.status}: ${checkpoint.authority.reason}`;
   } else if (reconciled.recovery.effect_state === "effects_possible") {
     outcome = "withheld";
     reason = "specialist effects remain ambiguous and require independent reconciliation before current reliance or canonical mutation";
@@ -114,7 +134,7 @@ export async function reintegrateSpecialistResult(
       resultingDisposition = "requires_re_evaluation";
       reason = "a partial specialist result cannot establish full objective completion; Ember may qualify or reject the usable remainder after re-evaluation";
     } else {
-      reconciled = await reconcileSpecialistResult(recordPath, checkpoint, {
+      reconciled = await reconcileSpecialistResult(recordPath, currentness, {
         now,
         re_evaluation: {
           disposition: options.decision.disposition,
@@ -132,8 +152,12 @@ export async function reintegrateSpecialistResult(
     outcome = "withheld";
     reason = "a partial specialist result cannot establish full objective completion; Ember may qualify or reject the usable remainder";
   } else {
+    reconciled = await reconcileSpecialistResult(recordPath, currentness, {
+      now,
+      disposition: options.decision.disposition,
+    });
     outcome = "integrated";
-    resultingDisposition = options.decision.disposition;
+    resultingDisposition = reconciled.ember_disposition;
     reason = options.decision.reason;
   }
 
@@ -246,7 +270,9 @@ async function persistDecision(
   resultingDisposition: SpecialistDisposition,
 ) {
   const record = JSON.parse(await readFile(recordPath, "utf8")) as PersistedSpecialistRecord;
-  record.ember_disposition = resultingDisposition;
+  if (record.ember_disposition !== resultingDisposition) {
+    throw new Error("specialist disposition changed before reintegration audit could be persisted");
+  }
   const audit = record.reintegration ?? { audit_version: 1 as const, history: [] };
   validateAudit(audit);
   audit.history.push(structuredClone(decision));
@@ -263,6 +289,28 @@ function requireFinalAttributedReport(record: SpecialistEpisodeRecord) {
   if (!record.report || !record.report_provenance) {
     throw new Error("specialist reintegration requires attributed specialist report evidence");
   }
+}
+
+function validateReintegrationCheckpoint(checkpoint: SpecialistReintegrationCheckpoint) {
+  if (
+    !Number.isSafeInteger(checkpoint.ember_revision)
+    || checkpoint.ember_revision < 0
+    || !["current", "superseded", "cancelled"].includes(checkpoint.objective_status)
+    || !bounded(checkpoint.objective_revision, 8192)
+    || !bounded(checkpoint.context_revision, 8192)
+    || !checkpoint.authority
+    || !["current", "revoked", "superseded", "uncertain"].includes(checkpoint.authority.status)
+    || !bounded(checkpoint.authority.provenance, 8192)
+    || !bounded(checkpoint.authority.reason, 8192)
+  ) throw new Error("specialist reintegration checkpoint is invalid");
+}
+
+function toCurrentnessCheckpoint(checkpoint: SpecialistReintegrationCheckpoint): SpecialistCurrentnessCheckpoint {
+  return {
+    objective_revision: checkpoint.objective_revision,
+    context_revision: checkpoint.context_revision,
+    objective_status: checkpoint.objective_status,
+  };
 }
 
 function validateDecision(decision: SpecialistSemanticDecision | undefined) {
@@ -288,8 +336,11 @@ function validateAudit(audit: SpecialistReintegrationAudit | null) {
       || !bounded(decision.decided_at, 512)
       || !["integrated", "withheld", "rejected"].includes(decision.outcome)
       || !bounded(decision.reason, 8192)
+      || !decision.checkpoint
+      || !decision.canonical_mutation
       || decision.canonical_mutation.decision_id !== decision.decision_id
     ) throw new Error("specialist reintegration decision is invalid");
+    validateReintegrationCheckpoint(decision.checkpoint);
   }
 }
 
