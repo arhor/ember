@@ -43,8 +43,10 @@ interface FactSeriesGenerator {
 type HistoryGenerator = FactSeriesGenerator;
 
 interface MeaningExpectations {
-  selected_meanings: MeaningReference[];
-  forbidden_meanings: MeaningReference[];
+  selected_meanings: string[];
+  selected_meaning_groups?: string[];
+  forbidden_meanings: string[];
+  forbidden_meaning_groups?: string[];
   relevant_meanings?: MeaningReference[];
   irrelevant_meanings?: MeaningReference[];
   superseded_meanings?: MeaningReference[];
@@ -245,11 +247,11 @@ export async function runLongitudinalScenario(
       const backendMetadata = observedBackendMetadata as BackendMetadata;
       const providerThreadId = providerResult.operational?.external_thread_id ?? null;
       if (providerThreadId !== null) episodeThreads.set(episode.id, providerThreadId);
-      const expectedSelected = resolveReferences(episode.expect.selected_meanings, aliases, history.groups).ids.sort();
+      const expectedSelected = resolveReferences(expectationReferences(episode.expect.selected_meanings, episode.expect.selected_meaning_groups), aliases, history.groups).ids.sort();
       const observedSelected = request.projection.selection.meaning_ids.map(String).sort();
-      const forbidden = resolveReferences(episode.expect.forbidden_meanings, aliases, history.groups);
+      const forbidden = resolveReferences(expectationReferences(episode.expect.forbidden_meanings, episode.expect.forbidden_meaning_groups), aliases, history.groups);
       const forbiddenIds = forbidden.ids;
-      const contextEvaluation = evaluateContext(episode.expect, aliases, history.groups, canonicalBefore, request.projection);
+      const contextEvaluation = evaluateContext(episode.expect, aliases, history.groups, request.projection);
       const emberAssertions: AssertionObservation[] = [
         observation("selected meanings", expectedSelected, observedSelected, sameJson(expectedSelected, observedSelected)),
         observation("forbidden meanings absent", [], forbiddenIds.filter(id => observedSelected.includes(id)), forbiddenIds.every(id => !observedSelected.includes(id))),
@@ -357,14 +359,13 @@ function evaluateContext(
   expectations: MeaningExpectations,
   aliases: Map<string, string>,
   groups: Map<string, string[]>,
-  canonicalBefore: ReturnType<typeof inspectionView>,
   projection: Projection,
 ): ContextEvaluation {
   const relevant = resolveReferences(expectations.relevant_meanings ?? [], aliases, groups);
   const irrelevant = resolveReferences(expectations.irrelevant_meanings ?? [], aliases, groups);
   const superseded = resolveReferences(expectations.superseded_meanings ?? [], aliases, groups);
   const unavailable = resolveReferences(expectations.unavailable_meanings ?? [], aliases, groups);
-  const forbidden = resolveReferences(expectations.forbidden_meanings, aliases, groups);
+  const forbidden = resolveReferences(expectationReferences(expectations.forbidden_meanings, expectations.forbidden_meaning_groups), aliases, groups);
   const selectedIds = new Set(projection.selection.meaning_ids.map(String));
   const projectionGapIds = new Set(projection.gaps.map(item => String(item.meaning_id)));
   const aliasById = new Map([...aliases].map(([alias, id]) => [id, alias]));
@@ -416,6 +417,10 @@ function appendClassificationAssertions(
 
 function filterAliases(references: ResolvedReferences, include: (id: string) => boolean) {
   return references.aliases.filter((_, index) => include(references.ids[index]!));
+}
+
+function expectationReferences(aliases: string[], groupNames: string[] | undefined): MeaningReference[] {
+  return [...aliases, ...(groupNames ?? []).map(group => ({ group }))];
 }
 
 function resolveReferences(references: MeaningReference[], aliases: Map<string, string>, groups: Map<string, string[]>): ResolvedReferences {
@@ -530,7 +535,15 @@ function validateScenario(value: unknown): asserts value is LongitudinalScenario
     if (!episode.external_thread || !["fresh", "reuse"].includes(episode.external_thread.mode)) throw new Error(`episode ${episode.id} thread control is invalid`);
     if (episode.external_thread.mode === "reuse" && !episodeIds.has(episode.external_thread.episode)) throw new Error(`episode ${episode.id} must reuse an earlier episode`);
     if (!episode.expect || !Array.isArray(episode.expect.selected_meanings) || !Array.isArray(episode.expect.forbidden_meanings)) throw new Error(`episode ${episode.id} expectations are invalid`);
-    for (const field of ["selected_meanings", "forbidden_meanings", "relevant_meanings", "irrelevant_meanings", "superseded_meanings", "unavailable_meanings"] as const) {
+    for (const field of ["selected_meanings", "forbidden_meanings"] as const) {
+      if (episode.expect[field].some(alias => typeof alias !== "string" || !alias.trim())) throw new Error(`episode ${episode.id} ${field} must contain non-empty aliases`);
+    }
+    for (const field of ["selected_meaning_groups", "forbidden_meaning_groups"] as const) {
+      const groupNames = episode.expect[field];
+      if (groupNames === undefined) continue;
+      if (!Array.isArray(groupNames) || groupNames.some(group => typeof group !== "string" || !group.trim() || !historyGroups.has(group))) throw new Error(`episode ${episode.id} ${field} contains an invalid history group`);
+    }
+    for (const field of ["relevant_meanings", "irrelevant_meanings", "superseded_meanings", "unavailable_meanings"] as const) {
       const references = episode.expect[field];
       if (references === undefined) continue;
       if (!Array.isArray(references)) throw new Error(`episode ${episode.id} ${field} must be an array`);
@@ -560,7 +573,9 @@ function validateHistoryGenerator(value: unknown, aliases: Set<string>, groups: 
   if (!Number.isInteger(generator.count) || generator.count! < 1 || generator.count! > 5_000) throw new Error("longitudinal history generator count must be an integer from 1 to 5000");
   if (![generator.slot_prefix, generator.scope, generator.text_prefix, generator.start_at].every(item => typeof item === "string" && item.trim())) throw new Error("longitudinal history generator text fields must be non-empty");
   if (!Number.isInteger(generator.interval_seconds) || generator.interval_seconds! < 1) throw new Error("longitudinal history generator interval_seconds must be a positive integer");
-  if (!Number.isFinite(Date.parse(generator.start_at!))) throw new Error("longitudinal history generator start_at must be a valid timestamp");
+  const start = Date.parse(generator.start_at!);
+  const last = start + ((generator.count! - 1) * generator.interval_seconds! * 1000);
+  if (!Number.isFinite(start) || !Number.isFinite(last) || Number.isNaN(new Date(last).getTime())) throw new Error("longitudinal history generator timestamps must stay within the supported date range");
   groups.add(generator.as);
   for (let index = 0; index < generator.count!; index += 1) {
     const alias = `${generator.as}.${String(index + 1).padStart(4, "0")}`;
