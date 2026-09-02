@@ -1,0 +1,254 @@
+{
+  "scenario_version": 1,
+  "id": "issue-66-memory-context-pressure",
+  "description": "Grow a deterministic same-scope history, then classify projection selections across preference supersession and degraded recall.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "initial_at": "2026-09-02T08:00:00Z"
+  },
+  "history": [
+    {
+      "generate": "remember_fact_series",
+      "as": "ambient_project_history",
+      "count": 64,
+      "slot_prefix": "ambient-history",
+      "scope": "project:ember/memory-context",
+      "text_prefix": "Synthetic ambient project history item",
+      "start_at": "2026-09-02T08:01:00Z",
+      "interval_seconds": 30
+    }
+  ],
+  "setup": [
+    {
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing collaborators",
+      "at": "2026-09-02T08:40:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "evaluation_target",
+      "slot": "evaluation-target",
+      "scope": "project:ember/memory-context",
+      "text": "The current evaluation target is longitudinal context selection",
+      "at": "2026-09-02T08:41:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "preference_a",
+      "slot": "memory-report-style",
+      "scope": "project:ember/memory-context",
+      "text": "Prefer terse memory reports",
+      "at": "2026-09-02T08:42:00Z"
+    },
+    {
+      "action": "undertake",
+      "as": "live_commitment",
+      "slot": "memory-context-evaluation",
+      "scope": "project:ember/memory-context",
+      "text": "Keep memory-context evaluation evidence attributable",
+      "at": "2026-09-02T08:43:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "private_forbidden",
+      "slot": "private-pressure-marker",
+      "scope": "project:private",
+      "text": "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",
+      "at": "2026-09-02T08:44:00Z"
+    },
+    {
+      "action": "remember_episode",
+      "as": "degraded_episode",
+      "slot": "memory-context-detail",
+      "scope": "relationship:user-1",
+      "text": "The memory-context experiment has optional detail",
+      "at": "2026-09-02T08:45:00Z"
+    },
+    {
+      "action": "attach_detail",
+      "as": "degraded_detail",
+      "episode": "degraded_episode",
+      "text": "SECRET_DEGRADED_DETAIL_66",
+      "at": "2026-09-02T08:46:00Z"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "baseline-long-history",
+      "at": "2026-09-02T09:00:00Z",
+      "scope": "project:ember/memory-context",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": {
+        "mode": "fresh"
+      },
+      "input": "State the current evaluation target, report preference, and live commitment.",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "evaluation_target",
+          "preference_a",
+          "live_commitment"
+        ],
+        "selected_meaning_groups": [
+          "ambient_project_history"
+        ],
+        "relevant_meanings": [
+          "evaluation_target",
+          "preference_a",
+          "live_commitment"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_project_history"
+          },
+          "degraded_episode"
+        ],
+        "superseded_meanings": [],
+        "unavailable_meanings": [],
+        "forbidden_meanings": [
+          "private_forbidden"
+        ],
+        "reply_includes": [
+          "longitudinal context selection",
+          "Prefer terse memory reports"
+        ],
+        "reply_excludes": [
+          "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",
+          "SECRET_DEGRADED_DETAIL_66"
+        ]
+      }
+    },
+    {
+      "id": "changed-and-degraded",
+      "at": "2026-09-03T09:00:00Z",
+      "scope": "project:ember/memory-context",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": {
+        "mode": "fresh"
+      },
+      "changes": [
+        {
+          "action": "supersede",
+          "as": "preference_b",
+          "meaning": "preference_a",
+          "text": "Prefer detailed memory reports",
+          "reason": "The longitudinal evaluation now needs auditable context evidence",
+          "at": "2026-09-03T08:55:00Z"
+        },
+        {
+          "action": "withhold_detail",
+          "as": "degraded_gap",
+          "evidence": "degraded_detail",
+          "reason": "controlled longitudinal detail unavailable",
+          "at": "2026-09-03T08:56:00Z"
+        }
+      ],
+      "input": "Explain the changed report preference and the degraded episode using only the selected projection.",
+      "purpose": "explain",
+      "explain": [
+        "preference_a",
+        "degraded_episode"
+      ],
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "evaluation_target",
+          "preference_a",
+          "preference_b",
+          "live_commitment",
+          "degraded_episode"
+        ],
+        "selected_meaning_groups": [
+          "ambient_project_history"
+        ],
+        "relevant_meanings": [
+          "evaluation_target",
+          "preference_a",
+          "preference_b",
+          "live_commitment",
+          "degraded_episode"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_project_history"
+          }
+        ],
+        "superseded_meanings": [
+          "preference_a"
+        ],
+        "unavailable_meanings": [
+          "degraded_episode"
+        ],
+        "forbidden_meanings": [
+          "private_forbidden"
+        ],
+        "reply_includes": [
+          "Prefer detailed memory reports",
+          "unavailable_detail"
+        ],
+        "reply_excludes": [
+          "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",
+          "SECRET_DEGRADED_DETAIL_66"
+        ]
+      }
+    },
+    {
+      "id": "ordinary-after-change",
+      "at": "2026-09-04T09:00:00Z",
+      "scope": "project:ember/memory-context",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": {
+        "mode": "fresh"
+      },
+      "input": "State the current evaluation target, current report preference, and live commitment without historical reconstruction.",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "evaluation_target",
+          "preference_b",
+          "live_commitment"
+        ],
+        "selected_meaning_groups": [
+          "ambient_project_history"
+        ],
+        "relevant_meanings": [
+          "evaluation_target",
+          "preference_b",
+          "live_commitment"
+        ],
+        "irrelevant_meanings": [
+          {
+            "group": "ambient_project_history"
+          },
+          "degraded_episode"
+        ],
+        "superseded_meanings": [
+          "preference_a"
+        ],
+        "unavailable_meanings": [
+          "degraded_episode"
+        ],
+        "forbidden_meanings": [
+          "preference_a",
+          "private_forbidden",
+          "degraded_episode"
+        ],
+        "reply_includes": [
+          "Prefer detailed memory reports"
+        ],
+        "reply_excludes": [
+          "Prefer terse memory reports",
+          "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",
+          "SECRET_DEGRADED_DETAIL_66",
+          "unavailable_detail"
+        ]
+      }
+    }
+  ]
+}
