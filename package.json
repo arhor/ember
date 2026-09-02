@@ -11,9 +11,8 @@
   },
   "scripts": {
     "check": "tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.mjs check",
-    "test": "node --test src/core/*.test.ts src/providers/*.test.ts src/delegation/*.test.ts eval/longitudinal/*.test.ts eval/process-restart/*.test.ts tests/*.test.ts tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
-    "test:continuity": "node --test src/core/*.test.ts src/providers/*.test.ts src/delegation/*.test.ts eval/longitudinal/*.test.ts eval/process-restart/*.test.ts tests/*.test.ts",
-    "test:docs": "node --test tests/docs-discovery.test.mjs tests/docs-discovery-repository.test.mjs",
+    "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
+    "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",
     "smoke:codex": "node scripts/live-codex-smoke.ts",
     "smoke:cursor": "node scripts/live-cursor-smoke.ts",

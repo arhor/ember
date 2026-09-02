@@ -19,7 +19,6 @@
     "src/**/*.ts"
   ],
   "exclude": [
-    "eval/**/*.test.ts",
     "src/**/*.test.ts",
     "src/**/*.test-d.ts"
   ]
