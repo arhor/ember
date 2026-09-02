@@ -18,11 +18,14 @@ test("longitudinal currentness pressure should preserve corrections as history a
         join(directory, "ember.json"),
         async invocation => {
             const reply = invocation.request.projection.meanings.map(item => item.content).join(" | ");
+            const externalThreadId = invocation.thread.mode === "fresh"
+                ? `thread-${invocation.episodeId}`
+                : invocation.thread.externalThreadId;
             return harnessOutput(invocation.cognitionBackend, {
                 contract_version: 1,
                 reply,
                 used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-                operational: { external_thread_id: `thread-${invocation.episodeId}` },
+                operational: { external_thread_id: externalThreadId },
             });
         },
     );
@@ -43,12 +46,16 @@ test("longitudinal currentness pressure should preserve corrections as history a
     assert.equal(baseline.context_evaluation.inclusion_candidates.irrelevant_selected.length, 24);
 
     const changedPreference = report.episodes[1]!;
+    assert.equal(changedPreference.external_thread.mode, "reuse");
+    assert.equal(changedPreference.provider_thread_id, baseline.provider_thread_id);
     assert.equal(changedPreference.projection.meanings.some(item => item.content.includes("CURRENTNESS_PREF_OLD")), false);
     assert.equal(changedPreference.projection.meanings.some(item => item.content.includes("CURRENTNESS_PREF_NEW")), true);
     assert.equal(changedPreference.canonical_before.historical_meanings.some(item => item.content.includes("CURRENTNESS_PREF_OLD") && item.currentness === "superseded"), true);
     assert.deepEqual(changedPreference.context_evaluation.inclusion_candidates.superseded_selected, []);
 
     const correctedFact = report.episodes[2]!;
+    assert.equal(correctedFact.external_thread.mode, "reuse");
+    assert.equal(correctedFact.provider_thread_id, baseline.provider_thread_id);
     assert.equal(correctedFact.projection.meanings.some(item => item.content.includes("CURRENTNESS_FACT_OLD")), false);
     assert.equal(correctedFact.projection.meanings.some(item => item.content.includes("CURRENTNESS_FACT_NEW")), true);
     assert.equal(correctedFact.canonical_before.historical_meanings.some(item => item.content.includes("CURRENTNESS_FACT_OLD") && item.currentness === "superseded"), true);
@@ -56,6 +63,8 @@ test("longitudinal currentness pressure should preserve corrections as history a
     assert.deepEqual(correctedFact.context_evaluation.inclusion_candidates.forbidden_selected, []);
 
     const history = report.episodes[3]!;
+    assert.equal(history.external_thread.mode, "fresh");
+    assert.notEqual(history.provider_thread_id, baseline.provider_thread_id);
     assert.deepEqual(history.context_evaluation.inclusion_candidates.superseded_selected, ["preference_old", "fact_old"]);
     assert.equal(history.projection.meanings.some(item => item.content.includes("CURRENTNESS_PREF_OLD")), true);
     assert.equal(history.projection.meanings.some(item => item.content.includes("CURRENTNESS_PREF_NEW")), true);
