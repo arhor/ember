@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
-import { buildSpecialistPrompt, createSpecialistEpisode, runCodexSpecialist, setSpecialistDisposition } from "./codex-specialist.ts";
+import { buildSpecialistPrompt, createSpecialistEpisode, reconcileSpecialistResult, runCodexSpecialist, setSpecialistDisposition } from "./codex-specialist.ts";
 import { ROOT, tempDir } from "../../tests/support.ts";
 
 const FIXTURE = join(ROOT, "test-fixtures/providers/scripted-codex-specialist.ts");
@@ -60,7 +60,7 @@ async function episodeFixture() {
         stdout_limit_bytes: 1024 * 1024,
         session_mode: "ephemeral",
       },
-      currentness_basis: "episode-60 objective version 1",
+      currentness_basis: { objective_revision: "objective-1", context_revision: "context-1" },
     }),
   };
 }
@@ -129,9 +129,106 @@ test("specialist disposition should become accepted when Ember explicitly interp
     environment: { PATH: process.env.PATH },
   });
 
-  const accepted = await setSpecialistDisposition(fixture.recordPath, "accepted");
+  const accepted = await reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-1",
+    context_revision: "context-1",
+    objective_status: "current",
+  }, { disposition: "accepted" });
 
   assert.equal(accepted.ember_disposition, "accepted");
+});
+
+test("successful specialist output should require currentness reconciliation before acceptance", async () => {
+  const fixture = await episodeFixture();
+  await runCodexSpecialist(fixture.spec, { recordPath: fixture.recordPath, environment: { PATH: process.env.PATH } });
+
+  await assert.rejects(setSpecialistDisposition(fixture.recordPath, "accepted"), /requires reconcileSpecialistResult/);
+});
+
+test("requirement change during work should require re-evaluation without erasing historical success", async () => {
+  const fixture = await episodeFixture();
+  await runCodexSpecialist(fixture.spec, { recordPath: fixture.recordPath, environment: { PATH: process.env.PATH } });
+
+  const reconciled = await reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-1",
+    context_revision: "context-2-requirements-changed",
+    objective_status: "current",
+  }, { now: () => "2026-09-02T12:00:00.000Z" });
+
+  assert.deepEqual([reconciled.report_state, reconciled.ember_disposition], ["reported_success", "requires_re_evaluation"]);
+  assert.equal(reconciled.currentness_evaluation?.applicability, "requires_re_evaluation");
+  assert.deepEqual(reconciled.currentness_evaluation?.started_from, fixture.spec.currentness_basis);
+});
+
+test("re-evaluated result should support a later atomic currentness check and acceptance", async () => {
+  const fixture = await episodeFixture();
+  await runCodexSpecialist(fixture.spec, { recordPath: fixture.recordPath, environment: { PATH: process.env.PATH } });
+  await reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-1",
+    context_revision: "context-2",
+    objective_status: "current",
+  });
+
+  const accepted = await reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-1",
+    context_revision: "context-2",
+    objective_status: "current",
+  }, { re_evaluation: { disposition: "accepted", reason: "The changed requirement does not invalidate the artifact." } });
+
+  assert.equal(accepted.ember_disposition, "accepted");
+  assert.equal(accepted.currentness_evaluation?.applicability, "requires_re_evaluation");
+  assert.equal(accepted.currentness_evaluation?.resolution?.disposition, "accepted");
+});
+
+test("currentness reconciliation should reject an in-flight episode", async () => {
+  const fixture = await episodeFixture();
+  const record = {
+    record_version: 2,
+    specification: fixture.spec,
+    runtime_state: "running",
+    report_state: "none",
+    ember_disposition: "unresolved",
+    known_effects: [],
+    possible_effects: [],
+    observations: [],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(record)}\n`);
+
+  await assert.rejects(reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-1",
+    context_revision: "context-1",
+    objective_status: "current",
+  }), /only after a final report and observed exit/);
+});
+
+test("late successful result after objective supersession should be classified stale", async () => {
+  const fixture = await episodeFixture();
+  await runCodexSpecialist(fixture.spec, { recordPath: fixture.recordPath, environment: { PATH: process.env.PATH } });
+
+  const reconciled = await reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-2",
+    context_revision: "context-2",
+    objective_status: "superseded",
+  });
+
+  assert.deepEqual([reconciled.report_state, reconciled.ember_disposition], ["reported_success", "stale"]);
+  assert.equal(reconciled.currentness_evaluation?.applicability, "stale");
+  assert.equal(JSON.parse(await readFile(fixture.recordPath, "utf8")).report.objective_disposition, "completed");
+});
+
+test("cancelled objective should reject a late result while retaining its provenance", async () => {
+  const fixture = await episodeFixture();
+  await runCodexSpecialist(fixture.spec, { recordPath: fixture.recordPath, environment: { PATH: process.env.PATH } });
+
+  const reconciled = await reconcileSpecialistResult(fixture.recordPath, {
+    objective_revision: "objective-1",
+    context_revision: "context-1",
+    objective_status: "cancelled",
+  });
+
+  assert.equal(reconciled.ember_disposition, "rejected");
+  assert.equal(reconciled.report_provenance?.episode_id, fixture.spec.episode_id);
 });
 
 test("Codex specialist should persist explicit runtime policy without forwarding credentials when invocation starts", async () => {

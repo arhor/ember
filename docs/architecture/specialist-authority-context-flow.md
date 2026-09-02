@@ -36,8 +36,8 @@ be serialized into the same bounded prompt:
 
 | Meaning | Production representation | What it may establish |
 | --- | --- | --- |
-| Objective | `objective` plus `acceptance` and `currentness_basis` | The work Ember is asking Codex to pursue and how Ember will later judge applicability |
-| Selected context | `context_projection[]` with `content`, `provenance`, `scope`, and `currentness` | Which task-relevant meaning Ember intentionally disclosed, how it is scoped, and how it may be interpreted |
+| Objective | `objective` plus `acceptance` and `currentness_basis.objective_revision` | The work Ember is asking Codex to pursue and the exact objective revision Ember will later compare |
+| Selected context | `context_projection[]` plus `currentness_basis.context_revision` | Which task-relevant meaning Ember intentionally disclosed and the revision checkpoint for relevant requirements or canonical meaning |
 | Authority | `authority_envelope` with attributable `principal`, `grant`, `provenance`, `currentness`, permitted/prohibited actions, and escalation conditions | The semantic decision-space intentionally entrusted for this episode and the source/currentness basis Ember used to treat it as live |
 | Runtime capability | `runtime_capability` plus the concrete `runtime_policy` | Technical reach and enforcement evidence available to the Codex attempt, never legitimacy by itself |
 
