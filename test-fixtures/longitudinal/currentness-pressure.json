@@ -124,7 +124,8 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": {
-        "mode": "fresh"
+        "mode": "reuse",
+        "episode": "baseline-with-unresolved-conflict"
       },
       "changes": [
         {
@@ -186,7 +187,8 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": {
-        "mode": "fresh"
+        "mode": "reuse",
+        "episode": "changed-preference"
       },
       "changes": [
         {
