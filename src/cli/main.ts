@@ -328,5 +328,9 @@ async function withSigintCancellation<T>(operation: (signal: AbortSignal) => Pro
 }
 
 function isOperationalSystemError(error: unknown): error is Error & { code: string } {
-  return error !== null && typeof error === "object" && "code" in error && typeof (error as { code?: unknown }).code === "string" && /^E[A-Z0-9]+$/.test((error as { code: string }).code);
+    return error !== null
+        && typeof error === "object"
+        && "code" in error
+        && typeof (error as { code?: unknown }).code === "string"
+        && /^E[A-Z0-9]+$/.test((error as { code: string }).code);
 }
