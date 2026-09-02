@@ -32,6 +32,8 @@ async function episodeFixture() {
       authority_envelope: {
         principal: "user-1",
         grant: "Modify this controlled fixture only",
+        provenance: "explicit current test instruction from user-1",
+        currentness: "current for episode-60 objective version 1",
         permitted_actions: ["read and write files in the selected workspace"],
         prohibited_actions: ["network access", "changes outside the workspace"],
         escalation_conditions: ["any broader access is needed"],
@@ -113,6 +115,10 @@ test("Codex specialist should preserve report as attributed unresolved evidence 
     source: "codex_specialist",
     episode_id: fixture.spec.episode_id,
   });
+  assert.deepEqual(record.specification.authority_envelope, fixture.spec.authority_envelope);
+  assert.deepEqual(record.report?.known_effects, ["Created specialist-result.txt in the selected workspace."]);
+  assert.deepEqual(record.known_effects, []);
+  assert.deepEqual(record.possible_effects, []);
   assert.equal(JSON.parse(await readFile(fixture.recordPath, "utf8")).ember_disposition, "unresolved");
 });
 
@@ -346,6 +352,8 @@ test("AS-DEL-07 should not turn workspace write capability into broader Ember au
   fixture.spec.authority_envelope = {
     principal: "user-1",
     grant: "Inspect the controlled fixture and report what change would be needed",
+    provenance: "explicit current test instruction from user-1",
+    currentness: "current for the read-only AS-DEL-07 attempt",
     permitted_actions: ["read files in the selected workspace"],
     prohibited_actions: ["write files even though the runtime sandbox can technically do so"],
     escalation_conditions: ["a write is required to satisfy the objective"],
@@ -360,14 +368,22 @@ test("AS-DEL-07 should not turn workspace write capability into broader Ember au
       requires_decision_from: "authority holder for the workspace mutation",
     }],
   });
+  let prompt = "";
+  const child = childReturning(report);
+  child.stdin.on("data", (chunk: Buffer) => {
+    prompt += chunk.toString();
+  });
 
   const record = await runCodexSpecialist(fixture.spec, {
     recordPath: fixture.recordPath,
-    spawnImpl: () => childReturning(report),
+    spawnImpl: () => child,
   });
 
+  assert.equal(prompt.includes("Runtime capability is not authority"), true);
+  assert.equal(prompt.includes('"mode":"read_write"'), true);
+  assert.equal(prompt.includes('"permitted_actions":["read files in the selected workspace"]'), true);
   assert.equal(record.specification.runtime_capability.filesystem.mode, "read_write");
-  assert.deepEqual(record.specification.authority_envelope.permitted_actions, ["read files in the selected workspace"]);
+  assert.deepEqual(record.specification.authority_envelope, fixture.spec.authority_envelope);
   assert.deepEqual(record.report?.expansion_requests, report.expansion_requests);
   assert.equal(record.report_state, "reported_failure");
   assert.equal(record.ember_disposition, "unresolved");
