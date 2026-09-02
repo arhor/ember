@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, writeFile } from "node:fs/promises";
+import { StaleRevision } from "../core/errors.ts";
+import type { StateStore } from "../persistence/state-store.ts";
 import {
   inspectSpecialistEpisode,
   reconcileSpecialistResult,
@@ -73,6 +75,7 @@ interface PersistedSpecialistRecord extends SpecialistEpisodeRecord {
 }
 
 export async function reintegrateSpecialistResult(
+  store: StateStore,
   recordPath: string,
   checkpoint: SpecialistReintegrationCheckpoint,
   options: {
@@ -81,10 +84,35 @@ export async function reintegrateSpecialistResult(
     now?: () => string;
   } = {},
 ): Promise<SpecialistReintegrationInspection> {
-  const before = await inspectSpecialistEpisode(recordPath);
-  requireFinalAttributedReport(before);
   validateReintegrationCheckpoint(checkpoint);
   validateDecision(options.decision);
+
+  const existingLease = store.lease;
+  const lease = existingLease ?? await store.acquireWriteLease();
+  try {
+    const currentState = await store.load();
+    if (currentState.revision !== checkpoint.ember_revision) {
+      throw new StaleRevision(
+        `specialist reintegration checkpoint revision ${checkpoint.ember_revision} is stale; current Ember revision is ${currentState.revision}`,
+      );
+    }
+    return await reintegrateAtCurrentRevision(recordPath, checkpoint, options);
+  } finally {
+    if (existingLease === null) await store.releaseWriteLease(lease);
+  }
+}
+
+async function reintegrateAtCurrentRevision(
+  recordPath: string,
+  checkpoint: SpecialistReintegrationCheckpoint,
+  options: {
+    decision?: SpecialistSemanticDecision;
+    corroboratingRecordPaths?: string[];
+    now?: () => string;
+  },
+): Promise<SpecialistReintegrationInspection> {
+  const before = await inspectSpecialistEpisode(recordPath);
+  requireFinalAttributedReport(before);
 
   const resultShape = classifyResult(before);
   const now = options.now ?? (() => new Date().toISOString());
