@@ -536,7 +536,7 @@ export async function recordSpecialistProcessLoss(
 ): Promise<SpecialistEpisodeRecord> {
   if (!bounded(detail, 32_768)) throw new Error("specialist process-loss observation is invalid");
   const record = await inspectSpecialistEpisode(recordPath);
-  if (!["running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
+  if (!["not_started", "running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
     throw new Error("specialist process loss can be recorded only for a nonterminal attempt");
   }
   if (!record.observations.some((item) => item.kind === "launch_attempted")) {

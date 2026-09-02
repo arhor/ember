@@ -546,6 +546,32 @@ test("process-loss recovery should convert a committed running attempt to durabl
   assert.match(restartedInspection.possible_effects.join(" "), /continued across process loss/);
 });
 
+test("process-loss recovery should preserve ambiguity after launch attempt but before child-start commit", async () => {
+  const fixture = await episodeFixture();
+  const launching = {
+    record_version: 3,
+    specification: fixture.spec,
+    runtime_state: "not_started",
+    report_state: "none",
+    ember_disposition: "unresolved",
+    recovery: { effect_state: "no_effect_established", continued_work_state: "not_applicable", retry_state: "not_applicable", reconciliation_required: null },
+    known_effects: [],
+    possible_effects: [],
+    observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: "launch_attempted" }],
+  };
+  await mkdir(join(fixture.root, "episodes"));
+  await writeFile(fixture.recordPath, `${JSON.stringify(launching)}\n`);
+
+  const recovered = await recordSpecialistProcessLoss(fixture.recordPath, "Ember restarted before child start was committed");
+
+  assert.deepEqual([recovered.runtime_state, recovered.report_state], ["lost", "ambiguous"]);
+  assert.equal(recovered.recovery.effect_state, "effects_possible");
+  assert.equal(recovered.recovery.continued_work_state, "unknown");
+  assert.equal(recovered.recovery.retry_state, "prohibited_pending_reconciliation");
+  assert.equal(recovered.termination?.reason, "boundary_failure");
+  assert.equal(recovered.termination?.direct_child_exit_observed, false);
+});
+
 for (const interrupted of [
   { runtimeState: "cancellation_requested", reason: "explicit_cancellation", observation: "cancellation_requested" },
   { runtimeState: "timed_out", reason: "timeout", observation: "timeout_observed" },

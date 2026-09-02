@@ -323,9 +323,12 @@ whether the direct child's exit was observed, and that the stop state of remote 
 descendant work remains unknown. Direct-child exit is therefore never presented as
 specialist-wide stop acknowledgement or rollback evidence. `inspectSpecialistEpisode`
 loads and validates this inspection surface after restart. When restart establishes
-that a previously committed `running`, `cancellation_requested`, or `timed_out`
-attempt lost its supervisor, `recordSpecialistProcessLoss` converts it to durable
-`lost`/`ambiguous` state without inventing a child exit.
+that a previously committed `launch_attempted`, `running`,
+`cancellation_requested`, or `timed_out` attempt lost its supervisor,
+`recordSpecialistProcessLoss` converts it to durable `lost`/`ambiguous` state
+without inventing a child exit. This includes the crash window where spawn may have
+succeeded before `child_started` reached disk; only pre-launch cancellation, which
+has no `launch_attempted` evidence, remains safely outside process-loss recovery.
 
 Effect and retry recovery are likewise explicit. An attempt interrupted after
 launch records `effects_possible` and `prohibited_pending_reconciliation`, even
