@@ -16,7 +16,18 @@ export type SourceRole =
     | "ember_adoption"
     | "ember_expression_via_provider"
     | "runtime_observation"
+    | "external_claim"
+    | "ember_inference"
+    | "ember_observation"
+    | "delegated_report"
     | "fixture_fault";
+export type EpistemicRole =
+    "user_testimony"
+    | "ember_inference"
+    | "external_claim"
+    | "direct_observation"
+    | "delegated_report"
+    | "ember_commitment";
 export type CognitionStatus =
     "started"
     | "completed"
@@ -107,6 +118,34 @@ export interface RuntimeObservationEvidence extends EvidenceBase {
     payload_mode: "descriptor_only";
 }
 
+export interface ExternalClaimEvidence extends EvidenceBase {
+    source_role: "external_claim";
+    source_actor: `external:${string}`;
+    derived_from_evidence_ids: [];
+    payload_mode: "descriptor_only";
+}
+
+export interface EmberInferenceEvidence extends EvidenceBase {
+    source_role: "ember_inference";
+    source_actor: "ember";
+    derived_from_evidence_ids: [EvidenceId, ...EvidenceId[]];
+    payload_mode: "descriptor_only";
+}
+
+export interface EmberObservationEvidence extends EvidenceBase {
+    source_role: "ember_observation";
+    source_actor: "ember";
+    derived_from_evidence_ids: [];
+    payload_mode: "descriptor_only";
+}
+
+export interface DelegatedReportEvidence extends EvidenceBase {
+    source_role: "delegated_report";
+    source_actor: `delegate:${string}`;
+    derived_from_evidence_ids: EvidenceId[];
+    payload_mode: "descriptor_only";
+}
+
 export interface FixtureFaultEvidence extends EvidenceBase {
     source_role: "fixture_fault";
     source_actor: "runtime";
@@ -122,6 +161,10 @@ export type Evidence =
     | EmberAdoptionEvidence
     | EmberExpressionEvidence
     | RuntimeObservationEvidence
+    | ExternalClaimEvidence
+    | EmberInferenceEvidence
+    | EmberObservationEvidence
+    | DelegatedReportEvidence
     | FixtureFaultEvidence;
 
 interface MeaningBase {
@@ -132,7 +175,7 @@ interface MeaningBase {
     scope: string;
     content: string;
     source_evidence_ids: EvidenceId[];
-    epistemic_role: "user_testimony" | "ember_commitment";
+    epistemic_role: EpistemicRole;
     learned_at: string;
     applicable_from: string;
     applicable_until: string | null;
@@ -146,6 +189,7 @@ interface MeaningBase {
 export interface RelationshipMeaning extends MeaningBase {
     kind: "relationship";
     owner: `relationship:${string}`;
+    epistemic_role: "user_testimony";
     currentness: "current";
     prospective_lifecycle: "none";
     supersedes: null;
@@ -154,7 +198,8 @@ export interface RelationshipMeaning extends MeaningBase {
 
 export interface FactMeaning extends MeaningBase {
     kind: "fact";
-    owner: `user:${string}`;
+    owner: `user:${string}` | "ember" | `external:${string}` | `delegate:${string}`;
+    epistemic_role: Exclude<EpistemicRole, "ember_commitment">;
     currentness: "current" | "superseded";
     prospective_lifecycle: "none";
 }
@@ -162,6 +207,7 @@ export interface FactMeaning extends MeaningBase {
 export interface PreferenceMeaning extends MeaningBase {
     kind: "preference";
     owner: `user:${string}`;
+    epistemic_role: "user_testimony";
     currentness: "current" | "superseded";
     prospective_lifecycle: "none";
 }
@@ -179,6 +225,7 @@ export interface CommitmentMeaning extends MeaningBase {
 export interface EpisodeMetaMeaning extends MeaningBase {
     kind: "episode_meta";
     owner: "ember" | `relationship:${string}`;
+    epistemic_role: "user_testimony";
     currentness: "current";
     prospective_lifecycle: "none";
     supersedes: null;
@@ -256,7 +303,7 @@ export const CONSTITUTIVE_TEXT = "Ember owns this lineage across temporary cogni
 
 const TOP_FIELDS = ["evidence", "lineage", "meanings", "operations", "revision", "runtime_contract", "schema_version"];
 const KINDS = new Set(["relationship", "fact", "preference", "commitment", "episode_meta"]);
-const ROLES = new Set(["user_command", "ember_adoption", "ember_expression_via_provider", "runtime_observation", "fixture_fault"]);
+const ROLES = new Set(["user_command", "ember_adoption", "ember_expression_via_provider", "runtime_observation", "external_claim", "ember_inference", "ember_observation", "delegated_report", "fixture_fault"]);
 const CURRENTNESS = new Set(["current", "superseded", "historical"]);
 
 type IdPrefix = "lineage" | "meaning" | "evidence" | "runtime" | "cognition";
@@ -441,6 +488,25 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(derived.length === 0, `${path} provider expression cannot derive new evidence`);
             require(!("related_meaning_id" in ev), `${path} provider expression cannot attach detail`);
         }
+        if (ev.source_role === "external_claim") {
+            require(typeof ev.source_actor === "string" && ev.source_actor.startsWith("external:") && ev.source_actor.length > "external:".length, `${path} external claim actor must identify its source`);
+            require(derived.length === 0, `${path} external claim is a source occurrence, not a derivative`);
+            require(ev.payload_mode === "descriptor_only", `${path} external claim must be descriptor-only`);
+        }
+        if (ev.source_role === "ember_inference") {
+            require(ev.source_actor === "ember", `${path} inference actor must be Ember`);
+            require(derived.length >= 1, `${path} inference needs source evidence`);
+            require(ev.payload_mode === "descriptor_only", `${path} inference must be descriptor-only`);
+        }
+        if (ev.source_role === "ember_observation") {
+            require(ev.source_actor === "ember", `${path} direct observation actor must be Ember`);
+            require(derived.length === 0, `${path} direct observation cannot masquerade as a derivative`);
+            require(ev.payload_mode === "descriptor_only", `${path} direct observation must be descriptor-only`);
+        }
+        if (ev.source_role === "delegated_report") {
+            require(typeof ev.source_actor === "string" && ev.source_actor.startsWith("delegate:") && ev.source_actor.length > "delegate:".length, `${path} delegated report actor must identify its delegate`);
+            require(ev.payload_mode === "descriptor_only", `${path} delegated report must be descriptor-only`);
+        }
         if (["runtime_observation", "fixture_fault"].includes(ev.source_role)) {
             require(ev.source_actor === "runtime", `${path} runtime evidence actor must be runtime`);
             require(ev.payload_mode === "descriptor_only", `${path} runtime evidence must be descriptor-only`);
@@ -476,11 +542,23 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(m.slot === "relationship", `${path} relationship slot must be fixed`);
             require(m.currentness === "current", `${path} relationship must remain current in v1`);
             require(m.prospective_lifecycle === "none", `${path} relationship lifecycle is unsupported`);
-        } else if (["fact", "preference"].includes(m.kind)) {
-            require(m.owner === `user:${principal}`, `${path} ${m.kind} owner must be the supported user`);
-            require(["current", "superseded"].includes(m.currentness), `${path} ${m.kind} currentness is invalid`);
-            require(m.prospective_lifecycle === "none", `${path} ${m.kind} prospective lifecycle is invalid`);
-            require(m.applicable_until === null, `${path} ${m.kind} applicability interval cannot be rewritten in v1`);
+        } else if (m.kind === "fact") {
+            require(
+                m.owner === `user:${principal}`
+                || m.owner === "ember"
+                || (typeof m.owner === "string" && m.owner.startsWith("external:") && m.owner.length > "external:".length)
+                || (typeof m.owner === "string" && m.owner.startsWith("delegate:") && m.owner.length > "delegate:".length),
+                `${path} fact owner is invalid`,
+            );
+            require(["current", "superseded"].includes(m.currentness), `${path} fact currentness is invalid`);
+            require(m.prospective_lifecycle === "none", `${path} fact prospective lifecycle is invalid`);
+            require(m.applicable_until === null, `${path} fact applicability interval cannot be rewritten in v1`);
+            if (m.currentness === "superseded") require(m.epistemic_role === "user_testimony", `${path} only user testimony supports supersession in v1`);
+        } else if (m.kind === "preference") {
+            require(m.owner === `user:${principal}`, `${path} preference owner must be the supported user`);
+            require(["current", "superseded"].includes(m.currentness), `${path} preference currentness is invalid`);
+            require(m.prospective_lifecycle === "none", `${path} preference prospective lifecycle is invalid`);
+            require(m.applicable_until === null, `${path} preference applicability interval cannot be rewritten in v1`);
         } else if (m.kind === "commitment") {
             require(m.owner === "ember", `${path} commitment owner must be Ember`);
             require(m.prospective_lifecycle === "live", `${path} commitment discharge is unsupported without a named transition`);
@@ -627,10 +705,46 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(adoptions.length >= 1, `${id} commitment needs Ember adoption evidence`);
             for (const a of adoptions) require(a!.derived_from_evidence_ids.length === 1 && evById.get(a!.derived_from_evidence_ids[0])?.source_role === "user_command", `${id} adoption must derive from user request`);
             require(m.epistemic_role === "ember_commitment", `${id} commitment epistemic role is invalid`);
+        } else if (m.kind === "fact") {
+            if (m.epistemic_role === "user_testimony") {
+                require(m.owner === `user:${principal}`, `${id} user testimony owner must be the supported user`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "user_command"), `${id} user testimony must cite user-command evidence`);
+            } else if (m.epistemic_role === "ember_inference") {
+                require(m.owner === "ember", `${id} Ember inference must be Ember-owned`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "ember_inference"), `${id} Ember inference must cite inference evidence`);
+            } else if (m.epistemic_role === "direct_observation") {
+                require(m.owner === "ember", `${id} direct observation must be Ember-owned`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "ember_observation"), `${id} direct observation must cite Ember observation evidence`);
+            } else if (m.epistemic_role === "external_claim") {
+                require(typeof m.owner === "string" && m.owner.startsWith("external:"), `${id} external claim owner must identify its source`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "external_claim" && ev.source_actor === m.owner), `${id} external claim must retain matching external source evidence`);
+            } else if (m.epistemic_role === "delegated_report") {
+                require(typeof m.owner === "string" && m.owner.startsWith("delegate:"), `${id} delegated report owner must identify its delegate`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "delegated_report" && ev.source_actor === m.owner), `${id} delegated report must retain matching delegate evidence`);
+            } else {
+                require(false, `${id} fact epistemic role is unsupported`);
+            }
         } else {
             require(m.epistemic_role === "user_testimony", `${id} epistemic role is invalid for supported promotion path`);
             require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "user_command"), `${id} supported remembered meaning must cite user-command evidence`);
         }
+    }
+
+    for (const start of evById.keys()) {
+        const visiting = new Set<string>();
+        const visited = new Set<string>();
+        const visit = (cursor: string): void => {
+            if (visiting.has(cursor)) {
+                require(false, `evidence derivation cycle contains ${cursor}`);
+                return;
+            }
+            if (visited.has(cursor)) return;
+            visiting.add(cursor);
+            for (const parent of evById.get(cursor)?.derived_from_evidence_ids ?? []) visit(parent);
+            visiting.delete(cursor);
+            visited.add(cursor);
+        };
+        visit(start);
     }
 
     for (const id of meaningById.keys()) {

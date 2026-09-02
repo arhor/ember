@@ -5,10 +5,14 @@ import {
   nowUtc,
   validateState,
   type AvailableUserEvidence,
+  type DelegatedReportEvidence,
   type EmberAdoptionEvidence,
+  type EmberInferenceEvidence,
+  type EmberObservationEvidence,
   type EmberState,
   type Evidence,
   type EvidenceId,
+  type ExternalClaimEvidence,
   type FactMeaning,
   type Meaning,
   type MeaningId,
@@ -90,6 +94,120 @@ function ensureNoCurrent(state: EmberState, kind: Meaning["kind"], owner: string
   if (state.meanings.some(m => m.kind === kind && m.owner === owner && m.slot === slot && m.scope === scope && m.currentness === "current")) {
     throw new ValidationError("a current meaning already occupies this exact semantic slot");
   }
+}
+
+function attributedOwner(prefix: "external" | "delegate", label: string): `external:${string}` | `delegate:${string}` {
+  if (typeof label !== "string" || !label.trim()) throw new ValidationError(`${prefix} source label must be non-empty`);
+  return `${prefix}:${label.trim()}` as `external:${string}` | `delegate:${string}`;
+}
+
+function resolveEvidenceIds(state: EmberState, ids: Array<EvidenceId | string>): EvidenceId[] {
+  return [...new Set(ids.map(id => findEvidence(state, id).evidence_id))];
+}
+
+function rememberAttributedFact(
+  state: EmberState,
+  principal: string,
+  owner: FactMeaning["owner"],
+  slot: string,
+  scope: string,
+  text: string,
+  epistemicRole: FactMeaning["epistemic_role"],
+  evidence: Evidence,
+): MeaningId {
+  requirePrincipal(state, principal);
+  ensureNoCurrent(state, "fact", owner, slot, scope);
+  const common = meaningCommon(slot, scope, text, evidence.evidence_id);
+  const meaning: FactMeaning = {
+    ...common,
+    kind: "fact",
+    owner,
+    epistemic_role: epistemicRole,
+    prospective_lifecycle: "none",
+  };
+  state.evidence.push(evidence);
+  state.meanings.push(meaning);
+  validateState(state);
+  return meaning.meaning_id;
+}
+
+export function rememberExternalClaim(state: EmberState, principal: string, source: string, slot: string, scope: string, text: string): MeaningId {
+  const owner = attributedOwner("external", source) as `external:${string}`;
+  const at = nowUtc();
+  const evidence: ExternalClaimEvidence = {
+    evidence_id: newId("evidence"),
+    source_role: "external_claim",
+    source_actor: owner,
+    occurred_at: at,
+    observed_at: at,
+    derived_from_evidence_ids: [],
+    scope,
+    payload_mode: "descriptor_only",
+  };
+  return rememberAttributedFact(state, principal, owner, slot, scope, text, "external_claim", evidence);
+}
+
+export function rememberDirectObservation(state: EmberState, principal: string, slot: string, scope: string, text: string): MeaningId {
+  const at = nowUtc();
+  const evidence: EmberObservationEvidence = {
+    evidence_id: newId("evidence"),
+    source_role: "ember_observation",
+    source_actor: "ember",
+    occurred_at: at,
+    observed_at: at,
+    derived_from_evidence_ids: [],
+    scope,
+    payload_mode: "descriptor_only",
+  };
+  return rememberAttributedFact(state, principal, "ember", slot, scope, text, "direct_observation", evidence);
+}
+
+export function rememberDelegatedReport(
+  state: EmberState,
+  principal: string,
+  delegate: string,
+  slot: string,
+  scope: string,
+  text: string,
+  derivedFrom: Array<EvidenceId | string> = [],
+): MeaningId {
+  const owner = attributedOwner("delegate", delegate) as `delegate:${string}`;
+  const at = nowUtc();
+  const evidence: DelegatedReportEvidence = {
+    evidence_id: newId("evidence"),
+    source_role: "delegated_report",
+    source_actor: owner,
+    occurred_at: at,
+    observed_at: at,
+    derived_from_evidence_ids: resolveEvidenceIds(state, derivedFrom),
+    scope,
+    payload_mode: "descriptor_only",
+  };
+  return rememberAttributedFact(state, principal, owner, slot, scope, text, "delegated_report", evidence);
+}
+
+export function rememberInference(
+  state: EmberState,
+  principal: string,
+  slot: string,
+  scope: string,
+  text: string,
+  derivedFrom: Array<EvidenceId | string>,
+): MeaningId {
+  const derived = resolveEvidenceIds(state, derivedFrom);
+  if (derived.length === 0) throw new ValidationError("Ember inference requires at least one source evidence occurrence");
+  const at = nowUtc();
+  const evidence: EmberInferenceEvidence = {
+    evidence_id: newId("evidence"),
+    source_role: "ember_inference",
+    source_actor: "ember",
+    occurred_at: at,
+    observed_at: at,
+    derived_from_evidence_ids: derived as [EvidenceId, ...EvidenceId[]],
+    scope,
+    payload_mode: "descriptor_only",
+  };
+  return rememberAttributedFact(state, principal, "ember", slot, scope, text, "ember_inference", evidence);
 }
 
 export function rememberRelationship(state: EmberState, principal: string, owner: string, scope: string, text: string): MeaningId {
@@ -194,6 +312,7 @@ export function supersede(
   const old = findMeaning(state, meaningId);
   if (old.kind !== "fact" && old.kind !== "preference") throw new ValidationError("only fact and preference correction/supersession is supported");
   if (old.currentness !== "current" || old.superseded_by !== null) throw new ValidationError("only a current, unsuperseded meaning can be superseded");
+  if (old.epistemic_role !== "user_testimony") throw new ValidationError("only user-testimony fact or preference supersession is supported in v1");
   requireUserOwner(principal, old.owner);
   const payload = reason === null ? text : `Correction: ${text}\nReason: ${reason}`;
   const ev = userEvidence(state, principal, old.scope, payload);

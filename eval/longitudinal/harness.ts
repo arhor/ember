@@ -5,8 +5,12 @@ import { inspectionView, type Projection } from "../../src/core/projection.ts";
 import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 import {
   attachDetail,
+  rememberDelegatedReport,
+  rememberDirectObservation,
   rememberEpisode,
+  rememberExternalClaim,
   rememberFact,
+  rememberInference,
   rememberPreference,
   rememberRelationship,
   supersede,
@@ -22,6 +26,10 @@ export type MeaningReference = string | { group: string };
 type StateAction =
   | { action: "remember_relationship"; as: string; scope: string; text: string; at: string }
   | { action: "remember_fact"; as: string; slot: string; scope: string; text: string; at: string }
+  | { action: "remember_external_claim"; as: string; source: string; slot: string; scope: string; text: string; at: string }
+  | { action: "remember_direct_observation"; as: string; slot: string; scope: string; text: string; at: string }
+  | { action: "remember_delegated_report"; as: string; delegate: string; slot: string; scope: string; text: string; derived_from: string[]; at: string }
+  | { action: "remember_inference"; as: string; slot: string; scope: string; text: string; derived_from: string[]; at: string }
   | { action: "remember_preference"; as: string; slot: string; scope: string; text: string; at: string }
   | { action: "undertake"; as: string; slot: string; scope: string; text: string; at: string }
   | { action: "remember_episode"; as: string; slot: string; scope: string; text: string; at: string }
@@ -342,6 +350,10 @@ function applyActions(state: EmberState, actions: StateAction[], principal: stri
       switch (item.action) {
         case "remember_relationship": return rememberRelationship(state, principal, `relationship:${principal}`, item.scope, item.text);
         case "remember_fact": return rememberFact(state, principal, `user:${principal}`, item.slot, item.scope, item.text);
+        case "remember_external_claim": return rememberExternalClaim(state, principal, item.source, item.slot, item.scope, item.text);
+        case "remember_direct_observation": return rememberDirectObservation(state, principal, item.slot, item.scope, item.text);
+        case "remember_delegated_report": return rememberDelegatedReport(state, principal, item.delegate, item.slot, item.scope, item.text, resolveEvidenceAliases(state, aliases, item.derived_from));
+        case "remember_inference": return rememberInference(state, principal, item.slot, item.scope, item.text, resolveEvidenceAliases(state, aliases, item.derived_from));
         case "remember_preference": return rememberPreference(state, principal, `user:${principal}`, item.slot, item.scope, item.text);
         case "undertake": return undertake(state, principal, item.slot, item.scope, item.text);
         case "remember_episode": return rememberEpisode(state, principal, item.slot, `relationship:${principal}`, item.scope, item.text);
@@ -353,6 +365,18 @@ function applyActions(state: EmberState, actions: StateAction[], principal: stri
     aliases.set(item.as, id);
   }
   validateState(state);
+}
+
+function resolveEvidenceAliases(state: EmberState, aliases: Map<string, string>, references: string[]): string[] {
+  if (!Array.isArray(references)) throw new Error("provenance derivation references must be an array");
+  const ids = references.flatMap(alias => {
+    const id = requireAlias(aliases, alias);
+    if (id.startsWith("evidence-")) return [id];
+    const meaning = state.meanings.find(item => String(item.meaning_id) === id);
+    if (!meaning) throw new Error(`provenance derivation alias does not resolve to meaning or evidence: ${alias}`);
+    return meaning.source_evidence_ids.map(String);
+  });
+  return [...new Set(ids)];
 }
 
 function evaluateContext(

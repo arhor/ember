@@ -1,0 +1,243 @@
+{
+  "scenario_version": 1,
+  "id": "issue-68-provenance-pressure",
+  "description": "Exercise testimony, external claims, direct observation, delegated reports, Ember inference, correlated derivation, correction, and historical provenance under longitudinal pressure.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "initial_at": "2026-09-02T08:00:00Z"
+  },
+  "history": [
+    {
+      "generate": "remember_fact_series",
+      "as": "ambient_provenance_history",
+      "count": 12,
+      "slot_prefix": "ambient-provenance",
+      "scope": "project:ember/provenance",
+      "text_prefix": "Synthetic provenance pressure history item",
+      "start_at": "2026-09-02T08:01:00Z",
+      "interval_seconds": 30
+    }
+  ],
+  "setup": [
+    {
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing collaborators",
+      "at": "2026-09-02T08:20:00Z"
+    },
+    {
+      "action": "remember_fact",
+      "as": "user_report_old",
+      "slot": "release-user-report",
+      "scope": "project:ember/provenance",
+      "text": "PROV_USER_OLD: The user reports the release is green",
+      "at": "2026-09-02T08:21:00Z"
+    },
+    {
+      "action": "remember_external_claim",
+      "as": "external_dashboard",
+      "source": "release-dashboard",
+      "slot": "release-dashboard-claim",
+      "scope": "project:ember/provenance",
+      "text": "PROV_EXTERNAL_GREEN: The release dashboard reports green",
+      "at": "2026-09-02T08:22:00Z"
+    },
+    {
+      "action": "remember_direct_observation",
+      "as": "direct_smoke_observation",
+      "slot": "release-smoke-observation",
+      "scope": "project:ember/provenance",
+      "text": "PROV_OBSERVATION_RED: Ember directly observed the smoke check fail",
+      "at": "2026-09-02T08:23:00Z"
+    },
+    {
+      "action": "remember_delegated_report",
+      "as": "delegate_a",
+      "delegate": "codex-a",
+      "slot": "release-delegate-a",
+      "scope": "project:ember/provenance",
+      "text": "PROV_DELEGATE_A_GREEN: Codex A reports green from the release dashboard",
+      "derived_from": ["external_dashboard"],
+      "at": "2026-09-02T08:24:00Z"
+    },
+    {
+      "action": "remember_delegated_report",
+      "as": "delegate_b",
+      "delegate": "codex-b",
+      "slot": "release-delegate-b",
+      "scope": "project:ember/provenance",
+      "text": "PROV_DELEGATE_B_GREEN: Codex B repeats green from the same release dashboard",
+      "derived_from": ["external_dashboard"],
+      "at": "2026-09-02T08:25:00Z"
+    },
+    {
+      "action": "remember_inference",
+      "as": "inference_a",
+      "slot": "release-inference-a",
+      "scope": "project:ember/provenance",
+      "text": "PROV_INFERENCE_A_GREEN: Ember inferred likely green from Codex A's dashboard report",
+      "derived_from": ["delegate_a"],
+      "at": "2026-09-02T08:26:00Z"
+    },
+    {
+      "action": "remember_inference",
+      "as": "inference_b",
+      "slot": "release-inference-b",
+      "scope": "project:ember/provenance",
+      "text": "PROV_INFERENCE_B_GREEN: Ember inferred likely green from Codex B's repeated dashboard report",
+      "derived_from": ["delegate_b"],
+      "at": "2026-09-02T08:27:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "private_forbidden",
+      "slot": "private-provenance-marker",
+      "scope": "project:private",
+      "text": "FORBIDDEN_PROVENANCE_MARKER_68",
+      "at": "2026-09-02T08:28:00Z"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "mixed-provenance-baseline",
+      "at": "2026-09-02T09:00:00Z",
+      "scope": "project:ember/provenance",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": { "mode": "fresh" },
+      "input": "Audit the release evidence without majority-voting repeated claims. Preserve user testimony, external claim, direct observation, delegated reports, and Ember inference as distinct classes. The two delegates and two inferences descend from one dashboard root, so do not count them as independent corroboration. End with exactly: PROVENANCE_DISTINCT GREEN_ROOTS=2 RED_ROOTS=1 CORRELATED_NOT_INDEPENDENT",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "user_report_old",
+          "external_dashboard",
+          "direct_smoke_observation",
+          "delegate_a",
+          "delegate_b",
+          "inference_a",
+          "inference_b"
+        ],
+        "selected_meaning_groups": ["ambient_provenance_history"],
+        "relevant_meanings": [
+          "user_report_old",
+          "external_dashboard",
+          "direct_smoke_observation",
+          "delegate_a",
+          "delegate_b",
+          "inference_a",
+          "inference_b"
+        ],
+        "irrelevant_meanings": [{ "group": "ambient_provenance_history" }],
+        "superseded_meanings": [],
+        "unavailable_meanings": [],
+        "forbidden_meanings": ["private_forbidden"],
+        "reply_includes": [
+          "PROVENANCE_DISTINCT",
+          "GREEN_ROOTS=2",
+          "RED_ROOTS=1",
+          "CORRELATED_NOT_INDEPENDENT"
+        ],
+        "reply_excludes": ["FORBIDDEN_PROVENANCE_MARKER_68"]
+      }
+    },
+    {
+      "id": "corrected-user-testimony",
+      "at": "2026-09-03T09:00:00Z",
+      "scope": "project:ember/provenance",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "reuse", "episode": "mixed-provenance-baseline" },
+      "changes": [
+        {
+          "action": "supersede",
+          "as": "user_report_new",
+          "meaning": "user_report_old",
+          "text": "PROV_USER_NEW_RED: The user corrects the release report to red",
+          "reason": "The user explicitly corrected the earlier testimony",
+          "at": "2026-09-03T08:55:00Z"
+        }
+      ],
+      "input": "Re-audit using current evidence only. The old green user testimony is historical, not current. Keep the external/delegate/inference green chain correlated through one dashboard root and keep Ember's red direct observation independent. End with exactly: PROVENANCE_DISTINCT GREEN_ROOTS=1 RED_ROOTS=2 CORRELATED_NOT_INDEPENDENT",
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "user_report_new",
+          "external_dashboard",
+          "direct_smoke_observation",
+          "delegate_a",
+          "delegate_b",
+          "inference_a",
+          "inference_b"
+        ],
+        "selected_meaning_groups": ["ambient_provenance_history"],
+        "relevant_meanings": [
+          "user_report_new",
+          "external_dashboard",
+          "direct_smoke_observation",
+          "delegate_a",
+          "delegate_b",
+          "inference_a",
+          "inference_b"
+        ],
+        "irrelevant_meanings": [{ "group": "ambient_provenance_history" }],
+        "superseded_meanings": ["user_report_old"],
+        "unavailable_meanings": [],
+        "forbidden_meanings": ["user_report_old", "private_forbidden"],
+        "reply_includes": [
+          "PROVENANCE_DISTINCT",
+          "GREEN_ROOTS=1",
+          "RED_ROOTS=2",
+          "CORRELATED_NOT_INDEPENDENT"
+        ],
+        "reply_excludes": ["PROV_USER_OLD", "FORBIDDEN_PROVENANCE_MARKER_68"]
+      }
+    },
+    {
+      "id": "historical-provenance-reconstruction",
+      "at": "2026-09-04T09:00:00Z",
+      "scope": "project:ember/provenance",
+      "cognition_backend": "codex",
+      "restart_ember": true,
+      "external_thread": { "mode": "fresh" },
+      "input": "Reconstruct why the user's release testimony changed. Include both old and new user reports as attributed history, but do not turn the old report into current truth or collapse the external, observed, delegated, and inferred evidence classes. End with exactly: HISTORICAL_USER_TESTIMONY PROVENANCE_DISTINCT CORRELATED_NOT_INDEPENDENT",
+      "purpose": "explain",
+      "explain": ["user_report_old"],
+      "expect": {
+        "selected_meanings": [
+          "relationship",
+          "user_report_old",
+          "user_report_new",
+          "external_dashboard",
+          "direct_smoke_observation",
+          "delegate_a",
+          "delegate_b",
+          "inference_a",
+          "inference_b"
+        ],
+        "selected_meaning_groups": ["ambient_provenance_history"],
+        "relevant_meanings": [
+          "user_report_old",
+          "user_report_new",
+          "external_dashboard",
+          "direct_smoke_observation",
+          "delegate_a",
+          "delegate_b",
+          "inference_a",
+          "inference_b"
+        ],
+        "irrelevant_meanings": [{ "group": "ambient_provenance_history" }],
+        "superseded_meanings": ["user_report_old"],
+        "unavailable_meanings": [],
+        "forbidden_meanings": ["private_forbidden"],
+        "reply_includes": [
+          "HISTORICAL_USER_TESTIMONY",
+          "PROVENANCE_DISTINCT",
+          "CORRELATED_NOT_INDEPENDENT"
+        ],
+        "reply_excludes": ["FORBIDDEN_PROVENANCE_MARKER_68"]
+      }
+    }
+  ]
+}

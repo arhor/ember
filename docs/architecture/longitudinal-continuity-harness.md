@@ -39,6 +39,10 @@ Two representative scenarios show the main uses:
   superseded, unavailable, and forbidden meanings while preference currentness and
   detail availability change. Its purpose is to prove that selection evidence can
   be captured under pressure, not to pre-decide the harm rubric that #70 owns.
+- `test-fixtures/longitudinal/provenance-pressure.json` mixes user testimony,
+  external claims, direct Ember observation, delegated reports, and Ember inference.
+  Delegated/inferred branches deliberately share evidence roots so repeated reports
+  cannot masquerade as independent corroboration.
 
 The runner is an orchestration process, not the continuity-bearing Ember runtime.
 For `restart_ember`, it cleanly stops the current runtime episode, commits that
@@ -56,7 +60,8 @@ The deterministic runners need no login, subscription, or network:
 ```sh
 npm run eval:continuity
 npm run eval:memory-context
-node --test tests/longitudinal-harness.test.ts tests/longitudinal-memory-context.test.ts
+npm run eval:provenance
+node --test tests/longitudinal-harness.test.ts tests/longitudinal-memory-context.test.ts tests/longitudinal-provenance.test.ts
 ```
 
 The memory/context fixture can use the same opt-in live provider layer:
@@ -154,19 +159,23 @@ harness share the scenario contract. Add generated groups to those exact sets wi
 pressure fixtures readable without making production code or specialized harnesses
 understand evaluator-only group-reference objects.
 
-Explicit setup/change actions continue to mirror the currently supported semantic
-operations: `remember_relationship`, `remember_fact`, `remember_preference`,
+Explicit setup/change actions continue to mirror supported semantic operations.
+Alongside `remember_relationship`, `remember_fact`, `remember_preference`,
 `undertake`, `remember_episode`, `attach_detail`, `supersede`, and
-`withhold_detail`. The fixture-only withholding action represents unavailable
-detail, not privacy deletion.
+`withhold_detail`, issue #68 adds provenance-aware fact actions:
+`remember_external_claim`, `remember_direct_observation`,
+`remember_delegated_report`, and `remember_inference`. Derived actions name earlier
+scenario aliases in `derived_from`; the harness resolves those aliases to immediate
+source evidence while the canonical projection carries the complete transitive
+lineage. The fixture-only withholding action still represents unavailable detail,
+not privacy deletion.
 
-The shared scenario envelope is deliberately extensible for the semantic-specific
-follow-ups under epic #49. In particular, #68 owns pressure across testimony,
-Ember inference, external claims, observations, and delegated reports; #69 owns
-deleted/forgotten versus unavailable/withheld distinctions. Those tasks may add
-scenario actions when the underlying Ember semantics can represent the distinction.
-Do not encode an unsupported provenance class as `user_testimony`, and do not
-rename `withhold_detail` to deletion merely to make a fixture pass.
+The richer provenance promotion path is intentionally narrow: it applies to fact
+propositions in the minimal slice. Relationship, preference, episode, and commitment
+semantics retain their existing ownership rules. Issue #69 still owns
+ deleted/forgotten versus unavailable/withheld distinctions. Do not encode an
+unsupported lifecycle as provenance metadata, and do not rename `withhold_detail`
+to deletion merely to make a fixture pass.
 
 ### Context classification
 
@@ -238,9 +247,17 @@ pass but model observations fail. A polished live reply cannot repair a projecti
 failure. Conversely, a live model failure does not prove that canonical state was
 lost or that context selection failed when the state/projection layers are correct.
 
+For provenance-aware facts, `projection.meanings[*].epistemic_role` preserves the
+claim class and `source_evidence` contains the immediate source occurrence plus its
+transitive ancestors. Independent support is therefore counted at derivation roots,
+not by the number of summaries, delegates, or inferences that repeat a root. See
+[Longitudinal Provenance Evaluation](longitudinal-provenance-evaluation.md) for the
+#68 fixture and its deterministic/empirical interpretation.
+
 The harness preserves the governing ADR boundaries: lineage and durable meaning
 remain Ember-owned; historical superseded meaning survives without automatically
 governing ordinary projection; unavailable detail becomes an explicit gap;
 selection includes deliberate exclusion; generated history is only evaluator
-input expressed through canonical semantics; and provider/thread IDs remain
-operational evidence rather than memory or identity.
+input expressed through canonical semantics; provenance derivation does not create
+new evidence roots; and provider/thread IDs remain operational evidence rather than
+memory or identity.

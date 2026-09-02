@@ -99,17 +99,9 @@ export function buildProjection(
       item.applicability = runtime.recovery_account.gap_kind === "initial_start" ? "current_live" : "last_known_live_needs_currentness_check";
     }
     const descriptors: ProjectedEvidence[] = [];
-    for (const eid of m.source_evidence_ids) {
-      const ev = evidenceById.get(eid);
-      if (!ev) throw new ValidationError(`meaning ${m.meaning_id} cites absent evidence ${eid}`);
+    for (const ev of evidenceLineage(m.source_evidence_ids, evidenceById)) {
       descriptors.push(projectEvidence(ev, purpose === "explain"));
-      selectedEvidence.set(eid, ev);
-      for (const pid of ev.derived_from_evidence_ids) {
-        const parent = evidenceById.get(pid);
-        if (!parent) throw new ValidationError(`evidence ${eid} derives from absent evidence ${pid}`);
-        selectedEvidence.set(pid, parent);
-        descriptors.push(projectEvidence(parent, purpose === "explain"));
-      }
+      selectedEvidence.set(ev.evidence_id, ev);
     }
     item.source_evidence = descriptors;
     projected.push(item);
@@ -178,17 +170,7 @@ export function explanationView(state: EmberState, id: MeaningId | string) {
   validateState(state);
   const m = cloneState(findMeaning(state, id));
   const byId = new Map(state.evidence.map(e => [e.evidence_id, e]));
-  const source: Evidence[] = [];
-  for (const eid of m.source_evidence_ids) {
-    const ev = byId.get(eid);
-    if (!ev) throw new ValidationError(`meaning ${m.meaning_id} cites absent evidence ${eid}`);
-    source.push(cloneState(ev));
-    for (const pid of ev.derived_from_evidence_ids) {
-      const parent = byId.get(pid);
-      if (!parent) throw new ValidationError(`evidence ${eid} derives from absent evidence ${pid}`);
-      source.push(cloneState(parent));
-    }
-  }
+  const source = evidenceLineage(m.source_evidence_ids, byId).map(cloneState);
   const linked: Partial<Record<"supersedes" | "superseded_by", Meaning>> = {};
   for (const field of ["supersedes", "superseded_by"] as const) if (m[field]) linked[field] = cloneState(findMeaning(state, m[field]!));
   return {
@@ -198,6 +180,21 @@ export function explanationView(state: EmberState, id: MeaningId | string) {
     linked_meanings: linked,
     selected_by_cognition_ids: state.operations.cognition_episodes.filter(c => c.selected_meaning_ids.includes(m.meaning_id)).map(c => c.cognition_id),
   };
+}
+
+function evidenceLineage(ids: EvidenceId[], byId: Map<EvidenceId, Evidence>): Evidence[] {
+  const result: Evidence[] = [];
+  const seen = new Set<EvidenceId>();
+  const visit = (id: EvidenceId): void => {
+    if (seen.has(id)) return;
+    const evidence = byId.get(id);
+    if (!evidence) throw new ValidationError(`evidence lineage refers to absent evidence ${id}`);
+    seen.add(id);
+    result.push(evidence);
+    for (const parent of evidence.derived_from_evidence_ids) visit(parent);
+  };
+  for (const id of ids) visit(id);
+  return result;
 }
 
 function projectEvidence(ev: Evidence, includePayload: boolean): ProjectedEvidence {

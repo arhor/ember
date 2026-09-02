@@ -59,6 +59,9 @@ Current architecture material:
 - [Longitudinal Continuity Harness](longitudinal-continuity-harness.md) explains
   the repository-owned multi-episode scenario format, deterministic and opt-in
   live runners, external-thread controls, and evidence-layer interpretation.
+- [Longitudinal Provenance Evaluation](longitudinal-provenance-evaluation.md)
+  records issue #68 evidence for testimony, inference, external claims, direct
+  observation, delegated reports, derivation roots, and historical provenance.
 - [Process-Restart Continuity Evaluation](process-restart-continuity-evaluation.md)
   records issue #55's true CLI-process restart probe, fresh-Codex-thread oracle,
   sanitized report contract, and live evidence procedure.
