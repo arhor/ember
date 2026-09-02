@@ -46,6 +46,10 @@ Current architecture material:
   hardens that Codex boundary with scoped least-sufficient disclosure, an explicit
   capability-versus-authority distinction, structured expansion requests, and
   specialist-report provenance for issue #61.
+- [Specialist Result Reintegration](specialist-result-reintegration.md) defines
+  issue #65's final Ember-owned decision path for currentness, partial and
+  ambiguous-effect results, correlated evidence, durable inspection, and the gate
+  before any canonical mutation may rely on specialist output.
 - [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
   Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
