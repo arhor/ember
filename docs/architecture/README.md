@@ -42,6 +42,10 @@ Current architecture material:
   specifies the first Codex repository-work episode boundary: Ember-owned purpose,
   disclosure, authority, evidence, lifecycle, and reintegration around a
   runtime-owned specialist loop.
+- [Specialist Authority and Context Flow](specialist-authority-context-flow.md)
+  hardens that Codex boundary with scoped least-sufficient disclosure, an explicit
+  capability-versus-authority distinction, structured expansion requests, and
+  specialist-report provenance for issue #61.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
