@@ -32,6 +32,8 @@ if (process.env.EMBER_RUN_LIVE_SPECIALIST !== "1") {
     authority_envelope: {
       principal: "local-user",
       grant: "Modify only the controlled workspace for this validation",
+      provenance: "explicit invocation of the controlled live validation harness by local-user",
+      currentness: "current for this live validation attempt",
       permitted_actions: ["inspect files and create greeting.txt inside the selected workspace"],
       prohibited_actions: ["network access", "access outside the selected workspace", "modify any other file"],
       escalation_conditions: ["any additional access or consequential action is needed"],
