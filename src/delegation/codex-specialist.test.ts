@@ -75,6 +75,7 @@ function blockedReport(overrides: Record<string, unknown> = {}) {
     possible_effects: [],
     blockers: ["not run"],
     requested_follow_up: [],
+    expansion_requests: [],
     ...overrides,
   };
 }
@@ -226,6 +227,7 @@ test("Codex specialist should reject malformed external evidence when report arr
     possible_effects: [],
     blockers: [],
     requested_follow_up: [],
+    expansion_requests: [],
     unsupported: true,
   };
 
@@ -301,7 +303,16 @@ test("Codex specialist should persist an ambiguous terminal record when failure 
 
 test("AS-DEL-05 should withhold out-of-scope canonical meaning and preserve a context expansion request", async () => {
   const fixture = await episodeFixture();
-  const withheldCanonicalMeaning = "PRIVATE_RELATIONSHIP_CONTEXT_MUST_NOT_REACH_CODEX";
+  const canonicalContext = [
+    ...fixture.spec.context_projection,
+    {
+      content: "PRIVATE_RELATIONSHIP_CONTEXT_MUST_NOT_REACH_CODEX",
+      provenance: "canonical relationship meaning",
+      scope: "relationship:user-1",
+      currentness: "current",
+    },
+  ];
+  const withheldCanonicalMeaning = canonicalContext.find((item) => item.scope === "relationship:user-1")!;
   let prompt = "";
   const report = blockedReport({
     blockers: ["Need project-owner rationale that was not disclosed."],
@@ -323,7 +334,7 @@ test("AS-DEL-05 should withhold out-of-scope canonical meaning and preserve a co
     spawnImpl: () => child,
   });
 
-  assert.equal(prompt.includes(withheldCanonicalMeaning), false);
+  assert.equal(prompt.includes(withheldCanonicalMeaning.content), false);
   assert.equal(prompt.includes("SAFE_SPECIALIST_MARKER_60"), true);
   assert.deepEqual(record.report?.expansion_requests, report.expansion_requests);
   assert.equal(record.ember_disposition, "unresolved");
