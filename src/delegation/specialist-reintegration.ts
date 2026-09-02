@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
 import {
   inspectSpecialistEpisode,
   reconcileSpecialistResult,
@@ -93,6 +92,10 @@ export async function reintegrateSpecialistResult(
     outcome = "rejected";
     resultingDisposition = "rejected";
     reason = reconciled.currentness_evaluation!.reason;
+  } else if (options.decision?.disposition === "rejected") {
+    outcome = "rejected";
+    resultingDisposition = "rejected";
+    reason = options.decision.reason;
   } else if (applicability === "stale") {
     outcome = "withheld";
     resultingDisposition = "stale";
@@ -119,7 +122,7 @@ export async function reintegrateSpecialistResult(
         },
       });
       resultingDisposition = reconciled.ember_disposition;
-      outcome = options.decision.disposition === "rejected" ? "rejected" : "integrated";
+      outcome = "integrated";
       reason = options.decision.reason;
     }
   } else if (!options.decision) {
@@ -129,7 +132,7 @@ export async function reintegrateSpecialistResult(
     outcome = "withheld";
     reason = "a partial specialist result cannot establish full objective completion; Ember may qualify or reject the usable remainder";
   } else {
-    outcome = options.decision.disposition === "rejected" ? "rejected" : "integrated";
+    outcome = "integrated";
     resultingDisposition = options.decision.disposition;
     reason = options.decision.reason;
   }
@@ -233,7 +236,6 @@ function evidenceBasisFingerprint(record: SpecialistEpisodeRecord): string {
     context_sources: record.specification.context_projection
       .map(item => ({ provenance: item.provenance, scope: item.scope, currentness: item.currentness }))
       .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
-    authority_provenance: record.specification.authority_envelope.provenance,
   };
   return `sha256:${createHash("sha256").update(JSON.stringify(source)).digest("hex")}`;
 }
