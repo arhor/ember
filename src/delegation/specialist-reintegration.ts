@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import { StaleRevision } from "../core/errors.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import {
@@ -111,113 +111,115 @@ async function reintegrateAtCurrentRevision(
     now?: () => string;
   },
 ): Promise<SpecialistReintegrationInspection> {
-  const before = await inspectSpecialistEpisode(recordPath);
+  const before = await inspectSpecialistEpisode(recordPath) as PersistedSpecialistRecord;
   requireFinalAttributedReport(before);
+  validateAudit(before.reintegration ?? null, before);
 
+  const supporting = await loadCorroboratingRecords(before, options.corroboratingRecordPaths ?? []);
+  const corroboration = buildCorroboration([before, ...supporting]);
   const resultShape = classifyResult(before);
   const now = options.now ?? (() => new Date().toISOString());
   const currentness = toCurrentnessCheckpoint(checkpoint);
   const explicitRejection = options.decision?.disposition === "rejected";
-  let reconciled = await reconcileSpecialistResult(recordPath, currentness, {
-    now,
-    disposition: explicitRejection ? "rejected" : undefined,
-  });
-  const applicability = reconciled.currentness_evaluation?.applicability;
-  if (!applicability) throw new Error("specialist currentness evaluation was not recorded");
+  const candidatePath = `${recordPath}.${process.pid}.${randomUUID()}.reintegration-candidate`;
+  await writeFile(candidatePath, `${JSON.stringify(before, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 
-  const supporting = await loadCorroboratingRecords(before, options.corroboratingRecordPaths ?? []);
-  const corroboration = buildCorroboration([before, ...supporting]);
-  const requestedDisposition = options.decision?.disposition ?? null;
+  try {
+    let reconciled = await reconcileSpecialistResult(candidatePath, currentness, {
+      now,
+      disposition: explicitRejection ? "rejected" : undefined,
+    }) as PersistedSpecialistRecord;
+    const applicability = reconciled.currentness_evaluation?.applicability;
+    if (!applicability) throw new Error("specialist currentness evaluation was not recorded");
 
-  let outcome: SpecialistReintegrationOutcome;
-  let resultingDisposition = reconciled.ember_disposition;
-  let reason: string;
+    const requestedDisposition = options.decision?.disposition ?? null;
+    let outcome: SpecialistReintegrationOutcome;
+    let reason: string;
 
-  if (applicability === "rejected") {
-    outcome = "rejected";
-    resultingDisposition = "rejected";
-    reason = reconciled.currentness_evaluation!.reason;
-  } else if (explicitRejection) {
-    outcome = "rejected";
-    resultingDisposition = "rejected";
-    reason = options.decision!.reason;
-  } else if (applicability === "stale") {
-    outcome = "withheld";
-    resultingDisposition = "stale";
-    reason = `${reconciled.currentness_evaluation!.reason}; historical specialist success is preserved but is not current completion`;
-  } else if (checkpoint.authority.status !== "current") {
-    outcome = "withheld";
-    reason = `current authority is ${checkpoint.authority.status}: ${checkpoint.authority.reason}`;
-  } else if (reconciled.recovery.effect_state === "effects_possible") {
-    outcome = "withheld";
-    reason = "specialist effects remain ambiguous and require independent reconciliation before current reliance or canonical mutation";
-  } else if (applicability === "requires_re_evaluation") {
-    const reEvaluationReason = options.decision?.current_context_re_evaluation;
-    if (!options.decision || !reEvaluationReason) {
+    if (applicability === "rejected") {
+      outcome = "rejected";
+      reason = reconciled.currentness_evaluation!.reason;
+    } else if (explicitRejection) {
+      outcome = "rejected";
+      reason = options.decision!.reason;
+    } else if (applicability === "stale") {
       outcome = "withheld";
-      resultingDisposition = "requires_re_evaluation";
-      reason = `${reconciled.currentness_evaluation!.reason}; Ember has not yet recorded a semantic re-evaluation against the changed context`;
+      reason = `${reconciled.currentness_evaluation!.reason}; historical specialist success is preserved but is not current completion`;
+    } else if (checkpoint.authority.status !== "current") {
+      outcome = "withheld";
+      reason = `current authority is ${checkpoint.authority.status}: ${checkpoint.authority.reason}`;
+    } else if (reconciled.recovery.effect_state === "effects_possible") {
+      outcome = "withheld";
+      reason = "specialist effects remain ambiguous and require independent reconciliation before current reliance or canonical mutation";
+    } else if (applicability === "requires_re_evaluation") {
+      const reEvaluationReason = options.decision?.current_context_re_evaluation;
+      if (!options.decision || !reEvaluationReason) {
+        outcome = "withheld";
+        reason = `${reconciled.currentness_evaluation!.reason}; Ember has not yet recorded a semantic re-evaluation against the changed context`;
+      } else if (options.decision.disposition === "accepted" && resultShape !== "complete") {
+        outcome = "withheld";
+        reason = `${resultShape} specialist result cannot establish full objective completion; Ember may qualify or reject the usable evidence after re-evaluation`;
+      } else {
+        reconciled = await reconcileSpecialistResult(candidatePath, currentness, {
+          now,
+          re_evaluation: {
+            disposition: options.decision.disposition,
+            reason: reEvaluationReason,
+          },
+        }) as PersistedSpecialistRecord;
+        outcome = "integrated";
+        reason = options.decision.reason;
+      }
+    } else if (!options.decision) {
+      outcome = "withheld";
+      reason = "the specialist report is current but remains evidence awaiting an Ember-owned semantic decision";
     } else if (options.decision.disposition === "accepted" && resultShape !== "complete") {
       outcome = "withheld";
-      resultingDisposition = "requires_re_evaluation";
-      reason = `${resultShape} specialist result cannot establish full objective completion; Ember may qualify or reject the usable evidence after re-evaluation`;
+      reason = `${resultShape} specialist result cannot establish full objective completion; Ember may qualify or reject the usable evidence`;
     } else {
-      reconciled = await reconcileSpecialistResult(recordPath, currentness, {
+      reconciled = await reconcileSpecialistResult(candidatePath, currentness, {
         now,
-        re_evaluation: {
-          disposition: options.decision.disposition,
-          reason: reEvaluationReason,
-        },
-      });
-      resultingDisposition = reconciled.ember_disposition;
+        disposition: options.decision.disposition,
+      }) as PersistedSpecialistRecord;
       outcome = "integrated";
       reason = options.decision.reason;
     }
-  } else if (!options.decision) {
-    outcome = "withheld";
-    reason = "the specialist report is current but remains evidence awaiting an Ember-owned semantic decision";
-  } else if (options.decision.disposition === "accepted" && resultShape !== "complete") {
-    outcome = "withheld";
-    reason = `${resultShape} specialist result cannot establish full objective completion; Ember may qualify or reject the usable evidence`;
-  } else {
-    reconciled = await reconcileSpecialistResult(recordPath, currentness, {
-      now,
-      disposition: options.decision.disposition,
-    });
-    outcome = "integrated";
-    resultingDisposition = reconciled.ember_disposition;
-    reason = options.decision.reason;
-  }
 
-  const decidedAt = now();
-  const decisionId = `reintegration-${randomUUID()}`;
-  const decision: SpecialistReintegrationDecision = {
-    decision_version: 1,
-    decision_id: decisionId,
-    decided_at: decidedAt,
-    outcome,
-    requested_disposition: requestedDisposition,
-    resulting_disposition: resultingDisposition,
-    result_shape: resultShape,
-    reason,
-    checkpoint: structuredClone(checkpoint),
-    report_provenance: structuredClone(before.report_provenance!),
-    corroboration,
-    canonical_mutation: {
-      eligibility: outcome === "integrated" ? "eligible_after_ember_decision" : "not_eligible",
+    const decisionId = `reintegration-${randomUUID()}`;
+    const decision: SpecialistReintegrationDecision = {
+      decision_version: 1,
       decision_id: decisionId,
-    },
-  };
+      decided_at: now(),
+      outcome,
+      requested_disposition: requestedDisposition,
+      resulting_disposition: reconciled.ember_disposition,
+      result_shape: resultShape,
+      reason,
+      checkpoint: structuredClone(checkpoint),
+      report_provenance: structuredClone(before.report_provenance!),
+      corroboration,
+      canonical_mutation: {
+        eligibility: outcome === "integrated" ? "eligible_after_ember_decision" : "not_eligible",
+        decision_id: decisionId,
+      },
+    };
 
-  await persistDecision(recordPath, decision, resultingDisposition);
-  return inspectSpecialistReintegration(recordPath);
+    const persisted = reconciled as PersistedSpecialistRecord;
+    const audit = structuredClone(before.reintegration ?? { audit_version: 1 as const, history: [] });
+    audit.history.push(decision);
+    persisted.reintegration = audit;
+    validateAudit(audit, persisted);
+    await persistReintegration(recordPath, before, persisted);
+    return inspectSpecialistReintegration(recordPath);
+  } finally {
+    await rm(candidatePath, { force: true });
+  }
 }
 
 export async function inspectSpecialistReintegration(recordPath: string): Promise<SpecialistReintegrationInspection> {
-  const record = await inspectSpecialistEpisode(recordPath);
-  const persisted = JSON.parse(await readFile(recordPath, "utf8")) as PersistedSpecialistRecord;
-  const audit = persisted.reintegration ?? null;
-  validateAudit(audit);
+  const record = await inspectSpecialistEpisode(recordPath) as PersistedSpecialistRecord;
+  const audit = record.reintegration ?? null;
+  validateAudit(audit, record);
   return {
     record,
     audit: audit === null ? null : structuredClone(audit),
@@ -290,21 +292,17 @@ function evidenceBasisFingerprint(record: SpecialistEpisodeRecord): string {
   return `sha256:${createHash("sha256").update(JSON.stringify(source)).digest("hex")}`;
 }
 
-async function persistDecision(
+async function persistReintegration(
   recordPath: string,
-  decision: SpecialistReintegrationDecision,
-  resultingDisposition: SpecialistDisposition,
+  expectedBefore: PersistedSpecialistRecord,
+  next: PersistedSpecialistRecord,
 ) {
-  const record = JSON.parse(await readFile(recordPath, "utf8")) as PersistedSpecialistRecord;
-  if (record.ember_disposition !== resultingDisposition) {
-    throw new Error("specialist disposition changed before reintegration audit could be persisted");
+  const current = JSON.parse(await readFile(recordPath, "utf8")) as PersistedSpecialistRecord;
+  if (JSON.stringify(current) !== JSON.stringify(expectedBefore)) {
+    throw new Error("specialist episode changed before reintegration could be committed");
   }
-  const audit = record.reintegration ?? { audit_version: 1 as const, history: [] };
-  validateAudit(audit);
-  audit.history.push(structuredClone(decision));
-  record.reintegration = audit;
   const temporary = `${recordPath}.${process.pid}.reintegration.tmp`;
-  await writeFile(temporary, `${JSON.stringify(record, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  await writeFile(temporary, `${JSON.stringify(next, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
   await rename(temporary, recordPath);
 }
 
@@ -339,6 +337,12 @@ function toCurrentnessCheckpoint(checkpoint: SpecialistReintegrationCheckpoint):
   };
 }
 
+function sameCheckpoint(left: SpecialistCurrentnessCheckpoint, right: SpecialistCurrentnessCheckpoint) {
+  return left.objective_revision === right.objective_revision
+    && left.context_revision === right.context_revision
+    && left.objective_status === right.objective_status;
+}
+
 function validateDecision(decision: SpecialistSemanticDecision | undefined) {
   if (!decision) return;
   if (!["accepted", "qualified", "rejected"].includes(decision.disposition)) {
@@ -350,24 +354,89 @@ function validateDecision(decision: SpecialistSemanticDecision | undefined) {
   }
 }
 
-function validateAudit(audit: SpecialistReintegrationAudit | null) {
+function validateAudit(audit: SpecialistReintegrationAudit | null, record: SpecialistEpisodeRecord) {
   if (audit === null) return;
-  if (audit.audit_version !== 1 || !Array.isArray(audit.history)) {
-    throw new Error("specialist reintegration audit is invalid");
+  if (audit.audit_version !== 1 || !Array.isArray(audit.history)) invalidAudit();
+  for (const decision of audit.history) validateAuditDecision(decision, record.specification.episode_id);
+  const latest = audit.history.at(-1);
+  if (!latest) return;
+  if (latest.resulting_disposition !== record.ember_disposition) invalidAudit();
+  if (!record.report_provenance || !sameProvenance(latest.report_provenance, record.report_provenance)) invalidAudit();
+  if (!record.currentness_evaluation || !sameCheckpoint(latest.checkpoint, record.currentness_evaluation.checked_against)) invalidAudit();
+}
+
+function validateAuditDecision(decision: SpecialistReintegrationDecision, episodeId: string) {
+  if (!decision || typeof decision !== "object") invalidAudit();
+  if (
+    decision.decision_version !== 1
+    || !bounded(decision.decision_id, 512)
+    || !bounded(decision.decided_at, 512)
+    || !["integrated", "withheld", "rejected"].includes(decision.outcome)
+    || !(decision.requested_disposition === null || ["accepted", "qualified", "rejected"].includes(decision.requested_disposition))
+    || !["unresolved", "blocked", "accepted", "qualified", "rejected", "stale", "requires_re_evaluation"].includes(decision.resulting_disposition)
+    || !["complete", "partial", "failed", "ambiguous_effect"].includes(decision.result_shape)
+    || !bounded(decision.reason, 8192)
+    || !decision.checkpoint
+    || !decision.report_provenance
+    || decision.report_provenance.source_role !== "specialist_report"
+    || decision.report_provenance.source !== "codex_specialist"
+    || decision.report_provenance.episode_id !== episodeId
+    || !validCorroboration(decision.corroboration, episodeId)
+    || !decision.canonical_mutation
+    || !["eligible_after_ember_decision", "not_eligible"].includes(decision.canonical_mutation.eligibility)
+    || decision.canonical_mutation.decision_id !== decision.decision_id
+  ) invalidAudit();
+  validateReintegrationCheckpoint(decision.checkpoint);
+
+  const eligible = decision.canonical_mutation.eligibility === "eligible_after_ember_decision";
+  if (eligible !== (decision.outcome === "integrated")) invalidAudit();
+  if (decision.outcome === "integrated") {
+    if (!decision.requested_disposition || decision.requested_disposition !== decision.resulting_disposition) invalidAudit();
+    if (!["accepted", "qualified"].includes(decision.resulting_disposition)) invalidAudit();
+    if (decision.checkpoint.authority.status !== "current" || decision.result_shape === "ambiguous_effect") invalidAudit();
+    if (decision.resulting_disposition === "accepted" && decision.result_shape !== "complete") invalidAudit();
+  } else if (decision.outcome === "rejected") {
+    if (decision.resulting_disposition !== "rejected") invalidAudit();
+  } else if (!["unresolved", "stale", "requires_re_evaluation"].includes(decision.resulting_disposition)) {
+    invalidAudit();
   }
-  for (const decision of audit.history) {
+}
+
+function validCorroboration(
+  value: SpecialistReintegrationDecision["corroboration"],
+  primaryEpisodeId: string,
+) {
+  if (!value || value.independence !== "not_established" || !Array.isArray(value.considered_episode_ids) || !Array.isArray(value.source_groups)) {
+    return false;
+  }
+  if (!uniqueBoundedStrings(value.considered_episode_ids) || !value.considered_episode_ids.includes(primaryEpisodeId)) return false;
+  const grouped: string[] = [];
+  for (const group of value.source_groups) {
     if (
-      decision.decision_version !== 1
-      || !bounded(decision.decision_id, 512)
-      || !bounded(decision.decided_at, 512)
-      || !["integrated", "withheld", "rejected"].includes(decision.outcome)
-      || !bounded(decision.reason, 8192)
-      || !decision.checkpoint
-      || !decision.canonical_mutation
-      || decision.canonical_mutation.decision_id !== decision.decision_id
-    ) throw new Error("specialist reintegration decision is invalid");
-    validateReintegrationCheckpoint(decision.checkpoint);
+      !group
+      || !/^sha256:[0-9a-f]{64}$/.test(group.basis_fingerprint)
+      || !bounded(group.context_revision, 8192)
+      || !Array.isArray(group.episode_ids)
+      || !group.episode_ids.length
+      || !uniqueBoundedStrings(group.episode_ids)
+    ) return false;
+    grouped.push(...group.episode_ids);
   }
+  return uniqueBoundedStrings(grouped)
+    && grouped.length === value.considered_episode_ids.length
+    && grouped.every(id => value.considered_episode_ids.includes(id));
+}
+
+function uniqueBoundedStrings(values: string[]) {
+  return values.every(value => bounded(value, 8192)) && new Set(values).size === values.length;
+}
+
+function sameProvenance(left: SpecialistReportProvenance, right: SpecialistReportProvenance) {
+  return left.source_role === right.source_role && left.source === right.source && left.episode_id === right.episode_id;
+}
+
+function invalidAudit(): never {
+  throw new Error("specialist reintegration audit is invalid");
 }
 
 function bounded(value: unknown, bytes: number): value is string {
