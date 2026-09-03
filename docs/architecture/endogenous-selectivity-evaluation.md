@@ -1,5 +1,5 @@
 ---
-summary: "Issue #79 evaluation methodology and structural baseline for endogenous selectivity, false-positive cognition, interruption pressure, model-call frequency, latency, and local process resource observations."
+summary: "Issue #79 evaluation methodology and structural baseline for endogenous selectivity, false-positive cognition, interruption pressure, evaluator/model-attempt frequency, latency, and local process resource observations."
 read_when:
   - "Evaluating issue #79, endogenous false positives, quiet-period behavior, or repeated cognition"
   - "Deciding whether issue #95 needs attention, backoff, budgeting, or suppression controls"
@@ -11,8 +11,8 @@ discovery_status: current
 # Endogenous Selectivity Evaluation
 
 > Status: current issue #79 evaluation artifact. It evaluates the implemented
-> topic-free opportunity, silence, dormant-concern, restart/currentness, and
-> interruption boundaries from #73-#78 without choosing scheduler or service topology.
+> topic-free opportunity, silence, dormant-concern, currentness, and interruption
+> boundaries from #73-#78 without choosing scheduler or service topology.
 
 ## Question
 
@@ -26,8 +26,9 @@ The evaluation keeps four things separate:
    false-positive cognition;
 2. **user interruption**: whether completed useful cognition is delivered, deferred,
    suppressed, or kept internal;
-3. **opportunity frequency and model calls**: how often the decision evaluator is
-   invoked; and
+3. **opportunity frequency and evaluator attempts**: how often the decision evaluator
+   is invoked and, for a model-backed backend, how often Ember attempts that external
+   evaluator path; and
 4. **local runtime overhead**: wall latency and Ember-process CPU/RSS observations,
    without pretending to observe external provider child-process resources that the
    harness does not expose.
@@ -56,22 +57,24 @@ single vague error rate:
 
 - `trivial_repetition`: the same unchanged grounding earns cognition again after an
   earlier worthwhile cognition in the same controlled case;
-- `stale_concern_revival`: cognition is selected from a case whose concern has already
-  become historical/resolved;
-- `post_hoc_fabricated_motive`: cognition is selected where the controlled state lacks
-  the consequence needed to make the live concern worthwhile now; and
+- `stale_concern_revival`: cognition is selected in the resolved-concern control,
+  reviving the concern from remaining current context after the commitment itself is
+  historical;
+- `post_hoc_fabricated_motive`: cognition is selected where a live concern exists but
+  the controlled state lacks the consequence needed to make it worthwhile now; and
 - `unnecessary_user_interruption`: the interruption boundary returns `deliver` in a
   case that should remain quiet, deferred, stale, or repetition-suppressed.
 
-A provider/evaluator failure is not counted as silence or as a semantic false
-positive. A worthwhile `defer` decision is also distinct from completed cognition.
+Deterministic adversarial controls exercise stale revival, fabricated motive, and the
+first unnecessary interruption those false positives could cause. A provider/evaluator
+failure is not counted as silence or as a semantic false positive. A `defer` decision
+is also distinct from completed cognition.
 
 ## Structural control evaluator
 
-The default command uses a deterministic evaluator that mirrors the current
-#76 dormant-concern control: cognition is selected only when both a live current
-commitment and the current `release-window = Release is imminent` consequence are
-projected.
+The default command uses a deterministic evaluator that mirrors the current #76
+control: cognition is selected only when both a live current commitment and the
+current `release-window = Release is imminent` consequence are projected.
 
 Run:
 
@@ -84,6 +87,7 @@ The exact semantic baseline for the checked-in 25-opportunity workload is:
 | Observation | Count |
 | --- | ---: |
 | evaluator calls | 25 |
+| external-model evaluator attempts | 0 for scripted control |
 | intentional silence | 19 |
 | worthwhile cognition | 3 |
 | false-positive cognition | 3 |
@@ -98,31 +102,32 @@ The exact semantic baseline for the checked-in 25-opportunity workload is:
 | interruption `suppress` | 3 |
 | interruption `no_delivery` | 19 |
 
-The three false positives are deliberate structural probes: after the first useful
-cognition, the evaluator receives the same unchanged current grounding again and has
-no representation of prior thought in its bounded opportunity projection. The
-current #78 interruption boundary prevents those repeated thoughts from becoming
-repeated user interruptions by suppressing the already-delivered grounding set.
+The three observed false positives are deliberate structural repetition probes. After
+the first useful cognition, the evaluator receives the same unchanged current
+grounding again and has no representation of prior thought in its bounded opportunity
+projection. The #78 interruption boundary prevents those repeated thoughts from
+becoming repeated user interruptions by suppressing already-delivered grounding.
 
 This distinguishes a real issue: **user-facing spam is currently bounded better than
-model-call/repeated-cognition cost**.
+repeated-cognition and model-backed evaluator cost**.
 
-## Model invocation frequency
+## Model-backed evaluator frequency
 
-The present model-backed opportunity path performs one evaluator invocation per
-opportunity. Therefore, before any future pre-evaluator attention control exists:
+The present model-backed opportunity path attempts one external evaluator invocation
+per opportunity. Before any future pre-evaluator attention control exists:
 
 ```text
-external model calls = cognition opportunities
+external-model evaluator attempts = cognition opportunities
 ```
 
-`no_cognition` saves downstream cognition and delivery, but it does not save the
-model call used to decide `no_cognition` when the evaluator itself is model-backed.
-A fixed high-frequency wake-up policy would therefore translate directly into fixed
-high-frequency model traffic even during long quiet stretches.
+This is deliberately phrased as an **attempt**, not proof that a provider process
+successfully reached or billed a model. The harness cannot observe that boundary in
+all failure modes. `no_cognition` saves downstream cognition and delivery, but it does
+not save the model-backed evaluator attempt used to decide `no_cognition`.
 
-This is a concrete requirement input for #80 and a concrete control pressure for
-#95. It is **not** evidence that Ember needs a daemon or any particular scheduler.
+A fixed high-frequency wake-up policy would therefore create fixed high-frequency
+external evaluator pressure even during long quiet stretches. This is a concrete
+input for #95 and #80, not evidence for a daemon or any particular scheduler.
 
 ## Latency and resource measurement
 
@@ -130,20 +135,39 @@ Every run records:
 
 - per-opportunity evaluator wall latency plus min/median/p95/max/mean summary;
 - Node version, platform, and architecture;
+- backend runtime version when the external runtime reports one;
+- optional model label when the operator can establish it without guessing;
 - Ember process RSS at start/end and the maximum RSS sample observed after an
-  opportunity;
-- Ember process user/system CPU consumed during the workload; and
-- whether the backend is an external-model backend.
+  opportunity; and
+- Ember process user/system CPU consumed during the workload.
 
 The harness deliberately reports external child-process resources as
 `not_observed_by_harness`. It does not infer Codex RSS/CPU from Ember's process
 metrics. Those costs belong in later representative runtime measurement (#82/#84)
 or a provider-specific measurement that can actually attribute the process tree.
 
-The deterministic evaluation runs in the normal `Continuity vertical slice` CI job
-on Node 26.8.1, so each relevant pull request leaves host-specific latency/resource
-observations in the workflow log. Those numbers are evidence for that host/run, not a
-portable performance constant and therefore are not copied here as timeless values.
+### Recorded CI structural snapshot
+
+A deterministic run on GitHub Actions `ubuntu-latest` during PR #127, workflow run
+`33788919425`, recorded this **single-host, single-run** snapshot:
+
+| Field | Observation |
+| --- | ---: |
+| Node / platform | `v26.8.1`, Linux x64 |
+| Backend | `scripted-structural-control` |
+| Opportunities | 25 |
+| Evaluator latency min / median / p95 / max / mean | 0.148 / 0.282 / 1.069 / 1.223 / 0.407 ms |
+| RSS start | 98,496,512 bytes (93.9 MiB) |
+| RSS end / observed peak | 104,542,208 bytes (99.7 MiB) |
+| RSS change | 6,045,696 bytes (5.8 MiB) |
+| User CPU across workload | 37.574 ms |
+| System CPU across workload | 1.594 ms |
+| External child-process resources | not observed |
+
+These values describe the scripted orchestration workload on that runner. They are
+not Codex latency, not steady-state service cost, and not a portable performance
+constant. Future runs should compare the structured fields rather than treating this
+snapshot as a threshold.
 
 ## Optional live Codex evaluation
 
@@ -153,16 +177,16 @@ A subscription-backed live run reuses the supported Codex opportunity evaluator:
 npm run eval:endogenous:live
 ```
 
-The command requires `EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1` through the package script,
-records the installed `codex --version` in the backend label, records an optional
-`EMBER_CODEX_MODEL_LABEL` when the operator can identify the selected model, and
-uses the same workload/rubric as the deterministic control.
+The command requires `EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1`, records `codex --version` as
+`runtime_version`, records `EMBER_CODEX_MODEL_LABEL` only when the operator can
+identify the selected model, and uses the same workload/rubric as the deterministic
+control.
 
-Normal tests and CI do not require Codex authentication. This environment cannot
-access the user's local subscription-backed CLI, so issue #79 does not claim live
-provider-quality numbers from an unexecuted run. When a live run is performed, its
-JSON is directly comparable with the structural baseline because workload version,
-case IDs, decision categories, runtime metadata, and policy inputs are preserved.
+Normal tests and CI do not require Codex authentication. This execution environment
+cannot access the user's local subscription-backed CLI, so issue #79 does not invent
+live provider-quality numbers from an unexecuted run. A later live result is directly
+comparable because workload version, case IDs, decision categories, runtime metadata,
+and policy inputs are preserved.
 
 ## Findings and handoff
 
@@ -182,8 +206,8 @@ new durable motive class.
 
 The evaluation establishes these implementation-neutral runtime pressures:
 
-- model-backed opportunity cost scales one-for-one with opportunity frequency until a
-  pre-evaluator control exists;
+- model-backed evaluator-attempt cost scales one-for-one with opportunity frequency
+  until a pre-evaluator control exists;
 - quiet periods must be able to contain many successful no-cognition outcomes without
   generating user interruption;
 - runtime metrics must distinguish Ember-process overhead from external provider
@@ -199,8 +223,8 @@ schedule is required.
 | Issue #79 requirement | Evidence |
 | --- | --- |
 | Distinguish worthwhile cognition, silence, and false positives | Typed observation classifications and exact deterministic workload counts. |
-| Include repetition, stale revival, fabricated motive, unnecessary interruption | Four independent false-positive categories in the harness and fixture cases that can exercise each. |
-| Record model calls, latency, and local resources cautiously | Per-run evaluator/external-model call counts, latency summary, Node/platform metadata, Ember RSS/CPU, and explicit non-observation of child-process resources. |
+| Include repetition, stale revival, fabricated motive, unnecessary interruption | Four independent categories plus deterministic structural/adversarial controls exercising them. |
+| Record model frequency, latency, and local resources cautiously | Evaluator and external-model-attempt counts, latency summary, backend/runtime metadata, Ember RSS/CPU, and explicit non-observation of child-process resources. |
 | Demonstrate long quiet stretches | Twelve consecutive topic-free quiet opportunities deterministically produce `no_cognition` and `no_delivery`. |
-| Identify runtime pressure | One model-backed evaluator call per opportunity and separate provider-process attribution are handed to #80. |
-| Reproducible corpus/methodology | Versioned JSON workload, deterministic tests, CLI runner, live Codex mode, and CI execution are all repository artifacts. |
+| Identify runtime pressure | One model-backed evaluator attempt per opportunity and separate provider-process attribution are handed to #80. |
+| Reproducible corpus/methodology | Versioned JSON workload, deterministic tests, CLI runner, live Codex mode, CI execution, and a recorded host-scoped snapshot are repository artifacts. |
