@@ -87,7 +87,7 @@ test("same projection in the same runtime should defer only after prior cognitio
 
 test("durable opportunity path should skip repeated evaluator work but reopen after projection change", async () => {
   const previousNow = process.env.EMBER_TEST_NOW;
-  process.env.EMBER_TEST_NOW = "2026-09-03T00:10:00Z";
+  process.env.EMBER_TEST_NOW = "2026-09-03T00:00:00Z";
   const directory = await mkdtemp(join(tmpdir(), "ember-attention-control-"));
   const store = new StateStore(join(directory, "ember.json"));
   let state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
@@ -140,6 +140,7 @@ test("durable opportunity path should skip repeated evaluator work but reopen af
       ["cognition", "defer"],
     );
 
+    process.env.EMBER_TEST_NOW = "2026-09-03T00:02:30Z";
     rememberFact(state, PRINCIPAL, `user:${PRINCIPAL}`, "release-channel", SCOPE, "Release will use the stable channel");
     state = await store.commit(state.revision, state);
 
