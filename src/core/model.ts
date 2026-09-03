@@ -664,10 +664,14 @@ export function validateState(state: unknown): asserts state is EmberState {
         const raw = cognitions[index];
         const p = `cognition_episodes[${index}]`;
         const c = isObject(raw) ? raw : {};
+
         require(isObject(raw), `${p} must be an object`);
         require(exactKeys(c, cognitionFields) || exactKeys(c, cognitionFieldsWithOperationalEvidence), `${p} fields do not match schema v1`);
         require(validId(c.cognition_id, "cognition-"), `${p}.cognition_id is invalid`);
-        if (nonempty(c.cognition_id)) { allIds.push(c.cognition_id); cognitionById.set(c.cognition_id, c); }
+        if (nonempty(c.cognition_id)) {
+            allIds.push(c.cognition_id);
+            cognitionById.set(c.cognition_id, c);
+        }
         require(nonempty(c.runtime_id), `${p}.runtime_id must be an ID`);
         require(c.principal === principal, `${p}.principal mismatch`);
         require(nonempty(c.active_scope), `${p}.active_scope must be explicit`);
@@ -676,18 +680,27 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(timestamp(c.started_at), `${p}.started_at must be RFC 3339 UTC`);
         require(timestamp(c.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
         require(["started", "completed", "failed", "timed_out", "cancellation_requested", "outcome_unknown"].includes(c.status), `${p}.status is invalid`);
-        if ("external_provider_thread_id" in c && c.external_provider_thread_id !== null) require(typeof c.external_provider_thread_id === "string" && c.external_provider_thread_id.length > 0 && c.external_provider_thread_id.length <= 512 && !/[\u0000-\u001f\u007f]/.test(c.external_provider_thread_id), `${p}.external_provider_thread_id is invalid`);
+        if ("external_provider_thread_id" in c && c.external_provider_thread_id !== null) {
+            require(typeof c.external_provider_thread_id === "string" && c.external_provider_thread_id.length > 0 && c.external_provider_thread_id.length <= 512 && !/[\u0000-\u001f\u007f]/.test(c.external_provider_thread_id), `${p}.external_provider_thread_id is invalid`);
+        }
         if ("provider_termination" in c && c.provider_termination !== null) {
             require(isObject(c.provider_termination) && exactKeys(c.provider_termination, ["reason", "direct_child_exit_observed"]), `${p}.provider_termination is invalid`);
             if (isObject(c.provider_termination)) {
                 require(["timeout", "explicit_cancellation", "output_limit"].includes(c.provider_termination.reason), `${p}.provider_termination.reason is invalid`);
                 require(typeof c.provider_termination.direct_child_exit_observed === "boolean", `${p}.provider_termination.direct_child_exit_observed is invalid`);
-                const reason = c.provider_termination.reason, observed = c.provider_termination.direct_child_exit_observed;
-                const consistent = c.status === "timed_out" ? reason === "timeout" && observed === true : c.status === "cancellation_requested" ? reason === "explicit_cancellation" : c.status === "failed" ? reason === "output_limit" && observed === true : c.status === "outcome_unknown" ? observed === false : false;
+                const reason = c.provider_termination.reason;
+                const observed = c.provider_termination.direct_child_exit_observed;
+                const consistent = c.status === "timed_out" ? reason === "timeout" && observed === true
+                    : c.status === "cancellation_requested" ? reason === "explicit_cancellation"
+                        : c.status === "failed" ? reason === "output_limit" && observed === true
+                            : c.status === "outcome_unknown" ? observed === false
+                                : false;
                 require(consistent, `${p}.provider_termination contradicts cognition status`);
             }
         }
-        for (const f of ["selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids"]) require(Array.isArray(c[f]) && c[f].every(nonempty), `${p}.${f} must be an ID list`);
+        for (const f of ["selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids"]) {
+            require(Array.isArray(c[f]) && c[f].every(nonempty), `${p}.${f} must be an ID list`);
+        }
         require(nonempty(c.input_evidence_id), `${p}.input_evidence_id is required`);
         require(["not_attempted", "pending", "displayed"].includes(c.delivery_status), `${p}.delivery_status is invalid`);
         if (c.status === "completed") {
@@ -700,13 +713,22 @@ export function validateState(state: unknown): asserts state is EmberState {
         }
     }
 
-    const opportunityFields = ["opportunity_id", "runtime_id", "principal", "active_scope", "mechanism", "observed_at", "last_durable_observation_at", "validated_revision", "projected_meaning_ids", "projected_evidence_ids", "status", "decision", "selected_meaning_ids", "interruption_status", "provider_termination"];
+    const opportunityFields = [
+        "opportunity_id", "runtime_id", "principal", "active_scope", "mechanism", "observed_at",
+        "last_durable_observation_at", "validated_revision", "projected_meaning_ids", "projected_evidence_ids",
+        "status", "decision", "selected_meaning_ids", "interruption_status", "provider_termination",
+    ];
     for (let index = 0; index < opportunities.length; index++) {
-        const raw = opportunities[index], p = `cognition_opportunities[${index}]`, o = isObject(raw) ? raw : {};
+        const raw = opportunities[index];
+        const p = `cognition_opportunities[${index}]`;
+        const o = isObject(raw) ? raw : {};
         require(isObject(raw), `${p} must be an object`);
         require(exactKeys(o, opportunityFields), `${p} fields do not match schema v1`);
         require(validId(o.opportunity_id, "opportunity-"), `${p}.opportunity_id is invalid`);
-        if (nonempty(o.opportunity_id)) { allIds.push(o.opportunity_id); opportunityById.set(o.opportunity_id, o); }
+        if (nonempty(o.opportunity_id)) {
+            allIds.push(o.opportunity_id);
+            opportunityById.set(o.opportunity_id, o);
+        }
         require(nonempty(o.runtime_id), `${p}.runtime_id must be an ID`);
         require(o.principal === principal, `${p}.principal mismatch`);
         require(nonempty(o.active_scope), `${p}.active_scope must be explicit`);
@@ -715,12 +737,18 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(timestamp(o.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
         if (timestamp(o.observed_at) && timestamp(o.last_durable_observation_at)) require(Date.parse(o.observed_at) <= Date.parse(o.last_durable_observation_at), `${p} durable observation precedes opportunity observation`);
         require(safeInteger(o.validated_revision) && o.validated_revision >= 0, `${p}.validated_revision must be a non-negative safe integer`);
-        for (const f of ["projected_meaning_ids", "projected_evidence_ids", "selected_meaning_ids"]) { require(Array.isArray(o[f]) && o[f].every(nonempty), `${p}.${f} must be an ID list`); if (Array.isArray(o[f])) require(new Set(o[f]).size === o[f].length, `${p}.${f} must not contain duplicates`); }
+        for (const f of ["projected_meaning_ids", "projected_evidence_ids", "selected_meaning_ids"]) {
+            require(Array.isArray(o[f]) && o[f].every(nonempty), `${p}.${f} must be an ID list`);
+            if (Array.isArray(o[f])) require(new Set(o[f]).size === o[f].length, `${p}.${f} must not contain duplicates`);
+        }
         require(OPPORTUNITY_STATUSES.has(o.status), `${p}.status is invalid`);
         require(o.decision === null || OPPORTUNITY_DECISIONS.has(o.decision), `${p}.decision is invalid`);
         require(o.interruption_status === "not_attempted", `${p}.interruption_status must remain not_attempted in v1`);
         require(o.provider_termination === null || (isObject(o.provider_termination) && exactKeys(o.provider_termination, ["reason", "direct_child_exit_observed"])), `${p}.provider_termination is invalid`);
-        if (isObject(o.provider_termination)) { require(["timeout", "explicit_cancellation", "output_limit"].includes(o.provider_termination.reason), `${p}.provider_termination.reason is invalid`); require(typeof o.provider_termination.direct_child_exit_observed === "boolean", `${p}.provider_termination.direct_child_exit_observed is invalid`); }
+        if (isObject(o.provider_termination)) {
+            require(["timeout", "explicit_cancellation", "output_limit"].includes(o.provider_termination.reason), `${p}.provider_termination.reason is invalid`);
+            require(typeof o.provider_termination.direct_child_exit_observed === "boolean", `${p}.provider_termination.direct_child_exit_observed is invalid`);
+        }
         if (o.status === "decided") {
             require(OPPORTUNITY_DECISIONS.has(o.decision), `${p} decided opportunity needs a decision`);
             require(o.provider_termination === null, `${p} decided opportunity cannot claim provider termination`);
@@ -741,11 +769,17 @@ export function validateState(state: unknown): asserts state is EmberState {
     require(allIds.length === new Set(allIds).size, "all canonical IDs must be unique");
 
     for (const [id, ev] of evById) {
-        for (const parent of ev.derived_from_evidence_ids) { const source = evById.get(parent); require(!!source, `${id} derives from absent evidence ${parent}`); if (source) require(source.scope === ev.scope, `${id} derivation crosses evidence scope`); }
+        for (const parent of ev.derived_from_evidence_ids) {
+            const source = evById.get(parent);
+            require(!!source, `${id} derives from absent evidence ${parent}`);
+            if (source) require(source.scope === ev.scope, `${id} derivation crosses evidence scope`);
+        }
         if (ev.related_meaning_id !== undefined) require(meaningById.has(ev.related_meaning_id), `${id} relates to absent meaning ${ev.related_meaning_id}`);
         if (ev.cognition_id !== undefined) require(cognitionById.has(ev.cognition_id), `${id} refers to absent cognition ${ev.cognition_id}`);
         if (ev.payload_mode === "retained_optional" && ev.availability === "unavailable") {
-            const related = meaningById.get(ev.related_meaning_id), cited = meanings.some(m => m.source_evidence_ids.includes(id)), faults = evidence.filter(f => f.source_role === "fixture_fault" && JSON.stringify(f.derived_from_evidence_ids) === JSON.stringify([id]) && f.related_meaning_id === ev.related_meaning_id);
+            const related = meaningById.get(ev.related_meaning_id);
+            const cited = meanings.some(m => m.source_evidence_ids.includes(id));
+            const faults = evidence.filter(f => f.source_role === "fixture_fault" && JSON.stringify(f.derived_from_evidence_ids) === JSON.stringify([id]) && f.related_meaning_id === ev.related_meaning_id);
             require(ev.source_role === "user_command", `${id} unavailable evidence must be attached user detail`);
             require(related?.kind === "episode_meta", `${id} unavailable evidence must relate to episode_meta`);
             if (related) require(ev.scope === related.scope, `${id} unavailable detail scope mismatch`);
@@ -756,8 +790,23 @@ export function validateState(state: unknown): asserts state is EmberState {
 
     for (const [id, m] of meaningById) {
         for (const ref of m.source_evidence_ids) require(evById.has(ref), `${id} cites absent evidence ${ref}`);
-        if (m.supersedes !== null) { const prior = meaningById.get(m.supersedes); require(!!prior, `${id} supersedes absent meaning`); if (prior) { require(prior.superseded_by === id, `${id} predecessor link is not reciprocal`); require(sameSlot(m, prior), `${id} crosses kind, owner, slot, or scope`); require(prior.currentness === "superseded", `${id} predecessor is not superseded`); } }
-        if (m.superseded_by !== null) { const later = meaningById.get(m.superseded_by); require(!!later, `${id} successor is absent`); if (later) { require(later.supersedes === id, `${id} successor link is not reciprocal`); require(sameSlot(m, later), `${id} successor crosses semantic slot`); } }
+        if (m.supersedes !== null) {
+            const prior = meaningById.get(m.supersedes);
+            require(!!prior, `${id} supersedes absent meaning`);
+            if (prior) {
+                require(prior.superseded_by === id, `${id} predecessor link is not reciprocal`);
+                require(sameSlot(m, prior), `${id} crosses kind, owner, slot, or scope`);
+                require(prior.currentness === "superseded", `${id} predecessor is not superseded`);
+            }
+        }
+        if (m.superseded_by !== null) {
+            const later = meaningById.get(m.superseded_by);
+            require(!!later, `${id} successor is absent`);
+            if (later) {
+                require(later.supersedes === id, `${id} successor link is not reciprocal`);
+                require(sameSlot(m, later), `${id} successor crosses semantic slot`);
+            }
+        }
         const refs = m.source_evidence_ids.map((ref: string) => evById.get(ref));
         require(refs.every((ev: Dynamic | undefined) => ev?.scope === m.scope), `${id} source evidence scope mismatch`);
         if (m.kind === "commitment") {
@@ -772,22 +821,55 @@ export function validateState(state: unknown): asserts state is EmberState {
                 if (transitions.length === 1) require(transitions[0]!.observed_at === m.applicable_until, `${id} discharge evidence must establish applicability end`);
             }
         } else if (m.kind === "fact") {
-            if (m.epistemic_role === "user_testimony") { require(m.owner === `user:${principal}`, `${id} user testimony owner must be the supported user`); require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "user_command"), `${id} user testimony must cite user-command evidence`); }
-            else if (m.epistemic_role === "ember_inference") { require(m.owner === "ember", `${id} Ember inference must be Ember-owned`); require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "ember_inference"), `${id} Ember inference must cite inference evidence`); }
-            else if (m.epistemic_role === "direct_observation") { require(m.owner === "ember", `${id} direct observation must be Ember-owned`); require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "ember_observation"), `${id} direct observation must cite Ember observation evidence`); }
-            else if (m.epistemic_role === "external_claim") { require(typeof m.owner === "string" && m.owner.startsWith("external:"), `${id} external claim owner must identify its source`); require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "external_claim" && ev.source_actor === m.owner), `${id} external claim must retain matching external source evidence`); }
-            else if (m.epistemic_role === "delegated_report") { require(typeof m.owner === "string" && m.owner.startsWith("delegate:"), `${id} delegated report owner must identify its delegate`); require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "delegated_report" && ev.source_actor === m.owner), `${id} delegated report must retain matching delegate evidence`); }
-            else require(false, `${id} fact epistemic role is unsupported`);
+            if (m.epistemic_role === "user_testimony") {
+                require(m.owner === `user:${principal}`, `${id} user testimony owner must be the supported user`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "user_command"), `${id} user testimony must cite user-command evidence`);
+            } else if (m.epistemic_role === "ember_inference") {
+                require(m.owner === "ember", `${id} Ember inference must be Ember-owned`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "ember_inference"), `${id} Ember inference must cite inference evidence`);
+            } else if (m.epistemic_role === "direct_observation") {
+                require(m.owner === "ember", `${id} direct observation must be Ember-owned`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "ember_observation"), `${id} direct observation must cite Ember observation evidence`);
+            } else if (m.epistemic_role === "external_claim") {
+                require(typeof m.owner === "string" && m.owner.startsWith("external:"), `${id} external claim owner must identify its source`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "external_claim" && ev.source_actor === m.owner), `${id} external claim must retain matching external source evidence`);
+            } else if (m.epistemic_role === "delegated_report") {
+                require(typeof m.owner === "string" && m.owner.startsWith("delegate:"), `${id} delegated report owner must identify its delegate`);
+                require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "delegated_report" && ev.source_actor === m.owner), `${id} delegated report must retain matching delegate evidence`);
+            } else {
+                require(false, `${id} fact epistemic role is unsupported`);
+            }
         } else {
             require(m.epistemic_role === "user_testimony", `${id} epistemic role is invalid for supported promotion path`);
             require(refs.every((ev: Dynamic | undefined) => ev?.source_role === "user_command"), `${id} supported remembered meaning must cite user-command evidence`);
         }
     }
 
-    const visitedEvidence = new Set<string>(), visitingEvidence = new Set<string>();
-    const visitEvidence = (cursor: string): void => { if (visitingEvidence.has(cursor)) { require(false, `evidence derivation cycle contains ${cursor}`); return; } if (visitedEvidence.has(cursor)) return; visitingEvidence.add(cursor); for (const parent of evById.get(cursor)?.derived_from_evidence_ids ?? []) visitEvidence(parent); visitingEvidence.delete(cursor); visitedEvidence.add(cursor); };
+    const visitedEvidence = new Set<string>();
+    const visitingEvidence = new Set<string>();
+    const visitEvidence = (cursor: string): void => {
+        if (visitingEvidence.has(cursor)) {
+            require(false, `evidence derivation cycle contains ${cursor}`);
+            return;
+        }
+        if (visitedEvidence.has(cursor)) return;
+        visitingEvidence.add(cursor);
+        for (const parent of evById.get(cursor)?.derived_from_evidence_ids ?? []) visitEvidence(parent);
+        visitingEvidence.delete(cursor);
+        visitedEvidence.add(cursor);
+    };
     for (const start of evById.keys()) visitEvidence(start);
-    for (const id of meaningById.keys()) { const seen = new Set<string>(); let cursor: string | null = id; while (cursor !== null) { require(!seen.has(cursor), `supersession cycle contains ${cursor}`); if (seen.has(cursor)) break; seen.add(cursor); cursor = meaningById.get(cursor)?.supersedes ?? null; } }
+
+    for (const id of meaningById.keys()) {
+        const seen = new Set<string>();
+        let cursor: string | null = id;
+        while (cursor !== null) {
+            require(!seen.has(cursor), `supersession cycle contains ${cursor}`);
+            if (seen.has(cursor)) break;
+            seen.add(cursor);
+            cursor = meaningById.get(cursor)?.supersedes ?? null;
+        }
+    }
 
     for (const [id, c] of cognitionById) {
         for (const mid of c.selected_meaning_ids) require(meaningById.has(mid), `${id} selected absent meaning ${mid}`);
@@ -795,13 +877,26 @@ export function validateState(state: unknown): asserts state is EmberState {
         for (const eid of c.selected_evidence_ids) require(evById.has(eid), `${id} selected absent evidence ${eid}`);
         require(evById.get(c.input_evidence_id)?.source_role === "user_command", `${id} input evidence has wrong role`);
         require(evById.get(c.input_evidence_id)?.scope === c.active_scope, `${id} input evidence scope mismatch`);
-        const runtime = runtimeById.get(c.runtime_id); require(!!runtime, `${id} owning runtime is absent`); if (runtime) require(c.active_scope === runtime.active_scope, `${id} scope differs from owning runtime`);
-        if (c.expression_evidence_id) { const expression = evById.get(c.expression_evidence_id); require(expression?.source_role === "ember_expression_via_provider", `${id} expression evidence has wrong role`); require(expression?.cognition_id === id, `${id} expression back-reference mismatch`); require(expression?.scope === c.active_scope, `${id} expression scope mismatch`); require(expression?.provider_label === c.provider_label, `${id} provider label mismatch`); }
+        const runtime = runtimeById.get(c.runtime_id);
+        require(!!runtime, `${id} owning runtime is absent`);
+        if (runtime) require(c.active_scope === runtime.active_scope, `${id} scope differs from owning runtime`);
+        if (c.expression_evidence_id) {
+            const expression = evById.get(c.expression_evidence_id);
+            require(expression?.source_role === "ember_expression_via_provider", `${id} expression evidence has wrong role`);
+            require(expression?.cognition_id === id, `${id} expression back-reference mismatch`);
+            require(expression?.scope === c.active_scope, `${id} expression scope mismatch`);
+            require(expression?.provider_label === c.provider_label, `${id} provider label mismatch`);
+        }
     }
 
     for (const [id, o] of opportunityById) {
-        const runtime = runtimeById.get(o.runtime_id); require(!!runtime, `${id} owning runtime is absent`);
-        if (runtime) { require(o.active_scope === runtime.active_scope, `${id} scope differs from owning runtime`); require(timestamp(o.observed_at) && timestamp(runtime.started_at) && Date.parse(runtime.started_at) <= Date.parse(o.observed_at), `${id} opportunity precedes owning runtime`); if (runtime.clean_stop_at !== null && timestamp(o.last_durable_observation_at)) require(Date.parse(o.last_durable_observation_at) <= Date.parse(runtime.clean_stop_at), `${id} opportunity observation follows clean runtime stop`); }
+        const runtime = runtimeById.get(o.runtime_id);
+        require(!!runtime, `${id} owning runtime is absent`);
+        if (runtime) {
+            require(o.active_scope === runtime.active_scope, `${id} scope differs from owning runtime`);
+            require(timestamp(o.observed_at) && timestamp(runtime.started_at) && Date.parse(runtime.started_at) <= Date.parse(o.observed_at), `${id} opportunity precedes owning runtime`);
+            if (runtime.clean_stop_at !== null && timestamp(o.last_durable_observation_at)) require(Date.parse(o.last_durable_observation_at) <= Date.parse(runtime.clean_stop_at), `${id} opportunity observation follows clean runtime stop`);
+        }
         require(o.validated_revision <= state.revision, `${id} validated revision is newer than canonical state`);
         for (const mid of o.projected_meaning_ids) require(meaningById.has(mid), `${id} projected absent meaning ${mid}`);
         for (const eid of o.projected_evidence_ids) require(evById.has(eid), `${id} projected absent evidence ${eid}`);
@@ -809,9 +904,15 @@ export function validateState(state: unknown): asserts state is EmberState {
     }
 
     const expressionRefs = cognitions.map(c => c.expression_evidence_id).filter(Boolean);
-    for (const [id, ev] of evById) if (ev.source_role === "ember_expression_via_provider") require(expressionRefs.filter(x => x === id).length === 1, `${id} provider expression must belong to exactly one completed cognition`);
+    for (const [id, ev] of evById) {
+        if (ev.source_role === "ember_expression_via_provider") {
+            require(expressionRefs.filter(x => x === id).length === 1, `${id} provider expression must belong to exactly one completed cognition`);
+        }
+    }
     validateRuntimeChain(runtimes, runtimeById, require);
-    if (errors.length) throw new ValidationError([...new Set(errors)].join("; "));
+    if (errors.length) {
+        throw new ValidationError([...new Set(errors)].join("; "));
+    }
 }
 
 function validateRuntimeChain(runtimes: Dynamic[], byId: Map<string, Dynamic>, require: (condition: unknown, message: string) => void) {
@@ -825,11 +926,17 @@ function validateRuntimeChain(runtimes: Dynamic[], byId: Map<string, Dynamic>, r
         require(a.restart_at === r.started_at, `${r.runtime_id} recovery restart_at mismatch`);
         require(a.external_changes_during_interval === "unknown", `${r.runtime_id} recovery must keep external changes unknown`);
         let expected: [string, string | null, string | null, string];
-        if (a.previous_runtime === null) { roots++; expected = ["initial_start", null, null, "not_applicable"]; }
-        else {
-            const p = byId.get(a.previous_runtime); require(!!p, `${r.runtime_id} recovery refers to absent previous runtime`); if (!p) continue;
+        if (a.previous_runtime === null) {
+            roots++;
+            expected = ["initial_start", null, null, "not_applicable"];
+        } else {
+            const p = byId.get(a.previous_runtime);
+            require(!!p, `${r.runtime_id} recovery refers to absent previous runtime`);
+            if (!p) continue;
             successors.get(p.runtime_id)!.push(r.runtime_id);
-            expected = p.clean_stop_at === null ? ["uncertain_interruption_boundary", p.last_durable_observation_at, null, "unknown_after_last_durable_observation"] : ["known_clean_stop_interval", p.last_durable_observation_at, p.clean_stop_at, "none_in_supported_runtime"];
+            expected = p.clean_stop_at === null
+                ? ["uncertain_interruption_boundary", p.last_durable_observation_at, null, "unknown_after_last_durable_observation"]
+                : ["known_clean_stop_interval", p.last_durable_observation_at, p.clean_stop_at, "none_in_supported_runtime"];
             if (timestamp(p.last_durable_observation_at) && timestamp(r.started_at)) require(Date.parse(p.last_durable_observation_at) <= Date.parse(r.started_at), `${r.runtime_id} restart precedes prior durable boundary`);
             if (p.clean_stop_at && timestamp(r.started_at)) require(Date.parse(p.clean_stop_at) <= Date.parse(r.started_at), `${r.runtime_id} restart precedes prior clean stop`);
         }
@@ -837,5 +944,14 @@ function validateRuntimeChain(runtimes: Dynamic[], byId: Map<string, Dynamic>, r
     }
     require(roots === 1, "runtime recovery chain must contain exactly one initial start");
     require([...successors.values()].every(items => items.length <= 1), "runtime recovery chain cannot fork in supported topology");
-    for (const id of byId.keys()) { const seen = new Set<string>(); let cursor: string | null = id; while (cursor !== null) { require(!seen.has(cursor), `runtime recovery chain contains cycle at ${cursor}`); if (seen.has(cursor)) break; seen.add(cursor); cursor = byId.get(cursor)?.recovery_account?.previous_runtime ?? null; } }
+    for (const id of byId.keys()) {
+        const seen = new Set<string>();
+        let cursor: string | null = id;
+        while (cursor !== null) {
+            require(!seen.has(cursor), `runtime recovery chain contains cycle at ${cursor}`);
+            if (seen.has(cursor)) break;
+            seen.add(cursor);
+            cursor = byId.get(cursor)?.recovery_account?.previous_runtime ?? null;
+        }
+    }
 }
