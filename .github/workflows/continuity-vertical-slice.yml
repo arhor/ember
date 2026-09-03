@@ -52,3 +52,5 @@ jobs:
         run: npm run check
       - name: Run complete acceptance suite
         run: npm test
+      - name: Run deterministic endogenous selectivity evaluation
+        run: npm run eval:endogenous
