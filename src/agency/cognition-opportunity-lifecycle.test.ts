@@ -148,6 +148,67 @@ test("timeout should remain operational failure rather than being counted as sil
   }
 });
 
+test("inspection should distinguish cancellation and malformed evaluator failure from silence", async () => {
+  // Given
+  const f = await fixture();
+  let { state } = f;
+  const cancelled: CognitionOpportunityEvaluator = async () => {
+    throw new ProviderError("synthetic cancellation", {
+      outcome: "cancellation_requested",
+      termination: { reason: "explicit_cancellation", directChildExitObserved: false },
+    });
+  };
+  const malformed: CognitionOpportunityEvaluator = async () => ({
+    contract_version: 1,
+    decision: "invented" as never,
+    selected_meaning_ids: [],
+  });
+  try {
+    // When
+    const cancellation = await runCognitionOpportunity(f.store, state, {
+      runtimeId: f.runtimeId,
+      principal: PRINCIPAL,
+      scope: SCOPE,
+      mechanism: "foreground_probe",
+      evaluator: cancelled,
+      timestamp: "2026-09-03T00:01:00Z",
+    });
+    state = cancellation.state;
+    const failure = await runCognitionOpportunity(f.store, state, {
+      runtimeId: f.runtimeId,
+      principal: PRINCIPAL,
+      scope: SCOPE,
+      mechanism: "foreground_probe",
+      evaluator: malformed,
+      timestamp: "2026-09-03T00:02:00Z",
+    });
+    state = failure.state;
+    const quiet = await runCognitionOpportunity(f.store, state, {
+      runtimeId: f.runtimeId,
+      principal: PRINCIPAL,
+      scope: SCOPE,
+      mechanism: "foreground_probe",
+      evaluator: silent,
+      timestamp: "2026-09-03T00:03:00Z",
+    });
+    state = quiet.state;
+
+    // Then
+    assert.match(cancellation.evaluatorFailure ?? "", /synthetic cancellation/);
+    assert.match(failure.evaluatorFailure ?? "", /decision is invalid/);
+    const inspected = inspectionView(state).cognition_opportunities;
+    assert.deepEqual(inspected.map(item => [item.status, item.decision]), [
+      ["cancellation_requested", null],
+      ["failed", null],
+      ["decided", "no_cognition"],
+    ]);
+    const metrics = cognitionOpportunityMetrics(state);
+    assert.deepEqual([metrics.cancellation_requested, metrics.failed, metrics.no_cognition], [1, 1, 1]);
+  } finally {
+    await cleanup(f.directory, f.store, f.lease);
+  }
+});
+
 test("restart should convert an unfinished opportunity to outcome_unknown rather than silence", () => {
   // Given
   const initial = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
