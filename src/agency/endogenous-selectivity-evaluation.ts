@@ -59,6 +59,7 @@ export interface SelectivityWorkload {
 export interface EvaluationBackend {
   label: string;
   external_model: boolean;
+  runtime_version: string | null;
   model_version: string | null;
 }
 
@@ -90,7 +91,7 @@ export interface SelectivityEvaluationResult {
   policy: {
     mechanism: "foreground_probe";
     trigger_topic_present: false;
-    model_backed_calls_per_opportunity: 1;
+    model_backed_evaluator_attempts_per_opportunity: 1;
     raw_reasoning_retained: false;
   };
   workload: {
@@ -99,7 +100,7 @@ export interface SelectivityEvaluationResult {
   };
   counts: {
     evaluator_calls: number;
-    external_model_calls: number;
+    external_model_evaluator_attempts: number;
     intentional_silence: number;
     worthwhile_cognition: number;
     worthwhile_deferred_attention: number;
@@ -313,13 +314,13 @@ export async function runEndogenousSelectivityEvaluation(
     policy: {
       mechanism: "foreground_probe",
       trigger_topic_present: false,
-      model_backed_calls_per_opportunity: 1,
+      model_backed_evaluator_attempts_per_opportunity: 1,
       raw_reasoning_retained: false,
     },
     workload: { case_count: validated.cases.length, opportunity_count: opportunityCount },
     counts: {
       evaluator_calls: evaluatorCalls,
-      external_model_calls: backend.external_model ? evaluatorCalls : 0,
+      external_model_evaluator_attempts: backend.external_model ? evaluatorCalls : 0,
       intentional_silence: intentionalSilence,
       worthwhile_cognition: count("worthwhile_cognition"),
       worthwhile_deferred_attention: count("worthwhile_deferred_attention"),
