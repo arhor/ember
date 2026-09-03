@@ -36,6 +36,10 @@ Current architecture material:
   selects the first unattended Linux topology: a lingered user-level systemd manager
   supervises short-lived Ember wake/recovery workers and per-episode specialist jobs,
   with no permanently resident Ember Node daemon until later evidence earns one.
+- [Episodic Runtime Runbook](episodic-runtime-runbook.md) records issue #94's runnable
+  `ember-runtime` configuration, systemd user-manager installation, one-shot wake and
+  specialist operations, status, shutdown/recovery behavior, deterministic tests, and
+  separate Linux/systemd smoke procedure used by issues #82 and #83.
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
