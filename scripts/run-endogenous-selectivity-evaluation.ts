@@ -58,7 +58,10 @@ function providerArgument(args: string[]): "scripted" | "codex" {
 
 function runtimeVersion(command: string): string {
   const result = spawnSync(command, ["--version"], { encoding: "utf8", timeout: 10_000 });
-  if (result.error) return `version-unavailable:${result.error.code ?? result.error.name}`;
+  if (result.error) {
+    const error = result.error as NodeJS.ErrnoException;
+    return `version-unavailable:${error.code ?? error.name}`;
+  }
   if (result.status !== 0) return `version-command-exit-${result.status ?? "unknown"}`;
   return result.stdout.trim() || result.stderr.trim() || "version-unreported";
 }
