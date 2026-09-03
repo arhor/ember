@@ -40,8 +40,8 @@ process when no Ember work exists.
 
 ## Decision
 
-For Ember's first long-lived deployment, use a **systemd user manager as the durable
-operational supervisor and run Ember itself as supervised episodic foreground
+For Ember's first long-lived deployment, use a **systemd user manager as the
+long-lived host supervisor and run Ember itself as supervised episodic foreground
 workers**.
 
 The first supported long-lived deployment target is a single-user Linux host with
@@ -52,7 +52,7 @@ The topology is:
 
 ```text
 Linux host
-└── systemd --user manager, kept available across logout/boot by lingering
+└── systemd --user manager, started at boot and kept after logout by lingering
     ├── startup/recovery reconciliation (short-lived Ember worker)
     ├── one-shot wake timer -> topic-free opportunity worker
     └── specialist episode service -> bounded Ember specialist worker -> Codex child
@@ -61,9 +61,9 @@ Ember canonical state + operational records remain on durable storage independen
 of every process and unit above.
 ```
 
-A systemd unit is an operational locus. Its unit name, PID, cgroup, active state,
-restart history, and manager lifetime are never Ember identity, canonical memory,
-authority, or proof of external effects.
+A systemd unit or manager is an operational locus. Its unit name, PID, cgroup, active
+state, restart history, or manager lifetime is never Ember identity, canonical memory,
+authority, durable work truth, or proof of external effects.
 
 ### Why this is the smallest selected topology
 
@@ -91,7 +91,7 @@ different topology.
 | R4 persist before consequential transitions | Yes while attached | Yes | **Yes** | Possible but ad hoc |
 | R5 reconcile rather than blindly replay | Manual only | Yes | **Yes** | Weak unless another recovery layer is added |
 | R6 truthful clean shutdown | Interactive only | Yes | **Yes, per worker/unit** | Weak |
-| R7 single-writer/concurrency safety | Yes | Requires coordination with CLI | **Preserves short lease model** | Overlap needs extra locking policy |
+| R7 single-writer/concurrency safety | Yes | Requires coordination with CLI | **Preserves cooperative lease/revision model** | Overlap needs extra locking policy |
 | R8 semantic-operational status | Manual state only | Yes | **Yes, durable state plus unit state** | Fragmented |
 | R9 explicit config/runtime-owned auth | Yes | Yes | **Yes** | Often inherits shell environment accidentally |
 | R10 attributable idle/active resource cost | No long-lived runtime | Permanent Node baseline | **No resident Ember process; workers attributable per unit** | Low idle cost but weak ownership |
@@ -268,14 +268,16 @@ multiply Ember occurrences.
 
 ## Writer ownership and concurrency
 
-The selected topology preserves the existing cooperative `StateStore` boundary rather
-than making one process hold the canonical writer lease for its entire lifetime.
+The selected topology preserves the existing cooperative `StateStore` lease and
+revision-validation boundary. It does **not** assume the current interactive lease
+lifetime is already appropriate for background workers: today's interactive
+`ember run` deliberately owns its lease across the foreground session.
 
-Each worker acquires the writer lease only around the canonical transitions that need
-it, reloads current revision, commits with revision validation, and releases the lease
-before long external waits when possible. Specialist execution continues to keep its
-own episode record independently of the canonical store until reintegration requires a
-current canonical checkpoint.
+The new non-interactive workers introduced by #94 should acquire the writer lease only
+around the canonical transitions that need it, reload current revision, commit with
+revision validation, and release the lease before long external waits when possible.
+Specialist execution continues to keep its own episode record independently of the
+canonical store until reintegration requires a current canonical checkpoint.
 
 Consequences:
 
@@ -283,9 +285,8 @@ Consequences:
 - a background worker does not bypass the lock because systemd started it;
 - `inspect`, `check`, and lock diagnosis remain short-lived read paths;
 - the existing interactive CLI remains usable when it can acquire the same lease;
-- a long interactive CLI that owns the lease can temporarily prevent background
-  mutation, which is surfaced as contention rather than solved with hidden concurrent
-  writes.
+- the current long interactive CLI lease can temporarily prevent background mutation,
+  which is surfaced as contention rather than solved with hidden concurrent writes.
 
 No local IPC server, actor mailbox, database writer process, or lock-service protocol
 is introduced by this decision.
@@ -489,7 +490,8 @@ evidence demonstrates that this selected topology cannot satisfy its own contrac
   than a new Ember daemon framework;
 - each specialist/wake occurrence has a narrow process lifetime and attributable unit;
 - process failure cannot silently become automatic work retry;
-- the existing short canonical writer lease remains viable;
+- the existing cooperative lease/revision model remains viable without a resident
+  single-writer process;
 - future resource measurement can attribute transient worker and provider process
   trees cleanly; and
 - a future resident surface can justify a topology change with concrete evidence.
@@ -500,7 +502,7 @@ evidence demonstrates that this selected topology cannot satisfy its own contrac
 - startup reconciliation must reconstruct transient timers/worker observations from
   durable Ember records;
 - systemd and Ember status have to be reconciled rather than read as one truth source;
-- interactive CLI lock contention can temporarily block background mutations;
+- the current long interactive CLI lease can temporarily block background mutations;
 - user-manager environment/configuration is less implicit than an interactive shell;
 - transient process startup cost may become material if opportunity frequency grows;
   and
