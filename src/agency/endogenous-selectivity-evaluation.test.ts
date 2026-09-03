@@ -20,26 +20,30 @@ async function workload() {
   return parseSelectivityWorkload(JSON.parse(raw));
 }
 
-test("selectivity workload should expose quiet stretches, useful concerns, repetition, and stale controls", async () => {
+test("issue 79 baseline should remain reproducible with attention control disabled", async () => {
   const result = await runEndogenousSelectivityEvaluation(
     await workload(),
     scriptedSelectivityEvaluator,
     SCRIPTED_BACKEND,
+    { attentionControl: "disabled" },
   );
 
   assert.deepEqual(result.workload, { case_count: 6, opportunity_count: 25 });
   assert.equal(result.policy.trigger_topic_present, false);
-  assert.equal(result.policy.model_backed_evaluator_attempts_per_opportunity, 1);
+  assert.equal(result.policy.attention_control, "disabled");
+  assert.equal(result.policy.max_model_backed_evaluator_attempts_per_opportunity, 1);
   assert.equal(result.counts.evaluator_calls, 25);
+  assert.equal(result.counts.attention_deferred_repeated_projection, 0);
   assert.equal(result.counts.external_model_evaluator_attempts, 0);
 
   assert.deepEqual([
     result.counts.intentional_silence,
     result.counts.worthwhile_cognition,
+    result.counts.worthwhile_deferred_attention,
     result.counts.false_positive_cognition,
     result.counts.missed_worthwhile,
     result.counts.evaluator_failures,
-  ], [19, 3, 3, 0, 0]);
+  ], [19, 3, 0, 3, 0, 0]);
   assert.deepEqual(result.counts.false_positive_categories, {
     trivial_repetition: 3,
     stale_concern_revival: 0,
@@ -52,8 +56,44 @@ test("selectivity workload should expose quiet stretches, useful concerns, repet
     suppress: 3,
     no_delivery: 19,
   });
-  assert.deepEqual(result.rates.intentional_silence, { numerator: 19, denominator: 25 });
+  assert.equal(result.latency_ms.sample_count, 25);
   assert.deepEqual(result.rates.false_positive_cognition, { numerator: 3, denominator: 25 });
+});
+
+test("repeated-projection control should remove issue 79 repetition without suppressing first useful cognition", async () => {
+  const result = await runEndogenousSelectivityEvaluation(
+    await workload(),
+    scriptedSelectivityEvaluator,
+    SCRIPTED_BACKEND,
+  );
+
+  assert.equal(result.policy.attention_control, "repeated_projection");
+  assert.equal(result.counts.evaluator_calls, 22);
+  assert.equal(result.counts.attention_deferred_repeated_projection, 3);
+  assert.equal(result.counts.external_model_evaluator_attempts, 0);
+  assert.deepEqual([
+    result.counts.intentional_silence,
+    result.counts.worthwhile_cognition,
+    result.counts.worthwhile_deferred_attention,
+    result.counts.false_positive_cognition,
+    result.counts.missed_worthwhile,
+    result.counts.evaluator_failures,
+  ], [19, 3, 3, 0, 0, 0]);
+  assert.deepEqual(result.counts.false_positive_categories, {
+    trivial_repetition: 0,
+    stale_concern_revival: 0,
+    post_hoc_fabricated_motive: 0,
+    unnecessary_user_interruption: 0,
+  });
+  assert.deepEqual(result.counts.interruptions, {
+    deliver: 2,
+    defer: 1,
+    suppress: 0,
+    no_delivery: 22,
+  });
+  assert.deepEqual(result.rates.intentional_silence, { numerator: 19, denominator: 25 });
+  assert.deepEqual(result.rates.false_positive_cognition, { numerator: 0, denominator: 25 });
+  assert.equal(result.latency_ms.sample_count, 22);
   assert.equal(result.local_process_resources.external_child_process_resources, "not_observed_by_harness");
 });
 
@@ -69,10 +109,12 @@ test("long quiet period should remain silent without model-written motives", asy
   assert.ok(quiet.every(item => item.decision === "no_cognition"));
   assert.ok(quiet.every(item => item.classification === "intentional_silence"));
   assert.ok(quiet.every(item => item.selected_meaning_count === 0));
+  assert.ok(quiet.every(item => item.attention_outcome === "evaluate"));
+  assert.ok(quiet.every(item => item.evaluator_latency_ms !== null));
   assert.ok(quiet.every(item => item.interruption_outcome === "no_delivery"));
 });
 
-test("unchanged current concern should expose structural repeated-cognition pressure while interruption stays suppressed", async () => {
+test("unchanged current concern should defer before repeated evaluator work", async () => {
   const result = await runEndogenousSelectivityEvaluation(
     await workload(),
     scriptedSelectivityEvaluator,
@@ -81,15 +123,23 @@ test("unchanged current concern should expose structural repeated-cognition pres
   const repeated = result.observations.filter(item => item.case_id === "repeated-current-concern");
 
   assert.equal(repeated.length, 4);
+  assert.deepEqual(repeated.map(item => item.decision), ["cognition", "defer", "defer", "defer"]);
   assert.deepEqual(repeated.map(item => item.classification), [
     "worthwhile_cognition",
-    "false_positive_cognition",
-    "false_positive_cognition",
-    "false_positive_cognition",
+    "worthwhile_deferred_attention",
+    "worthwhile_deferred_attention",
+    "worthwhile_deferred_attention",
   ]);
-  assert.deepEqual(repeated.map(item => item.interruption_outcome), ["deliver", "suppress", "suppress", "suppress"]);
-  assert.ok(repeated.slice(1).every(item => item.false_positive_categories.includes("trivial_repetition")));
-  assert.ok(repeated.every(item => !item.false_positive_categories.includes("unnecessary_user_interruption")));
+  assert.deepEqual(repeated.map(item => item.attention_outcome), [
+    "evaluate",
+    "defer_repeated_projection",
+    "defer_repeated_projection",
+    "defer_repeated_projection",
+  ]);
+  assert.deepEqual(repeated.map(item => item.interruption_outcome), ["deliver", "no_delivery", "no_delivery", "no_delivery"]);
+  assert.equal(repeated[0].evaluator_latency_ms === null, false);
+  assert.ok(repeated.slice(1).every(item => item.evaluator_latency_ms === null));
+  assert.ok(repeated.every(item => item.false_positive_categories.length === 0));
 });
 
 test("quiet-period useful cognition should remain separate from user interruption", async () => {
@@ -117,6 +167,7 @@ test("rubric should identify a fabricated motive and the first unnecessary inter
     await workload(),
     fabricateFromLiveConcern,
     SCRIPTED_BACKEND,
+    { attentionControl: "disabled" },
   );
   const irrelevant = result.observations.filter(item => item.case_id === "irrelevant-live-concern");
 
@@ -140,6 +191,7 @@ test("rubric should identify cognition that revives a resolved concern from a li
     await workload(),
     reviveFromConsequence,
     SCRIPTED_BACKEND,
+    { attentionControl: "disabled" },
   );
   const resolved = result.observations.filter(item => item.case_id === "resolved-concern");
 
