@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { createCodexOpportunityEvaluator } from "../agency/codex-opportunity-evaluator.ts";
 import { findCognitionOpportunity, runCognitionOpportunity, type CognitionOpportunityEvaluator } from "../agency/cognition-opportunity.ts";
 import { ValidationError } from "../core/errors.ts";
@@ -65,6 +65,8 @@ export interface RuntimeStatus {
     status: "pending" | "dispatching" | "completed" | "failed";
     timer_unit: string;
     timer_state: UnitState;
+    service_unit: string;
+    service_state: UnitState;
   }>;
   specialists: Array<{
     episode_id: string;
@@ -90,7 +92,11 @@ interface SpecialistWorkerOptions {
 }
 
 export class EpisodicRecordStore {
-  constructor(readonly root: string) {}
+  readonly root: string;
+
+  constructor(root: string) {
+    this.root = root;
+  }
 
   async createWake(intent: WakeIntent) {
     validateWakeIntent(intent);
@@ -154,13 +160,16 @@ export class EpisodicRecordStore {
 }
 
 export class SystemdUserSupervisor {
-  constructor(
-    readonly config: EpisodicRuntimeConfig,
-    readonly configPath: string,
-    readonly runner: CommandRunner = runCommand,
-  ) {
+  readonly config: EpisodicRuntimeConfig;
+  readonly configPath: string;
+  readonly runner: CommandRunner;
+
+  constructor(config: EpisodicRuntimeConfig, configPath: string, runner: CommandRunner = runCommand) {
     validateConfig(config);
     requireAbsolute(configPath, "runtime config path");
+    this.config = config;
+    this.configPath = configPath;
+    this.runner = runner;
   }
 
   async scheduleWake(intent: WakeIntent) {
@@ -172,13 +181,19 @@ export class SystemdUserSupervisor {
       `--on-calendar=${intent.due_at}`,
       "--property=Type=exec",
       "--property=Restart=no",
-      this.config.node_path,
-      this.config.runtime_entrypoint,
-      "run-wake",
-      "--config",
-      this.configPath,
-      "--wake-id",
-      intent.wake_id,
+      ...this.wakeWorkerCommand(intent.wake_id),
+    ]);
+  }
+
+  async startWakeNow(intent: WakeIntent) {
+    const unit = wakeUnitName(intent.wake_id);
+    await this.run(this.config.systemd_run_command, [
+      "--user",
+      "--collect",
+      `--unit=${unit}`,
+      "--property=Type=exec",
+      "--property=Restart=no",
+      ...this.wakeWorkerCommand(intent.wake_id),
     ]);
   }
 
@@ -232,6 +247,19 @@ export class SystemdUserSupervisor {
     return unitPath;
   }
 
+  private wakeWorkerCommand(wakeId: string) {
+    validateOpaqueId(wakeId, "wake id");
+    return [
+      this.config.node_path,
+      this.config.runtime_entrypoint,
+      "run-wake",
+      "--config",
+      this.configPath,
+      "--wake-id",
+      wakeId,
+    ];
+  }
+
   private async run(command: string, args: string[]) {
     const result = await this.runner(command, args);
     if (result.code !== 0) {
@@ -266,6 +294,7 @@ export async function scheduleWake(
     due_at: dueAt,
     created_at: now(),
   };
+  validateWakeIntent(intent);
   const records = new EpisodicRecordStore(config.records_directory);
   await records.createWake(intent);
   const supervisor = new SystemdUserSupervisor(config, configPath, runner);
@@ -414,8 +443,11 @@ export async function reconcileEpisodicRuntime(
   const records = new EpisodicRecordStore(config.records_directory);
   const supervisor = new SystemdUserSupervisor(config, configPath, runner);
   const repairedWakes: string[] = [];
+  const startedDueWakes: string[] = [];
   const ambiguousWakes: string[] = [];
   const lostSpecialists: string[] = [];
+  const observedAt = now();
+  if (!isRfc3339Utc(observedAt)) throw new ValidationError("reconciliation timestamp must be RFC 3339 UTC");
 
   for (const wakeId of await records.listWakeIds()) {
     const completed = await records.wakeObservation(wakeId, "completed");
@@ -425,9 +457,20 @@ export async function reconcileEpisodicRuntime(
       ambiguousWakes.push(wakeId);
       continue;
     }
+    const intent = await records.readWake(wakeId);
+    if (Date.parse(intent.due_at) <= Date.parse(observedAt)) {
+      const serviceState = await supervisor.unitState(`${wakeUnitName(wakeId)}.service`);
+      if (serviceState === "not_found") {
+        await supervisor.startWakeNow(intent);
+        startedDueWakes.push(wakeId);
+      } else if (serviceState !== "active") {
+        ambiguousWakes.push(wakeId);
+      }
+      continue;
+    }
     const timerState = await supervisor.unitState(`${wakeUnitName(wakeId)}.timer`);
     if (timerState === "not_found") {
-      await supervisor.scheduleWake(await records.readWake(wakeId));
+      await supervisor.scheduleWake(intent);
       repairedWakes.push(wakeId);
     }
   }
@@ -439,13 +482,13 @@ export async function reconcileEpisodicRuntime(
     const unitState = await supervisor.unitState(`${specialistUnitName(episodeId)}.service`);
     if (unitState === "not_found" || unitState === "inactive" || unitState === "failed") {
       if (["not_started", "running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
-        await recordSpecialistProcessLoss(recordPath, `systemd unit ${specialistUnitName(episodeId)} is ${unitState} during runtime reconciliation`, { now });
+        await recordSpecialistProcessLoss(recordPath, `systemd unit ${specialistUnitName(episodeId)} is ${unitState} during runtime reconciliation`, { now: () => observedAt });
         lostSpecialists.push(episodeId);
       }
     }
   }
 
-  return { repairedWakes, ambiguousWakes, lostSpecialists };
+  return { repairedWakes, startedDueWakes, ambiguousWakes, lostSpecialists };
 }
 
 export async function inspectEpisodicRuntime(
@@ -461,12 +504,15 @@ export async function inspectEpisodicRuntime(
     const intent = await records.readWake(wakeId);
     const status = await wakeStatus(records, wakeId);
     const timerUnit = `${wakeUnitName(wakeId)}.timer`;
+    const serviceUnit = `${wakeUnitName(wakeId)}.service`;
     wakes.push({
       wake_id: wakeId,
       due_at: intent.due_at,
       status,
       timer_unit: timerUnit,
       timer_state: await supervisor.unitState(timerUnit),
+      service_unit: serviceUnit,
+      service_state: await supervisor.unitState(serviceUnit),
     });
   }
 
@@ -612,7 +658,7 @@ function systemdQuote(value: string) {
 }
 
 async function writeExclusiveJson(path: string, value: unknown) {
-  await mkdir(join(path, ".."), { recursive: true });
+  await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
 }
 
