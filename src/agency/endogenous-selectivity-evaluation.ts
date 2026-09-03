@@ -4,6 +4,7 @@ import {
   initialState,
   isRfc3339Utc,
   newId,
+  type CognitionOpportunityDecision,
   type EmberState,
   type MeaningId,
 } from "../core/model.ts";
@@ -11,7 +12,6 @@ import { rememberFact, transitionCommitment, undertake } from "../core/semantics
 import { startRuntime } from "../runtime/runtime.ts";
 import {
   evaluateCognitionOpportunity,
-  type CognitionOpportunityDecision,
   type CognitionOpportunityEvaluator,
 } from "./cognition-opportunity.ts";
 import {
