@@ -78,6 +78,12 @@ scope. That occurrence is appended to the commitment's provenance and establishe
 transition therefore changes current normative force without erasing that Ember once
 undertook the commitment.
 
+This issue supersedes only the earlier statement in
+[minimal-continuity-slice.md](minimal-continuity-slice.md) that named commitment
+discharge was deferred from schema v1. That statement described the narrower slice
+before endogenous concern activation required a concrete transition. The rest of the
+minimal continuity design remains current.
+
 This initial transition seam is deliberately narrow. It does not claim that future
 commitment discharge must always originate in a user command. Direct observation,
 specialist evidence, renegotiation, expiry, or richer concern types should be added
