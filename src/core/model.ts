@@ -13,7 +13,7 @@ export type OpportunityId = Brand<"OpportunityId">;
 export type Currentness = "current" | "superseded" | "historical";
 export type MeaningKind = "relationship" | "fact" | "preference" | "commitment" | "episode_meta";
 export type SourceRole =
-    "user_command"
+    | "user_command"
     | "ember_adoption"
     | "ember_expression_via_provider"
     | "runtime_observation"
@@ -23,14 +23,14 @@ export type SourceRole =
     | "delegated_report"
     | "fixture_fault";
 export type EpistemicRole =
-    "user_testimony"
+    | "user_testimony"
     | "ember_inference"
     | "external_claim"
     | "direct_observation"
     | "delegated_report"
     | "ember_commitment";
 export type CognitionStatus =
-    "started"
+    | "started"
     | "completed"
     | "failed"
     | "timed_out"
@@ -48,7 +48,7 @@ export const COGNITION_OPPORTUNITY_MECHANISMS = [
 export type CognitionOpportunityMechanism = typeof COGNITION_OPPORTUNITY_MECHANISMS[number];
 export type CognitionOpportunityDecision = "cognition" | "defer" | "no_cognition";
 export type CognitionOpportunityStatus =
-    "evaluating"
+    | "evaluating"
     | "decided"
     | "failed"
     | "timed_out"
@@ -396,29 +396,54 @@ export function initialState(name: string, principal: string, timestamp = nowUtc
 }
 
 type Dynamic = Record<string, any>;
-const isObject = (value: unknown): value is Dynamic => value !== null && typeof value === "object" && !Array.isArray(value);
-const nonempty = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
-const exactKeys = (object: unknown, keys: readonly string[]) => isObject(object) && JSON.stringify(Object.keys(object).sort()) === JSON.stringify([...keys].sort());
-const safeInteger = (value: unknown): value is number => Number.isSafeInteger(value);
-const validId = (value: unknown, prefix: string) => nonempty(value) && value.startsWith(prefix);
+
+function isObject(value: unknown): value is Dynamic {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function nonempty(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
+function exactKeys(object: unknown, keys: readonly string[]) {
+    return isObject(object) && JSON.stringify(Object.keys(object).sort()) === JSON.stringify([...keys].sort());
+}
+
+function safeInteger(value: unknown): value is number {
+    return Number.isSafeInteger(value);
+}
+
+function validId(value: unknown, prefix: string) {
+    return nonempty(value) && value.startsWith(prefix);
+}
 
 export function isRfc3339Utc(value: unknown): value is string {
-    if (typeof value !== "string") return false;
+    if (typeof value !== "string") {
+        return false;
+    }
     const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z$/.exec(value);
-    if (!match) return false;
+    if (!match) {
+        return false;
+    }
     const [, year, month, day, hour, minute, second, fraction = ""] = match;
     const parts = [year, month, day, hour, minute, second].map(Number);
     const millisecond = Number(fraction.slice(0, 3).padEnd(3, "0"));
     const instant = new Date(0);
+
     instant.setUTCFullYear(parts[0], parts[1] - 1, parts[2]);
     instant.setUTCHours(parts[3], parts[4], parts[5], millisecond);
-    return instant.getUTCFullYear() === parts[0] && instant.getUTCMonth() === parts[1] - 1 && instant.getUTCDate() === parts[2] && instant.getUTCHours() === parts[3] && instant.getUTCMinutes() === parts[4] && instant.getUTCSeconds() === parts[5] && instant.getUTCMilliseconds() === millisecond;
+
+    return instant.getUTCFullYear() === parts[0]
+        && instant.getUTCMonth() === parts[1] - 1
+        && instant.getUTCDate() === parts[2]
+        && instant.getUTCHours() === parts[3]
+        && instant.getUTCMinutes() === parts[4]
+        && instant.getUTCSeconds() === parts[5]
+        && instant.getUTCMilliseconds() === millisecond;
 }
 
-const timestamp = isRfc3339Utc;
-
 function requireTimestamp(value: unknown, path: string): asserts value is string {
-    if (!timestamp(value)) throw new ValidationError(`${path} must be RFC 3339 UTC`);
+    if (!isRfc3339Utc(value)) throw new ValidationError(`${path} must be RFC 3339 UTC`);
 }
 
 function sameSlot(a: Dynamic, b: Dynamic) {
@@ -448,7 +473,7 @@ export function validateState(state: unknown): asserts state is EmberState {
     require(exactKeys(lineage, ["lineage_id", "display_name", "established_at", "constitutive_boundaries"]), "lineage contains unsupported fields");
     require(validId(lineage.lineage_id, "lineage-"), "lineage_id must be stable lineage ID");
     require(nonempty(lineage.display_name), "lineage display_name must be non-empty");
-    require(timestamp(lineage.established_at), "lineage.established_at must be RFC 3339 UTC");
+    require(isRfc3339Utc(lineage.established_at), "lineage.established_at must be RFC 3339 UTC");
     require(Array.isArray(lineage.constitutive_boundaries) && lineage.constitutive_boundaries.length === 1, "exactly one constitutive boundary is required");
     if (Array.isArray(lineage.constitutive_boundaries) && lineage.constitutive_boundaries.length === 1) {
         require(JSON.stringify(lineage.constitutive_boundaries[0]) === JSON.stringify({
@@ -494,9 +519,9 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(ROLES.has(ev.source_role), `${path}.source_role is unsupported`);
         require(nonempty(ev.source_actor), `${path}.source_actor must be non-empty`);
         require(nonempty(ev.scope), `${path}.scope must be non-empty`);
-        require(timestamp(ev.occurred_at), `${path}.occurred_at must be RFC 3339 UTC`);
-        require(timestamp(ev.observed_at), `${path}.observed_at must be RFC 3339 UTC`);
-        if (timestamp(ev.occurred_at) && timestamp(ev.observed_at)) require(Date.parse(ev.occurred_at) <= Date.parse(ev.observed_at), `${path} occurrence must not follow observation`);
+        require(isRfc3339Utc(ev.occurred_at), `${path}.occurred_at must be RFC 3339 UTC`);
+        require(isRfc3339Utc(ev.observed_at), `${path}.observed_at must be RFC 3339 UTC`);
+        if (isRfc3339Utc(ev.occurred_at) && isRfc3339Utc(ev.observed_at)) require(Date.parse(ev.occurred_at) <= Date.parse(ev.observed_at), `${path} occurrence must not follow observation`);
         require(Array.isArray(ev.derived_from_evidence_ids) && ev.derived_from_evidence_ids.every(nonempty), `${path}.derived_from_evidence_ids must be IDs`);
         if ("related_meaning_id" in ev) require(nonempty(ev.related_meaning_id), `${path}.related_meaning_id must be an ID`);
         if ("cognition_id" in ev) require(nonempty(ev.cognition_id), `${path}.cognition_id must be an ID`);
@@ -579,9 +604,9 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(KINDS.has(m.kind), `${path}.kind is unsupported`);
         for (const f of ["owner", "slot", "scope", "content", "epistemic_role"]) require(nonempty(m[f]), `${path}.${f} must be non-empty`);
         require(Array.isArray(m.source_evidence_ids) && m.source_evidence_ids.length > 0 && m.source_evidence_ids.every(nonempty), `${path} needs source evidence`);
-        require(timestamp(m.learned_at), `${path}.learned_at must be RFC 3339 UTC`);
-        require(timestamp(m.applicable_from), `${path}.applicable_from must be RFC 3339 UTC`);
-        if (m.applicable_until !== null) require(timestamp(m.applicable_until), `${path}.applicable_until must be RFC 3339 UTC`);
+        require(isRfc3339Utc(m.learned_at), `${path}.learned_at must be RFC 3339 UTC`);
+        require(isRfc3339Utc(m.applicable_from), `${path}.applicable_from must be RFC 3339 UTC`);
+        if (m.applicable_until !== null) require(isRfc3339Utc(m.applicable_until), `${path}.applicable_until must be RFC 3339 UTC`);
         require(CURRENTNESS.has(m.currentness), `${path}.currentness is invalid`);
         require("uncertainty" in m, `${path}.uncertainty must be explicit`);
         if (m.kind === "relationship") {
@@ -614,7 +639,7 @@ export function validateState(state: unknown): asserts state is EmberState {
                 require(m.applicable_until === null, `${path} live commitment cannot have applicability end`);
             } else {
                 require(m.currentness === "historical", `${path} discharged commitment must be historical`);
-                require(timestamp(m.applicable_until), `${path} discharged commitment needs applicability end`);
+                require(isRfc3339Utc(m.applicable_until), `${path} discharged commitment needs applicability end`);
             }
         } else if (m.kind === "episode_meta") {
             require(["ember", `relationship:${principal}`].includes(m.owner), `${path} episode owner is invalid`);
@@ -645,12 +670,12 @@ export function validateState(state: unknown): asserts state is EmberState {
         }
         require(r.principal === principal, `${p}.principal mismatch`);
         require(nonempty(r.active_scope), `${p}.active_scope must be explicit`);
-        require(timestamp(r.started_at), `${p}.started_at must be RFC 3339 UTC`);
-        require(timestamp(r.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
-        if (timestamp(r.started_at) && timestamp(r.last_durable_observation_at)) require(Date.parse(r.started_at) <= Date.parse(r.last_durable_observation_at), `${p} durable observation precedes runtime start`);
+        require(isRfc3339Utc(r.started_at), `${p}.started_at must be RFC 3339 UTC`);
+        require(isRfc3339Utc(r.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
+        if (isRfc3339Utc(r.started_at) && isRfc3339Utc(r.last_durable_observation_at)) require(Date.parse(r.started_at) <= Date.parse(r.last_durable_observation_at), `${p} durable observation precedes runtime start`);
         if (r.clean_stop_at !== null) {
-            require(timestamp(r.clean_stop_at), `${p}.clean_stop_at must be RFC 3339 UTC`);
-            if (timestamp(r.last_durable_observation_at) && timestamp(r.clean_stop_at)) require(Date.parse(r.last_durable_observation_at) <= Date.parse(r.clean_stop_at), `${p} clean stop precedes durable observation`);
+            require(isRfc3339Utc(r.clean_stop_at), `${p}.clean_stop_at must be RFC 3339 UTC`);
+            if (isRfc3339Utc(r.last_durable_observation_at) && isRfc3339Utc(r.clean_stop_at)) require(Date.parse(r.last_durable_observation_at) <= Date.parse(r.clean_stop_at), `${p} clean stop precedes durable observation`);
             require(nonempty(r.stop_reason), `${p}.stop_reason required for clean stop`);
         } else require(r.stop_reason === null, `${p}.stop_reason without clean stop`);
         require(isObject(r.recovery_account), `${p}.recovery_account must be an object`);
@@ -660,7 +685,7 @@ export function validateState(state: unknown): asserts state is EmberState {
     const cognitionFields = ["cognition_id", "runtime_id", "principal", "active_scope", "provider_label", "purpose", "started_at", "last_durable_observation_at", "status", "selected_meaning_ids", "selected_evidence_ids", "used_meaning_ids", "input_evidence_id", "expression_evidence_id", "delivery_status"];
     const cognitionFieldsWithOperationalEvidence = [...cognitionFields, "external_provider_thread_id", "provider_termination"];
 
-    for (let index = 0; index < cognitions.length; index++){
+    for (let index = 0; index < cognitions.length; index++) {
         const raw = cognitions[index];
         const p = `cognition_episodes[${index}]`;
         const c = isObject(raw) ? raw : {};
@@ -677,8 +702,8 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(nonempty(c.active_scope), `${p}.active_scope must be explicit`);
         require(["ordinary", "explain"].includes(c.purpose), `${p}.purpose is invalid`);
         require(nonempty(c.provider_label), `${p}.provider_label is required`);
-        require(timestamp(c.started_at), `${p}.started_at must be RFC 3339 UTC`);
-        require(timestamp(c.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
+        require(isRfc3339Utc(c.started_at), `${p}.started_at must be RFC 3339 UTC`);
+        require(isRfc3339Utc(c.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
         require(["started", "completed", "failed", "timed_out", "cancellation_requested", "outcome_unknown"].includes(c.status), `${p}.status is invalid`);
         if ("external_provider_thread_id" in c && c.external_provider_thread_id !== null) {
             require(typeof c.external_provider_thread_id === "string" && c.external_provider_thread_id.length > 0 && c.external_provider_thread_id.length <= 512 && !/[\u0000-\u001f\u007f]/.test(c.external_provider_thread_id), `${p}.external_provider_thread_id is invalid`);
@@ -733,9 +758,11 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(o.principal === principal, `${p}.principal mismatch`);
         require(nonempty(o.active_scope), `${p}.active_scope must be explicit`);
         require((COGNITION_OPPORTUNITY_MECHANISMS as readonly unknown[]).includes(o.mechanism), `${p}.mechanism is invalid`);
-        require(timestamp(o.observed_at), `${p}.observed_at must be RFC 3339 UTC`);
-        require(timestamp(o.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
-        if (timestamp(o.observed_at) && timestamp(o.last_durable_observation_at)) require(Date.parse(o.observed_at) <= Date.parse(o.last_durable_observation_at), `${p} durable observation precedes opportunity observation`);
+        require(isRfc3339Utc(o.observed_at), `${p}.observed_at must be RFC 3339 UTC`);
+        require(isRfc3339Utc(o.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
+        if (isRfc3339Utc(o.observed_at) && isRfc3339Utc(o.last_durable_observation_at)) {
+            require(Date.parse(o.observed_at) <= Date.parse(o.last_durable_observation_at), `${p} durable observation precedes opportunity observation`);
+        }
         require(safeInteger(o.validated_revision) && o.validated_revision >= 0, `${p}.validated_revision must be a non-negative safe integer`);
         for (const f of ["projected_meaning_ids", "projected_evidence_ids", "selected_meaning_ids"]) {
             require(Array.isArray(o[f]) && o[f].every(nonempty), `${p}.${f} must be an ID list`);
@@ -894,8 +921,8 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(!!runtime, `${id} owning runtime is absent`);
         if (runtime) {
             require(o.active_scope === runtime.active_scope, `${id} scope differs from owning runtime`);
-            require(timestamp(o.observed_at) && timestamp(runtime.started_at) && Date.parse(runtime.started_at) <= Date.parse(o.observed_at), `${id} opportunity precedes owning runtime`);
-            if (runtime.clean_stop_at !== null && timestamp(o.last_durable_observation_at)) require(Date.parse(o.last_durable_observation_at) <= Date.parse(runtime.clean_stop_at), `${id} opportunity observation follows clean runtime stop`);
+            require(isRfc3339Utc(o.observed_at) && isRfc3339Utc(runtime.started_at) && Date.parse(runtime.started_at) <= Date.parse(o.observed_at), `${id} opportunity precedes owning runtime`);
+            if (runtime.clean_stop_at !== null && isRfc3339Utc(o.last_durable_observation_at)) require(Date.parse(o.last_durable_observation_at) <= Date.parse(runtime.clean_stop_at), `${id} opportunity observation follows clean runtime stop`);
         }
         require(o.validated_revision <= state.revision, `${id} validated revision is newer than canonical state`);
         for (const mid of o.projected_meaning_ids) require(meaningById.has(mid), `${id} projected absent meaning ${mid}`);
@@ -937,8 +964,8 @@ function validateRuntimeChain(runtimes: Dynamic[], byId: Map<string, Dynamic>, r
             expected = p.clean_stop_at === null
                 ? ["uncertain_interruption_boundary", p.last_durable_observation_at, null, "unknown_after_last_durable_observation"]
                 : ["known_clean_stop_interval", p.last_durable_observation_at, p.clean_stop_at, "none_in_supported_runtime"];
-            if (timestamp(p.last_durable_observation_at) && timestamp(r.started_at)) require(Date.parse(p.last_durable_observation_at) <= Date.parse(r.started_at), `${r.runtime_id} restart precedes prior durable boundary`);
-            if (p.clean_stop_at && timestamp(r.started_at)) require(Date.parse(p.clean_stop_at) <= Date.parse(r.started_at), `${r.runtime_id} restart precedes prior clean stop`);
+            if (isRfc3339Utc(p.last_durable_observation_at) && isRfc3339Utc(r.started_at)) require(Date.parse(p.last_durable_observation_at) <= Date.parse(r.started_at), `${r.runtime_id} restart precedes prior durable boundary`);
+            if (p.clean_stop_at && isRfc3339Utc(r.started_at)) require(Date.parse(p.clean_stop_at) <= Date.parse(r.started_at), `${r.runtime_id} restart precedes prior clean stop`);
         }
         require(JSON.stringify([a.gap_kind, a.last_durable_observation_at, a.clean_stop_at, a.ember_cognition_during_interval]) === JSON.stringify(expected), `${r.runtime_id} recovery account overstates or contradicts surviving lifecycle evidence`);
     }
