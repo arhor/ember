@@ -35,6 +35,9 @@ Current architecture material:
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
+- [Bounded Cognition-Opportunity Boundary](cognition-opportunity.md) defines issue
+  #73's topic-free wake-up occurrence, bounded state projection, allowed endogenous
+  outcomes, and implementation handoff for the decision boundary in issue #74.
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
