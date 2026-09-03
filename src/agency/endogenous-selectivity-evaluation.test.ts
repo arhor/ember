@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 import {
   parseSelectivityWorkload,
   runEndogenousSelectivityEvaluation,
   scriptedSelectivityEvaluator,
 } from "./endogenous-selectivity-evaluation.ts";
+
+const SCRIPTED_BACKEND = {
+  label: "scripted-structural-control",
+  external_model: false,
+  runtime_version: null,
+  model_version: null,
+} as const;
 
 async function workload() {
   const raw = await readFile(new URL("../../test-fixtures/endogenous/selectivity-workload.json", import.meta.url), "utf8");
@@ -16,14 +24,14 @@ test("selectivity workload should expose quiet stretches, useful concerns, repet
   const result = await runEndogenousSelectivityEvaluation(
     await workload(),
     scriptedSelectivityEvaluator,
-    { label: "scripted-structural-control", external_model: false, model_version: null },
+    SCRIPTED_BACKEND,
   );
 
   assert.deepEqual(result.workload, { case_count: 6, opportunity_count: 25 });
   assert.equal(result.policy.trigger_topic_present, false);
-  assert.equal(result.policy.model_backed_calls_per_opportunity, 1);
+  assert.equal(result.policy.model_backed_evaluator_attempts_per_opportunity, 1);
   assert.equal(result.counts.evaluator_calls, 25);
-  assert.equal(result.counts.external_model_calls, 0);
+  assert.equal(result.counts.external_model_evaluator_attempts, 0);
 
   assert.deepEqual([
     result.counts.intentional_silence,
@@ -53,7 +61,7 @@ test("long quiet period should remain silent without model-written motives", asy
   const result = await runEndogenousSelectivityEvaluation(
     await workload(),
     scriptedSelectivityEvaluator,
-    { label: "scripted-structural-control", external_model: false, model_version: null },
+    SCRIPTED_BACKEND,
   );
   const quiet = result.observations.filter(item => item.case_id === "quiet-stretch");
 
@@ -68,7 +76,7 @@ test("unchanged current concern should expose structural repeated-cognition pres
   const result = await runEndogenousSelectivityEvaluation(
     await workload(),
     scriptedSelectivityEvaluator,
-    { label: "scripted-structural-control", external_model: false, model_version: null },
+    SCRIPTED_BACKEND,
   );
   const repeated = result.observations.filter(item => item.case_id === "repeated-current-concern");
 
@@ -88,13 +96,56 @@ test("quiet-period useful cognition should remain separate from user interruptio
   const result = await runEndogenousSelectivityEvaluation(
     await workload(),
     scriptedSelectivityEvaluator,
-    { label: "scripted-structural-control", external_model: false, model_version: null },
+    SCRIPTED_BACKEND,
   );
   const [observation] = result.observations.filter(item => item.case_id === "current-ordinary-quiet-period");
 
   assert.equal(observation.classification, "worthwhile_cognition");
   assert.equal(observation.interruption_outcome, "defer");
   assert.deepEqual(observation.false_positive_categories, []);
+});
+
+test("rubric should identify a fabricated motive and the first unnecessary interruption it causes", async () => {
+  const fabricateFromLiveConcern: CognitionOpportunityEvaluator = async request => {
+    const commitment = request.projection.meanings.find(item => item.kind === "commitment");
+    return commitment
+      ? { contract_version: 1, decision: "cognition", selected_meaning_ids: [commitment.meaning_id] }
+      : { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+  };
+
+  const result = await runEndogenousSelectivityEvaluation(
+    await workload(),
+    fabricateFromLiveConcern,
+    SCRIPTED_BACKEND,
+  );
+  const irrelevant = result.observations.filter(item => item.case_id === "irrelevant-live-concern");
+
+  assert.ok(irrelevant.every(item => item.classification === "false_positive_cognition"));
+  assert.ok(irrelevant.every(item => item.false_positive_categories.includes("post_hoc_fabricated_motive")));
+  assert.equal(irrelevant.filter(item => item.false_positive_categories.includes("unnecessary_user_interruption")).length, 1);
+  assert.deepEqual(irrelevant.map(item => item.interruption_outcome), ["deliver", "suppress", "suppress", "suppress"]);
+});
+
+test("rubric should identify cognition that revives a resolved concern from a lingering consequence", async () => {
+  const reviveFromConsequence: CognitionOpportunityEvaluator = async request => {
+    const commitment = request.projection.meanings.find(item => item.kind === "commitment");
+    const urgency = request.projection.meanings.find(item => item.kind === "fact" && item.slot === "release-window");
+    if (!commitment && urgency) {
+      return { contract_version: 1, decision: "cognition", selected_meaning_ids: [urgency.meaning_id] };
+    }
+    return { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+  };
+
+  const result = await runEndogenousSelectivityEvaluation(
+    await workload(),
+    reviveFromConsequence,
+    SCRIPTED_BACKEND,
+  );
+  const resolved = result.observations.filter(item => item.case_id === "resolved-concern");
+
+  assert.ok(resolved.every(item => item.classification === "false_positive_cognition"));
+  assert.ok(resolved.every(item => item.false_positive_categories.includes("stale_concern_revival")));
+  assert.equal(resolved.filter(item => item.false_positive_categories.includes("unnecessary_user_interruption")).length, 1);
 });
 
 test("workload parser should reject malformed or duplicate cases", async () => {
