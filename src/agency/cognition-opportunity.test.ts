@@ -7,6 +7,7 @@ import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 import {
   evaluateCognitionOpportunity,
   type CognitionOpportunityEvaluator,
+  type CognitionOpportunityMechanism,
   type CognitionOpportunityRequest,
 } from "./cognition-opportunity.ts";
 
@@ -107,6 +108,28 @@ test("evaluator should not select meaning outside the bounded projection", async
   );
 });
 
+test("evaluator mutation should not enlarge the validated projection envelope", async () => {
+  // Given
+  const fixture = startedState(false);
+  const injected = "meaning-injected-by-evaluator" as MeaningId;
+  const evaluator: CognitionOpportunityEvaluator = async request => {
+    request.projection.selection.meaning_ids.push(injected);
+    return { contract_version: 1, decision: "cognition", selected_meaning_ids: [injected] };
+  };
+
+  // When / Then
+  await assert.rejects(
+    evaluateCognitionOpportunity(fixture.state, {
+      runtimeId: fixture.runtimeId,
+      principal: PRINCIPAL,
+      scope: SCOPE,
+      mechanism: "foreground_probe",
+      evaluator,
+    }),
+    error => error instanceof ValidationError && /outside its projection/.test(error.message),
+  );
+});
+
 test("intentional no cognition should not carry a fabricated selected reason", async () => {
   // Given
   const fixture = startedState(true);
@@ -126,6 +149,23 @@ test("intentional no cognition should not carry a fabricated selected reason", a
       evaluator,
     }),
     error => error instanceof ValidationError && /no_cognition must not select/.test(error.message),
+  );
+});
+
+test("cognition opportunity should reject topic-shaped mechanism values at runtime", async () => {
+  // Given
+  const fixture = startedState(false);
+
+  // When / Then
+  await assert.rejects(
+    evaluateCognitionOpportunity(fixture.state, {
+      runtimeId: fixture.runtimeId,
+      principal: PRINCIPAL,
+      scope: SCOPE,
+      mechanism: "revisit-project-x" as CognitionOpportunityMechanism,
+      evaluator: selectLiveCommitment,
+    }),
+    error => error instanceof ValidationError && /mechanism is invalid/.test(error.message),
   );
 });
 
