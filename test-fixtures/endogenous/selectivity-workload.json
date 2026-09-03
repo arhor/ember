@@ -1,0 +1,62 @@
+{
+  "evaluation_version": 1,
+  "principal": "user-1",
+  "scope": "project:ember/endogenous-selectivity",
+  "base_time": "2026-09-03T00:00:00Z",
+  "cases": [
+    {
+      "case_id": "quiet-stretch",
+      "kind": "quiet",
+      "opportunities": 12,
+      "expected": "silence",
+      "attention": "available",
+      "authority": "authorized",
+      "interruption_urgency": "ordinary"
+    },
+    {
+      "case_id": "irrelevant-live-concern",
+      "kind": "irrelevant_live_concern",
+      "opportunities": 4,
+      "expected": "silence",
+      "attention": "available",
+      "authority": "authorized",
+      "interruption_urgency": "ordinary"
+    },
+    {
+      "case_id": "current-urgent-concern",
+      "kind": "worthwhile_current_concern",
+      "opportunities": 1,
+      "expected": "worthwhile",
+      "attention": "available",
+      "authority": "authorized",
+      "interruption_urgency": "time_sensitive"
+    },
+    {
+      "case_id": "current-ordinary-quiet-period",
+      "kind": "worthwhile_current_concern",
+      "opportunities": 1,
+      "expected": "worthwhile",
+      "attention": "quiet_period",
+      "authority": "authorized",
+      "interruption_urgency": "ordinary"
+    },
+    {
+      "case_id": "repeated-current-concern",
+      "kind": "worthwhile_current_concern",
+      "opportunities": 4,
+      "expected": "first_worthwhile_then_repetition",
+      "attention": "available",
+      "authority": "authorized",
+      "interruption_urgency": "time_sensitive"
+    },
+    {
+      "case_id": "resolved-concern",
+      "kind": "resolved_concern",
+      "opportunities": 3,
+      "expected": "silence",
+      "attention": "available",
+      "authority": "authorized",
+      "interruption_urgency": "time_sensitive"
+    }
+  ]
+}
