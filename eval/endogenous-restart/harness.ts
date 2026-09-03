@@ -29,7 +29,14 @@ interface PhaseResult {
   historical_aliases?: string[];
   gap_kind?: string;
   downtime_cognition?: string;
-  provider_thread_mode?: string;
+  provider_thread_policy?: string;
+  provider_thread_observed?: boolean;
+  supersession?: {
+    old_currentness: string;
+    current_currentness: string;
+    old_superseded_by_alias: string | null;
+    current_supersedes_alias: string | null;
+  };
 }
 
 export async function runEndogenousRestartScenario(
@@ -49,14 +56,31 @@ export async function runEndogenousRestartScenario(
     check("downtime cognition is bounded truthfully", "none_in_supported_runtime", restarted.downtime_cognition),
     check("post-restart opportunity decision", scenario.expected_decision, restarted.decision),
     check("post-restart selected durable reasons", scenario.expected_selected_aliases.slice().sort(), restarted.selected_aliases?.slice().sort()),
+    check("pre-restart phase observes no provider thread", false, prepared.provider_thread_observed ?? false),
     check(
-      "post-restart evaluator has no prior thread history",
+      "post-restart evaluator thread policy",
       options.executionMode === "live" ? "ephemeral" : "deterministic_no_session",
-      restarted.provider_thread_mode,
+      restarted.provider_thread_policy,
+    ),
+    check(
+      "post-restart provider thread is actually observed",
+      options.executionMode === "live",
+      restarted.provider_thread_observed ?? false,
     ),
   ];
   if (scenario.kind === "resolved") checks.push(check("resolved concern remains historical", ["concern"], restarted.historical_aliases));
-  if (scenario.kind === "superseded") checks.push(check("superseded consequence remains historical", ["old-consequence"], restarted.historical_aliases));
+  if (scenario.kind === "superseded") {
+    checks.push(
+      check("superseded concern-driving reason remains historical", ["old-consequence"], restarted.historical_aliases),
+      check("replacement reason and still-live concern remain current", ["concern", "current-consequence"], restarted.current_aliases),
+      check("supersession linkage survives restart", {
+        old_currentness: "superseded",
+        current_currentness: "current",
+        old_superseded_by_alias: "current-consequence",
+        current_supersedes_alias: "old-consequence",
+      }, restarted.supersession),
+    );
+  }
   return {
     report_version: 1,
     scenario_id: scenario.id,
