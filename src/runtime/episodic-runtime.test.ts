@@ -83,13 +83,32 @@ test("schedule wake should persist intent before creating one-shot systemd activ
   ]);
 });
 
+test("schedule wake should dispatch an already-due one-shot without creating a timer in the past", async () => {
+  const root = await tempDir();
+  const config = runtimeConfig(root);
+  const configPath = join(root, "runtime.json");
+  const { calls, runner } = capturingRunner();
+
+  const intent = await scheduleWake(config, configPath, "2026-09-03T19:59:00Z", {
+    now: () => "2026-09-03T20:00:00Z",
+    runner,
+  });
+
+  assert.equal(calls.length, 1);
+  assert.ok(!calls[0]!.args.some(arg => arg.startsWith("--on-calendar=")));
+  assert.equal(calls[0]!.args.at(-1), intent.wake_id);
+});
+
 test("wake worker should record one external-timing opportunity and cleanly stop its runtime", async () => {
   const root = await tempDir();
   const config = runtimeConfig(root);
   const configPath = join(root, "runtime.json");
   const { runner } = capturingRunner();
   await new StateStore(config.state_path).create(initialState("Ember", PRINCIPAL, "2026-09-03T19:00:00Z"));
-  const intent = await scheduleWake(config, configPath, "2026-09-03T20:00:00Z", { runner });
+  const intent = await scheduleWake(config, configPath, "2026-09-03T20:00:00Z", {
+    now: () => "2026-09-03T19:30:00Z",
+    runner,
+  });
 
   const result = await runWakeWorker(config, intent.wake_id, {
     evaluator: async () => ({ contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] }),
@@ -110,13 +129,19 @@ test("wake worker should record one external-timing opportunity and cleanly stop
   assert.ok(await records.wakeObservation(intent.wake_id, "completed"));
 });
 
-test("reconciliation should re-arm only wakes that have not begun dispatch", async () => {
+test("reconciliation should re-arm only future wakes that have not begun dispatch", async () => {
   const root = await tempDir();
   const config = runtimeConfig(root);
   const configPath = join(root, "runtime.json");
   const initial = capturingRunner();
-  const pending = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", { runner: initial.runner });
-  const ambiguous = await scheduleWake(config, configPath, "2026-09-04T11:00:00Z", { runner: initial.runner });
+  const pending = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    now: () => "2026-09-03T20:00:00Z",
+    runner: initial.runner,
+  });
+  const ambiguous = await scheduleWake(config, configPath, "2026-09-04T11:00:00Z", {
+    now: () => "2026-09-03T20:00:00Z",
+    runner: initial.runner,
+  });
   const records = new EpisodicRecordStore(config.records_directory);
   await records.observeWake(ambiguous.wake_id, {
     record_version: 1,
@@ -125,13 +150,42 @@ test("reconciliation should re-arm only wakes that have not begun dispatch", asy
   });
   const recovery = capturingRunner();
 
-  const result = await reconcileEpisodicRuntime(config, configPath, { runner: recovery.runner });
+  const result = await reconcileEpisodicRuntime(config, configPath, {
+    runner: recovery.runner,
+    now: () => "2026-09-03T20:05:00Z",
+  });
 
   assert.deepEqual(result.repairedWakes, [pending.wake_id]);
+  assert.deepEqual(result.startedDueWakes, []);
   assert.deepEqual(result.ambiguousWakes, [ambiguous.wake_id]);
   const wakeStarts = recovery.calls.filter(call => call.command === config.systemd_run_command);
   assert.equal(wakeStarts.length, 1);
+  assert.ok(wakeStarts[0]!.args.some(arg => arg.startsWith("--on-calendar=")));
   assert.equal(wakeStarts[0]!.args.at(-1), pending.wake_id);
+});
+
+test("reconciliation should dispatch one due pending wake now instead of replaying historical ticks", async () => {
+  const root = await tempDir();
+  const config = runtimeConfig(root);
+  const configPath = join(root, "runtime.json");
+  const initial = capturingRunner();
+  const due = await scheduleWake(config, configPath, "2026-09-03T20:10:00Z", {
+    now: () => "2026-09-03T20:00:00Z",
+    runner: initial.runner,
+  });
+  const recovery = capturingRunner();
+
+  const result = await reconcileEpisodicRuntime(config, configPath, {
+    runner: recovery.runner,
+    now: () => "2026-09-03T20:20:00Z",
+  });
+
+  assert.deepEqual(result.startedDueWakes, [due.wake_id]);
+  assert.deepEqual(result.repairedWakes, []);
+  const start = recovery.calls.find(call => call.command === config.systemd_run_command)!;
+  assert.ok(start);
+  assert.ok(!start.args.some(arg => arg.startsWith("--on-calendar=")));
+  assert.equal(start.args.at(-1), due.wake_id);
 });
 
 test("specialist launch should persist the spec and disable blind process restart", async () => {
@@ -186,12 +240,15 @@ test("specialist launch should persist the spec and disable blind process restar
   assert.ok(await new EpisodicRecordStore(config.records_directory).specialistObservation(spec.episode_id, "launch_accepted"));
 });
 
-test("status should join durable runtime records with systemd observation without treating either as Ember identity", async () => {
+test("status should join durable runtime outcomes with systemd observation", async () => {
   const root = await tempDir();
   const config = runtimeConfig(root);
   const configPath = join(root, "runtime.json");
   const first = capturingRunner();
-  const wake = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", { runner: first.runner });
+  const wake = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    now: () => "2026-09-03T20:00:00Z",
+    runner: first.runner,
+  });
   const statusRunner = capturingRunner("loaded\nactive\n");
 
   const status = await inspectEpisodicRuntime(config, configPath, { runner: statusRunner.runner });
@@ -199,7 +256,24 @@ test("status should join durable runtime records with systemd observation withou
   assert.equal(status.wakes.length, 1);
   assert.equal(status.wakes[0]!.wake_id, wake.wake_id);
   assert.equal(status.wakes[0]!.status, "pending");
+  assert.equal(status.wakes[0]!.decision, null);
+  assert.equal(status.wakes[0]!.evaluator_failure, null);
   assert.equal(status.wakes[0]!.timer_state, "active");
+  assert.equal(status.wakes[0]!.service_state, "active");
+});
+
+test("runtime record kinds should fail closed before they can become filesystem paths", async () => {
+  const root = await tempDir();
+  const records = new EpisodicRecordStore(join(root, "runtime-records"));
+
+  await assert.rejects(
+    records.observeWake("wake-safe", {
+      record_version: 1,
+      kind: "../../escape",
+      observed_at: "2026-09-03T20:00:00Z",
+    }),
+    /record kind is invalid/,
+  );
 });
 
 test("reconciliation unit should be one-shot and contain only explicit configured paths", async () => {
@@ -216,8 +290,9 @@ test("reconciliation unit should be one-shot and contain only explicit configure
   assert.match(unit, new RegExp(configPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
-test("systemd supervisor should refuse relative runtime configuration paths", () => {
+test("systemd supervisor should refuse relative or line-breaking runtime configuration paths", () => {
   const config = runtimeConfig("/tmp/ember-runtime-test");
-  assert.throws(() => new SystemdUserSupervisor(config, "runtime.json"), /absolute path/);
+  assert.throws(() => new SystemdUserSupervisor(config, "runtime.json"), /safe absolute path/);
+  assert.throws(() => new SystemdUserSupervisor(config, "/tmp/runtime\nInjected=1"), /safe absolute path/);
   assert.equal(specialistUnitName("episode-abc"), "ember-specialist-episode-abc");
 });
