@@ -14,6 +14,7 @@
     "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",
+    "runtime:episodic": "node bin/ember-runtime.ts",
     "smoke:codex": "node scripts/live-codex-smoke.ts",
     "smoke:cursor": "node scripts/live-cursor-smoke.ts",
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node scripts/live-codex-specialist.ts",
