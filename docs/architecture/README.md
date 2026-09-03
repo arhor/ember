@@ -38,6 +38,9 @@ Current architecture material:
 - [Bounded Cognition-Opportunity Boundary](cognition-opportunity.md) defines issue
   #73's topic-free wake-up occurrence, bounded state projection, allowed endogenous
   outcomes, and implementation handoff for the decision boundary in issue #74.
+- [Endogenous Cognition Decision Boundary](endogenous-cognition-decision.md) records
+  issue #74's executable topic-free decision seam, deterministic controls, bounded
+  outcome evidence, and opt-in Codex evaluation path.
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
