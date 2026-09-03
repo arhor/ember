@@ -29,9 +29,9 @@ interaction:
    separately decide whether completed cognition deserves user interruption.
 
 Those features create real operational pressure, but not every pressure implies a
-resident daemon. The purpose of this note is to identify what the eventual runtime
-**must make possible** and what simpler foreground or externally triggered execution
-still satisfies.
+resident daemon. This note identifies what the eventual runtime **must make
+possible** and what simpler foreground or externally triggered execution still
+satisfies.
 
 The governing distinction remains ADR 0005: process lifetime, session lifetime,
 work lifetime, occurrence, delivery, external effects, and current applicability are
@@ -48,7 +48,8 @@ not from product convention.
 | `minimal-continuity-slice.md` and its runbook | Complete process restart can preserve Ember continuity through durable state; a foreground process is sufficient for ordinary cognition, explicit inspection, correction, and controlled restart. The current store uses one cooperative writer and truthful lock recovery. |
 | `minimal-codex-specialist-delegation.md` and `src/delegation/codex-specialist.ts` | Specialist work has an Ember-owned durable episode specification and observations; the Codex child may produce effects before timeout/cancellation/process loss; cancellation intent, observed exit, continued work, effects, retry safety, and reintegration remain separate. |
 | `specialist-result-reintegration.md` | A completed specialist report cannot be accepted from its launch snapshot alone; current objective/context revisions and present lifecycle must be checked before reliance. |
-| `cognition-opportunity.md` through the issue #73-#78 design chain | An endogenous opportunity is topic-free, may end in silence, and is distinct from user input, provider failure, and user interruption. |
+| `cognition-opportunity.md` through the issue #73-#78 design chain | An endogenous opportunity is topic-free, may end in silence, and is distinct from user input, provider failure, completed cognition, user interruption, and actual delivery. |
+| `endogenous-interruption-decision.md` | Completed internal cognition may yield `deliver`, `defer`, `suppress`, or `no_delivery`; `deliver` only permits a later delivery layer and does not prove contact. Transport delivery remains intentionally unimplemented. |
 | `endogenous-selectivity-evaluation.md` | Issue #79 reproduced redundant repeated cognition; issue #95 removed it with an unchanged-projection deferral. No fixed scheduler interval, quiet-state cache, global opportunity budget, or service topology was earned. |
 | ADR 0005 and `operational-model-sessions-and-surfaces.md` | Long-running work survives interaction boundaries on its own semantic terms; restart reconciles the justified present; downtime remains a truthful gap; delivery and surface reachability do not define work completion or authority. |
 | ADR 0006 | Node.js 26 is the selected implementation runtime. Ambient OS capability remains distinct from Ember authority, and new runtime dependencies/service machinery must solve concrete requirements. |
@@ -128,8 +129,6 @@ establish the strongest justified facts about:
 
 This does not require preserving a Codex thread. Current specialist design treats
 replacement as a new Ember episode and keeps Codex-local continuity non-canonical.
-
-### Process ownership consequence
 
 If the selected topology cannot keep the original local child/runtime observable
 across an interaction boundary, it must still durably classify the resulting loss
@@ -279,28 +278,34 @@ is instead: avoid adding permanently resident machinery that has no demonstrated
 semantic/operational purpose, and keep the topology observable enough for #82/#84 to
 measure real idle and active cost.
 
-## R11. Delivery is not yet a requirement of the long-lived-runtime epic
+## R11. Interruption handoff must survive runtime boundaries; transport delivery is not yet required
 
-Issue #78 separates internal cognition from user interruption, but the current
-implemented surface is still the local CLI. A useful internal cognition or finished
-specialist result can remain durable without being immediately delivered through a
-second surface.
+Issue #78 already separates completed internal cognition from the later interruption
+decision. A current authorized candidate may yield `deliver`, but that outcome only
+permits a later delivery layer to attempt contact; it is not itself delivery evidence.
+`defer` similarly means the candidate may remain useful without being surfaced now.
 
-Consequently #51 does **not** currently require:
+For unattended cognition, the selected runtime must therefore avoid making an
+interruption outcome depend on the continued existence of the process that computed
+it. If a `deliver` or semantically live `defer` handoff needs to survive a runtime
+boundary before any delivery layer can act, #81/#94 must preserve enough operational
+state to resume from that handoff truthfully rather than recomputing or dropping it
+silently.
 
-- a notification queue;
+That requirement does **not** yet earn transport infrastructure. #51 does not
+currently require:
+
+- a notification queue or generic delivery scheduler;
 - Telegram delivery;
 - cross-surface routing;
-- retrying outbound messages while offline; or
+- retrying outbound messages while offline;
+- durable transport occurrence/deduplication state owned by #85/#88; or
 - treating a reachable surface as the owner of a result.
 
-The runtime should preserve any interruption/delivery intent that its current
-endogenous path already needs, but the concrete messaging/delivery lifecycle belongs
-to #52 after the runtime topology is established.
-
-If #81 finds that the selected topology needs a generic handoff seam merely to make
-#52 possible, that seam must remain narrower than implementing the future surface
-semantics early.
+The topology should expose a narrow handoff boundary that can later be consumed by
+#52 without implementing future surface semantics early. Actual delivery attempts,
+transport retry/replay, recipient mapping, and delivery uncertainty remain work for
+the secondary-surface epic.
 
 ## R12. Platform and supervision assumptions must remain explicit
 
@@ -327,7 +332,7 @@ complexity.
 | Topic-free cognition opportunity | A short-lived externally triggered invocation can satisfy the semantic opportunity boundary if trigger overlap, attention reconsideration, and store locking are handled correctly. |
 | Quiet periods | Silence requires no resident cognition loop. #79/#95 explicitly provide no evidence for continuous polling or a fixed opportunity cadence. |
 | Durable specialist history after completion/loss | Episode records and reintegration evidence survive process exit without preserving a Codex thread. |
-| Delivery | There is no second production surface yet, so unattended outbound transport is not part of #51's demonstrated requirement set. |
+| Transport delivery | There is no second production surface yet, so unattended outbound transport is not part of #51's demonstrated requirement set. The narrow interruption handoff in R11 is sufficient for #81. |
 
 The strongest pressure **for** a long-lived operational locus is not continuity by
 itself. It is the combination of unattended opportunities and owning/observing
@@ -335,7 +340,7 @@ specialist work while no interactive process is attached. #81 should compare whe
 those pressures are best satisfied by one resident Ember process, supervised
 short-lived executions plus external ownership, or another smaller local arrangement.
 
-## Requirement-to-scenario handoff for #81
+## Requirement-to-topology handoff for #81
 
 Issue #81 should evaluate every candidate topology against the following questions.
 
@@ -352,21 +357,21 @@ Issue #81 should evaluate every candidate topology against the following questio
 | Configuration/secrets | Where do state paths, provider commands, policy inputs, and runtime-owned auth access come from without committing secrets? |
 | Resource envelope | What is permanently resident, what is transient, and how can #82 attribute RSS/CPU/process counts? |
 | Platform scope | Which process-manager/OS assumptions are first-class deployment constraints and which semantics remain portable? |
-| Delivery boundary | What, if anything, must be retained for future delivery without prematurely implementing #52? |
+| Interruption/delivery handoff | How does a semantically live `deliver`/`defer` handoff survive a runtime boundary without prematurely implementing transport semantics from #52? |
 
 ## Explicit non-requirements
 
 No current evidence requires any of the following:
 
 - a generic background job framework;
-- a durable message broker or queue;
+- a durable message broker or generic delivery queue;
 - distributed or multi-host coordination;
 - persistent Codex sessions;
 - automatic specialist retry after ambiguous failure;
 - replay of missed endogenous opportunities;
 - fixed-rate polling or cron prompts;
 - a general scheduler API;
-- cross-surface delivery;
+- Telegram or cross-surface transport delivery;
 - generic plugin/runtime abstraction;
 - service identity as Ember identity; or
 - a new persistence technology merely because the process becomes long-lived.
@@ -379,7 +384,7 @@ input assumption to #81.
 | Issue #80 requirement | This artifact |
 | --- | --- |
 | What must survive with no foreground CLI | R1-R6 separate unattended opportunity, specialist work ownership, durable transition evidence, recovery, and shutdown from interaction lifetime. |
-| Wake-up, long-running work, cancellation, recovery, locking, delivery | R1-R9 and R11 state the earned requirement or explicit non-requirement for each. |
+| Wake-up, long-running work, cancellation, recovery, locking, delivery | R1-R9 and R11 state the earned requirement or explicit non-requirement for each, including the interruption handoff without transport pre-implementation. |
 | #79/#95 attention/backoff/resource findings | R2 captures time-sensitive reconsideration; R10 keeps resource claims measurable and non-numeric; the negative-evidence table preserves the absence of a fixed cadence/global budget. |
 | Durable semantic vs ephemeral runtime state | R3-R8 repeatedly distinguish objective/concern/episode evidence from child PID, process liveness, supervisor status, and runtime caches. |
 | Negative evidence against unnecessary service complexity | The dedicated negative-evidence table identifies capabilities that remain satisfied by foreground or externally triggered execution. |
