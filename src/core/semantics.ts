@@ -5,6 +5,7 @@ import {
   nowUtc,
   validateState,
   type AvailableUserEvidence,
+  type CommitmentLifecycle,
   type DelegatedReportEvidence,
   type EmberAdoptionEvidence,
   type EmberInferenceEvidence,
@@ -304,6 +305,29 @@ export function undertake(state: EmberState, principal: string, slot: string, sc
   state.meanings.push(m);
   validateState(state);
   return m.meaning_id;
+}
+
+export function transitionCommitment(
+  state: EmberState,
+  principal: string,
+  commitmentId: MeaningId | string,
+  outcome: Exclude<CommitmentLifecycle, "live">,
+  evidenceText: string,
+  { timestamp = nowUtc() }: { timestamp?: string } = {},
+): EvidenceId {
+  requirePrincipal(state, principal);
+  if (!(outcome === "fulfilled" || outcome === "cancelled")) throw new ValidationError("commitment transition must be fulfilled or cancelled");
+  if (typeof evidenceText !== "string" || !evidenceText.trim()) throw new ValidationError("commitment transition evidence must be non-empty");
+  const commitment = findMeaning(state, commitmentId);
+  if (commitment.kind !== "commitment") throw new ValidationError("only a commitment can receive a commitment transition");
+  if (commitment.currentness !== "current" || commitment.prospective_lifecycle !== "live") throw new ValidationError("only a live current commitment can be discharged");
+  const evidence = userEvidence(state, principal, commitment.scope, evidenceText, { timestamp });
+  commitment.source_evidence_ids.push(evidence.evidence_id);
+  commitment.currentness = "historical";
+  commitment.prospective_lifecycle = outcome;
+  commitment.applicable_until = timestamp;
+  validateState(state);
+  return evidence.evidence_id;
 }
 
 export function supersede(

@@ -38,6 +38,7 @@ export type CognitionStatus =
     | "outcome_unknown";
 export type DeliveryStatus = "not_attempted" | "pending" | "displayed";
 export type CognitionPurpose = "ordinary" | "explain";
+export type CommitmentLifecycle = "live" | "fulfilled" | "cancelled";
 export const COGNITION_OPPORTUNITY_MECHANISMS = [
     "foreground_probe",
     "runtime_start",
@@ -196,7 +197,7 @@ interface MeaningBase {
     applicable_from: string;
     applicable_until: string | null;
     currentness: Currentness;
-    prospective_lifecycle: "none" | "live";
+    prospective_lifecycle: "none" | CommitmentLifecycle;
     supersedes: MeaningId | null;
     superseded_by: MeaningId | null;
     uncertainty: string | null;
@@ -231,8 +232,8 @@ export interface PreferenceMeaning extends MeaningBase {
 export interface CommitmentMeaning extends MeaningBase {
     kind: "commitment";
     owner: "ember";
-    currentness: "current";
-    prospective_lifecycle: "live";
+    currentness: "current" | "historical";
+    prospective_lifecycle: CommitmentLifecycle;
     supersedes: null;
     superseded_by: null;
     epistemic_role: "ember_commitment";
@@ -607,9 +608,14 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(m.applicable_until === null, `${path} preference applicability interval cannot be rewritten in v1`);
         } else if (m.kind === "commitment") {
             require(m.owner === "ember", `${path} commitment owner must be Ember`);
-            require(m.prospective_lifecycle === "live", `${path} commitment discharge is unsupported without a named transition`);
-            require(m.currentness === "current", `${path} live commitment must be current`);
-            require(m.applicable_until === null, `${path} live commitment cannot have applicability end`);
+            require(["live", "fulfilled", "cancelled"].includes(m.prospective_lifecycle), `${path} commitment lifecycle is invalid`);
+            if (m.prospective_lifecycle === "live") {
+                require(m.currentness === "current", `${path} live commitment must be current`);
+                require(m.applicable_until === null, `${path} live commitment cannot have applicability end`);
+            } else {
+                require(m.currentness === "historical", `${path} discharged commitment must be historical`);
+                require(timestamp(m.applicable_until), `${path} discharged commitment needs applicability end`);
+            }
         } else if (m.kind === "episode_meta") {
             require(["ember", `relationship:${principal}`].includes(m.owner), `${path} episode owner is invalid`);
             require(m.currentness === "current", `${path} episode meta must be current`);
@@ -805,9 +811,15 @@ export function validateState(state: unknown): asserts state is EmberState {
         require(refs.every((ev: Dynamic | undefined) => ev?.scope === m.scope), `${id} source evidence scope mismatch`);
         if (m.kind === "commitment") {
             const adoptions = refs.filter((ev: Dynamic | undefined) => ev?.source_role === "ember_adoption");
+            const transitions = refs.filter((ev: Dynamic | undefined) => ev?.source_role === "user_command");
             require(adoptions.length >= 1, `${id} commitment needs Ember adoption evidence`);
             for (const a of adoptions) require(a!.derived_from_evidence_ids.length === 1 && evById.get(a!.derived_from_evidence_ids[0])?.source_role === "user_command", `${id} adoption must derive from user request`);
             require(m.epistemic_role === "ember_commitment", `${id} commitment epistemic role is invalid`);
+            if (m.prospective_lifecycle === "live") require(transitions.length === 0, `${id} live commitment cannot cite discharge evidence`);
+            else {
+                require(transitions.length === 1, `${id} discharged commitment needs exactly one attributable transition occurrence`);
+                if (transitions.length === 1) require(transitions[0]!.observed_at === m.applicable_until, `${id} discharge evidence must establish applicability end`);
+            }
         } else if (m.kind === "fact") {
             if (m.epistemic_role === "user_testimony") {
                 require(m.owner === `user:${principal}`, `${id} user testimony owner must be the supported user`);

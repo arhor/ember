@@ -127,7 +127,7 @@ test("state validator should reject state when commitment claims discharge witho
   // When
   const error=await captureError(()=>validateState(state));
   // Then
-  assert.match(error.message,/discharge is unsupported/);
+  assert.match(error.message,/discharged commitment needs/);
 });
 test("state validator should return typed failure when nested JSON shapes are malformed",async()=>{
   // Given

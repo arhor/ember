@@ -78,7 +78,7 @@ export function buildProjection(
   for (const m of state.meanings) {
     if (m.kind === "relationship" && m.owner === `relationship:${principal}`) selected.set(m.meaning_id, m);
     else if ((m.kind === "fact" || m.kind === "preference") && m.currentness === "current" && m.scope === scope) selected.set(m.meaning_id, m);
-    else if (m.kind === "commitment" && m.prospective_lifecycle === "live" && m.scope === scope) selected.set(m.meaning_id, m);
+    else if (m.kind === "commitment" && m.currentness === "current" && m.prospective_lifecycle === "live" && m.scope === scope) selected.set(m.meaning_id, m);
   }
   if (purpose === "explain") {
     for (const id of explicit) {
@@ -95,7 +95,7 @@ export function buildProjection(
 
   for (const m of selected.values()) {
     const item = cloneState(m) as ProjectedMeaning;
-    if (m.kind === "commitment" && m.prospective_lifecycle === "live") {
+    if (m.kind === "commitment" && m.currentness === "current" && m.prospective_lifecycle === "live") {
       item.applicability = runtime.recovery_account.gap_kind === "initial_start" ? "current_live" : "last_known_live_needs_currentness_check";
     }
     const descriptors: ProjectedEvidence[] = [];
@@ -160,6 +160,7 @@ export function inspectionView(state: EmberState) {
     current_meanings: current,
     historical_meanings: historical,
     live_commitments: current.filter(m => m.kind === "commitment" && m.prospective_lifecycle === "live").map(cloneState),
+    closed_commitments: historical.filter(m => m.kind === "commitment" && (m.prospective_lifecycle === "fulfilled" || m.prospective_lifecycle === "cancelled")).map(cloneState),
     gaps,
     runtime_episodes: cloneState(state.operations.runtime_episodes),
     cognition_episodes: cloneState(state.operations.cognition_episodes),
