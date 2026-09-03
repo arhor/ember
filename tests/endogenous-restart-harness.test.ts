@@ -30,3 +30,32 @@ test("endogenous restart harness should preserve concern lifecycle and truthful 
   assert.ok(superseded);
   assert.equal(superseded.assertions.find(item => item.assertion === "supersession linkage survives restart")?.passed, true);
 });
+
+test("live-shaped restart path should require an actually observed ephemeral Codex thread", async () => {
+  // Given
+  const directory = await mkdtemp(join(tmpdir(), "ember-endogenous-restart-provider-test-"));
+  const scenarios = JSON.parse(await readFile(resolve("test-fixtures/endogenous/restart-scenarios.json"), "utf8")) as EndogenousRestartScenario[];
+  const scenario = scenarios.find(item => item.id === "live-concern-reactivates");
+  assert.ok(scenario);
+
+  // When
+  let report;
+  try {
+    report = await runEndogenousRestartScenario(scenario, {
+      statePath: join(directory, "ember.json"),
+      workerPath: resolve("test-fixtures/providers/endogenous-restart-worker.ts"),
+      cwd: resolve("."),
+      executionMode: "live",
+      codexCommand: process.execPath,
+      codexArguments: [resolve("test-fixtures/providers/endogenous-opportunity-codex.ts")],
+      timeoutSeconds: 5,
+    });
+  } finally { await rm(directory, { recursive: true, force: true }); }
+
+  // Then
+  assert.equal(report.passed, true, JSON.stringify(report, null, 2));
+  const observed = report.assertions.find(item => item.assertion === "post-restart provider thread is actually observed");
+  assert.deepEqual([observed?.expected, observed?.observed, observed?.passed], [true, true, true]);
+  const policy = report.assertions.find(item => item.assertion === "post-restart evaluator thread policy");
+  assert.deepEqual([policy?.expected, policy?.observed, policy?.passed], ["ephemeral", "ephemeral", true]);
+});
