@@ -51,19 +51,6 @@ jobs:
       - name: Run static and repository checks
         run: npm run check
       - name: Run complete acceptance suite
-        id: acceptance
-        continue-on-error: true
-        run: npm test > acceptance-test.log 2>&1
-      - name: Upload acceptance diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: acceptance-test-log
-          path: acceptance-test.log
-      - name: Surface acceptance failure
-        if: steps.acceptance.outcome == 'failure'
-        run: |
-          cat acceptance-test.log
-          exit 1
+        run: npm test
       - name: Run deterministic endogenous selectivity evaluation
         run: npm run eval:endogenous
