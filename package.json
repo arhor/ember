@@ -7,7 +7,8 @@
     "node": ">=26.8.1 <27"
   },
   "bin": {
-    "ember": "bin/ember.ts"
+    "ember": "bin/ember.ts",
+    "ember-runtime": "bin/ember-runtime.ts"
   },
   "scripts": {
     "check": "tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.mjs check",
