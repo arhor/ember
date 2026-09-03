@@ -53,11 +53,4 @@ jobs:
       - name: Run complete acceptance suite
         run: npm test
       - name: Run deterministic endogenous selectivity evaluation
-        run: |
-          npm run eval:endogenous > endogenous-selectivity-evaluation.json
-          cat endogenous-selectivity-evaluation.json
-      - name: Upload endogenous selectivity snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: endogenous-selectivity-evaluation
-          path: endogenous-selectivity-evaluation.json
+        run: npm run eval:endogenous
