@@ -49,7 +49,20 @@ jobs:
       - name: Install locked development toolchain
         run: npm ci
       - name: Run static and repository checks
-        run: npm run check
+        id: static
+        continue-on-error: true
+        run: npm run check > static-check.log 2>&1
+      - name: Upload static check diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-check-log
+          path: static-check.log
+      - name: Surface static check failure
+        if: steps.static.outcome == 'failure'
+        run: |
+          cat static-check.log
+          exit 1
       - name: Run complete acceptance suite
         run: npm test
       - name: Run deterministic endogenous selectivity evaluation
