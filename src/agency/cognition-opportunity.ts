@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ValidationError } from "../core/errors.ts";
 import {
+  cloneState,
   isRfc3339Utc,
   nowUtc,
   validateState,
@@ -16,13 +17,14 @@ import {
 } from "../core/projection.ts";
 
 export const COGNITION_OPPORTUNITY_CONTRACT_VERSION = 1 as const;
+export const COGNITION_OPPORTUNITY_MECHANISMS = [
+  "foreground_probe",
+  "runtime_start",
+  "idle_opportunity",
+  "external_timing",
+] as const;
 
-export type CognitionOpportunityMechanism =
-  | "foreground_probe"
-  | "runtime_start"
-  | "idle_opportunity"
-  | "external_timing";
-
+export type CognitionOpportunityMechanism = typeof COGNITION_OPPORTUNITY_MECHANISMS[number];
 export type CognitionOpportunityDecision = "cognition" | "defer" | "no_cognition";
 
 export type CognitionOpportunityProjection = Omit<Projection, "purpose" | "current_input"> & {
@@ -114,6 +116,9 @@ export async function evaluateCognitionOpportunity(
     timestamp = nowUtc(),
   }: EvaluateCognitionOpportunityOptions,
 ): Promise<CognitionOpportunityRecord> {
+  if (!(COGNITION_OPPORTUNITY_MECHANISMS as readonly unknown[]).includes(mechanism)) {
+    throw new ValidationError("cognition opportunity mechanism is invalid");
+  }
   const projection = buildCognitionOpportunityProjection(state, {
     runtimeId,
     principal,
@@ -121,12 +126,14 @@ export async function evaluateCognitionOpportunity(
     timestamp,
   });
   const opportunityId = `opportunity-${randomUUID()}`;
+  const projectedMeaningIds = [...projection.selection.meaning_ids];
+  const projectedEvidenceIds = [...projection.selection.evidence_ids];
   const result = await evaluator({
     contract_version: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
     opportunity_id: opportunityId,
-    projection,
+    projection: cloneState(projection),
   });
-  validateEvaluation(result, new Set(projection.selection.meaning_ids));
+  validateEvaluation(result, new Set(projectedMeaningIds));
 
   return {
     opportunity_id: opportunityId,
@@ -136,8 +143,8 @@ export async function evaluateCognitionOpportunity(
     mechanism,
     observed_at: timestamp,
     validated_revision: projection.validated_revision,
-    projected_meaning_ids: [...projection.selection.meaning_ids],
-    projected_evidence_ids: [...projection.selection.evidence_ids],
+    projected_meaning_ids: projectedMeaningIds,
+    projected_evidence_ids: projectedEvidenceIds,
     decision: result.decision,
     selected_meaning_ids: [...result.selected_meaning_ids],
   };
@@ -156,6 +163,7 @@ function validateOpportunityContext(
   if (runtime.clean_stop_at !== null) throw new ValidationError("cognition opportunity requires an active runtime");
   if (runtime.principal !== principal) throw new ValidationError("cognition opportunity principal differs from owning runtime");
   if (runtime.active_scope !== scope) throw new ValidationError("cognition opportunity scope differs from owning runtime");
+  if (Date.parse(timestamp) < Date.parse(runtime.started_at)) throw new ValidationError("cognition opportunity cannot precede its runtime");
 }
 
 function validateEvaluation(
