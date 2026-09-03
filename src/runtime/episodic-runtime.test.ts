@@ -72,15 +72,15 @@ test("schedule wake should persist intent before creating one-shot systemd activ
   assert.ok(calls[0]!.args.includes("--property=Type=exec"));
   assert.ok(calls[0]!.args.includes("--property=Restart=no"));
   assert.ok(!calls[0]!.args.some(arg => arg.includes("Persistent")));
-  assert.deepEqual(calls[0]!.args.slice(-6), [
+  assert.deepEqual(calls[0]!.args.slice(-7), [
     config.node_path,
     config.runtime_entrypoint,
     "run-wake",
     "--config",
     configPath,
     "--wake-id",
-  ].slice(0, 0), "placeholder");
-  assert.equal(calls[0]!.args.at(-1), intent.wake_id);
+    intent.wake_id,
+  ]);
 });
 
 test("wake worker should record one external-timing opportunity and cleanly stop its runtime", async () => {
