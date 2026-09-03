@@ -163,6 +163,7 @@ export function inspectionView(state: EmberState) {
     gaps,
     runtime_episodes: cloneState(state.operations.runtime_episodes),
     cognition_episodes: cloneState(state.operations.cognition_episodes),
+    cognition_opportunities: cloneState(state.operations.cognition_opportunities ?? []),
   };
 }
 

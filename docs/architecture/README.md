@@ -41,6 +41,9 @@ Current architecture material:
 - [Endogenous Cognition Decision Boundary](endogenous-cognition-decision.md) records
   issue #74's executable topic-free decision seam, deterministic controls, bounded
   outcome evidence, and opt-in Codex evaluation path.
+- [First-Class Endogenous Silence Lifecycle](endogenous-silence-lifecycle.md) defines
+  issue #75's durable opportunity ledger, successful `no_cognition`, failure/timeout
+  separation, repeated quiet scenarios, restart semantics, and silence metrics.
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.

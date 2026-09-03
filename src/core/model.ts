@@ -9,6 +9,7 @@ export type MeaningId = Brand<"MeaningId">;
 export type EvidenceId = Brand<"EvidenceId">;
 export type RuntimeId = Brand<"RuntimeId">;
 export type CognitionId = Brand<"CognitionId">;
+export type OpportunityId = Brand<"OpportunityId">;
 export type Currentness = "current" | "superseded" | "historical";
 export type MeaningKind = "relationship" | "fact" | "preference" | "commitment" | "episode_meta";
 export type SourceRole =
@@ -37,6 +38,21 @@ export type CognitionStatus =
     | "outcome_unknown";
 export type DeliveryStatus = "not_attempted" | "pending" | "displayed";
 export type CognitionPurpose = "ordinary" | "explain";
+export const COGNITION_OPPORTUNITY_MECHANISMS = [
+    "foreground_probe",
+    "runtime_start",
+    "idle_opportunity",
+    "external_timing",
+] as const;
+export type CognitionOpportunityMechanism = typeof COGNITION_OPPORTUNITY_MECHANISMS[number];
+export type CognitionOpportunityDecision = "cognition" | "defer" | "no_cognition";
+export type CognitionOpportunityStatus =
+    "evaluating"
+    | "decided"
+    | "failed"
+    | "timed_out"
+    | "cancellation_requested"
+    | "outcome_unknown";
 
 export interface RuntimeContract {
     local_principal: string;
@@ -284,6 +300,27 @@ export interface CognitionEpisode {
     } | null;
 }
 
+export interface CognitionOpportunityOccurrence {
+    opportunity_id: OpportunityId;
+    runtime_id: RuntimeId;
+    principal: string;
+    active_scope: string;
+    mechanism: CognitionOpportunityMechanism;
+    observed_at: string;
+    last_durable_observation_at: string;
+    validated_revision: number;
+    projected_meaning_ids: MeaningId[];
+    projected_evidence_ids: EvidenceId[];
+    status: CognitionOpportunityStatus;
+    decision: CognitionOpportunityDecision | null;
+    selected_meaning_ids: MeaningId[];
+    interruption_status: "not_attempted";
+    provider_termination: {
+        reason: "timeout" | "explicit_cancellation" | "output_limit";
+        direct_child_exit_observed: boolean;
+    } | null;
+}
+
 export interface EmberState {
     schema_version: 1;
     revision: number;
@@ -294,6 +331,7 @@ export interface EmberState {
     operations: {
         runtime_episodes: RuntimeEpisode[];
         cognition_episodes: CognitionEpisode[];
+        cognition_opportunities?: CognitionOpportunityOccurrence[];
     };
 }
 
@@ -305,16 +343,19 @@ const TOP_FIELDS = ["evidence", "lineage", "meanings", "operations", "revision",
 const KINDS = new Set(["relationship", "fact", "preference", "commitment", "episode_meta"]);
 const ROLES = new Set(["user_command", "ember_adoption", "ember_expression_via_provider", "runtime_observation", "external_claim", "ember_inference", "ember_observation", "delegated_report", "fixture_fault"]);
 const CURRENTNESS = new Set(["current", "superseded", "historical"]);
+const OPPORTUNITY_DECISIONS = new Set(["cognition", "defer", "no_cognition"]);
+const OPPORTUNITY_STATUSES = new Set(["evaluating", "decided", "failed", "timed_out", "cancellation_requested", "outcome_unknown"]);
 
-type IdPrefix = "lineage" | "meaning" | "evidence" | "runtime" | "cognition";
+type IdPrefix = "lineage" | "meaning" | "evidence" | "runtime" | "cognition" | "opportunity";
 
 export function newId(prefix: "lineage"): LineageId;
 export function newId(prefix: "meaning"): MeaningId;
 export function newId(prefix: "evidence"): EvidenceId;
 export function newId(prefix: "runtime"): RuntimeId;
 export function newId(prefix: "cognition"): CognitionId;
-export function newId(prefix: IdPrefix): LineageId | MeaningId | EvidenceId | RuntimeId | CognitionId {
-    return `${prefix}-${randomUUID()}` as LineageId | MeaningId | EvidenceId | RuntimeId | CognitionId;
+export function newId(prefix: "opportunity"): OpportunityId;
+export function newId(prefix: IdPrefix): LineageId | MeaningId | EvidenceId | RuntimeId | CognitionId | OpportunityId {
+    return `${prefix}-${randomUUID()}` as LineageId | MeaningId | EvidenceId | RuntimeId | CognitionId | OpportunityId;
 }
 
 export function nowUtc(): string {
@@ -347,7 +388,7 @@ export function initialState(name: string, principal: string, timestamp = nowUtc
         },
         evidence: [],
         meanings: [],
-        operations: { runtime_episodes: [], cognition_episodes: [] },
+        operations: { runtime_episodes: [], cognition_episodes: [], cognition_opportunities: [] },
     };
     validateState(state);
     return state;
@@ -419,19 +460,24 @@ export function validateState(state: unknown): asserts state is EmberState {
     require(Array.isArray(state.meanings), "meanings must be a list");
     const operations = isObject(state.operations) ? state.operations : {};
     require(isObject(state.operations), "operations must be an object");
-    require(exactKeys(operations, ["runtime_episodes", "cognition_episodes"]), "operations contains unsupported fields");
+    const legacyOperationFields = ["runtime_episodes", "cognition_episodes"];
+    const currentOperationFields = [...legacyOperationFields, "cognition_opportunities"];
+    require(exactKeys(operations, legacyOperationFields) || exactKeys(operations, currentOperationFields), "operations contains unsupported fields");
     require(Array.isArray(operations.runtime_episodes), "runtime_episodes must be a list");
     require(Array.isArray(operations.cognition_episodes), "cognition_episodes must be a list");
+    if ("cognition_opportunities" in operations) require(Array.isArray(operations.cognition_opportunities), "cognition_opportunities must be a list");
 
     const evidence: Dynamic[] = Array.isArray(state.evidence) ? state.evidence : [];
     const meanings: Dynamic[] = Array.isArray(state.meanings) ? state.meanings : [];
     const runtimes: Dynamic[] = Array.isArray(operations.runtime_episodes) ? operations.runtime_episodes : [];
     const cognitions: Dynamic[] = Array.isArray(operations.cognition_episodes) ? operations.cognition_episodes : [];
+    const opportunities: Dynamic[] = Array.isArray(operations.cognition_opportunities) ? operations.cognition_opportunities : [];
     const allIds: string[] = nonempty(lineage.lineage_id) ? [lineage.lineage_id, "minimal-continuity-v1"] : ["minimal-continuity-v1"];
     const evById = new Map<string, Dynamic>();
     const meaningById = new Map<string, Dynamic>();
     const runtimeById = new Map<string, Dynamic>();
     const cognitionById = new Map<string, Dynamic>();
+    const opportunityById = new Map<string, Dynamic>();
 
     const evAllowed = new Set(["evidence_id", "source_role", "source_actor", "asserted_principal", "occurred_at", "observed_at", "derived_from_evidence_ids", "scope", "payload_mode", "availability", "payload", "content_digest", "unavailable_reason", "related_meaning_id", "cognition_id", "provider_label"]);
     evidence.forEach((raw, index) => {
@@ -661,6 +707,58 @@ export function validateState(state: unknown): asserts state is EmberState {
         }
     }
 
+    const opportunityFields = [
+        "opportunity_id", "runtime_id", "principal", "active_scope", "mechanism", "observed_at",
+        "last_durable_observation_at", "validated_revision", "projected_meaning_ids", "projected_evidence_ids",
+        "status", "decision", "selected_meaning_ids", "interruption_status", "provider_termination",
+    ];
+    for (let index = 0; index < opportunities.length; index++) {
+        const raw = opportunities[index];
+        const p = `cognition_opportunities[${index}]`;
+        const o = isObject(raw) ? raw : {};
+        require(isObject(raw), `${p} must be an object`);
+        require(exactKeys(o, opportunityFields), `${p} fields do not match schema v1`);
+        require(validId(o.opportunity_id, "opportunity-"), `${p}.opportunity_id is invalid`);
+        if (nonempty(o.opportunity_id)) {
+            allIds.push(o.opportunity_id);
+            opportunityById.set(o.opportunity_id, o);
+        }
+        require(nonempty(o.runtime_id), `${p}.runtime_id must be an ID`);
+        require(o.principal === principal, `${p}.principal mismatch`);
+        require(nonempty(o.active_scope), `${p}.active_scope must be explicit`);
+        require((COGNITION_OPPORTUNITY_MECHANISMS as readonly unknown[]).includes(o.mechanism), `${p}.mechanism is invalid`);
+        require(timestamp(o.observed_at), `${p}.observed_at must be RFC 3339 UTC`);
+        require(timestamp(o.last_durable_observation_at), `${p}.last_durable_observation_at must be RFC 3339 UTC`);
+        if (timestamp(o.observed_at) && timestamp(o.last_durable_observation_at)) require(Date.parse(o.observed_at) <= Date.parse(o.last_durable_observation_at), `${p} durable observation precedes opportunity observation`);
+        require(safeInteger(o.validated_revision) && o.validated_revision >= 0, `${p}.validated_revision must be a non-negative safe integer`);
+        for (const f of ["projected_meaning_ids", "projected_evidence_ids", "selected_meaning_ids"]) {
+            require(Array.isArray(o[f]) && o[f].every(nonempty), `${p}.${f} must be an ID list`);
+            if (Array.isArray(o[f])) require(new Set(o[f]).size === o[f].length, `${p}.${f} must not contain duplicates`);
+        }
+        require(OPPORTUNITY_STATUSES.has(o.status), `${p}.status is invalid`);
+        require(o.decision === null || OPPORTUNITY_DECISIONS.has(o.decision), `${p}.decision is invalid`);
+        require(o.interruption_status === "not_attempted", `${p}.interruption_status must remain not_attempted in v1`);
+        require(o.provider_termination === null || (isObject(o.provider_termination) && exactKeys(o.provider_termination, ["reason", "direct_child_exit_observed"])), `${p}.provider_termination is invalid`);
+        if (isObject(o.provider_termination)) {
+            require(["timeout", "explicit_cancellation", "output_limit"].includes(o.provider_termination.reason), `${p}.provider_termination.reason is invalid`);
+            require(typeof o.provider_termination.direct_child_exit_observed === "boolean", `${p}.provider_termination.direct_child_exit_observed is invalid`);
+        }
+        if (o.status === "decided") {
+            require(OPPORTUNITY_DECISIONS.has(o.decision), `${p} decided opportunity needs a decision`);
+            require(o.provider_termination === null, `${p} decided opportunity cannot claim provider termination`);
+            if (o.decision === "no_cognition") require(Array.isArray(o.selected_meaning_ids) && o.selected_meaning_ids.length === 0, `${p} no_cognition must not select a meaning`);
+            if (o.decision === "cognition" || o.decision === "defer") require(Array.isArray(o.selected_meaning_ids) && o.selected_meaning_ids.length > 0, `${p} ${o.decision} must select at least one meaning`);
+        } else {
+            require(o.decision === null, `${p} non-decided opportunity cannot claim a decision`);
+            require(Array.isArray(o.selected_meaning_ids) && o.selected_meaning_ids.length === 0, `${p} non-decided opportunity cannot claim selected meanings`);
+            if (o.status === "evaluating") require(o.provider_termination === null, `${p} evaluating opportunity cannot claim provider termination`);
+            if (o.status === "timed_out") require(isObject(o.provider_termination) && o.provider_termination.reason === "timeout" && o.provider_termination.direct_child_exit_observed === true, `${p} timeout termination evidence contradicts status`);
+            if (o.status === "cancellation_requested" && isObject(o.provider_termination)) require(o.provider_termination.reason === "explicit_cancellation", `${p} cancellation termination evidence contradicts status`);
+            if (o.status === "outcome_unknown" && isObject(o.provider_termination)) require(o.provider_termination.direct_child_exit_observed === false, `${p} unknown outcome cannot claim confirmed child exit`);
+            if (o.status === "failed" && isObject(o.provider_termination)) require(o.provider_termination.reason === "output_limit" && o.provider_termination.direct_child_exit_observed === true, `${p} failure termination evidence contradicts status`);
+        }
+    }
+
     if (errors.length) throw new ValidationError([...new Set(errors)].join("; "));
     require(allIds.length === new Set(allIds).size, "all canonical IDs must be unique");
 
@@ -777,6 +875,20 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(expression?.scope === c.active_scope, `${id} expression scope mismatch`);
             require(expression?.provider_label === c.provider_label, `${id} provider label mismatch`);
         }
+    }
+
+    for (const [id, o] of opportunityById) {
+        const runtime = runtimeById.get(o.runtime_id);
+        require(!!runtime, `${id} owning runtime is absent`);
+        if (runtime) {
+            require(o.active_scope === runtime.active_scope, `${id} scope differs from owning runtime`);
+            require(timestamp(o.observed_at) && timestamp(runtime.started_at) && Date.parse(runtime.started_at) <= Date.parse(o.observed_at), `${id} opportunity precedes owning runtime`);
+            if (runtime.clean_stop_at !== null && timestamp(o.last_durable_observation_at)) require(Date.parse(o.last_durable_observation_at) <= Date.parse(runtime.clean_stop_at), `${id} opportunity observation follows clean runtime stop`);
+        }
+        require(o.validated_revision <= state.revision, `${id} validated revision is newer than canonical state`);
+        for (const mid of o.projected_meaning_ids) require(meaningById.has(mid), `${id} projected absent meaning ${mid}`);
+        for (const eid of o.projected_evidence_ids) require(evById.has(eid), `${id} projected absent evidence ${eid}`);
+        require(o.selected_meaning_ids.every((mid: string) => o.projected_meaning_ids.includes(mid)), `${id} selected a meaning outside its projection`);
     }
 
     const expressionRefs = cognitions.map(c => c.expression_evidence_id).filter(Boolean);

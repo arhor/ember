@@ -46,7 +46,16 @@ export function startRuntime(state: EmberState, principal: string, scope: string
           external_changes_during_interval: "unknown" as const,
         };
   if (previous?.clean_stop_at === null) {
-    for (const cognition of candidate.operations.cognition_episodes) if (cognition.runtime_id === previous.runtime_id && cognition.status === "started") cognition.status = "outcome_unknown";
+    for (const cognition of candidate.operations.cognition_episodes) {
+      if (cognition.runtime_id === previous.runtime_id && cognition.status === "started") cognition.status = "outcome_unknown";
+    }
+    for (const opportunity of candidate.operations.cognition_opportunities ?? []) {
+      if (opportunity.runtime_id === previous.runtime_id && opportunity.status === "evaluating") {
+        opportunity.status = "outcome_unknown";
+        opportunity.last_durable_observation_at = timestamp;
+        opportunity.provider_termination = null;
+      }
+    }
   }
   candidate.operations.runtime_episodes.push({ runtime_id: runtimeId, principal, active_scope: scope, started_at: timestamp, last_durable_observation_at: timestamp, clean_stop_at: null, stop_reason: null, recovery_account: recovery });
   validateState(candidate);
@@ -57,6 +66,13 @@ export function stopRuntime(state: EmberState, runtimeId: RuntimeId | string, { 
   const candidate = cloneState(state);
   const runtime = findRuntime(candidate, runtimeId);
   if (runtime.clean_stop_at !== null) throw new ValidationError("runtime is already stopped");
+  for (const opportunity of candidate.operations.cognition_opportunities ?? []) {
+    if (opportunity.runtime_id === runtime.runtime_id && opportunity.status === "evaluating") {
+      opportunity.status = "outcome_unknown";
+      opportunity.last_durable_observation_at = timestamp;
+      opportunity.provider_termination = null;
+    }
+  }
   runtime.last_durable_observation_at = timestamp;
   runtime.clean_stop_at = timestamp;
   runtime.stop_reason = reason;
