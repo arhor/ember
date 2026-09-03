@@ -18,6 +18,7 @@ let evaluator = scriptedSelectivityEvaluator;
 let backend: EvaluationBackend = {
   label: "scripted-structural-control",
   external_model: false,
+  runtime_version: null,
   model_version: null,
 };
 
@@ -30,8 +31,9 @@ if (provider === "codex") {
   const version = runtimeVersion(command);
   evaluator = createCodexOpportunityEvaluator({ command, timeoutSeconds: 120 });
   backend = {
-    label: `codex exec (${version})`,
+    label: "codex exec",
     external_model: true,
+    runtime_version: version,
     model_version: process.env.EMBER_CODEX_MODEL_LABEL ?? null,
   };
 }
