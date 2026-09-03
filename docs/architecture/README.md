@@ -32,6 +32,10 @@ Current architecture material:
 - [ADR 0006: Adopt TypeScript on Node.js 26 as Ember's Implementation Runtime](decisions/0006-adopt-typescript-on-nodejs-26.md)
   records the selected language, runtime line, source/type-checking model, minimal
   toolchain, dependency policy, rejected alternatives, and revisit triggers.
+- [ADR 0007: Use a systemd-Supervised Episodic Runtime Before a Resident Ember Daemon](decisions/0007-use-systemd-supervised-episodic-runtime.md)
+  selects the first unattended Linux topology: a lingered user-level systemd manager
+  supervises short-lived Ember wake/recovery workers and per-episode specialist jobs,
+  with no permanently resident Ember Node daemon until later evidence earns one.
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
@@ -101,7 +105,7 @@ Historical material:
   accepted decisions.
 
 Implementation architecture must preserve the semantic baseline. ADR 0006 settles
-the current implementation language/runtime baseline, but it does not settle
-persistence technology, daemon/process topology, delegation protocols, memory
-retrieval architecture, or package boundaries beyond the minimal runtime/toolchain
-policy it explicitly records.
+the current implementation language/runtime baseline, and ADR 0007 settles the first
+unattended Linux supervision topology beneath it. Neither decision settles memory
+retrieval architecture, future surface transports, generic delegation protocols, or
+package boundaries beyond the concrete requirements they explicitly address.
