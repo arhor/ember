@@ -25,4 +25,8 @@ test("endogenous restart harness should preserve concern lifecycle and truthful 
   assert.equal(reports.length, 4);
   assert.ok(reports.every(report => report.passed), JSON.stringify(reports, null, 2));
   assert.ok(reports.every(report => report.sanitized));
+  assert.ok(reports.every(report => report.assertions.some(item => item.assertion === "post-restart provider thread is actually observed" && item.passed)));
+  const superseded = reports.find(report => report.scenario_id === "superseded-consequence-stays-quiet");
+  assert.ok(superseded);
+  assert.equal(superseded.assertions.find(item => item.assertion === "supersession linkage survives restart")?.passed, true);
 });
