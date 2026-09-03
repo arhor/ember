@@ -23,6 +23,7 @@
     "eval:provenance": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/provenance-pressure.json",
     "eval:degraded-context": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/degraded-context-pressure.json",
     "eval:endogenous": "node scripts/run-endogenous-selectivity-evaluation.ts",
+    "eval:endogenous:baseline": "node scripts/run-endogenous-selectivity-evaluation.ts --attention-control disabled",
     "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node scripts/run-longitudinal-scenario.ts --provider codex",
     "eval:continuity:process-restart:live": "EMBER_RUN_LIVE_PROCESS_RESTART=1 node scripts/run-process-restart-scenario.ts",
     "eval:endogenous:live": "EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 node scripts/run-endogenous-selectivity-evaluation.ts --provider codex",
