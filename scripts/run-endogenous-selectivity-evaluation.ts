@@ -8,9 +8,10 @@ import {
   runEndogenousSelectivityEvaluation,
   scriptedSelectivityEvaluator,
   type EvaluationBackend,
+  type SelectivityAttentionControl,
 } from "../src/agency/endogenous-selectivity-evaluation.ts";
 
-const provider = providerArgument(process.argv.slice(2));
+const cli = parseArguments(process.argv.slice(2));
 const raw = await readFile(new URL("../test-fixtures/endogenous/selectivity-workload.json", import.meta.url), "utf8");
 const workload = parseSelectivityWorkload(JSON.parse(raw));
 
@@ -22,7 +23,7 @@ let backend: EvaluationBackend = {
   model_version: null,
 };
 
-if (provider === "codex") {
+if (cli.provider === "codex") {
   if (process.env.EMBER_RUN_LIVE_ENDOGENOUS_EVAL !== "1") {
     process.stderr.write("Set EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 to run the subscription-backed Codex selectivity evaluation.\n");
     process.exit(2);
@@ -38,24 +39,38 @@ if (provider === "codex") {
   };
 }
 
-const result = await runEndogenousSelectivityEvaluation(workload, evaluator, backend);
+const result = await runEndogenousSelectivityEvaluation(
+  workload,
+  evaluator,
+  backend,
+  { attentionControl: cli.attentionControl },
+);
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 
-if (provider === "codex" && result.counts.evaluator_failures > 0) {
+if (cli.provider === "codex" && result.counts.evaluator_failures > 0) {
   process.stderr.write(`Live selectivity evaluation recorded ${result.counts.evaluator_failures} evaluator failures.\n`);
   process.exitCode = 1;
 }
 
-function providerArgument(args: string[]): "scripted" | "codex" {
-  let value = "scripted";
+function parseArguments(args: string[]): {
+  provider: "scripted" | "codex";
+  attentionControl: SelectivityAttentionControl;
+} {
+  let provider = "scripted";
+  let attentionControl = "repeated_projection";
   for (let index = 0; index < args.length; index++) {
     const argument = args[index];
-    if (argument === "--provider") value = args[++index] ?? "";
-    else if (argument.startsWith("--provider=")) value = argument.slice("--provider=".length);
+    if (argument === "--provider") provider = args[++index] ?? "";
+    else if (argument.startsWith("--provider=")) provider = argument.slice("--provider=".length);
+    else if (argument === "--attention-control") attentionControl = args[++index] ?? "";
+    else if (argument.startsWith("--attention-control=")) attentionControl = argument.slice("--attention-control=".length);
     else throw new Error(`Unknown argument: ${argument}`);
   }
-  if (value !== "scripted" && value !== "codex") throw new Error(`Unsupported provider: ${value}`);
-  return value;
+  if (provider !== "scripted" && provider !== "codex") throw new Error(`Unsupported provider: ${provider}`);
+  if (attentionControl !== "repeated_projection" && attentionControl !== "disabled") {
+    throw new Error(`Unsupported attention control: ${attentionControl}`);
+  }
+  return { provider, attentionControl };
 }
 
 function runtimeVersion(command: string): string {
