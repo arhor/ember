@@ -41,12 +41,21 @@ interface PhaseResult {
 
 export async function runEndogenousRestartScenario(
   scenario: EndogenousRestartScenario,
-  options: { statePath: string; workerPath: string; cwd: string; executionMode: "fixture" | "live"; codexCommand?: string; timeoutSeconds?: number },
+  options: {
+    statePath: string;
+    workerPath: string;
+    cwd: string;
+    executionMode: "fixture" | "live";
+    codexCommand?: string;
+    codexArguments?: string[];
+    timeoutSeconds?: number;
+  },
 ): Promise<EndogenousRestartReport> {
   const prepared = await runPhase(options, ["prepare", scenario.kind, options.statePath]);
   const restarted = await runPhase(options, [
     "restart", scenario.kind, options.statePath, options.executionMode,
     options.codexCommand ?? "codex", String(options.timeoutSeconds ?? 120),
+    JSON.stringify(options.codexArguments ?? []),
   ]);
   const checks = [
     check("complete Ember process restarted", true, prepared.pid !== restarted.pid),
