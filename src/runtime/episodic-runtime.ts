@@ -63,6 +63,9 @@ export interface RuntimeStatus {
     wake_id: string;
     due_at: string;
     status: "pending" | "dispatching" | "completed" | "failed";
+    decision: string | null;
+    evaluator_failure: string | null;
+    failure_detail: string | null;
     timer_unit: string;
     timer_state: UnitState;
     service_unit: string;
@@ -104,7 +107,9 @@ export class EpisodicRecordStore {
   }
 
   async readWake(wakeId: string): Promise<WakeIntent> {
-    return readJson(this.wakeFile(wakeId, "intent")) as Promise<WakeIntent>;
+    const intent = await readJson(this.wakeFile(wakeId, "intent")) as WakeIntent;
+    validateWakeIntent(intent);
+    return intent;
   }
 
   async observeWake(wakeId: string, observation: RuntimeObservation) {
@@ -113,7 +118,10 @@ export class EpisodicRecordStore {
   }
 
   async wakeObservation(wakeId: string, kind: string): Promise<RuntimeObservation | null> {
-    return readOptionalJson(this.wakeFile(wakeId, kind)) as Promise<RuntimeObservation | null>;
+    validateRecordKind(kind);
+    const value = await readOptionalJson(this.wakeFile(wakeId, kind)) as RuntimeObservation | null;
+    if (value !== null) validateObservation(value);
+    return value;
   }
 
   async listWakeIds() {
@@ -137,7 +145,10 @@ export class EpisodicRecordStore {
   }
 
   async specialistObservation(episodeId: string, kind: string): Promise<RuntimeObservation | null> {
-    return readOptionalJson(this.specialistFile(episodeId, kind)) as Promise<RuntimeObservation | null>;
+    validateRecordKind(kind);
+    const value = await readOptionalJson(this.specialistFile(episodeId, kind)) as RuntimeObservation | null;
+    if (value !== null) validateObservation(value);
+    return value;
   }
 
   async listSpecialistIds() {
@@ -150,11 +161,13 @@ export class EpisodicRecordStore {
 
   private wakeFile(wakeId: string, name: string) {
     validateOpaqueId(wakeId, "wake id");
+    validateRecordKind(name);
     return join(this.root, "wakes", wakeId, `${name}.json`);
   }
 
   private specialistFile(episodeId: string, name: string) {
     validateOpaqueId(episodeId, "specialist episode id");
+    validateRecordKind(name);
     return join(this.root, "specialists", episodeId, `${name}.json`);
   }
 }
@@ -173,6 +186,7 @@ export class SystemdUserSupervisor {
   }
 
   async scheduleWake(intent: WakeIntent) {
+    validateWakeIntent(intent);
     const unit = wakeUnitName(intent.wake_id);
     await this.run(this.config.systemd_run_command, [
       "--user",
@@ -186,6 +200,7 @@ export class SystemdUserSupervisor {
   }
 
   async startWakeNow(intent: WakeIntent) {
+    validateWakeIntent(intent);
     const unit = wakeUnitName(intent.wake_id);
     await this.run(this.config.systemd_run_command, [
       "--user",
@@ -284,6 +299,8 @@ export async function scheduleWake(
 ) {
   validateConfig(config);
   if (!isRfc3339Utc(dueAt)) throw new ValidationError("wake due time must be RFC 3339 UTC");
+  const createdAt = now();
+  if (!isRfc3339Utc(createdAt)) throw new ValidationError("wake creation time must be RFC 3339 UTC");
   const wakeId = `wake-${randomUUID()}`;
   const intent: WakeIntent = {
     record_version: 1,
@@ -292,13 +309,13 @@ export async function scheduleWake(
     active_scope: config.active_scope,
     mechanism: "external_timing",
     due_at: dueAt,
-    created_at: now(),
+    created_at: createdAt,
   };
-  validateWakeIntent(intent);
   const records = new EpisodicRecordStore(config.records_directory);
   await records.createWake(intent);
   const supervisor = new SystemdUserSupervisor(config, configPath, runner);
-  await supervisor.scheduleWake(intent);
+  if (Date.parse(dueAt) <= Date.parse(createdAt)) await supervisor.startWakeNow(intent);
+  else await supervisor.scheduleWake(intent);
   return intent;
 }
 
@@ -333,7 +350,6 @@ export async function runWakeWorker(
   const now = options.now ?? (() => new Date().toISOString());
   const records = new EpisodicRecordStore(config.records_directory);
   const intent = await records.readWake(wakeId);
-  validateWakeIntent(intent);
   if (intent.principal !== config.principal || intent.active_scope !== config.active_scope) {
     throw new ValidationError("wake intent principal/scope differs from runtime configuration");
   }
@@ -503,12 +519,17 @@ export async function inspectEpisodicRuntime(
   for (const wakeId of await records.listWakeIds()) {
     const intent = await records.readWake(wakeId);
     const status = await wakeStatus(records, wakeId);
+    const completed = await records.wakeObservation(wakeId, "completed");
+    const failed = await records.wakeObservation(wakeId, "failed");
     const timerUnit = `${wakeUnitName(wakeId)}.timer`;
     const serviceUnit = `${wakeUnitName(wakeId)}.service`;
     wakes.push({
       wake_id: wakeId,
       due_at: intent.due_at,
       status,
+      decision: completed?.decision ?? null,
+      evaluator_failure: completed?.evaluator_failure ?? null,
+      failure_detail: failed?.detail ?? null,
       timer_unit: timerUnit,
       timer_state: await supervisor.unitState(timerUnit),
       service_unit: serviceUnit,
@@ -595,12 +616,14 @@ async function readOptionalSpecialist(path: string): Promise<SpecialistEpisodeRe
 }
 
 function observation(kind: string, observedAt: string, detail?: string): RuntimeObservation {
-  return {
+  const value: RuntimeObservation = {
     record_version: 1,
     observed_at: observedAt,
     kind,
     ...(detail ? { detail: detail.slice(0, 32_768) } : {}),
   };
+  validateObservation(value);
+  return value;
 }
 
 function validateConfig(value: EpisodicRuntimeConfig) {
@@ -638,9 +661,14 @@ function validateSpecialistIdentity(spec: SpecialistEpisodeSpec) {
 }
 
 function validateObservation(value: RuntimeObservation) {
-  if (!value || value.record_version !== 1 || typeof value.kind !== "string" || !value.kind || !isRfc3339Utc(value.observed_at)) {
+  if (!value || value.record_version !== 1 || typeof value.kind !== "string" || !isRfc3339Utc(value.observed_at)) {
     throw new ValidationError("runtime observation is invalid");
   }
+  validateRecordKind(value.kind);
+}
+
+function validateRecordKind(value: string) {
+  if (!/^[a-z][a-z0-9_]{0,63}$/.test(value)) throw new ValidationError("runtime record kind is invalid");
 }
 
 function validateOpaqueId(value: string, label: string) {
@@ -650,7 +678,7 @@ function validateOpaqueId(value: string, label: string) {
 }
 
 function requireAbsolute(value: string, label: string) {
-  if (typeof value !== "string" || !isAbsolute(value)) throw new ValidationError(`${label} must be an absolute path`);
+  if (typeof value !== "string" || !isAbsolute(value) || /[\0\r\n]/.test(value)) throw new ValidationError(`${label} must be a safe absolute path`);
 }
 
 function systemdQuote(value: string) {
