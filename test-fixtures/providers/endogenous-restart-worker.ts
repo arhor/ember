@@ -9,8 +9,9 @@ import { runCognitionOpportunity, type CognitionOpportunityEvaluator } from "../
 import { invokeCodexProvider } from "../../src/providers/codex.ts";
 import type { EndogenousRestartScenarioKind } from "../../eval/endogenous-restart/harness.ts";
 
-const [phase, kindRaw, statePath, mode = "fixture", codexCommand = "codex", timeoutRaw = "120"] = process.argv.slice(2);
+const [phase, kindRaw, statePath, mode = "fixture", codexCommand = "codex", timeoutRaw = "120", codexArgumentsRaw = "[]"] = process.argv.slice(2);
 const kind = kindRaw as EndogenousRestartScenarioKind;
+const codexArguments = parseStringList(codexArgumentsRaw, "Codex arguments");
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember/endogenous-restart";
 const store = new StateStore(statePath);
@@ -55,6 +56,7 @@ if (phase === "prepare") {
     const evaluator = mode === "live"
       ? createCodexOpportunityEvaluator({
           command: codexCommand,
+          arguments_: codexArguments,
           timeoutSeconds: Number(timeoutRaw),
           provider: async (command, arguments_, request, options) => {
             const providerResult = await invokeCodexProvider(command, arguments_, request, {
@@ -106,4 +108,11 @@ function aliasesFor(state: EmberState) {
 
 function aliasFor(aliases: Map<string, string>, id: string | null) {
   return id === null ? null : aliases.get(id) ?? "<unaliased>";
+}
+
+function parseStringList(raw: string, label: string) {
+  let value: unknown;
+  try { value = JSON.parse(raw); } catch (error) { throw new Error(`${label} must be valid JSON`, { cause: error }); }
+  if (!Array.isArray(value) || !value.every(item => typeof item === "string")) throw new Error(`${label} must be a JSON string array`);
+  return value;
 }
