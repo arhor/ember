@@ -35,6 +35,10 @@ Current architecture material:
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
+- [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md) derives
+  issue #80's implementation-neutral unattended wake-up, specialist work ownership,
+  recovery, locking, status, configuration, and resource requirements plus negative
+  evidence against premature service complexity for issue #81.
 - [Bounded Cognition-Opportunity Boundary](cognition-opportunity.md) defines issue
   #73's topic-free wake-up occurrence, bounded state projection, allowed endogenous
   outcomes, and implementation handoff for the decision boundary in issue #74.
