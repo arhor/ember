@@ -109,6 +109,7 @@ test("durable opportunity path should skip repeated evaluator work but reopen af
   };
 
   try {
+    process.env.EMBER_TEST_NOW = "2026-09-03T00:01:01Z";
     const first = await runCognitionOpportunity(store, state, {
       runtimeId: started.runtimeId,
       principal: PRINCIPAL,
@@ -119,6 +120,7 @@ test("durable opportunity path should skip repeated evaluator work but reopen af
     });
     state = first.state;
 
+    process.env.EMBER_TEST_NOW = "2026-09-03T00:02:01Z";
     const repeated = await runCognitionOpportunity(store, state, {
       runtimeId: started.runtimeId,
       principal: PRINCIPAL,
@@ -144,6 +146,7 @@ test("durable opportunity path should skip repeated evaluator work but reopen af
     rememberFact(state, PRINCIPAL, `user:${PRINCIPAL}`, "release-channel", SCOPE, "Release will use the stable channel");
     state = await store.commit(state.revision, state);
 
+    process.env.EMBER_TEST_NOW = "2026-09-03T00:03:01Z";
     const changed = await runCognitionOpportunity(store, state, {
       runtimeId: started.runtimeId,
       principal: PRINCIPAL,
