@@ -28,7 +28,7 @@ The governing constraints remain the canonical
 [endogenous-agency research](../research/endogenous-agency-and-self-initiated-behavior.md),
 [operational-model research](../research/operational-model-sessions-and-surfaces.md),
 [ADRs 0001, 0003, and 0005](decisions/README.md), and the
-[agency acceptance scenarios](acceptance-scenarios.md#endogenous-agency-and-self-initiated-behavior).
+[agency acceptance scenarios](acceptance-scenarios.md#endogenous-agency-and-attention).
 This document selects a narrow implementation boundary beneath those semantics; it
 does not create another semantic ADR.
 
