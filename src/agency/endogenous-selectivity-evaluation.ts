@@ -5,15 +5,21 @@ import {
   isRfc3339Utc,
   newId,
   type CognitionOpportunityDecision,
+  type CognitionOpportunityOccurrence,
   type EmberState,
   type MeaningId,
 } from "../core/model.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
 import { startRuntime } from "../runtime/runtime.ts";
 import {
+  buildCognitionOpportunityProjection,
   evaluateCognitionOpportunity,
   type CognitionOpportunityEvaluator,
 } from "./cognition-opportunity.ts";
+import {
+  decideRepeatedCognitionAttention,
+  type RepeatedCognitionAttentionOutcome,
+} from "./endogenous-attention-control.ts";
 import {
   decideUserInterruption,
   type CompletedInternalCognition,
@@ -37,6 +43,7 @@ export type FalsePositiveCategory =
   | "stale_concern_revival"
   | "post_hoc_fabricated_motive"
   | "unnecessary_user_interruption";
+export type SelectivityAttentionControl = "repeated_projection" | "disabled";
 
 export interface SelectivityWorkloadCase {
   case_id: string;
@@ -63,6 +70,10 @@ export interface EvaluationBackend {
   model_version: string | null;
 }
 
+export interface SelectivityEvaluationOptions {
+  attentionControl?: SelectivityAttentionControl;
+}
+
 export interface SelectivityObservation {
   case_id: string;
   opportunity_index: number;
@@ -76,7 +87,8 @@ export interface SelectivityObservation {
     | "evaluator_failure";
   false_positive_categories: FalsePositiveCategory[];
   selected_meaning_count: number;
-  evaluator_latency_ms: number;
+  attention_outcome: RepeatedCognitionAttentionOutcome;
+  evaluator_latency_ms: number | null;
   interruption_outcome: InterruptionOutcome;
 }
 
@@ -91,7 +103,8 @@ export interface SelectivityEvaluationResult {
   policy: {
     mechanism: "foreground_probe";
     trigger_topic_present: false;
-    model_backed_evaluator_attempts_per_opportunity: 1;
+    attention_control: SelectivityAttentionControl;
+    max_model_backed_evaluator_attempts_per_opportunity: 1;
     raw_reasoning_retained: false;
   };
   workload: {
@@ -101,6 +114,7 @@ export interface SelectivityEvaluationResult {
   counts: {
     evaluator_calls: number;
     external_model_evaluator_attempts: number;
+    attention_deferred_repeated_projection: number;
     intentional_silence: number;
     worthwhile_cognition: number;
     worthwhile_deferred_attention: number;
@@ -115,6 +129,7 @@ export interface SelectivityEvaluationResult {
     false_positive_cognition: { numerator: number; denominator: number };
   };
   latency_ms: {
+    sample_count: number;
     min: number;
     median: number;
     p95: number;
@@ -192,6 +207,7 @@ export async function runEndogenousSelectivityEvaluation(
   workload: SelectivityWorkload,
   evaluator: CognitionOpportunityEvaluator,
   backend: EvaluationBackend,
+  { attentionControl = "repeated_projection" }: SelectivityEvaluationOptions = {},
 ): Promise<SelectivityEvaluationResult> {
   const validated = parseSelectivityWorkload(workload);
   const observations: SelectivityObservation[] = [];
@@ -205,33 +221,83 @@ export async function runEndogenousSelectivityEvaluation(
   for (const testCase of validated.cases) {
     const scenario = buildScenario(validated, testCase);
     const deliveredGroundingSets: MeaningId[][] = [];
+    const history: CognitionOpportunityOccurrence[] = [];
 
     for (let opportunityIndex = 0; opportunityIndex < testCase.opportunities; opportunityIndex++) {
       const consideredAt = addSeconds(validated.base_time, 300 + globalOpportunityIndex);
       globalOpportunityIndex += 1;
-      evaluatorCalls += 1;
-      const startedAt = performance.now();
+      const projection = buildCognitionOpportunityProjection(scenario.state, {
+        runtimeId: scenario.runtimeId,
+        principal: validated.principal,
+        scope: validated.scope,
+        timestamp: consideredAt,
+      });
+      const attention = attentionControl === "repeated_projection"
+        ? decideRepeatedCognitionAttention(history, {
+            runtime_id: scenario.runtimeId,
+            principal: validated.principal,
+            active_scope: validated.scope,
+            mechanism: "foreground_probe",
+            projected_meaning_ids: [...projection.selection.meaning_ids],
+            projected_evidence_ids: [...projection.selection.evidence_ids],
+          })
+        : {
+            outcome: "evaluate" as const,
+            source_opportunity_id: null,
+            selected_meaning_ids: [] as MeaningId[],
+          };
+
       let decision: CognitionOpportunityDecision | "error" = "error";
       let selectedMeaningIds: MeaningId[] = [];
       let evaluatorFailed = false;
+      let evaluatorLatency: number | null = null;
+      let historyStatus: CognitionOpportunityOccurrence["status"] = "decided";
+      let historyOpportunityId = newId("opportunity");
 
-      try {
-        const evaluated = await evaluateCognitionOpportunity(scenario.state, {
-          runtimeId: scenario.runtimeId,
-          principal: validated.principal,
-          scope: validated.scope,
-          mechanism: "foreground_probe",
-          evaluator,
-          timestamp: consideredAt,
-        });
-        decision = evaluated.decision;
-        selectedMeaningIds = [...evaluated.selected_meaning_ids];
-      } catch {
-        evaluatorFailed = true;
+      if (attention.outcome === "defer_repeated_projection") {
+        decision = "defer";
+        selectedMeaningIds = [...attention.selected_meaning_ids];
+      } else {
+        evaluatorCalls += 1;
+        const startedAt = performance.now();
+        try {
+          const evaluated = await evaluateCognitionOpportunity(scenario.state, {
+            runtimeId: scenario.runtimeId,
+            principal: validated.principal,
+            scope: validated.scope,
+            mechanism: "foreground_probe",
+            evaluator,
+            timestamp: consideredAt,
+          });
+          decision = evaluated.decision;
+          selectedMeaningIds = [...evaluated.selected_meaning_ids];
+          historyOpportunityId = evaluated.opportunity_id;
+        } catch {
+          evaluatorFailed = true;
+          historyStatus = "failed";
+        }
+        evaluatorLatency = performance.now() - startedAt;
+        latencies.push(evaluatorLatency);
       }
 
-      const latency = performance.now() - startedAt;
-      latencies.push(latency);
+      history.push({
+        opportunity_id: historyOpportunityId,
+        runtime_id: scenario.runtimeId,
+        principal: validated.principal,
+        active_scope: validated.scope,
+        mechanism: "foreground_probe",
+        observed_at: consideredAt,
+        last_durable_observation_at: consideredAt,
+        validated_revision: projection.validated_revision,
+        projected_meaning_ids: [...projection.selection.meaning_ids],
+        projected_evidence_ids: [...projection.selection.evidence_ids],
+        status: historyStatus,
+        decision: historyStatus === "decided" ? decision as CognitionOpportunityDecision : null,
+        selected_meaning_ids: historyStatus === "decided" ? [...selectedMeaningIds] : [],
+        interruption_status: "not_attempted",
+        provider_termination: null,
+      });
+
       peakRss = Math.max(peakRss, process.memoryUsage().rss);
 
       const falsePositiveCategories: FalsePositiveCategory[] = [];
@@ -277,7 +343,8 @@ export async function runEndogenousSelectivityEvaluation(
         classification,
         false_positive_categories: falsePositiveCategories,
         selected_meaning_count: selectedMeaningIds.length,
-        evaluator_latency_ms: round(latency),
+        attention_outcome: attention.outcome,
+        evaluator_latency_ms: evaluatorLatency === null ? null : round(evaluatorLatency),
         interruption_outcome: interruptionOutcome,
       });
     }
@@ -314,13 +381,15 @@ export async function runEndogenousSelectivityEvaluation(
     policy: {
       mechanism: "foreground_probe",
       trigger_topic_present: false,
-      model_backed_evaluator_attempts_per_opportunity: 1,
+      attention_control: attentionControl,
+      max_model_backed_evaluator_attempts_per_opportunity: 1,
       raw_reasoning_retained: false,
     },
     workload: { case_count: validated.cases.length, opportunity_count: opportunityCount },
     counts: {
       evaluator_calls: evaluatorCalls,
       external_model_evaluator_attempts: backend.external_model ? evaluatorCalls : 0,
+      attention_deferred_repeated_projection: observations.filter(item => item.attention_outcome === "defer_repeated_projection").length,
       intentional_silence: intentionalSilence,
       worthwhile_cognition: count("worthwhile_cognition"),
       worthwhile_deferred_attention: count("worthwhile_deferred_attention"),
@@ -428,10 +497,11 @@ function buildScenario(workload: SelectivityWorkload, testCase: SelectivityWorkl
 }
 
 function summarizeLatency(values: number[]) {
-  if (values.length === 0) return { min: 0, median: 0, p95: 0, max: 0, mean: 0 };
+  if (values.length === 0) return { sample_count: 0, min: 0, median: 0, p95: 0, max: 0, mean: 0 };
   const sorted = [...values].sort((a, b) => a - b);
   const quantile = (q: number) => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * q) - 1)];
   return {
+    sample_count: values.length,
     min: round(sorted[0]),
     median: round(quantile(0.5)),
     p95: round(quantile(0.95)),

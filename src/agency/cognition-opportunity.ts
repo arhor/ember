@@ -16,6 +16,10 @@ import {
 } from "../core/model.ts";
 import { buildProjection, findRuntime, type Projection, } from "../core/projection.ts";
 import type { StateStore } from "../persistence/state-store.ts";
+import {
+    decideRepeatedCognitionAttention,
+    type RepeatedCognitionAttentionOutcome,
+} from "./endogenous-attention-control.ts";
 
 export const COGNITION_OPPORTUNITY_CONTRACT_VERSION = 1 as const;
 
@@ -66,6 +70,9 @@ export interface RunCognitionOpportunityResult {
     state: EmberState;
     opportunityId: OpportunityId;
     evaluatorFailure: string | null;
+    evaluatorInvoked: boolean;
+    attentionOutcome: RepeatedCognitionAttentionOutcome;
+    attentionSourceOpportunityId: OpportunityId | null;
 }
 
 interface PreparedOpportunity {
@@ -140,6 +147,50 @@ export async function runCognitionOpportunity(
     options: EvaluateCognitionOpportunityOptions,
 ): Promise<RunCognitionOpportunityResult> {
     const prepared = prepareOpportunity(state, options);
+    const attention = decideRepeatedCognitionAttention(
+        state.operations.cognition_opportunities ?? [],
+        {
+            runtime_id: options.runtimeId,
+            principal: options.principal,
+            active_scope: options.scope,
+            mechanism: options.mechanism,
+            projected_meaning_ids: prepared.projectedMeaningIds,
+            projected_evidence_ids: prepared.projectedEvidenceIds,
+        },
+    );
+
+    if (attention.outcome === "defer_repeated_projection") {
+        const deferred = cloneState(state);
+        findRuntime(deferred, options.runtimeId).last_durable_observation_at = prepared.timestamp;
+        const occurrences = deferred.operations.cognition_opportunities ??= [];
+        occurrences.push({
+            opportunity_id: prepared.opportunityId,
+            runtime_id: options.runtimeId,
+            principal: options.principal,
+            active_scope: options.scope,
+            mechanism: options.mechanism,
+            observed_at: prepared.timestamp,
+            last_durable_observation_at: prepared.timestamp,
+            validated_revision: prepared.projection.validated_revision,
+            projected_meaning_ids: prepared.projectedMeaningIds,
+            projected_evidence_ids: prepared.projectedEvidenceIds,
+            status: "decided",
+            decision: "defer",
+            selected_meaning_ids: [...attention.selected_meaning_ids],
+            interruption_status: "not_attempted",
+            provider_termination: null,
+        });
+        state = await store.commit(state.revision, deferred);
+        return {
+            state,
+            opportunityId: prepared.opportunityId,
+            evaluatorFailure: null,
+            evaluatorInvoked: false,
+            attentionOutcome: attention.outcome,
+            attentionSourceOpportunityId: attention.source_opportunity_id,
+        };
+    }
+
     const started = cloneState(state);
     const runtime = findRuntime(started, options.runtimeId);
     runtime.last_durable_observation_at = prepared.timestamp;
@@ -190,7 +241,10 @@ export async function runCognitionOpportunity(
         return {
             state,
             opportunityId: prepared.opportunityId,
-            evaluatorFailure: error.message
+            evaluatorFailure: error.message,
+            evaluatorInvoked: true,
+            attentionOutcome: "evaluate",
+            attentionSourceOpportunityId: null,
         };
     }
 
@@ -213,7 +267,10 @@ export async function runCognitionOpportunity(
     return {
         state,
         opportunityId: prepared.opportunityId,
-        evaluatorFailure: null
+        evaluatorFailure: null,
+        evaluatorInvoked: true,
+        attentionOutcome: "evaluate",
+        attentionSourceOpportunityId: null,
     };
 }
 
