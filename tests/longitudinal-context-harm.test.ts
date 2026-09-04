@@ -87,7 +87,7 @@ test("representative longitudinal corpus should show inclusion pressure without 
 
     // When
     for (const filename of SCENARIOS) {
-        const scenario = await loadLongitudinalScenario(join(ROOT, "test-fixtures", "longitudinal", filename));
+        const scenario = await loadLongitudinalScenario(join(ROOT, "eval", "longitudinal", "fixtures", filename));
         const directory = await tempDir();
         const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
             const externalThreadId =
