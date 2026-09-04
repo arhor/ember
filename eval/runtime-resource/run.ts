@@ -443,7 +443,10 @@ async function readProcess(pid: number): Promise<ProcessInfo | null> {
             readFile(`/proc/${pid}/status`, "utf8"),
             readFile(`/proc/${pid}/cmdline`, "utf8"),
         ]);
-        const rest = stat.slice(stat.lastIndexOf(")") + 2).trim().split(/\s+/);
+        const rest = stat
+            .slice(stat.lastIndexOf(")") + 2)
+            .trim()
+            .split(/\s+/);
         const ppid = Number(rest[1]);
         const userTicks = Number(rest[11]);
         const systemTicks = Number(rest[12]);
@@ -473,9 +476,7 @@ function summarizeSamples(name: WorkloadName, samples: RawSample[]) {
         external_descendants_cpu_ms: summarize(samples.map((sample) => sample.externalCpuMs)),
         total_tree_cpu_ms: summarize(samples.map((sample) => sample.treeCpuMs)),
         ember_root_average_cpu_percent: summarize(samples.map((sample) => sample.rootAverageCpuPercent)),
-        external_descendants_average_cpu_percent: summarize(
-            samples.map((sample) => sample.externalAverageCpuPercent),
-        ),
+        external_descendants_average_cpu_percent: summarize(samples.map((sample) => sample.externalAverageCpuPercent)),
         total_tree_average_cpu_percent: summarize(samples.map((sample) => sample.treeAverageCpuPercent)),
         max_process_count: summarize(samples.map((sample) => sample.maxProcessCount)),
         external_process_observed_in_every_sample: samples.every((sample) => sample.externalProcessObserved),
@@ -485,8 +486,7 @@ function summarizeSamples(name: WorkloadName, samples: RawSample[]) {
 function summarize(values: number[]) {
     const sorted = [...values].sort((left, right) => left - right);
     const middle = Math.floor(sorted.length / 2);
-    const median =
-        sorted.length % 2 === 1 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+    const median = sorted.length % 2 === 1 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
     return {
         median: round(median),
         min: round(sorted[0]!),
