@@ -17,6 +17,7 @@
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node tests/live/codex-specialist.ts",
     "smoke:runtime:live": "EMBER_RUN_LIVE_EPISODIC=1 node tests/live/episodic-runtime-smoke.ts",
     "eval:runtime-resource": "node eval/runtime-resource/run.ts",
+    "eval:runtime-resource:constrained": "node eval/runtime-resource/constrained-host.ts",
     "eval:continuity": "node eval/longitudinal/run.ts",
     "eval:memory-context": "node eval/longitudinal/run.ts --scenario eval/longitudinal/fixtures/memory-context-pressure.json",
     "eval:currentness": "node eval/longitudinal/run.ts --scenario eval/longitudinal/fixtures/currentness-pressure.json",
