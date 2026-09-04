@@ -122,7 +122,9 @@ async function runResourceEvaluation(arguments_: string[]) {
     try {
         return JSON.parse(stdout) as unknown;
     } catch (error) {
-        throw new Error(`runtime resource runner emitted invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+            `runtime resource runner emitted invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        );
     }
 }
 
@@ -190,8 +192,7 @@ async function memorySnapshot(): Promise<MemorySnapshot> {
         mem_available_mib: kibToMib(available),
         swap_total_mib: kibToMib(swapTotal),
         swap_free_mib: kibToMib(swapFree),
-        swap_used_mib:
-            swapTotal === undefined || swapFree === undefined ? null : round((swapTotal - swapFree) / 1024),
+        swap_used_mib: swapTotal === undefined || swapFree === undefined ? null : round((swapTotal - swapFree) / 1024),
     };
 }
 
@@ -259,7 +260,10 @@ async function readOsRelease() {
 
 async function executableVersion(executable: string) {
     try {
-        const { stdout, stderr } = await execFileAsync(executable, ["--version"], { encoding: "utf8", timeout: 10_000 });
+        const { stdout, stderr } = await execFileAsync(executable, ["--version"], {
+            encoding: "utf8",
+            timeout: 10_000,
+        });
         const value = stdout.trim() || stderr.trim();
         return value ? value.split("\n")[0] : null;
     } catch {
