@@ -44,6 +44,11 @@ jobs:
         run: node --version
       - name: Install locked development toolchain
         run: npm ci
+      - name: Show formatter patch
+        run: |
+          npm run fmt
+          git diff -- . ':!.github/workflows/continuity-vertical-slice.yml'
+          git diff --quiet -- . ':!.github/workflows/continuity-vertical-slice.yml'
       - name: Run static and repository checks
         run: npm run check
       - name: Run complete acceptance suite
