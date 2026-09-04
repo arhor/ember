@@ -227,14 +227,14 @@ An active service does not prove an objective is current or effects are safe. A 
 Read apparently contradictory fields as a recovery signal rather than choosing the
 more convenient layer:
 
-| Durable status | Current unit observation | Truthful interpretation |
-| --- | --- | --- |
-| wake `pending` | timer/service missing | activation is missing; reconciliation may reconstruct it because dispatch has not begun |
-| wake `dispatching` | service missing/inactive/failed | outcome is uncertain; do not replay the wake automatically |
-| specialist `running` with episode record | service missing/inactive/failed | local process loss is suspected; run reconciliation to persist `lost`/effect uncertainty |
-| specialist `launched` or `running`, `runtime_state=null` | service missing | the outer worker boundary was observed but no specialist episode record exists; do not invent child execution or retry safety |
-| specialist `lost` | service missing/inactive/failed | process loss is durable; inspect `retry_state`/episode recovery evidence before any retry |
-| terminal durable record | any stale unit observation | durable work outcome and current unit state remain separate facts; stale supervisor state does not rewrite history |
+| Durable status                                           | Current unit observation        | Truthful interpretation                                                                                                       |
+| -------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| wake `pending`                                           | timer/service missing           | activation is missing; reconciliation may reconstruct it because dispatch has not begun                                       |
+| wake `dispatching`                                       | service missing/inactive/failed | outcome is uncertain; do not replay the wake automatically                                                                    |
+| specialist `running` with episode record                 | service missing/inactive/failed | local process loss is suspected; run reconciliation to persist `lost`/effect uncertainty                                      |
+| specialist `launched` or `running`, `runtime_state=null` | service missing                 | the outer worker boundary was observed but no specialist episode record exists; do not invent child execution or retry safety |
+| specialist `lost`                                        | service missing/inactive/failed | process loss is durable; inspect `retry_state`/episode recovery evidence before any retry                                     |
+| terminal durable record                                  | any stale unit observation      | durable work outcome and current unit state remain separate facts; stale supervisor state does not rewrite history            |
 
 Canonical and lock inspection remain ordinary CLI operations:
 
