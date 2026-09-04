@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, matchesGlob } from "node:path";
 import { PassThrough, Writable } from "node:stream";
 import test from "node:test";
 
@@ -45,11 +45,11 @@ async function startedStore() {
 
 test("scripted provider should stay outside automatic discovery when repository tests run", () => {
     // Given
-    const automaticDiscoveryRoot = join(ROOT, "tests");
+    const automaticDiscoveryPattern = join(ROOT, "tests", "*.test.ts");
     // When
-    const providerIsInside = PROVIDER === automaticDiscoveryRoot || PROVIDER.startsWith(`${automaticDiscoveryRoot}/`);
+    const providerIsDiscovered = matchesGlob(PROVIDER, automaticDiscoveryPattern);
     // Then
-    assert.equal(providerIsInside, false);
+    assert.equal(providerIsDiscovered, false);
 });
 
 test("provider adapter should accept one result when result uses only selected meanings", async () => {
