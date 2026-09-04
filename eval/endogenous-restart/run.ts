@@ -3,9 +3,9 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import type { EndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
+import type { EndogenousRestartScenario } from "./harness.ts";
 
-import { runEndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
+import { runEndogenousRestartScenario } from "./harness.ts";
 
 if (process.env.EMBER_RUN_LIVE_ENDOGENOUS_RESTART !== "1") {
     throw new Error("live endogenous-restart execution is opt-in; set EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1");
@@ -19,7 +19,7 @@ const directory = await mkdtemp(join(tmpdir(), "ember-endogenous-restart-live-")
 try {
     const report = await runEndogenousRestartScenario(scenario, {
         statePath: join(directory, "ember.json"),
-        workerPath: resolve("test-fixtures/providers/endogenous-restart-worker.ts"),
+        workerPath: resolve("tests/fixtures/providers/endogenous-restart-worker.ts"),
         cwd: resolve("."),
         executionMode: "live",
         codexCommand: options.codexCommand,
@@ -34,7 +34,7 @@ try {
 }
 
 function parseArguments(args: string[]) {
-    let scenarioPath = resolve("test-fixtures/endogenous/restart-scenarios.json");
+    let scenarioPath = resolve("eval/endogenous-restart/fixtures/restart-scenarios.json");
     let scenarioId = "live-concern-reactivates";
     let codexCommand = "codex";
     let timeoutSeconds = 120;
@@ -59,7 +59,7 @@ function parseArguments(args: string[]) {
             index += 1;
         } else
             throw new Error(
-                "usage: run-endogenous-restart-scenario.ts [--scenario PATH] [--scenario-id ID] [--codex-command PATH] [--timeout-seconds N] [--report NEW_PATH]",
+                "usage: eval/endogenous-restart/run.ts [--scenario PATH] [--scenario-id ID] [--codex-command PATH] [--timeout-seconds N] [--report NEW_PATH]",
             );
     }
     return { scenarioPath, scenarioId, codexCommand, timeoutSeconds, report };
