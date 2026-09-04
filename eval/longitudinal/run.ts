@@ -7,10 +7,10 @@ import { isAbsolute, join, resolve } from "node:path";
 
 import type { HarnessProvider } from "./harness.ts";
 
-import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
 import { invokeCodexProvider } from "../../src/providers/codex.ts";
 import { invokeCursorProvider } from "../../src/providers/cursor.ts";
 import { codexArgumentEvidence } from "../../src/providers/evidence.ts";
+import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));
 if (options.provider !== "scripted" && process.env.EMBER_RUN_LIVE_LONGITUDINAL !== "1") {
