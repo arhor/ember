@@ -20,7 +20,7 @@ nor a memory source.
 This probe complements, rather than replaces, the repository's two existing
 oracles:
 
-- `test/longitudinal-acceptance.test.ts` already proves the semantic restart vector
+- `tests/longitudinal-acceptance.test.ts` already proves the semantic restart vector
   across real OS process boundaries with a deterministic provider; and
 - the [Longitudinal Continuity Harness](longitudinal-continuity-harness.md) varies
   state, runtime episodes, and external-thread controls while separating
@@ -32,7 +32,7 @@ production CLI and Codex adapter.
 ## Scenario
 
 The repository-owned scenario is
-`test-fixtures/longitudinal/process-restart-fresh-codex.json`. It uses the existing
+`eval/longitudinal/fixtures/process-restart-fresh-codex.json`. It uses the existing
 version-1 longitudinal scenario vocabulary and contains only the subset needed by
 this process-level runner:
 
@@ -52,7 +52,7 @@ All scenario content is synthetic.
 
 ## What the runner actually restarts
 
-`scripts/run-process-restart-scenario.ts` does not model a restart inside one
+`eval/process-restart/run.ts` does not model a restart inside one
 long-lived Ember runtime. It creates a temporary canonical store and then:
 
 1. starts one `bin/ember.ts run` child process;
@@ -76,8 +76,8 @@ and meaning IDs.
 
 ## Deterministic repository oracle
 
-`test/process-restart-harness.test.ts` executes the exact process orchestration
-against `test-fixtures/providers/codex-jsonl-fixture.ts`, a local JSONL fixture that
+`tests/process-restart-harness.test.ts` executes the exact process orchestration
+against `tests/fixtures/providers/codex-jsonl-fixture.ts`, a local JSONL fixture that
 exercises the production Codex adapter without login or network access. The test
 also forces the same fake thread ID into both process episodes and verifies that
 the freshness assertion fails. This keeps CI deterministic while testing the
