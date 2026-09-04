@@ -18,7 +18,7 @@ export const SCOPE = "project:ember/docs";
 export const RELATIONSHIP_SCOPE = "relationship:user-1";
 export const ROOT = resolve(import.meta.dirname, "..");
 export const CLI = join(ROOT, "bin", "ember.ts");
-export const PROVIDER = join(ROOT, "test-fixtures", "providers", "scripted-provider.ts");
+export const PROVIDER = join(ROOT, "tests", "fixtures", "providers", "scripted-provider.ts");
 
 export function populatedState() {
     const state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z");
