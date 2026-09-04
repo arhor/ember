@@ -7,7 +7,7 @@ import type { ProviderResult } from "../src/providers/contract.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";
 
-const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "currentness-pressure.json");
+const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "currentness-pressure.json");
 
 test("longitudinal currentness pressure should preserve corrections as history and keep unresolved reports distinct", async () => {
     // Given
