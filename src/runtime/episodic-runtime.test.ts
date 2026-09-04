@@ -58,7 +58,7 @@ test("schedule wake should persist intent before creating one-shot systemd activ
     const configPath = join(root, "runtime.json");
     const { calls, runner } = capturingRunner();
 
-    const intent = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    const intent = await scheduleWake(config, configPath, "2026-09-04T10:00:00.250Z", {
         now: () => "2026-09-03T20:00:00Z",
         runner,
     });
@@ -68,9 +68,10 @@ test("schedule wake should persist intent before creating one-shot systemd activ
     );
     assert.equal(persisted.wake_id, intent.wake_id);
     assert.equal(persisted.mechanism, "external_timing");
+    assert.equal(persisted.due_at, intent.due_at);
     assert.equal(calls.length, 1);
     assert.equal(calls[0]!.command, config.systemd_run_command);
-    assert.ok(calls[0]!.args.includes(`--on-calendar=${intent.due_at}`));
+    assert.ok(calls[0]!.args.includes("--on-calendar=2026-09-04 10:00:01 UTC"));
     assert.ok(calls[0]!.args.includes("--property=Type=exec"));
     assert.ok(calls[0]!.args.includes("--property=Restart=no"));
     assert.ok(!calls[0]!.args.some((arg) => arg.includes("Persistent")));
@@ -83,6 +84,20 @@ test("schedule wake should persist intent before creating one-shot systemd activ
         "--wake-id",
         intent.wake_id,
     ]);
+});
+
+test("schedule wake should preserve exact-second UTC timing in systemd calendar syntax", async () => {
+    const root = await tempDir();
+    const config = runtimeConfig(root);
+    const configPath = join(root, "runtime.json");
+    const { calls, runner } = capturingRunner();
+
+    await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+        now: () => "2026-09-03T20:00:00Z",
+        runner,
+    });
+
+    assert.ok(calls[0]!.args.includes("--on-calendar=2026-09-04 10:00:00 UTC"));
 });
 
 test("schedule wake should dispatch an already-due one-shot without creating a timer in the past", async () => {
@@ -162,7 +177,7 @@ test("reconciliation should re-arm only future wakes that have not begun dispatc
     assert.deepEqual(result.ambiguousWakes, [ambiguous.wake_id]);
     const wakeStarts = recovery.calls.filter((call) => call.command === config.systemd_run_command);
     assert.equal(wakeStarts.length, 1);
-    assert.ok(wakeStarts[0]!.args.some((arg) => arg.startsWith("--on-calendar=")));
+    assert.ok(wakeStarts[0]!.args.includes("--on-calendar=2026-09-04 10:00:00 UTC"));
     assert.equal(wakeStarts[0]!.args.at(-1), pending.wake_id);
 });
 

@@ -15,6 +15,7 @@
     "smoke:codex": "node scripts/live-codex-smoke.ts",
     "smoke:cursor": "node scripts/live-cursor-smoke.ts",
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node scripts/live-codex-specialist.ts",
+    "smoke:runtime:live": "EMBER_RUN_LIVE_EPISODIC=1 node scripts/live-episodic-runtime-smoke.ts",
     "eval:continuity": "node scripts/run-longitudinal-scenario.ts",
     "eval:memory-context": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/memory-context-pressure.json",
     "eval:currentness": "node scripts/run-longitudinal-scenario.ts --scenario test-fixtures/longitudinal/currentness-pressure.json",

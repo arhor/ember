@@ -202,7 +202,7 @@ export class SystemdUserSupervisor {
             "--user",
             "--collect",
             `--unit=${unit}`,
-            `--on-calendar=${intent.due_at}`,
+            `--on-calendar=${systemdCalendarTimestamp(intent.due_at)}`,
             "--property=Type=exec",
             "--property=Restart=no",
             ...this.wakeWorkerCommand(intent.wake_id),
@@ -713,6 +713,17 @@ function validateOpaqueId(value: string, label: string) {
 function requireAbsolute(value: string, label: string) {
     if (typeof value !== "string" || !isAbsolute(value) || /[\0\r\n]/.test(value))
         throw new ValidationError(`${label} must be a safe absolute path`);
+}
+
+function systemdCalendarTimestamp(value: string) {
+    if (!isRfc3339Utc(value)) throw new ValidationError("systemd calendar timestamp must originate from RFC 3339 UTC");
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) throw new ValidationError("systemd calendar timestamp is invalid");
+    const fraction = /\.(\d+)Z$/.exec(value)?.[1];
+    const wholeSecond = Math.floor(parsed / 1000) * 1000;
+    const roundedUp = wholeSecond + (fraction && /[1-9]/.test(fraction) ? 1000 : 0);
+    const normalized = new Date(roundedUp).toISOString();
+    return `${normalized.slice(0, 10)} ${normalized.slice(11, 19)} UTC`;
 }
 
 function systemdQuote(value: string) {
