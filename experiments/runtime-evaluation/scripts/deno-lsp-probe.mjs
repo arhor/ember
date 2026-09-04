@@ -9,90 +9,93 @@ if (!deno) throw new Error("usage: deno-lsp-probe.mjs <deno-executable>");
 const child = spawn(deno, ["lsp"], { stdio: ["pipe", "pipe", "pipe"] });
 let stderr = "";
 child.stderr.setEncoding("utf8");
-child.stderr.on("data", (chunk) => { stderr = (stderr + chunk).slice(-16_384); });
+child.stderr.on("data", (chunk) => {
+    stderr = (stderr + chunk).slice(-16_384);
+});
 let wire = Buffer.alloc(0);
 const pending = new Map();
 let nextId = 1;
 child.stdout.on("data", (chunk) => {
-  wire = Buffer.concat([wire, chunk]);
-  drain();
+    wire = Buffer.concat([wire, chunk]);
+    drain();
 });
 child.once("error", (error) => {
-  for (const { reject } of pending.values()) reject(error);
-  pending.clear();
+    for (const { reject } of pending.values()) reject(error);
+    pending.clear();
 });
 
 function send(message) {
-  const body = Buffer.from(JSON.stringify(message), "utf8");
-  child.stdin.write(`Content-Length: ${body.length}\r\n\r\n`);
-  child.stdin.write(body);
+    const body = Buffer.from(JSON.stringify(message), "utf8");
+    child.stdin.write(`Content-Length: ${body.length}\r\n\r\n`);
+    child.stdin.write(body);
 }
 
 function request(method, params) {
-  const id = nextId++;
-  const message = { jsonrpc: "2.0", id, method };
-  if (params !== undefined) message.params = params;
-  send(message);
-  return new Promise((resolvePromise, reject) => {
-    const timer = setTimeout(() => {
-      pending.delete(id);
-      reject(new Error(`Deno LSP request timed out: ${method}; stderr=${stderr}`));
-    }, 10_000);
-    pending.set(id, {
-      resolve: (value) => {
-        clearTimeout(timer);
-        resolvePromise(value);
-      },
-      reject: (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
+    const id = nextId++;
+    const message = { jsonrpc: "2.0", id, method };
+    if (params !== undefined) message.params = params;
+    send(message);
+    return new Promise((resolvePromise, reject) => {
+        const timer = setTimeout(() => {
+            pending.delete(id);
+            reject(new Error(`Deno LSP request timed out: ${method}; stderr=${stderr}`));
+        }, 10_000);
+        pending.set(id, {
+            resolve: (value) => {
+                clearTimeout(timer);
+                resolvePromise(value);
+            },
+            reject: (error) => {
+                clearTimeout(timer);
+                reject(error);
+            },
+        });
     });
-  });
 }
 
 function drain() {
-  while (true) {
-    const separator = wire.indexOf("\r\n\r\n");
-    if (separator < 0) return;
-    const header = wire.subarray(0, separator).toString("ascii");
-    const match = /(?:^|\r\n)Content-Length:\s*(\d+)/i.exec(header);
-    if (!match) throw new Error(`Deno LSP response lacks Content-Length: ${header}`);
-    const length = Number(match[1]);
-    const bodyStart = separator + 4;
-    if (wire.length < bodyStart + length) return;
-    const body = wire.subarray(bodyStart, bodyStart + length).toString("utf8");
-    wire = wire.subarray(bodyStart + length);
-    const message = JSON.parse(body);
-    if (message.method && message.id !== undefined) {
-      const result = message.method === "workspace/configuration"
-        ? (message.params?.items ?? []).map(() => ({ enable: true, lint: true }))
-        : null;
-      send({ jsonrpc: "2.0", id: message.id, result });
-      continue;
+    while (true) {
+        const separator = wire.indexOf("\r\n\r\n");
+        if (separator < 0) return;
+        const header = wire.subarray(0, separator).toString("ascii");
+        const match = /(?:^|\r\n)Content-Length:\s*(\d+)/i.exec(header);
+        if (!match) throw new Error(`Deno LSP response lacks Content-Length: ${header}`);
+        const length = Number(match[1]);
+        const bodyStart = separator + 4;
+        if (wire.length < bodyStart + length) return;
+        const body = wire.subarray(bodyStart, bodyStart + length).toString("utf8");
+        wire = wire.subarray(bodyStart + length);
+        const message = JSON.parse(body);
+        if (message.method && message.id !== undefined) {
+            const result =
+                message.method === "workspace/configuration"
+                    ? (message.params?.items ?? []).map(() => ({ enable: true, lint: true }))
+                    : null;
+            send({ jsonrpc: "2.0", id: message.id, result });
+            continue;
+        }
+        if (message.id !== undefined && pending.has(message.id)) {
+            const entry = pending.get(message.id);
+            pending.delete(message.id);
+            if (message.error) entry.reject(new Error(JSON.stringify(message.error)));
+            else entry.resolve(message.result);
+        }
     }
-    if (message.id !== undefined && pending.has(message.id)) {
-      const entry = pending.get(message.id);
-      pending.delete(message.id);
-      if (message.error) entry.reject(new Error(JSON.stringify(message.error)));
-      else entry.resolve(message.result);
-    }
-  }
 }
 
 function lspPosition(text, offset) {
-  const prefix = text.slice(0, offset);
-  const lines = prefix.split("\n");
-  return { line: lines.length - 1, character: lines.at(-1).length };
+    const prefix = text.slice(0, offset);
+    const lines = prefix.split("\n");
+    return { line: lines.length - 1, character: lines.at(-1).length };
 }
 
 const rootUri = pathToFileURL(`${process.cwd()}/`).href;
 await request("initialize", {
-  processId: process.pid,
-  rootUri,
-  capabilities: {},
-  initializationOptions: { enable: true, lint: true },
-  workspaceFolders: [{ uri: rootUri, name: "ember-runtime-evaluation" }],
+    processId: process.pid,
+    rootUri,
+    capabilities: {},
+    initializationOptions: { enable: true, lint: true },
+    workspaceFolders: [{ uri: rootUri, name: "ember-runtime-evaluation" }],
 });
 send({ jsonrpc: "2.0", method: "initialized", params: {} });
 const runtimePath = resolve("src/runtime.ts");
@@ -101,26 +104,29 @@ const offset = runtimeText.indexOf("buildProjection(state");
 if (offset < 0) throw new Error("buildProjection call not found in runtime.ts");
 const runtimeUri = pathToFileURL(runtimePath).href;
 send({
-  jsonrpc: "2.0",
-  method: "textDocument/didOpen",
-  params: {
-    textDocument: { uri: runtimeUri, languageId: "typescript", version: 1, text: runtimeText },
-  },
+    jsonrpc: "2.0",
+    method: "textDocument/didOpen",
+    params: {
+        textDocument: { uri: runtimeUri, languageId: "typescript", version: 1, text: runtimeText },
+    },
 });
 const definition = await request("textDocument/definition", {
-  textDocument: { uri: runtimeUri },
-  position: lspPosition(runtimeText, offset),
+    textDocument: { uri: runtimeUri },
+    position: lspPosition(runtimeText, offset),
 });
 const locations = Array.isArray(definition) ? definition : definition ? [definition] : [];
 const target = locations.find((location) =>
-  String(location.uri ?? location.targetUri ?? "").endsWith("/src/projection.ts")
+    String(location.uri ?? location.targetUri ?? "").endsWith("/src/projection.ts"),
 );
-if (!target) throw new Error(`Deno LSP did not resolve buildProjection to projection.ts: ${JSON.stringify(definition)}`);
+if (!target)
+    throw new Error(`Deno LSP did not resolve buildProjection to projection.ts: ${JSON.stringify(definition)}`);
 await request("shutdown");
 send({ jsonrpc: "2.0", method: "exit" });
 child.stdin.end();
-console.log(JSON.stringify({
-  engine: "deno-lsp",
-  source: "src/runtime.ts",
-  definition: "src/projection.ts",
-}));
+console.log(
+    JSON.stringify({
+        engine: "deno-lsp",
+        source: "src/runtime.ts",
+        definition: "src/projection.ts",
+    }),
+);

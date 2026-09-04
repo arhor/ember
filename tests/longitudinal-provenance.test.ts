@@ -16,27 +16,23 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     const scenario = await loadLongitudinalScenario(SCENARIO);
 
     // When
-    const report = await runLongitudinalScenario(
-        scenario,
-        join(directory, "ember.json"),
-        async invocation => {
-            const selected = invocation.request.projection.meanings.map(item => item.content).join(" | ");
-            const audit = invocation.episodeId === "mixed-provenance-baseline"
+    const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
+        const selected = invocation.request.projection.meanings.map((item) => item.content).join(" | ");
+        const audit =
+            invocation.episodeId === "mixed-provenance-baseline"
                 ? "PROVENANCE_DISTINCT GREEN_ROOTS=2 RED_ROOTS=1 CORRELATED_NOT_INDEPENDENT"
                 : invocation.episodeId === "corrected-user-testimony"
-                    ? "PROVENANCE_DISTINCT GREEN_ROOTS=1 RED_ROOTS=2 CORRELATED_NOT_INDEPENDENT"
-                    : "HISTORICAL_USER_TESTIMONY PROVENANCE_DISTINCT CORRELATED_NOT_INDEPENDENT";
-            const externalThreadId = invocation.thread.mode === "fresh"
-                ? `thread-${invocation.episodeId}`
-                : invocation.thread.externalThreadId;
-            return harnessOutput(invocation.cognitionBackend, {
-                contract_version: 1,
-                reply: `${selected} | ${audit}`,
-                used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-                operational: { external_thread_id: externalThreadId },
-            });
-        },
-    );
+                  ? "PROVENANCE_DISTINCT GREEN_ROOTS=1 RED_ROOTS=2 CORRELATED_NOT_INDEPENDENT"
+                  : "HISTORICAL_USER_TESTIMONY PROVENANCE_DISTINCT CORRELATED_NOT_INDEPENDENT";
+        const externalThreadId =
+            invocation.thread.mode === "fresh" ? `thread-${invocation.episodeId}` : invocation.thread.externalThreadId;
+        return harnessOutput(invocation.cognitionBackend, {
+            contract_version: 1,
+            reply: `${selected} | ${audit}`,
+            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+            operational: { external_thread_id: externalThreadId },
+        });
+    });
 
     // Then
     assert.equal(report.ember_assertions_passed, true);
@@ -67,8 +63,14 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     assert.equal(delegateA.source_evidence[0]!.source_role, "delegated_report");
     assert.equal(delegateA.source_evidence[0]!.source_actor, "delegate:codex-a");
     assert.equal(inferenceA.source_evidence[0]!.source_role, "ember_inference");
-    assert.deepEqual(inferenceA.source_evidence.map(item => item.source_role), ["ember_inference", "delegated_report", "external_claim"]);
-    assert.deepEqual(inferenceB.source_evidence.map(item => item.source_role), ["ember_inference", "delegated_report", "external_claim"]);
+    assert.deepEqual(
+        inferenceA.source_evidence.map((item) => item.source_role),
+        ["ember_inference", "delegated_report", "external_claim"],
+    );
+    assert.deepEqual(
+        inferenceB.source_evidence.map((item) => item.source_role),
+        ["ember_inference", "delegated_report", "external_claim"],
+    );
 
     const externalRoot = roots(external)[0]!;
     assert.deepEqual(roots(delegateA), [externalRoot]);
@@ -81,7 +83,10 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     const redRoots = new Set(roots(observation));
     assert.equal(greenRoots.size, 2);
     assert.equal(redRoots.size, 1);
-    assert.equal([...greenRoots].some(id => redRoots.has(id)), false);
+    assert.equal(
+        [...greenRoots].some((id) => redRoots.has(id)),
+        false,
+    );
     assert.equal(baseline.projection.selection.evidence_ids.map(String).includes(externalRoot), true);
     assert.deepEqual(baseline.context_evaluation.omission_candidates.relevant_not_selected, []);
     assert.equal(baseline.context_evaluation.inclusion_candidates.irrelevant_selected.length, 12);
@@ -89,11 +94,16 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     const corrected = report.episodes[1]!;
     assert.equal(corrected.external_thread.mode, "reuse");
     assert.equal(corrected.provider_thread_id, baseline.provider_thread_id);
-    assert.equal(corrected.projection.meanings.some(item => item.content.includes("PROV_USER_OLD")), false);
+    assert.equal(
+        corrected.projection.meanings.some((item) => item.content.includes("PROV_USER_OLD")),
+        false,
+    );
     const correctedUser = meaningWith(corrected.projection.meanings, "PROV_USER_NEW_RED");
     assert.equal(correctedUser.epistemic_role, "user_testimony");
     assert.equal(correctedUser.source_evidence[0]!.source_role, "user_command");
-    const historicalOld = corrected.canonical_before.historical_meanings.find(item => item.content.includes("PROV_USER_OLD"));
+    const historicalOld = corrected.canonical_before.historical_meanings.find((item) =>
+        item.content.includes("PROV_USER_OLD"),
+    );
     assert.ok(historicalOld);
     assert.equal(historicalOld.currentness, "superseded");
     assert.equal(historicalOld.epistemic_role, "user_testimony");
@@ -119,7 +129,9 @@ test("provenance validation should reject epistemic laundering and cyclic deriva
     const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
     const first = rememberDelegatedReport(state, "user-1", "codex-a", "a", "project:ember/provenance", "A", []);
     const firstEvidenceId = findMeaning(state, first).source_evidence_ids[0]!;
-    const second = rememberDelegatedReport(state, "user-1", "codex-b", "b", "project:ember/provenance", "B", [firstEvidenceId]);
+    const second = rememberDelegatedReport(state, "user-1", "codex-b", "b", "project:ember/provenance", "B", [
+        firstEvidenceId,
+    ]);
     const secondMeaning = findMeaning(state, second);
     const secondEvidenceId = secondMeaning.source_evidence_ids[0]!;
 
@@ -138,14 +150,31 @@ test("provenance validation should reject epistemic laundering and cyclic deriva
 test("provenance derivation should not cross evidence scopes or partially mutate state", () => {
     // Given
     const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
-    const privateReport = rememberDelegatedReport(state, "user-1", "codex-private", "private", "project:private", "Private report", []);
+    const privateReport = rememberDelegatedReport(
+        state,
+        "user-1",
+        "codex-private",
+        "private",
+        "project:private",
+        "Private report",
+        [],
+    );
     const privateEvidenceId = findMeaning(state, privateReport).source_evidence_ids[0]!;
     const evidenceCount = state.evidence.length;
     const meaningCount = state.meanings.length;
 
     // When / Then
     assert.throws(
-        () => rememberDelegatedReport(state, "user-1", "codex-public", "public", "project:public", "Derived public report", [privateEvidenceId]),
+        () =>
+            rememberDelegatedReport(
+                state,
+                "user-1",
+                "codex-public",
+                "public",
+                "project:public",
+                "Derived public report",
+                [privateEvidenceId],
+            ),
         /evidence derivation cannot cross scope/,
     );
     assert.equal(state.evidence.length, evidenceCount);
@@ -156,9 +185,25 @@ test("provenance derivation should not cross evidence scopes or partially mutate
 test("canonical validation should reject cross-scope provenance edges", () => {
     // Given
     const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
-    const privateRoot = rememberDelegatedReport(state, "user-1", "codex-private", "private-root", "project:private", "Private root", []);
+    const privateRoot = rememberDelegatedReport(
+        state,
+        "user-1",
+        "codex-private",
+        "private-root",
+        "project:private",
+        "Private root",
+        [],
+    );
     const privateEvidenceId = findMeaning(state, privateRoot).source_evidence_ids[0]!;
-    const publicChild = rememberDelegatedReport(state, "user-1", "codex-public", "public-child", "project:public", "Public child", []);
+    const publicChild = rememberDelegatedReport(
+        state,
+        "user-1",
+        "codex-public",
+        "public-child",
+        "project:public",
+        "Public child",
+        [],
+    );
     const publicEvidenceId = findMeaning(state, publicChild).source_evidence_ids[0]!;
     const publicEvidence = findEvidence(state, publicEvidenceId);
 
@@ -170,17 +215,17 @@ test("canonical validation should reject cross-scope provenance edges", () => {
 });
 
 function meaningWith(meanings: ProjectedMeaning[], marker: string): ProjectedMeaning {
-    const meaning = meanings.find(item => item.content.includes(marker));
+    const meaning = meanings.find((item) => item.content.includes(marker));
     assert.ok(meaning, `missing projected meaning with marker ${marker}`);
     return meaning;
 }
 
 function roots(meaning: ProjectedMeaning): string[] {
-    const ids = new Set(meaning.source_evidence.map(item => String(item.evidence_id)));
+    const ids = new Set(meaning.source_evidence.map((item) => String(item.evidence_id)));
     return meaning.source_evidence
-        .filter(item => item.derived_from_evidence_ids.length === 0)
-        .map(item => String(item.evidence_id))
-        .filter(id => ids.has(id))
+        .filter((item) => item.derived_from_evidence_ids.length === 0)
+        .map((item) => String(item.evidence_id))
+        .filter((id) => ids.has(id))
         .sort();
 }
 

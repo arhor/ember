@@ -25,7 +25,7 @@ function requestFixture() {
         `user:${PRINCIPAL}`,
         "private-marker",
         "project:private",
-        "PRIVATE_CANONICAL_MARKER_46"
+        "PRIVATE_CANONICAL_MARKER_46",
     );
 
     const started = startRuntime(state, PRINCIPAL, SCOPE, {
@@ -36,7 +36,7 @@ function requestFixture() {
         scope: SCOPE,
         currentInput: "What should I remember?",
         currentTime: "2026-08-31T12:00:01Z",
-        runtimeId: started.runtimeId
+        runtimeId: started.runtimeId,
     });
 
     return {
@@ -46,7 +46,7 @@ function requestFixture() {
             contract_version: 1,
             cognition_id: "cognition-codex-test",
             projection,
-            input: { text: "What should I remember?" }
+            input: { text: "What should I remember?" },
         },
     };
 }
@@ -69,13 +69,14 @@ function childDouble({ output = "", error = "", exitCode = 0, closeOnKill = true
         },
     });
 
-    const complete = () => queueMicrotask(() => {
-        if (output) stdout.write(output);
-        if (error) stderr.write(error);
-        stdout.end();
-        stderr.end();
-        child.emit("close", exitCode, null);
-    });
+    const complete = () =>
+        queueMicrotask(() => {
+            if (output) stdout.write(output);
+            if (error) stderr.write(error);
+            stdout.end();
+            stderr.end();
+            child.emit("close", exitCode, null);
+        });
 
     return { child, stdin, signals, complete };
 }
@@ -88,8 +89,8 @@ function successfulJsonl(reply = "bounded answer", usedMeaningIds = [] as string
             type: "item.completed",
             item: {
                 type: "agent_message",
-                text: JSON.stringify({ contract_version: 1, reply, used_meaning_ids: usedMeaningIds })
-            }
+                text: JSON.stringify({ contract_version: 1, reply, used_meaning_ids: usedMeaningIds }),
+            },
         }),
         JSON.stringify({ type: "turn.completed", usage: { input_tokens: 1, output_tokens: 1 } }),
         "",
@@ -112,16 +113,16 @@ describe("Codex provider", () => {
                 PATH: "/safe/bin",
                 HOME: "/safe/home",
                 OPENAI_API_KEY: "raw-key",
-                PRIVATE_ENV_MARKER_46: "private"
+                PRIVATE_ENV_MARKER_46: "private",
             },
             spawnImpl: (_command, arguments_, options) => {
                 invocation = {
                     arguments_,
                     options,
                     schemaExists: existsSync(options.cwd),
-                    cwdEntries: readdirSync(options.cwd)
+                    cwdEntries: readdirSync(options.cwd),
                 };
-                fixture.stdin.on("data", chunk => {
+                fixture.stdin.on("data", (chunk) => {
                     prompt += chunk.toString("utf8");
                 });
                 fixture.complete();
@@ -134,7 +135,7 @@ describe("Codex provider", () => {
             contract_version: 1,
             reply: "bounded answer",
             used_meaning_ids: [used],
-            operational: { external_thread_id: "thread-operational-46" }
+            operational: { external_thread_id: "thread-operational-46" },
         });
         assert.equal(prompt, buildCodexPrompt(request));
         assert.equal(prompt.includes("PRIVATE_CANONICAL_MARKER_46"), false);
@@ -142,8 +143,18 @@ describe("Codex provider", () => {
         assert.equal(invocation.options.cwd === ROOT, false);
         assert.deepEqual(invocation.cwdEntries, ["provider-result.schema.json"]);
         assert.deepEqual(invocation.options.env, { PATH: "/safe/bin", HOME: "/safe/home" });
-        assert.notEqual(invocation.arguments_.findIndex((value, index) => value === "--disable" && invocation.arguments_[index + 1] === "plugins"), -1);
-        assert.notEqual(invocation.arguments_.findIndex((value, index) => value === "--disable" && invocation.arguments_[index + 1] === "apps"), -1);
+        assert.notEqual(
+            invocation.arguments_.findIndex(
+                (value, index) => value === "--disable" && invocation.arguments_[index + 1] === "plugins",
+            ),
+            -1,
+        );
+        assert.notEqual(
+            invocation.arguments_.findIndex(
+                (value, index) => value === "--disable" && invocation.arguments_[index + 1] === "apps",
+            ),
+            -1,
+        );
         assert.equal(invocation.arguments_.includes("skills.include_instructions=false"), true);
         assert.deepEqual(invocation.arguments_.slice(-3, -1), ["-C", invocation.options.cwd]);
     });
@@ -157,12 +168,14 @@ describe("Codex provider", () => {
 
         // When
         await invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1, cwd, spawnImpl: (_command, arguments_) => {
+            timeoutSeconds: 1,
+            cwd,
+            spawnImpl: (_command, arguments_) => {
                 const schemaPath = arguments_[arguments_.indexOf("--output-schema") + 1];
                 schema = JSON.parse(readFileSync(schemaPath, "utf8"));
                 fixture.complete();
                 return fixture.child;
-            }
+            },
         });
 
         // Then
@@ -177,14 +190,16 @@ describe("Codex provider", () => {
         const cwd = await tempDir();
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            cwd,
-            spawnImpl: () => {
-                fixture.complete();
-                return fixture.child;
-            }
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                cwd,
+                spawnImpl: () => {
+                    fixture.complete();
+                    return fixture.child;
+                },
+            }),
+        );
 
         // Then
         assert.equal(error instanceof ProviderError, true);
@@ -199,14 +214,16 @@ describe("Codex provider", () => {
         const cwd = await tempDir();
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            cwd,
-            spawnImpl: () => {
-                fixture.complete();
-                return fixture.child;
-            }
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                cwd,
+                spawnImpl: () => {
+                    fixture.complete();
+                    return fixture.child;
+                },
+            }),
+        );
 
         // Then
         assert.equal(error instanceof ProviderError, true);
@@ -220,15 +237,17 @@ describe("Codex provider", () => {
         const cwd = await tempDir();
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            cwd,
-            thread: { mode: "resume", externalThreadId: "requested-thread-54" },
-            spawnImpl: () => {
-                fixture.complete();
-                return fixture.child;
-            },
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                cwd,
+                thread: { mode: "resume", externalThreadId: "requested-thread-54" },
+                spawnImpl: () => {
+                    fixture.complete();
+                    return fixture.child;
+                },
+            }),
+        );
 
         // Then
         assert.equal(error instanceof ProviderError, true);
@@ -242,16 +261,18 @@ describe("Codex provider", () => {
         const cwd = await tempDir();
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            cwd,
-            terminationGraceMs: 5,
-            finalTerminationMs: 20,
-            spawnImpl: () => {
-                fixture.complete();
-                return fixture.child;
-            }
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                cwd,
+                terminationGraceMs: 5,
+                finalTerminationMs: 20,
+                spawnImpl: () => {
+                    fixture.complete();
+                    return fixture.child;
+                },
+            }),
+        );
 
         // Then
         assert.equal(error instanceof ProviderError, true);
@@ -266,14 +287,16 @@ describe("Codex provider", () => {
         const cwd = await tempDir();
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            cwd,
-            spawnImpl: () => {
-                fixture.complete();
-                return fixture.child;
-            }
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                cwd,
+                spawnImpl: () => {
+                    fixture.complete();
+                    return fixture.child;
+                },
+            }),
+        );
 
         // Then
         assert.equal(error instanceof ProviderError, true);
@@ -288,22 +311,33 @@ describe("Codex provider", () => {
         const cwd = await tempDir();
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 0.005,
-            cwd,
-            terminationGraceMs: 5,
-            finalTerminationMs: 20,
-            spawnImpl: () => {
-                spawnCount += 1;
-                return fixture.child;
-            }
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 0.005,
+                cwd,
+                terminationGraceMs: 5,
+                finalTerminationMs: 20,
+                spawnImpl: () => {
+                    spawnCount += 1;
+                    return fixture.child;
+                },
+            }),
+        );
 
         // Then
-        assert.deepEqual([error.outcome, error.terminationConfirmed, error.termination, spawnCount, fixture.signals], ["timed_out", true, {
-            reason: "timeout",
-            directChildExitObserved: true
-        }, 1, ["SIGTERM"]]);
+        assert.deepEqual(
+            [error.outcome, error.terminationConfirmed, error.termination, spawnCount, fixture.signals],
+            [
+                "timed_out",
+                true,
+                {
+                    reason: "timeout",
+                    directChildExitObserved: true,
+                },
+                1,
+                ["SIGTERM"],
+            ],
+        );
         assert.match(error.message, /remote work or effects remain unconfirmed/);
     });
 
@@ -316,20 +350,30 @@ describe("Codex provider", () => {
         queueMicrotask(() => controller.abort());
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            signal: controller.signal,
-            cwd,
-            terminationGraceMs: 5,
-            finalTerminationMs: 20,
-            spawnImpl: () => fixture.child
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                signal: controller.signal,
+                cwd,
+                terminationGraceMs: 5,
+                finalTerminationMs: 20,
+                spawnImpl: () => fixture.child,
+            }),
+        );
 
         // Then
-        assert.deepEqual([error.outcome, error.terminationConfirmed, error.termination, fixture.signals], ["cancellation_requested", true, {
-            reason: "explicit_cancellation",
-            directChildExitObserved: true
-        }, ["SIGTERM"]]);
+        assert.deepEqual(
+            [error.outcome, error.terminationConfirmed, error.termination, fixture.signals],
+            [
+                "cancellation_requested",
+                true,
+                {
+                    reason: "explicit_cancellation",
+                    directChildExitObserved: true,
+                },
+                ["SIGTERM"],
+            ],
+        );
     });
 
     test("should preserve ambiguous termination when direct child exit is not observed", async () => {
@@ -341,20 +385,30 @@ describe("Codex provider", () => {
         queueMicrotask(() => controller.abort());
 
         // When
-        const error = await captureError(() => invokeCodexProvider("codex", [], request, {
-            timeoutSeconds: 1,
-            signal: controller.signal,
-            cwd,
-            terminationGraceMs: 5,
-            finalTerminationMs: 20,
-            spawnImpl: () => fixture.child
-        }));
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 1,
+                signal: controller.signal,
+                cwd,
+                terminationGraceMs: 5,
+                finalTerminationMs: 20,
+                spawnImpl: () => fixture.child,
+            }),
+        );
 
         // Then
-        assert.deepEqual([error.outcome, error.terminationConfirmed, error.termination, fixture.signals], ["outcome_unknown", false, {
-            reason: "explicit_cancellation",
-            directChildExitObserved: false
-        }, ["SIGTERM", "SIGKILL"]]);
+        assert.deepEqual(
+            [error.outcome, error.terminationConfirmed, error.termination, fixture.signals],
+            [
+                "outcome_unknown",
+                false,
+                {
+                    reason: "explicit_cancellation",
+                    directChildExitObserved: false,
+                },
+                ["SIGTERM", "SIGKILL"],
+            ],
+        );
     });
 });
 
@@ -367,7 +421,7 @@ describe("Codex environment", () => {
             CODEX_HOME: "/home/user/.codex",
             OPENAI_API_KEY: "secret",
             GH_TOKEN: "secret",
-            HTTPS_PROXY: "https://credential@example.test"
+            HTTPS_PROXY: "https://credential@example.test",
         };
 
         // When
@@ -391,7 +445,7 @@ describe("runCognition", () => {
             contract_version: 1,
             reply: "transient reply",
             used_meaning_ids: request.projection.selection.meaning_ids,
-            operational: { external_thread_id: "thread-operational-46" }
+            operational: { external_thread_id: "thread-operational-46" },
         });
 
         // When
@@ -403,15 +457,20 @@ describe("runCognition", () => {
             command: "codex",
             timeoutSeconds: 1,
             provider,
-            output: () => {
-            }
+            output: () => {},
         });
         const serialized = JSON.stringify(result.state);
         await store.releaseWriteLease(lease);
 
         // Then
-        assert.equal(result.state.operations.cognition_episodes.at(-1).external_provider_thread_id, "thread-operational-46");
-        assert.equal(result.state.meanings.some(meaning => JSON.stringify(meaning).includes("thread-operational-46")), false);
+        assert.equal(
+            result.state.operations.cognition_episodes.at(-1).external_provider_thread_id,
+            "thread-operational-46",
+        );
+        assert.equal(
+            result.state.meanings.some((meaning) => JSON.stringify(meaning).includes("thread-operational-46")),
+            false,
+        );
         assert.equal(serialized.includes("transient reply"), false);
     });
 
@@ -427,7 +486,7 @@ describe("runCognition", () => {
             throw new ProviderError("cancellation requested", {
                 outcome: "cancellation_requested",
                 externalThreadId: "thread-operational-46",
-                termination: { reason: "explicit_cancellation", directChildExitObserved: true }
+                termination: { reason: "explicit_cancellation", directChildExitObserved: true },
             });
         };
 
@@ -440,16 +499,26 @@ describe("runCognition", () => {
             command: "codex",
             timeoutSeconds: 1,
             provider,
-            output: () => {
-            }
+            output: () => {},
         });
         await store.releaseWriteLease(lease);
 
         // Then
-        assert.deepEqual([result.state.operations.cognition_episodes.at(-1).status, result.state.operations.cognition_episodes.at(-1).external_provider_thread_id, result.state.operations.cognition_episodes.at(-1).provider_termination], ["cancellation_requested", "thread-operational-46", {
-            reason: "explicit_cancellation",
-            direct_child_exit_observed: true
-        }]);
+        assert.deepEqual(
+            [
+                result.state.operations.cognition_episodes.at(-1).status,
+                result.state.operations.cognition_episodes.at(-1).external_provider_thread_id,
+                result.state.operations.cognition_episodes.at(-1).provider_termination,
+            ],
+            [
+                "cancellation_requested",
+                "thread-operational-46",
+                {
+                    reason: "explicit_cancellation",
+                    direct_child_exit_observed: true,
+                },
+            ],
+        );
         assert.equal(result.state.operations.cognition_episodes.at(-1).expression_evidence_id, null);
     });
 });
@@ -457,7 +526,19 @@ describe("runCognition", () => {
 describe("CLI parser", () => {
     test("should select the production Codex backend when the supported provider flag is used", () => {
         // Given
-        const arguments_ = ["run", "--state", "/tmp/ember.json", "--principal", PRINCIPAL, "--scope", SCOPE, "--provider", "codex", "--provider-timeout-seconds", "120"];
+        const arguments_ = [
+            "run",
+            "--state",
+            "/tmp/ember.json",
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--provider",
+            "codex",
+            "--provider-timeout-seconds",
+            "120",
+        ];
 
         // When
         const parsed = parseArgs(arguments_);
@@ -472,13 +553,29 @@ describe("CLI parser", () => {
             providerKind: "codex",
             providerCommand: "codex",
             providerArgs: [],
-            providerTimeoutSeconds: 120
+            providerTimeoutSeconds: 120,
         });
     });
 
     test("should preserve runtime-owned authentication overrides when Codex uses a non-default store", () => {
         // Given
-        const arguments_ = ["run", "--state", "/tmp/ember.json", "--principal", PRINCIPAL, "--scope", SCOPE, "--provider", "codex", "--codex-arg", "-c", "--codex-arg", 'cli_auth_credentials_store="keyring"', "--provider-timeout-seconds", "120"];
+        const arguments_ = [
+            "run",
+            "--state",
+            "/tmp/ember.json",
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--provider",
+            "codex",
+            "--codex-arg",
+            "-c",
+            "--codex-arg",
+            'cli_auth_credentials_store="keyring"',
+            "--provider-timeout-seconds",
+            "120",
+        ];
 
         // When
         const parsed = parseArgs(arguments_);
@@ -496,15 +593,43 @@ describe("CLI run", () => {
         await command(["init", "--state", statePath, "--name", "Ember", "--principal", PRINCIPAL]);
 
         // When
-        const executed = await command(["run", "--state", statePath, "--principal", PRINCIPAL, "--scope", SCOPE, "--provider", "codex", "--codex-command", process.execPath, "--codex-arg", SCRIPTED_CODEX, "--provider-timeout-seconds", "2"], {
-            stdin: "hello through Codex\n:quit\n",
-            env: { PRIVATE_ENV_MARKER_46: "must-not-be-forwarded" }
-        });
+        const executed = await command(
+            [
+                "run",
+                "--state",
+                statePath,
+                "--principal",
+                PRINCIPAL,
+                "--scope",
+                SCOPE,
+                "--provider",
+                "codex",
+                "--codex-command",
+                process.execPath,
+                "--codex-arg",
+                SCRIPTED_CODEX,
+                "--provider-timeout-seconds",
+                "2",
+            ],
+            {
+                stdin: "hello through Codex\n:quit\n",
+                env: { PRIVATE_ENV_MARKER_46: "must-not-be-forwarded" },
+            },
+        );
         const state = JSON.parse(await readFile(statePath, "utf8"));
         const cognition = state.operations.cognition_episodes.at(-1);
 
         // Then
-        assert.deepEqual([executed.code, executed.stdout.includes("CODEX_CLI_RESPONSE"), cognition.status, cognition.delivery_status, cognition.external_provider_thread_id], [0, true, "completed", "displayed", "thread-cli-46"]);
+        assert.deepEqual(
+            [
+                executed.code,
+                executed.stdout.includes("CODEX_CLI_RESPONSE"),
+                cognition.status,
+                cognition.delivery_status,
+                cognition.external_provider_thread_id,
+            ],
+            [0, true, "completed", "displayed", "thread-cli-46"],
+        );
         assert.equal(JSON.stringify(state).includes("CODEX_CLI_RESPONSE"), false);
     });
 });

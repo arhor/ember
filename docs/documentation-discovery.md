@@ -110,17 +110,17 @@ If contributor or operational guidance grows large enough to benefit from discov
 
 Every participating document declares one `role`. A role describes the document's repository knowledge function, not its subject matter or currentness.
 
-| Role | Meaning | Normal discovery depth |
-|---|---|---|
-| `foundation` | Project purpose or durable design principles. | Default |
-| `decision` | A decision record such as an ADR. Whether it governs work comes from that decision record's own lifecycle and governance, not from the role label alone. | Default |
-| `design` | Architecture or design direction that explains how constraints fit together without necessarily being a governing decision itself. | Default |
-| `scenario` | Acceptance, evaluation, or architecture-oracle scenarios used to test observable semantics. | Default |
-| `research` | A canonical Ember research synthesis or concern note. Whether it is current is expressed separately by `discovery_status`. | Default |
-| `guide` | Repository, contributor, authoring, operational, or navigation guidance under `docs/`. | Default |
-| `reference` | Supporting investigation or comparative note that informs work but is not itself a canonical Ember conclusion. | Deep |
-| `evidence` | Portable evidence map or reference map supporting a canonical research conclusion. | Deep |
-| `source` | Preserved source research artifact retained for provenance and reconstruction. | Deep |
+| Role         | Meaning                                                                                                                                                  | Normal discovery depth |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `foundation` | Project purpose or durable design principles.                                                                                                            | Default                |
+| `decision`   | A decision record such as an ADR. Whether it governs work comes from that decision record's own lifecycle and governance, not from the role label alone. | Default                |
+| `design`     | Architecture or design direction that explains how constraints fit together without necessarily being a governing decision itself.                       | Default                |
+| `scenario`   | Acceptance, evaluation, or architecture-oracle scenarios used to test observable semantics.                                                              | Default                |
+| `research`   | A canonical Ember research synthesis or concern note. Whether it is current is expressed separately by `discovery_status`.                               | Default                |
+| `guide`      | Repository, contributor, authoring, operational, or navigation guidance under `docs/`.                                                                   | Default                |
+| `reference`  | Supporting investigation or comparative note that informs work but is not itself a canonical Ember conclusion.                                           | Deep                   |
+| `evidence`   | Portable evidence map or reference map supporting a canonical research conclusion.                                                                       | Deep                   |
+| `source`     | Preserved source research artifact retained for provenance and reconstruction.                                                                           | Deep                   |
 
 The role vocabulary is intentionally about repository knowledge function rather than topics such as `memory`, `delegation`, or `cli`. Topic taxonomies are deferred because `read_when` already provides task-oriented routing without forcing a rigid ontology.
 
@@ -146,20 +146,20 @@ The current `docs/architecture/initial-model.md`, for example, should be `discov
 
 The contract is role-based rather than path-authority-based, but #27 should not have to rediscover the intended classification of the existing corpus. Representative assignments are:
 
-| Document class / representative path | Role | Discovery status | Depth |
-|---|---|---|---|
-| `docs/vision.md`, `docs/principles.md` | `foundation` | `current` | Default |
-| `docs/architecture/design-directions.md` | `design` | `current` | Default |
-| `docs/architecture/initial-model.md` | `design` | `superseded` | All/history only |
-| accepted or proposed ADR source files | `decision` | normally `current` while actively relevant; decision authority still comes from the ADR lifecycle | Default |
-| `docs/architecture/acceptance-scenarios.md` | `scenario` | `current` | Default |
-| architecture/research navigation README files under `docs/` | `guide` | `current` | Default |
-| canonical concern notes such as `docs/research/memory-and-remembering.md` | `research` | `current` | Default |
-| portable `*-references.md` evidence maps | `evidence` | `current` while supporting the current canonical note | Deep |
-| `docs/research/source-material/*-deep-research.md` | `source` | `current` while retained as the source artifact for current research; the content remains non-canonical | Deep |
-| reviewed-system notes such as `nanobot.md`, `hermes.md`, `openclaw.md`, `letta.md` | `reference` | `current` | Deep |
-| `docs/research/openclaw-documentation-discovery.md` | `reference` | `current` | Deep |
-| this `docs/documentation-discovery.md` contract | `design` | `current` | Default |
+| Document class / representative path                                               | Role         | Discovery status                                                                                        | Depth            |
+| ---------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- | ---------------- |
+| `docs/vision.md`, `docs/principles.md`                                             | `foundation` | `current`                                                                                               | Default          |
+| `docs/architecture/design-directions.md`                                           | `design`     | `current`                                                                                               | Default          |
+| `docs/architecture/initial-model.md`                                               | `design`     | `superseded`                                                                                            | All/history only |
+| accepted or proposed ADR source files                                              | `decision`   | normally `current` while actively relevant; decision authority still comes from the ADR lifecycle       | Default          |
+| `docs/architecture/acceptance-scenarios.md`                                        | `scenario`   | `current`                                                                                               | Default          |
+| architecture/research navigation README files under `docs/`                        | `guide`      | `current`                                                                                               | Default          |
+| canonical concern notes such as `docs/research/memory-and-remembering.md`          | `research`   | `current`                                                                                               | Default          |
+| portable `*-references.md` evidence maps                                           | `evidence`   | `current` while supporting the current canonical note                                                   | Deep             |
+| `docs/research/source-material/*-deep-research.md`                                 | `source`     | `current` while retained as the source artifact for current research; the content remains non-canonical | Deep             |
+| reviewed-system notes such as `nanobot.md`, `hermes.md`, `openclaw.md`, `letta.md` | `reference`  | `current`                                                                                               | Deep             |
+| `docs/research/openclaw-documentation-discovery.md`                                | `reference`  | `current`                                                                                               | Deep             |
+| this `docs/documentation-discovery.md` contract                                    | `design`     | `current`                                                                                               | Default          |
 
 Directory placement helps identify candidates, but the metadata remains explicit because two files in the same research directory can have different semantic roles.
 

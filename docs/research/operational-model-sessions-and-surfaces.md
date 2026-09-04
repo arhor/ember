@@ -51,13 +51,13 @@ No evidence reviewed in this phase gives a substantive reason to reopen a canoni
 
 This note uses the established Ember evidence vocabulary:
 
-| Mark | Meaning |
-|---|---|
-| **[E] Empirical** | User study, experiment, measured failure, benchmark, or documented runtime behaviour. |
-| **[C] Convergence** | A recurring semantic pressure independently visible across mature implementations. Useful evidence, not proof. |
-| **[J] Judgment** | An Ember-specific semantic conclusion derived from project goals, inherited constraints, scenarios, and available evidence. |
-| **[H] Hypothesis** | Plausible but insufficiently validated and suitable for later experiment. |
-| **[L] Lens** | A distributed-systems, HCI, security, durable-work, or adjacent distinction used to sharpen reasoning without importing an architecture wholesale. |
+| Mark                | Meaning                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[E] Empirical**   | User study, experiment, measured failure, benchmark, or documented runtime behaviour.                                                              |
+| **[C] Convergence** | A recurring semantic pressure independently visible across mature implementations. Useful evidence, not proof.                                     |
+| **[J] Judgment**    | An Ember-specific semantic conclusion derived from project goals, inherited constraints, scenarios, and available evidence.                        |
+| **[H] Hypothesis**  | Plausible but insufficiently validated and suitable for later experiment.                                                                          |
+| **[L] Lens**        | A distributed-systems, HCI, security, durable-work, or adjacent distinction used to sharpen reasoning without importing an architecture wholesale. |
 
 Operational research draws from three evidence families.
 
@@ -123,22 +123,22 @@ Operational consequence:
 
 These meanings should remain distinguishable even if a future implementation represents several of them together.
 
-| Concept | Ember-facing meaning | Must not imply |
-|---|---|---|
-| **Ember continuity** | Persistence of the same agent lineage and its durable semantic state across operational episodes. | Process uptime, one session, one model, or one surface. |
-| **Session** | A bounded temporary interaction or working frame carrying local conversational and situational state. | Identity, all durable memory, all current work, or one unique conversation. |
-| **Conversation / thread** | A semantically coherent discourse trajectory or unresolved line of interaction. | One socket, one UI tab, or one session identifier. |
-| **Surface** | The interaction setting through which a participant encounters Ember, such as CLI, messaging, voice, or web. | A separate Ember or unrestricted access to all remembered state. |
-| **Transport connection** | A technical path currently capable of carrying information. | Principal identity, successful user awareness, or semantic delivery. |
-| **Work / delegated objective** | A continuing purpose whose completion, blockage, cancellation, or obsolescence can matter beyond one interaction. | An active conversation or live transport. |
-| **Presence** | A surface-relative claim that Ember is presently available for some form of interaction under that surface's circumstances. | Active cognition or universal reachability. |
-| **Activity** | Cognition or execution that is actually occurring now. | Presence on every surface. |
-| **Idle** | Operational availability without current Ember-owned cognition demanding execution. | No delegated work exists or no concerns remain live. |
-| **Unavailability** | Loss of a particular operational ability, resource, surface, or dependency. | Identity loss or necessarily total agent failure. |
-| **Downtime** | An interval in which Ember cannot perform the relevant cognition or observation. | Erasure of durable continuity. |
-| **Recovery** | Re-establishing a justified current operating view after interruption, uncertainty, or unavailable state. | Replaying the past as if no gap occurred. |
-| **Semantic occurrence** | A user interaction or external-world happening that counts as one meaningful occurrence regardless of how it is transported. | One received message copy or notification. |
-| **Delivery** | An attempt or outcome of moving a representation of an occurrence or result to a recipient or surface. | A new occurrence, user awareness, or authority. |
+| Concept                        | Ember-facing meaning                                                                                                         | Must not imply                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Ember continuity**           | Persistence of the same agent lineage and its durable semantic state across operational episodes.                            | Process uptime, one session, one model, or one surface.                     |
+| **Session**                    | A bounded temporary interaction or working frame carrying local conversational and situational state.                        | Identity, all durable memory, all current work, or one unique conversation. |
+| **Conversation / thread**      | A semantically coherent discourse trajectory or unresolved line of interaction.                                              | One socket, one UI tab, or one session identifier.                          |
+| **Surface**                    | The interaction setting through which a participant encounters Ember, such as CLI, messaging, voice, or web.                 | A separate Ember or unrestricted access to all remembered state.            |
+| **Transport connection**       | A technical path currently capable of carrying information.                                                                  | Principal identity, successful user awareness, or semantic delivery.        |
+| **Work / delegated objective** | A continuing purpose whose completion, blockage, cancellation, or obsolescence can matter beyond one interaction.            | An active conversation or live transport.                                   |
+| **Presence**                   | A surface-relative claim that Ember is presently available for some form of interaction under that surface's circumstances.  | Active cognition or universal reachability.                                 |
+| **Activity**                   | Cognition or execution that is actually occurring now.                                                                       | Presence on every surface.                                                  |
+| **Idle**                       | Operational availability without current Ember-owned cognition demanding execution.                                          | No delegated work exists or no concerns remain live.                        |
+| **Unavailability**             | Loss of a particular operational ability, resource, surface, or dependency.                                                  | Identity loss or necessarily total agent failure.                           |
+| **Downtime**                   | An interval in which Ember cannot perform the relevant cognition or observation.                                             | Erasure of durable continuity.                                              |
+| **Recovery**                   | Re-establishing a justified current operating view after interruption, uncertainty, or unavailable state.                    | Replaying the past as if no gap occurred.                                   |
+| **Semantic occurrence**        | A user interaction or external-world happening that counts as one meaningful occurrence regardless of how it is transported. | One received message copy or notification.                                  |
+| **Delivery**                   | An attempt or outcome of moving a representation of an occurrence or result to a recipient or surface.                       | A new occurrence, user awareness, or authority.                             |
 
 The research found strong implementation convergence that mature systems eventually need several of these distinctions even when their concrete names and data models differ. See [R1 OpenClaw](operational-model-sessions-and-surfaces-references.md#r1-openclaw-session-surface-and-runtime-behaviour), [R2 Letta](operational-model-sessions-and-surfaces-references.md#r2-letta-persistent-agents-and-conversations), [R3 Hermes](operational-model-sessions-and-surfaces-references.md#r3-hermes-sessions-surfaces-and-background-work), and the existing Ember system reconnaissance.
 
@@ -561,92 +561,92 @@ Some current Letta language treats context much more strongly as the agent's sel
 
 ## Failure modes
 
-| Failure | Example | Why it matters |
-|---|---|---|
-| **Session capture** | Closing a terminal silently cancels a live commitment or delegated objective. | Temporary interaction lifetime becomes owner of durable meaning. |
-| **Surface fission** | Telegram and CLI behave as separate Embers because they see different local context. | Context omission becomes identity fracture. |
-| **Principal collapse** | A shared device is treated as definitive proof that the usual user is speaking. | Relationship memory or authority leaks to the wrong person. |
-| **Presence overclaim** | A persisted session is displayed as proof that Ember can currently observe new events. | Storage state becomes liveness fiction. |
-| **Delivery multiplication** | Reconnect replay turns one user request into two semantic instructions or external effects. | Transport behaviour manufactures meaning. |
-| **Content deduplication** | Two intentional identical requests are collapsed because their text matches. | Representation equality is mistaken for occurrence identity. |
-| **Timeout certainty** | No response is treated as proof that an external mutation failed. | Transport uncertainty becomes false world-state certainty. |
-| **Retry duplication** | Ember repeats a purchase after timeout without establishing whether the first charge occurred. | Retry becomes a second unintended effect. |
-| **Arrival-order authority** | An older delayed instruction overrides a newer correction because it arrived last. | Observation order is confused with applicability. |
-| **Last-writer convenience** | Two concurrent interactions conflict and whichever completes last silently becomes current. | Concurrency erases provenance and legitimate precedence. |
-| **Stale cognition** | A long-running action commits based on a preference or authority premise changed elsewhere. | Reasoning remains locally coherent but globally obsolete. |
-| **Seamless downtime fiction** | Ember says she monitored or thought through an interval while offline. | Continuity is preserved through invented experience. |
-| **Blind replay recovery** | Restart simply continues an old prompt despite changed world state and authority. | Recovery reproduces stale assumptions rather than current situation. |
-| **Missed-schedule stampede** | Restart mechanically executes every missed scheduled check regardless of purpose. | Wake-up mechanism is mistaken for semantic obligation. |
-| **Notification eagerness** | Every completed result immediately interrupts the user. | Availability is mistaken for attention-worthiness. |
-| **Delivery-route leakage** | A result from private CLI is rerouted to a shared voice surface because it is reachable. | Technical delivery success violates recipient/privacy semantics. |
-| **Degraded-state bluffing** | Memory is unavailable but Ember speaks as though old preferences and authority were successfully recovered. | Graceful degradation becomes semantic fabrication. |
+| Failure                       | Example                                                                                                     | Why it matters                                                       |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Session capture**           | Closing a terminal silently cancels a live commitment or delegated objective.                               | Temporary interaction lifetime becomes owner of durable meaning.     |
+| **Surface fission**           | Telegram and CLI behave as separate Embers because they see different local context.                        | Context omission becomes identity fracture.                          |
+| **Principal collapse**        | A shared device is treated as definitive proof that the usual user is speaking.                             | Relationship memory or authority leaks to the wrong person.          |
+| **Presence overclaim**        | A persisted session is displayed as proof that Ember can currently observe new events.                      | Storage state becomes liveness fiction.                              |
+| **Delivery multiplication**   | Reconnect replay turns one user request into two semantic instructions or external effects.                 | Transport behaviour manufactures meaning.                            |
+| **Content deduplication**     | Two intentional identical requests are collapsed because their text matches.                                | Representation equality is mistaken for occurrence identity.         |
+| **Timeout certainty**         | No response is treated as proof that an external mutation failed.                                           | Transport uncertainty becomes false world-state certainty.           |
+| **Retry duplication**         | Ember repeats a purchase after timeout without establishing whether the first charge occurred.              | Retry becomes a second unintended effect.                            |
+| **Arrival-order authority**   | An older delayed instruction overrides a newer correction because it arrived last.                          | Observation order is confused with applicability.                    |
+| **Last-writer convenience**   | Two concurrent interactions conflict and whichever completes last silently becomes current.                 | Concurrency erases provenance and legitimate precedence.             |
+| **Stale cognition**           | A long-running action commits based on a preference or authority premise changed elsewhere.                 | Reasoning remains locally coherent but globally obsolete.            |
+| **Seamless downtime fiction** | Ember says she monitored or thought through an interval while offline.                                      | Continuity is preserved through invented experience.                 |
+| **Blind replay recovery**     | Restart simply continues an old prompt despite changed world state and authority.                           | Recovery reproduces stale assumptions rather than current situation. |
+| **Missed-schedule stampede**  | Restart mechanically executes every missed scheduled check regardless of purpose.                           | Wake-up mechanism is mistaken for semantic obligation.               |
+| **Notification eagerness**    | Every completed result immediately interrupts the user.                                                     | Availability is mistaken for attention-worthiness.                   |
+| **Delivery-route leakage**    | A result from private CLI is rerouted to a shared voice surface because it is reachable.                    | Technical delivery success violates recipient/privacy semantics.     |
+| **Degraded-state bluffing**   | Memory is unavailable but Ember speaks as though old preferences and authority were successfully recovered. | Graceful degradation becomes semantic fabrication.                   |
 
 ## Scenario catalogue
 
 These scenarios should be preserved for issue #9 and later architecture validation.
 
-| Scenario | Required semantic interpretation |
-|---|---|
-| **Cross-surface continuation** | Same Ember. Potentially same conversation. Reconstruct the current thread; do not assume all CLI-visible material is appropriate for Telegram. |
-| **Voice to text** | Same Ember and thread may continue while presentation affordances change. Speech-local references may need reconstruction. |
-| **Long-running Codex work** | Session ended; delegated objective did not. Specialist runtime remains attributable for local execution. |
-| **Late obsolete result** | Historical success may be obsolete. Re-evaluate current applicability before relying on it. |
-| **No active conversation** | A live concern can remain part of Ember's continuing state and later motivate cognition without requiring a session. |
-| **Concurrent unrelated messages** | May proceed independently when neither can materially change the other's assumptions or authority. |
-| **Conflicting concurrent actions** | Preserve conflict, currentness, and provenance before consequential reliance. Do not infer precedence from completion order. |
-| **Preference change during work** | Old preference remains historical; downstream consequential action should use current applicable preference. |
-| **Overlapping voice and text** | Global continuity can coexist with local conversational framing and surface-specific privacy. |
-| **Offline overnight** | Ember continuity persists. Ember did not think or observe during unavailable intervals unless another legitimate runtime actually did so. |
-| **Missed scheduled opportunity** | Reconsider purpose: expire, perform once now, resume recurrence, or retain as missed history. Never fabricate missed cognition. |
-| **Crash mid-operation** | External outcome is uncertain unless independent evidence establishes it. Failure of acknowledgement is not proof of no effect. |
-| **Duplicate result after reconnect** | One semantic result when provenance establishes redelivery. Do not count it twice merely because transport did. |
-| **Duplicate request with side effect** | Establish whether the first effect occurred before unsafe retry when consequence warrants. |
-| **Out-of-order delivery** | Observation order and applicability order remain distinct. |
-| **Delayed user message** | Re-establish currentness and authority before consequentially executing an old request. |
-| **Surface outage** | Other surfaces and internal work can remain functional. One channel failure is not whole-agent unavailability. |
-| **Memory subsystem unavailable** | Degrade truthfully. Retrieval failure is not proof of absent history or memory. |
-| **Ambiguous shared device** | Transport identity is insufficient for sensitive disclosure or broad authority. |
-| **Quiet period** | Completion does not mandate interruption. Consider urgency, expiry, user attention, and standing expectations. |
-| **Cancellation during disconnect** | Cancellation intent can survive the surface. Requested, acknowledged, stopped, and rolled back remain different facts. |
-| **Reconnect replay** | Replay must not manufacture new semantic occurrences. |
-| **Two identical real events** | Do not collapse them merely by content equality. |
-| **Model replacement after downtime** | Same Ember can continue if continuity semantics survive; new provider behaviour does not create a new identity. |
-| **Lower-privacy surface** | Relationship and memory may remain internally available while disclosure narrows for the current recipient and audience. |
+| Scenario                               | Required semantic interpretation                                                                                                               |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cross-surface continuation**         | Same Ember. Potentially same conversation. Reconstruct the current thread; do not assume all CLI-visible material is appropriate for Telegram. |
+| **Voice to text**                      | Same Ember and thread may continue while presentation affordances change. Speech-local references may need reconstruction.                     |
+| **Long-running Codex work**            | Session ended; delegated objective did not. Specialist runtime remains attributable for local execution.                                       |
+| **Late obsolete result**               | Historical success may be obsolete. Re-evaluate current applicability before relying on it.                                                    |
+| **No active conversation**             | A live concern can remain part of Ember's continuing state and later motivate cognition without requiring a session.                           |
+| **Concurrent unrelated messages**      | May proceed independently when neither can materially change the other's assumptions or authority.                                             |
+| **Conflicting concurrent actions**     | Preserve conflict, currentness, and provenance before consequential reliance. Do not infer precedence from completion order.                   |
+| **Preference change during work**      | Old preference remains historical; downstream consequential action should use current applicable preference.                                   |
+| **Overlapping voice and text**         | Global continuity can coexist with local conversational framing and surface-specific privacy.                                                  |
+| **Offline overnight**                  | Ember continuity persists. Ember did not think or observe during unavailable intervals unless another legitimate runtime actually did so.      |
+| **Missed scheduled opportunity**       | Reconsider purpose: expire, perform once now, resume recurrence, or retain as missed history. Never fabricate missed cognition.                |
+| **Crash mid-operation**                | External outcome is uncertain unless independent evidence establishes it. Failure of acknowledgement is not proof of no effect.                |
+| **Duplicate result after reconnect**   | One semantic result when provenance establishes redelivery. Do not count it twice merely because transport did.                                |
+| **Duplicate request with side effect** | Establish whether the first effect occurred before unsafe retry when consequence warrants.                                                     |
+| **Out-of-order delivery**              | Observation order and applicability order remain distinct.                                                                                     |
+| **Delayed user message**               | Re-establish currentness and authority before consequentially executing an old request.                                                        |
+| **Surface outage**                     | Other surfaces and internal work can remain functional. One channel failure is not whole-agent unavailability.                                 |
+| **Memory subsystem unavailable**       | Degrade truthfully. Retrieval failure is not proof of absent history or memory.                                                                |
+| **Ambiguous shared device**            | Transport identity is insufficient for sensitive disclosure or broad authority.                                                                |
+| **Quiet period**                       | Completion does not mandate interruption. Consider urgency, expiry, user attention, and standing expectations.                                 |
+| **Cancellation during disconnect**     | Cancellation intent can survive the surface. Requested, acknowledged, stopped, and rolled back remain different facts.                         |
+| **Reconnect replay**                   | Replay must not manufacture new semantic occurrences.                                                                                          |
+| **Two identical real events**          | Do not collapse them merely by content equality.                                                                                               |
+| **Model replacement after downtime**   | Same Ember can continue if continuity semantics survive; new provider behaviour does not create a new identity.                                |
+| **Lower-privacy surface**              | Relationship and memory may remain internally available while disclosure narrows for the current recipient and audience.                       |
 
 ## Validated conclusions
 
-| Conclusion | Basis |
-|---|---|
-| Session continuity is not Ember continuity. | **[C + J]** |
-| A session is a temporary interaction or working frame whose end does not by itself terminate durable state or live work. | **[C + J]** |
-| Conversation continuity follows semantic discourse more closely than transport or session lifetime. | **[J]** |
-| One conversation may span several sessions and surfaces; one session may contain several threads. | **[C + J]** |
-| Surface changes presentation, privacy, recipient, and interaction affordances rather than identity. | **[C + J]** |
-| Principal identity is distinct from session, account, device, and transport identity. | **[E + C + J]** |
-| Presence, activity, idle state, reachability, observability, and continuity are distinct. | **[C + J]** |
-| A persisted session is not evidence of live connectivity. | **[E, documented runtime behaviour]** |
-| Long-running work may outlive the session and surface that initiated it. | **[C + J]** |
-| Completion of long-running work does not imply current applicability or downstream authorization. | **[Inherited J]** |
-| A result belongs semantically to continuing work and Ember history before it belongs to a delivery surface. | **[J]** |
-| Semantic occurrence and delivery are distinct. | **[E/L + J]** |
-| Duplicate delivery must not manufacture additional authority, memory, occurrence, or side effect. | **[E/L + J]** |
-| Identical content does not prove duplicate occurrence. | **[E/L + J]** |
-| Exactly-once guarantees are scoped technical properties, not an adequate universal semantic foundation. | **[E + J]** |
-| Occurrence time, observation time, and applicability time may differ. | **[E/L + J]** |
-| Timeout or missing response establishes uncertainty, not failure. | **[E + J]** |
-| Consequential ambiguous retries require external-state establishment proportional to consequence unless repetition is independently safe. | **[E + inherited J]** |
-| Concurrency matters when another actor can materially change premises, authority, shared state, objective, recipient, or consequence. | **[C + J]** |
-| Concurrent cognition can become stale while still running. | **[C + J]** |
-| Not every concurrent interaction needs global awareness of every other interaction. | **[J]** |
-| Downtime is a gap in Ember's experience, not a break in identity. | **[Inherited J]** |
-| External events and delegated work may continue during Ember downtime without becoming Ember's direct experience. | **[Inherited J]** |
-| Recovery is current-state reconciliation rather than prompt replay. | **[E/L + inherited J]** |
-| A truthful unresolved gap is preferable to invented seamless continuity. | **[Inherited J]** |
-| Missed scheduled opportunities require purpose-sensitive reconsideration rather than unconditional backfill. | **[J]** |
-| Result availability and notification are distinct; deliberate non-interruption can be correct. | **[E + J]** |
-| Cross-surface delivery must re-evaluate recipient, privacy, currentness, and attention context. | **[E/L + J]** |
-| Partial operational failure should degrade functionality rather than semantic honesty. | **[J]** |
-| User-visible operational state must not claim stronger facts than Ember actually knows. | **[E/L + J]** |
+| Conclusion                                                                                                                                | Basis                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Session continuity is not Ember continuity.                                                                                               | **[C + J]**                           |
+| A session is a temporary interaction or working frame whose end does not by itself terminate durable state or live work.                  | **[C + J]**                           |
+| Conversation continuity follows semantic discourse more closely than transport or session lifetime.                                       | **[J]**                               |
+| One conversation may span several sessions and surfaces; one session may contain several threads.                                         | **[C + J]**                           |
+| Surface changes presentation, privacy, recipient, and interaction affordances rather than identity.                                       | **[C + J]**                           |
+| Principal identity is distinct from session, account, device, and transport identity.                                                     | **[E + C + J]**                       |
+| Presence, activity, idle state, reachability, observability, and continuity are distinct.                                                 | **[C + J]**                           |
+| A persisted session is not evidence of live connectivity.                                                                                 | **[E, documented runtime behaviour]** |
+| Long-running work may outlive the session and surface that initiated it.                                                                  | **[C + J]**                           |
+| Completion of long-running work does not imply current applicability or downstream authorization.                                         | **[Inherited J]**                     |
+| A result belongs semantically to continuing work and Ember history before it belongs to a delivery surface.                               | **[J]**                               |
+| Semantic occurrence and delivery are distinct.                                                                                            | **[E/L + J]**                         |
+| Duplicate delivery must not manufacture additional authority, memory, occurrence, or side effect.                                         | **[E/L + J]**                         |
+| Identical content does not prove duplicate occurrence.                                                                                    | **[E/L + J]**                         |
+| Exactly-once guarantees are scoped technical properties, not an adequate universal semantic foundation.                                   | **[E + J]**                           |
+| Occurrence time, observation time, and applicability time may differ.                                                                     | **[E/L + J]**                         |
+| Timeout or missing response establishes uncertainty, not failure.                                                                         | **[E + J]**                           |
+| Consequential ambiguous retries require external-state establishment proportional to consequence unless repetition is independently safe. | **[E + inherited J]**                 |
+| Concurrency matters when another actor can materially change premises, authority, shared state, objective, recipient, or consequence.     | **[C + J]**                           |
+| Concurrent cognition can become stale while still running.                                                                                | **[C + J]**                           |
+| Not every concurrent interaction needs global awareness of every other interaction.                                                       | **[J]**                               |
+| Downtime is a gap in Ember's experience, not a break in identity.                                                                         | **[Inherited J]**                     |
+| External events and delegated work may continue during Ember downtime without becoming Ember's direct experience.                         | **[Inherited J]**                     |
+| Recovery is current-state reconciliation rather than prompt replay.                                                                       | **[E/L + inherited J]**               |
+| A truthful unresolved gap is preferable to invented seamless continuity.                                                                  | **[Inherited J]**                     |
+| Missed scheduled opportunities require purpose-sensitive reconsideration rather than unconditional backfill.                              | **[J]**                               |
+| Result availability and notification are distinct; deliberate non-interruption can be correct.                                            | **[E + J]**                           |
+| Cross-surface delivery must re-evaluate recipient, privacy, currentness, and attention context.                                           | **[E/L + J]**                         |
+| Partial operational failure should degrade functionality rather than semantic honesty.                                                    | **[J]**                               |
+| User-visible operational state must not claim stronger facts than Ember actually knows.                                                   | **[E/L + J]**                         |
 
 ## Operational invariants for later architecture
 

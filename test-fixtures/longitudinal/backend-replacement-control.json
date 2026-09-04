@@ -65,7 +65,11 @@
       "expect": {
         "selected_meanings": ["relationship", "shared_history", "current_preference", "live_commitment"],
         "forbidden_meanings": ["forbidden_private"],
-        "reply_includes": ["Ember-57", "Prefer attributable backend replacement reports", "Keep continuity owned by Ember across cognition backend replacement"],
+        "reply_includes": [
+          "Ember-57",
+          "Prefer attributable backend replacement reports",
+          "Keep continuity owned by Ember across cognition backend replacement"
+        ],
         "reply_excludes": ["FORBIDDEN_BACKEND_REPLACEMENT_57"]
       }
     },
@@ -80,7 +84,11 @@
       "expect": {
         "selected_meanings": ["relationship", "shared_history", "current_preference", "live_commitment"],
         "forbidden_meanings": ["forbidden_private"],
-        "reply_includes": ["Ember-57", "Prefer attributable backend replacement reports", "Keep continuity owned by Ember across cognition backend replacement"],
+        "reply_includes": [
+          "Ember-57",
+          "Prefer attributable backend replacement reports",
+          "Keep continuity owned by Ember across cognition backend replacement"
+        ],
         "reply_excludes": ["FORBIDDEN_BACKEND_REPLACEMENT_57"]
       }
     }

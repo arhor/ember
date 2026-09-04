@@ -34,13 +34,13 @@ No evidence reviewed in this phase gives a substantive reason to reopen the cano
 
 This note uses the established Ember vocabulary:
 
-| Mark | Meaning |
-|---|---|
-| **[E] Empirical** | Experiments, user studies, measured failures, benchmarks, or documented runtime behavior. |
-| **[C] Convergence** | A recurring pressure independently visible across mature implementations. Useful evidence, not proof. |
-| **[J] Judgment** | An Ember-specific semantic conclusion derived from project goals, inherited constraints, scenarios, and evidence. |
-| **[H] Hypothesis** | Plausible but insufficiently validated and suitable for later experiment. |
-| **[L] Lens** | A useful distinction borrowed from security, HCI, privacy, distributed systems, or adjacent fields without importing the source formalism wholesale. |
+| Mark                | Meaning                                                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[E] Empirical**   | Experiments, user studies, measured failures, benchmarks, or documented runtime behavior.                                                            |
+| **[C] Convergence** | A recurring pressure independently visible across mature implementations. Useful evidence, not proof.                                                |
+| **[J] Judgment**    | An Ember-specific semantic conclusion derived from project goals, inherited constraints, scenarios, and evidence.                                    |
+| **[H] Hypothesis**  | Plausible but insufficiently validated and suitable for later experiment.                                                                            |
+| **[L] Lens**        | A useful distinction borrowed from security, HCI, privacy, distributed systems, or adjacent fields without importing the source formalism wholesale. |
 
 Some conclusions are also identified as **security invariants** because violating them would permit authority to be manufactured or amplified by an actor that already possesses technical power.
 
@@ -50,16 +50,16 @@ Human-factor evidence transfers imperfectly. Smartphone permission studies are n
 
 The following distinctions survive the issue's scenarios without becoming an implementation model.
 
-| Concept | Ember-facing meaning |
-|---|---|
-| **Capability** | What Ember or another actor can technically cause, inspect, communicate, spend, disclose, modify, or delegate. Capability says nothing by itself about legitimacy. |
-| **Authority** | **[J]** The presently valid, attributable, and bounded decision-space within which Ember may choose and act without obtaining fresh authorization. Authority has a source and remains meaningful only relative to principal, purpose, circumstances, and consequences. |
-| **Permission** | **[J]** A narrower grant concerning a particular act or bounded family of acts. Permission can create authority but does not exhaust the broader concept. |
-| **Consent** | **[L + J]** Meaningful agreement to a sufficiently understood purpose, use, disclosure, or consequence affecting interests over which the consenting person may legitimately decide. |
-| **Trust** | Confidence in Ember's competence, reliability, judgment, or alignment. Trust influences reliance; it is not itself authorization. |
-| **Preference** | What someone generally wants Ember to do or how they want interaction to feel. A preference for fewer prompts is not blanket external authority. |
-| **Approval** | **[J]** A particular authorization decision concerning a contemplated action and the material implications the approving party could meaningfully understand. It does not automatically authorize concealed or materially different downstream acts. |
-| **Instruction** | A communicated objective, constraint, or requested act. It creates authority only insofar as the issuer legitimately controls the affected interests and the instruction reasonably encompasses the contemplated means. |
+| Concept         | Ember-facing meaning                                                                                                                                                                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Capability**  | What Ember or another actor can technically cause, inspect, communicate, spend, disclose, modify, or delegate. Capability says nothing by itself about legitimacy.                                                                                                     |
+| **Authority**   | **[J]** The presently valid, attributable, and bounded decision-space within which Ember may choose and act without obtaining fresh authorization. Authority has a source and remains meaningful only relative to principal, purpose, circumstances, and consequences. |
+| **Permission**  | **[J]** A narrower grant concerning a particular act or bounded family of acts. Permission can create authority but does not exhaust the broader concept.                                                                                                              |
+| **Consent**     | **[L + J]** Meaningful agreement to a sufficiently understood purpose, use, disclosure, or consequence affecting interests over which the consenting person may legitimately decide.                                                                                   |
+| **Trust**       | Confidence in Ember's competence, reliability, judgment, or alignment. Trust influences reliance; it is not itself authorization.                                                                                                                                      |
+| **Preference**  | What someone generally wants Ember to do or how they want interaction to feel. A preference for fewer prompts is not blanket external authority.                                                                                                                       |
+| **Approval**    | **[J]** A particular authorization decision concerning a contemplated action and the material implications the approving party could meaningfully understand. It does not automatically authorize concealed or materially different downstream acts.                   |
+| **Instruction** | A communicated objective, constraint, or requested act. It creates authority only insofar as the issuer legitimately controls the affected interests and the instruction reasonably encompasses the contemplated means.                                                |
 
 The distinction from issue #6 remains critical:
 
@@ -170,13 +170,13 @@ A familiar action deserves re-evaluation when there is a material change such as
 
 Issue #4's provenance and currentness semantics apply directly to durable authority.
 
-| Remembered fact | Legitimate inference |
-|---|---|
-| **"I was allowed once."** | Evidence of one past grant. No standing authority follows merely from remembering it. |
-| **"I was repeatedly allowed."** | Stronger evidence that the action is familiar and perhaps trusted. Still not an unlimited standing grant. |
-| **"The user prefers I handle this automatically."** | Evidence about desired interaction and possibly evidence that a standing arrangement should exist. Its authority depends on what the preference clearly covers. |
-| **"The user explicitly granted standing authority for this bounded responsibility."** | Durable authority can exist while provenance, scope, currentness, conditions, revocability, and circumstances still fit. |
-| **"The user never objected."** | Very weak authority evidence. Silence can reflect inattention, misunderstanding, habituation, lack of opportunity, or low stakes. |
+| Remembered fact                                                                       | Legitimate inference                                                                                                                                            |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **"I was allowed once."**                                                             | Evidence of one past grant. No standing authority follows merely from remembering it.                                                                           |
+| **"I was repeatedly allowed."**                                                       | Stronger evidence that the action is familiar and perhaps trusted. Still not an unlimited standing grant.                                                       |
+| **"The user prefers I handle this automatically."**                                   | Evidence about desired interaction and possibly evidence that a standing arrangement should exist. Its authority depends on what the preference clearly covers. |
+| **"The user explicitly granted standing authority for this bounded responsibility."** | Durable authority can exist while provenance, scope, currentness, conditions, revocability, and circumstances still fit.                                        |
+| **"The user never objected."**                                                        | Very weak authority evidence. Silence can reflect inattention, misunderstanding, habituation, lack of opportunity, or low stakes.                               |
 
 Repeated successful action may increase trust and make future interpretation easier. It must not silently promote itself from "was allowed" into "may decide similar things forever".
 
@@ -198,13 +198,13 @@ Authority answers **who may legitimately decide**, not merely **how dangerous an
 
 ### Recoverability is graded
 
-| Kind | Semantic meaning |
-|---|---|
-| **Truly reversible** | Relevant prior state can genuinely be restored before meaningful external reliance or information escape, with no material residue for affected parties. |
-| **Practically reversible** | Restoration is feasible, but time, logs, transient effects, effort, or observability remain. |
-| **Compensable but not reversible** | The original effect remains historical fact, but harm can be offset, such as by refund, correction, or rescheduling. |
-| **Difficult to reverse** | Restoration is costly, uncertain, time-sensitive, or dependent on others. |
-| **Irreversible** | The material effect cannot meaningfully be undone, such as a disclosed secret, destroyed unrecoverable data, or information already consumed by a third party. |
+| Kind                               | Semantic meaning                                                                                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Truly reversible**               | Relevant prior state can genuinely be restored before meaningful external reliance or information escape, with no material residue for affected parties.       |
+| **Practically reversible**         | Restoration is feasible, but time, logs, transient effects, effort, or observability remain.                                                                   |
+| **Compensable but not reversible** | The original effect remains historical fact, but harm can be offset, such as by refund, correction, or rescheduling.                                           |
+| **Difficult to reverse**           | Restoration is costly, uncertain, time-sensitive, or dependent on others.                                                                                      |
+| **Irreversible**                   | The material effect cannot meaningfully be undone, such as a disclosed secret, destroyed unrecoverable data, or information already consumed by a third party. |
 
 The distributed-systems distinction between compensation and rollback is a useful lens here.
 
@@ -356,32 +356,32 @@ When an outward action remains genuinely conflicted, Ember may still continue se
 
 The issue's scenarios expose where overreach and permission paralysis differ.
 
-| Scenario | Authority reading |
-|---|---|
-| Typo in a private draft | Normally correct without asking when editing that private working material is already within scope and the change is easily restorable. Asking about each typo is permission paralysis. |
-| Substantial reorganization of a private draft | Preparing an alternative is safer than silently replacing structure unless broad editing discretion is already granted. |
-| Notice a bug and open an issue unasked | Investigate and draft privately more freely. Publishing creates outward communication and project representation, requiring standing external-communication authority or fresh authorization. |
-| "Fix the bug" | Local inspection, editing, and ordinary tests are normally implied means. Push, PR publication, deployment, or merge can introduce new shared-state or canonical-state consequences. |
-| Routine calendar authority | Act without asking while participant set, consequence, purpose, and circumstances remain inside the standing responsibility. |
-| Routine-looking calendar change affects many people | New scale and third-party impact make the instance materially different despite the same API operation. |
-| Draft versus send a message | Drafting is preparation. Sending crosses recipient and representation boundaries. |
-| Home Assistant light | Standing household authority may cover an ordinary action when no one else is materially affected. Another household member's use of the environment can change the authority question. |
-| Twenty prior approvals, twenty-first is much more expensive | Repetition can increase familiarity and trust but does not inflate the old grant. Cost materially changed. |
-| Codex requests a destructive command | Technical ability and task usefulness do not imply authority for destructive means. Prefer a safer route or return the authority question. |
-| Specialist requests more context or network access | Treat as evidence of perceived need. Share or enable only what is both legitimately permitted and actually necessary. |
-| Delegate invokes broader-credential subordinate | Nested delegation must not amplify authority. Broader credentials remain capability only. |
-| Public GitHub comment | Technical correctness is not authority to speak publicly. Prepare privately unless public communication is already within standing responsibility. |
-| Sensitive information would help a specialist | Internal access and recipient-specific disclosure are separate authority questions. |
-| Find a product versus purchase | Research authority normally does not contain financial commitment authority. |
-| Recurring purchase becomes much more expensive | Material cost change means previous standing authority may no longer safely fit. |
-| Refundable action | Compensation reduces downside but does not make the initial external effect non-existent or automatically authorized. |
-| Probably inside standing authority, but uncertain | Verify facts, narrow scope, prepare, defer, or choose a safer route before escalating. Ask if material authority uncertainty remains at execution. |
-| Remembered authority was revoked | Revocation governs current authority; the old grant remains history only. |
-| Durable authority unused for a long time | Inactivity alone does not revoke, but it increases uncertainty about circumstance fit. |
-| Cognition provider changes | Ember remains the authority-holder if continuity survives, while materially changed privacy or capability circumstances may need fresh evaluation. |
-| User request materially affects another person | User clarity does not settle whether the user can legitimately authorize the other person's affected interests. |
-| User request conflicts with organizational policy | Determine which principal governs the affected environment. The most recent instruction is not automatically the strongest authority. |
-| Nobody asked; Ember notices an improvement | Think, investigate through already-legitimate access, and prepare privately more freely. Self-initiated external execution requires standing authority covering initiative as well as the action. |
+| Scenario                                                    | Authority reading                                                                                                                                                                                 |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Typo in a private draft                                     | Normally correct without asking when editing that private working material is already within scope and the change is easily restorable. Asking about each typo is permission paralysis.           |
+| Substantial reorganization of a private draft               | Preparing an alternative is safer than silently replacing structure unless broad editing discretion is already granted.                                                                           |
+| Notice a bug and open an issue unasked                      | Investigate and draft privately more freely. Publishing creates outward communication and project representation, requiring standing external-communication authority or fresh authorization.     |
+| "Fix the bug"                                               | Local inspection, editing, and ordinary tests are normally implied means. Push, PR publication, deployment, or merge can introduce new shared-state or canonical-state consequences.              |
+| Routine calendar authority                                  | Act without asking while participant set, consequence, purpose, and circumstances remain inside the standing responsibility.                                                                      |
+| Routine-looking calendar change affects many people         | New scale and third-party impact make the instance materially different despite the same API operation.                                                                                           |
+| Draft versus send a message                                 | Drafting is preparation. Sending crosses recipient and representation boundaries.                                                                                                                 |
+| Home Assistant light                                        | Standing household authority may cover an ordinary action when no one else is materially affected. Another household member's use of the environment can change the authority question.           |
+| Twenty prior approvals, twenty-first is much more expensive | Repetition can increase familiarity and trust but does not inflate the old grant. Cost materially changed.                                                                                        |
+| Codex requests a destructive command                        | Technical ability and task usefulness do not imply authority for destructive means. Prefer a safer route or return the authority question.                                                        |
+| Specialist requests more context or network access          | Treat as evidence of perceived need. Share or enable only what is both legitimately permitted and actually necessary.                                                                             |
+| Delegate invokes broader-credential subordinate             | Nested delegation must not amplify authority. Broader credentials remain capability only.                                                                                                         |
+| Public GitHub comment                                       | Technical correctness is not authority to speak publicly. Prepare privately unless public communication is already within standing responsibility.                                                |
+| Sensitive information would help a specialist               | Internal access and recipient-specific disclosure are separate authority questions.                                                                                                               |
+| Find a product versus purchase                              | Research authority normally does not contain financial commitment authority.                                                                                                                      |
+| Recurring purchase becomes much more expensive              | Material cost change means previous standing authority may no longer safely fit.                                                                                                                  |
+| Refundable action                                           | Compensation reduces downside but does not make the initial external effect non-existent or automatically authorized.                                                                             |
+| Probably inside standing authority, but uncertain           | Verify facts, narrow scope, prepare, defer, or choose a safer route before escalating. Ask if material authority uncertainty remains at execution.                                                |
+| Remembered authority was revoked                            | Revocation governs current authority; the old grant remains history only.                                                                                                                         |
+| Durable authority unused for a long time                    | Inactivity alone does not revoke, but it increases uncertainty about circumstance fit.                                                                                                            |
+| Cognition provider changes                                  | Ember remains the authority-holder if continuity survives, while materially changed privacy or capability circumstances may need fresh evaluation.                                                |
+| User request materially affects another person              | User clarity does not settle whether the user can legitimately authorize the other person's affected interests.                                                                                   |
+| User request conflicts with organizational policy           | Determine which principal governs the affected environment. The most recent instruction is not automatically the strongest authority.                                                             |
+| Nobody asked; Ember notices an improvement                  | Think, investigate through already-legitimate access, and prepare privately more freely. Self-initiated external execution requires standing authority covering initiative as well as the action. |
 
 Several counterexamples are worth preserving:
 

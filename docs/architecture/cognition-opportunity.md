@@ -51,7 +51,7 @@ be implemented by calling `runCognition` with an empty string or a synthetic pro
 such as `you may think now`. Either representation would make a non-user occurrence
 look like user evidence and risk letting the trigger text determine the topic.
 
-Issue #74 therefore needs a boundary *before* ordinary cognition. It may reuse the
+Issue #74 therefore needs a boundary _before_ ordinary cognition. It may reuse the
 existing projection-selection semantics, provider adapters, and cognition machinery
 after a topic has earned attention, but the opportunity itself is not an ordinary
 user request and must not be persisted as one.
@@ -60,16 +60,16 @@ user request and must not be persisted as one.
 
 A cognition opportunity is one bounded operational occurrence with these meanings:
 
-| Concern | Required meaning |
-| --- | --- |
+| Concern              | Required meaning                                                                                                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Opportunity identity | Ember can distinguish this opportunity occurrence from another opportunity, user request, scheduled task payload, delegated result, or cognition episode. The identity is Ember-owned and independent of process/provider thread IDs. |
-| Runtime locus | The opportunity is observed in one current runtime episode. Runtime identity locates the observation but does not own Ember continuity or the concern that may later be selected. |
-| Principal and scope | The same explicit principal/scope boundary used for normal projection selection applies. Wake-up creates neither a new principal nor broader disclosure. |
-| Observation time | The opportunity records when Ember could evaluate current state. Time may affect currentness or urgency, but it is not itself a topic or motive. |
-| Mechanism provenance | The occurrence may identify the mechanism that made evaluation possible, for example a foreground probe, runtime start, idle opportunity, or future scheduler tick. This is operational provenance only. |
-| Topic | **Absent.** The opportunity does not carry a subject, task, desired conclusion, concern ID to activate, search query, reminder text, or provider prompt that predetermines what deserves attention. |
-| Current state | Candidate state is supplied only through Ember's normal least-sufficient permitted projection boundary. Canonical storage is not handed directly to the endogenous decision step. |
-| Authority | None is added. Motivation may later justify thought or preparation; external action or user interruption remains behind its own authority/currentness boundary. |
+| Runtime locus        | The opportunity is observed in one current runtime episode. Runtime identity locates the observation but does not own Ember continuity or the concern that may later be selected.                                                     |
+| Principal and scope  | The same explicit principal/scope boundary used for normal projection selection applies. Wake-up creates neither a new principal nor broader disclosure.                                                                              |
+| Observation time     | The opportunity records when Ember could evaluate current state. Time may affect currentness or urgency, but it is not itself a topic or motive.                                                                                      |
+| Mechanism provenance | The occurrence may identify the mechanism that made evaluation possible, for example a foreground probe, runtime start, idle opportunity, or future scheduler tick. This is operational provenance only.                              |
+| Topic                | **Absent.** The opportunity does not carry a subject, task, desired conclusion, concern ID to activate, search query, reminder text, or provider prompt that predetermines what deserves attention.                                   |
+| Current state        | Candidate state is supplied only through Ember's normal least-sufficient permitted projection boundary. Canonical storage is not handed directly to the endogenous decision step.                                                     |
+| Authority            | None is added. Motivation may later justify thought or preparation; external action or user interruption remains behind its own authority/currentness boundary.                                                                       |
 
 A trigger that already says `revisit project X`, `research Y`, `send Z`, or an
 equivalent topic-bearing instruction is not a cognition opportunity in this sense.
@@ -156,11 +156,11 @@ ordinary/private cognition lifecycle
 
 The three decision outcomes are distinct:
 
-| Outcome | Meaning |
-| --- | --- |
-| `cognition` | Current projected state contains at least one sufficiently worthwhile concern/topic to justify spending cognition resources now. The selected concern, not the opportunity mechanism, explains the topic. |
-| `defer` | A potentially relevant concern exists, but currentness, competing foreground work, resource/attention limits, missing evidence, or another bounded reason makes cognition inappropriate now. The concern may remain live without becoming a scheduled prompt. |
-| `no_cognition` | Nothing in the current bounded state warrants further discretionary cognition. This is a successful endogenous outcome, not provider failure, timeout, missing output, or an obligation to invent activity. |
+| Outcome        | Meaning                                                                                                                                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cognition`    | Current projected state contains at least one sufficiently worthwhile concern/topic to justify spending cognition resources now. The selected concern, not the opportunity mechanism, explains the topic.                                                     |
+| `defer`        | A potentially relevant concern exists, but currentness, competing foreground work, resource/attention limits, missing evidence, or another bounded reason makes cognition inappropriate now. The concern may remain live without becoming a scheduled prompt. |
+| `no_cognition` | Nothing in the current bounded state warrants further discretionary cognition. This is a successful endogenous outcome, not provider failure, timeout, missing output, or an obligation to invent activity.                                                   |
 
 Issue #75 will harden the durable/inspectable representation of intentional silence
 and distinguish it from operational failure. Issue #73 only requires the lifecycle
@@ -186,7 +186,7 @@ A cognition opportunity and a cognition episode are different occurrences.
 - A restart can create a new opportunity from surviving current state; it cannot
   backfill cognition into the downtime interval.
 
-An implementation may introduce an inspectable *decision attempt* distinct from a
+An implementation may introduce an inspectable _decision attempt_ distinct from a
 full cognition episode if real-model evaluation requires it. That record should
 capture occurrence, projection selection, outcome, and bounded evidence needed for
 evaluation, not raw chain-of-thought or a model-generated story promoted to durable
@@ -214,7 +214,7 @@ without changing its semantics.
 
 ### CO-02 — Same opportunity, live concern
 
-- **Given:** The *same* opportunity input/provenance as CO-01, but current projected
+- **Given:** The _same_ opportunity input/provenance as CO-01, but current projected
   durable state contains one live, applicable concern or commitment whose present
   consequence can justify attention.
 - **When:** The opportunity is evaluated.
@@ -300,11 +300,11 @@ to define a truthful topic-free opportunity.
 
 ## Definition-of-done mapping
 
-| Issue #73 requirement | Design result |
-| --- | --- |
-| Distinct from user request, scheduled task payload, and delegated result | The semantic contract and current-path analysis define a separate opportunity occurrence and reject topic-bearing payloads. |
-| Trigger does not smuggle in a topic | Topic absence is an invariant; CO-01/CO-02 hold opportunity inputs constant while durable state changes. |
-| Current durable state uses normal projection boundary | The projection section explicitly reuses current principal/scope/currentness/provenance selection and forbids direct canonical-store disclosure. |
-| Cognition, defer, and no cognition are possible | The lifecycle defines all three as separate outcomes and keeps operational failure distinct. |
-| No daemon or fixed scheduler required | Scheduling and topology are explicit non-goals; foreground probes are valid opportunity mechanisms. |
-| #74 can implement from repository artifacts | The implementation handoff defines the minimal boundary, deterministic controls, evidence expectations, and anti-patterns. |
+| Issue #73 requirement                                                    | Design result                                                                                                                                    |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Distinct from user request, scheduled task payload, and delegated result | The semantic contract and current-path analysis define a separate opportunity occurrence and reject topic-bearing payloads.                      |
+| Trigger does not smuggle in a topic                                      | Topic absence is an invariant; CO-01/CO-02 hold opportunity inputs constant while durable state changes.                                         |
+| Current durable state uses normal projection boundary                    | The projection section explicitly reuses current principal/scope/currentness/provenance selection and forbids direct canonical-store disclosure. |
+| Cognition, defer, and no cognition are possible                          | The lifecycle defines all three as separate outcomes and keeps operational failure distinct.                                                     |
+| No daemon or fixed scheduler required                                    | Scheduling and topology are explicit non-goals; foreground probes are valid opportunity mechanisms.                                              |
+| #74 can implement from repository artifacts                              | The implementation handoff defines the minimal boundary, deterministic controls, evidence expectations, and anti-patterns.                       |

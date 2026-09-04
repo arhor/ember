@@ -73,7 +73,7 @@ export function buildProjection(
         currentTime,
         runtimeId,
         purpose = "ordinary",
-        explainIds = []
+        explainIds = [],
     }: BuildProjectionOptions,
 ): Projection {
     validateState(state);
@@ -91,7 +91,10 @@ export function buildProjection(
         if (
             (m.kind === "relationship" && m.owner === `relationship:${principal}`) ||
             ((m.kind === "fact" || m.kind === "preference") && m.currentness === "current" && m.scope === scope) ||
-            (m.kind === "commitment" && m.currentness === "current" && m.prospective_lifecycle === "live" && m.scope === scope)
+            (m.kind === "commitment" &&
+                m.currentness === "current" &&
+                m.prospective_lifecycle === "live" &&
+                m.scope === scope)
         ) {
             selected.set(m.meaning_id, m);
         }
@@ -108,7 +111,7 @@ export function buildProjection(
         }
     }
 
-    const evidenceById = new Map(state.evidence.map(e => [e.evidence_id, e]));
+    const evidenceById = new Map(state.evidence.map((e) => [e.evidence_id, e]));
     const selectedEvidence = new Map<EvidenceId, Evidence>();
     const gaps: ProjectionGap[] = [];
     const projected: ProjectedMeaning[] = [];
@@ -116,9 +119,10 @@ export function buildProjection(
     for (const m of selected.values()) {
         const item = cloneState(m) as ProjectedMeaning;
         if (m.kind === "commitment" && m.currentness === "current" && m.prospective_lifecycle === "live") {
-            item.applicability = runtime.recovery_account.gap_kind === "initial_start"
-                ? "current_live"
-                : "last_known_live_needs_currentness_check";
+            item.applicability =
+                runtime.recovery_account.gap_kind === "initial_start"
+                    ? "current_live"
+                    : "last_known_live_needs_currentness_check";
         }
         const descriptors: ProjectedEvidence[] = [];
         for (const ev of evidenceLineage(m.source_evidence_ids, evidenceById)) {
@@ -172,15 +176,15 @@ export function buildProjection(
 
 export function inspectionView(state: EmberState) {
     validateState(state);
-    const current = state.meanings.filter(m => m.currentness === "current").map(cloneState);
-    const historical = state.meanings.filter(m => m.currentness !== "current").map(cloneState);
+    const current = state.meanings.filter((m) => m.currentness === "current").map(cloneState);
+    const historical = state.meanings.filter((m) => m.currentness !== "current").map(cloneState);
     const gaps = state.evidence
-        .filter(e => e.payload_mode === "retained_optional" && e.availability === "unavailable")
-        .map(e => ({
+        .filter((e) => e.payload_mode === "retained_optional" && e.availability === "unavailable")
+        .map((e) => ({
             gap_kind: "unavailable_detail" as const,
             evidence_id: e.evidence_id,
             meaning_id: e.related_meaning_id,
-            reason: e.unavailable_reason
+            reason: e.unavailable_reason,
         }));
     return {
         schema_version: state.schema_version,
@@ -188,8 +192,16 @@ export function inspectionView(state: EmberState) {
         lineage: cloneState(state.lineage),
         current_meanings: current,
         historical_meanings: historical,
-        live_commitments: current.filter(m => m.kind === "commitment" && m.prospective_lifecycle === "live").map(cloneState),
-        closed_commitments: historical.filter(m => m.kind === "commitment" && (m.prospective_lifecycle === "fulfilled" || m.prospective_lifecycle === "cancelled")).map(cloneState),
+        live_commitments: current
+            .filter((m) => m.kind === "commitment" && m.prospective_lifecycle === "live")
+            .map(cloneState),
+        closed_commitments: historical
+            .filter(
+                (m) =>
+                    m.kind === "commitment" &&
+                    (m.prospective_lifecycle === "fulfilled" || m.prospective_lifecycle === "cancelled"),
+            )
+            .map(cloneState),
         gaps,
         runtime_episodes: cloneState(state.operations.runtime_episodes),
         cognition_episodes: cloneState(state.operations.cognition_episodes),
@@ -200,7 +212,7 @@ export function inspectionView(state: EmberState) {
 export function explanationView(state: EmberState, id: MeaningId | string) {
     validateState(state);
     const m = cloneState(findMeaning(state, id));
-    const byId = new Map(state.evidence.map(e => [e.evidence_id, e]));
+    const byId = new Map(state.evidence.map((e) => [e.evidence_id, e]));
     const source = evidenceLineage(m.source_evidence_ids, byId).map(cloneState);
     const linked: Partial<Record<"supersedes" | "superseded_by", Meaning>> = {};
     for (const field of ["supersedes", "superseded_by"] as const) {
@@ -212,9 +224,11 @@ export function explanationView(state: EmberState, id: MeaningId | string) {
     return {
         meaning: m,
         source_evidence: source,
-        related_detail_evidence: state.evidence.filter(e => e.related_meaning_id === m.meaning_id).map(cloneState),
+        related_detail_evidence: state.evidence.filter((e) => e.related_meaning_id === m.meaning_id).map(cloneState),
         linked_meanings: linked,
-        selected_by_cognition_ids: state.operations.cognition_episodes.filter(c => c.selected_meaning_ids.includes(m.meaning_id)).map(c => c.cognition_id),
+        selected_by_cognition_ids: state.operations.cognition_episodes
+            .filter((c) => c.selected_meaning_ids.includes(m.meaning_id))
+            .map((c) => c.cognition_id),
     };
 }
 
@@ -254,7 +268,7 @@ function projectEvidence(ev: Evidence, includePayload: boolean): ProjectedEviden
 }
 
 export function findRuntime(state: EmberState, id: RuntimeId | string): RuntimeEpisode {
-    const value = state.operations.runtime_episodes.find(r => r.runtime_id === id);
+    const value = state.operations.runtime_episodes.find((r) => r.runtime_id === id);
     if (!value) {
         throw new ValidationError(`runtime does not exist: ${id}`);
     }

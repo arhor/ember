@@ -75,10 +75,7 @@
           "FACT_SOURCE_ROLE=user_command",
           "FACT_DIRECTLY_OBSERVED_BY_EMBER=no"
         ],
-        "reply_excludes": [
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=yes",
-          "HIDDEN_NICKNAME_56"
-        ]
+        "reply_excludes": ["FACT_DIRECTLY_OBSERVED_BY_EMBER=yes", "HIDDEN_NICKNAME_56"]
       }
     },
     {
@@ -109,7 +106,14 @@
       "purpose": "explain",
       "explain": ["preference_a", "nickname_episode"],
       "expect": {
-        "selected_meanings": ["relationship", "sensor_fact", "preference_a", "preference_b", "live_commitment", "nickname_episode"],
+        "selected_meanings": [
+          "relationship",
+          "sensor_fact",
+          "preference_a",
+          "preference_b",
+          "live_commitment",
+          "nickname_episode"
+        ],
         "forbidden_meanings": [],
         "reply_includes": [
           "CURRENT_PREFERENCE=Prefer detailed semantic reports",
@@ -147,10 +151,7 @@
           "LIVE_COMMITMENT=Keep semantic evaluation findings attributable across restarts",
           "COMMITMENT_LIFECYCLE=live"
         ],
-        "reply_excludes": [
-          "Prefer terse semantic reports",
-          "HIDDEN_NICKNAME_56"
-        ]
+        "reply_excludes": ["Prefer terse semantic reports", "HIDDEN_NICKNAME_56"]
       }
     }
   ]

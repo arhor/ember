@@ -43,16 +43,16 @@ rather than hiding them behind process-oriented statuses.
 The requirements below are derived from repository behavior and accepted design,
 not from product convention.
 
-| Evidence | Operational pressure actually demonstrated |
-| --- | --- |
-| `minimal-continuity-slice.md` and its runbook | Complete process restart can preserve Ember continuity through durable state; a foreground process is sufficient for ordinary cognition, explicit inspection, correction, and controlled restart. The current store uses one cooperative writer and truthful lock recovery. |
+| Evidence                                                                          | Operational pressure actually demonstrated                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `minimal-continuity-slice.md` and its runbook                                     | Complete process restart can preserve Ember continuity through durable state; a foreground process is sufficient for ordinary cognition, explicit inspection, correction, and controlled restart. The current store uses one cooperative writer and truthful lock recovery.    |
 | `minimal-codex-specialist-delegation.md` and `src/delegation/codex-specialist.ts` | Specialist work has an Ember-owned durable episode specification and observations; the Codex child may produce effects before timeout/cancellation/process loss; cancellation intent, observed exit, continued work, effects, retry safety, and reintegration remain separate. |
-| `specialist-result-reintegration.md` | A completed specialist report cannot be accepted from its launch snapshot alone; current objective/context revisions and present lifecycle must be checked before reliance. |
-| `cognition-opportunity.md` through the issue #73-#78 design chain | An endogenous opportunity is topic-free, may end in silence, and is distinct from user input, provider failure, completed cognition, user interruption, and actual delivery. |
-| `endogenous-interruption-decision.md` | Completed internal cognition may yield `deliver`, `defer`, `suppress`, or `no_delivery`; `deliver` only permits a later delivery layer and does not prove contact. Transport delivery remains intentionally unimplemented. |
-| `endogenous-selectivity-evaluation.md` | Issue #79 reproduced redundant repeated cognition; issue #95 removed it with an unchanged-projection deferral. No fixed scheduler interval, quiet-state cache, global opportunity budget, or service topology was earned. |
-| ADR 0005 and `operational-model-sessions-and-surfaces.md` | Long-running work survives interaction boundaries on its own semantic terms; restart reconciles the justified present; downtime remains a truthful gap; delivery and surface reachability do not define work completion or authority. |
-| ADR 0006 | Node.js 26 is the selected implementation runtime. Ambient OS capability remains distinct from Ember authority, and new runtime dependencies/service machinery must solve concrete requirements. |
+| `specialist-result-reintegration.md`                                              | A completed specialist report cannot be accepted from its launch snapshot alone; current objective/context revisions and present lifecycle must be checked before reliance.                                                                                                    |
+| `cognition-opportunity.md` through the issue #73-#78 design chain                 | An endogenous opportunity is topic-free, may end in silence, and is distinct from user input, provider failure, completed cognition, user interruption, and actual delivery.                                                                                                   |
+| `endogenous-interruption-decision.md`                                             | Completed internal cognition may yield `deliver`, `defer`, `suppress`, or `no_delivery`; `deliver` only permits a later delivery layer and does not prove contact. Transport delivery remains intentionally unimplemented.                                                     |
+| `endogenous-selectivity-evaluation.md`                                            | Issue #79 reproduced redundant repeated cognition; issue #95 removed it with an unchanged-projection deferral. No fixed scheduler interval, quiet-state cache, global opportunity budget, or service topology was earned.                                                      |
+| ADR 0005 and `operational-model-sessions-and-surfaces.md`                         | Long-running work survives interaction boundaries on its own semantic terms; restart reconciles the justified present; downtime remains a truthful gap; delivery and surface reachability do not define work completion or authority.                                          |
+| ADR 0006                                                                          | Node.js 26 is the selected implementation runtime. Ambient OS capability remains distinct from Ember authority, and new runtime dependencies/service machinery must solve concrete requirements.                                                                               |
 
 ## Requirement vocabulary
 
@@ -324,15 +324,15 @@ Ember semantics remain independent of that supervisor's identity and state model
 The completed slices leave substantial evidence against premature service
 complexity.
 
-| Capability | Foreground process or simpler trigger remains sufficient because... |
-| --- | --- |
-| Ordinary user-requested cognition | The current CLI can load durable state, construct a fresh bounded projection, invoke a provider, record lifecycle evidence, and stop cleanly. |
-| Continuity across downtime | Ember identity/current meaning already survive complete process absence. No resident process is required merely to remain the same Ember. |
-| Manual inspection/correction/recovery | `inspect`, `check`, lock diagnosis, correction, and explicit recovery operations are naturally short-lived commands. |
-| Topic-free cognition opportunity | A short-lived externally triggered invocation can satisfy the semantic opportunity boundary if trigger overlap, attention reconsideration, and store locking are handled correctly. |
-| Quiet periods | Silence requires no resident cognition loop. #79/#95 explicitly provide no evidence for continuous polling or a fixed opportunity cadence. |
-| Durable specialist history after completion/loss | Episode records and reintegration evidence survive process exit without preserving a Codex thread. |
-| Transport delivery | There is no second production surface yet, so unattended outbound transport is not part of #51's demonstrated requirement set. The narrow interruption handoff in R11 is sufficient for #81. |
+| Capability                                       | Foreground process or simpler trigger remains sufficient because...                                                                                                                          |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ordinary user-requested cognition                | The current CLI can load durable state, construct a fresh bounded projection, invoke a provider, record lifecycle evidence, and stop cleanly.                                                |
+| Continuity across downtime                       | Ember identity/current meaning already survive complete process absence. No resident process is required merely to remain the same Ember.                                                    |
+| Manual inspection/correction/recovery            | `inspect`, `check`, lock diagnosis, correction, and explicit recovery operations are naturally short-lived commands.                                                                         |
+| Topic-free cognition opportunity                 | A short-lived externally triggered invocation can satisfy the semantic opportunity boundary if trigger overlap, attention reconsideration, and store locking are handled correctly.          |
+| Quiet periods                                    | Silence requires no resident cognition loop. #79/#95 explicitly provide no evidence for continuous polling or a fixed opportunity cadence.                                                   |
+| Durable specialist history after completion/loss | Episode records and reintegration evidence survive process exit without preserving a Codex thread.                                                                                           |
+| Transport delivery                               | There is no second production surface yet, so unattended outbound transport is not part of #51's demonstrated requirement set. The narrow interruption handoff in R11 is sufficient for #81. |
 
 The strongest pressure **for** a long-lived operational locus is not continuity by
 itself. It is the combination of unattended opportunities and owning/observing
@@ -344,19 +344,19 @@ short-lived executions plus external ownership, or another smaller local arrange
 
 Issue #81 should evaluate every candidate topology against the following questions.
 
-| Area | Candidate must answer |
-| --- | --- |
-| Process ownership | What operational locus owns an in-flight Codex child/runtime after the initiating interaction ends? What happens if that locus disappears? |
-| Startup | How are double-start, existing live writer, malformed/stale lock, and incomplete prior work handled? |
-| Shutdown | What happens to new work, writer ownership, current specialist attempts, unresolved concerns, and clean-gap evidence? |
-| Wake-up | What creates topic-free opportunities with no attached CLI, and how is overlap prevented without encoding motive? |
-| Reconsideration | How can elapsed time materially reopen an unchanged concern without using restart frequency as hidden policy? |
-| Restart/recovery | Which durable records are scanned/reconciled, and how are unknown effects or continued specialist work exposed? |
-| Locking/concurrency | How does the topology preserve one-writer safety across service restart, external triggers, and manual CLI commands? |
-| Status/inspection | How can an operator distinguish service liveness, idle state, in-flight work, uncertainty, blocked recovery, and provider capability? |
-| Configuration/secrets | Where do state paths, provider commands, policy inputs, and runtime-owned auth access come from without committing secrets? |
-| Resource envelope | What is permanently resident, what is transient, and how can #82 attribute RSS/CPU/process counts? |
-| Platform scope | Which process-manager/OS assumptions are first-class deployment constraints and which semantics remain portable? |
+| Area                          | Candidate must answer                                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Process ownership             | What operational locus owns an in-flight Codex child/runtime after the initiating interaction ends? What happens if that locus disappears?       |
+| Startup                       | How are double-start, existing live writer, malformed/stale lock, and incomplete prior work handled?                                             |
+| Shutdown                      | What happens to new work, writer ownership, current specialist attempts, unresolved concerns, and clean-gap evidence?                            |
+| Wake-up                       | What creates topic-free opportunities with no attached CLI, and how is overlap prevented without encoding motive?                                |
+| Reconsideration               | How can elapsed time materially reopen an unchanged concern without using restart frequency as hidden policy?                                    |
+| Restart/recovery              | Which durable records are scanned/reconciled, and how are unknown effects or continued specialist work exposed?                                  |
+| Locking/concurrency           | How does the topology preserve one-writer safety across service restart, external triggers, and manual CLI commands?                             |
+| Status/inspection             | How can an operator distinguish service liveness, idle state, in-flight work, uncertainty, blocked recovery, and provider capability?            |
+| Configuration/secrets         | Where do state paths, provider commands, policy inputs, and runtime-owned auth access come from without committing secrets?                      |
+| Resource envelope             | What is permanently resident, what is transient, and how can #82 attribute RSS/CPU/process counts?                                               |
+| Platform scope                | Which process-manager/OS assumptions are first-class deployment constraints and which semantics remain portable?                                 |
 | Interruption/delivery handoff | How does a semantically live `deliver`/`defer` handoff survive a runtime boundary without prematurely implementing transport semantics from #52? |
 
 ## Explicit non-requirements
@@ -381,11 +381,11 @@ input assumption to #81.
 
 ## Definition-of-done mapping
 
-| Issue #80 requirement | This artifact |
-| --- | --- |
-| What must survive with no foreground CLI | R1-R6 separate unattended opportunity, specialist work ownership, durable transition evidence, recovery, and shutdown from interaction lifetime. |
-| Wake-up, long-running work, cancellation, recovery, locking, delivery | R1-R9 and R11 state the earned requirement or explicit non-requirement for each, including the interruption handoff without transport pre-implementation. |
-| #79/#95 attention/backoff/resource findings | R2 captures time-sensitive reconsideration; R10 keeps resource claims measurable and non-numeric; the negative-evidence table preserves the absence of a fixed cadence/global budget. |
-| Durable semantic vs ephemeral runtime state | R3-R8 repeatedly distinguish objective/concern/episode evidence from child PID, process liveness, supervisor status, and runtime caches. |
-| Negative evidence against unnecessary service complexity | The dedicated negative-evidence table identifies capabilities that remain satisfied by foreground or externally triggered execution. |
-| Implementation-neutral input to #81 | The handoff table names questions every topology must answer while this document chooses none. |
+| Issue #80 requirement                                                 | This artifact                                                                                                                                                                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What must survive with no foreground CLI                              | R1-R6 separate unattended opportunity, specialist work ownership, durable transition evidence, recovery, and shutdown from interaction lifetime.                                      |
+| Wake-up, long-running work, cancellation, recovery, locking, delivery | R1-R9 and R11 state the earned requirement or explicit non-requirement for each, including the interruption handoff without transport pre-implementation.                             |
+| #79/#95 attention/backoff/resource findings                           | R2 captures time-sensitive reconsideration; R10 keeps resource claims measurable and non-numeric; the negative-evidence table preserves the absence of a fixed cadence/global budget. |
+| Durable semantic vs ephemeral runtime state                           | R3-R8 repeatedly distinguish objective/concern/episode evidence from child PID, process liveness, supervisor status, and runtime caches.                                              |
+| Negative evidence against unnecessary service complexity              | The dedicated negative-evidence table identifies capabilities that remain satisfied by foreground or externally triggered execution.                                                  |
+| Implementation-neutral input to #81                                   | The handoff table names questions every topology must answer while this document chooses none.                                                                                        |

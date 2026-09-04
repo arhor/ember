@@ -72,15 +72,15 @@ disposition to the primary episode without the matching reintegration audit.
 
 ## Current checkpoint
 
-| Field | Meaning |
-| --- | --- |
-| `ember_revision` | Exact canonical Ember revision against which the decision was derived and held stable |
-| `objective_revision` | Current objective revision compared with the delegation-start basis |
-| `context_revision` | Current relevant-context revision compared with the delegation-start basis |
-| `objective_status` | `current`, `superseded`, or `cancelled` |
-| `authority.status` | `current`, `revoked`, `superseded`, or `uncertain` |
-| `authority.provenance` | Attributable source used for the current authority assessment |
-| `authority.reason` | Why that authority assessment applies |
+| Field                  | Meaning                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| `ember_revision`       | Exact canonical Ember revision against which the decision was derived and held stable |
+| `objective_revision`   | Current objective revision compared with the delegation-start basis                   |
+| `context_revision`     | Current relevant-context revision compared with the delegation-start basis            |
+| `objective_status`     | `current`, `superseded`, or `cancelled`                                               |
+| `authority.status`     | `current`, `revoked`, `superseded`, or `uncertain`                                    |
+| `authority.provenance` | Attributable source used for the current authority assessment                         |
+| `authority.reason`     | Why that authority assessment applies                                                 |
 
 The numeric Ember revision is a concurrency boundary, not a substitute for semantic
 assessment. The caller remains responsible for deriving objective, context, and
@@ -92,19 +92,19 @@ the specialist claim.
 
 ## Decision outcomes
 
-| Condition | Outcome | Meaning |
-| --- | --- | --- |
-| Canonical `ember_revision` already changed | no decision persisted | Caller must rebuild the checkpoint |
-| Current complete result, no Ember decision | `withheld` | Attributed evidence only |
-| Current complete result, reasoned acceptance | `integrated` | `accepted`; later canonical mutation may cite the decision ID |
-| Current non-complete result, attempted acceptance | `withheld` | Completion is not established |
-| Current partial or failed evidence, reasoned qualification | `integrated` | `qualified`; reliance is limited to the qualification |
-| Current authority revoked, superseded, or uncertain | `withheld` | Historical launch authority does not authorize present reliance |
-| Objective superseded or revision changed | `withheld` | `stale`; historical result survives without completing the current objective |
-| Relevant context changed | `withheld` until re-evaluated | `requires_re_evaluation` |
-| Objective cancelled/inapplicable | `rejected` | Report remains historical evidence |
-| Explicit Ember rejection | `rejected` | Semantic non-reliance; unresolved effects are not erased |
-| Effects remain possible | `withheld` | Issue-63 recovery must establish the relevant present state first |
+| Condition                                                  | Outcome                       | Meaning                                                                      |
+| ---------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| Canonical `ember_revision` already changed                 | no decision persisted         | Caller must rebuild the checkpoint                                           |
+| Current complete result, no Ember decision                 | `withheld`                    | Attributed evidence only                                                     |
+| Current complete result, reasoned acceptance               | `integrated`                  | `accepted`; later canonical mutation may cite the decision ID                |
+| Current non-complete result, attempted acceptance          | `withheld`                    | Completion is not established                                                |
+| Current partial or failed evidence, reasoned qualification | `integrated`                  | `qualified`; reliance is limited to the qualification                        |
+| Current authority revoked, superseded, or uncertain        | `withheld`                    | Historical launch authority does not authorize present reliance              |
+| Objective superseded or revision changed                   | `withheld`                    | `stale`; historical result survives without completing the current objective |
+| Relevant context changed                                   | `withheld` until re-evaluated | `requires_re_evaluation`                                                     |
+| Objective cancelled/inapplicable                           | `rejected`                    | Report remains historical evidence                                           |
+| Explicit Ember rejection                                   | `rejected`                    | Semantic non-reliance; unresolved effects are not erased                     |
+| Effects remain possible                                    | `withheld`                    | Issue-63 recovery must establish the relevant present state first            |
 
 ## Durable audit and validation
 

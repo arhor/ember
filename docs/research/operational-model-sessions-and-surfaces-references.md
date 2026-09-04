@@ -23,13 +23,13 @@ Runtime documentation should be revalidated before a later ADR if those systems 
 
 ## Evidence key
 
-| Mark | Meaning |
-|---|---|
+| Mark    | Meaning                                                                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
 | **[E]** | Empirical evidence: experiment, user study, benchmark, measured behaviour, or documented runtime behaviour. |
-| **[C]** | Convergence across mature implementations or independent engineering traditions. |
-| **[J]** | Ember-specific semantic judgment derived from evidence, inherited constraints, and scenarios. |
-| **[H]** | Hypothesis that remains suitable for prototype evaluation. |
-| **[L]** | Conceptual lens imported without adopting the source framework wholesale. |
+| **[C]** | Convergence across mature implementations or independent engineering traditions.                            |
+| **[J]** | Ember-specific semantic judgment derived from evidence, inherited constraints, and scenarios.               |
+| **[H]** | Hypothesis that remains suitable for prototype evaluation.                                                  |
+| **[L]** | Conceptual lens imported without adopting the source framework wholesale.                                   |
 
 ## Inherited Ember research
 
@@ -77,25 +77,25 @@ Runtime documentation should be revalidated before a later ADR if those systems 
 
 ## Evidence map for validated conclusions
 
-| Canonical conclusion | Basis | Principal portable evidence | Interpretation for Ember |
-|---|---|---|---|
-| Session continuity is not Ember continuity. | **[C + J]** | [R1 OpenClaw](#r1-openclaw-session-surface-and-runtime-behaviour), [R2 Letta](#r2-letta-persistent-agents-and-conversations), [R3 Hermes](#r3-hermes-sessions-surfaces-and-background-work), inherited E0 | Mature systems independently separate persistent agent state from individual sessions. Ember's stronger identity boundary is inherited from #3. |
-| One semantic conversation may cross surfaces and sessions, while one session may host several threads. | **[C + J]** | [R1](#r1-openclaw-session-surface-and-runtime-behaviour), [R2](#r2-letta-persistent-agents-and-conversations), [R3](#r3-hermes-sessions-surfaces-and-background-work), [R13 Cross-Device Taxonomy](#r13-cross-device-taxonomy) | Multi-client and concurrent-conversation runtimes show feasibility; HCI shows cross-device interaction is a broad established design space. Exact mapping remains an Ember judgment. |
-| Principal identity is distinct from account, device, session, or transport identity. | **[E + C + J]** | [R1](#r1-openclaw-session-surface-and-runtime-behaviour), [R14 FamiData Hub](#r14-famidata-hub-and-shared-device-identity-pressure), inherited E4 | OpenClaw requires explicit cross-channel identity linking; family HCI shows one adult account is often used by multiple people on shared devices. |
-| Persisted session state is not evidence of live connectivity. | **[E, runtime]** | [R1](#r1-openclaw-session-surface-and-runtime-behaviour) | OpenClaw explicitly warns that session listings are persisted conversation rows rather than channel/provider liveness checks. |
-| Long-running work can outlive the initiating interaction. | **[C + J]** | [R3](#r3-hermes-sessions-surfaces-and-background-work), [R1](#r1-openclaw-session-surface-and-runtime-behaviour), inherited E3 | Background work is independently implemented in mature runtimes. Ember inherits the stronger semantic rule that the work's objective, not the surface, owns its lifetime. |
-| Semantic occurrence and delivery are distinct. | **[E/L + J]** | [R4 SQS standard delivery](#r4-amazon-sqs-at-least-once-delivery), [R5 PubSub exactly-once](#r5-google-cloud-pubsub-exactly-once-delivery), [R6 SQS deduplication identity](#r6-amazon-sqs-message-deduplication-identity) | Delivery systems routinely redeliver, replay, or scope exactly-once guarantees. Ember should treat transport copies as evidence about one or more occurrences rather than occurrences themselves. |
-| Duplicate delivery must not manufacture duplicate semantic effect. | **[E/L + J]** | [R4](#r4-amazon-sqs-at-least-once-delivery), [R5](#r5-google-cloud-pubsub-exactly-once-delivery), [R6](#r6-amazon-sqs-message-deduplication-identity) | Infrastructure already requires deduplication-aware consumers; Ember extends the requirement to authority, memory, autobiography, and external action. |
-| Identical content does not prove duplicate occurrence. | **[E/L + J]** | [R6](#r6-amazon-sqs-message-deduplication-identity) | AWS explicitly documents cases where identical bodies must be treated as unique and distinct bodies may need to be recognized as retries. Semantic identity cannot be derived from text equality alone. |
-| Exactly-once is a scoped technical property, not a universal semantic foundation. | **[E + J]** | [R5](#r5-google-cloud-pubsub-exactly-once-delivery), [R6](#r6-amazon-sqs-message-deduplication-identity) | Exactly-once guarantees depend on concrete subscription, region, acknowledgement, or deduplication windows. Ember's semantic correctness must survive weaker transports. |
-| Missing acknowledgement establishes uncertainty rather than proof that nothing happened. | **[E + J]** | [R7 Stripe](#r7-stripe-network-errors-and-idempotency), [R8 AWS Durable Execution](#r8-aws-durable-execution-error-and-retry-semantics), inherited E3 | Both systems explicitly preserve uncertainty when an external side effect may have started before the caller learned the result. |
-| Consequential retry may require inspection of external state before repetition. | **[E + J]** | [R7](#r7-stripe-network-errors-and-idempotency), [R8](#r8-aws-durable-execution-error-and-retry-semantics), inherited E3 | Retry safety depends on effect semantics and evidence, not merely on a previous timeout. |
-| Recovery should reconstruct goals and current relevant state rather than replay chronology alone. | **[E/L + J]** | [R9 Trafton et al.](#r9-trafton-et-al-resumption-goals), [R10 Parnin and DeLine](#r10-parnin-and-deline-task-resumption-cues), inherited E2 | Human task-resumption evidence supports recovering goals and contextual cues. Transfer to Ember is a lens, not a cognitive equivalence claim. |
-| Result availability does not imply immediate notification is best. | **[E + J]** | [R11 Iqbal and Bailey](#r11-iqbal-and-bailey-notification-interruption), inherited E4/E5 | Deferred notifications at task breakpoints reduced frustration and reaction time in the studied setting. Ember should treat delivery timing as an attention decision rather than a transport reflex. |
-| Cross-device interaction changes affordances without requiring distinct underlying identity. | **[E/L + J]** | [R13](#r13-cross-device-taxonomy), [R1](#r1-openclaw-session-surface-and-runtime-behaviour), [R2](#r2-letta-persistent-agents-and-conversations) | HCI provides a broad taxonomy of cross-device interaction; agent runtimes show one persistent state can be projected through several clients. |
-| Shared devices can make surface identity ambiguous and privacy-sensitive. | **[E + J]** | [R14](#r14-famidata-hub-and-shared-device-identity-pressure), inherited E4 | Families in the study frequently shared one adult account across smart-home devices, and children reported mixed digital identities. This is direct pressure against equating device/account identity with a person. |
-| Resume cues materially affect interrupted programming-task recovery. | **[E/L]** | [R10](#r10-parnin-and-deline-task-resumption-cues), [R12 Parnin and Rugaber](#r12-parnin-and-rugaber-resumption-strategies) | Programming studies show task resumption involves reconstructing plans and context, supporting Ember's distinction between resumption and transcript replay. |
-| A truthful unresolved operational gap is preferable to invented seamlessness. | **[Inherited J]** | E0, E1, E2 plus [R7](#r7-stripe-network-errors-and-idempotency) and [R8](#r8-aws-durable-execution-error-and-retry-semantics) as uncertainty lenses | Infrastructure uncertainty and inherited autobiographical restraint both favour explicit unknowns over fabricated state. |
+| Canonical conclusion                                                                                   | Basis             | Principal portable evidence                                                                                                                                                                                                    | Interpretation for Ember                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session continuity is not Ember continuity.                                                            | **[C + J]**       | [R1 OpenClaw](#r1-openclaw-session-surface-and-runtime-behaviour), [R2 Letta](#r2-letta-persistent-agents-and-conversations), [R3 Hermes](#r3-hermes-sessions-surfaces-and-background-work), inherited E0                      | Mature systems independently separate persistent agent state from individual sessions. Ember's stronger identity boundary is inherited from #3.                                                                      |
+| One semantic conversation may cross surfaces and sessions, while one session may host several threads. | **[C + J]**       | [R1](#r1-openclaw-session-surface-and-runtime-behaviour), [R2](#r2-letta-persistent-agents-and-conversations), [R3](#r3-hermes-sessions-surfaces-and-background-work), [R13 Cross-Device Taxonomy](#r13-cross-device-taxonomy) | Multi-client and concurrent-conversation runtimes show feasibility; HCI shows cross-device interaction is a broad established design space. Exact mapping remains an Ember judgment.                                 |
+| Principal identity is distinct from account, device, session, or transport identity.                   | **[E + C + J]**   | [R1](#r1-openclaw-session-surface-and-runtime-behaviour), [R14 FamiData Hub](#r14-famidata-hub-and-shared-device-identity-pressure), inherited E4                                                                              | OpenClaw requires explicit cross-channel identity linking; family HCI shows one adult account is often used by multiple people on shared devices.                                                                    |
+| Persisted session state is not evidence of live connectivity.                                          | **[E, runtime]**  | [R1](#r1-openclaw-session-surface-and-runtime-behaviour)                                                                                                                                                                       | OpenClaw explicitly warns that session listings are persisted conversation rows rather than channel/provider liveness checks.                                                                                        |
+| Long-running work can outlive the initiating interaction.                                              | **[C + J]**       | [R3](#r3-hermes-sessions-surfaces-and-background-work), [R1](#r1-openclaw-session-surface-and-runtime-behaviour), inherited E3                                                                                                 | Background work is independently implemented in mature runtimes. Ember inherits the stronger semantic rule that the work's objective, not the surface, owns its lifetime.                                            |
+| Semantic occurrence and delivery are distinct.                                                         | **[E/L + J]**     | [R4 SQS standard delivery](#r4-amazon-sqs-at-least-once-delivery), [R5 PubSub exactly-once](#r5-google-cloud-pubsub-exactly-once-delivery), [R6 SQS deduplication identity](#r6-amazon-sqs-message-deduplication-identity)     | Delivery systems routinely redeliver, replay, or scope exactly-once guarantees. Ember should treat transport copies as evidence about one or more occurrences rather than occurrences themselves.                    |
+| Duplicate delivery must not manufacture duplicate semantic effect.                                     | **[E/L + J]**     | [R4](#r4-amazon-sqs-at-least-once-delivery), [R5](#r5-google-cloud-pubsub-exactly-once-delivery), [R6](#r6-amazon-sqs-message-deduplication-identity)                                                                          | Infrastructure already requires deduplication-aware consumers; Ember extends the requirement to authority, memory, autobiography, and external action.                                                               |
+| Identical content does not prove duplicate occurrence.                                                 | **[E/L + J]**     | [R6](#r6-amazon-sqs-message-deduplication-identity)                                                                                                                                                                            | AWS explicitly documents cases where identical bodies must be treated as unique and distinct bodies may need to be recognized as retries. Semantic identity cannot be derived from text equality alone.              |
+| Exactly-once is a scoped technical property, not a universal semantic foundation.                      | **[E + J]**       | [R5](#r5-google-cloud-pubsub-exactly-once-delivery), [R6](#r6-amazon-sqs-message-deduplication-identity)                                                                                                                       | Exactly-once guarantees depend on concrete subscription, region, acknowledgement, or deduplication windows. Ember's semantic correctness must survive weaker transports.                                             |
+| Missing acknowledgement establishes uncertainty rather than proof that nothing happened.               | **[E + J]**       | [R7 Stripe](#r7-stripe-network-errors-and-idempotency), [R8 AWS Durable Execution](#r8-aws-durable-execution-error-and-retry-semantics), inherited E3                                                                          | Both systems explicitly preserve uncertainty when an external side effect may have started before the caller learned the result.                                                                                     |
+| Consequential retry may require inspection of external state before repetition.                        | **[E + J]**       | [R7](#r7-stripe-network-errors-and-idempotency), [R8](#r8-aws-durable-execution-error-and-retry-semantics), inherited E3                                                                                                       | Retry safety depends on effect semantics and evidence, not merely on a previous timeout.                                                                                                                             |
+| Recovery should reconstruct goals and current relevant state rather than replay chronology alone.      | **[E/L + J]**     | [R9 Trafton et al.](#r9-trafton-et-al-resumption-goals), [R10 Parnin and DeLine](#r10-parnin-and-deline-task-resumption-cues), inherited E2                                                                                    | Human task-resumption evidence supports recovering goals and contextual cues. Transfer to Ember is a lens, not a cognitive equivalence claim.                                                                        |
+| Result availability does not imply immediate notification is best.                                     | **[E + J]**       | [R11 Iqbal and Bailey](#r11-iqbal-and-bailey-notification-interruption), inherited E4/E5                                                                                                                                       | Deferred notifications at task breakpoints reduced frustration and reaction time in the studied setting. Ember should treat delivery timing as an attention decision rather than a transport reflex.                 |
+| Cross-device interaction changes affordances without requiring distinct underlying identity.           | **[E/L + J]**     | [R13](#r13-cross-device-taxonomy), [R1](#r1-openclaw-session-surface-and-runtime-behaviour), [R2](#r2-letta-persistent-agents-and-conversations)                                                                               | HCI provides a broad taxonomy of cross-device interaction; agent runtimes show one persistent state can be projected through several clients.                                                                        |
+| Shared devices can make surface identity ambiguous and privacy-sensitive.                              | **[E + J]**       | [R14](#r14-famidata-hub-and-shared-device-identity-pressure), inherited E4                                                                                                                                                     | Families in the study frequently shared one adult account across smart-home devices, and children reported mixed digital identities. This is direct pressure against equating device/account identity with a person. |
+| Resume cues materially affect interrupted programming-task recovery.                                   | **[E/L]**         | [R10](#r10-parnin-and-deline-task-resumption-cues), [R12 Parnin and Rugaber](#r12-parnin-and-rugaber-resumption-strategies)                                                                                                    | Programming studies show task resumption involves reconstructing plans and context, supporting Ember's distinction between resumption and transcript replay.                                                         |
+| A truthful unresolved operational gap is preferable to invented seamlessness.                          | **[Inherited J]** | E0, E1, E2 plus [R7](#r7-stripe-network-errors-and-idempotency) and [R8](#r8-aws-durable-execution-error-and-retry-semantics) as uncertainty lenses                                                                            | Infrastructure uncertainty and inherited autobiographical restraint both favour explicit unknowns over fabricated state.                                                                                             |
 
 ## Runtime and distributed-systems evidence
 
@@ -114,7 +114,7 @@ Runtime documentation should be revalidated before a later ADR if those systems 
 
 ### R2 Letta persistent agents and conversations
 
-**Letta.** *Conversations: Shared Agent Memory Across Concurrent Experiences.* Published 2026-01-21. Letta repository snapshot observed on 2026-08-29: `4511fa0bc91f68fbab32b91f694617271ea9012b`.
+**Letta.** _Conversations: Shared Agent Memory Across Concurrent Experiences._ Published 2026-01-21. Letta repository snapshot observed on 2026-08-29: `4511fa0bc91f68fbab32b91f694617271ea9012b`.
 
 - Product article: https://www.letta.com/blog/conversations/
 - Repository snapshot: https://github.com/letta-ai/letta/tree/4511fa0bc91f68fbab32b91f694617271ea9012b
@@ -139,7 +139,7 @@ Runtime documentation should be revalidated before a later ADR if those systems 
 
 ### R4 Amazon SQS at-least-once delivery
 
-**Amazon Web Services.** *Amazon SQS standard queues.*
+**Amazon Web Services.** _Amazon SQS standard queues._
 
 - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues.html
 
@@ -151,7 +151,7 @@ AWS documents that standard queues use at-least-once delivery, can deliver more 
 
 ### R5 Google Cloud PubSub exactly-once delivery
 
-**Google Cloud.** *Exactly-once delivery.*
+**Google Cloud.** _Exactly-once delivery._
 
 - https://cloud.google.com/pubsub/docs/exactly-once-delivery
 
@@ -163,7 +163,7 @@ Pub/Sub documents exactly-once semantics around acknowledgement behaviour, outst
 
 ### R6 Amazon SQS message deduplication identity
 
-**Amazon Web Services.** *When to provide a message deduplication ID in Amazon SQS* and related FIFO documentation.
+**Amazon Web Services.** _When to provide a message deduplication ID in Amazon SQS_ and related FIFO documentation.
 
 - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/providing-message-deduplication-id.html
 - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/using-messagededuplicationid-property.html
@@ -177,7 +177,7 @@ AWS explicitly documents that producers may need different deduplication identit
 
 ### R7 Stripe network errors and idempotency
 
-**Stripe.** *Advanced error handling.*
+**Stripe.** _Advanced error handling._
 
 - https://docs.stripe.com/error-low-level
 
@@ -189,7 +189,7 @@ Stripe documents that after network errors clients may not know whether the serv
 
 ### R8 AWS Durable Execution error and retry semantics
 
-**Amazon Web Services.** *AWS Durable Execution SDK Developer Guide - Error handling.*
+**Amazon Web Services.** _AWS Durable Execution SDK Developer Guide - Error handling._
 
 - https://docs.aws.amazon.com/durable-execution/sdk-reference/error-handling/errors/
 
@@ -203,7 +203,7 @@ AWS documents at-most-once steps where interruption after the side-effecting bod
 
 ### R9 Trafton et al. resumption goals
 
-**J. Gregory Trafton, Erik M. Altmann, Derek P. Brock, Farilee E. Mintz.** *Preparing to Resume an Interrupted Task: Effects of Prospective Goal Encoding and Retrospective Rehearsal.* International Journal of Human-Computer Studies 58(5), 2003, pp. 583-603.
+**J. Gregory Trafton, Erik M. Altmann, Derek P. Brock, Farilee E. Mintz.** _Preparing to Resume an Interrupted Task: Effects of Prospective Goal Encoding and Retrospective Rehearsal._ International Journal of Human-Computer Studies 58(5), 2003, pp. 583-603.
 
 - DOI: https://doi.org/10.1016/S1071-5819(03)00023-5
 - Publisher: https://www.sciencedirect.com/science/article/pii/S1071581903000235
@@ -216,7 +216,7 @@ The experiment found that participants given an interruption lag prepared more a
 
 ### R10 Parnin and DeLine task resumption cues
 
-**Chris Parnin, Robert DeLine.** *Evaluating Cues for Resuming Interrupted Programming Tasks.* CHI 2010.
+**Chris Parnin, Robert DeLine.** _Evaluating Cues for Resuming Interrupted Programming Tasks._ CHI 2010.
 
 - DOI: https://doi.org/10.1145/1753326.1753342
 - Microsoft Research: https://www.microsoft.com/en-us/research/publication/evaluating-cues-for-resuming-interrupted-programming-tasks/
@@ -229,7 +229,7 @@ The work surveyed 371 programmers and ran a controlled study comparing automated
 
 ### R11 Iqbal and Bailey notification interruption
 
-**Shamsi T. Iqbal, Brian P. Bailey.** *Effects of Intelligent Notification Management on Users and Their Tasks.* CHI 2008, pp. 93-102.
+**Shamsi T. Iqbal, Brian P. Bailey.** _Effects of Intelligent Notification Management on Users and Their Tasks._ CHI 2008, pp. 93-102.
 
 - DOI: https://doi.org/10.1145/1357054.1357070
 - University of Illinois record: https://experts.illinois.edu/en/publications/effects-of-intelligent-notification-management-on-users-and-their/
@@ -242,7 +242,7 @@ The study found that scheduling notifications at detected task breakpoints reduc
 
 ### R12 Parnin and Rugaber resumption strategies
 
-**Chris Parnin, Spencer Rugaber.** *Resumption Strategies for Interrupted Programming Tasks.* ICPC 2009, pp. 80-89. Extended journal version: Software Quality Journal 19(1), 2011, pp. 5-34.
+**Chris Parnin, Spencer Rugaber.** _Resumption Strategies for Interrupted Programming Tasks._ ICPC 2009, pp. 80-89. Extended journal version: Software Quality Journal 19(1), 2011, pp. 5-34.
 
 - ICPC DOI: https://doi.org/10.1109/ICPC.2009.5090030
 - Journal DOI: https://doi.org/10.1007/s11219-010-9104-9
@@ -256,7 +256,7 @@ The study analysed roughly 10,000 programming sessions and found that programmer
 
 ### R13 Cross-Device Taxonomy
 
-**Frederik Brudy, Christian Holz, Roman Rädle, Chi-Jui Wu, Steven Houben, Clemens Nylandsted Klokmose, Nicolai Marquardt.** *Cross-Device Taxonomy: Survey, Opportunities and Challenges of Interactions Spanning Across Multiple Devices.* CHI 2019, Article 562, 28 pages.
+**Frederik Brudy, Christian Holz, Roman Rädle, Chi-Jui Wu, Steven Houben, Clemens Nylandsted Klokmose, Nicolai Marquardt.** _Cross-Device Taxonomy: Survey, Opportunities and Challenges of Interactions Spanning Across Multiple Devices._ CHI 2019, Article 562, 28 pages.
 
 - DOI: https://doi.org/10.1145/3290605.3300792
 - Microsoft Research: https://www.microsoft.com/en-us/research/publication/cross-device-taxonomy-survey-opportunities-and-challenges-of-interactions-spanning-across-multiple-devices/
@@ -270,7 +270,7 @@ The paper synthesizes a corpus of 510 cross-device papers and develops common te
 
 ### R14 FamiData Hub and shared-device identity pressure
 
-**Ge Wang, Jun Zhao, Max Van Kleek, Roy Pea, Nigel Shadbolt.** *FamiData Hub: A Speculative Design Exploration with Families on Smart Home Datafication.* CHI 2025, Article 940.
+**Ge Wang, Jun Zhao, Max Van Kleek, Roy Pea, Nigel Shadbolt.** _FamiData Hub: A Speculative Design Exploration with Families on Smart Home Datafication._ CHI 2025, Article 940.
 
 - DOI: https://doi.org/10.1145/3706598.3713494
 - Oxford repository: https://ora.ox.ac.uk/objects/uuid:14c09636-059b-4e11-8896-cb14f4eb01f0

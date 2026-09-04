@@ -53,19 +53,19 @@ disclosure, and a model wording failure cannot rewrite canonical evidence.
 The fixture establishes four deliberately different conditions before and across
 restart:
 
-| Condition | Repository representation | Expected behavior |
-| --- | --- | --- |
-| Recoverable optional detail | `episode_meta` plus available attached detail evidence | Explicit explain projection may include the requested detail payload. |
-| Unavailable recall | Attached detail converted by the fixture-only `withhold_detail` fault | Episode meaning survives, detail payload is absent, and explicit explanation carries an `unavailable_detail` gap. |
-| Intentionally withheld private context | Current meaning remains canonical in another scope and is declared forbidden for this projection | Canonical inspection can still see the meaning, but the cognition projection must not receive it. |
-| Merely irrelevant permitted context | Current same-scope fact remains eligible for the present broad v1 projection but is classified irrelevant by the scenario | The evaluator reports it separately as `irrelevant_selected`; it is neither unavailable nor private. |
+| Condition                              | Repository representation                                                                                                 | Expected behavior                                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Recoverable optional detail            | `episode_meta` plus available attached detail evidence                                                                    | Explicit explain projection may include the requested detail payload.                                             |
+| Unavailable recall                     | Attached detail converted by the fixture-only `withhold_detail` fault                                                     | Episode meaning survives, detail payload is absent, and explicit explanation carries an `unavailable_detail` gap. |
+| Intentionally withheld private context | Current meaning remains canonical in another scope and is declared forbidden for this projection                          | Canonical inspection can still see the meaning, but the cognition projection must not receive it.                 |
+| Merely irrelevant permitted context    | Current same-scope fact remains eligible for the present broad v1 projection but is classified irrelevant by the scenario | The evaluator reports it separately as `irrelevant_selected`; it is neither unavailable nor private.              |
 
 Three cognition episodes then expose the transitions:
 
-| Episode | Pressure | Deterministic oracle |
-| --- | --- | --- |
-| `available-detail-baseline` | The optional detail is still recoverable. | Explain projection contains the requested detail payload, no gap, and no private marker. |
-| `unavailable-after-restart` | The detail becomes unavailable immediately before Ember restarts. | Canonical inspection and explain projection preserve the gap; the old payload is absent; private context remains canonical but undisclosed. |
+| Episode                         | Pressure                                                                                       | Deterministic oracle                                                                                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `available-detail-baseline`     | The optional detail is still recoverable.                                                      | Explain projection contains the requested detail payload, no gap, and no private marker.                                                              |
+| `unavailable-after-restart`     | The detail becomes unavailable immediately before Ember restarts.                              | Canonical inspection and explain projection preserve the gap; the old payload is absent; private context remains canonical but undisclosed.           |
 | `ordinary-after-second-restart` | Ember restarts again and answers an ordinary question that does not need the degraded episode. | Canonical gap still exists, but the ordinary projection omits the episode and its gap. The omission means only that the gap is not participating now. |
 
 The fixture also leaves one same-scope irrelevant fact selected throughout. This is

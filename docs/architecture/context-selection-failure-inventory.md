@@ -73,12 +73,12 @@ larger context window is therefore not justified by this evidence alone.
 
 This inventory uses cause classes rather than implementation labels.
 
-| Class | Question |
-| --- | --- |
-| **Storage / modeling** | Can canonical Ember state truthfully represent the semantic distinction before selection begins? |
-| **Selection** | Given representable and permitted state, does Ember choose the meanings that should participate in this cognition? |
-| **Projection / currentness / provenance** | Does the selected projection preserve current-vs-historical status, scope, gaps, attribution, conflict, and evidence lineage? |
-| **Model behavior** | Given a semantically correct projection, does the cognition provider nevertheless misuse, ignore, collapse, or fabricate from it? |
+| Class                                     | Question                                                                                                                          |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Storage / modeling**                    | Can canonical Ember state truthfully represent the semantic distinction before selection begins?                                  |
+| **Selection**                             | Given representable and permitted state, does Ember choose the meanings that should participate in this cognition?                |
+| **Projection / currentness / provenance** | Does the selected projection preserve current-vs-historical status, scope, gaps, attribution, conflict, and evidence lineage?     |
+| **Model behavior**                        | Given a semantically correct projection, does the cognition provider nevertheless misuse, ignore, collapse, or fabricate from it? |
 
 A failure can only be fixed at or before the layer that caused it. Retrieval cannot
 recover a distinction that canonical state cannot represent, and a model wording
@@ -97,12 +97,12 @@ failure does not prove that Ember selected the wrong context.
 that is relevant to the current purpose from another current meaning that merely
 shares the same scope. The longitudinal scenarios expose that behavior directly:
 
-| Scenario / episode family | Irrelevant same-scope meanings selected | Relevant omission | Harm judgment |
-| --- | ---: | --- | --- |
-| `memory-context-pressure` | 64 generated ambient facts | none observed | `potential` inclusion, `reduce` pressure |
-| `currentness-pressure` | 24 generated ambient facts | none observed | `potential` inclusion, `reduce` pressure |
-| `provenance-pressure` | 12 generated ambient facts | none observed | `potential` inclusion, `reduce` pressure |
-| `degraded-context-pressure` | 1 unrelated permitted fact | none observed | `potential` inclusion, `reduce` pressure |
+| Scenario / episode family   | Irrelevant same-scope meanings selected | Relevant omission | Harm judgment                            |
+| --------------------------- | --------------------------------------: | ----------------- | ---------------------------------------- |
+| `memory-context-pressure`   |              64 generated ambient facts | none observed     | `potential` inclusion, `reduce` pressure |
+| `currentness-pressure`      |              24 generated ambient facts | none observed     | `potential` inclusion, `reduce` pressure |
+| `provenance-pressure`       |              12 generated ambient facts | none observed     | `potential` inclusion, `reduce` pressure |
+| `degraded-context-pressure` |              1 unrelated permitted fact | none observed     | `potential` inclusion, `reduce` pressure |
 
 The counts are evidence of systematic breadth, not a scalar severity formula. One
 private disclosure could be more serious than hundreds of harmless distractors, and

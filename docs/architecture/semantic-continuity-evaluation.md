@@ -28,14 +28,14 @@ after cognition.
 
 ## Governing expectations
 
-| Scenario | Semantic vector | Governing expectation |
-|---|---|---|
-| `issue-56-supersession-commitment-gap` | Current and superseded preference remain distinguishable | [AS-MEM-01](acceptance-scenarios.md#as-mem-01), ADR 0002, ADR 0003 |
-| `issue-56-supersession-commitment-gap` | A live Ember commitment survives restart but remains subject to currentness reconciliation | [AS-CONT-01](acceptance-scenarios.md#as-cont-01), ADR 0002, ADR 0003 |
-| `issue-56-supersession-commitment-gap` | Unavailable detail remains an explicit gap and is not plausibly reconstructed | [AS-MEM-04](acceptance-scenarios.md#as-mem-04), ADR 0002, ADR 0003 |
-| `issue-56-supersession-commitment-gap` | Downtime is represented by the recovery account rather than a seamless autobiographical bridge | [AS-CONT-01](acceptance-scenarios.md#as-cont-01), cross-ADR restart case 1 |
-| `issue-56-provenance-epistemic-restraint` | User testimony stays user testimony while an Ember commitment stays Ember-owned adoption | ADR 0002 and [memory provenance semantics](../research/memory-and-remembering.md) |
-| `issue-56-provenance-epistemic-restraint` | A user-reported external event is not retold as Ember's direct observation | ADR 0002; the same epistemic-ownership rule exposed by [AS-DEL-03](acceptance-scenarios.md#as-del-03) |
+| Scenario                                  | Semantic vector                                                                                | Governing expectation                                                                                 |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `issue-56-supersession-commitment-gap`    | Current and superseded preference remain distinguishable                                       | [AS-MEM-01](acceptance-scenarios.md#as-mem-01), ADR 0002, ADR 0003                                    |
+| `issue-56-supersession-commitment-gap`    | A live Ember commitment survives restart but remains subject to currentness reconciliation     | [AS-CONT-01](acceptance-scenarios.md#as-cont-01), ADR 0002, ADR 0003                                  |
+| `issue-56-supersession-commitment-gap`    | Unavailable detail remains an explicit gap and is not plausibly reconstructed                  | [AS-MEM-04](acceptance-scenarios.md#as-mem-04), ADR 0002, ADR 0003                                    |
+| `issue-56-supersession-commitment-gap`    | Downtime is represented by the recovery account rather than a seamless autobiographical bridge | [AS-CONT-01](acceptance-scenarios.md#as-cont-01), cross-ADR restart case 1                            |
+| `issue-56-provenance-epistemic-restraint` | User testimony stays user testimony while an Ember commitment stays Ember-owned adoption       | ADR 0002 and [memory provenance semantics](../research/memory-and-remembering.md)                     |
+| `issue-56-provenance-epistemic-restraint` | A user-reported external event is not retold as Ember's direct observation                     | ADR 0002; the same epistemic-ownership rule exposed by [AS-DEL-03](acceptance-scenarios.md#as-del-03) |
 
 The cross-ADR validation matrix in
 [`decisions/README.md`](decisions/README.md) remains the governing compact oracle:
@@ -163,14 +163,14 @@ supplied, so model selection was the Codex CLI default rather than an explicitly
 selected model. Each episode used the scenario's fresh external-thread setting.
 Raw reports remain local and are not repository artifacts.
 
-| Scenario | Episode | Ember assertions | Model observations |
-|---|---|---:|---:|
-| `issue-56-supersession-commitment-gap` | `baseline-currentness` | 6/6 passed | 8/8 passed |
-| `issue-56-supersession-commitment-gap` | `explain-after-restart` | 7/7 passed | 14/14 passed |
-| `issue-56-supersession-commitment-gap` | `ordinary-current-only` | 7/7 passed | 5/5 passed |
-| `issue-56-provenance-epistemic-restraint` | `provenance-baseline` | 6/6 passed | 11/11 passed |
-| `issue-56-provenance-epistemic-restraint` | `provenance-after-restart` | 7/7 passed | 12/12 passed |
-| **Aggregate** | **5 episodes** | **33/33 passed** | **50/50 passed** |
+| Scenario                                  | Episode                    | Ember assertions | Model observations |
+| ----------------------------------------- | -------------------------- | ---------------: | -----------------: |
+| `issue-56-supersession-commitment-gap`    | `baseline-currentness`     |       6/6 passed |         8/8 passed |
+| `issue-56-supersession-commitment-gap`    | `explain-after-restart`    |       7/7 passed |       14/14 passed |
+| `issue-56-supersession-commitment-gap`    | `ordinary-current-only`    |       7/7 passed |         5/5 passed |
+| `issue-56-provenance-epistemic-restraint` | `provenance-baseline`      |       6/6 passed |       11/11 passed |
+| `issue-56-provenance-epistemic-restraint` | `provenance-after-restart` |       7/7 passed |       12/12 passed |
+| **Aggregate**                             | **5 episodes**             | **33/33 passed** |   **50/50 passed** |
 
 The supersession scenario's canonical state retained the earlier preference as
 superseded history while the replacement remained current. Its explain projection

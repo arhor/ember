@@ -73,7 +73,7 @@ Dream
       └── memory/MEMORY.md
 ```
 
-The important semantic distinction is that `history.jsonl` is *material for memory*, not final memory itself.
+The important semantic distinction is that `history.jsonl` is _material for memory_, not final memory itself.
 
 `Dream` periodically reads recent history plus current durable files and makes bounded edits to the long-term state. NanoBot can also version these durable changes through Git, giving memory an audit and restore path.
 

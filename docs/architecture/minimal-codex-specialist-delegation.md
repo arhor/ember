@@ -36,17 +36,17 @@ cross-cutting choice.
 
 ## Ownership boundary
 
-| Concern | Ember owns | Codex runtime owns |
-| --- | --- | --- |
-| Purpose | The live objective, why delegation is appropriate, acceptance constraints, and whether the objective remains current | Local interpretation needed to pursue the supplied objective |
-| Context | Selection, permitted disclosure, provenance, scope, observation time, and omissions in the supplied projection | Task-local use, compaction, and scratch derivations from what was disclosed or observed in the workspace |
-| Authority | The attributable authority envelope and every decision to grant, deny, narrow, or seek broader authority | Enforcement of its own sandbox and approval policy; a request for more access has no authority by itself |
-| Execution | Starting the bounded episode, choosing the workspace and invocation policy, observing boundary events, and deciding whether to request cancellation | The local cognition, planning, tool, retry, and execution loop |
-| Runtime state | Opaque runtime/thread identifiers only as operational evidence | Thread history, hidden reasoning, local plan, process state, and runtime scratch state |
-| Evidence | Durable observations made at the boundary, their provenance, and any independent verification | Specialist-local observations and the report attributed to Codex |
-| Completion | Whether the Ember-owned objective is satisfied and whether the result is still applicable | Whether Codex considers its local attempt done and what it reports |
-| Effects | Reconciliation of known and possible effects before reliance, compensation, or retry | Effects caused by runtime-selected tool calls inside the entrusted boundary |
-| Continuity | The continuing objective, episode record, unresolved responsibility, and reintegration into Ember history | At most continuity of the particular Codex thread; never Ember identity or objective ownership |
+| Concern       | Ember owns                                                                                                                                          | Codex runtime owns                                                                                       |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Purpose       | The live objective, why delegation is appropriate, acceptance constraints, and whether the objective remains current                                | Local interpretation needed to pursue the supplied objective                                             |
+| Context       | Selection, permitted disclosure, provenance, scope, observation time, and omissions in the supplied projection                                      | Task-local use, compaction, and scratch derivations from what was disclosed or observed in the workspace |
+| Authority     | The attributable authority envelope and every decision to grant, deny, narrow, or seek broader authority                                            | Enforcement of its own sandbox and approval policy; a request for more access has no authority by itself |
+| Execution     | Starting the bounded episode, choosing the workspace and invocation policy, observing boundary events, and deciding whether to request cancellation | The local cognition, planning, tool, retry, and execution loop                                           |
+| Runtime state | Opaque runtime/thread identifiers only as operational evidence                                                                                      | Thread history, hidden reasoning, local plan, process state, and runtime scratch state                   |
+| Evidence      | Durable observations made at the boundary, their provenance, and any independent verification                                                       | Specialist-local observations and the report attributed to Codex                                         |
+| Completion    | Whether the Ember-owned objective is satisfied and whether the result is still applicable                                                           | Whether Codex considers its local attempt done and what it reports                                       |
+| Effects       | Reconciliation of known and possible effects before reliance, compensation, or retry                                                                | Effects caused by runtime-selected tool calls inside the entrusted boundary                              |
+| Continuity    | The continuing objective, episode record, unresolved responsibility, and reintegration into Ember history                                           | At most continuity of the particular Codex thread; never Ember identity or objective ownership           |
 
 Ember can therefore truthfully say that it selected and bounded Codex, observed
 particular boundary events, received a Codex report, and independently verified a
@@ -59,16 +59,16 @@ not remove Ember's responsibility for initiating or relying on the delegation.
 Before launch, Ember persists an immutable episode specification. The names below
 describe required meanings rather than requiring a public or generalized schema.
 
-| Input | Required content |
-| --- | --- |
-| `episode_id` | Ember-generated identity for this delegation occurrence, independent of process and Codex thread IDs |
-| `objective` | The bounded outcome Codex is asked to pursue, plus why it remains live |
-| `acceptance` | Observable success constraints, prohibited outcomes, and evidence Ember needs before relying on the report |
-| `context_projection` | Only the task facts, constraints, and source/currentness labels needed by this specialist; never a canonical store path or implicit memory dump |
-| `authority_envelope` | Attributable principal and grant, purpose, permitted actions and disclosures, targets/recipients, material limits, and conditions requiring escalation |
-| `workspace` | An explicit canonical path, expected repository identity or baseline when relevant, and whether existing user changes must be preserved |
-| `runtime_policy` | Codex command/version evidence, narrowest runtime-enforceable sandbox/tool/network controls compatible with the task, configuration isolation, timeout/resource bounds, and session mode |
-| `currentness_basis` | Machine-comparable `objective_revision` and `context_revision` captured at launch, against which a late result must be checked |
+| Input                | Required content                                                                                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `episode_id`         | Ember-generated identity for this delegation occurrence, independent of process and Codex thread IDs                                                                                     |
+| `objective`          | The bounded outcome Codex is asked to pursue, plus why it remains live                                                                                                                   |
+| `acceptance`         | Observable success constraints, prohibited outcomes, and evidence Ember needs before relying on the report                                                                               |
+| `context_projection` | Only the task facts, constraints, and source/currentness labels needed by this specialist; never a canonical store path or implicit memory dump                                          |
+| `authority_envelope` | Attributable principal and grant, purpose, permitted actions and disclosures, targets/recipients, material limits, and conditions requiring escalation                                   |
+| `workspace`          | An explicit canonical path, expected repository identity or baseline when relevant, and whether existing user changes must be preserved                                                  |
+| `runtime_policy`     | Codex command/version evidence, narrowest runtime-enforceable sandbox/tool/network controls compatible with the task, configuration isolation, timeout/resource bounds, and session mode |
+| `currentness_basis`  | Machine-comparable `objective_revision` and `context_revision` captured at launch, against which a late result must be checked                                                           |
 
 The working directory is both capability and disclosure. It is never inherited
 from the Ember process by accident. Selecting a repository workspace intentionally
@@ -152,11 +152,11 @@ treated as evidence. At minimum the episode can preserve:
 These observations support, but do not collapse into, three independent state
 dimensions:
 
-| Dimension | Values needed by the first slice | Meaning |
-| --- | --- | --- |
-| Runtime attempt | `not_started`, `running`, `waiting_for_authority`, `cancellation_requested`, `exited`, `lost` | What Ember can justify about the operational locus |
-| Specialist report | `none`, `partial`, `reported_success`, `reported_failure`, `ambiguous` | What Codex reported, not whether Ember's objective is complete |
-| Ember disposition | `unresolved`, `blocked`, `accepted`, `qualified`, `rejected`, `stale` | Ember's current interpretation after checking evidence, objective, authority, and world state |
+| Dimension         | Values needed by the first slice                                                              | Meaning                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Runtime attempt   | `not_started`, `running`, `waiting_for_authority`, `cancellation_requested`, `exited`, `lost` | What Ember can justify about the operational locus                                            |
+| Specialist report | `none`, `partial`, `reported_success`, `reported_failure`, `ambiguous`                        | What Codex reported, not whether Ember's objective is complete                                |
+| Ember disposition | `unresolved`, `blocked`, `accepted`, `qualified`, `rejected`, `stale`                         | Ember's current interpretation after checking evidence, objective, authority, and world state |
 
 Known effects and possible effects are recorded alongside these dimensions rather
 than inferred from them. In particular:
@@ -235,16 +235,16 @@ attributable authority; otherwise it narrows, blocks, or seeks meaningful approv
 
 ## Acceptance-scenario responsibility map
 
-| Scenario | Design responsibility |
-| --- | --- |
-| [AS-DEL-00](acceptance-scenarios.md#as-del-00) | Immutable Ember-owned envelope, Codex-owned local loop, attributed report, verification and reintegration |
-| [AS-DEL-01](acceptance-scenarios.md#as-del-01) | Durable episode/objective independent of surface lifetime; only observed progress is claimed |
-| [AS-DEL-02](acceptance-scenarios.md#as-del-02) | Immutable original objective plus currentness basis; `stale` is a valid Ember disposition |
-| [AS-DEL-03](acceptance-scenarios.md#as-del-03) | Specialist report, boundary observation, and independent Ember verification have distinct provenance |
-| [AS-DEL-04](acceptance-scenarios.md#as-del-04) | Cancellation intent, signal, observed exit, stop, rollback, and effects remain separate |
-| [AS-DEL-05](acceptance-scenarios.md#as-del-05) | Explicit disclosure/authority envelope; expansion requests return to Ember and never self-authorize |
-| [AS-DEL-06](acceptance-scenarios.md#as-del-06) | Orthogonal runtime, report, disposition, and effect state; no unsafe automatic retry |
-| [AS-DEL-07](acceptance-scenarios.md#as-del-07) | Context-rich approval evidence and Ember-owned decision; safe blocked outcome when CLI mediation is insufficient |
+| Scenario                                       | Design responsibility                                                                                             |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [AS-DEL-00](acceptance-scenarios.md#as-del-00) | Immutable Ember-owned envelope, Codex-owned local loop, attributed report, verification and reintegration         |
+| [AS-DEL-01](acceptance-scenarios.md#as-del-01) | Durable episode/objective independent of surface lifetime; only observed progress is claimed                      |
+| [AS-DEL-02](acceptance-scenarios.md#as-del-02) | Immutable original objective plus currentness basis; `stale` is a valid Ember disposition                         |
+| [AS-DEL-03](acceptance-scenarios.md#as-del-03) | Specialist report, boundary observation, and independent Ember verification have distinct provenance              |
+| [AS-DEL-04](acceptance-scenarios.md#as-del-04) | Cancellation intent, signal, observed exit, stop, rollback, and effects remain separate                           |
+| [AS-DEL-05](acceptance-scenarios.md#as-del-05) | Explicit disclosure/authority envelope; expansion requests return to Ember and never self-authorize               |
+| [AS-DEL-06](acceptance-scenarios.md#as-del-06) | Orthogonal runtime, report, disposition, and effect state; no unsafe automatic retry                              |
+| [AS-DEL-07](acceptance-scenarios.md#as-del-07) | Context-rich approval evidence and Ember-owned decision; safe blocked outcome when CLI mediation is insufficient  |
 | [AS-DEL-08](acceptance-scenarios.md#as-del-08) | Durable boundary evidence survives thread/runtime loss; replacement is a new episode, not fabricated continuation |
 
 ## Unresolved questions for implementation evidence
@@ -288,12 +288,12 @@ Issue #62 adds the production checkpoint implemented by
 the immutable launch basis with a current checkpoint containing the objective
 revision, relevant-context revision, and objective lifecycle status:
 
-| Current checkpoint | Applicability | Ember disposition |
-| --- | --- | --- |
-| Objective and context revisions match; objective is current | `still_applicable` | Remains `unresolved`, or atomically receives the supplied verified disposition |
-| Objective is superseded or its revision changed | `stale` | `stale` |
-| Objective still matches but relevant context or requirements changed | `requires_re_evaluation` | `requires_re_evaluation` |
-| Objective is cancelled | `rejected` | `rejected` |
+| Current checkpoint                                                   | Applicability            | Ember disposition                                                              |
+| -------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| Objective and context revisions match; objective is current          | `still_applicable`       | Remains `unresolved`, or atomically receives the supplied verified disposition |
+| Objective is superseded or its revision changed                      | `stale`                  | `stale`                                                                        |
+| Objective still matches but relevant context or requirements changed | `requires_re_evaluation` | `requires_re_evaluation`                                                       |
+| Objective is cancelled                                               | `rejected`               | `rejected`                                                                     |
 
 The durable `currentness_evaluation` records the comparison time, launch basis,
 current checkpoint, classification, and reason. Another process can therefore
