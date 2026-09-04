@@ -10,7 +10,7 @@ import { initialState } from "../src/core/model.ts";
 import { attachDetail, rememberEpisode, withholdDetail } from "../src/core/semantics.ts";
 import { ROOT, tempDir } from "./support.ts";
 
-const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "degraded-context-pressure.json");
+const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "degraded-context-pressure.json");
 const DETAIL = "UNAVAILABLE_DETAIL_MARKER_69: copper-fern-17";
 const PRIVATE = "WITHHELD_PRIVATE_MARKER_69";
 
