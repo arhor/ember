@@ -18,7 +18,7 @@ import {
     setSpecialistDisposition,
 } from "./codex-specialist.ts";
 
-const FIXTURE = join(ROOT, "test-fixtures/providers/scripted-codex-specialist.ts");
+const FIXTURE = join(ROOT, "tests/fixtures/providers/scripted-codex-specialist.ts");
 
 async function episodeFixture() {
     const root = await tempDir();
