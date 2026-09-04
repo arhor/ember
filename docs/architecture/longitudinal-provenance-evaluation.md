@@ -19,7 +19,7 @@ implementation/evaluation evidence. It does not make repetition into epistemic
 weight, define a confidence calculus, or replace the governing semantic sources.
 
 The executable fixture is
-`test-fixtures/longitudinal/provenance-pressure.json`; deterministic coverage is
+`eval/longitudinal/fixtures/provenance-pressure.json`; deterministic coverage is
 `tests/longitudinal-provenance.test.ts`. Reproduce it with:
 
 ```sh
@@ -31,8 +31,8 @@ The same fixture can be passed to the opt-in live runner:
 
 ```sh
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
-  --scenario test-fixtures/longitudinal/provenance-pressure.json \
+  node eval/longitudinal/run.ts \
+  --scenario eval/longitudinal/fixtures/provenance-pressure.json \
   --provider codex \
   --timeout-seconds 180
 ```
