@@ -224,6 +224,18 @@ Status joins two evidence classes instead of conflating them:
 An active service does not prove an objective is current or effects are safe. A durable
 `running` observation does not prove a process still exists.
 
+Read apparently contradictory fields as a recovery signal rather than choosing the
+more convenient layer:
+
+| Durable status | Current unit observation | Truthful interpretation |
+| --- | --- | --- |
+| wake `pending` | timer/service missing | activation is missing; reconciliation may reconstruct it because dispatch has not begun |
+| wake `dispatching` | service missing/inactive/failed | outcome is uncertain; do not replay the wake automatically |
+| specialist `running` with episode record | service missing/inactive/failed | local process loss is suspected; run reconciliation to persist `lost`/effect uncertainty |
+| specialist `launched` or `running`, `runtime_state=null` | service missing | the outer worker boundary was observed but no specialist episode record exists; do not invent child execution or retry safety |
+| specialist `lost` | service missing/inactive/failed | process loss is durable; inspect `retry_state`/episode recovery evidence before any retry |
+| terminal durable record | any stale unit observation | durable work outcome and current unit state remain separate facts; stale supervisor state does not rewrite history |
+
 Canonical and lock inspection remain ordinary CLI operations:
 
 ```bash
@@ -259,8 +271,27 @@ opportunity evaluator call because the current `runCognitionOpportunity` lifecyc
 requires the cooperating lease for its before/after commits. A foreground `ember run`
 session can therefore contend with a background wake. Contention fails closed.
 
-Do not delete a lock merely because it is old. Use the existing lock-status and
-explicit quiescence recovery procedure.
+Do not delete a lock merely because it is old. Diagnose first:
+
+```bash
+ember lock-status --state /ABSOLUTE/PATH/ember.json
+```
+
+Only if the result is `apparently_stale`, the recorded owner token still matches, and
+you have independently established that no writer capable of using the state remains,
+quarantine the stale artifact explicitly:
+
+```bash
+ember quarantine-stale-lock \
+  --state /ABSOLUTE/PATH/ember.json \
+  --owner-token EXACT_TOKEN_FROM_LOCK_STATUS \
+  --confirm-quiescent
+```
+
+Quarantine renames the lock rather than deleting history, re-checks same-host PID
+absence, and fails closed if liveness becomes uncertain. A pending wake blocked before
+`dispatching` remains the same wake after quarantine; lock recovery itself is not a
+cognition occurrence and is not permission to replay work that had already begun.
 
 Shorter wake lease windows remain a possible future refinement only if currentness can
 be preserved correctly across the external wait.
@@ -277,6 +308,11 @@ whose due time passed is dispatched at most once from the same durable identity 
 no worker is observed. A wake that already crossed `dispatching` is preserved as
 ambiguous rather than replayed. A vanished nonterminal specialist is recorded lost
 through the existing specialist recovery semantics.
+
+Run `status` again after reconciliation. Do not interpret an empty `repairedWakes` or
+`lostSpecialists` list as proof that there is no recovery gap: a wake already at
+`dispatching`, or an outer specialist worker with no `episode.json`, is intentionally
+left unreplayed because durable evidence is insufficient for a stronger claim.
 
 ## Logs
 
@@ -301,11 +337,15 @@ npm run test:docs
 node scripts/docs-discovery.mjs check
 ```
 
-Runtime tests inject a fake supervisor and deterministic evaluator. They verify
-persist-before-launch ordering, one-shot and already-due wake activation, duplicate
-work protection, `Restart=no`, specialist kill policy, startup repair, record-path
-validation, clean wake lifecycle, and joined status. No normal test requires systemd,
-lingering, root, or live provider authentication.
+Runtime tests inject a fake supervisor and deterministic evaluator. In addition to the
+baseline #94 tests, `tests/episodic-runtime-recovery.test.ts` validates manager/timer
+reconstruction, stale-lock quarantine before dispatch, unclean cognition/opportunity
+restart classification, pending-delivery preservation, specialist process loss, and
+the pre-episode specialist information gap. No normal test requires systemd, lingering,
+root, or live provider authentication.
+
+The durable scenario conclusions are recorded in
+[episodic-runtime-recovery-validation.md](episodic-runtime-recovery-validation.md).
 
 ## Reproducible Linux/systemd smoke
 
@@ -349,26 +389,99 @@ systemd assumptions.
    one terminal wake observation. The model's discretionary decision is not itself a
    deterministic assertion.
 
-6. For restart/crash semantics, follow issue #83 scenarios. At minimum verify that
-   removing a pending transient timer or restarting the user manager, followed by
-   reconciliation, preserves one durable wake identity rather than multiplying
-   occurrences.
-
 Record Node/systemd versions, commands, unit states, and opaque runtime IDs. Do not
 commit host paths, credentials, or journal excerpts containing private content.
 
-## Handoff to #82 and #83
+## Recovery and restart validation
 
-Issue #82 can measure three distinct resource classes:
+Run destructive recovery checks only against disposable state/workspaces. Capture the
+before/after `status`, canonical `inspect`, relevant runtime-record filenames, and unit
+states. The expected result is a classification boundary, not necessarily successful
+work completion.
+
+### User-manager or transient-timer loss before wake dispatch
+
+1. Schedule a wake far enough in the future to inspect it.
+2. Record its single `wake_id` and verify that `dispatching.json` does not exist.
+3. Stop/remove the transient timer, or restart the user manager only on a disposable
+   validation account where doing so is safe.
+4. Run `reconcile` once and verify the same wake identity is re-armed.
+5. Run `reconcile` again after the timer is active and verify no second activation is
+   created.
+6. Inspect canonical state and verify that the restart/reconciliation itself created no
+   cognition opportunity.
+
+A real user-manager restart may disrupt the shell/session used to perform the test.
+Do not automate it in shared CI or on a non-disposable login merely to satisfy this
+smoke procedure.
+
+### Abrupt wake loss after dispatch
+
+1. Let a disposable wake cross `dispatching.json`.
+2. Kill its worker with `SIGKILL` before a terminal wake observation is written.
+3. Confirm `Restart=no` leaves the service non-running rather than replaying it.
+4. Run `status` and `reconcile`.
+5. Verify the wake remains ambiguous and no second cognition opportunity is created for
+   that wake identity.
+
+If the canonical opportunity itself had reached `evaluating`, a later Ember runtime
+start may classify that occurrence `outcome_unknown`; that is stronger evidence than
+inventing either completion or abortion.
+
+### Specialist orderly stop versus forced loss
+
+For orderly cancellation, use `systemctl --user stop` and verify the worker had a
+chance to persist cancellation/termination evidence before the unit becomes inactive.
+
+For forced-loss validation on a disposable specialist workspace:
+
+```bash
+systemctl --user kill \
+  --kill-who=main \
+  --signal=KILL \
+  ember-specialist-<episode-id>.service
+```
+
+Then run `reconcile` and inspect the specialist episode. Once the specialist-local
+record had crossed `launch_attempted`, the expected recovery state is `lost` with an
+ambiguous report, possible effects, unknown continued work, and retry prohibited
+pending reconciliation. Do **not** infer rollback from an empty unit cgroup.
+
+If outer `launch_accepted`/`worker_started` evidence exists but `episode.json` does not,
+retain that gap. The specialist child launch is not durably established, and current
+reconciliation intentionally does not synthesize a child process-loss history.
+
+### Stale writer lock after process death
+
+1. Run `ember lock-status` and retain the exact owner token/hostname/PID diagnosis.
+2. Establish independently that the recorded same-host writer is absent and that the
+   state is quiescent.
+3. Use `quarantine-stale-lock` with that exact token and `--confirm-quiescent`.
+4. Re-run `lock-status`, then `reconcile` if a pending wake was previously blocked.
+5. Verify a wake that had not crossed `dispatching` retains its original identity and
+   creates at most one opportunity after recovery.
+
+Never use lock age, systemd inactivity, or a guessed PID as sufficient proof of safe
+quarantine.
+
+### Ambiguous delivery
+
+A cognition that is `completed` with `delivery_status=pending` after process loss is a
+durable semantic occurrence with uncertain presentation. Recovery must preserve it as
+such. Do not rerun cognition to make the output appear again. Any future redelivery
+mechanism must operate on the delivery occurrence and its privacy/currentness policy,
+not manufacture a second cognition.
+
+## Handoff to #82
+
+Issue #82 can measure three distinct resource classes using this validated recovery
+boundary:
 
 1. no resident Ember Node process while idle;
 2. one bounded wake/reconciliation Node worker; and
 3. one specialist Ember worker plus its Codex process tree.
 
-Issue #83 can validate recovery at the explicit durable boundaries: before wake
-dispatch, after dispatch before terminal observation, before specialist launch, during
-specialist work, during bounded shutdown, after forced process/host loss, and under
-writer contention.
-
-Those tasks should use the runtime records plus `status`/`reconcile` rather than
-building a second semantic recovery model around systemd state.
+Recovery validation evidence for #83 is retained in
+[episodic-runtime-recovery-validation.md](episodic-runtime-recovery-validation.md).
+Resource measurement should continue to use runtime records plus `status`/`reconcile`
+rather than building a second semantic model around systemd state.
