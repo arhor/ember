@@ -63,6 +63,17 @@ function absentProcess() {
     throw error;
 }
 
+async function withFixedTime<T>(timestamp: string, action: () => Promise<T>): Promise<T> {
+    const previous = process.env.EMBER_TEST_NOW;
+    process.env.EMBER_TEST_NOW = timestamp;
+    try {
+        return await action();
+    } finally {
+        if (previous === undefined) delete process.env.EMBER_TEST_NOW;
+        else process.env.EMBER_TEST_NOW = previous;
+    }
+}
+
 function specialistSpec(root: string) {
     return createSpecialistEpisode({
         objective: "Inspect the recovery fixture",
@@ -210,19 +221,21 @@ test("process restart should classify in-flight cognition and opportunity as out
     let state = await store.load();
     const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T16:01:00Z" });
     state = await store.commit(state.revision, started.state);
-    const cognitionError = await captureError(() =>
-        runCognition(store, state, {
-            runtimeId: started.runtimeId,
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            text: "preserve this in-flight boundary",
-            command: "/unused/provider",
-            timeoutSeconds: 1,
-            output: () => {},
-            provider: async () => {
-                throw new Error("simulated abrupt cognition process loss");
-            },
-        }),
+    const cognitionError = await withFixedTime("2026-09-04T17:00:00Z", () =>
+        captureError(() =>
+            runCognition(store, state, {
+                runtimeId: started.runtimeId,
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                text: "preserve this in-flight boundary",
+                command: "/unused/provider",
+                timeoutSeconds: 1,
+                output: () => {},
+                provider: async () => {
+                    throw new Error("simulated abrupt cognition process loss");
+                },
+            }),
+        ),
     );
     state = await store.load();
     const opportunityError = await captureError(() =>
@@ -278,28 +291,30 @@ test("restart should preserve completed cognition with pending delivery instead 
     let displayed = "";
 
     // When
-    const crash = await captureError(() =>
-        runCognition(store, state, {
-            runtimeId: started.runtimeId,
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            text: "render once",
-            command: "/unused/provider",
-            timeoutSeconds: 1,
-            provider: async () => ({
-                contract_version: 1,
-                reply: "recovery-boundary reply",
-                used_meaning_ids: [],
-            }),
-            output: (text) => {
-                displayed += text;
-            },
-            hooks: {
-                afterDisplay: () => {
-                    throw new Error("simulated process loss after display");
+    const crash = await withFixedTime("2026-09-04T17:00:00Z", () =>
+        captureError(() =>
+            runCognition(store, state, {
+                runtimeId: started.runtimeId,
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                text: "render once",
+                command: "/unused/provider",
+                timeoutSeconds: 1,
+                provider: async () => ({
+                    contract_version: 1,
+                    reply: "recovery-boundary reply",
+                    used_meaning_ids: [],
+                }),
+                output: (text) => {
+                    displayed += text;
                 },
-            },
-        }),
+                hooks: {
+                    afterDisplay: () => {
+                        throw new Error("simulated process loss after display");
+                    },
+                },
+            }),
+        ),
     );
     await store.releaseWriteLease(lease);
     const beforeRestart = await store.load();
