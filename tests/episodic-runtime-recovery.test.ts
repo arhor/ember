@@ -22,7 +22,7 @@ import {
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
-const OBSERVED_AT = "2026-09-04T18:00:00Z";
+const OBSERVED_AT = "2026-09-04T16:00:00Z";
 
 function runtimeConfig(root: string): EpisodicRuntimeConfig {
     return {
@@ -208,7 +208,7 @@ test("process restart should classify in-flight cognition and opportunity as out
     await store.create(initialState("Ember", PRINCIPAL, OBSERVED_AT));
     const lease = await store.acquireWriteLease();
     let state = await store.load();
-    const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T18:01:00Z" });
+    const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T16:01:00Z" });
     state = await store.commit(state.revision, started.state);
     const cognitionError = await captureError(() =>
         runCognition(store, state, {
@@ -273,7 +273,7 @@ test("restart should preserve completed cognition with pending delivery instead 
     await store.create(initialState("Ember", PRINCIPAL, OBSERVED_AT));
     const lease = await store.acquireWriteLease();
     let state = await store.load();
-    const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T18:01:00Z" });
+    const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T16:01:00Z" });
     state = await store.commit(state.revision, started.state);
     let displayed = "";
 
