@@ -4,15 +4,12 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "bin/ember.ts"
-      - "bin/ember-runtime.ts"
-      - "src/agency/**"
-      - "src/delegation/**"
-      - "src/providers/**"
-      - "src/runtime/**"
+      - "bin/**"
+      - "src/**"
       - "eval/runtime-resource/**"
       - "docs/architecture/runtime-resource-evaluation.md"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/runtime-resource-evaluation.yml"
 
 permissions:
@@ -29,8 +26,17 @@ jobs:
           cache: npm
       - name: Install locked development toolchain
         run: npm ci
-      - name: Show resource formatter diff
+      - name: Record host identity
         run: |
-          npx oxfmt eval/runtime-resource/run.ts eval/runtime-resource/fixture-codex.ts docs/architecture/runtime-resource-evaluation.md
-          git diff -- eval/runtime-resource/run.ts eval/runtime-resource/fixture-codex.ts docs/architecture/runtime-resource-evaluation.md
-          exit 1
+          uname -a
+          node --version
+          lscpu
+          free -m
+      - name: Measure episodic runtime resource usage
+        run: npm run eval:runtime-resource | tee runtime-resource-evidence.json
+      - name: Upload raw resource evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-resource-evidence
+          path: runtime-resource-evidence.json
+          if-no-files-found: error
