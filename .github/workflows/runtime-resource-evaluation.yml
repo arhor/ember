@@ -33,7 +33,9 @@ jobs:
           lscpu
           free -m
       - name: Measure episodic runtime resource usage
-        run: npm run eval:runtime-resource | tee runtime-resource-evidence.json
+        run: npm run --silent eval:runtime-resource | tee runtime-resource-evidence.json
+      - name: Validate raw resource evidence
+        run: node -e 'JSON.parse(require("node:fs").readFileSync("runtime-resource-evidence.json", "utf8"))'
       - name: Upload raw resource evidence
         uses: actions/upload-artifact@v4
         with:
