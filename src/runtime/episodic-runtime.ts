@@ -3,10 +3,20 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 import { createCodexOpportunityEvaluator } from "../agency/codex-opportunity-evaluator.ts";
-import { findCognitionOpportunity, runCognitionOpportunity, type CognitionOpportunityEvaluator } from "../agency/cognition-opportunity.ts";
+import {
+  findCognitionOpportunity,
+  runCognitionOpportunity,
+  type CognitionOpportunityEvaluator,
+} from "../agency/cognition-opportunity.ts";
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc, type EmberState } from "../core/model.ts";
-import { inspectSpecialistEpisode, recordSpecialistProcessLoss, runCodexSpecialist, type SpecialistEpisodeRecord, type SpecialistEpisodeSpec } from "../delegation/codex-specialist.ts";
+import {
+  inspectSpecialistEpisode,
+  recordSpecialistProcessLoss,
+  runCodexSpecialist,
+  type SpecialistEpisodeRecord,
+  type SpecialistEpisodeSpec,
+} from "../delegation/codex-specialist.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "./runtime.ts";
 
@@ -107,7 +117,7 @@ export class EpisodicRecordStore {
   }
 
   async readWake(wakeId: string): Promise<WakeIntent> {
-    const intent = await readJson(this.wakeFile(wakeId, "intent")) as WakeIntent;
+    const intent = (await readJson(this.wakeFile(wakeId, "intent"))) as WakeIntent;
     validateWakeIntent(intent);
     return intent;
   }
@@ -119,7 +129,7 @@ export class EpisodicRecordStore {
 
   async wakeObservation(wakeId: string, kind: string): Promise<RuntimeObservation | null> {
     validateRecordKind(kind);
-    const value = await readOptionalJson(this.wakeFile(wakeId, kind)) as RuntimeObservation | null;
+    const value = (await readOptionalJson(this.wakeFile(wakeId, kind))) as RuntimeObservation | null;
     if (value !== null) validateObservation(value);
     return value;
   }
@@ -134,7 +144,7 @@ export class EpisodicRecordStore {
   }
 
   async readSpecialistSpec(episodeId: string): Promise<SpecialistEpisodeSpec> {
-    const spec = await readJson(this.specialistFile(episodeId, "spec")) as SpecialistEpisodeSpec;
+    const spec = (await readJson(this.specialistFile(episodeId, "spec"))) as SpecialistEpisodeSpec;
     validateSpecialistIdentity(spec);
     return spec;
   }
@@ -146,7 +156,7 @@ export class EpisodicRecordStore {
 
   async specialistObservation(episodeId: string, kind: string): Promise<RuntimeObservation | null> {
     validateRecordKind(kind);
-    const value = await readOptionalJson(this.specialistFile(episodeId, kind)) as RuntimeObservation | null;
+    const value = (await readOptionalJson(this.specialistFile(episodeId, kind))) as RuntimeObservation | null;
     if (value !== null) validateObservation(value);
     return value;
   }
@@ -192,7 +202,7 @@ export class SystemdUserSupervisor {
       "--user",
       "--collect",
       `--unit=${unit}`,
-      `--on-calendar=${intent.due_at}`,
+      `--on-calendar=${systemdCalendarTimestamp(intent.due_at)}`,
       "--property=Type=exec",
       "--property=Restart=no",
       ...this.wakeWorkerCommand(intent.wake_id),
@@ -341,11 +351,7 @@ export async function startSpecialistEpisode(
   return spec.episode_id;
 }
 
-export async function runWakeWorker(
-  config: EpisodicRuntimeConfig,
-  wakeId: string,
-  options: WorkerOptions = {},
-) {
+export async function runWakeWorker(config: EpisodicRuntimeConfig, wakeId: string, options: WorkerOptions = {}) {
   validateConfig(config);
   const now = options.now ?? (() => new Date().toISOString());
   const records = new EpisodicRecordStore(config.records_directory);
@@ -353,9 +359,11 @@ export async function runWakeWorker(
   if (intent.principal !== config.principal || intent.active_scope !== config.active_scope) {
     throw new ValidationError("wake intent principal/scope differs from runtime configuration");
   }
-  if (await records.wakeObservation(wakeId, "dispatching")
-    || await records.wakeObservation(wakeId, "completed")
-    || await records.wakeObservation(wakeId, "failed")) {
+  if (
+    (await records.wakeObservation(wakeId, "dispatching")) ||
+    (await records.wakeObservation(wakeId, "completed")) ||
+    (await records.wakeObservation(wakeId, "failed"))
+  ) {
     return { status: "already_dispatched" as const };
   }
 
@@ -374,12 +382,14 @@ export async function runWakeWorker(
     state = await store.commit(state.revision, started.state);
     await records.observeWake(wakeId, observation("dispatching", now()));
 
-    const evaluator = options.evaluator ?? createCodexOpportunityEvaluator({
-      command: config.codex_command,
-      arguments_: config.codex_arguments,
-      timeoutSeconds: config.opportunity_timeout_seconds,
-      signal: options.signal,
-    });
+    const evaluator =
+      options.evaluator ??
+      createCodexOpportunityEvaluator({
+        command: config.codex_command,
+        arguments_: config.codex_arguments,
+        timeoutSeconds: config.opportunity_timeout_seconds,
+        signal: options.signal,
+      });
     const result = await runCognitionOpportunity(store, state, {
       runtimeId,
       principal: config.principal,
@@ -429,9 +439,7 @@ export async function runSpecialistWorker(
   const spec = await records.readSpecialistSpec(episodeId);
   if (await records.specialistObservation(episodeId, "worker_started")) {
     const existing = await readOptionalSpecialist(records.specialistRecordPath(episodeId));
-    if (existing && ["exited", "lost"].includes(existing.runtime_state)) {
-      return existing;
-    }
+    if (existing && ["exited", "lost"].includes(existing.runtime_state)) return existing;
     throw new Error("specialist worker has already started; refusing duplicate execution");
   }
   await records.observeSpecialist(episodeId, observation("worker_started", now()));
@@ -498,7 +506,11 @@ export async function reconcileEpisodicRuntime(
     const unitState = await supervisor.unitState(`${specialistUnitName(episodeId)}.service`);
     if (unitState === "not_found" || unitState === "inactive" || unitState === "failed") {
       if (["not_started", "running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
-        await recordSpecialistProcessLoss(recordPath, `systemd unit ${specialistUnitName(episodeId)} is ${unitState} during runtime reconciliation`, { now: () => observedAt });
+        await recordSpecialistProcessLoss(
+          recordPath,
+          `systemd unit ${specialistUnitName(episodeId)} is ${unitState} during runtime reconciliation`,
+          { now: () => observedAt },
+        );
         lostSpecialists.push(episodeId);
       }
     }
@@ -584,7 +596,10 @@ export function specialistUnitName(episodeId: string) {
   return `ember-specialist-${episodeId}`;
 }
 
-async function wakeStatus(records: EpisodicRecordStore, wakeId: string): Promise<RuntimeStatus["wakes"][number]["status"]> {
+async function wakeStatus(
+  records: EpisodicRecordStore,
+  wakeId: string,
+): Promise<RuntimeStatus["wakes"][number]["status"]> {
   if (await records.wakeObservation(wakeId, "completed")) return "completed";
   if (await records.wakeObservation(wakeId, "failed")) return "failed";
   if (await records.wakeObservation(wakeId, "dispatching")) return "dispatching";
@@ -638,21 +653,39 @@ function validateConfig(value: EpisodicRuntimeConfig) {
     ["codex_command", value.codex_command],
     ["systemd_run_command", value.systemd_run_command],
     ["systemctl_command", value.systemctl_command],
-  ] as const) requireAbsolute(path, name);
-  if (typeof value.principal !== "string" || !value.principal.trim()) throw new ValidationError("runtime principal must be non-empty");
-  if (typeof value.active_scope !== "string" || !value.active_scope.trim()) throw new ValidationError("runtime active_scope must be non-empty");
-  if (!Array.isArray(value.codex_arguments) || !value.codex_arguments.every(item => typeof item === "string")) throw new ValidationError("codex_arguments must be a string list");
-  if (!Number.isFinite(value.opportunity_timeout_seconds) || value.opportunity_timeout_seconds <= 0) throw new ValidationError("opportunity_timeout_seconds must be positive");
-  if (!Number.isFinite(value.stop_timeout_seconds) || value.stop_timeout_seconds <= 0) throw new ValidationError("stop_timeout_seconds must be positive");
+  ] as const) {
+    requireAbsolute(path, name);
+  }
+  if (typeof value.principal !== "string" || !value.principal.trim()) {
+    throw new ValidationError("runtime principal must be non-empty");
+  }
+  if (typeof value.active_scope !== "string" || !value.active_scope.trim()) {
+    throw new ValidationError("runtime active_scope must be non-empty");
+  }
+  if (!Array.isArray(value.codex_arguments) || !value.codex_arguments.every((item) => typeof item === "string")) {
+    throw new ValidationError("codex_arguments must be a string list");
+  }
+  if (!Number.isFinite(value.opportunity_timeout_seconds) || value.opportunity_timeout_seconds <= 0) {
+    throw new ValidationError("opportunity_timeout_seconds must be positive");
+  }
+  if (!Number.isFinite(value.stop_timeout_seconds) || value.stop_timeout_seconds <= 0) {
+    throw new ValidationError("stop_timeout_seconds must be positive");
+  }
 }
 
 function validateWakeIntent(value: WakeIntent) {
   if (!value || value.record_version !== 1) throw new ValidationError("wake intent record_version must be 1");
   validateOpaqueId(value.wake_id, "wake id");
-  if (!isRfc3339Utc(value.due_at) || !isRfc3339Utc(value.created_at)) throw new ValidationError("wake timestamps must be RFC 3339 UTC");
+  if (!isRfc3339Utc(value.due_at) || !isRfc3339Utc(value.created_at)) {
+    throw new ValidationError("wake timestamps must be RFC 3339 UTC");
+  }
   if (value.mechanism !== "external_timing") throw new ValidationError("wake mechanism must be external_timing");
-  if (typeof value.principal !== "string" || !value.principal) throw new ValidationError("wake principal must be non-empty");
-  if (typeof value.active_scope !== "string" || !value.active_scope) throw new ValidationError("wake active scope must be non-empty");
+  if (typeof value.principal !== "string" || !value.principal) {
+    throw new ValidationError("wake principal must be non-empty");
+  }
+  if (typeof value.active_scope !== "string" || !value.active_scope) {
+    throw new ValidationError("wake active scope must be non-empty");
+  }
 }
 
 function validateSpecialistIdentity(spec: SpecialistEpisodeSpec) {
@@ -678,7 +711,18 @@ function validateOpaqueId(value: string, label: string) {
 }
 
 function requireAbsolute(value: string, label: string) {
-  if (typeof value !== "string" || !isAbsolute(value) || /[\0\r\n]/.test(value)) throw new ValidationError(`${label} must be a safe absolute path`);
+  if (typeof value !== "string" || !isAbsolute(value) || /[\0\r\n]/.test(value)) {
+    throw new ValidationError(`${label} must be a safe absolute path`);
+  }
+}
+
+function systemdCalendarTimestamp(value: string) {
+  if (!isRfc3339Utc(value)) throw new ValidationError("systemd calendar timestamp must originate from RFC 3339 UTC");
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) throw new ValidationError("systemd calendar timestamp is invalid");
+  const roundedUp = Math.ceil(parsed / 1000) * 1000;
+  const normalized = new Date(roundedUp).toISOString();
+  return `${normalized.slice(0, 10)} ${normalized.slice(11, 19)} UTC`;
 }
 
 function systemdQuote(value: string) {
@@ -712,8 +756,8 @@ async function readOptionalJson(path: string) {
 async function listDirectories(path: string) {
   try {
     return (await readdir(path, { withFileTypes: true }))
-      .filter(entry => entry.isDirectory())
-      .map(entry => entry.name)
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
       .sort();
   } catch (error) {
     if (errorCode(error) === "ENOENT") return [];
@@ -728,8 +772,8 @@ export async function runCommand(command: string, args: string[]): Promise<Comma
     let stderr = "";
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
-    child.stdout.on("data", chunk => stdout += chunk);
-    child.stderr.on("data", chunk => stderr += chunk);
+    child.stdout.on("data", (chunk) => (stdout += chunk));
+    child.stderr.on("data", (chunk) => (stderr += chunk));
     child.once("error", reject);
     child.once("close", (code, signal) => resolve({ code, signal, stdout, stderr }));
   });
@@ -740,7 +784,10 @@ function errorMessage(error: unknown) {
 }
 
 function errorCode(error: unknown) {
-  return error !== null && typeof error === "object" && "code" in error && typeof (error as { code?: unknown }).code === "string"
+  return error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof (error as { code?: unknown }).code === "string"
     ? (error as { code: string }).code
     : undefined;
 }
