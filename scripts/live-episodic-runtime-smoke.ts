@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { constants } from "node:fs";
-import { access, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -85,7 +85,7 @@ async function main() {
     const supervisor = new SystemdUserSupervisor(config, configPath);
     const records = new EpisodicRecordStore(recordsDirectory);
 
-    const dueAt = new Date(Date.now() + 5_000).toISOString();
+    const dueAt = new Date(Date.now() + 10_000).toISOString();
     const wake = await scheduleWake(config, configPath, dueAt);
     wakeId = wake.wake_id;
     const wakeBase = wakeUnitName(wakeId);
@@ -153,6 +153,8 @@ async function main() {
     assert.equal(specialist.runtime_state, "exited", `specialist runtime ended as ${specialist.runtime_state}`);
     assert.equal(specialist.report_state, "reported_success", `specialist report ended as ${specialist.report_state}`);
     assert.equal(specialist.report?.objective_disposition, "completed", "specialist did not report the smoke objective completed");
+    assert.deepEqual((await readdir(specialistWorkspace)).sort(), ["README.md", "smoke.txt"]);
+    assert.equal(await readFile(join(specialistWorkspace, "README.md"), "utf8"), "# Ember episodic runtime live smoke\n");
     assert.equal(
       await readFile(join(specialistWorkspace, "smoke.txt"), "utf8"),
       "ember episodic runtime live smoke\n",
@@ -239,10 +241,10 @@ async function requireNonActive(supervisor: SystemdUserSupervisor, unit: string)
 }
 
 async function cleanupUnits(systemctl: string, wakeId: string | null, specialistId: string | null) {
-  const units = diagnosticUnits(wakeId, specialistId);
-  if (!units.length) return;
-  await runCommand(systemctl, ["--user", "stop", ...units]).catch(() => {});
-  await runCommand(systemctl, ["--user", "reset-failed", ...units]).catch(() => {});
+  for (const unit of diagnosticUnits(wakeId, specialistId)) {
+    await runCommand(systemctl, ["--user", "stop", unit]).catch(() => {});
+    await runCommand(systemctl, ["--user", "reset-failed", unit]).catch(() => {});
+  }
 }
 
 function diagnosticUnits(wakeId: string | null, specialistId: string | null) {
@@ -255,6 +257,9 @@ function diagnosticUnits(wakeId: string | null, specialistId: string | null) {
   return units;
 }
 
+function findExecutable(name: string): Promise<string>;
+function findExecutable(name: string, required: true): Promise<string>;
+function findExecutable(name: string, required: false): Promise<string | null>;
 async function findExecutable(name: string, required = true): Promise<string | null> {
   for (const directory of (process.env.PATH ?? "").split(delimiter)) {
     if (!directory) continue;
