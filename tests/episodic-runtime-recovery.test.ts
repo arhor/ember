@@ -259,7 +259,10 @@ test("process restart should classify in-flight cognition and opportunity as out
     assert.equal(afterRestart.operations.cognition_episodes[0]!.status, "outcome_unknown");
     assert.equal(afterRestart.operations.cognition_opportunities?.length, 1);
     assert.equal(afterRestart.operations.cognition_opportunities?.[0]!.status, "outcome_unknown");
-    assert.equal(afterRestart.operations.runtime_episodes.at(-1)!.recovery_account.gap_kind, "uncertain_interruption_boundary");
+    assert.equal(
+        afterRestart.operations.runtime_episodes.at(-1)!.recovery_account.gap_kind,
+        "uncertain_interruption_boundary",
+    );
 });
 
 test("restart should preserve completed cognition with pending delivery instead of duplicating or claiming delivery", async () => {
