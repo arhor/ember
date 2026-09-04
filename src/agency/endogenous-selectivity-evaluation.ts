@@ -1,34 +1,28 @@
 import { performance } from "node:perf_hooks";
 
-import { ValidationError } from "../core/errors.ts";
-import {
-    initialState,
-    isRfc3339Utc,
-    newId,
-    type CognitionOpportunityDecision,
-    type CognitionOpportunityOccurrence,
-    type EmberState,
-    type MeaningId,
+import type {
+    CognitionOpportunityDecision,
+    CognitionOpportunityOccurrence,
+    EmberState,
+    MeaningId,
 } from "../core/model.ts";
+import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
+import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-control.ts";
+import type {
+    CompletedInternalCognition,
+    InterruptionAttention,
+    InterruptionAuthority,
+    InterruptionOutcome,
+    InterruptionUrgency,
+} from "./interruption-decision.ts";
+
+import { ValidationError } from "../core/errors.ts";
+import { initialState, isRfc3339Utc, newId } from "../core/model.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
 import { startRuntime } from "../runtime/runtime.ts";
-import {
-    buildCognitionOpportunityProjection,
-    evaluateCognitionOpportunity,
-    type CognitionOpportunityEvaluator,
-} from "./cognition-opportunity.ts";
-import {
-    decideRepeatedCognitionAttention,
-    type RepeatedCognitionAttentionOutcome,
-} from "./endogenous-attention-control.ts";
-import {
-    decideUserInterruption,
-    type CompletedInternalCognition,
-    type InterruptionAttention,
-    type InterruptionAuthority,
-    type InterruptionOutcome,
-    type InterruptionUrgency,
-} from "./interruption-decision.ts";
+import { buildCognitionOpportunityProjection, evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
+import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
+import { decideUserInterruption } from "./interruption-decision.ts";
 
 export type SelectivityCaseKind =
     | "quiet"

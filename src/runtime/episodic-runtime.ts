@@ -3,20 +3,18 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 
+import type { CognitionOpportunityEvaluator } from "../agency/cognition-opportunity.ts";
+import type { EmberState } from "../core/model.ts";
+import type { SpecialistEpisodeRecord, SpecialistEpisodeSpec } from "../delegation/codex-specialist.ts";
+
 import { createCodexOpportunityEvaluator } from "../agency/codex-opportunity-evaluator.ts";
-import {
-    findCognitionOpportunity,
-    runCognitionOpportunity,
-    type CognitionOpportunityEvaluator,
-} from "../agency/cognition-opportunity.ts";
+import { findCognitionOpportunity, runCognitionOpportunity } from "../agency/cognition-opportunity.ts";
 import { ValidationError } from "../core/errors.ts";
-import { isRfc3339Utc, type EmberState } from "../core/model.ts";
+import { isRfc3339Utc } from "../core/model.ts";
 import {
     inspectSpecialistEpisode,
     recordSpecialistProcessLoss,
     runCodexSpecialist,
-    type SpecialistEpisodeRecord,
-    type SpecialistEpisodeSpec,
 } from "../delegation/codex-specialist.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "./runtime.ts";

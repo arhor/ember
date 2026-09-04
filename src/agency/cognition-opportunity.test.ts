@@ -1,16 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { MeaningId, CognitionOpportunityMechanism } from "../core/model.ts";
+import type { CognitionOpportunityEvaluator, CognitionOpportunityRequest } from "./cognition-opportunity.ts";
+
 import { ValidationError } from "../core/errors.ts";
-import { cloneState, initialState, type MeaningId } from "../core/model.ts";
+import { cloneState, initialState } from "../core/model.ts";
 import { undertake } from "../core/semantics.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
-import {
-    evaluateCognitionOpportunity,
-    type CognitionOpportunityEvaluator,
-    type CognitionOpportunityMechanism,
-    type CognitionOpportunityRequest,
-} from "./cognition-opportunity.ts";
+import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";

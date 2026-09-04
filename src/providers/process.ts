@@ -1,6 +1,9 @@
+import type { Readable, Writable } from "node:stream";
+
 import { spawn } from "node:child_process";
 import { basename } from "node:path";
-import type { Readable, Writable } from "node:stream";
+
+import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import {
@@ -8,9 +11,6 @@ import {
     MAX_STDERR_BYTES,
     MAX_STDOUT_BYTES,
     validateProviderResult,
-    type ProviderInvocationOptions,
-    type ProviderRequest,
-    type ProviderResult,
 } from "./contract.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

@@ -1,8 +1,11 @@
+import type { FileHandle } from "node:fs/promises";
+
 import { randomUUID } from "node:crypto";
-import { access, type FileHandle, mkdir, open, readFile, rename, unlink } from "node:fs/promises";
+import { access, mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import type { PersistentState } from "./model.ts";
+
 import { parsePersistentState, validatePersistentState } from "./validation.ts";
 
 interface Lease {

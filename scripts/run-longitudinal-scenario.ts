@@ -5,11 +5,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import {
-    loadLongitudinalScenario,
-    runLongitudinalScenario,
-    type HarnessProvider,
-} from "../eval/longitudinal/harness.ts";
+import type { HarnessProvider } from "../eval/longitudinal/harness.ts";
+
+import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { invokeCodexProvider } from "../src/providers/codex.ts";
 import { invokeCursorProvider } from "../src/providers/cursor.ts";
 import { codexArgumentEvidence } from "../src/providers/evidence.ts";

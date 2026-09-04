@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import type { ProviderResult } from "../src/providers/contract.ts";
+
+import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "currentness-pressure.json");

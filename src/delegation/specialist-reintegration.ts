@@ -1,16 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 
-import { StaleRevision } from "../core/errors.ts";
 import type { StateStore } from "../persistence/state-store.ts";
-import {
-    inspectSpecialistEpisode,
-    reconcileSpecialistResult,
-    type SpecialistCurrentnessCheckpoint,
-    type SpecialistDisposition,
-    type SpecialistEpisodeRecord,
-    type SpecialistReportProvenance,
+import type {
+    SpecialistCurrentnessCheckpoint,
+    SpecialistDisposition,
+    SpecialistEpisodeRecord,
+    SpecialistReportProvenance,
 } from "./codex-specialist.ts";
+
+import { StaleRevision } from "../core/errors.ts";
+import { inspectSpecialistEpisode, reconcileSpecialistResult } from "./codex-specialist.ts";
 
 export type SpecialistReintegrationOutcome = "integrated" | "withheld" | "rejected";
 export type SpecialistResultShape = "complete" | "partial" | "failed" | "ambiguous_effect";

@@ -1,14 +1,15 @@
+import type { Projection } from "../core/projection.ts";
+import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
+import type {
+    CognitionOpportunityEvaluation,
+    CognitionOpportunityEvaluator,
+    CognitionOpportunityRequest,
+} from "./cognition-opportunity.ts";
+
 import { ValidationError } from "../core/errors.ts";
 import { newId } from "../core/model.ts";
-import type { Projection } from "../core/projection.ts";
 import { invokeCodexProvider } from "../providers/codex.ts";
-import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
-import {
-    COGNITION_OPPORTUNITY_CONTRACT_VERSION,
-    type CognitionOpportunityEvaluation,
-    type CognitionOpportunityEvaluator,
-    type CognitionOpportunityRequest,
-} from "./cognition-opportunity.ts";
+import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
 
 export const CODEX_OPPORTUNITY_INSTRUCTION = [
     "Evaluate only whether the projected current Ember state contains anything worth discretionary cognition now.",

@@ -4,7 +4,9 @@ import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-import { validateProviderResult, type ProviderRequest, type ProviderResult } from "../../src/providers/contract.ts";
+import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
+
+import { validateProviderResult } from "../../src/providers/contract.ts";
 
 const MAX_BYTES = 1024 * 1024;
 const RESULT_SCHEMA = fileURLToPath(new URL("provider-result.schema.json", import.meta.url));

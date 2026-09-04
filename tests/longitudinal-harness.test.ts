@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { ProviderResult } from "../src/providers/contract.ts";
+
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { buildCodexArguments } from "../src/providers/codex.ts";
-import type { ProviderResult } from "../src/providers/contract.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "restart-thread-continuity.json");

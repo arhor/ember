@@ -1,15 +1,8 @@
 import { createHash } from "node:crypto";
 
-import {
-    type EmberAdoptionEvidence,
-    type Evidence,
-    evidenceId,
-    lineageId,
-    type Meaning,
-    meaningId,
-    type PersistentState,
-    type UserEvidence,
-} from "./model.ts";
+import type { EmberAdoptionEvidence, Evidence, Meaning, PersistentState, UserEvidence } from "./model.ts";
+
+import { evidenceId, lineageId, meaningId } from "./model.ts";
 
 const KINDS = new Set(["relationship", "fact", "preference", "commitment", "episode_meta"]);
 const CURRENTNESS = new Set(["current", "superseded", "historical"]);

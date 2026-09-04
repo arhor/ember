@@ -2,13 +2,13 @@ import { defineConfig } from "oxfmt";
 
 export default defineConfig({
     sortImports: {
-        // oxfmt-ignore
         groups: [
-            "builtin",
-            "external",
-            ["internal", "subpath"],
-            ["parent", "sibling", "index"],
-            "style",
+            "type-import",
+            ["value-builtin", "value-external"],
+            "type-internal",
+            "value-internal",
+            ["type-parent", "type-sibling", "type-index"],
+            ["value-parent", "value-sibling", "value-index"],
             "unknown",
         ],
     },

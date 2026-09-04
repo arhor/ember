@@ -1,6 +1,8 @@
-import { ProviderError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, type CognitionId, type MeaningId } from "../core/model.ts";
+import type { CognitionId, MeaningId } from "../core/model.ts";
 import type { Projection } from "../core/projection.ts";
+
+import { ProviderError } from "../core/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
 
 export const CONTRACT_VERSION = 1;
 export const MAX_STDOUT_BYTES = 1024 * 1024;

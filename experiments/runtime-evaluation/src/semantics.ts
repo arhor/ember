@@ -1,13 +1,8 @@
 import { createHash } from "node:crypto";
 
-import {
-    evidenceId,
-    type MeaningId,
-    meaningId,
-    type PersistentState,
-    type PreferenceMeaning,
-    type UserEvidence,
-} from "./model.ts";
+import type { MeaningId, PersistentState, PreferenceMeaning, UserEvidence } from "./model.ts";
+
+import { evidenceId, meaningId } from "./model.ts";
 
 export function supersedePreference(state: PersistentState, oldId: MeaningId, replacement: string): PersistentState {
     if (!replacement.trim()) throw new Error("replacement preference must not be empty");

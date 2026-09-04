@@ -4,18 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import {
-    initialState,
-    newId,
-    type CognitionOpportunityOccurrence,
-    type EvidenceId,
-    type MeaningId,
-    type RuntimeId,
-} from "../core/model.ts";
+import type { CognitionOpportunityOccurrence, EvidenceId, MeaningId, RuntimeId } from "../core/model.ts";
+import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
+
+import { initialState, newId } from "../core/model.ts";
 import { rememberFact, undertake } from "../core/semantics.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime } from "../runtime/runtime.ts";
-import { runCognitionOpportunity, type CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
+import { runCognitionOpportunity } from "./cognition-opportunity.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 
 const PRINCIPAL = "user-1";

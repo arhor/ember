@@ -3,7 +3,9 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { runEndogenousRestartScenario, type EndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
+import type { EndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
+
+import { runEndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
 
 if (process.env.EMBER_RUN_LIVE_ENDOGENOUS_RESTART !== "1") {
     throw new Error("live endogenous-restart execution is opt-in; set EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1");

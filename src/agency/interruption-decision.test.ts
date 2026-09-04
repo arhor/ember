@@ -1,13 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { initialState, type MeaningId } from "../core/model.ts";
+import type { MeaningId } from "../core/model.ts";
+import type { CompletedInternalCognition, InterruptionDecisionRequest } from "./interruption-decision.ts";
+
+import { initialState } from "../core/model.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
-import {
-    decideUserInterruption,
-    type CompletedInternalCognition,
-    type InterruptionDecisionRequest,
-} from "./interruption-decision.ts";
+import { decideUserInterruption } from "./interruption-decision.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";

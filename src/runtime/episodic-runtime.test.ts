@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { CommandRunner, EpisodicRuntimeConfig } from "./episodic-runtime.ts";
+
 import { ROOT, PRINCIPAL, SCOPE, tempDir } from "../../tests/support.ts";
 import { initialState } from "../core/model.ts";
 import { createSpecialistEpisode } from "../delegation/codex-specialist.ts";
@@ -17,8 +19,6 @@ import {
     scheduleWake,
     specialistUnitName,
     startSpecialistEpisode,
-    type CommandRunner,
-    type EpisodicRuntimeConfig,
 } from "./episodic-runtime.ts";
 
 function runtimeConfig(root: string): EpisodicRuntimeConfig {

@@ -3,13 +3,16 @@
 import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 
+import type {
+    EvaluationBackend,
+    SelectivityAttentionControl,
+} from "../src/agency/endogenous-selectivity-evaluation.ts";
+
 import { createCodexOpportunityEvaluator } from "../src/agency/codex-opportunity-evaluator.ts";
 import {
     parseSelectivityWorkload,
     runEndogenousSelectivityEvaluation,
     scriptedSelectivityEvaluator,
-    type EvaluationBackend,
-    type SelectivityAttentionControl,
 } from "../src/agency/endogenous-selectivity-evaluation.ts";
 
 const cli = parseArguments(process.argv.slice(2));

@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
+
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { cloneState, initialState, newId, validateState } from "../core/model.ts";
 import { inspectionView } from "../core/projection.ts";
@@ -13,7 +15,6 @@ import {
     buildCognitionOpportunityProjection,
     cognitionOpportunityMetrics,
     runCognitionOpportunity,
-    type CognitionOpportunityEvaluator,
 } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";

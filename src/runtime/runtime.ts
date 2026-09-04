@@ -1,24 +1,23 @@
 import type { Writable } from "node:stream";
 
-import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import {
-    cloneState,
-    type CognitionEpisode,
-    type CognitionId,
-    type CognitionPurpose,
-    type EmberExpressionEvidence,
-    type EmberState,
-    type MeaningId,
-    newId,
-    nowUtc,
-    type RuntimeEpisode,
-    type RuntimeId,
-    validateState,
+import type {
+    CognitionEpisode,
+    CognitionId,
+    CognitionPurpose,
+    EmberExpressionEvidence,
+    EmberState,
+    MeaningId,
+    RuntimeEpisode,
+    RuntimeId,
 } from "../core/model.ts";
+import type { StateStore } from "../persistence/state-store.ts";
+import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
+
+import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
+import { cloneState, newId, nowUtc, validateState } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
-import type { StateStore } from "../persistence/state-store.ts";
-import { CONTRACT_VERSION, type ProviderInvoker, type ProviderRequest } from "../providers/contract.ts";
+import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { invokeProvider, providerLabel } from "../providers/process.ts";
 
 export function startRuntime(

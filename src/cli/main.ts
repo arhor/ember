@@ -1,8 +1,11 @@
-import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
+import { createInterface } from "node:readline";
+
+import type { EmberState, MeaningId, RuntimeId } from "../core/model.ts";
+
 import { EmberError, ValidationError } from "../core/errors.ts";
-import { cloneState, initialState, nowUtc, type EmberState, type MeaningId, type RuntimeId } from "../core/model.ts";
+import { cloneState, initialState, nowUtc } from "../core/model.ts";
 import { explanationView, inspectionView } from "../core/projection.ts";
 import {
     attachDetail,

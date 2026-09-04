@@ -1,25 +1,23 @@
-import { ValidationError } from "./errors.ts";
-import {
-    contentDigest,
-    newId,
-    nowUtc,
-    validateState,
-    type AvailableUserEvidence,
-    type CommitmentLifecycle,
-    type DelegatedReportEvidence,
-    type EmberAdoptionEvidence,
-    type EmberInferenceEvidence,
-    type EmberObservationEvidence,
-    type EmberState,
-    type Evidence,
-    type EvidenceId,
-    type ExternalClaimEvidence,
-    type FactMeaning,
-    type Meaning,
-    type MeaningId,
-    type PreferenceMeaning,
-    type UnavailableUserDetailEvidence,
+import type {
+    AvailableUserEvidence,
+    CommitmentLifecycle,
+    DelegatedReportEvidence,
+    EmberAdoptionEvidence,
+    EmberInferenceEvidence,
+    EmberObservationEvidence,
+    EmberState,
+    Evidence,
+    EvidenceId,
+    ExternalClaimEvidence,
+    FactMeaning,
+    Meaning,
+    MeaningId,
+    PreferenceMeaning,
+    UnavailableUserDetailEvidence,
 } from "./model.ts";
+
+import { ValidationError } from "./errors.ts";
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
 
 export function userEvidence(
     state: EmberState,

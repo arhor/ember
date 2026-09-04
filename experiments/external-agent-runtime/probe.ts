@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+import type { Readable } from "node:stream";
+
 import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
-import type { Readable } from "node:stream";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const API_KEY_NAMES = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "CURSOR_API_KEY"] as const;

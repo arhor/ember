@@ -1,18 +1,18 @@
-import { ValidationError } from "./errors.ts";
-import {
-    cloneState,
-    type CognitionId,
-    type CognitionPurpose,
-    type EmberState,
-    type Evidence,
-    type EvidenceId,
-    type Meaning,
-    type MeaningId,
-    type RecoveryAccount,
-    type RuntimeEpisode,
-    type RuntimeId,
-    validateState,
+import type {
+    CognitionId,
+    CognitionPurpose,
+    EmberState,
+    Evidence,
+    EvidenceId,
+    Meaning,
+    MeaningId,
+    RecoveryAccount,
+    RuntimeEpisode,
+    RuntimeId,
 } from "./model.ts";
+
+import { ValidationError } from "./errors.ts";
+import { cloneState, validateState } from "./model.ts";
 import { findMeaning } from "./semantics.ts";
 
 export type ProjectedEvidence = Omit<Evidence, "payload" | "content_digest"> & {

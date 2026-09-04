@@ -2,12 +2,10 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import {
-    loadLongitudinalScenario,
-    runLongitudinalScenario,
-    type HarnessProvider,
-} from "../eval/longitudinal/harness.ts";
+import type { HarnessProvider } from "../eval/longitudinal/harness.ts";
 import type { ProjectedMeaning } from "../src/core/projection.ts";
+
+import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SUPERSESSION_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "semantic-supersession-gap.json");

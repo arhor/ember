@@ -3,6 +3,8 @@
 import { readFile } from "node:fs/promises";
 
 import type { SpecialistEpisodeSpec } from "../src/delegation/codex-specialist.ts";
+import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
+
 import {
     SystemdUserSupervisor,
     inspectEpisodicRuntime,
@@ -12,7 +14,6 @@ import {
     runWakeWorker,
     scheduleWake,
     startSpecialistEpisode,
-    type EpisodicRuntimeConfig,
 } from "../src/runtime/episodic-runtime.ts";
 
 const controller = new AbortController();

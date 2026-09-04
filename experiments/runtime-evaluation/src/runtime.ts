@@ -1,4 +1,6 @@
-import { type CliInput, cognitionId, type PersistentState, type ProviderResult } from "./model.ts";
+import type { CliInput, PersistentState, ProviderResult } from "./model.ts";
+
+import { cognitionId } from "./model.ts";
 import { buildProjection } from "./projection.ts";
 import { invokeProvider } from "./provider.ts";
 

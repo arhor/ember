@@ -1,25 +1,27 @@
+import type {
+    CognitionOpportunityDecision,
+    CognitionOpportunityMechanism,
+    CognitionOpportunityOccurrence,
+    EmberState,
+    MeaningId,
+    OpportunityId,
+    RuntimeId,
+} from "../core/model.ts";
+import type { Projection } from "../core/projection.ts";
+import type { StateStore } from "../persistence/state-store.ts";
+import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-control.ts";
+
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import {
     cloneState,
     COGNITION_OPPORTUNITY_MECHANISMS,
-    type CognitionOpportunityDecision,
-    type CognitionOpportunityMechanism,
-    type CognitionOpportunityOccurrence,
-    type EmberState,
-    type MeaningId,
     newId,
     nowUtc,
-    type OpportunityId,
-    type RuntimeId,
     validateState,
     isRfc3339Utc,
 } from "../core/model.ts";
-import { buildProjection, findRuntime, type Projection } from "../core/projection.ts";
-import type { StateStore } from "../persistence/state-store.ts";
-import {
-    decideRepeatedCognitionAttention,
-    type RepeatedCognitionAttentionOutcome,
-} from "./endogenous-attention-control.ts";
+import { buildProjection, findRuntime } from "../core/projection.ts";
+import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 
 export const COGNITION_OPPORTUNITY_CONTRACT_VERSION = 1 as const;
 
