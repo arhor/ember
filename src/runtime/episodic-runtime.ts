@@ -252,10 +252,7 @@ export class SystemdUserSupervisor {
             "--property=ActiveState",
             "--value",
         ]);
-        const values = result.stdout
-            .trim()
-            .split(/\r?\n/)
-            .filter(Boolean);
+        const values = result.stdout.trim().split(/\r?\n/).filter(Boolean);
         if (values.includes("not-found")) return "not_found";
         if (values.includes("failed")) return "failed";
         if (values.includes("active") || values.includes("activating") || values.includes("reloading")) return "active";
@@ -719,8 +716,7 @@ function requireAbsolute(value: string, label: string) {
 }
 
 function systemdCalendarTimestamp(value: string) {
-    if (!isRfc3339Utc(value))
-        throw new ValidationError("systemd calendar timestamp must originate from RFC 3339 UTC");
+    if (!isRfc3339Utc(value)) throw new ValidationError("systemd calendar timestamp must originate from RFC 3339 UTC");
     const parsed = Date.parse(value);
     if (!Number.isFinite(parsed)) throw new ValidationError("systemd calendar timestamp is invalid");
     const fraction = /\.(\d+)Z$/.exec(value)?.[1];
