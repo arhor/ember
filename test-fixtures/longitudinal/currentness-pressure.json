@@ -80,22 +80,9 @@
       },
       "input": "State the exact current preference and fact marker tokens, then repeat both migration report marker tokens without resolving their contradiction.",
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "preference_old",
-          "fact_old",
-          "conflict_report_a",
-          "conflict_report_b"
-        ],
-        "selected_meaning_groups": [
-          "ambient_currentness_history"
-        ],
-        "relevant_meanings": [
-          "preference_old",
-          "fact_old",
-          "conflict_report_a",
-          "conflict_report_b"
-        ],
+        "selected_meanings": ["relationship", "preference_old", "fact_old", "conflict_report_a", "conflict_report_b"],
+        "selected_meaning_groups": ["ambient_currentness_history"],
+        "relevant_meanings": ["preference_old", "fact_old", "conflict_report_a", "conflict_report_b"],
         "irrelevant_meanings": [
           {
             "group": "ambient_currentness_history"
@@ -103,18 +90,9 @@
         ],
         "superseded_meanings": [],
         "unavailable_meanings": [],
-        "forbidden_meanings": [
-          "private_forbidden"
-        ],
-        "reply_includes": [
-          "CURRENTNESS_PREF_OLD",
-          "CURRENTNESS_FACT_OLD",
-          "CONFLICT_REPORT_A",
-          "CONFLICT_REPORT_B"
-        ],
-        "reply_excludes": [
-          "FORBIDDEN_CURRENTNESS_MARKER_67"
-        ]
+        "forbidden_meanings": ["private_forbidden"],
+        "reply_includes": ["CURRENTNESS_PREF_OLD", "CURRENTNESS_FACT_OLD", "CONFLICT_REPORT_A", "CONFLICT_REPORT_B"],
+        "reply_excludes": ["FORBIDDEN_CURRENTNESS_MARKER_67"]
       }
     },
     {
@@ -139,45 +117,19 @@
       ],
       "input": "State the exact current preference marker token and both unresolved migration report marker tokens. Do not resurrect the old preference.",
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "preference_new",
-          "fact_old",
-          "conflict_report_a",
-          "conflict_report_b"
-        ],
-        "selected_meaning_groups": [
-          "ambient_currentness_history"
-        ],
-        "relevant_meanings": [
-          "preference_new",
-          "fact_old",
-          "conflict_report_a",
-          "conflict_report_b"
-        ],
+        "selected_meanings": ["relationship", "preference_new", "fact_old", "conflict_report_a", "conflict_report_b"],
+        "selected_meaning_groups": ["ambient_currentness_history"],
+        "relevant_meanings": ["preference_new", "fact_old", "conflict_report_a", "conflict_report_b"],
         "irrelevant_meanings": [
           {
             "group": "ambient_currentness_history"
           }
         ],
-        "superseded_meanings": [
-          "preference_old"
-        ],
+        "superseded_meanings": ["preference_old"],
         "unavailable_meanings": [],
-        "forbidden_meanings": [
-          "preference_old",
-          "private_forbidden"
-        ],
-        "reply_includes": [
-          "CURRENTNESS_PREF_NEW",
-          "CURRENTNESS_FACT_OLD",
-          "CONFLICT_REPORT_A",
-          "CONFLICT_REPORT_B"
-        ],
-        "reply_excludes": [
-          "CURRENTNESS_PREF_OLD",
-          "FORBIDDEN_CURRENTNESS_MARKER_67"
-        ]
+        "forbidden_meanings": ["preference_old", "private_forbidden"],
+        "reply_includes": ["CURRENTNESS_PREF_NEW", "CURRENTNESS_FACT_OLD", "CONFLICT_REPORT_A", "CONFLICT_REPORT_B"],
+        "reply_excludes": ["CURRENTNESS_PREF_OLD", "FORBIDDEN_CURRENTNESS_MARKER_67"]
       }
     },
     {
@@ -202,48 +154,19 @@
       ],
       "input": "State the exact current preference and release-train fact marker tokens and repeat both unresolved migration report markers. Do not use stale values.",
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "preference_new",
-          "fact_new",
-          "conflict_report_a",
-          "conflict_report_b"
-        ],
-        "selected_meaning_groups": [
-          "ambient_currentness_history"
-        ],
-        "relevant_meanings": [
-          "preference_new",
-          "fact_new",
-          "conflict_report_a",
-          "conflict_report_b"
-        ],
+        "selected_meanings": ["relationship", "preference_new", "fact_new", "conflict_report_a", "conflict_report_b"],
+        "selected_meaning_groups": ["ambient_currentness_history"],
+        "relevant_meanings": ["preference_new", "fact_new", "conflict_report_a", "conflict_report_b"],
         "irrelevant_meanings": [
           {
             "group": "ambient_currentness_history"
           }
         ],
-        "superseded_meanings": [
-          "preference_old",
-          "fact_old"
-        ],
+        "superseded_meanings": ["preference_old", "fact_old"],
         "unavailable_meanings": [],
-        "forbidden_meanings": [
-          "preference_old",
-          "fact_old",
-          "private_forbidden"
-        ],
-        "reply_includes": [
-          "CURRENTNESS_PREF_NEW",
-          "CURRENTNESS_FACT_NEW",
-          "CONFLICT_REPORT_A",
-          "CONFLICT_REPORT_B"
-        ],
-        "reply_excludes": [
-          "CURRENTNESS_PREF_OLD",
-          "CURRENTNESS_FACT_OLD",
-          "FORBIDDEN_CURRENTNESS_MARKER_67"
-        ]
+        "forbidden_meanings": ["preference_old", "fact_old", "private_forbidden"],
+        "reply_includes": ["CURRENTNESS_PREF_NEW", "CURRENTNESS_FACT_NEW", "CONFLICT_REPORT_A", "CONFLICT_REPORT_B"],
+        "reply_excludes": ["CURRENTNESS_PREF_OLD", "CURRENTNESS_FACT_OLD", "FORBIDDEN_CURRENTNESS_MARKER_67"]
       }
     },
     {
@@ -257,10 +180,7 @@
       },
       "input": "Explain the preference and release-train corrections by naming both old and new marker tokens, while keeping both migration reports unresolved.",
       "purpose": "explain",
-      "explain": [
-        "preference_old",
-        "fact_old"
-      ],
+      "explain": ["preference_old", "fact_old"],
       "expect": {
         "selected_meanings": [
           "relationship",
@@ -271,9 +191,7 @@
           "conflict_report_a",
           "conflict_report_b"
         ],
-        "selected_meaning_groups": [
-          "ambient_currentness_history"
-        ],
+        "selected_meaning_groups": ["ambient_currentness_history"],
         "relevant_meanings": [
           "preference_old",
           "preference_new",
@@ -287,14 +205,9 @@
             "group": "ambient_currentness_history"
           }
         ],
-        "superseded_meanings": [
-          "preference_old",
-          "fact_old"
-        ],
+        "superseded_meanings": ["preference_old", "fact_old"],
         "unavailable_meanings": [],
-        "forbidden_meanings": [
-          "private_forbidden"
-        ],
+        "forbidden_meanings": ["private_forbidden"],
         "reply_includes": [
           "CURRENTNESS_PREF_OLD",
           "CURRENTNESS_PREF_NEW",
@@ -303,9 +216,7 @@
           "CONFLICT_REPORT_A",
           "CONFLICT_REPORT_B"
         ],
-        "reply_excludes": [
-          "FORBIDDEN_CURRENTNESS_MARKER_67"
-        ]
+        "reply_excludes": ["FORBIDDEN_CURRENTNESS_MARKER_67"]
       }
     }
   ]

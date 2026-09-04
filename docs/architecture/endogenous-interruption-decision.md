@@ -126,12 +126,12 @@ rewriting its historical truth.
 
 ## Outcome semantics
 
-| Outcome | Meaning |
-| --- | --- |
-| `deliver` | A current candidate has explicit interruption authority and passes currentness, repetition, and attention checks. This permits a later delivery attempt; it is not proof of delivery. |
-| `defer` | A candidate remains potentially useful but authority is unknown or ordinary contact falls in a quiet period. Underlying meaning remains unchanged. |
-| `suppress` | A candidate exists but should not surface because grounding became stale, authority is denied, or the same complete grounding set already produced a successful delivery. Suppression does not erase cognition or source meanings. |
-| `no_delivery` | There is no completed internal cognition source, or completed cognition produced no interruption candidate. |
+| Outcome       | Meaning                                                                                                                                                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deliver`     | A current candidate has explicit interruption authority and passes currentness, repetition, and attention checks. This permits a later delivery attempt; it is not proof of delivery.                                              |
+| `defer`       | A candidate remains potentially useful but authority is unknown or ordinary contact falls in a quiet period. Underlying meaning remains unchanged.                                                                                 |
+| `suppress`    | A candidate exists but should not surface because grounding became stale, authority is denied, or the same complete grounding set already produced a successful delivery. Suppression does not erase cognition or source meanings. |
+| `no_delivery` | There is no completed internal cognition source, or completed cognition produced no interruption candidate.                                                                                                                        |
 
 The record uses an enumerated `basis` rather than model-written prose. Inspection and
 evaluation therefore do not require persisting hidden reasoning or post-hoc motive
@@ -206,11 +206,11 @@ and transport uncertainty.
 
 ## Definition-of-done mapping
 
-| Issue #78 requirement | Implemented evidence |
-| --- | --- |
-| Cognition and interruption are separate lifecycle decisions | Opportunity selection is not accepted as completed cognition; `CompletedInternalCognition` is a later handoff and interruption policy is a separate call. |
+| Issue #78 requirement                                            | Implemented evidence                                                                                                                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cognition and interruption are separate lifecycle decisions      | Opportunity selection is not accepted as completed cognition; `CompletedInternalCognition` is a later handoff and interruption policy is a separate call.     |
 | Candidate reasons use current concern/urgency/authority evidence | Candidate IDs must have been used by completed cognition and remain current; time-sensitive urgency requires explicit grounding; authority is separate input. |
-| Useful cognition may end without user delivery | `candidate: null -> no_delivery`; quiet periods and unknown authority can also defer. |
-| Interruption cannot create authority or commitments | Function is pure and tests assert canonical state is unchanged; authority must be supplied explicitly. |
-| Useful/defer/suppress/repeat/stale scenarios | Eight deterministic tests cover all named cases and the cognition-completion boundary. |
-| Transport independence | No messaging/Telegram dependency or transport identifier appears in the contract. |
+| Useful cognition may end without user delivery                   | `candidate: null -> no_delivery`; quiet periods and unknown authority can also defer.                                                                         |
+| Interruption cannot create authority or commitments              | Function is pure and tests assert canonical state is unchanged; authority must be supplied explicitly.                                                        |
+| Useful/defer/suppress/repeat/stale scenarios                     | Eight deterministic tests cover all named cases and the cognition-completion boundary.                                                                        |
+| Transport independence                                           | No messaging/Telegram dependency or transport identifier appears in the contract.                                                                             |

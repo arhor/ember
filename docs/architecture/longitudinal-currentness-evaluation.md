@@ -46,12 +46,12 @@ The fixture grows 24 irrelevant same-scope history items before establishing the
 meanings under evaluation. That pressure is intentional: stale values must not
 reappear merely because history is long or similar.
 
-| Episode | Currentness pressure | Deterministic oracle |
-| --- | --- | --- |
-| `baseline-with-unresolved-conflict` | Preference A, fact A, and two contradictory migration reports coexist. | Both reports remain distinct current meanings with distinct source occurrences; neither is silently declared the correction of the other. |
-| `changed-preference` | Preference A is explicitly superseded by preference B while the provider thread still contains A. | Ordinary projection selects B, preserves A as historical, forbids A from governing current cognition, and reuses the baseline provider thread. |
-| `corrected-fact` | Fact A is explicitly corrected by fact B while the same provider thread still contains A. | Ordinary projection selects B, preserves A as historical, does not resurrect A, and continues the reused provider thread. |
-| `explicit-history-reconstruction` | Cognition explicitly asks why preference and fact changed. | Explain projection includes both historical and current linked meanings on a fresh provider thread, while the ordinary currentness rule remains unchanged. |
+| Episode                             | Currentness pressure                                                                              | Deterministic oracle                                                                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseline-with-unresolved-conflict` | Preference A, fact A, and two contradictory migration reports coexist.                            | Both reports remain distinct current meanings with distinct source occurrences; neither is silently declared the correction of the other.                  |
+| `changed-preference`                | Preference A is explicitly superseded by preference B while the provider thread still contains A. | Ordinary projection selects B, preserves A as historical, forbids A from governing current cognition, and reuses the baseline provider thread.             |
+| `corrected-fact`                    | Fact A is explicitly corrected by fact B while the same provider thread still contains A.         | Ordinary projection selects B, preserves A as historical, does not resurrect A, and continues the reused provider thread.                                  |
+| `explicit-history-reconstruction`   | Cognition explicitly asks why preference and fact changed.                                        | Explain projection includes both historical and current linked meanings on a fresh provider thread, while the ordinary currentness rule remains unchanged. |
 
 The scripted provider simply renders selected meaning content and truthfully mirrors
 fresh-versus-reused thread IDs. Therefore marker presence or absence is a direct

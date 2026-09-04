@@ -67,30 +67,14 @@
       "purpose": "explain",
       "explain": ["degraded_episode"],
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "evaluation_target",
-          "irrelevant_permitted",
-          "degraded_episode"
-        ],
-        "relevant_meanings": [
-          "evaluation_target",
-          "degraded_episode"
-        ],
-        "irrelevant_meanings": [
-          "irrelevant_permitted"
-        ],
+        "selected_meanings": ["relationship", "evaluation_target", "irrelevant_permitted", "degraded_episode"],
+        "relevant_meanings": ["evaluation_target", "degraded_episode"],
+        "irrelevant_meanings": ["irrelevant_permitted"],
         "superseded_meanings": [],
         "unavailable_meanings": [],
-        "forbidden_meanings": [
-          "intentionally_withheld_private"
-        ],
-        "reply_includes": [
-          "DEGRADED_CONTEXT_TARGET_69"
-        ],
-        "reply_excludes": [
-          "WITHHELD_PRIVATE_MARKER_69"
-        ]
+        "forbidden_meanings": ["intentionally_withheld_private"],
+        "reply_includes": ["DEGRADED_CONTEXT_TARGET_69"],
+        "reply_excludes": ["WITHHELD_PRIVATE_MARKER_69"]
       }
     },
     {
@@ -113,30 +97,13 @@
       "purpose": "explain",
       "explain": ["degraded_episode"],
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "evaluation_target",
-          "irrelevant_permitted",
-          "degraded_episode"
-        ],
-        "relevant_meanings": [
-          "evaluation_target",
-          "degraded_episode"
-        ],
-        "irrelevant_meanings": [
-          "irrelevant_permitted"
-        ],
+        "selected_meanings": ["relationship", "evaluation_target", "irrelevant_permitted", "degraded_episode"],
+        "relevant_meanings": ["evaluation_target", "degraded_episode"],
+        "irrelevant_meanings": ["irrelevant_permitted"],
         "superseded_meanings": [],
-        "unavailable_meanings": [
-          "degraded_episode"
-        ],
-        "forbidden_meanings": [
-          "intentionally_withheld_private"
-        ],
-        "reply_includes": [
-          "DEGRADED_CONTEXT_TARGET_69",
-          "unavailable_detail"
-        ],
+        "unavailable_meanings": ["degraded_episode"],
+        "forbidden_meanings": ["intentionally_withheld_private"],
+        "reply_includes": ["DEGRADED_CONTEXT_TARGET_69", "unavailable_detail"],
         "reply_excludes": [
           "UNAVAILABLE_DETAIL_MARKER_69",
           "copper-fern-17",
@@ -155,28 +122,13 @@
       "external_thread": { "mode": "fresh" },
       "input": "State the current degraded-context evaluation target without historical reconstruction. Include the literal token DEGRADED_CONTEXT_TARGET_69.",
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "evaluation_target",
-          "irrelevant_permitted"
-        ],
-        "relevant_meanings": [
-          "evaluation_target"
-        ],
-        "irrelevant_meanings": [
-          "irrelevant_permitted",
-          "degraded_episode"
-        ],
+        "selected_meanings": ["relationship", "evaluation_target", "irrelevant_permitted"],
+        "relevant_meanings": ["evaluation_target"],
+        "irrelevant_meanings": ["irrelevant_permitted", "degraded_episode"],
         "superseded_meanings": [],
-        "unavailable_meanings": [
-          "degraded_episode"
-        ],
-        "forbidden_meanings": [
-          "intentionally_withheld_private"
-        ],
-        "reply_includes": [
-          "DEGRADED_CONTEXT_TARGET_69"
-        ],
+        "unavailable_meanings": ["degraded_episode"],
+        "forbidden_meanings": ["intentionally_withheld_private"],
+        "reply_includes": ["DEGRADED_CONTEXT_TARGET_69"],
         "reply_excludes": [
           "UNAVAILABLE_DETAIL_MARKER_69",
           "copper-fern-17",

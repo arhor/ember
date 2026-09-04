@@ -62,6 +62,10 @@ Reviewed systems:
 - [OpenClaw](openclaw.md) — runtime ownership, specialist harnesses, provenance-aware memory, and gated promotion.
 - [Letta](letta.md) — persisted agent state and independently attachable memory/capability resources.
 
+Cross-system comparisons:
+
+- [Long-Lived Runtime Topology Comparison](long-lived-runtime-topology-comparison.md) — compares resident runtime ownership, turn placement, durable state, background work, and restart boundaries across OpenClaw, Hermes, NanoBot, and Letta, then records implications and revisit triggers for ADR 0007.
+
 The pre-research working hypothesis lives in [Initial Architecture Model](../architecture/initial-model.md). The completed cross-cutting synthesis and current design direction lives in [Cross-Cutting Research Synthesis and Ember Design Directions](../architecture/design-directions.md).
 
 ## Architecture handoff

@@ -144,11 +144,11 @@ scheduler, motivational store, or second memory system.
 
 ## Definition-of-done mapping
 
-| Issue #75 requirement | Implemented evidence |
-| --- | --- |
-| Explicit successful no-cognition/no-interruption outcome | Durable `decided / no_cognition` occurrence with empty selected meanings and `interruption_status: not_attempted`. |
-| Distinguish silence from failure/cancellation | Separate `failed`, `timed_out`, `cancellation_requested`, and `outcome_unknown` statuses. |
-| No fabricated motives or memory | Occurrences contain IDs/status only; repeated-silence tests leave meanings, evidence, commitments, and cognition episodes unchanged. |
-| Repeated quiet scenarios | Deterministic tests persist three independent successful silent opportunities. |
-| Metrics count silence separately | `cognitionOpportunityMetrics()` reports `no_cognition` independently from all failure classes. |
-| Restart/inspection defined without raw reasoning | `inspectionView()` exposes durable occurrences; decided silence survives, unfinished evaluation becomes `outcome_unknown`. |
+| Issue #75 requirement                                    | Implemented evidence                                                                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Explicit successful no-cognition/no-interruption outcome | Durable `decided / no_cognition` occurrence with empty selected meanings and `interruption_status: not_attempted`.                   |
+| Distinguish silence from failure/cancellation            | Separate `failed`, `timed_out`, `cancellation_requested`, and `outcome_unknown` statuses.                                            |
+| No fabricated motives or memory                          | Occurrences contain IDs/status only; repeated-silence tests leave meanings, evidence, commitments, and cognition episodes unchanged. |
+| Repeated quiet scenarios                                 | Deterministic tests persist three independent successful silent opportunities.                                                       |
+| Metrics count silence separately                         | `cognitionOpportunityMetrics()` reports `no_cognition` independently from all failure classes.                                       |
+| Restart/inspection defined without raw reasoning         | `inspectionView()` exposes durable occurrences; decided silence survives, unfinished evaluation becomes `outcome_unknown`.           |

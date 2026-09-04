@@ -39,13 +39,13 @@ No substantive evidence reviewed in this phase requires reopening the canonical 
 
 This note uses the established Ember vocabulary:
 
-| Mark | Meaning |
-|---|---|
-| **[E] Empirical** | Experiments, user studies, measured behavior, benchmarks, or documented system behavior. |
-| **[C] Convergence** | A recurring pressure independently visible across mature systems or research traditions. Useful evidence, not proof. |
-| **[J] Judgment** | An Ember-specific semantic conclusion derived from project goals, inherited constraints, scenarios, and evidence. |
-| **[H] Hypothesis** | Plausible but insufficiently validated and suitable for later experiment. |
-| **[L] Lens** | A distinction borrowed from cognitive science, intrinsic-motivation research, HCI, artificial life, or adjacent fields without importing the source framework wholesale. |
+| Mark                | Meaning                                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **[E] Empirical**   | Experiments, user studies, measured behavior, benchmarks, or documented system behavior.                                                                                 |
+| **[C] Convergence** | A recurring pressure independently visible across mature systems or research traditions. Useful evidence, not proof.                                                     |
+| **[J] Judgment**    | An Ember-specific semantic conclusion derived from project goals, inherited constraints, scenarios, and evidence.                                                        |
+| **[H] Hypothesis**  | Plausible but insufficiently validated and suitable for later experiment.                                                                                                |
+| **[L] Lens**        | A distinction borrowed from cognitive science, intrinsic-motivation research, HCI, artificial life, or adjacent fields without importing the source framework wholesale. |
 
 Transfer from humans and animals is intentionally limited. Cognitive science can demonstrate that spontaneous thought is often structured by goals and current concerns rather than pure randomness, and intrinsic-motivation research can demonstrate useful computational distinctions among novelty, information gain, competence, and control. Neither establishes that an LLM has the same subjective states or that Ember should copy a biological motivational architecture.
 
@@ -53,19 +53,19 @@ Transfer from humans and animals is intentionally limited. Cognitive science can
 
 The following distinctions survive the issue's scenarios without requiring separate implementation objects.
 
-| Concept | Ember-facing meaning |
-|---|---|
-| **External trigger** | A change outside Ember that directly demands, requests, or strongly determines attention. |
-| **Wake-up opportunity** | A mechanism or circumstance that makes cognition possible without determining what deserves thought. |
+| Concept                       | Ember-facing meaning                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **External trigger**          | A change outside Ember that directly demands, requests, or strongly determines attention.                                                                                                   |
+| **Wake-up opportunity**       | A mechanism or circumstance that makes cognition possible without determining what deserves thought.                                                                                        |
 | **Internally arising reason** | A live concern, commitment, contradiction, uncertainty, interest, interpretation, anticipated need, value-relevant tension, or other continuing state that makes something worth attention. |
-| **Salience / attention** | Which possible concern becomes foregrounded for cognition now. |
-| **Motivation** | Why Ember treats one possible thought or action as worth spending effort on rather than another. |
-| **Interest / curiosity** | A continuing tendency to seek understanding, evidence, skill, or resolution around a topic without necessarily implying a completion obligation. |
-| **Goal / commitment** | Future-facing state capable of constraining later behavior. A commitment has normative ownership; a goal may be adopted for a task or derived from another concern. |
-| **Intention** | A presently adopted direction to pursue, prepare, investigate, contact, or act. |
-| **Impulse / candidate** | A possible thought or action that has not yet earned resources, attention, or authority. |
-| **Action** | Cognition or behavior actually undertaken. |
-| **Non-action** | A deliberate outcome such as waiting, deferring, abandoning, observing, or remaining silent. |
+| **Salience / attention**      | Which possible concern becomes foregrounded for cognition now.                                                                                                                              |
+| **Motivation**                | Why Ember treats one possible thought or action as worth spending effort on rather than another.                                                                                            |
+| **Interest / curiosity**      | A continuing tendency to seek understanding, evidence, skill, or resolution around a topic without necessarily implying a completion obligation.                                            |
+| **Goal / commitment**         | Future-facing state capable of constraining later behavior. A commitment has normative ownership; a goal may be adopted for a task or derived from another concern.                         |
+| **Intention**                 | A presently adopted direction to pursue, prepare, investigate, contact, or act.                                                                                                             |
+| **Impulse / candidate**       | A possible thought or action that has not yet earned resources, attention, or authority.                                                                                                    |
+| **Action**                    | Cognition or behavior actually undertaken.                                                                                                                                                  |
+| **Non-action**                | A deliberate outcome such as waiting, deferring, abandoning, observing, or remaining silent.                                                                                                |
 
 These distinctions are semantic. The research does not imply one stored record, class, queue entry, or score per concept.
 
@@ -683,19 +683,19 @@ Later architecture should preserve at least these semantics:
 
 ## Evidence summary
 
-| Finding | Classification | Confidence and qualification |
-|---|---|---|
-| Human spontaneous thought is often structured by goals and current concerns rather than pure randomness. | **[E -> L]** | Strong as a human cognitive finding; transfer to artificial agents is conceptual only. |
-| Incubation can improve some forms of problem solving. | **[E -> L]** | Meta-analytic support with substantial moderators; does not imply cognition occurs during Ember downtime. |
-| Intrinsic motivation, curiosity, novelty, information gain, competence, and empowerment are distinct constructs. | **[E/L]** | Strong across psychology and computational research; no single construct is an Ember-ready motive. |
-| Curiosity-style intrinsic rewards can improve exploration. | **[E]** | Strong in RL tasks such as sparse-reward exploration; external validity for persistent personal agents is weak. |
-| Autotelic agents demonstrate learnable self-generated goal selection. | **[E/L]** | Real computational research, but it does not establish that Ember should copy developmental RL. |
-| Proactive assistance has a false-alarm / missed-opportunity trade-off and depends on timing and acceptability. | **[E]** | Supported by HCI and current proactive-agent benchmarks; domains remain narrower than Ember's intended life. |
-| Proactivity does not establish endogenous motivation. | **[J]** | Strong semantic conclusion. Current benchmarks typically evaluate response to observed context, not persistent motivational ownership. |
-| Wake-up opportunity and motivational reason should remain distinct. | **[J]** | Central Ember judgment; consistent with cognitive and systems evidence. |
-| Persistent motivational state may need semantics beyond factual memory. | **[J/H]** | Strong semantic pressure from commitments/interests; representation remains open. |
-| Non-action is a core agency outcome. | **[J]** | Strongly required by Ember's goals, HCI interruption costs, and failure prevention. |
-| No direct evidence establishes human-like subjective wanting, boredom, or consciousness in current LLM agents. | **[J with evidential restraint]** | Treat phenomenology as unsupported; use functional language only. |
+| Finding                                                                                                          | Classification                    | Confidence and qualification                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Human spontaneous thought is often structured by goals and current concerns rather than pure randomness.         | **[E -> L]**                      | Strong as a human cognitive finding; transfer to artificial agents is conceptual only.                                                 |
+| Incubation can improve some forms of problem solving.                                                            | **[E -> L]**                      | Meta-analytic support with substantial moderators; does not imply cognition occurs during Ember downtime.                              |
+| Intrinsic motivation, curiosity, novelty, information gain, competence, and empowerment are distinct constructs. | **[E/L]**                         | Strong across psychology and computational research; no single construct is an Ember-ready motive.                                     |
+| Curiosity-style intrinsic rewards can improve exploration.                                                       | **[E]**                           | Strong in RL tasks such as sparse-reward exploration; external validity for persistent personal agents is weak.                        |
+| Autotelic agents demonstrate learnable self-generated goal selection.                                            | **[E/L]**                         | Real computational research, but it does not establish that Ember should copy developmental RL.                                        |
+| Proactive assistance has a false-alarm / missed-opportunity trade-off and depends on timing and acceptability.   | **[E]**                           | Supported by HCI and current proactive-agent benchmarks; domains remain narrower than Ember's intended life.                           |
+| Proactivity does not establish endogenous motivation.                                                            | **[J]**                           | Strong semantic conclusion. Current benchmarks typically evaluate response to observed context, not persistent motivational ownership. |
+| Wake-up opportunity and motivational reason should remain distinct.                                              | **[J]**                           | Central Ember judgment; consistent with cognitive and systems evidence.                                                                |
+| Persistent motivational state may need semantics beyond factual memory.                                          | **[J/H]**                         | Strong semantic pressure from commitments/interests; representation remains open.                                                      |
+| Non-action is a core agency outcome.                                                                             | **[J]**                           | Strongly required by Ember's goals, HCI interruption costs, and failure prevention.                                                    |
+| No direct evidence establishes human-like subjective wanting, boredom, or consciousness in current LLM agents.   | **[J with evidential restraint]** | Treat phenomenology as unsupported; use functional language only.                                                                      |
 
 ## What remains open
 

@@ -98,11 +98,11 @@ Return exactly this JSON object and nothing else:
 {"probe":"ember-runtime","answer":42}
 ```
 
-| Surface | Observed result | Structured evidence | Login classification |
-| --- | --- | --- | --- |
-| Codex `exec --json` | Exact result, exit 0, 7.3 s wall clock | `thread.started`, `turn.started`, `item.completed`, `turn.completed`; thread ID and usage | **Observed subscription reuse:** ChatGPT login, API-key variable absent |
-| Cursor `agent -p --output-format stream-json --mode ask --sandbox enabled` | Exact result, exit 0, 10.0 s wall clock; runtime reported 3.1 s API duration | init, user, assistant, result; session ID, model, login auth source, request ID, usage | **Observed subscription reuse:** `apiKeySource: login`, API-key variable absent |
-| Claude Code `-p --output-format stream-json --safe-mode --permission-mode plan --tools ''` | Exit 1 before a model turn | Structured init showed empty tools and plan mode; terminal result reported `authentication_failed` because OAuth was expired and refresh failed | **Not viable on this host at test time**; no API-key fallback attempted |
+| Surface                                                                                    | Observed result                                                              | Structured evidence                                                                                                                             | Login classification                                                            |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Codex `exec --json`                                                                        | Exact result, exit 0, 7.3 s wall clock                                       | `thread.started`, `turn.started`, `item.completed`, `turn.completed`; thread ID and usage                                                       | **Observed subscription reuse:** ChatGPT login, API-key variable absent         |
+| Cursor `agent -p --output-format stream-json --mode ask --sandbox enabled`                 | Exact result, exit 0, 10.0 s wall clock; runtime reported 3.1 s API duration | init, user, assistant, result; session ID, model, login auth source, request ID, usage                                                          | **Observed subscription reuse:** `apiKeySource: login`, API-key variable absent |
+| Claude Code `-p --output-format stream-json --safe-mode --permission-mode plan --tools ''` | Exit 1 before a model turn                                                   | Structured init showed empty tools and plan mode; terminal result reported `authentication_failed` because OAuth was expired and refresh failed | **Not viable on this host at test time**; no API-key fallback attempted         |
 
 Codex and Cursor used prompt-enforced JSON for this initial connectivity check.
 The later Codex projection proof used `--output-schema` plus Ember's independent
@@ -219,19 +219,19 @@ required Ember-owned bounded projection round-trip.
 
 ## Comparison
 
-| Dimension | Codex CLI | Claude Code CLI | Cursor Agent CLI |
-| --- | --- | --- | --- |
-| Authentication reuse | ChatGPT subscription login observed | OAuth cache expired; refresh failed | Browser login observed |
-| Official automation | `codex exec` | `claude -p` | `agent -p` |
-| Headless invocation | Successful | Structured auth failure before turn | Successful |
-| Structured I/O | JSONL; output schema; Ember validator | JSON/stream JSON and schema option | Stream JSON with final result |
-| Context control | Explicit cwd; automatic `AGENTS.md` discovery | Safe mode and tool controls accepted; live context probe blocked by auth | Explicit workspace; automatic `AGENTS.md` discovery |
-| Tool control tested | Read-only sandbox; no tool use requested | Empty tool list and plan mode at init | Ask mode plus sandbox; no tool use requested |
-| Session semantics | Thread ID and resume observed | Supported but not live-tested | Session ID and resume observed |
-| Cancellation truth | Child exit 0, no acknowledgement | Not tested | Child exit 143, no acknowledgement |
-| Model control | CLI supports selection; proof did not force a model | CLI supports selection; model artifact intentionally not treated as reliable evidence after auth failure | Init exposed selected model |
-| One-shot portability cost | Thin argument/event adapter proven | Likely thin adapter after login repair | Thin argument/event adapter appears feasible |
-| Subscription practicality | Proven now | Blocked until OAuth is restored | Proven now |
+| Dimension                 | Codex CLI                                           | Claude Code CLI                                                                                          | Cursor Agent CLI                                    |
+| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Authentication reuse      | ChatGPT subscription login observed                 | OAuth cache expired; refresh failed                                                                      | Browser login observed                              |
+| Official automation       | `codex exec`                                        | `claude -p`                                                                                              | `agent -p`                                          |
+| Headless invocation       | Successful                                          | Structured auth failure before turn                                                                      | Successful                                          |
+| Structured I/O            | JSONL; output schema; Ember validator               | JSON/stream JSON and schema option                                                                       | Stream JSON with final result                       |
+| Context control           | Explicit cwd; automatic `AGENTS.md` discovery       | Safe mode and tool controls accepted; live context probe blocked by auth                                 | Explicit workspace; automatic `AGENTS.md` discovery |
+| Tool control tested       | Read-only sandbox; no tool use requested            | Empty tool list and plan mode at init                                                                    | Ask mode plus sandbox; no tool use requested        |
+| Session semantics         | Thread ID and resume observed                       | Supported but not live-tested                                                                            | Session ID and resume observed                      |
+| Cancellation truth        | Child exit 0, no acknowledgement                    | Not tested                                                                                               | Child exit 143, no acknowledgement                  |
+| Model control             | CLI supports selection; proof did not force a model | CLI supports selection; model artifact intentionally not treated as reliable evidence after auth failure | Init exposed selected model                         |
+| One-shot portability cost | Thin argument/event adapter proven                  | Likely thin adapter after login repair                                                                   | Thin argument/event adapter appears feasible        |
+| Subscription practicality | Proven now                                          | Blocked until OAuth is restored                                                                          | Proven now                                          |
 
 The products remain external agent runtimes: they own model selection, some agent
 loop behavior, session state, working-directory interpretation, and potentially

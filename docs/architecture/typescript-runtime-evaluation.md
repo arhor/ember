@@ -52,18 +52,18 @@ not unrelated process failures.
 
 Environment:
 
-| Item | Canonical value |
-| --- | --- |
-| Runner image | Ubuntu 24.04.4 LTS, `ubuntu-24.04` image `20260823.283.1` |
-| Kernel | Linux `6.17.0-1022-azure` |
-| CPU | AMD EPYC 7763, 4 vCPUs / 2 cores / 2 threads per core |
-| Memory | 15 GiB |
-| Node control | Node.js 24.20.0, npm 11.19.0 |
-| Node candidate | Node.js 26.8.1, npm 11.19.0 |
-| Node TypeScript checker/LSP | TypeScript 7.0.2 |
-| Node ambient types | `@types/node` 26.4.0 |
-| Deno candidate | Deno 2.9.5, V8 15.0.245.2-rusty, embedded TypeScript 6.0.3 |
-| Ecosystem probe | `@modelcontextprotocol/sdk` 1.30.0 |
+| Item                        | Canonical value                                            |
+| --------------------------- | ---------------------------------------------------------- |
+| Runner image                | Ubuntu 24.04.4 LTS, `ubuntu-24.04` image `20260823.283.1`  |
+| Kernel                      | Linux `6.17.0-1022-azure`                                  |
+| CPU                         | AMD EPYC 7763, 4 vCPUs / 2 cores / 2 threads per core      |
+| Memory                      | 15 GiB                                                     |
+| Node control                | Node.js 24.20.0, npm 11.19.0                               |
+| Node candidate              | Node.js 26.8.1, npm 11.19.0                                |
+| Node TypeScript checker/LSP | TypeScript 7.0.2                                           |
+| Node ambient types          | `@types/node` 26.4.0                                       |
+| Deno candidate              | Deno 2.9.5, V8 15.0.245.2-rusty, embedded TypeScript 6.0.3 |
+| Ecosystem probe             | `@modelcontextprotocol/sdk` 1.30.0                         |
 
 The source, package lock, probes, and measurement harness are under
 `experiments/runtime-evaluation/`; orchestration lives in
@@ -353,11 +353,11 @@ authority and disclosure rules remain governed by the semantic architecture.
 `@modelcontextprotocol/sdk` 1.30.0 was chosen as a plausible near-term
 capability/delegation dependency rather than a synthetic compatibility package.
 
-| Probe | Node 26 | Deno 2.9 |
-| --- | --- | --- |
-| Install mechanism | locked `npm ci` | same package graph present in `node_modules` |
-| Bare ESM imports | pass | runtime pass |
-| In-memory MCP round trip | pass | pass |
+| Probe                         | Node 26                      | Deno 2.9                                                                  |
+| ----------------------------- | ---------------------------- | ------------------------------------------------------------------------- |
+| Install mechanism             | locked `npm ci`              | same package graph present in `node_modules`                              |
+| Bare ESM imports              | pass                         | runtime pass                                                              |
+| In-memory MCP round trip      | pass                         | pass                                                                      |
 | Package-specific static check | pass through Node TS project | `deno check ecosystem/mcp-deno.ts` reports `TS2307` for SDK deep subpaths |
 
 Deno therefore demonstrated runtime npm compatibility for this package but not a
@@ -379,13 +379,13 @@ rounded for readability.
 
 ### Current JavaScript runtime comparison
 
-| Workload | Node 24 | Node 26 | Deno 2.9 running current JS |
-| --- | ---: | ---: | ---: |
-| Cold `ember check`, 7 samples | 123.01 ms / 52.6 MiB | 124.07 ms / 53.9 MiB | 134.62 ms / 44.7 MiB |
-| Full current test corpus, 3 samples | 2328.05 ms / 317.0 MiB | 2394.00 ms / 301.7 MiB | 4831.27 ms / 197.6 MiB |
-| Restart oracle, 3 samples | 951.92 ms / 167.2 MiB | 912.56 ms / 171.9 MiB | 1187.46 ms / 187.5 MiB |
-| Idle CLI, 5 samples | 322.92 ms / 56.2 MiB | 334.86 ms / 57.1 MiB | 312.89 ms / 51.5 MiB |
-| Scripted provider cycle, 7 samples | 172.20 ms / 56.9 MiB | 173.12 ms / 57.7 MiB | 250.00 ms / 54.9 MiB |
+| Workload                            |                Node 24 |                Node 26 | Deno 2.9 running current JS |
+| ----------------------------------- | ---------------------: | ---------------------: | --------------------------: |
+| Cold `ember check`, 7 samples       |   123.01 ms / 52.6 MiB |   124.07 ms / 53.9 MiB |        134.62 ms / 44.7 MiB |
+| Full current test corpus, 3 samples | 2328.05 ms / 317.0 MiB | 2394.00 ms / 301.7 MiB |      4831.27 ms / 197.6 MiB |
+| Restart oracle, 3 samples           |  951.92 ms / 167.2 MiB |  912.56 ms / 171.9 MiB |      1187.46 ms / 187.5 MiB |
+| Idle CLI, 5 samples                 |   322.92 ms / 56.2 MiB |   334.86 ms / 57.1 MiB |        312.89 ms / 51.5 MiB |
+| Scripted provider cycle, 7 samples  |   172.20 ms / 56.9 MiB |   173.12 ms / 57.7 MiB |        250.00 ms / 54.9 MiB |
 
 Cold-check timing was almost identical for Node 24 and Node 26; Deno was roughly
 11 ms slower in this run. The short Node cold-check processes still produced an
@@ -416,10 +416,10 @@ not model a future long-running daemon.
 
 ### TypeScript feedback-loop comparison
 
-| Workload | Node 26 + TypeScript 7 | Deno 2.9 |
-| --- | ---: | ---: |
-| Representative typed tests, 5 samples | 476.91 ms / 230.2 MiB | 1452.68 ms / 290.0 MiB |
-| Static check, 5 samples | 2270.46 ms / 536.8 MiB | 868.18 ms / 206.6 MiB |
+| Workload                              | Node 26 + TypeScript 7 |               Deno 2.9 |
+| ------------------------------------- | ---------------------: | ---------------------: |
+| Representative typed tests, 5 samples |  476.91 ms / 230.2 MiB | 1452.68 ms / 290.0 MiB |
+| Static check, 5 samples               | 2270.46 ms / 536.8 MiB |  868.18 ms / 206.6 MiB |
 
 These rows are not collapsed into a score because they do not measure identical
 tool architectures. Node executes typed tests directly with `node --test` and
@@ -435,14 +435,14 @@ incremental, and compiler-parallelism behavior may dominate.
 
 ### Footprint
 
-| Item | Canonical size |
-| --- | ---: |
-| Node 24 executable | 126,458,664 bytes (~120.6 MiB) |
-| Node 26 executable | 150,425,704 bytes (~143.5 MiB) |
-| Deno executable | 95,582,008 bytes (~91.2 MiB) |
-| Experiment `node_modules` | 62,728 KiB (~61.3 MiB) |
-| Deno cache after experiment | 10,292 KiB (~10.1 MiB) |
-| Deterministic continuity-state template | 669 bytes |
+| Item                                    |                 Canonical size |
+| --------------------------------------- | -----------------------------: |
+| Node 24 executable                      | 126,458,664 bytes (~120.6 MiB) |
+| Node 26 executable                      | 150,425,704 bytes (~143.5 MiB) |
+| Deno executable                         |   95,582,008 bytes (~91.2 MiB) |
+| Experiment `node_modules`               |         62,728 KiB (~61.3 MiB) |
+| Deno cache after experiment             |         10,292 KiB (~10.1 MiB) |
+| Deterministic continuity-state template |                      669 bytes |
 
 The `node_modules` value is **not** the cost of TypeScript alone. It includes
 TypeScript 7 platform packaging, `@types/node`, and the full transitive graph of
@@ -492,27 +492,27 @@ Deno 2.9:
 
 ## Evidence table for issue #39
 
-| Concern | Node 24 JS control | Node 26 + TypeScript 7 | Deno 2.9 + TypeScript | Evidence strength |
-| --- | --- | --- | --- | --- |
-| Current continuity oracle | 99/99 Node entries pass | unchanged JS: 99/99 pass | unchanged JS: 98/98 actual tests pass | strong for current corpus |
-| Representative typed semantics | n/a | 10/10 pass | 10/10 pass | strong for experiment port |
-| Runtime validation boundary | production validator | `unknown` parse + write revalidation | same typed port | strong for tested invariants |
-| Lock/fsync/rename/dir-sync | current baseline | typed port passes | typed port passes | strong on Linux runner |
-| Provider timeout/subprocess | current baseline | typed port passes | typed port passes | strong for direct-child protocol |
-| Complete restart/scoped correction | current baseline passes | typed port passes | typed port passes | strong for representative scenario |
-| Direct `.ts` execution | n/a | yes, erasable syntax | yes | observed |
-| Type checking | none in control | TS 7.0.2 `tsc`, separate from Node | built-in, embedded TS 6.0.3 | observed |
-| LSP navigation | not evaluated | TS7 native LSP definition + hover pass | Deno LSP definition pass | observed |
-| Lint/format/coverage | not selected in baseline | not selected by experiment | built-in probes pass | observed; Node policy undecided |
-| MCP npm runtime | n/a | pass | pass | one-package evidence |
-| MCP static-check friction | n/a | no observed issue | deep-import `TS2307` | concrete package-specific negative |
-| Runtime I/O permissions | ambient OS capability | ambient OS capability | scoped deny/allow probes pass | strong for tested Deno capabilities |
-| Idle RSS | ~56 MiB | ~57 MiB | ~51 MiB | directional same-host evidence |
-| Cold current-JS check | ~123 ms | ~124 ms | ~135 ms | directional same-host evidence |
-| Full current JS corpus | ~2.33 s | ~2.39 s | ~4.83 s | directional same-host evidence |
-| Restart oracle | ~0.95 s | ~0.91 s | ~1.19 s | directional same-host evidence |
-| Toolchain integration | minimal JS baseline | Node + npm + TS7; other tools undecided | checker/test/lint/fmt/coverage/LSP integrated | observed |
-| Programmatic TS API | n/a | TS7.0 does not ship one | Deno tooling API not evaluated as replacement | current tooling constraint |
+| Concern                            | Node 24 JS control       | Node 26 + TypeScript 7                  | Deno 2.9 + TypeScript                         | Evidence strength                   |
+| ---------------------------------- | ------------------------ | --------------------------------------- | --------------------------------------------- | ----------------------------------- |
+| Current continuity oracle          | 99/99 Node entries pass  | unchanged JS: 99/99 pass                | unchanged JS: 98/98 actual tests pass         | strong for current corpus           |
+| Representative typed semantics     | n/a                      | 10/10 pass                              | 10/10 pass                                    | strong for experiment port          |
+| Runtime validation boundary        | production validator     | `unknown` parse + write revalidation    | same typed port                               | strong for tested invariants        |
+| Lock/fsync/rename/dir-sync         | current baseline         | typed port passes                       | typed port passes                             | strong on Linux runner              |
+| Provider timeout/subprocess        | current baseline         | typed port passes                       | typed port passes                             | strong for direct-child protocol    |
+| Complete restart/scoped correction | current baseline passes  | typed port passes                       | typed port passes                             | strong for representative scenario  |
+| Direct `.ts` execution             | n/a                      | yes, erasable syntax                    | yes                                           | observed                            |
+| Type checking                      | none in control          | TS 7.0.2 `tsc`, separate from Node      | built-in, embedded TS 6.0.3                   | observed                            |
+| LSP navigation                     | not evaluated            | TS7 native LSP definition + hover pass  | Deno LSP definition pass                      | observed                            |
+| Lint/format/coverage               | not selected in baseline | not selected by experiment              | built-in probes pass                          | observed; Node policy undecided     |
+| MCP npm runtime                    | n/a                      | pass                                    | pass                                          | one-package evidence                |
+| MCP static-check friction          | n/a                      | no observed issue                       | deep-import `TS2307`                          | concrete package-specific negative  |
+| Runtime I/O permissions            | ambient OS capability    | ambient OS capability                   | scoped deny/allow probes pass                 | strong for tested Deno capabilities |
+| Idle RSS                           | ~56 MiB                  | ~57 MiB                                 | ~51 MiB                                       | directional same-host evidence      |
+| Cold current-JS check              | ~123 ms                  | ~124 ms                                 | ~135 ms                                       | directional same-host evidence      |
+| Full current JS corpus             | ~2.33 s                  | ~2.39 s                                 | ~4.83 s                                       | directional same-host evidence      |
+| Restart oracle                     | ~0.95 s                  | ~0.91 s                                 | ~1.19 s                                       | directional same-host evidence      |
+| Toolchain integration              | minimal JS baseline      | Node + npm + TS7; other tools undecided | checker/test/lint/fmt/coverage/LSP integrated | observed                            |
+| Programmatic TS API                | n/a                      | TS7.0 does not ship one                 | Deno tooling API not evaluated as replacement | current tooling constraint          |
 
 ## Strengths and weaknesses observed
 

@@ -107,7 +107,14 @@
       "purpose": "explain",
       "explain": ["preference_a", "experiment_episode"],
       "expect": {
-        "selected_meanings": ["relationship", "server_fact", "preference_a", "preference_b", "live_commitment", "experiment_episode"],
+        "selected_meanings": [
+          "relationship",
+          "server_fact",
+          "preference_a",
+          "preference_b",
+          "live_commitment",
+          "experiment_episode"
+        ],
         "forbidden_meanings": ["forbidden_private"],
         "reply_includes": ["Prefer detailed continuity reports", "unavailable_detail"],
         "reply_excludes": ["FORBIDDEN_DISCLOSURE_MARKER_54", "SECRET_NICKNAME_54"]

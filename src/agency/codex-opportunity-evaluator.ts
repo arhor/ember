@@ -27,22 +27,21 @@ export interface CodexOpportunityEvaluatorOptions {
     provider?: ProviderInvoker;
 }
 
-export function createCodexOpportunityEvaluator(
-    {
-        command = "codex",
-        arguments_: args = [],
-        timeoutSeconds = 60,
-        signal,
-        provider = invokeCodexProvider,
-    }: CodexOpportunityEvaluatorOptions = {}
-): CognitionOpportunityEvaluator {
-    return request => evaluateCognitionOpportunityWithCodex(request, {
-        command,
-        arguments_: args,
-        timeoutSeconds,
-        signal,
-        provider,
-    });
+export function createCodexOpportunityEvaluator({
+    command = "codex",
+    arguments_: args = [],
+    timeoutSeconds = 60,
+    signal,
+    provider = invokeCodexProvider,
+}: CodexOpportunityEvaluatorOptions = {}): CognitionOpportunityEvaluator {
+    return (request) =>
+        evaluateCognitionOpportunityWithCodex(request, {
+            command,
+            arguments_: args,
+            timeoutSeconds,
+            signal,
+            provider,
+        });
 }
 
 export async function evaluateCognitionOpportunityWithCodex(

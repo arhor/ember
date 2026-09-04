@@ -109,17 +109,17 @@ Avoid keyword lists such as `memory`, `agents`, or hints broad enough to match n
 
 Choose the document's repository knowledge function, not its topic:
 
-| Role | Purpose | Normal depth |
-| --- | --- | --- |
-| `foundation` | Project purpose or durable principles | Default |
-| `decision` | Decision record; its own lifecycle determines whether it governs | Default |
-| `design` | Current or historical architecture/design direction | Default |
-| `scenario` | Acceptance or evaluation fixtures for observable semantics | Default |
-| `research` | Canonical Ember concern synthesis | Default |
-| `guide` | Repository, contributor, authoring, or operational guidance | Default |
-| `reference` | Supporting external-system or comparative investigation | Deep |
-| `evidence` | Portable evidence map supporting canonical research | Deep |
-| `source` | Preserved source research artifact | Deep |
+| Role         | Purpose                                                          | Normal depth |
+| ------------ | ---------------------------------------------------------------- | ------------ |
+| `foundation` | Project purpose or durable principles                            | Default      |
+| `decision`   | Decision record; its own lifecycle determines whether it governs | Default      |
+| `design`     | Current or historical architecture/design direction              | Default      |
+| `scenario`   | Acceptance or evaluation fixtures for observable semantics       | Default      |
+| `research`   | Canonical Ember concern synthesis                                | Default      |
+| `guide`      | Repository, contributor, authoring, or operational guidance      | Default      |
+| `reference`  | Supporting external-system or comparative investigation          | Deep         |
+| `evidence`   | Portable evidence map supporting canonical research              | Deep         |
+| `source`     | Preserved source research artifact                               | Deep         |
 
 A role label projects existing governance into discovery. It cannot turn arbitrary prose into a canonical research result or make a proposed decision accepted.
 

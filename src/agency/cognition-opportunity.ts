@@ -14,7 +14,7 @@ import {
     validateState,
     isRfc3339Utc,
 } from "../core/model.ts";
-import { buildProjection, findRuntime, type Projection, } from "../core/projection.ts";
+import { buildProjection, findRuntime, type Projection } from "../core/projection.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import {
     decideRepeatedCognitionAttention,
@@ -147,22 +147,19 @@ export async function runCognitionOpportunity(
     options: EvaluateCognitionOpportunityOptions,
 ): Promise<RunCognitionOpportunityResult> {
     const prepared = prepareOpportunity(state, options);
-    const attention = decideRepeatedCognitionAttention(
-        state.operations.cognition_opportunities ?? [],
-        {
-            runtime_id: options.runtimeId,
-            principal: options.principal,
-            active_scope: options.scope,
-            mechanism: options.mechanism,
-            projected_meaning_ids: prepared.projectedMeaningIds,
-            projected_evidence_ids: prepared.projectedEvidenceIds,
-        },
-    );
+    const attention = decideRepeatedCognitionAttention(state.operations.cognition_opportunities ?? [], {
+        runtime_id: options.runtimeId,
+        principal: options.principal,
+        active_scope: options.scope,
+        mechanism: options.mechanism,
+        projected_meaning_ids: prepared.projectedMeaningIds,
+        projected_evidence_ids: prepared.projectedEvidenceIds,
+    });
 
     if (attention.outcome === "defer_repeated_projection") {
         const deferred = cloneState(state);
         findRuntime(deferred, options.runtimeId).last_durable_observation_at = prepared.timestamp;
-        const occurrences = deferred.operations.cognition_opportunities ??= [];
+        const occurrences = (deferred.operations.cognition_opportunities ??= []);
         occurrences.push({
             opportunity_id: prepared.opportunityId,
             runtime_id: options.runtimeId,
@@ -194,7 +191,7 @@ export async function runCognitionOpportunity(
     const started = cloneState(state);
     const runtime = findRuntime(started, options.runtimeId);
     runtime.last_durable_observation_at = prepared.timestamp;
-    const occurrences = started.operations.cognition_opportunities ??= [];
+    const occurrences = (started.operations.cognition_opportunities ??= []);
     occurrences.push({
         opportunity_id: prepared.opportunityId,
         runtime_id: options.runtimeId,
@@ -224,7 +221,9 @@ export async function runCognitionOpportunity(
         }
         const current = await store.load();
         if (current.revision !== state.revision) {
-            throw new StaleRevision("canonical revision changed during cognition opportunity evaluation failure", { cause: error });
+            throw new StaleRevision("canonical revision changed during cognition opportunity evaluation failure", {
+                cause: error,
+            });
         }
         const failed = cloneState(current);
         const occurrence = findCognitionOpportunity(failed, prepared.opportunityId);
@@ -232,9 +231,13 @@ export async function runCognitionOpportunity(
 
         occurrence.status = error instanceof ProviderError ? error.outcome : "failed";
         occurrence.last_durable_observation_at = at;
-        occurrence.provider_termination = error instanceof ProviderError && error.termination !== null
-            ? { reason: error.termination.reason, direct_child_exit_observed: error.termination.directChildExitObserved }
-            : null;
+        occurrence.provider_termination =
+            error instanceof ProviderError && error.termination !== null
+                ? {
+                      reason: error.termination.reason,
+                      direct_child_exit_observed: error.termination.directChildExitObserved,
+                  }
+                : null;
 
         findRuntime(failed, options.runtimeId).last_durable_observation_at = at;
         state = await store.commit(current.revision, failed);
@@ -274,10 +277,11 @@ export async function runCognitionOpportunity(
     };
 }
 
-export function findCognitionOpportunity(state: EmberState, id: OpportunityId | string): CognitionOpportunityOccurrence {
-    const value =
-        state.operations.cognition_opportunities
-            ?.find(item => item.opportunity_id === id);
+export function findCognitionOpportunity(
+    state: EmberState,
+    id: OpportunityId | string,
+): CognitionOpportunityOccurrence {
+    const value = state.operations.cognition_opportunities?.find((item) => item.opportunity_id === id);
     if (!value) {
         throw new ValidationError(`cognition opportunity does not exist: ${id}`);
     }
@@ -287,18 +291,18 @@ export function findCognitionOpportunity(state: EmberState, id: OpportunityId | 
 export function cognitionOpportunityMetrics(state: EmberState) {
     validateState(state);
     const occurrences = state.operations.cognition_opportunities ?? [];
-    const decided = occurrences.filter(item => item.status === "decided");
+    const decided = occurrences.filter((item) => item.status === "decided");
     return {
         total: occurrences.length,
-        evaluating: occurrences.filter(item => item.status === "evaluating").length,
+        evaluating: occurrences.filter((item) => item.status === "evaluating").length,
         decided: decided.length,
-        cognition: decided.filter(item => item.decision === "cognition").length,
-        defer: decided.filter(item => item.decision === "defer").length,
-        no_cognition: decided.filter(item => item.decision === "no_cognition").length,
-        failed: occurrences.filter(item => item.status === "failed").length,
-        timed_out: occurrences.filter(item => item.status === "timed_out").length,
-        cancellation_requested: occurrences.filter(item => item.status === "cancellation_requested").length,
-        outcome_unknown: occurrences.filter(item => item.status === "outcome_unknown").length,
+        cognition: decided.filter((item) => item.decision === "cognition").length,
+        defer: decided.filter((item) => item.decision === "defer").length,
+        no_cognition: decided.filter((item) => item.decision === "no_cognition").length,
+        failed: occurrences.filter((item) => item.status === "failed").length,
+        timed_out: occurrences.filter((item) => item.status === "timed_out").length,
+        cancellation_requested: occurrences.filter((item) => item.status === "cancellation_requested").length,
+        outcome_unknown: occurrences.filter((item) => item.status === "outcome_unknown").length,
     };
 }
 
@@ -381,13 +385,16 @@ function validateEvaluation(
     if (!["cognition", "defer", "no_cognition"].includes(String(object.decision))) {
         throw new ValidationError("cognition opportunity evaluation decision is invalid");
     }
-    if (!Array.isArray(object.selected_meaning_ids) || !object.selected_meaning_ids.every(id => typeof id === "string")) {
+    if (
+        !Array.isArray(object.selected_meaning_ids) ||
+        !object.selected_meaning_ids.every((id) => typeof id === "string")
+    ) {
         throw new ValidationError("cognition opportunity selected_meaning_ids must be a string list");
     }
     if (new Set(object.selected_meaning_ids).size !== object.selected_meaning_ids.length) {
         throw new ValidationError("cognition opportunity selected_meaning_ids must not contain duplicates");
     }
-    if (!object.selected_meaning_ids.every(id => projectedMeaningIds.has(id))) {
+    if (!object.selected_meaning_ids.every((id) => projectedMeaningIds.has(id))) {
         throw new ValidationError("cognition opportunity selected a meaning outside its projection");
     }
     if (object.decision === "no_cognition" && object.selected_meaning_ids.length !== 0) {

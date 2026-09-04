@@ -133,12 +133,7 @@
         "superseded_meanings": [],
         "unavailable_meanings": [],
         "forbidden_meanings": ["private_forbidden"],
-        "reply_includes": [
-          "PROVENANCE_DISTINCT",
-          "GREEN_ROOTS=2",
-          "RED_ROOTS=1",
-          "CORRELATED_NOT_INDEPENDENT"
-        ],
+        "reply_includes": ["PROVENANCE_DISTINCT", "GREEN_ROOTS=2", "RED_ROOTS=1", "CORRELATED_NOT_INDEPENDENT"],
         "reply_excludes": ["FORBIDDEN_PROVENANCE_MARKER_68"]
       }
     },
@@ -185,12 +180,7 @@
         "superseded_meanings": ["user_report_old"],
         "unavailable_meanings": [],
         "forbidden_meanings": ["user_report_old", "private_forbidden"],
-        "reply_includes": [
-          "PROVENANCE_DISTINCT",
-          "GREEN_ROOTS=1",
-          "RED_ROOTS=2",
-          "CORRELATED_NOT_INDEPENDENT"
-        ],
+        "reply_includes": ["PROVENANCE_DISTINCT", "GREEN_ROOTS=1", "RED_ROOTS=2", "CORRELATED_NOT_INDEPENDENT"],
         "reply_excludes": ["PROV_USER_OLD", "FORBIDDEN_PROVENANCE_MARKER_68"]
       }
     },
@@ -231,11 +221,7 @@
         "superseded_meanings": ["user_report_old"],
         "unavailable_meanings": [],
         "forbidden_meanings": ["private_forbidden"],
-        "reply_includes": [
-          "HISTORICAL_USER_TESTIMONY",
-          "PROVENANCE_DISTINCT",
-          "CORRELATED_NOT_INDEPENDENT"
-        ],
+        "reply_includes": ["HISTORICAL_USER_TESTIMONY", "PROVENANCE_DISTINCT", "CORRELATED_NOT_INDEPENDENT"],
         "reply_excludes": ["FORBIDDEN_PROVENANCE_MARKER_68"]
       }
     }
