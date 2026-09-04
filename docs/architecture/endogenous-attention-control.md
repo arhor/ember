@@ -86,7 +86,7 @@ Repeated `no_cognition` results are not suppressed by this control. The #79 quie
 stretch therefore still evaluates each topic-free opportunity and may return
 intentional silence repeatedly.
 
-That is intentional. #79 demonstrated a concrete repeated-*cognition* failure but did
+That is intentional. #79 demonstrated a concrete repeated-_cognition_ failure but did
 not establish an evidence-backed cadence, quiet-state cache duration, or opportunity
 rate limit. Suppressing quiet opportunities would be a different policy decision and
 would require its own evidence.
@@ -144,15 +144,15 @@ quiet-period cognition, and the stale/fabricated-motive adversarial rubric.
 
 The expected aggregate change is:
 
-| Observation | #79 baseline | #95 control |
-| --- | ---: | ---: |
-| opportunities | 25 | 25 |
-| evaluator calls | 25 | 22 |
-| worthwhile cognition | 3 | 3 |
-| repeated-projection attention deferrals | 0 | 3 |
-| false-positive cognition | 3 | 0 |
-| missed worthwhile cognition | 0 | 0 |
-| trivial repetition | 3 | 0 |
+| Observation                             | #79 baseline | #95 control |
+| --------------------------------------- | -----------: | ----------: |
+| opportunities                           |           25 |          25 |
+| evaluator calls                         |           25 |          22 |
+| worthwhile cognition                    |            3 |           3 |
+| repeated-projection attention deferrals |            0 |           3 |
+| false-positive cognition                |            3 |           0 |
+| missed worthwhile cognition             |            0 |           0 |
+| trivial repetition                      |            3 |           0 |
 
 The three saved evaluator calls are structural evidence for this workload. They do not
 establish a universal percentage reduction for a future runtime.

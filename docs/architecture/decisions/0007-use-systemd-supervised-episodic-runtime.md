@@ -83,20 +83,20 @@ The comparison uses requirements R1-R12 from issue #80. `Yes` means the option c
 satisfy the requirement without introducing a second mechanism that is effectively a
 different topology.
 
-| Requirement | Foreground CLI only | Resident Ember service | systemd-supervised episodic workers | Cron/detached jobs |
-| --- | --- | --- | --- | --- |
-| R1 unattended topic-free opportunity | No | Yes | **Yes** | Partial |
-| R2 time may reopen attention without restart policy | No | Yes | **Yes, with explicit one-shot wake intent** | Poor fit; cadence tends to become policy |
-| R3 specialist ownership after interaction ends | No | Yes | **Yes, one supervised unit per episode** | Partial; detached process truth is weak |
-| R4 persist before consequential transitions | Yes while attached | Yes | **Yes** | Possible but ad hoc |
-| R5 reconcile rather than blindly replay | Manual only | Yes | **Yes** | Weak unless another recovery layer is added |
-| R6 truthful clean shutdown | Interactive only | Yes | **Yes, per worker/unit** | Weak |
-| R7 single-writer/concurrency safety | Yes | Requires coordination with CLI | **Preserves cooperative lease/revision model** | Overlap needs extra locking policy |
-| R8 semantic-operational status | Manual state only | Yes | **Yes, durable state plus unit state** | Fragmented |
-| R9 explicit config/runtime-owned auth | Yes | Yes | **Yes** | Often inherits shell environment accidentally |
-| R10 attributable idle/active resource cost | No long-lived runtime | Permanent Node baseline | **No resident Ember process; workers attributable per unit** | Low idle cost but weak ownership |
-| R11 interruption handoff survives process boundaries | No unattended producer | Yes | **Yes, durable handoff before worker exit** | Possible but ad hoc |
-| R12 explicit first platform/supervisor scope | Portable but insufficient | Requires a supervisor choice anyway | **Linux/systemd explicitly selected** | Tool/distribution dependent |
+| Requirement                                          | Foreground CLI only       | Resident Ember service              | systemd-supervised episodic workers                          | Cron/detached jobs                            |
+| ---------------------------------------------------- | ------------------------- | ----------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| R1 unattended topic-free opportunity                 | No                        | Yes                                 | **Yes**                                                      | Partial                                       |
+| R2 time may reopen attention without restart policy  | No                        | Yes                                 | **Yes, with explicit one-shot wake intent**                  | Poor fit; cadence tends to become policy      |
+| R3 specialist ownership after interaction ends       | No                        | Yes                                 | **Yes, one supervised unit per episode**                     | Partial; detached process truth is weak       |
+| R4 persist before consequential transitions          | Yes while attached        | Yes                                 | **Yes**                                                      | Possible but ad hoc                           |
+| R5 reconcile rather than blindly replay              | Manual only               | Yes                                 | **Yes**                                                      | Weak unless another recovery layer is added   |
+| R6 truthful clean shutdown                           | Interactive only          | Yes                                 | **Yes, per worker/unit**                                     | Weak                                          |
+| R7 single-writer/concurrency safety                  | Yes                       | Requires coordination with CLI      | **Preserves cooperative lease/revision model**               | Overlap needs extra locking policy            |
+| R8 semantic-operational status                       | Manual state only         | Yes                                 | **Yes, durable state plus unit state**                       | Fragmented                                    |
+| R9 explicit config/runtime-owned auth                | Yes                       | Yes                                 | **Yes**                                                      | Often inherits shell environment accidentally |
+| R10 attributable idle/active resource cost           | No long-lived runtime     | Permanent Node baseline             | **No resident Ember process; workers attributable per unit** | Low idle cost but weak ownership              |
+| R11 interruption handoff survives process boundaries | No unattended producer    | Yes                                 | **Yes, durable handoff before worker exit**                  | Possible but ad hoc                           |
+| R12 explicit first platform/supervisor scope         | Portable but insufficient | Requires a supervisor choice anyway | **Linux/systemd explicitly selected**                        | Tool/distribution dependent                   |
 
 ### Foreground-only process
 
@@ -422,21 +422,21 @@ Issue #94 implements the topology; issue #83 validates recovery. The implementat
 must make the following failures reproducible rather than merely documenting the
 happy path:
 
-| Failure | Required interpretation |
-| --- | --- |
-| User manager unavailable or lingering disabled | Unattended capability is unavailable; Ember continuity remains intact and foreground operation remains possible. |
-| Transient worker fails before `exec` | Launch failure, no claim that Ember work began. |
-| Worker crashes after durable spec but before child launch | Work remains unresolved; recovery may start a new justified attempt only from explicit state. |
-| Worker/host dies while specialist is running | Prior attempt becomes lost/uncertain; possible effects survive; no automatic rerun. |
-| `SIGTERM` arrives during specialist work | Cancellation/shutdown intent is persisted first when possible; direct-child/cgroup/remote outcomes remain separate. |
-| Final kill occurs before clean shutdown finishes | Recovery records an unclean gap; no invented clean stop. |
-| Timer unit disappears before firing | Durable wake intent survives and reconciliation may re-arm it. |
-| Wake time passes during downtime | Reconciliation dispatches at most one current opportunity for that intent; it does not replay elapsed periodic ticks. |
-| Wake intent becomes superseded before firing | Worker rechecks currentness and produces no obsolete cognition occurrence. |
-| Two workers race for canonical state | Existing writer lease/revision validation prevents concurrent commit; contention is visible. |
-| Interactive CLI holds writer lease | Background work defers/fails safely rather than bypassing the lock. |
-| systemd says unit exited successfully but specialist report is ambiguous | Ember preserves report/effect uncertainty; process status does not upgrade semantic confidence. |
-| Codex auth unavailable in user-manager environment | Capability is degraded/blocked; no credential copying or authority inference. |
+| Failure                                                                  | Required interpretation                                                                                               |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| User manager unavailable or lingering disabled                           | Unattended capability is unavailable; Ember continuity remains intact and foreground operation remains possible.      |
+| Transient worker fails before `exec`                                     | Launch failure, no claim that Ember work began.                                                                       |
+| Worker crashes after durable spec but before child launch                | Work remains unresolved; recovery may start a new justified attempt only from explicit state.                         |
+| Worker/host dies while specialist is running                             | Prior attempt becomes lost/uncertain; possible effects survive; no automatic rerun.                                   |
+| `SIGTERM` arrives during specialist work                                 | Cancellation/shutdown intent is persisted first when possible; direct-child/cgroup/remote outcomes remain separate.   |
+| Final kill occurs before clean shutdown finishes                         | Recovery records an unclean gap; no invented clean stop.                                                              |
+| Timer unit disappears before firing                                      | Durable wake intent survives and reconciliation may re-arm it.                                                        |
+| Wake time passes during downtime                                         | Reconciliation dispatches at most one current opportunity for that intent; it does not replay elapsed periodic ticks. |
+| Wake intent becomes superseded before firing                             | Worker rechecks currentness and produces no obsolete cognition occurrence.                                            |
+| Two workers race for canonical state                                     | Existing writer lease/revision validation prevents concurrent commit; contention is visible.                          |
+| Interactive CLI holds writer lease                                       | Background work defers/fails safely rather than bypassing the lock.                                                   |
+| systemd says unit exited successfully but specialist report is ambiguous | Ember preserves report/effect uncertainty; process status does not upgrade semantic confidence.                       |
+| Codex auth unavailable in user-manager environment                       | Capability is degraded/blocked; no credential copying or authority inference.                                         |
 
 ## Implementation handoff for issue #94
 

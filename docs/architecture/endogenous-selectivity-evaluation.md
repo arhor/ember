@@ -40,14 +40,14 @@ The evaluation keeps five things separate:
 `test-fixtures/endogenous/selectivity-workload.json` is the canonical workload. It
 contains 25 topic-free opportunities across six cases:
 
-| Case | Opportunities | Intended pressure |
-| --- | ---: | --- |
-| `quiet-stretch` | 12 | Long quiet interval with no durable motive. |
-| `irrelevant-live-concern` | 4 | A live commitment exists but lacks the current consequence that would make it worth cognition now. |
-| `current-urgent-concern` | 1 | A genuinely current concern with an imminent consequence should deserve cognition and may justify contact. |
-| `current-ordinary-quiet-period` | 1 | Useful cognition during a quiet period should remain separate from immediate interruption. |
-| `repeated-current-concern` | 4 | The same unchanged worthwhile grounding is presented repeatedly to reveal repeated-thought pressure. |
-| `resolved-concern` | 3 | A fulfilled concern must not be revived as current cognition. |
+| Case                            | Opportunities | Intended pressure                                                                                          |
+| ------------------------------- | ------------: | ---------------------------------------------------------------------------------------------------------- |
+| `quiet-stretch`                 |            12 | Long quiet interval with no durable motive.                                                                |
+| `irrelevant-live-concern`       |             4 | A live commitment exists but lacks the current consequence that would make it worth cognition now.         |
+| `current-urgent-concern`        |             1 | A genuinely current concern with an imminent consequence should deserve cognition and may justify contact. |
+| `current-ordinary-quiet-period` |             1 | Useful cognition during a quiet period should remain separate from immediate interruption.                 |
+| `repeated-current-concern`      |             4 | The same unchanged worthwhile grounding is presented repeatedly to reveal repeated-thought pressure.       |
+| `resolved-concern`              |             3 | A fulfilled concern must not be revived as current cognition.                                              |
 
 Every opportunity uses the same enumerated `foreground_probe` mechanism. The trigger
 contains no topic. Semantic differences come only from Ember-owned current state.
@@ -95,24 +95,24 @@ failure out of the corpus.
 
 With attention control disabled, the exact structural baseline is:
 
-| Observation | Count |
-| --- | ---: |
-| opportunities | 25 |
-| evaluator calls | 25 |
-| intentional silence | 19 |
-| worthwhile cognition | 3 |
-| attention deferrals | 0 |
-| false-positive cognition | 3 |
-| missed worthwhile cognition | 0 |
-| evaluator failures | 0 |
-| trivial repetition | 3 |
-| stale concern revival | 0 |
-| post-hoc fabricated motive | 0 |
-| unnecessary user interruption | 0 |
-| interruption `deliver` | 2 |
-| interruption `defer` | 1 |
-| interruption `suppress` | 3 |
-| interruption `no_delivery` | 19 |
+| Observation                   | Count |
+| ----------------------------- | ----: |
+| opportunities                 |    25 |
+| evaluator calls               |    25 |
+| intentional silence           |    19 |
+| worthwhile cognition          |     3 |
+| attention deferrals           |     0 |
+| false-positive cognition      |     3 |
+| missed worthwhile cognition   |     0 |
+| evaluator failures            |     0 |
+| trivial repetition            |     3 |
+| stale concern revival         |     0 |
+| post-hoc fabricated motive    |     0 |
+| unnecessary user interruption |     0 |
+| interruption `deliver`        |     2 |
+| interruption `defer`          |     1 |
+| interruption `suppress`       |     3 |
+| interruption `no_delivery`    |    19 |
 
 The three false positives are the reproduced issue #79 failure. After the first useful
 cognition, the evaluator receives the same unchanged current grounding three more
@@ -125,24 +125,24 @@ save the evaluator work or repeated internal cognition.
 Issue #95 adds only the evidence-earned repeated-projection boundary documented in
 `endogenous-attention-control.md`. The current deterministic result is expected to be:
 
-| Observation | #79 baseline | #95 control |
-| --- | ---: | ---: |
-| opportunities | 25 | 25 |
-| evaluator calls | 25 | 22 |
-| intentional silence | 19 | 19 |
-| worthwhile cognition | 3 | 3 |
-| grounded attention deferrals | 0 | 3 |
-| false-positive cognition | 3 | 0 |
-| missed worthwhile cognition | 0 | 0 |
-| evaluator failures | 0 | 0 |
-| trivial repetition | 3 | 0 |
-| stale concern revival | 0 | 0 |
-| post-hoc fabricated motive | 0 | 0 |
-| unnecessary user interruption | 0 | 0 |
-| interruption `deliver` | 2 | 2 |
-| interruption `defer` | 1 | 1 |
-| interruption `suppress` | 3 | 0 |
-| interruption `no_delivery` | 19 | 22 |
+| Observation                   | #79 baseline | #95 control |
+| ----------------------------- | -----------: | ----------: |
+| opportunities                 |           25 |          25 |
+| evaluator calls               |           25 |          22 |
+| intentional silence           |           19 |          19 |
+| worthwhile cognition          |            3 |           3 |
+| grounded attention deferrals  |            0 |           3 |
+| false-positive cognition      |            3 |           0 |
+| missed worthwhile cognition   |            0 |           0 |
+| evaluator failures            |            0 |           0 |
+| trivial repetition            |            3 |           0 |
+| stale concern revival         |            0 |           0 |
+| post-hoc fabricated motive    |            0 |           0 |
+| unnecessary user interruption |            0 |           0 |
+| interruption `deliver`        |            2 |           2 |
+| interruption `defer`          |            1 |           1 |
+| interruption `suppress`       |            3 |           0 |
+| interruption `no_delivery`    |           19 |          22 |
 
 The repeated case changes from:
 
@@ -229,17 +229,17 @@ or a provider-specific measurement that can actually attribute the process tree.
 A deterministic run on GitHub Actions `ubuntu-latest` during PR #127, workflow run
 `33788919425`, recorded this **single-host, single-run** pre-control snapshot:
 
-| Field | Observation |
-| --- | ---: |
-| Node / platform | `v26.8.1`, Linux x64 |
-| Backend | `scripted-structural-control` |
-| Opportunities / evaluator calls | 25 / 25 |
+| Field                                             |                              Observation |
+| ------------------------------------------------- | ---------------------------------------: |
+| Node / platform                                   |                     `v26.8.1`, Linux x64 |
+| Backend                                           |            `scripted-structural-control` |
+| Opportunities / evaluator calls                   |                                  25 / 25 |
 | Evaluator latency min / median / p95 / max / mean | 0.148 / 0.282 / 1.069 / 1.223 / 0.407 ms |
-| RSS start | 98,496,512 bytes (93.9 MiB) |
-| RSS end / observed peak | 104,542,208 bytes (99.7 MiB) |
-| User CPU across workload | 37.574 ms |
-| System CPU across workload | 1.594 ms |
-| External child-process resources | not observed |
+| RSS start                                         |              98,496,512 bytes (93.9 MiB) |
+| RSS end / observed peak                           |             104,542,208 bytes (99.7 MiB) |
+| User CPU across workload                          |                                37.574 ms |
+| System CPU across workload                        |                                 1.594 ms |
+| External child-process resources                  |                             not observed |
 
 These values describe the scripted orchestration workload on that runner. They are
 not Codex latency, not steady-state service cost, and not a portable performance
@@ -280,12 +280,12 @@ by issues #79/#95.
 
 ## Definition-of-done mapping
 
-| Requirement | Evidence |
-| --- | --- |
-| Control maps to a named #79 finding | It targets only `trivial_repetition` over an unchanged projection after prior cognition. |
-| Grounded, topic-free control | Matching uses current bounded projection IDs plus durable prior opportunity history; it creates no topic or motive. |
-| Silence, cognition, interruption remain distinct | Quiet opportunities remain `no_cognition`; repeated useful grounding becomes `defer`; interruption runs only after actual completed cognition. |
-| Reduced false positives without omission harm | Before/after workload plus projection-change/new-runtime regressions require 3 -> 0 repetition false positives with no missed worthwhile cognition. |
-| Resource bounds below semantic baseline | The policy skips only redundant evaluator attempts and does not choose scheduler frequency or a global budget. |
-| Runtime/topology requirement handed to #80 | Time-only reconsideration in a long-lived runtime is recorded explicitly rather than hidden in an arbitrary cooldown. |
-| Reproducible from repository artifacts | Versioned workload, baseline/current CLI modes, deterministic tests, and current design documents are checked in. |
+| Requirement                                      | Evidence                                                                                                                                            |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Control maps to a named #79 finding              | It targets only `trivial_repetition` over an unchanged projection after prior cognition.                                                            |
+| Grounded, topic-free control                     | Matching uses current bounded projection IDs plus durable prior opportunity history; it creates no topic or motive.                                 |
+| Silence, cognition, interruption remain distinct | Quiet opportunities remain `no_cognition`; repeated useful grounding becomes `defer`; interruption runs only after actual completed cognition.      |
+| Reduced false positives without omission harm    | Before/after workload plus projection-change/new-runtime regressions require 3 -> 0 repetition false positives with no missed worthwhile cognition. |
+| Resource bounds below semantic baseline          | The policy skips only redundant evaluator attempts and does not choose scheduler frequency or a global budget.                                      |
+| Runtime/topology requirement handed to #80       | Time-only reconsideration in a long-lived runtime is recorded explicitly rather than hidden in an arbitrary cooldown.                               |
+| Reproducible from repository artifacts           | Versioned workload, baseline/current CLI modes, deterministic tests, and current design documents are checked in.                                   |

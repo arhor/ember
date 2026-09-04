@@ -36,7 +36,7 @@ The research deliberately did **not** design a daemon, queue, broker, IPC layer,
 
 ## Initial semantic decomposition
 
-The issue text itself exposes a central problem: the word *session* often becomes a container for unrelated meanings.
+The issue text itself exposes a central problem: the word _session_ often becomes a container for unrelated meanings.
 
 A persistent personal agent has at least several different kinds of continuity in play:
 
@@ -76,7 +76,7 @@ Current implementations converge on this pressure without converging on one desi
 
 OpenClaw has session lifecycle/reset rules around a longer-lived agent and can project Gateway-owned session state into several clients. Hermes persists conversations as sessions, can resume or reset them, and keeps sessions with active background work from being reset. Letta now permits several concurrent conversations attached to one persistent agent with shared agent memory.
 
-Those systems use different definitions and mechanics. Their convergence is therefore useful at the semantic level: *agent continuity and session continuity are not the same problem*.
+Those systems use different definitions and mechanics. Their convergence is therefore useful at the semantic level: _agent continuity and session continuity are not the same problem_.
 
 ### Conversation should follow discourse, not transport
 
@@ -92,7 +92,7 @@ This makes "resume" a current-context question rather than an identifier questio
 
 The existing Ember vision already says interfaces are windows into one persistent agent.
 
-Issue #8 adds a critical qualifier: *a window changes who can see what*.
+Issue #8 adds a critical qualifier: _a window changes who can see what_.
 
 A private CLI, private phone notification, family voice speaker, shared group chat, and web UI can all expose the same Ember while having different:
 
@@ -112,13 +112,13 @@ That implementation should not be copied literally, but it demonstrates a durabl
 
 > principal identity, session identity, and agent identity are independent questions.
 
-Family smart-home HCI provides independent evidence. In *FamiData Hub* (CHI 2025), nearly all studied families used a single parent account for smart-home devices, and children often used those devices independently. Children described their digital identities as mixed with their parents' activity. The study is not about personal agents, but it is strong evidence against treating a shared account or device as proof of one human principal.
+Family smart-home HCI provides independent evidence. In _FamiData Hub_ (CHI 2025), nearly all studied families used a single parent account for smart-home devices, and children often used those devices independently. Children described their digital identities as mixed with their parents' activity. The study is not about personal agents, but it is strong evidence against treating a shared account or device as proof of one human principal.
 
 For Ember, this matters especially where relationship memory, private information, or standing authority is involved.
 
 ## Presence and liveness
 
-A second overloaded concept is *presence*.
+A second overloaded concept is _presence_.
 
 A persistent agent can be:
 
@@ -207,7 +207,7 @@ Source correlation, provenance, causal history, timing, and context can provide 
 
 The most useful external evidence here came from systems dealing with real side effects.
 
-Stripe's advanced error documentation explicitly states that after a network failure a client may not know whether the server received the request. Idempotency keys let the client retry the *same intended operation* and recover a definitive answer. Stripe also treats some server errors as indeterminate because user-visible effects may already exist.
+Stripe's advanced error documentation explicitly states that after a network failure a client may not know whether the server received the request. Idempotency keys let the client retry the _same intended operation_ and recover a definitive answer. Stripe also treats some server errors as indeterminate because user-visible effects may already exist.
 
 AWS Durable Execution has an even sharper example. For an at-most-once step, if execution is interrupted after the side-effecting body starts but before the SDK checkpoints the result, the SDK does not simply rerun the step. It reports an interrupted condition and instructs the caller to inspect the external system before deciding what to do next.
 
@@ -225,7 +225,7 @@ The safe conclusion is not "always retry" or "never retry." It is:
 
 The consequence level matters. Re-reading status is different from charging a card or sending a public message.
 
-A related conclusion is that *retry* is itself semantic. Re-executing the same function call after the objective, target, authority, or world state changed may no longer be the same attempt at all.
+A related conclusion is that _retry_ is itself semantic. Re-executing the same function call after the objective, target, authority, or world state changed may no longer be the same attempt at all.
 
 ## Concurrency
 

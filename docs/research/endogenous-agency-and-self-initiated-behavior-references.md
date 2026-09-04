@@ -17,13 +17,13 @@ The evidence does **not** establish subjective wanting, consciousness, or human-
 
 ## Evidence key
 
-| Mark | Meaning |
-|---|---|
+| Mark    | Meaning                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------ |
 | **[E]** | Empirical evidence: experiment, user study, benchmark, measured behavior, or documented evaluated system behavior. |
-| **[C]** | Convergence across implementations or research traditions. |
-| **[J]** | Ember-specific semantic judgment derived from evidence, inherited constraints, and scenarios. |
-| **[H]** | Hypothesis that remains suitable for prototype evaluation. |
-| **[L]** | Conceptual lens imported without adopting the source framework wholesale. |
+| **[C]** | Convergence across implementations or research traditions.                                                         |
+| **[J]** | Ember-specific semantic judgment derived from evidence, inherited constraints, and scenarios.                      |
+| **[H]** | Hypothesis that remains suitable for prototype evaluation.                                                         |
+| **[L]** | Conceptual lens imported without adopting the source framework wholesale.                                          |
 
 ## Inherited Ember research
 
@@ -72,7 +72,7 @@ The evidence does **not** establish subjective wanting, consciousness, or human-
 
 ### R1 — Ryan & Deci (2000), intrinsic and extrinsic motivation
 
-Richard M. Ryan and Edward L. Deci. **Intrinsic and Extrinsic Motivations: Classic Definitions and New Directions.** *Contemporary Educational Psychology* 25(1), 54–67.
+Richard M. Ryan and Edward L. Deci. **Intrinsic and Extrinsic Motivations: Classic Definitions and New Directions.** _Contemporary Educational Psychology_ 25(1), 54–67.
 
 - DOI: https://doi.org/10.1006/ceps.1999.1020
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/10620381/
@@ -83,7 +83,7 @@ Richard M. Ryan and Edward L. Deci. **Intrinsic and Extrinsic Motivations: Class
 
 ### R2 — Loewenstein (1994), information-gap theory of curiosity
 
-George Loewenstein. **The Psychology of Curiosity: A Review and Reinterpretation.** *Psychological Bulletin* 116(1), 75–98.
+George Loewenstein. **The Psychology of Curiosity: A Review and Reinterpretation.** _Psychological Bulletin_ 116(1), 75–98.
 
 - DOI: https://doi.org/10.1037/0033-2909.116.1.75
 
@@ -93,7 +93,7 @@ George Loewenstein. **The Psychology of Curiosity: A Review and Reinterpretation
 
 ### R3 — Smallwood & Schooler (2015), mind-wandering review
 
-Jonathan Smallwood and Jonathan W. Schooler. **The Science of Mind Wandering: Empirically Navigating the Stream of Consciousness.** *Annual Review of Psychology* 66, 487–518.
+Jonathan Smallwood and Jonathan W. Schooler. **The Science of Mind Wandering: Empirically Navigating the Stream of Consciousness.** _Annual Review of Psychology_ 66, 487–518.
 
 - DOI: https://doi.org/10.1146/annurev-psych-010814-015331
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/25293689/
@@ -104,7 +104,7 @@ Jonathan Smallwood and Jonathan W. Schooler. **The Science of Mind Wandering: Em
 
 ### R4 — Christoff et al. (2016), spontaneous-thought dynamics
 
-Kalina Christoff, Zachary C. Irving, Kieran C. R. Fox, R. Nathan Spreng, and Jessica R. Andrews-Hanna. **Mind-wandering as spontaneous thought: a dynamic framework.** *Nature Reviews Neuroscience* 17, 718–731.
+Kalina Christoff, Zachary C. Irving, Kieran C. R. Fox, R. Nathan Spreng, and Jessica R. Andrews-Hanna. **Mind-wandering as spontaneous thought: a dynamic framework.** _Nature Reviews Neuroscience_ 17, 718–731.
 
 - DOI: https://doi.org/10.1038/nrn.2016.113
 - Publisher: https://www.nature.com/articles/nrn.2016.113
@@ -115,7 +115,7 @@ Kalina Christoff, Zachary C. Irving, Kieran C. R. Fox, R. Nathan Spreng, and Jes
 
 ### R5 — Klinger, Koster & Marchetti (2018), current concerns and spontaneous thought
 
-Eric Klinger, Ernest H. W. Koster, and Igor Marchetti. **Spontaneous Thought and Goal Pursuit: From Functions Such as Planning to Dysfunctions Such as Rumination.** In *The Oxford Handbook of Spontaneous Thought*.
+Eric Klinger, Ernest H. W. Koster, and Igor Marchetti. **Spontaneous Thought and Goal Pursuit: From Functions Such as Planning to Dysfunctions Such as Rumination.** In _The Oxford Handbook of Spontaneous Thought_.
 
 - DOI: https://doi.org/10.1093/oxfordhb/9780190464745.013.24
 - Institutional copy: https://digitalcommons.morris.umn.edu/psych_facpubs/5/
@@ -126,7 +126,7 @@ Eric Klinger, Ernest H. W. Koster, and Igor Marchetti. **Spontaneous Thought and
 
 ### R6 — Why do we think? (2024), current-concern content in spontaneous thought
 
-**Why do we think? The dynamics of spontaneous thought reveal its functions.** *PNAS Nexus* 3(6), 2024.
+**Why do we think? The dynamics of spontaneous thought reveal its functions.** _PNAS Nexus_ 3(6), 2024.
 
 - Publisher: https://academic.oup.com/pnasnexus/article/3/6/pgae230/7691350
 
@@ -136,7 +136,7 @@ Eric Klinger, Ernest H. W. Koster, and Igor Marchetti. **Spontaneous Thought and
 
 ### R7 — Sio & Ormerod (2009), incubation meta-analysis
 
-Ut Na Sio and Thomas C. Ormerod. **Does Incubation Enhance Problem Solving? A Meta-Analytic Review.** *Psychological Bulletin* 135(1), 94–120.
+Ut Na Sio and Thomas C. Ormerod. **Does Incubation Enhance Problem Solving? A Meta-Analytic Review.** _Psychological Bulletin_ 135(1), 94–120.
 
 - DOI: https://doi.org/10.1037/a0014212
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/19210055/
@@ -149,7 +149,7 @@ Ut Na Sio and Thomas C. Ormerod. **Does Incubation Enhance Problem Solving? A Me
 
 ### R8 — Oudeyer & Kaplan (2007), computational intrinsic-motivation typology
 
-Pierre-Yves Oudeyer and Frédéric Kaplan. **What is Intrinsic Motivation? A Typology of Computational Approaches.** *Frontiers in Neurorobotics* 1:6.
+Pierre-Yves Oudeyer and Frédéric Kaplan. **What is Intrinsic Motivation? A Typology of Computational Approaches.** _Frontiers in Neurorobotics_ 1:6.
 
 - DOI: https://doi.org/10.3389/neuro.12.006.2007
 - PubMed/PMC: https://pubmed.ncbi.nlm.nih.gov/18958277/
@@ -160,7 +160,7 @@ Pierre-Yves Oudeyer and Frédéric Kaplan. **What is Intrinsic Motivation? A Typ
 
 ### R9 — Pathak et al. (2017), curiosity-driven exploration
 
-Deepak Pathak, Pulkit Agrawal, Alexei A. Efros, and Trevor Darrell. **Curiosity-driven Exploration by Self-supervised Prediction.** *ICML 2017*, PMLR 70:2778–2787.
+Deepak Pathak, Pulkit Agrawal, Alexei A. Efros, and Trevor Darrell. **Curiosity-driven Exploration by Self-supervised Prediction.** _ICML 2017_, PMLR 70:2778–2787.
 
 - PMLR: https://proceedings.mlr.press/v70/pathak17a.html
 - arXiv: https://arxiv.org/abs/1705.05363
@@ -193,7 +193,7 @@ Alexander S. Klyubin, Daniel Polani, and Chrystopher L. Nehaniv. **Empowerment: 
 
 ### R12 — Colas et al. (2022), autotelic agents
 
-Cédric Colas, Tristan Karch, Olivier Sigaud, and Pierre-Yves Oudeyer. **Autotelic Agents with Intrinsically Motivated Goal-Conditioned Reinforcement Learning: A Short Survey.** *Journal of Artificial Intelligence Research* 74, 1159–1199.
+Cédric Colas, Tristan Karch, Olivier Sigaud, and Pierre-Yves Oudeyer. **Autotelic Agents with Intrinsically Motivated Goal-Conditioned Reinforcement Learning: A Short Survey.** _Journal of Artificial Intelligence Research_ 74, 1159–1199.
 
 - DOI: https://doi.org/10.1613/JAIR.1.13554
 - arXiv: https://arxiv.org/abs/2012.09830
@@ -217,7 +217,7 @@ Eric Horvitz. **Principles of Mixed-Initiative User Interfaces.** CHI 1999, 159�
 
 ### R14 — Kraus et al. (2021), trust in proactive conversational assistants
 
-Matthias Kraus, Nicolas Wagner, Zoraida Callejas, and Wolfgang Minker. **The Role of Trust in Proactive Conversational Assistants.** *IEEE Access* 9, 112821–112836.
+Matthias Kraus, Nicolas Wagner, Zoraida Callejas, and Wolfgang Minker. **The Role of Trust in Proactive Conversational Assistants.** _IEEE Access_ 9, 112821–112836.
 
 - DOI: https://doi.org/10.1109/ACCESS.2021.3103893
 - Institutional repository: https://digibug.ugr.es/handle/10481/70822
@@ -269,7 +269,7 @@ Bufang Yang et al. **ProAgent: Harnessing On-Demand Sensory Contexts for Proacti
 
 **Supports:** **[E/L]** context-driven systems can improve proactive prediction and tool-call behavior in a sensory-assistance setting.
 
-**Ember use:** strong example of proactivity that is still fundamentally triggered by observed context. It therefore sharpens the distinction between *proactive behavior* and *endogenous motivation*.
+**Ember use:** strong example of proactivity that is still fundamentally triggered by observed context. It therefore sharpens the distinction between _proactive behavior_ and _endogenous motivation_.
 
 ### R19 — ProAgentBench (2026), timing and content as separate evaluation targets
 
@@ -283,20 +283,20 @@ Yuanbo Tang et al. **ProAgentBench: Evaluating LLM Agents for Proactive Assistan
 
 ## Mapping principal conclusions to evidence
 
-| Canonical conclusion | Classification | Principal evidence |
-|---|---|---|
-| A wake-up opportunity can be external while the topic-selection reason remains internal. | **[J]** | E0–E5, R3–R6. Cognitive evidence demonstrates internally structured concern-driven thought; system evidence demonstrates timing mechanisms are separable from persistent state. |
-| Absence of a recent prompt is neither necessary nor sufficient for endogeneity. | **[J]** | R1, R3–R6, R16–R18. Proactive systems can still be externally context-driven; human motivation also admits internalized externally originated regulation. |
-| Randomness is not motivation. | **[J]** | R3–R6, R8–R10. Spontaneous thought is structured; computational exploration signals are specific objectives, not arbitrary sampling. |
-| Curiosity should not collapse into novelty. | **[E/L + J]** | R2, R8–R10. Information gaps, prediction error, novelty, and learning progress are distinct constructs. |
-| Delayed return to a concern can be useful without implying hidden cognition during downtime. | **[E/L + J]** | R7 plus E0/E1. Incubation supports delayed benefit; continuity/provenance forbid invented offline experience. |
-| Persistent commitments are especially strong endogenous reasons. | **[Inherited J]** | E0, E1, E4. Prospective state is already canonically distinct from historical recall and subject to authority constraints. |
-| A live reason may remain dormant without constant reconsideration. | **[J]** | E1, E2, R3–R6. Persistent availability differs from foreground cognition. |
-| More self-initiated cognition is not automatically better. | **[E/L + J]** | R3–R7, R13–R17. Mind-wandering has costs; rumination exists; proactive assistance can produce trust and false-alarm failures. |
-| Non-action is a legitimate agency outcome. | **[J]** | E4, R13–R17. Mixed initiative and false-alarm evidence make silence/deferral behaviorally meaningful. |
-| Proactivity and endogenous motivation are distinct. | **[J]** | R16–R19. Current proactive benchmarks largely evaluate anticipatory responses to observed context, not persistent internally owned reasons. |
-| Internal motivation cannot create authority. | **[Inherited security invariant]** | E4. Issue #7 directly establishes this boundary. |
-| A self-initiated action should be attributable to a continuing reason rather than only post-hoc narrative. | **[J/H]** | E0–E2 plus R3–R6. Strong semantic requirement; direct artificial-agent evaluation remains an open research need. |
+| Canonical conclusion                                                                                       | Classification                     | Principal evidence                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A wake-up opportunity can be external while the topic-selection reason remains internal.                   | **[J]**                            | E0–E5, R3–R6. Cognitive evidence demonstrates internally structured concern-driven thought; system evidence demonstrates timing mechanisms are separable from persistent state. |
+| Absence of a recent prompt is neither necessary nor sufficient for endogeneity.                            | **[J]**                            | R1, R3–R6, R16–R18. Proactive systems can still be externally context-driven; human motivation also admits internalized externally originated regulation.                       |
+| Randomness is not motivation.                                                                              | **[J]**                            | R3–R6, R8–R10. Spontaneous thought is structured; computational exploration signals are specific objectives, not arbitrary sampling.                                            |
+| Curiosity should not collapse into novelty.                                                                | **[E/L + J]**                      | R2, R8–R10. Information gaps, prediction error, novelty, and learning progress are distinct constructs.                                                                         |
+| Delayed return to a concern can be useful without implying hidden cognition during downtime.               | **[E/L + J]**                      | R7 plus E0/E1. Incubation supports delayed benefit; continuity/provenance forbid invented offline experience.                                                                   |
+| Persistent commitments are especially strong endogenous reasons.                                           | **[Inherited J]**                  | E0, E1, E4. Prospective state is already canonically distinct from historical recall and subject to authority constraints.                                                      |
+| A live reason may remain dormant without constant reconsideration.                                         | **[J]**                            | E1, E2, R3–R6. Persistent availability differs from foreground cognition.                                                                                                       |
+| More self-initiated cognition is not automatically better.                                                 | **[E/L + J]**                      | R3–R7, R13–R17. Mind-wandering has costs; rumination exists; proactive assistance can produce trust and false-alarm failures.                                                   |
+| Non-action is a legitimate agency outcome.                                                                 | **[J]**                            | E4, R13–R17. Mixed initiative and false-alarm evidence make silence/deferral behaviorally meaningful.                                                                           |
+| Proactivity and endogenous motivation are distinct.                                                        | **[J]**                            | R16–R19. Current proactive benchmarks largely evaluate anticipatory responses to observed context, not persistent internally owned reasons.                                     |
+| Internal motivation cannot create authority.                                                               | **[Inherited security invariant]** | E4. Issue #7 directly establishes this boundary.                                                                                                                                |
+| A self-initiated action should be attributable to a continuing reason rather than only post-hoc narrative. | **[J/H]**                          | E0–E2 plus R3–R6. Strong semantic requirement; direct artificial-agent evaluation remains an open research need.                                                                |
 
 ## Negative evidence and non-transfer decisions
 
@@ -309,7 +309,7 @@ The research deliberately **does not** promote the following attractive ideas in
 - **No active-inference commitment.** Prediction/preference/action distinctions may be conceptually interesting, but current issue semantics are already expressible without importing the framework.
 - **No goal-generator requirement.** Autotelic agents demonstrate a mechanism family; they do not establish the only path to meaningful endogenous attention.
 - **No inference from proactive behavior to subjective desire.** Current benchmarks measure behavior, not phenomenology.
-- **No scheduler-as-agency shortcut.** Schedules can answer *when* while leaving *what matters and why* unresolved.
+- **No scheduler-as-agency shortcut.** Schedules can answer _when_ while leaving _what matters and why_ unresolved.
 
 ## Evidence gaps suitable for later experiments
 

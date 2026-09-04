@@ -1,6 +1,30 @@
 [
-  { "id": "live-concern-reactivates", "description": "A current concern and consequence are evaluated after restart.", "kind": "reactivation", "expected_decision": "cognition", "expected_selected_aliases": ["concern", "old-consequence"] },
-  { "id": "resolved-concern-stays-quiet", "description": "A fulfilled concern stays historical after restart.", "kind": "resolved", "expected_decision": "no_cognition", "expected_selected_aliases": [] },
-  { "id": "superseded-consequence-stays-quiet", "description": "A superseded concern-driving consequence preserves its replacement linkage and cannot reactivate the still-live concern after restart.", "kind": "superseded", "expected_decision": "no_cognition", "expected_selected_aliases": [] },
-  { "id": "quiet-restart-is-intentional-silence", "description": "Quiet durable state produces successful silence after restart.", "kind": "silence", "expected_decision": "no_cognition", "expected_selected_aliases": [] }
+  {
+    "id": "live-concern-reactivates",
+    "description": "A current concern and consequence are evaluated after restart.",
+    "kind": "reactivation",
+    "expected_decision": "cognition",
+    "expected_selected_aliases": ["concern", "old-consequence"]
+  },
+  {
+    "id": "resolved-concern-stays-quiet",
+    "description": "A fulfilled concern stays historical after restart.",
+    "kind": "resolved",
+    "expected_decision": "no_cognition",
+    "expected_selected_aliases": []
+  },
+  {
+    "id": "superseded-consequence-stays-quiet",
+    "description": "A superseded concern-driving consequence preserves its replacement linkage and cannot reactivate the still-live concern after restart.",
+    "kind": "superseded",
+    "expected_decision": "no_cognition",
+    "expected_selected_aliases": []
+  },
+  {
+    "id": "quiet-restart-is-intentional-silence",
+    "description": "Quiet durable state produces successful silence after restart.",
+    "kind": "silence",
+    "expected_decision": "no_cognition",
+    "expected_selected_aliases": []
+  }
 ]

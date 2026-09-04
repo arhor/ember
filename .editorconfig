@@ -11,3 +11,6 @@ tab_width = 4
 
 [*.{yml,json}]
 indent_size = 2
+
+[docs/**/*.md]
+indent_size = 2

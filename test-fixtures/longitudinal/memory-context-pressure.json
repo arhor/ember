@@ -87,20 +87,9 @@
       },
       "input": "State the current evaluation target, report preference, and live commitment.",
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "evaluation_target",
-          "preference_a",
-          "live_commitment"
-        ],
-        "selected_meaning_groups": [
-          "ambient_project_history"
-        ],
-        "relevant_meanings": [
-          "evaluation_target",
-          "preference_a",
-          "live_commitment"
-        ],
+        "selected_meanings": ["relationship", "evaluation_target", "preference_a", "live_commitment"],
+        "selected_meaning_groups": ["ambient_project_history"],
+        "relevant_meanings": ["evaluation_target", "preference_a", "live_commitment"],
         "irrelevant_meanings": [
           {
             "group": "ambient_project_history"
@@ -109,17 +98,9 @@
         ],
         "superseded_meanings": [],
         "unavailable_meanings": [],
-        "forbidden_meanings": [
-          "private_forbidden"
-        ],
-        "reply_includes": [
-          "longitudinal context selection",
-          "Prefer terse memory reports"
-        ],
-        "reply_excludes": [
-          "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",
-          "SECRET_DEGRADED_DETAIL_66"
-        ]
+        "forbidden_meanings": ["private_forbidden"],
+        "reply_includes": ["longitudinal context selection", "Prefer terse memory reports"],
+        "reply_excludes": ["FORBIDDEN_MEMORY_CONTEXT_MARKER_66", "SECRET_DEGRADED_DETAIL_66"]
       }
     },
     {
@@ -150,10 +131,7 @@
       ],
       "input": "Explain the changed report preference and the degraded episode using only the selected projection.",
       "purpose": "explain",
-      "explain": [
-        "preference_a",
-        "degraded_episode"
-      ],
+      "explain": ["preference_a", "degraded_episode"],
       "expect": {
         "selected_meanings": [
           "relationship",
@@ -163,9 +141,7 @@
           "live_commitment",
           "degraded_episode"
         ],
-        "selected_meaning_groups": [
-          "ambient_project_history"
-        ],
+        "selected_meaning_groups": ["ambient_project_history"],
         "relevant_meanings": [
           "evaluation_target",
           "preference_a",
@@ -178,23 +154,11 @@
             "group": "ambient_project_history"
           }
         ],
-        "superseded_meanings": [
-          "preference_a"
-        ],
-        "unavailable_meanings": [
-          "degraded_episode"
-        ],
-        "forbidden_meanings": [
-          "private_forbidden"
-        ],
-        "reply_includes": [
-          "Prefer detailed memory reports",
-          "unavailable_detail"
-        ],
-        "reply_excludes": [
-          "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",
-          "SECRET_DEGRADED_DETAIL_66"
-        ]
+        "superseded_meanings": ["preference_a"],
+        "unavailable_meanings": ["degraded_episode"],
+        "forbidden_meanings": ["private_forbidden"],
+        "reply_includes": ["Prefer detailed memory reports", "unavailable_detail"],
+        "reply_excludes": ["FORBIDDEN_MEMORY_CONTEXT_MARKER_66", "SECRET_DEGRADED_DETAIL_66"]
       }
     },
     {
@@ -208,40 +172,19 @@
       },
       "input": "State the current evaluation target, current report preference, and live commitment without historical reconstruction.",
       "expect": {
-        "selected_meanings": [
-          "relationship",
-          "evaluation_target",
-          "preference_b",
-          "live_commitment"
-        ],
-        "selected_meaning_groups": [
-          "ambient_project_history"
-        ],
-        "relevant_meanings": [
-          "evaluation_target",
-          "preference_b",
-          "live_commitment"
-        ],
+        "selected_meanings": ["relationship", "evaluation_target", "preference_b", "live_commitment"],
+        "selected_meaning_groups": ["ambient_project_history"],
+        "relevant_meanings": ["evaluation_target", "preference_b", "live_commitment"],
         "irrelevant_meanings": [
           {
             "group": "ambient_project_history"
           },
           "degraded_episode"
         ],
-        "superseded_meanings": [
-          "preference_a"
-        ],
-        "unavailable_meanings": [
-          "degraded_episode"
-        ],
-        "forbidden_meanings": [
-          "preference_a",
-          "private_forbidden",
-          "degraded_episode"
-        ],
-        "reply_includes": [
-          "Prefer detailed memory reports"
-        ],
+        "superseded_meanings": ["preference_a"],
+        "unavailable_meanings": ["degraded_episode"],
+        "forbidden_meanings": ["preference_a", "private_forbidden", "degraded_episode"],
+        "reply_includes": ["Prefer detailed memory reports"],
         "reply_excludes": [
           "Prefer terse memory reports",
           "FORBIDDEN_MEMORY_CONTEXT_MARKER_66",

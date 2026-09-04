@@ -4,23 +4,89 @@
   "description": "Evaluate one continuity vector first through Codex and then Cursor while canonical Ember state remains unchanged.",
   "ember": { "name": "Ember", "principal": "user-1", "initial_at": "2026-09-01T08:00:00Z" },
   "setup": [
-    { "action": "remember_relationship", "as": "relationship", "scope": "relationship:user-1", "text": "Ember and user-1 are continuing backend-replacement collaborators", "at": "2026-09-01T08:01:00Z" },
-    { "action": "remember_fact", "as": "shared_history", "slot": "replacement-beacon", "scope": "project:ember/evaluation", "text": "The backend replacement beacon is Ember-57", "at": "2026-09-01T08:02:00Z" },
-    { "action": "remember_preference", "as": "current_preference", "slot": "replacement-report-style", "scope": "project:ember/evaluation", "text": "Prefer attributable backend replacement reports", "at": "2026-09-01T08:03:00Z" },
-    { "action": "undertake", "as": "live_commitment", "slot": "backend-replacement-evaluation", "scope": "project:ember/evaluation", "text": "Keep continuity owned by Ember across cognition backend replacement", "at": "2026-09-01T08:04:00Z" },
-    { "action": "remember_preference", "as": "forbidden_private", "slot": "replacement-private-marker", "scope": "project:private", "text": "FORBIDDEN_BACKEND_REPLACEMENT_57", "at": "2026-09-01T08:05:00Z" }
-  ],
-  "backend_replacement": { "status": "cross_provider", "control_episode": "codex-control", "replacement_episode": "cursor-replacement" },
-  "episodes": [
     {
-      "id": "codex-control", "at": "2026-09-01T09:00:00Z", "scope": "project:ember/evaluation", "cognition_backend": "codex", "restart_ember": false, "external_thread": { "mode": "fresh" },
-      "input": "Using only the permitted projection, copy the replacement beacon, current preference, and live commitment verbatim.",
-      "expect": { "selected_meanings": ["relationship", "shared_history", "current_preference", "live_commitment"], "forbidden_meanings": ["forbidden_private"], "reply_includes": ["Ember-57", "Prefer attributable backend replacement reports", "Keep continuity owned by Ember across cognition backend replacement"], "reply_excludes": ["FORBIDDEN_BACKEND_REPLACEMENT_57"] }
+      "action": "remember_relationship",
+      "as": "relationship",
+      "scope": "relationship:user-1",
+      "text": "Ember and user-1 are continuing backend-replacement collaborators",
+      "at": "2026-09-01T08:01:00Z"
     },
     {
-      "id": "cursor-replacement", "at": "2026-09-01T10:00:00Z", "scope": "project:ember/evaluation", "cognition_backend": "cursor", "restart_ember": false, "external_thread": { "mode": "fresh" },
+      "action": "remember_fact",
+      "as": "shared_history",
+      "slot": "replacement-beacon",
+      "scope": "project:ember/evaluation",
+      "text": "The backend replacement beacon is Ember-57",
+      "at": "2026-09-01T08:02:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "current_preference",
+      "slot": "replacement-report-style",
+      "scope": "project:ember/evaluation",
+      "text": "Prefer attributable backend replacement reports",
+      "at": "2026-09-01T08:03:00Z"
+    },
+    {
+      "action": "undertake",
+      "as": "live_commitment",
+      "slot": "backend-replacement-evaluation",
+      "scope": "project:ember/evaluation",
+      "text": "Keep continuity owned by Ember across cognition backend replacement",
+      "at": "2026-09-01T08:04:00Z"
+    },
+    {
+      "action": "remember_preference",
+      "as": "forbidden_private",
+      "slot": "replacement-private-marker",
+      "scope": "project:private",
+      "text": "FORBIDDEN_BACKEND_REPLACEMENT_57",
+      "at": "2026-09-01T08:05:00Z"
+    }
+  ],
+  "backend_replacement": {
+    "status": "cross_provider",
+    "control_episode": "codex-control",
+    "replacement_episode": "cursor-replacement"
+  },
+  "episodes": [
+    {
+      "id": "codex-control",
+      "at": "2026-09-01T09:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "codex",
+      "restart_ember": false,
+      "external_thread": { "mode": "fresh" },
       "input": "Using only the permitted projection, copy the replacement beacon, current preference, and live commitment verbatim.",
-      "expect": { "selected_meanings": ["relationship", "shared_history", "current_preference", "live_commitment"], "forbidden_meanings": ["forbidden_private"], "reply_includes": ["Ember-57", "Prefer attributable backend replacement reports", "Keep continuity owned by Ember across cognition backend replacement"], "reply_excludes": ["FORBIDDEN_BACKEND_REPLACEMENT_57"] }
+      "expect": {
+        "selected_meanings": ["relationship", "shared_history", "current_preference", "live_commitment"],
+        "forbidden_meanings": ["forbidden_private"],
+        "reply_includes": [
+          "Ember-57",
+          "Prefer attributable backend replacement reports",
+          "Keep continuity owned by Ember across cognition backend replacement"
+        ],
+        "reply_excludes": ["FORBIDDEN_BACKEND_REPLACEMENT_57"]
+      }
+    },
+    {
+      "id": "cursor-replacement",
+      "at": "2026-09-01T10:00:00Z",
+      "scope": "project:ember/evaluation",
+      "cognition_backend": "cursor",
+      "restart_ember": false,
+      "external_thread": { "mode": "fresh" },
+      "input": "Using only the permitted projection, copy the replacement beacon, current preference, and live commitment verbatim.",
+      "expect": {
+        "selected_meanings": ["relationship", "shared_history", "current_preference", "live_commitment"],
+        "forbidden_meanings": ["forbidden_private"],
+        "reply_includes": [
+          "Ember-57",
+          "Prefer attributable backend replacement reports",
+          "Keep continuity owned by Ember across cognition backend replacement"
+        ],
+        "reply_excludes": ["FORBIDDEN_BACKEND_REPLACEMENT_57"]
+      }
     }
   ]
 }

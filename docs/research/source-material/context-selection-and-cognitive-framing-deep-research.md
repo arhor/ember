@@ -13,7 +13,7 @@ discovery_status: current
 
 ## Research frame and executive synthesis
 
-Issue #5 asks a question deliberately downstream of persistence and upstream of prompt construction: **knowing something and bringing it into the present act of cognition are different problems**. It asks what should shape Ember's point of view *now*, including information lifetimes, scope, reconstruction, conflict, delegation, privacy, ordering, compaction, and graceful degradation, while explicitly deferring prompt templates, token allocation, retrieval APIs, caches, and concrete context structures.
+Issue #5 asks a question deliberately downstream of persistence and upstream of prompt construction: **knowing something and bringing it into the present act of cognition are different problems**. It asks what should shape Ember's point of view _now_, including information lifetimes, scope, reconstruction, conflict, delegation, privacy, ordering, compaction, and graceful degradation, while explicitly deferring prompt templates, token allocation, retrieval APIs, caches, and concrete context structures.
 
 Issue #10 strengthens that framing: research is concern-driven rather than product-driven; empirical literature and adjacent disciplines are first-class inputs; evidence strength must remain visible; semantics precedes representation; and scenarios should be used as probes before architecture hardens.
 
@@ -46,22 +46,22 @@ The important word is **establishes**, not merely "contains." Two projections co
 
 ## Central findings
 
-| Finding | Status | Ember interpretation |
-|---|---|---|
-| Context is a view over persistent semantics, not a persistence layer. | **[J]** | Omission from the current projection means "not participating now," not "forgotten" or "no longer part of Ember." |
-| Context has no independent epistemic authority. | **[J]** | A proposition's authority comes from its source, evidence, commitment, observation, or legitimate update, not from having appeared in a prompt or summary. |
-| Some meanings need to be reliably behaviorally available without necessarily being textually repeated. | **[J]** | Constitutive boundaries, active commitments, applicable authority constraints, and the current objective must not disappear merely because one projection omitted their prose. |
-| Relevance is multidimensional and cannot be reduced to recency, embedding similarity, or lexical overlap. | **[E + J]** | Causal dependence, current applicability, scope, normative force, live goals, unresolved contradiction, consequence, relationship significance, and trigger conditions all matter. |
-| Correct context selection includes deliberate exclusion. | **[E + J]** | True or personally relevant information may still be wrong to expose because it is stale, wrong-scope, private, distracting, untrusted, redundant, or likely to anchor reasoning. |
-| Larger context capacity changes the engineering cost frontier; it does not remove the semantic selection problem. | **[E + J]** | Long-context performance degradation and distractor results directly reject "include everything if it fits." |
-| Ordering effects are real but not stable enough to become Ember semantics. | **[E + J]** | "Current beats superseded" is semantic. "Put current facts in position X" is a provider-adapter concern. |
-| Contradiction is information that projection may need to preserve. | **[E + J]** | A cognition may need "A and B disagree, for these reasons" rather than a cleaner but fabricated single state. |
-| Recall depth should be consequence- and uncertainty-sensitive. | **[E + C + J]** | Begin with a lightweight remembered view; reconstruct evidence when provenance, contradiction, currentness, consequence, autobiographical significance, or explanation demands it. |
-| Restart reconstruction should recover the current situation, not recreate the previous prompt. | **[J]** | What was active before interruption and what remains live now are different questions. |
-| Compaction is interpretation and can erase governing information. | **[E + J]** | Summaries are derived views; preserved topic is not sufficient if currentness, constraints, provenance, or uncertainty disappear. |
-| Delegates should receive least sufficient context, not all context relevant to Ember. | **[E + L + J]** | Relevance, necessity, and permission are separate tests. |
-| A degraded but truthful projection is preferable to seamless invented continuity. | **[J]** | Retrieval failure, partial history, lossy compaction, or model change should produce bounded uncertainty rather than fabricated certainty. |
-| Context selection should be evaluated as downstream decision quality under a bounded permitted projection, not as retrieval recall alone. | **[E + J]** | Evaluation must include omission harm, inclusion harm, currentness, scope, provenance, privacy, conflict, and continuity. |
+| Finding                                                                                                                                   | Status          | Ember interpretation                                                                                                                                                               |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Context is a view over persistent semantics, not a persistence layer.                                                                     | **[J]**         | Omission from the current projection means "not participating now," not "forgotten" or "no longer part of Ember."                                                                  |
+| Context has no independent epistemic authority.                                                                                           | **[J]**         | A proposition's authority comes from its source, evidence, commitment, observation, or legitimate update, not from having appeared in a prompt or summary.                         |
+| Some meanings need to be reliably behaviorally available without necessarily being textually repeated.                                    | **[J]**         | Constitutive boundaries, active commitments, applicable authority constraints, and the current objective must not disappear merely because one projection omitted their prose.     |
+| Relevance is multidimensional and cannot be reduced to recency, embedding similarity, or lexical overlap.                                 | **[E + J]**     | Causal dependence, current applicability, scope, normative force, live goals, unresolved contradiction, consequence, relationship significance, and trigger conditions all matter. |
+| Correct context selection includes deliberate exclusion.                                                                                  | **[E + J]**     | True or personally relevant information may still be wrong to expose because it is stale, wrong-scope, private, distracting, untrusted, redundant, or likely to anchor reasoning.  |
+| Larger context capacity changes the engineering cost frontier; it does not remove the semantic selection problem.                         | **[E + J]**     | Long-context performance degradation and distractor results directly reject "include everything if it fits."                                                                       |
+| Ordering effects are real but not stable enough to become Ember semantics.                                                                | **[E + J]**     | "Current beats superseded" is semantic. "Put current facts in position X" is a provider-adapter concern.                                                                           |
+| Contradiction is information that projection may need to preserve.                                                                        | **[E + J]**     | A cognition may need "A and B disagree, for these reasons" rather than a cleaner but fabricated single state.                                                                      |
+| Recall depth should be consequence- and uncertainty-sensitive.                                                                            | **[E + C + J]** | Begin with a lightweight remembered view; reconstruct evidence when provenance, contradiction, currentness, consequence, autobiographical significance, or explanation demands it. |
+| Restart reconstruction should recover the current situation, not recreate the previous prompt.                                            | **[J]**         | What was active before interruption and what remains live now are different questions.                                                                                             |
+| Compaction is interpretation and can erase governing information.                                                                         | **[E + J]**     | Summaries are derived views; preserved topic is not sufficient if currentness, constraints, provenance, or uncertainty disappear.                                                  |
+| Delegates should receive least sufficient context, not all context relevant to Ember.                                                     | **[E + L + J]** | Relevance, necessity, and permission are separate tests.                                                                                                                           |
+| A degraded but truthful projection is preferable to seamless invented continuity.                                                         | **[J]**         | Retrieval failure, partial history, lossy compaction, or model change should produce bounded uncertainty rather than fabricated certainty.                                         |
+| Context selection should be evaluated as downstream decision quality under a bounded permitted projection, not as retrieval recall alone. | **[E + J]**     | Evaluation must include omission harm, inclusion harm, currentness, scope, provenance, privacy, conflict, and continuity.                                                          |
 
 The strongest overall result is nearly paradoxical:
 
@@ -75,14 +75,14 @@ The inverse is equally important:
 
 The cleanest semantic boundary is to distinguish **availability**, **participation**, **authority**, and **persistence**.
 
-| Situation | Meaning |
-|---|---|
-| Ember remembers X, but X is not in the current projection. | X remains part of Ember's persistent remembered state but is not currently shaping this cognition. This is normal selectivity, not forgetting. |
-| X is in the current projection but is not durable memory. | X may be a current user message, transient observation, temporary hypothesis, external search result, scratch conclusion, or interface state. It may affect present cognition without automatically becoming durable state. |
-| X appears repeatedly in context. | X becomes more salient to the model but not more evidentially supported. Evidential conservation still applies. |
-| A remembered X cannot presently be retrieved. | Ember has a recall/access failure. She should not silently convert this into "I never knew or remembered X." |
-| A new user statement appears and legitimately changes Ember's understanding. | The user statement is new evidence because the user made it, not because it occupied model context. |
-| A summary says X even though its sources only weakly implied X. | The summary remains a derived interpretation; context inclusion cannot promote the inference into direct testimony. |
+| Situation                                                                    | Meaning                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ember remembers X, but X is not in the current projection.                   | X remains part of Ember's persistent remembered state but is not currently shaping this cognition. This is normal selectivity, not forgetting.                                                                              |
+| X is in the current projection but is not durable memory.                    | X may be a current user message, transient observation, temporary hypothesis, external search result, scratch conclusion, or interface state. It may affect present cognition without automatically becoming durable state. |
+| X appears repeatedly in context.                                             | X becomes more salient to the model but not more evidentially supported. Evidential conservation still applies.                                                                                                             |
+| A remembered X cannot presently be retrieved.                                | Ember has a recall/access failure. She should not silently convert this into "I never knew or remembered X."                                                                                                                |
+| A new user statement appears and legitimately changes Ember's understanding. | The user statement is new evidence because the user made it, not because it occupied model context.                                                                                                                         |
+| A summary says X even though its sources only weakly implied X.              | The summary remains a derived interpretation; context inclusion cannot promote the inference into direct testimony.                                                                                                         |
 
 This is also important for security. Sleeper-memory-poisoning experiments show that malicious external content can be transformed into fabricated remembered state and later affect actions. Information encountered in context must therefore not automatically cross an evidential or persistent-state boundary.
 
@@ -90,17 +90,17 @@ This is also important for security. Sleeper-memory-poisoning experiments show t
 
 ### Semantic influences on the current point of view
 
-| Semantic influence | Question it answers | Typical selection behavior |
-|---|---|---|
-| **Constitutive and normative frame** | What enduring boundaries or identity-level commitments constrain acceptable behavior? | Must remain reliably behaviorally available when applicable. |
-| **Relational frame** | Who is Ember interacting with, and which relationship-specific boundaries, trust, history, or expectations matter now? | Usually scoped to this person or relationship; only the relevant slice participates. |
-| **Situational frame** | What is happening now: surface, environment, time-sensitive conditions, interruption state? | Highly current and often transient. |
-| **Goal and task frame** | What is Ember trying to accomplish, for which project/task/subtask, under which valid decisions and acceptance criteria? | Strong default relevance while the task is live. |
-| **Prospective frame** | Which commitments, standing intentions, deadlines, or trigger conditions have become behaviorally relevant? | Can become foreground despite great age and zero lexical overlap. |
-| **Remembered interpretive frame** | Which current beliefs, preferences, decisions, relationship understandings, or autobiographical meanings help interpret the situation? | Selected according to applicability, not merely retrieval score. |
-| **Evidential frame** | What source evidence, disagreement, provenance, or historical states must be inspected to justify or revise the remembered view? | Often unnecessary for routine cognition; increasingly important under uncertainty, conflict, explanation, or consequence. |
-| **Conversational trajectory** | What recent discourse is needed to understand references, unresolved questions, local assumptions, or the active reasoning thread? | Important locally but should not be mistaken for durable significance. |
-| **External and delegated evidence** | What have tools, repositories, documents, services, or specialists reported? | Included according to relevance and trust while preserving external provenance. |
+| Semantic influence                   | Question it answers                                                                                                                    | Typical selection behavior                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Constitutive and normative frame** | What enduring boundaries or identity-level commitments constrain acceptable behavior?                                                  | Must remain reliably behaviorally available when applicable.                                                              |
+| **Relational frame**                 | Who is Ember interacting with, and which relationship-specific boundaries, trust, history, or expectations matter now?                 | Usually scoped to this person or relationship; only the relevant slice participates.                                      |
+| **Situational frame**                | What is happening now: surface, environment, time-sensitive conditions, interruption state?                                            | Highly current and often transient.                                                                                       |
+| **Goal and task frame**              | What is Ember trying to accomplish, for which project/task/subtask, under which valid decisions and acceptance criteria?               | Strong default relevance while the task is live.                                                                          |
+| **Prospective frame**                | Which commitments, standing intentions, deadlines, or trigger conditions have become behaviorally relevant?                            | Can become foreground despite great age and zero lexical overlap.                                                         |
+| **Remembered interpretive frame**    | Which current beliefs, preferences, decisions, relationship understandings, or autobiographical meanings help interpret the situation? | Selected according to applicability, not merely retrieval score.                                                          |
+| **Evidential frame**                 | What source evidence, disagreement, provenance, or historical states must be inspected to justify or revise the remembered view?       | Often unnecessary for routine cognition; increasingly important under uncertainty, conflict, explanation, or consequence. |
+| **Conversational trajectory**        | What recent discourse is needed to understand references, unresolved questions, local assumptions, or the active reasoning thread?     | Important locally but should not be mistaken for durable significance.                                                    |
+| **External and delegated evidence**  | What have tools, repositories, documents, services, or specialists reported?                                                           | Included according to relevance and trust while preserving external provenance.                                           |
 
 The system reconnaissance gives implementation convergence rather than a template. NanoBot, Hermes, OpenClaw, and Letta all distinguish broad historical or persistent material from a smaller active view in materially different ways. This convergence supports the semantic separation between persistent availability and current visibility; it does not establish any particular files, stores, blocks, or prompt tiers as Ember architecture.
 
@@ -126,18 +126,18 @@ A useful working account is:
 
 This counterfactual framing captures cases similarity misses.
 
-| Dimension | Example | Why similarity/recency fails |
-|---|---|---|
-| **Causal dependence** | A month-old architecture decision determines whether today's change is valid. | It may share none of the current request's vocabulary. |
-| **Current applicability** | A preference stated yesterday was superseded this morning. | The old text can be highly similar and recent but no longer governing. |
-| **Normative force** | A promise made a year ago becomes due today. | Age does not remove force. |
-| **Prospective trigger** | A condition occurs that activates a standing intention. | Relevance arises from the condition, not topical overlap. |
-| **Scope** | A useful debugging lesson came from another project with incompatible assumptions. | Similarity does not establish transfer validity. |
-| **Relationship significance** | A private boundary affects Ember's interpretation but should not be forwarded to a coding delegate. | Relevance to Ember does not imply permission to disclose. |
-| **Contradiction** | Two plausible memories disagree about current configuration. | Both may need inclusion precisely because neither is settled. |
-| **Consequence of omission** | A low-salience limitation matters because overlooking it could cause an irreversible action. | Expected consequence can outweigh topical centrality. |
-| **Explanatory importance** | The user asks "Why did we decide this?" | Historical rationale becomes relevant although the compact decision was previously enough. |
-| **Uncertainty reduction** | Ember remembers a conclusion but not whether it was user-approved or her own suggestion. | Provenance, not semantic closeness, is missing. |
+| Dimension                     | Example                                                                                             | Why similarity/recency fails                                                               |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Causal dependence**         | A month-old architecture decision determines whether today's change is valid.                       | It may share none of the current request's vocabulary.                                     |
+| **Current applicability**     | A preference stated yesterday was superseded this morning.                                          | The old text can be highly similar and recent but no longer governing.                     |
+| **Normative force**           | A promise made a year ago becomes due today.                                                        | Age does not remove force.                                                                 |
+| **Prospective trigger**       | A condition occurs that activates a standing intention.                                             | Relevance arises from the condition, not topical overlap.                                  |
+| **Scope**                     | A useful debugging lesson came from another project with incompatible assumptions.                  | Similarity does not establish transfer validity.                                           |
+| **Relationship significance** | A private boundary affects Ember's interpretation but should not be forwarded to a coding delegate. | Relevance to Ember does not imply permission to disclose.                                  |
+| **Contradiction**             | Two plausible memories disagree about current configuration.                                        | Both may need inclusion precisely because neither is settled.                              |
+| **Consequence of omission**   | A low-salience limitation matters because overlooking it could cause an irreversible action.        | Expected consequence can outweigh topical centrality.                                      |
+| **Explanatory importance**    | The user asks "Why did we decide this?"                                                             | Historical rationale becomes relevant although the compact decision was previously enough. |
+| **Uncertainty reduction**     | Ember remembers a conclusion but not whether it was user-approved or her own suggestion.            | Provenance, not semantic closeness, is missing.                                            |
 
 Current empirical memory work provides strong counterexamples to similarity-based relevance. STALE constructs cases where later observations implicitly invalidate earlier memories; systems can retrieve newer material yet continue accepting stale premises. DynamicMem similarly evaluates evolving attributes, habits, and preferences over synthetic long-horizon histories and reports that retrieval content is a dominant source of failure in its setup.
 
@@ -172,7 +172,7 @@ When the disagreement affects cognition, projection should preserve enough of:
 
 ## Ordering and framing
 
-*Lost in the Middle* found pronounced position sensitivity in the older models it evaluated, often with better use of information near the beginning or end. A 2026 controlled audit gives a more nuanced picture: some newer releases substantially reduce middle-position drops in some conditions, while substantial vulnerabilities remain in other model, filler, and context combinations.
+_Lost in the Middle_ found pronounced position sensitivity in the older models it evaluated, often with better use of information near the beginning or end. A 2026 controlled audit gives a more nuanced picture: some newer releases substantially reduce middle-position drops in some conditions, while substantial vulnerabilities remain in other model, filler, and context combinations.
 
 The appropriate conclusion is not "important memories belong first" or "new information belongs last."
 
@@ -184,7 +184,7 @@ A future model that becomes position-invariant should not force Ember to change 
 
 ### Larger capacity does not remove selection
 
-The strongest direct evidence is Du et al., *Context Length Alone Hurts LLM Performance Despite Perfect Retrieval*, Findings of EMNLP 2025. Across five evaluated models and math, question-answering, and coding tasks, the authors report substantial degradation as input grows while remaining inside advertised context windows. Degradation remained under controlled conditions designed to remove ordinary retrieval explanations.
+The strongest direct evidence is Du et al., _Context Length Alone Hurts LLM Performance Despite Perfect Retrieval_, Findings of EMNLP 2025. Across five evaluated models and math, question-answering, and coding tasks, the authors report substantial degradation as input grows while remaining inside advertised context windows. Degradation remained under controlled conditions designed to remove ordinary retrieval explanations.
 
 Older and broader benchmark work points in the same direction but should be interpreted conservatively. RULER extends needle retrieval into multi-needle, tracing, and aggregation tasks and shows large degradation with length in many evaluated 2024-era models. LongBench v2 introduces difficult tasks over documents, dialogue, code, structured data, and in-context learning. LooGLE v2 uses real-world long-dependency problems in law, finance, games, and code. These benchmarks support the difference between nominal and dependable context, not timeless scorecards for later models.
 
@@ -194,7 +194,7 @@ Older and broader benchmark work points in the same direction but should be inte
 
 **Active distraction.** Amiraz et al., ACL 2025, formalize passage-specific distracting effects and show that irrelevant passages differ in how harmful they are.
 
-**Position and interference.** *Lost in the Middle* established strong position effects in older generations; newer controlled audits show substantial cross-model variation.
+**Position and interference.** _Lost in the Middle_ established strong position effects in older generations; newer controlled audits show substantial cross-model variation.
 
 **Staleness and conflict.** STALE demonstrates that availability of updated evidence does not guarantee that cognition stops reasoning from an implicitly invalidated premise. RASTeR separately studies temporal QA under irrelevant, outdated, or inconsistent retrieved material.
 
@@ -228,41 +228,41 @@ Permission comes before compression. Sufficiency comes before minimality.
 
 ## Existing systems compared by concern
 
-| Concern | Observed convergence or divergence | Ember inference |
-|---|---|---|
-| Persistent state versus active projection | NanoBot, Hermes, OpenClaw, and Letta all distinguish broad historical/persistent material from a smaller active view in different ways. | **[C + J]** Strong engineering pressure exists for active-context selectivity; no storage split is thereby canonical. |
-| Personal versus project scope | NanoBot distinguishes agent-level and project-level material; other systems expose related scope boundaries through memory and prompt layers. | **[C + J]** Scope must survive context construction. |
-| Always-visible versus on-demand information | Hermes and Letta explicitly distinguish small active material from larger searchable/archival information; OpenClaw distinguishes curated and episodic material. | **[C]** Persistent availability does not require constant model visibility. |
-| Delegated cognition | Hermes uses fresh/narrowed delegation context; Ember principles separately say Ember remains responsible for passed context while respecting specialist-owned state. | **[C + J]** Delegation creates a distinct context boundary. |
-| Recall failure | OpenClaw permits memory degradation without making ordinary response generation wholly dependent on successful recall. | **[C + J]** Missing enrichment should often degrade gracefully rather than masquerade as canonical loss. |
-| Model/context stability for caching | Hermes prompt tiering reflects cache pressure; current provider APIs reward stable reusable prefixes. | **[C + J]** Cacheability may influence presentation later but should not define semantic relevance. |
+| Concern                                     | Observed convergence or divergence                                                                                                                                   | Ember inference                                                                                                       |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Persistent state versus active projection   | NanoBot, Hermes, OpenClaw, and Letta all distinguish broad historical/persistent material from a smaller active view in different ways.                              | **[C + J]** Strong engineering pressure exists for active-context selectivity; no storage split is thereby canonical. |
+| Personal versus project scope               | NanoBot distinguishes agent-level and project-level material; other systems expose related scope boundaries through memory and prompt layers.                        | **[C + J]** Scope must survive context construction.                                                                  |
+| Always-visible versus on-demand information | Hermes and Letta explicitly distinguish small active material from larger searchable/archival information; OpenClaw distinguishes curated and episodic material.     | **[C]** Persistent availability does not require constant model visibility.                                           |
+| Delegated cognition                         | Hermes uses fresh/narrowed delegation context; Ember principles separately say Ember remains responsible for passed context while respecting specialist-owned state. | **[C + J]** Delegation creates a distinct context boundary.                                                           |
+| Recall failure                              | OpenClaw permits memory degradation without making ordinary response generation wholly dependent on successful recall.                                               | **[C + J]** Missing enrichment should often degrade gracefully rather than masquerade as canonical loss.              |
+| Model/context stability for caching         | Hermes prompt tiering reflects cache pressure; current provider APIs reward stable reusable prefixes.                                                                | **[C + J]** Cacheability may influence presentation later but should not define semantic relevance.                   |
 
 ## Portable source ledger
 
 The canonical evidence map provides the durable bibliography. The main external sources used in this research are listed here as an archival ledger:
 
-- **Liu et al.** *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. DOI `10.1162/tacl_a_00638`. https://arxiv.org/abs/2307.03172 ; https://aclanthology.org/2024.tacl-1.9/
-- **Hsieh et al.** *RULER: What's the Real Context Size of Your Long-Context Language Models?* 2024. https://arxiv.org/abs/2404.06654
-- **Bai et al.** *LongBench v2: Towards Deeper Understanding and Reasoning on Realistic Long-context Multitasks.* 2024. https://arxiv.org/abs/2412.15204
-- **He et al.** *LooGLE v2: Are LLMs Ready for Real World Long Dependency Challenges?* 2025. https://arxiv.org/abs/2510.22548
-- **Du et al.** *Context Length Alone Hurts LLM Performance Despite Perfect Retrieval.* Findings of EMNLP 2025. DOI `10.18653/v1/2025.findings-emnlp.1264`. https://aclanthology.org/2025.findings-emnlp.1264/
-- **Amiraz et al.** *The Distracting Effect: Understanding Irrelevant Passages in RAG.* ACL 2025. DOI `10.18653/v1/2025.acl-long.892`. https://aclanthology.org/2025.acl-long.892/
-- **Zhang et al.** *Positional Failures in Long-Context LLMs: A Blind Spot in Reasoning Benchmarks.* 2026. https://arxiv.org/abs/2605.23170
-- **Chao et al.** *STALE: Can LLM Agents Know When Their Memories Are No Longer Valid?* 2026. https://arxiv.org/abs/2605.06527
-- **Xie et al.** *DynamicMem: A Long-Horizon Memory Benchmark in Real-World Settings.* 2026. https://arxiv.org/abs/2606.22877
-- **T. Zhang et al.** *TriggerBench: Investigating Prospective Memory for Large Language Models.* 2026. https://arxiv.org/abs/2606.23459
-- **H. Zhang et al.** *Beyond Static Dialogues: Benchmarking Realistic, Heterogeneous, and Evolving Long-Term Memory.* 2026. https://arxiv.org/abs/2605.31086
-- **Cim et al.** *Parallel Context Compaction for Long-Horizon LLM Agent Serving.* 2026. https://arxiv.org/abs/2605.23296
-- **Chen.** *Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM Agents.* 2026. https://arxiv.org/abs/2606.22528
-- **Mireshghallah et al.** *CIMemories: A Compositional Benchmark for Contextual Integrity of Persistent Memory in LLMs.* 2025. https://arxiv.org/abs/2511.14937
-- **Priyanshu, Vijay, Pahwa.** *Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in Multi-Agent Systems.* 2026. https://arxiv.org/abs/2605.27766
-- **Pulipaka et al.** *Hidden in Memory: Sleeper Memory Poisoning in LLM Agents.* 2026. https://arxiv.org/abs/2605.15338
-- **Shen et al.** *ReliabilityRAG: Effective and Provably Robust Defense for RAG-based Web-Search.* 2025. https://arxiv.org/abs/2509.23519
-- **Ju et al.** *Controlled Retrieval-augmented Context Evaluation for Long-form RAG.* Findings of EMNLP 2025. DOI `10.18653/v1/2025.findings-emnlp.1151`. https://aclanthology.org/2025.findings-emnlp.1151/
-- **Jeong et al.** *ECoRAG: Evidentiality-guided Compression for Long Context RAG.* Findings of ACL 2025. DOI `10.18653/v1/2025.findings-acl.1365`. https://aclanthology.org/2025.findings-acl.1365/
-- **Nissenbaum.** *Privacy as Contextual Integrity.* Washington Law Review 79, 2004. https://digitalcommons.law.uw.edu/wlr/vol79/iss1/10/
-- **Saltzer and Schroeder.** *The Protection of Information in Computer Systems.* Proceedings of the IEEE 63(9), 1975. DOI `10.1109/PROC.1975.9939`.
-- **Cowan.** *The Magical Number 4 in Short-Term Memory: A Reconsideration of Mental Storage Capacity.* Behavioral and Brain Sciences 24(1), 2001. DOI `10.1017/S0140525X01003922`.
+- **Liu et al.** _Lost in the Middle: How Language Models Use Long Contexts._ TACL 2024. DOI `10.1162/tacl_a_00638`. https://arxiv.org/abs/2307.03172 ; https://aclanthology.org/2024.tacl-1.9/
+- **Hsieh et al.** _RULER: What's the Real Context Size of Your Long-Context Language Models?_ 2024. https://arxiv.org/abs/2404.06654
+- **Bai et al.** _LongBench v2: Towards Deeper Understanding and Reasoning on Realistic Long-context Multitasks._ 2024. https://arxiv.org/abs/2412.15204
+- **He et al.** _LooGLE v2: Are LLMs Ready for Real World Long Dependency Challenges?_ 2025. https://arxiv.org/abs/2510.22548
+- **Du et al.** _Context Length Alone Hurts LLM Performance Despite Perfect Retrieval._ Findings of EMNLP 2025. DOI `10.18653/v1/2025.findings-emnlp.1264`. https://aclanthology.org/2025.findings-emnlp.1264/
+- **Amiraz et al.** _The Distracting Effect: Understanding Irrelevant Passages in RAG._ ACL 2025. DOI `10.18653/v1/2025.acl-long.892`. https://aclanthology.org/2025.acl-long.892/
+- **Zhang et al.** _Positional Failures in Long-Context LLMs: A Blind Spot in Reasoning Benchmarks._ 2026. https://arxiv.org/abs/2605.23170
+- **Chao et al.** _STALE: Can LLM Agents Know When Their Memories Are No Longer Valid?_ 2026. https://arxiv.org/abs/2605.06527
+- **Xie et al.** _DynamicMem: A Long-Horizon Memory Benchmark in Real-World Settings._ 2026. https://arxiv.org/abs/2606.22877
+- **T. Zhang et al.** _TriggerBench: Investigating Prospective Memory for Large Language Models._ 2026. https://arxiv.org/abs/2606.23459
+- **H. Zhang et al.** _Beyond Static Dialogues: Benchmarking Realistic, Heterogeneous, and Evolving Long-Term Memory._ 2026. https://arxiv.org/abs/2605.31086
+- **Cim et al.** _Parallel Context Compaction for Long-Horizon LLM Agent Serving._ 2026. https://arxiv.org/abs/2605.23296
+- **Chen.** _Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM Agents._ 2026. https://arxiv.org/abs/2606.22528
+- **Mireshghallah et al.** _CIMemories: A Compositional Benchmark for Contextual Integrity of Persistent Memory in LLMs._ 2025. https://arxiv.org/abs/2511.14937
+- **Priyanshu, Vijay, Pahwa.** _Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in Multi-Agent Systems._ 2026. https://arxiv.org/abs/2605.27766
+- **Pulipaka et al.** _Hidden in Memory: Sleeper Memory Poisoning in LLM Agents._ 2026. https://arxiv.org/abs/2605.15338
+- **Shen et al.** _ReliabilityRAG: Effective and Provably Robust Defense for RAG-based Web-Search._ 2025. https://arxiv.org/abs/2509.23519
+- **Ju et al.** _Controlled Retrieval-augmented Context Evaluation for Long-form RAG._ Findings of EMNLP 2025. DOI `10.18653/v1/2025.findings-emnlp.1151`. https://aclanthology.org/2025.findings-emnlp.1151/
+- **Jeong et al.** _ECoRAG: Evidentiality-guided Compression for Long Context RAG._ Findings of ACL 2025. DOI `10.18653/v1/2025.findings-acl.1365`. https://aclanthology.org/2025.findings-acl.1365/
+- **Nissenbaum.** _Privacy as Contextual Integrity._ Washington Law Review 79, 2004. https://digitalcommons.law.uw.edu/wlr/vol79/iss1/10/
+- **Saltzer and Schroeder.** _The Protection of Information in Computer Systems._ Proceedings of the IEEE 63(9), 1975. DOI `10.1109/PROC.1975.9939`.
+- **Cowan.** _The Magical Number 4 in Short-Term Memory: A Reconsideration of Mental Storage Capacity._ Behavioral and Brain Sciences 24(1), 2001. DOI `10.1017/S0140525X01003922`.
 - OpenAI prompt caching: https://platform.openai.com/docs/guides/prompt-caching
 - Anthropic prompt caching: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
 - Gemini context caching: https://ai.google.dev/gemini-api/docs/caching
@@ -325,15 +325,15 @@ The semantic task after restart is:
 
 > **[J] Determine which goals, commitments, relationships, decisions, unresolved questions, evidence states, and local reasoning threads are still current after the gap, while representing uncertainty about anything whose continued applicability cannot be established.**
 
-| Situation | Context-reconstruction semantics |
-|---|---|
-| **Brief restart mid-thought** | Active task, unresolved inference, current evidence, and intended next dependency are presumptively relevant if state remains reliable. |
-| **Return after hours/days** | Active task and live commitments may remain; temporary hypotheses and interface microstate deserve more scrutiny. |
-| **Return after months** | Relationship and durable project state can continue; old conversational momentum should not automatically. Dormant matters re-enter only if still live, triggered, or implicated. |
-| **After compaction** | Resume from the derived view but preserve awareness of omitted detail; recover source evidence when the summary is insufficient. |
-| **Switching interfaces** | Identity, memory, relationship state, and commitments are unchanged. Surface can alter expression and visible repetition, not canonical meaning. |
-| **Model replacement** | Same canonical state should remain available, but the new model must be evaluated for volume, ordering, and framing sensitivity. |
-| **Delegate returns after conversation moved on** | Reconstruct both original delegated objective/constraints and current situation. A result can be valid evidence about the old task without becoming new foreground. |
+| Situation                                        | Context-reconstruction semantics                                                                                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Brief restart mid-thought**                    | Active task, unresolved inference, current evidence, and intended next dependency are presumptively relevant if state remains reliable.                                           |
+| **Return after hours/days**                      | Active task and live commitments may remain; temporary hypotheses and interface microstate deserve more scrutiny.                                                                 |
+| **Return after months**                          | Relationship and durable project state can continue; old conversational momentum should not automatically. Dormant matters re-enter only if still live, triggered, or implicated. |
+| **After compaction**                             | Resume from the derived view but preserve awareness of omitted detail; recover source evidence when the summary is insufficient.                                                  |
+| **Switching interfaces**                         | Identity, memory, relationship state, and commitments are unchanged. Surface can alter expression and visible repetition, not canonical meaning.                                  |
+| **Model replacement**                            | Same canonical state should remain available, but the new model must be evaluated for volume, ordering, and framing sensitivity.                                                  |
+| **Delegate returns after conversation moved on** | Reconstruct both original delegated objective/constraints and current situation. A result can be valid evidence about the old task without becoming new foreground.               |
 
 A fresh start can be healthier than aggressive reconstruction.
 
@@ -347,18 +347,18 @@ Material is comparatively safe to omit when its loss does not materially affect 
 
 By contrast, a compacted view should preserve, when applicable:
 
-| Meaning that must survive | Failure if lost |
-|---|---|
-| Current objective and acceptance constraints | Ember optimizes the wrong task. |
-| Live commitments and conditions | Retrospective recall may survive while practical obligation disappears. |
-| Current versus historical state | A superseded preference or decision regains authority. |
-| Material provenance | "The specialist reported X" becomes "I observed X" or "the user said X." |
-| Unresolved disagreement | The summary fabricates consensus. |
-| Uncertainty | Tentative interpretation becomes fact. |
-| Conditionality and exceptions | "Usually" becomes "always" or a boundary loses its condition. |
-| Relationship or privacy boundaries | Later cognition reveals or uses information outside its legitimate context. |
-| Evidence versus derived interpretation | Repeated summaries start looking like multiple independent sources. |
-| Important unfinished reasoning | Restart can no longer tell what remained unresolved. |
+| Meaning that must survive                    | Failure if lost                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| Current objective and acceptance constraints | Ember optimizes the wrong task.                                             |
+| Live commitments and conditions              | Retrospective recall may survive while practical obligation disappears.     |
+| Current versus historical state              | A superseded preference or decision regains authority.                      |
+| Material provenance                          | "The specialist reported X" becomes "I observed X" or "the user said X."    |
+| Unresolved disagreement                      | The summary fabricates consensus.                                           |
+| Uncertainty                                  | Tentative interpretation becomes fact.                                      |
+| Conditionality and exceptions                | "Usually" becomes "always" or a boundary loses its condition.               |
+| Relationship or privacy boundaries           | Later cognition reveals or uses information outside its legitimate context. |
+| Evidence versus derived interpretation       | Repeated summaries start looking like multiple independent sources.         |
+| Important unfinished reasoning               | Restart can no longer tell what remained unresolved.                        |
 
 > **[J] Compaction drift occurs when a chain of derived interpretations progressively sheds qualification, provenance, exceptions, conflict, or uncertainty until a later summary asserts a stronger and cleaner story than any surviving source justified.**
 
@@ -394,18 +394,18 @@ A voice interruption may create uncertainty about whether the user heard a sente
 
 ## Graceful degradation
 
-| Context failure | Appropriate semantic response |
-|---|---|
-| Low-consequence enrichment is unavailable | Proceed from the surviving sufficient view and avoid claiming unavailable detail. |
-| Relevant memory probably exists but recall fails | Mark recall/access uncertainty; do not report absence of memory. |
-| A lossy summary is adequate for a routine task | Use it without unnecessary reconstruction while treating it as derived. |
-| The user asks for exact provenance or rationale absent from summary | Escalate toward source reconstruction; if unavailable, state the gap. |
-| Current and historical sources disagree | Preserve disagreement; retrieve or ask if resolution matters. |
-| Context capacity is unexpectedly small | Prefer governing constraints, current objective, live commitments, scope/provenance, and uncertainty over verbose history. |
-| Delegate cannot receive a private but relevant fact | Keep private interpretation with Ember; translate only necessary non-private consequences where possible. |
-| Required private context cannot be abstracted away | Narrow or retain the task rather than leak context for convenience. |
-| Context is contaminated by untrusted external material | Preserve external provenance and prevent topical relevance from conferring instruction or persistent-memory authority. |
-| Consequential action depends on unresolved missing context | Defer, ask, retrieve more, narrow, or abstain rather than manufacture certainty. |
+| Context failure                                                     | Appropriate semantic response                                                                                              |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Low-consequence enrichment is unavailable                           | Proceed from the surviving sufficient view and avoid claiming unavailable detail.                                          |
+| Relevant memory probably exists but recall fails                    | Mark recall/access uncertainty; do not report absence of memory.                                                           |
+| A lossy summary is adequate for a routine task                      | Use it without unnecessary reconstruction while treating it as derived.                                                    |
+| The user asks for exact provenance or rationale absent from summary | Escalate toward source reconstruction; if unavailable, state the gap.                                                      |
+| Current and historical sources disagree                             | Preserve disagreement; retrieve or ask if resolution matters.                                                              |
+| Context capacity is unexpectedly small                              | Prefer governing constraints, current objective, live commitments, scope/provenance, and uncertainty over verbose history. |
+| Delegate cannot receive a private but relevant fact                 | Keep private interpretation with Ember; translate only necessary non-private consequences where possible.                  |
+| Required private context cannot be abstracted away                  | Narrow or retain the task rather than leak context for convenience.                                                        |
+| Context is contaminated by untrusted external material              | Preserve external provenance and prevent topical relevance from conferring instruction or persistent-memory authority.     |
+| Consequential action depends on unresolved missing context          | Defer, ask, retrieve more, narrow, or abstain rather than manufacture certainty.                                           |
 
 > **[J] A degraded context is acceptable when Ember can still act or answer truthfully within the epistemic and authority bounds created by what remains.**
 
@@ -591,23 +591,23 @@ The unit of evaluation should be:
 
 Useful outcome dimensions include:
 
-| Dimension | What it tests |
-|---|---|
-| **Decision/task correctness** | Did projection support the right answer or action? |
-| **Critical-omission harm** | Does excluding a semantically necessary item cause failure? |
-| **Inclusion harm** | Does adding irrelevant, stale, duplicate, or misleading material reduce quality? |
-| **Currentness integrity** | Does obsolete state regain current authority? |
-| **Scope integrity** | Does correct information from another project/person/relationship/time improperly influence cognition? |
-| **Privacy/disclosure integrity** | Does information flow to a cognition or delegate without legitimate need or permission? |
-| **Provenance preservation** | Does output distinguish user testimony, Ember inference, outside evidence, delegate reports, and direct observation? |
-| **Conflict preservation** | Does disagreement remain visible until legitimately resolved? |
-| **Uncertainty calibration** | Does partial or failed recall create bounded uncertainty rather than fabricated certainty? |
-| **Prospective activation** | Do live commitments become relevant when their triggers occur without explicit reminders? |
-| **Compaction fidelity** | Do currentness, constraints, disagreement, provenance, uncertainty, and commitments survive repeated compaction? |
-| **Reconstruction truthfulness** | After restart or gap, does Ember resume genuinely live state without inventing reasoning or dragging dormant topics forward? |
-| **Order robustness** | Does semantically identical evidence produce materially different results under permutations? |
-| **Cross-model semantic invariance** | Does provider replacement preserve Ember-level meanings even if concrete presentation changes? |
-| **Least-context utility frontier** | How much information is genuinely required for delegate quality, and how much exposure can be removed without unacceptable degradation? |
+| Dimension                           | What it tests                                                                                                                           |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Decision/task correctness**       | Did projection support the right answer or action?                                                                                      |
+| **Critical-omission harm**          | Does excluding a semantically necessary item cause failure?                                                                             |
+| **Inclusion harm**                  | Does adding irrelevant, stale, duplicate, or misleading material reduce quality?                                                        |
+| **Currentness integrity**           | Does obsolete state regain current authority?                                                                                           |
+| **Scope integrity**                 | Does correct information from another project/person/relationship/time improperly influence cognition?                                  |
+| **Privacy/disclosure integrity**    | Does information flow to a cognition or delegate without legitimate need or permission?                                                 |
+| **Provenance preservation**         | Does output distinguish user testimony, Ember inference, outside evidence, delegate reports, and direct observation?                    |
+| **Conflict preservation**           | Does disagreement remain visible until legitimately resolved?                                                                           |
+| **Uncertainty calibration**         | Does partial or failed recall create bounded uncertainty rather than fabricated certainty?                                              |
+| **Prospective activation**          | Do live commitments become relevant when their triggers occur without explicit reminders?                                               |
+| **Compaction fidelity**             | Do currentness, constraints, disagreement, provenance, uncertainty, and commitments survive repeated compaction?                        |
+| **Reconstruction truthfulness**     | After restart or gap, does Ember resume genuinely live state without inventing reasoning or dragging dormant topics forward?            |
+| **Order robustness**                | Does semantically identical evidence produce materially different results under permutations?                                           |
+| **Cross-model semantic invariance** | Does provider replacement preserve Ember-level meanings even if concrete presentation changes?                                          |
+| **Least-context utility frontier**  | How much information is genuinely required for delegate quality, and how much exposure can be removed without unacceptable degradation? |
 
 Important controls include varying context length and relevant position independently; distinguishing fresh irrelevant distractors from stale-but-similar distractors; preserving versus stripping provenance; testing conflicting evidence before and after lossy summarization; measuring repeated compaction longitudinally; holding canonical semantic state fixed under model replacement; and jointly scoring delegation utility and inappropriate disclosure.
 

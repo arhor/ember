@@ -18,12 +18,22 @@ const directory = await mkdtemp(join(tmpdir(), "ember-live-codex-"));
 const probeHome = join(directory, "home");
 const skillDirectory = join(probeHome, ".agents", "skills", "ember-context-probe");
 await mkdir(skillDirectory, { recursive: true });
-await writeFile(join(skillDirectory, "SKILL.md"), `---\nname: ember-context-probe\ndescription: ${USER_SKILL_MARKER}\n---\n\n${USER_SKILL_MARKER}\n`);
+await writeFile(
+    join(skillDirectory, "SKILL.md"),
+    `---\nname: ember-context-probe\ndescription: ${USER_SKILL_MARKER}\n---\n\n${USER_SKILL_MARKER}\n`,
+);
 const codexHome = process.env.CODEX_HOME ?? (process.env.HOME ? join(process.env.HOME, ".codex") : undefined);
 const statePath = join(directory, "ember.json");
 const state = initialState("Ember", PRINCIPAL);
 const relationshipId = rememberRelationship(state, PRINCIPAL, SCOPE, SCOPE, "Synthetic issue-46 collaborator fixture");
-const factId = rememberFact(state, PRINCIPAL, `user:${PRINCIPAL}`, "fixture-server", SCOPE, "The synthetic fixture server uses EmberBoard 46 hardware");
+const factId = rememberFact(
+    state,
+    PRINCIPAL,
+    `user:${PRINCIPAL}`,
+    "fixture-server",
+    SCOPE,
+    "The synthetic fixture server uses EmberBoard 46 hardware",
+);
 rememberPreference(state, PRINCIPAL, `user:${PRINCIPAL}`, "unrelated-preference", "project:unrelated", EXCLUDED_MARKER);
 
 const store = new StateStore(statePath);
@@ -31,46 +41,60 @@ await store.create(state);
 const lease = await store.acquireWriteLease();
 let reply = "";
 try {
-  const loaded = await store.load();
-  const started = startRuntime(loaded, PRINCIPAL, SCOPE);
-  const running = await store.commit(loaded.revision, started.state);
-  const result = await runCognition(store, running, {
-    runtimeId: started.runtimeId,
-    principal: PRINCIPAL,
-    scope: SCOPE,
-    text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
-    command: "codex",
-    timeoutSeconds: 120,
-    provider: (command, arguments_, request, options) => invokeCodexProvider(command, arguments_, request, { ...options, environment: { ...process.env, HOME: probeHome, ...(codexHome ? { CODEX_HOME: codexHome } : {}) } }),
-    output: text => { reply += text; },
-  });
-  if (result.providerFailure) throw new Error(result.providerFailure);
-  const cognition = result.state.operations.cognition_episodes.find(item => item.cognition_id === result.cognitionId)!;
-  const canonical = await readFile(statePath, "utf8");
-  assert.deepEqual(new Set(cognition.selected_meaning_ids), new Set([relationshipId, factId]));
-  assert.equal(canonical.includes(EXCLUDED_MARKER), true);
-  assert.equal(reply.includes(EXCLUDED_MARKER), false);
-  assert.equal(reply.includes(USER_SKILL_MARKER), false);
-  assert.equal(canonical.includes(reply.trim()), false);
-  assert.match(reply, /EmberBoard 46/);
-  const stopped = stopRuntime(result.state, started.runtimeId, { reason: "live_smoke_complete" });
-  await store.commit(result.state.revision, stopped);
-  process.stdout.write(`${JSON.stringify({
-    provider: "codex exec",
-    selected_meaning_count: cognition.selected_meaning_ids.length,
-    used_meaning_count: cognition.used_meaning_ids.length,
-    external_thread_recorded_as_operational_evidence: cognition.external_provider_thread_id !== null,
-    out_of_scope_marker_disclosed: false,
-    user_skill_marker_present_in_reply: false,
-    reply_retained_in_canonical_state: false,
-    cognition_status: cognition.status,
-    delivery_status: cognition.delivery_status,
-    reply: reply.trim(),
-  }, null, 2)}\n`);
+    const loaded = await store.load();
+    const started = startRuntime(loaded, PRINCIPAL, SCOPE);
+    const running = await store.commit(loaded.revision, started.state);
+    const result = await runCognition(store, running, {
+        runtimeId: started.runtimeId,
+        principal: PRINCIPAL,
+        scope: SCOPE,
+        text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
+        command: "codex",
+        timeoutSeconds: 120,
+        provider: (command, arguments_, request, options) =>
+            invokeCodexProvider(command, arguments_, request, {
+                ...options,
+                environment: { ...process.env, HOME: probeHome, ...(codexHome ? { CODEX_HOME: codexHome } : {}) },
+            }),
+        output: (text) => {
+            reply += text;
+        },
+    });
+    if (result.providerFailure) throw new Error(result.providerFailure);
+    const cognition = result.state.operations.cognition_episodes.find(
+        (item) => item.cognition_id === result.cognitionId,
+    )!;
+    const canonical = await readFile(statePath, "utf8");
+    assert.deepEqual(new Set(cognition.selected_meaning_ids), new Set([relationshipId, factId]));
+    assert.equal(canonical.includes(EXCLUDED_MARKER), true);
+    assert.equal(reply.includes(EXCLUDED_MARKER), false);
+    assert.equal(reply.includes(USER_SKILL_MARKER), false);
+    assert.equal(canonical.includes(reply.trim()), false);
+    assert.match(reply, /EmberBoard 46/);
+    const stopped = stopRuntime(result.state, started.runtimeId, { reason: "live_smoke_complete" });
+    await store.commit(result.state.revision, stopped);
+    process.stdout.write(
+        `${JSON.stringify(
+            {
+                provider: "codex exec",
+                selected_meaning_count: cognition.selected_meaning_ids.length,
+                used_meaning_count: cognition.used_meaning_ids.length,
+                external_thread_recorded_as_operational_evidence: cognition.external_provider_thread_id !== null,
+                out_of_scope_marker_disclosed: false,
+                user_skill_marker_present_in_reply: false,
+                reply_retained_in_canonical_state: false,
+                cognition_status: cognition.status,
+                delivery_status: cognition.delivery_status,
+                reply: reply.trim(),
+            },
+            null,
+            2,
+        )}\n`,
+    );
 } finally {
-  try {
-    await store.releaseWriteLease(lease);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
+    try {
+        await store.releaseWriteLease(lease);
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
 }

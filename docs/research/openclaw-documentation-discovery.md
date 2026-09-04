@@ -57,13 +57,13 @@ OpenClaw does deliberately exclude some subtrees. The compact `docs:list` catalo
 
 The current discovery parser is intentionally narrow. Despite richer frontmatter existing throughout the docs corpus, `docs:list` mechanically consumes only:
 
-| Field | Used by repository discovery? | Observed role |
-| --- | --- | --- |
-| `summary` | Yes | Compact description of what the page contains. Required by `docs:list`. |
-| `read_when` | Yes | One or more natural-language applicability hints. Optional. |
-| `title` | No | Presentation/publishing metadata, not part of `docs:list` routing. |
-| `doc-schema-version` | No | Docs authoring/schema convention, not consumed by `docs:list`. |
-| `redirect`, `sidebarTitle`, `status`, and other page metadata | No | Page/publishing concerns outside the compact discovery mechanism. |
+| Field                                                         | Used by repository discovery? | Observed role                                                           |
+| ------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------- |
+| `summary`                                                     | Yes                           | Compact description of what the page contains. Required by `docs:list`. |
+| `read_when`                                                   | Yes                           | One or more natural-language applicability hints. Optional.             |
+| `title`                                                       | No                            | Presentation/publishing metadata, not part of `docs:list` routing.      |
+| `doc-schema-version`                                          | No                            | Docs authoring/schema convention, not consumed by `docs:list`.          |
+| `redirect`, `sidebarTitle`, `status`, and other page metadata | No                            | Page/publishing concerns outside the compact discovery mechanism.       |
 
 Representative pages make the separation visible. For example, [`docs/reference/wizard.md`](https://github.com/openclaw/openclaw/blob/f5eea3197c55c0ed0e609d182bd88a7f09ec55e9/docs/reference/wizard.md) carries `summary`, `doc-schema-version`, `title`, and `redirect`, while the discovery script only extracts `summary` and `read_when`. Searches of the current scripts found no `doc-schema-version` consumer in `scripts/`.
 
@@ -267,14 +267,14 @@ Ask Molty also carries a richer evidence policy: docs are canonical documentatio
 
 This is qualitatively different from `docs:list`:
 
-| Repository discovery | Ask Molty retrieval |
-| --- | --- |
-| Works from the source checkout | Runs as a dedicated docs AI service |
-| Projects path + human summary + applicability | Builds searchable JSONL indexes and a virtual workspace |
-| Lets the model interpret hints | Deterministically ranks candidates before model reads |
-| Documentation only | Documentation + source + GitHub discussion/status evidence |
-| No separate retrieval store | Exported retrieval artifacts and runtime |
-| Near-zero architectural footprint | Dedicated exporter, worker, retrieval logic, tools, auth, deployment |
+| Repository discovery                          | Ask Molty retrieval                                                  |
+| --------------------------------------------- | -------------------------------------------------------------------- |
+| Works from the source checkout                | Runs as a dedicated docs AI service                                  |
+| Projects path + human summary + applicability | Builds searchable JSONL indexes and a virtual workspace              |
+| Lets the model interpret hints                | Deterministically ranks candidates before model reads                |
+| Documentation only                            | Documentation + source + GitHub discussion/status evidence           |
+| No separate retrieval store                   | Exported retrieval artifacts and runtime                             |
+| Near-zero architectural footprint             | Dedicated exporter, worker, retrieval logic, tools, auth, deployment |
 
 The reusable lesson is not that every project should eventually build Ask Molty. It is that a simple discovery contract should leave an **escape hatch** for deeper retrieval when repository scale or question type actually justifies it.
 
@@ -332,15 +332,15 @@ OpenClaw's own architecture illustrates the progression: the repository uses a t
 
 The following framework separates the invariant from OpenClaw's implementation choices.
 
-| Element | Essential invariant | Useful OpenClaw choice | Project-specific convention | Optional enhancement |
-| --- | --- | --- | --- | --- |
-| **1. Knowledge artifacts** | Durable source documents remain authoritative; discovery points to them. | Markdown/MDX files with colocated frontmatter. | `docs/**`, plus OpenClaw-specific exclusions. | Other human-readable or structured source formats. |
-| **2. Routing metadata** | Describe both what a document contains and when it matters. | `summary` + natural-language `read_when`. | `title`, `doc-schema-version`, redirects, sidebar/status metadata belong to other docs concerns. | Role/currentness/supersession metadata where a real corpus requires it. |
-| **3. Deterministic projection** | Produce a reproducible compact catalogue without model calls. | Sorted `path - summary` plus `Read when` lines from a zero-dependency Node script. | `pnpm docs:list` command name and exact formatting. | JSON output, filters, or multiple source sets if concrete consumers need them. |
-| **4. Optional structural projection** | Expose more structure without eagerly loading full sources. | H1-H4 heading map from `--headings`. | Mintlify route generation and package/public docs map. | Section summaries or other deterministic structure, only if headings are insufficient. |
-| **5. Agent policy** | Tell agents when to consult discovery, how to interpret hints, and when to open full sources. | Root/scoped `AGENTS.md`, docs agent prompt, and skills all reuse `docs:list`. | OpenClaw's exact workflow triggers and docs-specific rules. | Task-specific policies for design, coding, review, research, or operations. |
-| **6. Validation** | Prevent syntax/projection breakage and make metadata omissions visible. | Focused tests for parser/projection behavior plus broader docs checks. | OpenClaw's MDX, Mintlify, i18n, config-example, and publishing checks. | Hard CI failure for missing required routing metadata or invalid participating documents. |
-| **7. Escape hatch / deeper retrieval** | The compact mechanism must not pretend to solve every retrieval problem. | Open full docs directly; use Ask Molty for indexed docs/source/GitHub retrieval in the separate public system. | Ask Molty's Cloudflare/R2/Gitcrawl/workspace architecture. | Search/ranking, embeddings, or richer evidence retrieval only when scale or use cases justify them. |
+| Element                                | Essential invariant                                                                           | Useful OpenClaw choice                                                                                         | Project-specific convention                                                                      | Optional enhancement                                                                                |
+| -------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| **1. Knowledge artifacts**             | Durable source documents remain authoritative; discovery points to them.                      | Markdown/MDX files with colocated frontmatter.                                                                 | `docs/**`, plus OpenClaw-specific exclusions.                                                    | Other human-readable or structured source formats.                                                  |
+| **2. Routing metadata**                | Describe both what a document contains and when it matters.                                   | `summary` + natural-language `read_when`.                                                                      | `title`, `doc-schema-version`, redirects, sidebar/status metadata belong to other docs concerns. | Role/currentness/supersession metadata where a real corpus requires it.                             |
+| **3. Deterministic projection**        | Produce a reproducible compact catalogue without model calls.                                 | Sorted `path - summary` plus `Read when` lines from a zero-dependency Node script.                             | `pnpm docs:list` command name and exact formatting.                                              | JSON output, filters, or multiple source sets if concrete consumers need them.                      |
+| **4. Optional structural projection**  | Expose more structure without eagerly loading full sources.                                   | H1-H4 heading map from `--headings`.                                                                           | Mintlify route generation and package/public docs map.                                           | Section summaries or other deterministic structure, only if headings are insufficient.              |
+| **5. Agent policy**                    | Tell agents when to consult discovery, how to interpret hints, and when to open full sources. | Root/scoped `AGENTS.md`, docs agent prompt, and skills all reuse `docs:list`.                                  | OpenClaw's exact workflow triggers and docs-specific rules.                                      | Task-specific policies for design, coding, review, research, or operations.                         |
+| **6. Validation**                      | Prevent syntax/projection breakage and make metadata omissions visible.                       | Focused tests for parser/projection behavior plus broader docs checks.                                         | OpenClaw's MDX, Mintlify, i18n, config-example, and publishing checks.                           | Hard CI failure for missing required routing metadata or invalid participating documents.           |
+| **7. Escape hatch / deeper retrieval** | The compact mechanism must not pretend to solve every retrieval problem.                      | Open full docs directly; use Ask Molty for indexed docs/source/GitHub retrieval in the separate public system. | Ask Molty's Cloudflare/R2/Gitcrawl/workspace architecture.                                       | Search/ranking, embeddings, or richer evidence retrieval only when scale or use cases justify them. |
 
 The invariant can be summarized more compactly:
 

@@ -34,12 +34,12 @@ permission DSL is warranted.
 The specialist specification keeps four meanings separate even when they happen to
 be serialized into the same bounded prompt:
 
-| Meaning | Production representation | What it may establish |
-| --- | --- | --- |
-| Objective | `objective` plus `acceptance` and `currentness_basis.objective_revision` | The work Ember is asking Codex to pursue and the exact objective revision Ember will later compare |
-| Selected context | `context_projection[]` plus `currentness_basis.context_revision` | Which task-relevant meaning Ember intentionally disclosed and the revision checkpoint for relevant requirements or canonical meaning |
-| Authority | `authority_envelope` with attributable `principal`, `grant`, `provenance`, `currentness`, permitted/prohibited actions, and escalation conditions | The semantic decision-space intentionally entrusted for this episode and the source/currentness basis Ember used to treat it as live |
-| Runtime capability | `runtime_capability` plus the concrete `runtime_policy` | Technical reach and enforcement evidence available to the Codex attempt, never legitimacy by itself |
+| Meaning            | Production representation                                                                                                                         | What it may establish                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Objective          | `objective` plus `acceptance` and `currentness_basis.objective_revision`                                                                          | The work Ember is asking Codex to pursue and the exact objective revision Ember will later compare                                   |
+| Selected context   | `context_projection[]` plus `currentness_basis.context_revision`                                                                                  | Which task-relevant meaning Ember intentionally disclosed and the revision checkpoint for relevant requirements or canonical meaning |
+| Authority          | `authority_envelope` with attributable `principal`, `grant`, `provenance`, `currentness`, permitted/prohibited actions, and escalation conditions | The semantic decision-space intentionally entrusted for this episode and the source/currentness basis Ember used to treat it as live |
+| Runtime capability | `runtime_capability` plus the concrete `runtime_policy`                                                                                           | Technical reach and enforcement evidence available to the Codex attempt, never legitimacy by itself                                  |
 
 `principal` and `grant` say whose authority is being exercised and what decision-space
 was entrusted. `provenance` records the source Ember relied on for that grant, while
@@ -132,11 +132,11 @@ The first boundary distinguishes three request kinds:
 
 Each request carries:
 
-| Field | Meaning |
-| --- | --- |
-| `request` | What expansion Codex says it needs |
-| `purpose` | Why that expansion is relevant to the delegated objective |
-| `consequence` | What disclosure or effect would become possible if expanded |
+| Field                    | Meaning                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `request`                | What expansion Codex says it needs                                            |
+| `purpose`                | Why that expansion is relevant to the delegated objective                     |
+| `consequence`            | What disclosure or effect would become possible if expanded                   |
 | `requires_decision_from` | The authority-holder or Ember decision boundary that must resolve the request |
 
 Recording `requires_decision_from` is deliberately not an approval UI. It preserves

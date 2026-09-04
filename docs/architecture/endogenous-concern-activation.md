@@ -37,12 +37,12 @@ the normal bounded projection only.
 
 Controlled issue-76 scenarios use the same `foreground_probe` and the same evaluator:
 
-| Durable state | Expected decision |
-| --- | --- |
-| no concern | `no_cognition` |
-| live commitment with no current consequence making it relevant | `no_cognition`; commitment is projected but unselected |
-| same live commitment plus a current durable consequence | `cognition`; commitment and consequence are selected grounding meanings |
-| same consequence after the commitment is fulfilled | `no_cognition`; historical commitment is not in ordinary projection |
+| Durable state                                                  | Expected decision                                                       |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| no concern                                                     | `no_cognition`                                                          |
+| live commitment with no current consequence making it relevant | `no_cognition`; commitment is projected but unselected                  |
+| same live commitment plus a current durable consequence        | `cognition`; commitment and consequence are selected grounding meanings |
+| same consequence after the commitment is fulfilled             | `no_cognition`; historical commitment is not in ordinary projection     |
 
 The topic therefore comes from the continuing commitment plus present Ember-owned
 state, not from the opportunity mechanism.
@@ -115,12 +115,12 @@ meaning IDs that explain activation or non-activation without raw model reasonin
 
 ## Definition-of-done mapping
 
-| Issue #76 requirement | Implemented evidence |
-| --- | --- |
-| Dormant concerns may deserve renewed attention | Same evaluator activates a live commitment only when current consequence state makes it relevant. |
-| Wake-up does not name concern | All controls use the same `foreground_probe`; mechanism never reaches evaluator request. |
-| Relevant concern surfaces from durable state | Commitment and current consequence are selected from normal projection. |
-| Dormant state does not force repeated cognition | Repeated irrelevant opportunities return `no_cognition` while the commitment and state remain unchanged. |
-| Resolved concerns do not reactivate | Fulfilled/cancelled commitments become historical and are excluded from ordinary projection. |
-| Behavior is explainable | Commitment provenance plus projected/selected opportunity IDs distinguish available, activated, dormant, and closed state. |
+| Issue #76 requirement                                       | Implemented evidence                                                                                                                       |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Dormant concerns may deserve renewed attention              | Same evaluator activates a live commitment only when current consequence state makes it relevant.                                          |
+| Wake-up does not name concern                               | All controls use the same `foreground_probe`; mechanism never reaches evaluator request.                                                   |
+| Relevant concern surfaces from durable state                | Commitment and current consequence are selected from normal projection.                                                                    |
+| Dormant state does not force repeated cognition             | Repeated irrelevant opportunities return `no_cognition` while the commitment and state remain unchanged.                                   |
+| Resolved concerns do not reactivate                         | Fulfilled/cancelled commitments become historical and are excluded from ordinary projection.                                               |
+| Behavior is explainable                                     | Commitment provenance plus projected/selected opportunity IDs distinguish available, activated, dormant, and closed state.                 |
 | New durable representation preserves provenance/currentness | No concern type is added; commitment discharge retains adoption evidence and adds attributable transition evidence plus applicability end. |

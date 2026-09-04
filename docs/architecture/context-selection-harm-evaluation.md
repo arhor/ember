@@ -47,12 +47,12 @@ The rubric therefore uses ordinal categories rather than a synthetic scalar scor
 The categories are intentionally asymmetric because some failures are observable at
 the projection boundary while others require empirical cognition evidence.
 
-| Judgment | Meaning |
-| --- | --- |
-| `none_observed` | The observed projection condition is semantically appropriate or no harm signal is present. This is not a claim that every model will behave perfectly. |
-| `potential` | The projection contains an observable exposure that can create harm, but downstream cognitive impact is model-dependent and has not been measured here. |
-| `material` | The projection violates a semantic condition that can materially change justified interpretation, currentness, uncertainty, or task outcome even before a model-specific effect is measured. |
-| `boundary_violation` | The projection crosses a recipient, privacy, scope, or authority boundary that should have prevented disclosure. More model capacity cannot make the disclosure correct. |
+| Judgment             | Meaning                                                                                                                                                                                      |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `none_observed`      | The observed projection condition is semantically appropriate or no harm signal is present. This is not a claim that every model will behave perfectly.                                      |
+| `potential`          | The projection contains an observable exposure that can create harm, but downstream cognitive impact is model-dependent and has not been measured here.                                      |
+| `material`           | The projection violates a semantic condition that can materially change justified interpretation, currentness, uncertainty, or task outcome even before a model-specific effect is measured. |
+| `boundary_violation` | The projection crosses a recipient, privacy, scope, or authority boundary that should have prevented disclosure. More model capacity cannot make the disclosure correct.                     |
 
 These categories are ordinal descriptions, not arithmetic quantities. Ten
 `potential` distractors do not automatically equal one `material` omission, and 64
@@ -62,11 +62,11 @@ irrelevant facts are not assigned 64 times the harm of one irrelevant fact.
 
 ### Omission harm
 
-| Signal | Judgment | Interpretation |
-| --- | --- | --- |
-| Scenario-relevant meaning is not selected | `material` | Relevance is defined counterfactually: omission creates material risk of changing justified cognition. The projection needs expansion, reconstruction, translation, or a narrower task. |
-| Relevant detail is unavailable but an explicit gap truthfully frames the limitation | `none_observed` for the unavailable content itself | Missing content is not fabricated. Whether the remaining projection is sufficient depends on consequence and task semantics. |
-| Required context cannot legitimately cross a recipient boundary | `material` task pressure, but not permission to disclose | The correct response is to translate, narrow, retain the sensitive judgment, ask, defer, or abstain rather than convert omission pressure into a privacy leak. |
+| Signal                                                                              | Judgment                                                 | Interpretation                                                                                                                                                                          |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scenario-relevant meaning is not selected                                           | `material`                                               | Relevance is defined counterfactually: omission creates material risk of changing justified cognition. The projection needs expansion, reconstruction, translation, or a narrower task. |
+| Relevant detail is unavailable but an explicit gap truthfully frames the limitation | `none_observed` for the unavailable content itself       | Missing content is not fabricated. Whether the remaining projection is sufficient depends on consequence and task semantics.                                                            |
+| Required context cannot legitimately cross a recipient boundary                     | `material` task pressure, but not permission to disclose | The correct response is to translate, narrow, retain the sensitive judgment, ask, defer, or abstain rather than convert omission pressure into a privacy leak.                          |
 
 The current executable corpus contains no reproduced `relevant_not_selected`
 condition. That absence is meaningful negative evidence: the current broad selector
@@ -74,16 +74,16 @@ has not yet failed these representative cases by under-selection.
 
 ### Inclusion harm
 
-| Signal | Judgment | Interpretation |
-| --- | --- | --- |
-| Irrelevant permitted meaning is selected | `potential` | Unnecessary context exposure is observed. Distraction, anchoring, position interference, or degraded answer quality remain empirical model questions. |
-| Superseded meaning is selected for an ordinary purpose where it is not relevant | `material` | Stale state can regain authority or distort currentness. |
-| Superseded meaning is deliberately selected for historical/explanatory reconstruction and remains labeled historical | `none_observed` | Historical inclusion is purpose-sensitive evidence, not automatically stale-context harm. |
-| Forbidden meaning is selected | `boundary_violation` | Privacy/scope/recipient rules were breached regardless of whether the model used the material. |
-| Unavailable meaning participates with an explicit unavailable-detail gap | `none_observed` | The projection degrades truthfully rather than manufacturing continuity. |
-| Unavailable meaning participates without the required gap | `material` | The projection risks unsupported certainty or false seamless recall. |
-| Provenance, ownership, uncertainty, or conflict is collapsed while the underlying propositions remain selected | `material` | Inclusion can be harmful through framing, not only membership. Repeated derived reports must not become independent evidence and direct observation must not become testimony or inference. |
-| Repeated/derived material receives false independent evidential salience | `material` when the projection changes evidential interpretation; otherwise `potential` when only unnecessary duplication is observed | Repetition does not manufacture corroboration. |
+| Signal                                                                                                               | Judgment                                                                                                                              | Interpretation                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Irrelevant permitted meaning is selected                                                                             | `potential`                                                                                                                           | Unnecessary context exposure is observed. Distraction, anchoring, position interference, or degraded answer quality remain empirical model questions.                                       |
+| Superseded meaning is selected for an ordinary purpose where it is not relevant                                      | `material`                                                                                                                            | Stale state can regain authority or distort currentness.                                                                                                                                    |
+| Superseded meaning is deliberately selected for historical/explanatory reconstruction and remains labeled historical | `none_observed`                                                                                                                       | Historical inclusion is purpose-sensitive evidence, not automatically stale-context harm.                                                                                                   |
+| Forbidden meaning is selected                                                                                        | `boundary_violation`                                                                                                                  | Privacy/scope/recipient rules were breached regardless of whether the model used the material.                                                                                              |
+| Unavailable meaning participates with an explicit unavailable-detail gap                                             | `none_observed`                                                                                                                       | The projection degrades truthfully rather than manufacturing continuity.                                                                                                                    |
+| Unavailable meaning participates without the required gap                                                            | `material`                                                                                                                            | The projection risks unsupported certainty or false seamless recall.                                                                                                                        |
+| Provenance, ownership, uncertainty, or conflict is collapsed while the underlying propositions remain selected       | `material`                                                                                                                            | Inclusion can be harmful through framing, not only membership. Repeated derived reports must not become independent evidence and direct observation must not become testimony or inference. |
+| Repeated/derived material receives false independent evidential salience                                             | `material` when the projection changes evidential interpretation; otherwise `potential` when only unnecessary duplication is observed | Repetition does not manufacture corroboration.                                                                                                                                              |
 
 The generic executable classifier handles membership/currentness/gap/boundary signals.
 Provenance distortion remains governed by semantic projection assertions because a
@@ -96,12 +96,12 @@ provenance slice.
 For downstream comparison the executable rubric reports an implementation-neutral
 selection pressure:
 
-| Pressure | Meaning |
-| --- | --- |
-| `stable` | No observed omission or harmful/potential inclusion pressure requires changing projection breadth. |
-| `reduce` | Inclusion pressure exists without observed relevant omission. Prefer a smaller or more selective projection while preserving governing meaning. |
-| `expand` | Material omission exists without inclusion pressure. Retrieve/reconstruct enough additional permitted context to restore sufficiency. |
-| `rebalance` | Both sides are present. Neither indiscriminate expansion nor indiscriminate minimization is justified. |
+| Pressure    | Meaning                                                                                                                                         |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stable`    | No observed omission or harmful/potential inclusion pressure requires changing projection breadth.                                              |
+| `reduce`    | Inclusion pressure exists without observed relevant omission. Prefer a smaller or more selective projection while preserving governing meaning. |
+| `expand`    | Material omission exists without inclusion pressure. Retrieve/reconstruct enough additional permitted context to restore sufficiency.           |
+| `rebalance` | Both sides are present. Neither indiscriminate expansion nor indiscriminate minimization is justified.                                          |
 
 This is deliberately not a retrieval prescription. `reduce` may eventually mean a
 better semantic selector, ranking, task-specific projection, compaction, or another
@@ -114,21 +114,21 @@ The current corpus was evaluated using the deterministic harness and scripted
 provider layer. All Ember projection assertions pass independently of model reply
 quality.
 
-| Scenario / episode | Omission | Inclusion | Pressure | Interpretation |
-| --- | --- | --- | --- | --- |
-| `memory-context-pressure / baseline-long-history` | `none_observed` | `potential` | `reduce` | 64 generated same-scope facts are declared irrelevant yet selected. Relevant target, preference, and commitment are present; forbidden private context is absent. |
-| `memory-context-pressure / changed-and-degraded` | `none_observed` | `potential` | `reduce` | The 64 irrelevant facts remain. The superseded preference is intentionally relevant to explanation and the unavailable episode carries an explicit gap, so neither is harm by itself. |
-| `memory-context-pressure / ordinary-after-change` | `none_observed` | `potential` | `reduce` | Current preference governs; stale preference, private marker, and irrelevant degraded episode stay out. Ambient history still creates unnecessary inclusion. |
-| `currentness-pressure / baseline-with-unresolved-conflict` | `none_observed` | `potential` | `reduce` | Both unresolved reports remain attributable and current while 24 irrelevant history facts are selected. Smaller context can remove noise without resolving the conflict. |
-| `currentness-pressure / changed-preference` | `none_observed` | `potential` | `reduce` | Old preference is excluded despite reused provider-thread history; 24 irrelevant facts remain. |
-| `currentness-pressure / corrected-fact` | `none_observed` | `potential` | `reduce` | Corrected fact and current preference replace stale values in ordinary projection; ambient irrelevant inclusion remains. |
-| `currentness-pressure / explicit-history-reconstruction` | `none_observed` | `potential` | `reduce` | Old preference and fact become relevant again as labeled history. Removing them would create omission harm for the explanation; removing the 24 ambient facts would not. |
-| `provenance-pressure / mixed-provenance-baseline` | `none_observed` | `potential` | `reduce` | Testimony, external claim, direct observation, delegates, and inferences remain distinct with transitive evidence roots; 12 irrelevant facts add noise. |
-| `provenance-pressure / corrected-user-testimony` | `none_observed` | `potential` | `reduce` | Superseded testimony stays historical while current conflicting evidence retains provenance. The same 12 irrelevant facts remain selected. |
-| `provenance-pressure / historical-provenance-reconstruction` | `none_observed` | `potential` | `reduce` | Historical user testimony is intentionally included with attribution. Provenance distinctions and correlated roots survive; irrelevant ambient facts remain unnecessary. |
-| `degraded-context-pressure / available-detail-baseline` | `none_observed` | `potential` | `reduce` | Requested detail is recoverable and relevant, private context is withheld, but one irrelevant permitted lab note is selected. |
-| `degraded-context-pressure / unavailable-after-restart` | `none_observed` | `potential` | `reduce` | The unavailable detail becomes a truthful projection gap after restart; the private meaning remains undisclosed. The irrelevant lab note is still selected. |
-| `degraded-context-pressure / ordinary-after-second-restart` | `none_observed` | `potential` | `reduce` | The persistent gap remains canonical but does not participate when irrelevant. The private context stays out; the unrelated lab note still participates. |
+| Scenario / episode                                           | Omission        | Inclusion   | Pressure | Interpretation                                                                                                                                                                        |
+| ------------------------------------------------------------ | --------------- | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory-context-pressure / baseline-long-history`            | `none_observed` | `potential` | `reduce` | 64 generated same-scope facts are declared irrelevant yet selected. Relevant target, preference, and commitment are present; forbidden private context is absent.                     |
+| `memory-context-pressure / changed-and-degraded`             | `none_observed` | `potential` | `reduce` | The 64 irrelevant facts remain. The superseded preference is intentionally relevant to explanation and the unavailable episode carries an explicit gap, so neither is harm by itself. |
+| `memory-context-pressure / ordinary-after-change`            | `none_observed` | `potential` | `reduce` | Current preference governs; stale preference, private marker, and irrelevant degraded episode stay out. Ambient history still creates unnecessary inclusion.                          |
+| `currentness-pressure / baseline-with-unresolved-conflict`   | `none_observed` | `potential` | `reduce` | Both unresolved reports remain attributable and current while 24 irrelevant history facts are selected. Smaller context can remove noise without resolving the conflict.              |
+| `currentness-pressure / changed-preference`                  | `none_observed` | `potential` | `reduce` | Old preference is excluded despite reused provider-thread history; 24 irrelevant facts remain.                                                                                        |
+| `currentness-pressure / corrected-fact`                      | `none_observed` | `potential` | `reduce` | Corrected fact and current preference replace stale values in ordinary projection; ambient irrelevant inclusion remains.                                                              |
+| `currentness-pressure / explicit-history-reconstruction`     | `none_observed` | `potential` | `reduce` | Old preference and fact become relevant again as labeled history. Removing them would create omission harm for the explanation; removing the 24 ambient facts would not.              |
+| `provenance-pressure / mixed-provenance-baseline`            | `none_observed` | `potential` | `reduce` | Testimony, external claim, direct observation, delegates, and inferences remain distinct with transitive evidence roots; 12 irrelevant facts add noise.                               |
+| `provenance-pressure / corrected-user-testimony`             | `none_observed` | `potential` | `reduce` | Superseded testimony stays historical while current conflicting evidence retains provenance. The same 12 irrelevant facts remain selected.                                            |
+| `provenance-pressure / historical-provenance-reconstruction` | `none_observed` | `potential` | `reduce` | Historical user testimony is intentionally included with attribution. Provenance distinctions and correlated roots survive; irrelevant ambient facts remain unnecessary.              |
+| `degraded-context-pressure / available-detail-baseline`      | `none_observed` | `potential` | `reduce` | Requested detail is recoverable and relevant, private context is withheld, but one irrelevant permitted lab note is selected.                                                         |
+| `degraded-context-pressure / unavailable-after-restart`      | `none_observed` | `potential` | `reduce` | The unavailable detail becomes a truthful projection gap after restart; the private meaning remains undisclosed. The irrelevant lab note is still selected.                           |
+| `degraded-context-pressure / ordinary-after-second-restart`  | `none_observed` | `potential` | `reduce` | The persistent gap remains canonical but does not participate when irrelevant. The private context stays out; the unrelated lab note still participates.                              |
 
 No representative episode currently produces `material` omission,
 `material` stale/unmarked-degradation inclusion, or a `boundary_violation`. The test

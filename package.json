@@ -2,15 +2,12 @@
   "name": "@arhor/ember",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
-  "engines": {
-    "node": ">=26.8.1 <27"
-  },
   "bin": {
     "ember": "bin/ember.ts"
   },
+  "type": "module",
   "scripts": {
-    "check": "tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.mjs check",
+    "check": "npm run fmt:check && tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.mjs check",
     "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",
@@ -27,11 +24,17 @@
     "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node scripts/run-longitudinal-scenario.ts --provider codex",
     "eval:continuity:process-restart:live": "EMBER_RUN_LIVE_PROCESS_RESTART=1 node scripts/run-process-restart-scenario.ts",
     "eval:endogenous:live": "EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 node scripts/run-endogenous-selectivity-evaluation.ts --provider codex",
-    "eval:endogenous:restart:live": "EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 node scripts/run-endogenous-restart-scenario.ts"
+    "eval:endogenous:restart:live": "EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 node scripts/run-endogenous-restart-scenario.ts",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
     "@types/node": "26.4.0",
+    "oxfmt": "0.66.0",
     "tsd": "0.33.0",
     "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=26.8.1 <27"
   }
 }

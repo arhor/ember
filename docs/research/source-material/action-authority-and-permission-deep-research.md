@@ -41,13 +41,13 @@ Its symmetric partner is:
 
 ## Evidence vocabulary
 
-| Mark | Meaning in this report |
-|---|---|
-| **[E] Empirical** | Experiments, user studies, benchmarks, measured failures, or documented runtime behavior. |
-| **[C] Convergence** | Recurring implementation pressure independently visible in mature systems. |
-| **[J] Judgment** | Ember-specific semantic conclusion based on project goals, inherited constraints, scenarios, and evidence. |
-| **[H] Hypothesis** | Plausible but not adequately validated; suitable for later experiment. |
-| **[L] Lens** | A distinction from security, HCI, privacy, human factors, law, distributed systems, or adjacent fields used to sharpen reasoning without importing a formalism wholesale. |
+| Mark                | Meaning in this report                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[E] Empirical**   | Experiments, user studies, benchmarks, measured failures, or documented runtime behavior.                                                                                 |
+| **[C] Convergence** | Recurring implementation pressure independently visible in mature systems.                                                                                                |
+| **[J] Judgment**    | Ember-specific semantic conclusion based on project goals, inherited constraints, scenarios, and evidence.                                                                |
+| **[H] Hypothesis**  | Plausible but not adequately validated; suitable for later experiment.                                                                                                    |
+| **[L] Lens**        | A distinction from security, HCI, privacy, human factors, law, distributed systems, or adjacent fields used to sharpen reasoning without importing a formalism wholesale. |
 
 Some conclusions are identified separately as **security invariants** where permitting the opposite would allow a capable actor or untrusted input to manufacture or amplify authority.
 
@@ -165,13 +165,13 @@ A familiar action deserves re-evaluation when purpose, recipient, target, accoun
 
 The issue deliberately distinguishes several remembered states:
 
-| Remembered state | Legitimate consequence |
-|---|---|
-| "I was allowed once." | One historical grant. No standing mandate follows merely from persistence. |
-| "I was repeatedly allowed." | Evidence of familiarity and perhaps trust. Still not unlimited standing authority. |
-| "The user prefers I handle this automatically." | Evidence about desired interaction. Actual authority depends on what the preference clearly covers. |
-| "The user explicitly granted standing authority for this bounded responsibility." | Durable current authority can exist while provenance, scope, conditions, currentness, revocability, and circumstances still fit. |
-| "The user never objected." | Very weak authority evidence. Silence can reflect inattention, misunderstanding, habituation, lack of opportunity, or low stakes. |
+| Remembered state                                                                  | Legitimate consequence                                                                                                            |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| "I was allowed once."                                                             | One historical grant. No standing mandate follows merely from persistence.                                                        |
+| "I was repeatedly allowed."                                                       | Evidence of familiarity and perhaps trust. Still not unlimited standing authority.                                                |
+| "The user prefers I handle this automatically."                                   | Evidence about desired interaction. Actual authority depends on what the preference clearly covers.                               |
+| "The user explicitly granted standing authority for this bounded responsibility." | Durable current authority can exist while provenance, scope, conditions, currentness, revocability, and circumstances still fit.  |
+| "The user never objected."                                                        | Very weak authority evidence. Silence can reflect inattention, misunderstanding, habituation, lack of opportunity, or low stakes. |
 
 This matters because human permission behavior is not a perfect expression of stable consent. Bonné et al.'s six-week Android study reported high grant rates while participants still described a subset of grants as uncomfortable. Winterhalter et al.'s 2026 study shows that users often do not accurately remember which permissions applications possess.
 
@@ -193,13 +193,13 @@ A cognition-provider change follows the same pattern. Issue #3 says the model is
 
 Issue #7 explicitly rejects a binary reversible/irreversible distinction. Distributed-systems work on long-lived transactions provides a useful lens: compensation can offset an external effect without making history as though the effect never occurred.
 
-| Recoverability | Meaning for Ember |
-|---|---|
-| **Truly reversible** | Relevant prior state can be restored before meaningful external reliance or information escape, without material residue for affected parties. |
-| **Practically reversible** | Restoration is feasible, but logs, transient effects, time, effort, or observability remain. |
-| **Compensable but not reversible** | The original effect remains part of history but harm may be offset, as with refund, correction, or rescheduling. |
-| **Difficult to reverse** | Restoration is costly, uncertain, time-sensitive, or dependent on others. |
-| **Irreversible** | The material effect cannot meaningfully be undone, such as a disclosed secret or unrecoverable deletion. |
+| Recoverability                     | Meaning for Ember                                                                                                                              |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Truly reversible**               | Relevant prior state can be restored before meaningful external reliance or information escape, without material residue for affected parties. |
+| **Practically reversible**         | Restoration is feasible, but logs, transient effects, time, effort, or observability remain.                                                   |
+| **Compensable but not reversible** | The original effect remains part of history but harm may be offset, as with refund, correction, or rescheduling.                               |
+| **Difficult to reverse**           | Restoration is costly, uncertain, time-sensitive, or dependent on others.                                                                      |
+| **Irreversible**                   | The material effect cannot meaningfully be undone, such as a disclosed secret or unrecoverable deletion.                                       |
 
 > **[J] Reversibility can justify wider discretion inside an already-legitimate authority envelope because mistakes are less costly. It does not create authority.**
 
@@ -483,45 +483,45 @@ Low consequence and strong recoverability broaden discretion within genuine auth
 The portable evidence map contains the complete durable bibliography. The principal anchors behind this report are:
 
 - NIST least privilege and NIST SP 800-162 ABAC, as lenses for minimum authorization and circumstance-sensitive access decisions.
-- Norm Hardy, *The Confused Deputy (or why capabilities might have been invented)*, 1988, DOI `10.1145/54289.871709`.
-- Helen Nissenbaum, *Privacy as Contextual Integrity*, Washington Law Review 79(1), 2004.
-- John D. Lee and Katrina A. See, *Trust in Automation: Designing for Appropriate Reliance*, Human Factors 46(1), 2004, DOI `10.1518/hfes.46.1.50_30392`.
-- Raja Parasuraman and Victor Riley, *Humans and Automation: Use, Misuse, Disuse, Abuse*, Human Factors 39(2), 1997, DOI `10.1518/001872097778543886`.
-- Weicheng Cao et al., *A Large Scale Study of User Behavior, Expectations and Engagement with Android Permissions*, USENIX Security 2021.
-- Bram Bonné et al., *Exploring decision making with Android's runtime permission dialogs using in-context surveys*, SOUPS 2017.
-- Verena Winterhalter et al., *I don't know what I've all granted. Does it really matter?*, SOUPS 2026.
-- Bonnie Brinton Anderson et al., *From Warning to Wallpaper*, JMIS 33(3), 2016, DOI `10.1080/07421222.2016.1243947`.
-- Joshua Sunshine et al., *Crying Wolf: An Empirical Study of SSL Warning Effectiveness*, USENIX Security 2009.
-- Gloria Mark, Daniela Gudith, and Ulrich Klocke, *The Cost of Interrupted Work: More Speed and Stress*, CHI 2008, DOI `10.1145/1357054.1357072`.
-- Nathan Malkin, David Wagner, and Serge Egelman, *Runtime Permissions for Privacy in Proactive Intelligent Assistants*, SOUPS 2022.
-- Soheil Khodayari et al., *Indirect Prompt Injection in the Wild*, 2026, arXiv `2604.27202`.
-- Georgios Syros et al., *MUZZLE*, 2026, arXiv `2602.09222`.
-- Hector Garcia-Molina and Kenneth Salem, *Sagas*, SIGMOD 1987, DOI `10.1145/38713.38742`.
-- Eric Zeng and Franziska Roesner, *Understanding and Improving Security and Privacy in Multi-User Smart Homes*, USENIX Security 2019.
-- Amit Kumar Sikder et al., *KRATOS*, 2019, arXiv `1911.10186`.
-- Nandita Pattnaik, Shujun Li, and Jason R. C. Nurse, *Security and Privacy Perspectives of People Living in Shared Home Environments*, 2024, arXiv `2409.09363`.
+- Norm Hardy, _The Confused Deputy (or why capabilities might have been invented)_, 1988, DOI `10.1145/54289.871709`.
+- Helen Nissenbaum, _Privacy as Contextual Integrity_, Washington Law Review 79(1), 2004.
+- John D. Lee and Katrina A. See, _Trust in Automation: Designing for Appropriate Reliance_, Human Factors 46(1), 2004, DOI `10.1518/hfes.46.1.50_30392`.
+- Raja Parasuraman and Victor Riley, _Humans and Automation: Use, Misuse, Disuse, Abuse_, Human Factors 39(2), 1997, DOI `10.1518/001872097778543886`.
+- Weicheng Cao et al., _A Large Scale Study of User Behavior, Expectations and Engagement with Android Permissions_, USENIX Security 2021.
+- Bram Bonné et al., _Exploring decision making with Android's runtime permission dialogs using in-context surveys_, SOUPS 2017.
+- Verena Winterhalter et al., _I don't know what I've all granted. Does it really matter?_, SOUPS 2026.
+- Bonnie Brinton Anderson et al., _From Warning to Wallpaper_, JMIS 33(3), 2016, DOI `10.1080/07421222.2016.1243947`.
+- Joshua Sunshine et al., _Crying Wolf: An Empirical Study of SSL Warning Effectiveness_, USENIX Security 2009.
+- Gloria Mark, Daniela Gudith, and Ulrich Klocke, _The Cost of Interrupted Work: More Speed and Stress_, CHI 2008, DOI `10.1145/1357054.1357072`.
+- Nathan Malkin, David Wagner, and Serge Egelman, _Runtime Permissions for Privacy in Proactive Intelligent Assistants_, SOUPS 2022.
+- Soheil Khodayari et al., _Indirect Prompt Injection in the Wild_, 2026, arXiv `2604.27202`.
+- Georgios Syros et al., _MUZZLE_, 2026, arXiv `2602.09222`.
+- Hector Garcia-Molina and Kenneth Salem, _Sagas_, SIGMOD 1987, DOI `10.1145/38713.38742`.
+- Eric Zeng and Franziska Roesner, _Understanding and Improving Security and Privacy in Multi-User Smart Homes_, USENIX Security 2019.
+- Amit Kumar Sikder et al., _KRATOS_, 2019, arXiv `1911.10186`.
+- Nandita Pattnaik, Shujun Li, and Jason R. C. Nurse, _Security and Privacy Perspectives of People Living in Shared Home Environments_, 2024, arXiv `2409.09363`.
 - Current Codex, OpenClaw, and Hermes repository snapshots listed above.
 
 ### Evidence classifications retained from the original research
 
-| Finding | Classification | Qualification |
-|---|---|---|
-| Capability/credential possession is not mandate. | **Security invariant; L + C + J** | Supported by least privilege, confused deputy, inherited delegation semantics, and current runtime separation. |
-| Delegation must not amplify authority. | **Security invariant; L + J** | Strong structural consequence of confused-deputy reasoning plus issue #6. |
-| Retrieved external content cannot create authority. | **Security invariant; E + J** | Prompt-injection evidence makes external instruction laundering a concrete attack path. |
-| Access/knowledge and disclosure are distinct. | **Security/privacy invariant; L + J** | Contextual integrity plus inherited least-sufficient-context semantics. |
-| Unexpectedness predicts permission fit. | **E** | Cao et al.; population and mobile-platform context limit transfer. |
-| A recorded grant is imperfect evidence of comfortable, remembered consent. | **E + J** | Bonné et al. and Winterhalter et al.; platform-specific but directly relevant to remembered authority. |
-| Repeated confirmations lose attentional force. | **E** | Anderson et al. plus SSL-warning studies. |
-| Interruptions carry cognitive and affective cost. | **E** | Mark et al.; laboratory work, not agent-specific. |
-| Users may want proactive assistance, control, and fewer interruptions simultaneously. | **E, setting-specific** | Malkin et al.; small Wizard-of-Oz study. |
-| Trust should be calibrated toward appropriate reliance. | **L / research synthesis** | Lee & See; Parasuraman & Riley; not a permission model. |
-| Shared resources may require multi-principal reasoning. | **E + J** | Smart-home studies; domain-specific but semantically portable. |
-| Reversibility lowers harm without creating authority. | **L + J** | Sagas/compensation lens plus issue #6 rollback distinction. |
-| Mature runtimes use hard outer boundaries plus selective autonomy inside them. | **C** | Codex, OpenClaw, Hermes as of 2026-08-28. |
-| Surprise is an anomaly detector rather than authority source. | **H** | Empirically plausible but normatively incomplete. |
-| Inactivity weakens confidence in circumstance fit rather than automatically revoking durable authority. | **H** | Strongly derived from Ember currentness semantics; weak direct empirical support. |
-| Private preparation generally permits broader autonomy than outward execution. | **J** | Scenario-derived semantic conclusion; exact boundary remains experimentable. |
+| Finding                                                                                                 | Classification                        | Qualification                                                                                                  |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Capability/credential possession is not mandate.                                                        | **Security invariant; L + C + J**     | Supported by least privilege, confused deputy, inherited delegation semantics, and current runtime separation. |
+| Delegation must not amplify authority.                                                                  | **Security invariant; L + J**         | Strong structural consequence of confused-deputy reasoning plus issue #6.                                      |
+| Retrieved external content cannot create authority.                                                     | **Security invariant; E + J**         | Prompt-injection evidence makes external instruction laundering a concrete attack path.                        |
+| Access/knowledge and disclosure are distinct.                                                           | **Security/privacy invariant; L + J** | Contextual integrity plus inherited least-sufficient-context semantics.                                        |
+| Unexpectedness predicts permission fit.                                                                 | **E**                                 | Cao et al.; population and mobile-platform context limit transfer.                                             |
+| A recorded grant is imperfect evidence of comfortable, remembered consent.                              | **E + J**                             | Bonné et al. and Winterhalter et al.; platform-specific but directly relevant to remembered authority.         |
+| Repeated confirmations lose attentional force.                                                          | **E**                                 | Anderson et al. plus SSL-warning studies.                                                                      |
+| Interruptions carry cognitive and affective cost.                                                       | **E**                                 | Mark et al.; laboratory work, not agent-specific.                                                              |
+| Users may want proactive assistance, control, and fewer interruptions simultaneously.                   | **E, setting-specific**               | Malkin et al.; small Wizard-of-Oz study.                                                                       |
+| Trust should be calibrated toward appropriate reliance.                                                 | **L / research synthesis**            | Lee & See; Parasuraman & Riley; not a permission model.                                                        |
+| Shared resources may require multi-principal reasoning.                                                 | **E + J**                             | Smart-home studies; domain-specific but semantically portable.                                                 |
+| Reversibility lowers harm without creating authority.                                                   | **L + J**                             | Sagas/compensation lens plus issue #6 rollback distinction.                                                    |
+| Mature runtimes use hard outer boundaries plus selective autonomy inside them.                          | **C**                                 | Codex, OpenClaw, Hermes as of 2026-08-28.                                                                      |
+| Surprise is an anomaly detector rather than authority source.                                           | **H**                                 | Empirically plausible but normatively incomplete.                                                              |
+| Inactivity weakens confidence in circumstance fit rather than automatically revoking durable authority. | **H**                                 | Strongly derived from Ember currentness semantics; weak direct empirical support.                              |
+| Private preparation generally permits broader autonomy than outward execution.                          | **J**                                 | Scenario-derived semantic conclusion; exact boundary remains experimentable.                                   |
 
 ## Limitations and open empirical questions
 

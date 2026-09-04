@@ -96,7 +96,7 @@ Instead of growing Ember until it contains every specialist workflow, prefer bou
 - "This event is not important enough to interrupt the user."
 - "This should become durable memory."
 
-This project therefore treats *selection, continuity, and composition* as more important research areas than feature count.
+This project therefore treats _selection, continuity, and composition_ as more important research areas than feature count.
 
 ## Research questions
 

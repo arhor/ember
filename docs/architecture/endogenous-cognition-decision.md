@@ -140,7 +140,7 @@ silence scenarios without changing this evaluator contract.
 using the existing isolated Codex provider boundary.
 
 For compatibility with the one-shot provider contract it uses one fixed evaluator
-instruction as `input.text` and `Projection.current_input` *inside the adapter*.
+instruction as `input.text` and `Projection.current_input` _inside the adapter_.
 That text is invariant across opportunities and only asks the provider to choose
 `cognition`, `defer`, or `no_cognition` from projected state. It contains no scheduler
 topic, concern name, or scenario-specific answer.
@@ -174,11 +174,11 @@ or new durable concern class is introduced here.
 
 ## Definition-of-done mapping
 
-| Issue #74 requirement | Implemented evidence |
-| --- | --- |
-| Decision comes from bounded Ember state | Evaluator request contains `OpportunityProjection` only; mechanism metadata is excluded. |
-| Dormant/current concerns can influence decision | Same-trigger deterministic scenario changes from `no_cognition` to `cognition` when a live commitment enters projected state. |
-| Lack of worthwhile material terminates cleanly | `no_cognition` is a validated explicit outcome requiring no selected meaning. |
-| Decision is inspectable without canonicalising internal reasons | Records use revision/projected IDs/outcome/selected IDs and have no free-form reason field. |
-| Positive and negative scenarios exist | Deterministic CO-01/CO-02 controls cover quiet and current-concern states with identical mechanism input. |
-| Real-model evaluation is opt-in | `live-cognition-opportunity.ts` is gated by `EMBER_RUN_LIVE_ENDOGENOUS=1`; normal tests use injected evaluators. |
+| Issue #74 requirement                                           | Implemented evidence                                                                                                          |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Decision comes from bounded Ember state                         | Evaluator request contains `OpportunityProjection` only; mechanism metadata is excluded.                                      |
+| Dormant/current concerns can influence decision                 | Same-trigger deterministic scenario changes from `no_cognition` to `cognition` when a live commitment enters projected state. |
+| Lack of worthwhile material terminates cleanly                  | `no_cognition` is a validated explicit outcome requiring no selected meaning.                                                 |
+| Decision is inspectable without canonicalising internal reasons | Records use revision/projected IDs/outcome/selected IDs and have no free-form reason field.                                   |
+| Positive and negative scenarios exist                           | Deterministic CO-01/CO-02 controls cover quiet and current-concern states with identical mechanism input.                     |
+| Real-model evaluation is opt-in                                 | `live-cognition-opportunity.ts` is gated by `EMBER_RUN_LIVE_ENDOGENOUS=1`; normal tests use injected evaluators.              |

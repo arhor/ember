@@ -43,13 +43,13 @@ The ADR links below target the five accepted semantic decisions produced by issu
 #20. The scenario contract follows those decisions without depending on their
 representation.
 
-| ADR | Decision |
-|---|---|
-| [ADR-0001](decisions/0001-continuity-belongs-to-ember.md) | Continuity belongs to Ember, not an operational locus. |
-| [ADR-0002](decisions/0002-preserve-persistent-meaning.md) | Persistent meaning preserves provenance, scope, currentness, and lifecycle. |
-| [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md) | Cognition and delegation receive least sufficient permitted projections. |
-| [ADR-0004](decisions/0004-separate-capability-from-authority.md) | Capability and authority are independent, and authority cannot self-amplify. |
-| [ADR-0005](decisions/0005-distinguish-operational-continuity.md) | Operational continuity distinguishes work, occurrence, delivery, effects, and currentness. |
+| ADR                                                                      | Decision                                                                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [ADR-0001](decisions/0001-continuity-belongs-to-ember.md)                | Continuity belongs to Ember, not an operational locus.                                     |
+| [ADR-0002](decisions/0002-preserve-persistent-meaning.md)                | Persistent meaning preserves provenance, scope, currentness, and lifecycle.                |
+| [ADR-0003](decisions/0003-use-least-sufficient-permitted-projections.md) | Cognition and delegation receive least sufficient permitted projections.                   |
+| [ADR-0004](decisions/0004-separate-capability-from-authority.md)         | Capability and authority are independent, and authority cannot self-amplify.               |
+| [ADR-0005](decisions/0005-distinguish-operational-continuity.md)         | Operational continuity distinguishes work, occurrence, delivery, effects, and currentness. |
 
 Canonical research shorthands used below are [SYN](design-directions.md), [CONT](../research/continuity-and-identity.md), [MEM](../research/memory-and-remembering.md), [CTX](../research/context-selection-and-cognitive-framing.md), [DEL](../research/capabilities-and-delegation.md), [AUTH](../research/action-authority-and-permission.md), [AGY](../research/endogenous-agency-and-self-initiated-behavior.md), and [OPS](../research/operational-model-sessions-and-surfaces.md).
 
@@ -57,11 +57,11 @@ Canonical research shorthands used below are [SYN](design-directions.md), [CONT]
 
 The first executable continuity slice must pass this deliberately small three-fixture subset before broader runtime work is credited with preserving continuity:
 
-| Fixture | What it proves in the first slice |
-|---|---|
+| Fixture                   | What it proves in the first slice                                                                                                                                                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [AS-CONT-01](#as-cont-01) | The same recognised Ember survives a complete process restart with durable identity, relationship meaning, a sourced fact, and a live concern; context is reconstructed from durable meaning and present evidence; downtime is described truthfully. |
-| [AS-MEM-01](#as-mem-01) | A change survives as both governing current state and attributable history rather than becoming either stale behaviour or a rewritten past. |
-| [AS-MEM-04](#as-mem-04) | An unavailable remembered detail produces bounded uncertainty, not fabricated recall, false absence, or a false claim that the event never happened. |
+| [AS-MEM-01](#as-mem-01)   | A change survives as both governing current state and attributable history rather than becoming either stale behaviour or a rewritten past.                                                                                                          |
+| [AS-MEM-04](#as-mem-04)   | An unavailable remembered detail produces bounded uncertainty, not fabricated recall, false absence, or a false claim that the event never happened.                                                                                                 |
 
 Run these three as one longitudinal probe: establish identity and relationship meaning, one user-stated fact with provenance, preference A, and one unresolved Ember commitment or concern; supersede A with scoped preference B; make one non-governing remembered detail unavailable; terminate the complete Ember process; and restart without relying on transcript replay as the sole source of continuity. The resumed cognition must use B where applicable, retain A as history, recover the sourced fact and live concern, acknowledge the inactive interval, and describe the unavailable detail no more strongly than surviving evidence permits.
 
@@ -546,15 +546,15 @@ If an ADR resolves any of these more strongly, reconcile the decision and fixtur
 
 ## Coverage map
 
-| Required issue #21 cases | Stable fixtures |
-|---|---|
-| Continuity and recovery 1–5 | AS-CONT-01 through AS-CONT-05 |
-| Memory and currentness 6–10 | AS-MEM-01 through AS-MEM-05 |
-| Context and disclosure 11–14 | AS-CTX-01 through AS-CTX-04 |
-| Delegation and responsibility 15–19 | AS-DEL-01 through AS-DEL-05 |
-| Authority and initiative 20–24 | AS-AUTH-01 through AS-AUTH-05 |
-| Endogenous agency and attention 25–30 | AS-AGY-01 through AS-AGY-06 |
-| Operational occurrence, delivery, and concurrency 31–36 | AS-OPS-01 through AS-OPS-06 |
+| Required issue #21 cases                                | Stable fixtures               |
+| ------------------------------------------------------- | ----------------------------- |
+| Continuity and recovery 1–5                             | AS-CONT-01 through AS-CONT-05 |
+| Memory and currentness 6–10                             | AS-MEM-01 through AS-MEM-05   |
+| Context and disclosure 11–14                            | AS-CTX-01 through AS-CTX-04   |
+| Delegation and responsibility 15–19                     | AS-DEL-01 through AS-DEL-05   |
+| Authority and initiative 20–24                          | AS-AUTH-01 through AS-AUTH-05 |
+| Endogenous agency and attention 25–30                   | AS-AGY-01 through AS-AGY-06   |
+| Operational occurrence, delivery, and concurrency 31–36 | AS-OPS-01 through AS-OPS-06   |
 
 The one-to-one map is intentional: consolidation would make the catalogue shorter, but would also make it easier for an implementation to pass one semantic axis while silently dropping another.
 
@@ -564,6 +564,6 @@ Later issues may define focused subsets that add fixtures or overlap the origina
 issue #21 mapping. These subsets are traceability and evaluation oracles, not new
 one-to-one partitions of the catalogue.
 
-| Source | Focused subset |
-|---|---|
+| Source                              | Focused subset              |
+| ----------------------------------- | --------------------------- |
 | Specialist delegation for issue #58 | AS-DEL-00 through AS-DEL-08 |

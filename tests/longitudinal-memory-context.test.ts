@@ -13,23 +13,19 @@ test("longitudinal memory/context harness should generate stable history groups 
     const scenario = await loadLongitudinalScenario(SCENARIO);
 
     // When
-    const report = await runLongitudinalScenario(
-        scenario,
-        join(directory, "ember.json"),
-        async invocation => {
-            const reply = [
-                ...invocation.request.projection.meanings.map(item => item.content),
-                ...invocation.request.projection.gaps.map(item => item.gap_kind),
-            ].join(" | ");
+    const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
+        const reply = [
+            ...invocation.request.projection.meanings.map((item) => item.content),
+            ...invocation.request.projection.gaps.map((item) => item.gap_kind),
+        ].join(" | ");
 
-            return harnessOutput(invocation.cognitionBackend, {
-                contract_version: 1,
-                reply,
-                used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-                operational: { external_thread_id: `thread-${invocation.episodeId}` },
-            });
-        },
-    );
+        return harnessOutput(invocation.cognitionBackend, {
+            contract_version: 1,
+            reply,
+            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+            operational: { external_thread_id: `thread-${invocation.episodeId}` },
+        });
+    });
 
     // Then
     assert.equal(report.ember_assertions_passed, true);
@@ -53,9 +49,20 @@ test("longitudinal memory/context harness should generate stable history groups 
     assert.equal(changed.context_evaluation.inclusion_candidates.irrelevant_selected.length, 64);
     assert.deepEqual(changed.context_evaluation.inclusion_candidates.superseded_selected, ["preference_a"]);
     assert.deepEqual(changed.context_evaluation.degradation_signals.unavailable_selected, ["degraded_episode"]);
-    assert.deepEqual(changed.context_evaluation.degradation_signals.unavailable_with_projection_gap, ["degraded_episode"]);
-    assert.equal(changed.ember_assertions.find(item => item.assertion === "declared superseded meanings are superseded")?.passed, true);
-    assert.equal(changed.ember_assertions.find(item => item.assertion === "declared unavailable meanings have unavailable evidence")?.passed, true);
+    assert.deepEqual(changed.context_evaluation.degradation_signals.unavailable_with_projection_gap, [
+        "degraded_episode",
+    ]);
+    assert.equal(
+        changed.ember_assertions.find((item) => item.assertion === "declared superseded meanings are superseded")
+            ?.passed,
+        true,
+    );
+    assert.equal(
+        changed.ember_assertions.find(
+            (item) => item.assertion === "declared unavailable meanings have unavailable evidence",
+        )?.passed,
+        true,
+    );
 
     const ordinary = report.episodes[2]!;
     assert.deepEqual(ordinary.context_evaluation.inclusion_candidates.superseded_selected, []);
@@ -70,10 +77,8 @@ test("memory/context projection evidence should remain independent from empirica
     const scenario = await loadLongitudinalScenario(SCENARIO);
 
     // When
-    const report = await runLongitudinalScenario(
-        scenario,
-        join(directory, "ember.json"),
-        async invocation => harnessOutput(invocation.cognitionBackend, {
+    const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) =>
+        harnessOutput(invocation.cognitionBackend, {
             contract_version: 1,
             reply: "MODEL_DID_NOT_FOLLOW_THE_PROJECTED_CONTEXT",
             used_meaning_ids: [],
@@ -86,7 +91,9 @@ test("memory/context projection evidence should remain independent from empirica
     assert.equal(report.model_observations_passed, false);
     assert.equal(report.episodes[0]!.context_evaluation.inclusion_candidates.irrelevant_selected.length, 64);
     assert.deepEqual(report.episodes[1]!.context_evaluation.inclusion_candidates.superseded_selected, ["preference_a"]);
-    assert.deepEqual(report.episodes[1]!.context_evaluation.degradation_signals.unavailable_with_projection_gap, ["degraded_episode"]);
+    assert.deepEqual(report.episodes[1]!.context_evaluation.degradation_signals.unavailable_with_projection_gap, [
+        "degraded_episode",
+    ]);
 });
 
 function harnessOutput(backend: string, result: ProviderResult) {
