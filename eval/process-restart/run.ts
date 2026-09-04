@@ -3,8 +3,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { loadLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { runProcessRestartScenario } from "../eval/process-restart/harness.ts";
+import { loadLongitudinalScenario } from "../longitudinal/harness.ts";
+import { runProcessRestartScenario } from "./harness.ts";
 
 if (process.env.EMBER_RUN_LIVE_PROCESS_RESTART !== "1") {
     throw new Error("live process-restart execution is opt-in; set EMBER_RUN_LIVE_PROCESS_RESTART=1");
@@ -33,7 +33,7 @@ try {
 }
 
 function parseArguments(arguments_: string[]) {
-    let scenario = resolve("test-fixtures/longitudinal/process-restart-fresh-codex.json");
+    let scenario = resolve("eval/longitudinal/fixtures/process-restart-fresh-codex.json");
     let report: string | undefined;
     let timeoutSeconds = 180;
     const codexArguments: string[] = [];
@@ -54,7 +54,7 @@ function parseArguments(arguments_: string[]) {
             index += 1;
         } else
             throw new Error(
-                "usage: run-process-restart-scenario.ts [--scenario PATH] [--report NEW_PATH] [--timeout-seconds N] [--codex-arg VALUE]",
+                "usage: eval/process-restart/run.ts [--scenario PATH] [--report NEW_PATH] [--timeout-seconds N] [--codex-arg VALUE]",
             );
     }
     return { scenario, report, timeoutSeconds, codexArguments };
