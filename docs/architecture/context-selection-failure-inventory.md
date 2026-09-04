@@ -34,10 +34,10 @@ The governing sources remain:
 
 The executable evidence comes from the longitudinal harness and scenario corpus:
 
-- `test-fixtures/longitudinal/memory-context-pressure.json`;
-- `test-fixtures/longitudinal/currentness-pressure.json`;
-- `test-fixtures/longitudinal/provenance-pressure.json`;
-- `test-fixtures/longitudinal/degraded-context-pressure.json`;
+- `eval/longitudinal/fixtures/memory-context-pressure.json`;
+- `eval/longitudinal/fixtures/currentness-pressure.json`;
+- `eval/longitudinal/fixtures/provenance-pressure.json`;
+- `eval/longitudinal/fixtures/degraded-context-pressure.json`;
 - `eval/longitudinal/context-harm.ts` and its regression tests;
 - the current `src/core/projection.ts` selection implementation.
 

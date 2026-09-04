@@ -350,7 +350,7 @@ launch was attempted, non-effect is established at the boundary, and process-los
 recovery cannot later convert it into an in-flight ambiguity.
 
 Deterministic process coverage uses only a temporary controlled workspace and
-`test-fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
+`tests/fixtures/providers/scripted-codex-specialist.ts`. It proves a real child
 process can perform the bounded file change, while the durable record retains the
 Codex report as attributed evidence rather than accepting it automatically. Fake
 process coverage checks explicit cwd, prompt disclosure, environment filtering,

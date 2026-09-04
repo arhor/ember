@@ -7,12 +7,12 @@ import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { SpecialistEpisodeRecord } from "../src/delegation/codex-specialist.ts";
-import type { EpisodicRuntimeConfig, RuntimeObservation } from "../src/runtime/episodic-runtime.ts";
+import type { SpecialistEpisodeRecord } from "../../src/delegation/codex-specialist.ts";
+import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/runtime/episodic-runtime.ts";
 
-import { initialState } from "../src/core/model.ts";
-import { createSpecialistEpisode, inspectSpecialistEpisode } from "../src/delegation/codex-specialist.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
+import { initialState } from "../../src/core/model.ts";
+import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../src/delegation/codex-specialist.ts";
+import { StateStore } from "../../src/persistence/state-store.ts";
 import {
     EpisodicRecordStore,
     SystemdUserSupervisor,
@@ -21,9 +21,9 @@ import {
     specialistUnitName,
     startSpecialistEpisode,
     wakeUnitName,
-} from "../src/runtime/episodic-runtime.ts";
+} from "../../src/runtime/episodic-runtime.ts";
 
-const ROOT = resolve(import.meta.dirname, "..");
+const ROOT = resolve(import.meta.dirname, "../..");
 const PRINCIPAL = "live-runtime-smoke-user";
 const SCOPE = "smoke:episodic-runtime";
 const WAKE_TIMEOUT_MS = 90_000;

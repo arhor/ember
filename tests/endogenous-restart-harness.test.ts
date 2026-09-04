@@ -12,7 +12,7 @@ test("endogenous restart harness should preserve concern lifecycle and truthful 
     // Given
     const directory = await mkdtemp(join(tmpdir(), "ember-endogenous-restart-test-"));
     const scenarios = JSON.parse(
-        await readFile(resolve("test-fixtures/endogenous/restart-scenarios.json"), "utf8"),
+        await readFile(resolve("eval/endogenous-restart/fixtures/restart-scenarios.json"), "utf8"),
     ) as EndogenousRestartScenario[];
 
     // When
@@ -22,7 +22,7 @@ test("endogenous restart harness should preserve concern lifecycle and truthful 
             reports.push(
                 await runEndogenousRestartScenario(scenario, {
                     statePath: join(directory, `${scenario.id}.json`),
-                    workerPath: resolve("test-fixtures/providers/endogenous-restart-worker.ts"),
+                    workerPath: resolve("tests/fixtures/providers/endogenous-restart-worker.ts"),
                     cwd: resolve("."),
                     executionMode: "fixture",
                 }),
@@ -57,7 +57,7 @@ test("live-shaped restart path should require an actually observed ephemeral Cod
     // Given
     const directory = await mkdtemp(join(tmpdir(), "ember-endogenous-restart-provider-test-"));
     const scenarios = JSON.parse(
-        await readFile(resolve("test-fixtures/endogenous/restart-scenarios.json"), "utf8"),
+        await readFile(resolve("eval/endogenous-restart/fixtures/restart-scenarios.json"), "utf8"),
     ) as EndogenousRestartScenario[];
     const scenario = scenarios.find((item) => item.id === "live-concern-reactivates");
     assert.ok(scenario);
@@ -67,11 +67,11 @@ test("live-shaped restart path should require an actually observed ephemeral Cod
     try {
         report = await runEndogenousRestartScenario(scenario, {
             statePath: join(directory, "ember.json"),
-            workerPath: resolve("test-fixtures/providers/endogenous-restart-worker.ts"),
+            workerPath: resolve("tests/fixtures/providers/endogenous-restart-worker.ts"),
             cwd: resolve("."),
             executionMode: "live",
             codexCommand: process.execPath,
-            codexArguments: [resolve("test-fixtures/providers/endogenous-opportunity-codex.ts")],
+            codexArguments: [resolve("tests/fixtures/providers/endogenous-opportunity-codex.ts")],
             timeoutSeconds: 5,
         });
     } finally {

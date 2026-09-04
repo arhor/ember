@@ -8,9 +8,15 @@ import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longi
 import { buildCodexArguments } from "../src/providers/codex.ts";
 import { ROOT, tempDir } from "./support.ts";
 
-const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "restart-thread-continuity.json");
-const REPLACEMENT_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-control.json");
-const CROSS_PROVIDER_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "backend-replacement-cross-provider.json");
+const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "restart-thread-continuity.json");
+const REPLACEMENT_SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "backend-replacement-control.json");
+const CROSS_PROVIDER_SCENARIO = join(
+    ROOT,
+    "eval",
+    "longitudinal",
+    "fixtures",
+    "backend-replacement-cross-provider.json",
+);
 
 test("backend replacement scenario should preserve continuity when Cursor replaces Codex", async () => {
     // Given

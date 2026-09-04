@@ -6,17 +6,17 @@ import { readFile } from "node:fs/promises";
 import type {
     EvaluationBackend,
     SelectivityAttentionControl,
-} from "../src/agency/endogenous-selectivity-evaluation.ts";
+} from "../../src/agency/endogenous-selectivity-evaluation.ts";
 
-import { createCodexOpportunityEvaluator } from "../src/agency/codex-opportunity-evaluator.ts";
+import { createCodexOpportunityEvaluator } from "../../src/agency/codex-opportunity-evaluator.ts";
 import {
     parseSelectivityWorkload,
     runEndogenousSelectivityEvaluation,
     scriptedSelectivityEvaluator,
-} from "../src/agency/endogenous-selectivity-evaluation.ts";
+} from "../../src/agency/endogenous-selectivity-evaluation.ts";
 
 const cli = parseArguments(process.argv.slice(2));
-const raw = await readFile(new URL("../test-fixtures/endogenous/selectivity-workload.json", import.meta.url), "utf8");
+const raw = await readFile(new URL("./fixtures/selectivity-workload.json", import.meta.url), "utf8");
 const workload = parseSelectivityWorkload(JSON.parse(raw));
 
 let evaluator = scriptedSelectivityEvaluator;

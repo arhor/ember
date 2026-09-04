@@ -24,8 +24,9 @@ discovery_status: current
 **Graduation:** issue [#46](https://github.com/arhor/ember/issues/46) promoted the
 recommended Codex one-shot path into production, and issue
 [#90](https://github.com/arhor/ember/issues/90) later added a separate Cursor
-one-shot adapter after that boundary stabilized. The experiments remain historical
-design evidence; supported operation is documented in the
+one-shot adapter after that boundary stabilized. The original experiment implementation
+has since been removed from the active repository layout; this document preserves its
+historical design evidence. Supported operation is documented in the
 [minimal continuity runbook](minimal-continuity-runbook.md#supported-live-codex-cognition).
 
 Ember can perform real subscription-backed cognition through an already-authorized
@@ -159,14 +160,13 @@ default to a dedicated minimal directory rather than the Ember repository root.
 
 ## Real Ember-owned projection round-trip
 
-The final proof is implemented entirely under
-`experiments/external-agent-runtime/`:
-
-- `codex-provider.ts` is a provider-process adapter;
-- `provider-result.schema.json` constrains Codex's final response;
-- `live-codex-round-trip.ts` builds synthetic canonical state, runs one real
-  cognition, and reports sanitized assertions;
-- `probe.ts` records bounded lifecycle and termination observations.
+The final proof originally lived in a dedicated `external-agent-runtime` experiment
+directory. That spike contained a Codex provider-process adapter, output schema, live
+round-trip harness, and lifecycle probe. Those experiment-only files were removed after
+the boundary graduated. The supported Codex implementation now lives in
+`src/providers/codex.ts`, with deterministic coverage in
+`tests/codex-provider.test.ts` and the opt-in production smoke in
+`tests/live/codex-smoke.ts`.
 
 The round-trip used the actual Ember path:
 
@@ -285,30 +285,18 @@ agent --version
 agent status
 ```
 
-Run the deterministic experiment tests:
+The original experiment-only executables are no longer part of the active repository layout.
+Use the graduated production boundary for current regression and smoke coverage:
 
 ```bash
-node --test test/external-runtime-probe.test.ts
+node --test tests/codex-provider.test.ts tests/provider-timeout.test.ts
+npm run smoke:codex
 ```
 
-Run the live synthetic Ember projection proof from an authenticated host:
-
-```bash
-env -u OPENAI_API_KEY -u ANTHROPIC_API_KEY -u CURSOR_API_KEY \
-  node experiments/external-agent-runtime/live-codex-round-trip.ts
-```
-
-Run a generic lifecycle probe:
-
-```bash
-node experiments/external-agent-runtime/probe.ts \
-  --cwd /tmp --timeout-ms 30000 -- \
-  codex exec --ephemeral --skip-git-repo-check --sandbox read-only --json \
-  'Return exactly {"probe":"ember-runtime","answer":42}'
-```
-
-Add `--cancel-after-ms N` before `--` to request explicit cancellation. Omitting it
-leaves the ordinary deadline classified as `timeout` if reached.
+The deterministic tests cover the supported adapter and process-lifecycle contract without
+requiring subscription access. `npm run smoke:codex` is the opt-in authenticated live probe.
+Historical commands for the removed spike remain recoverable from issue #44 and repository
+history rather than being presented here as current executable instructions.
 
 ## Residual limitations
 

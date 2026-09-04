@@ -11,7 +11,7 @@ import { initialState, validateState } from "../src/core/model.ts";
 import { findEvidence, findMeaning, rememberDelegatedReport } from "../src/core/semantics.ts";
 import { ROOT, tempDir } from "./support.ts";
 
-const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "provenance-pressure.json");
+const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "provenance-pressure.json");
 
 test("longitudinal provenance pressure should preserve classes, derivation roots, correction, and history", async () => {
     // Given

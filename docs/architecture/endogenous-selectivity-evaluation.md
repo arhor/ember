@@ -37,7 +37,7 @@ The evaluation keeps five things separate:
 
 ## Reproducible workload
 
-`test-fixtures/endogenous/selectivity-workload.json` is the canonical workload. It
+`eval/endogenous/fixtures/selectivity-workload.json` is the canonical workload. It
 contains 25 topic-free opportunities across six cases:
 
 | Case                            | Opportunities | Intended pressure                                                                                          |

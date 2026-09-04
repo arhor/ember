@@ -46,7 +46,7 @@ revival, and case 10 requires genuine information gaps to remain explicit.
 
 ### Supersession, commitment, and gap
 
-`test-fixtures/longitudinal/semantic-supersession-gap.json` runs three cognition
+`eval/longitudinal/fixtures/semantic-supersession-gap.json` runs three cognition
 episodes:
 
 1. establish a current scoped preference, a user-stated fact, and a live Ember
@@ -67,7 +67,7 @@ projection or model reply.
 
 ### Provenance and epistemic restraint
 
-`test-fixtures/longitudinal/semantic-provenance-restraint.json` runs the same
+`eval/longitudinal/fixtures/semantic-provenance-restraint.json` runs the same
 provenance audit before and after a restart with fresh external Codex threads. The
 projection must preserve two deliberately different meanings:
 
@@ -108,7 +108,7 @@ It is not permission to erase a difficult fixture or weaken ADR semantics.
 
 ## Deterministic repository oracle
 
-`test/semantic-continuity-evaluation.test.ts` runs both scenarios against a small
+`tests/semantic-continuity-evaluation.test.ts` runs both scenarios against a small
 deterministic audit provider that derives the requested fields from the exact
 projection. This test does not claim model quality. It proves that the scenarios
 exercise the intended state/projection distinctions and that the harness can
@@ -129,16 +129,16 @@ traceable:
 
 ```sh
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
+  node eval/longitudinal/run.ts \
   --provider codex \
-  --scenario test-fixtures/longitudinal/semantic-supersession-gap.json \
+  --scenario eval/longitudinal/fixtures/semantic-supersession-gap.json \
   --timeout-seconds 180 \
   --report /tmp/ember-56-supersession-gap.json
 
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
+  node eval/longitudinal/run.ts \
   --provider codex \
-  --scenario test-fixtures/longitudinal/semantic-provenance-restraint.json \
+  --scenario eval/longitudinal/fixtures/semantic-provenance-restraint.json \
   --timeout-seconds 180 \
   --report /tmp/ember-56-provenance-restraint.json
 ```

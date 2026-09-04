@@ -13,12 +13,12 @@ discovery_status: current
 Issue [#57](https://github.com/arhor/ember/issues/57) tests the hypothesis that a
 cognition provider is a replaceable operational locus rather than Ember's
 identity or memory owner. The deterministic repository scenario
-`test-fixtures/longitudinal/backend-replacement-control.json` implements the first
+`eval/longitudinal/fixtures/backend-replacement-control.json` implements the first
 phase: the same bounded continuity vector is evaluated through two deliberately
 fresh Codex loci while canonical Ember state is unchanged.
 
 The repository also contains
-`test-fixtures/longitudinal/backend-replacement-cross-provider.json`, which routes
+`eval/longitudinal/fixtures/backend-replacement-cross-provider.json`, which routes
 the same vector through Codex and then the production Cursor backend. Its
 deterministic form proves routing, projection, state, lineage, and evidence
 invariants without requiring either login; live model behavior remains an
@@ -46,17 +46,17 @@ state, projection, routing, or freshness assertion.
 Deterministically, without login or network:
 
 ```sh
-node scripts/run-longitudinal-scenario.ts \
-  --scenario test-fixtures/longitudinal/backend-replacement-control.json
+node eval/longitudinal/run.ts \
+  --scenario eval/longitudinal/fixtures/backend-replacement-control.json
 ```
 
 Against live Codex, opt in explicitly:
 
 ```sh
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
+  node eval/longitudinal/run.ts \
   --provider codex \
-  --scenario test-fixtures/longitudinal/backend-replacement-control.json \
+  --scenario eval/longitudinal/fixtures/backend-replacement-control.json \
   --timeout-seconds 180
 ```
 
@@ -89,17 +89,17 @@ cross-provider phase from pending to proven.
 Run deterministic cross-provider evaluation with:
 
 ```sh
-node scripts/run-longitudinal-scenario.ts \
-  --scenario test-fixtures/longitudinal/backend-replacement-cross-provider.json
+node eval/longitudinal/run.ts \
+  --scenario eval/longitudinal/fixtures/backend-replacement-cross-provider.json
 ```
 
 Run both real adapters only with explicit opt-in and working runtime-owned logins:
 
 ```sh
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
+  node eval/longitudinal/run.ts \
   --provider codex-cursor \
-  --scenario test-fixtures/longitudinal/backend-replacement-cross-provider.json \
+  --scenario eval/longitudinal/fixtures/backend-replacement-cross-provider.json \
   --timeout-seconds 180
 ```
 

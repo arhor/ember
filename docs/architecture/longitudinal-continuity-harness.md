@@ -29,17 +29,17 @@ canonical validation or introduce a search/index representation.
 
 Two representative scenarios show the main uses:
 
-- `test-fixtures/longitudinal/restart-thread-continuity.json` establishes a
+- `eval/longitudinal/fixtures/restart-thread-continuity.json` establishes a
   relationship, sourced fact, preference, live Ember commitment, deliberately
   out-of-scope marker, and an episode with optional detail. Across three episodes
   it supersedes the preference, makes the detail unavailable, restarts Ember,
   and varies external provider threads.
-- `test-fixtures/longitudinal/memory-context-pressure.json` deterministically
+- `eval/longitudinal/fixtures/memory-context-pressure.json` deterministically
   generates a long same-scope fact history, then declares relevant, irrelevant,
   superseded, unavailable, and forbidden meanings while preference currentness and
   detail availability change. Its purpose is to prove that selection evidence can
   be captured under pressure, not to pre-decide the harm rubric that #70 owns.
-- `test-fixtures/longitudinal/provenance-pressure.json` mixes user testimony,
+- `eval/longitudinal/fixtures/provenance-pressure.json` mixes user testimony,
   external claims, direct Ember observation, delegated reports, and Ember inference.
   Delegated/inferred branches deliberately share evidence roots so repeated reports
   cannot masquerade as independent corroboration.
@@ -68,8 +68,8 @@ The memory/context fixture can use the same opt-in live provider layer:
 
 ```sh
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
-  --scenario test-fixtures/longitudinal/memory-context-pressure.json \
+  node eval/longitudinal/run.ts \
+  --scenario eval/longitudinal/fixtures/memory-context-pressure.json \
   --provider codex \
   --timeout-seconds 180
 ```

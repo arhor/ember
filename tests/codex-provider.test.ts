@@ -15,7 +15,7 @@ import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
-const SCRIPTED_CODEX = join(ROOT, "test-fixtures", "providers", "scripted-codex.ts");
+const SCRIPTED_CODEX = join(ROOT, "tests", "fixtures", "providers", "scripted-codex.ts");
 
 function requestFixture() {
     const { state } = populatedState();

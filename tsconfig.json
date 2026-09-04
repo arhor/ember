@@ -11,12 +11,6 @@
     "verbatimModuleSyntax": true,
     "types": ["node"]
   },
-  "include": [
-    "bin/**/*.ts",
-    "eval/**/*.ts",
-    "experiments/external-agent-runtime/**/*.ts",
-    "scripts/**/*.ts",
-    "src/**/*.ts"
-  ],
+  "include": ["bin/**/*.ts", "eval/**/*.ts", "scripts/**/*.ts", "src/**/*.ts", "tests/live/**/*.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test-d.ts"]
 }

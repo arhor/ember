@@ -20,7 +20,7 @@ not create new semantic authority. The governing sources remain ADR 0002, ADR 00
 scenarios in `docs/architecture/acceptance-scenarios.md`.
 
 The executable fixture is
-`test-fixtures/longitudinal/currentness-pressure.json`. Its deterministic regression
+`eval/longitudinal/fixtures/currentness-pressure.json`. Its deterministic regression
 coverage is `tests/longitudinal-currentness.test.ts` and it can be reproduced with:
 
 ```sh

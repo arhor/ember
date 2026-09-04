@@ -6,8 +6,8 @@ import { loadLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { runProcessRestartScenario } from "../eval/process-restart/harness.ts";
 import { CLI, ROOT, tempDir } from "./support.ts";
 
-const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "process-restart-fresh-codex.json");
-const CODEX_FIXTURE = join(ROOT, "test-fixtures", "providers", "codex-jsonl-fixture.ts");
+const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "process-restart-fresh-codex.json");
+const CODEX_FIXTURE = join(ROOT, "tests", "fixtures", "providers", "codex-jsonl-fixture.ts");
 
 test("process-restart harness should preserve Ember continuity while Codex threads stay fresh", async () => {
     // Given

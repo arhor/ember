@@ -16,7 +16,7 @@ external model conversation or an inferred account of cognition during downtime.
 
 ## Reproducible scenarios
 
-`test-fixtures/endogenous/restart-scenarios.json` defines four deterministic controls:
+`eval/endogenous-restart/fixtures/restart-scenarios.json` defines four deterministic controls:
 
 - a live commitment plus its current consequence reactivates after restart;
 - a fulfilled commitment remains historical and produces `no_cognition`;

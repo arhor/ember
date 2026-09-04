@@ -7,7 +7,7 @@ import type { ProviderResult } from "../src/providers/contract.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";
 
-const SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "memory-context-pressure.json");
+const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "memory-context-pressure.json");
 
 test("longitudinal memory/context harness should generate stable history groups and classify projection signals", async () => {
     // Given

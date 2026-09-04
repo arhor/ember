@@ -14,7 +14,7 @@ import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../s
 import { startRuntime } from "../src/runtime/runtime.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
-const SCRIPTED_CURSOR = join(ROOT, "test-fixtures", "providers", "scripted-cursor.ts");
+const SCRIPTED_CURSOR = join(ROOT, "tests", "fixtures", "providers", "scripted-cursor.ts");
 
 function requestFixture() {
     const { state } = populatedState();

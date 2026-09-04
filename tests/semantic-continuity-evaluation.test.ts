@@ -8,8 +8,8 @@ import type { ProjectedMeaning } from "../src/core/projection.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";
 
-const SUPERSESSION_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "semantic-supersession-gap.json");
-const PROVENANCE_SCENARIO = join(ROOT, "test-fixtures", "longitudinal", "semantic-provenance-restraint.json");
+const SUPERSESSION_SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "semantic-supersession-gap.json");
+const PROVENANCE_SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "semantic-provenance-restraint.json");
 
 const semanticAuditProvider: HarnessProvider = async (invocation) => {
     const projection = invocation.request.projection;

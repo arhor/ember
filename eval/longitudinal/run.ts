@@ -5,12 +5,12 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import type { HarnessProvider } from "../eval/longitudinal/harness.ts";
+import type { HarnessProvider } from "./harness.ts";
 
-import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { invokeCodexProvider } from "../src/providers/codex.ts";
-import { invokeCursorProvider } from "../src/providers/cursor.ts";
-import { codexArgumentEvidence } from "../src/providers/evidence.ts";
+import { invokeCodexProvider } from "../../src/providers/codex.ts";
+import { invokeCursorProvider } from "../../src/providers/cursor.ts";
+import { codexArgumentEvidence } from "../../src/providers/evidence.ts";
+import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));
 if (options.provider !== "scripted" && process.env.EMBER_RUN_LIVE_LONGITUDINAL !== "1") {
@@ -135,7 +135,7 @@ function readVersion(command: string, arguments_: string[]) {
 }
 
 function parseArguments(arguments_: string[]) {
-    let scenario = resolve("test-fixtures/longitudinal/restart-thread-continuity.json");
+    let scenario = resolve("eval/longitudinal/fixtures/restart-thread-continuity.json");
     let provider: "scripted" | "codex" | "cursor" | "codex-cursor" = "scripted";
     let report: string | undefined;
     let timeoutSeconds = 180;
@@ -167,7 +167,7 @@ function parseArguments(arguments_: string[]) {
             index += 1;
         } else
             throw new Error(
-                "usage: run-longitudinal-scenario.ts [--scenario PATH] [--provider scripted|codex|cursor|codex-cursor] [--report NEW_PATH] [--timeout-seconds N] [--codex-arg VALUE] [--cursor-arg VALUE]",
+                "usage: eval/longitudinal/run.ts [--scenario PATH] [--provider scripted|codex|cursor|codex-cursor] [--report NEW_PATH] [--timeout-seconds N] [--codex-arg VALUE] [--cursor-arg VALUE]",
             );
     }
     return { scenario, provider, report, timeoutSeconds, codexArguments, cursorArguments };
