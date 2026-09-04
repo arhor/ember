@@ -294,23 +294,39 @@ async function runMeasured(prepared: PreparedWorkload, sampleMs: number): Promis
     });
     if (child.pid === undefined) throw new Error("failed to observe measured Ember process pid");
     const rootPid = child.pid;
+    const stdoutStream = child.stdout;
+    const stderrStream = child.stderr;
+    const stdinStream = child.stdin;
+    if (stdoutStream === null || stderrStream === null || (prepared.stdin !== null && stdinStream === null)) {
+        child.kill();
+        throw new Error("measured Ember process did not expose the configured stdio pipes");
+    }
+
     let stdout = "";
     let stderr = "";
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk) => {
+    stdoutStream.setEncoding("utf8");
+    stderrStream.setEncoding("utf8");
+    stdoutStream.on("data", (chunk) => {
         stdout += chunk;
     });
-    child.stderr.on("data", (chunk) => {
+    stderrStream.on("data", (chunk) => {
         stderr += chunk;
     });
-    if (prepared.stdin !== null) child.stdin.end(prepared.stdin);
+    if (prepared.stdin !== null) {
+        if (stdinStream === null) throw new Error("measured Ember process stdin pipe disappeared");
+        stdinStream.end(prepared.stdin);
+    }
 
     let closed = false;
     let code: number | null = null;
     let signal: NodeJS.Signals | null = null;
-    const terminal = new Promise<void>((resolve_, reject) => {
-        child.once("error", reject);
+    let spawnError: Error | null = null;
+    const terminal = new Promise<void>((resolve_) => {
+        child.once("error", (error) => {
+            spawnError = error;
+            closed = true;
+            resolve_();
+        });
         child.once("close", (code_, signal_) => {
             code = code_;
             signal = signal_;
@@ -346,6 +362,7 @@ async function runMeasured(prepared: PreparedWorkload, sampleMs: number): Promis
     }
     await terminal;
 
+    if (spawnError !== null) throw spawnError;
     const elapsedMs = performance.now() - start;
     if (code !== 0) {
         throw new Error(
