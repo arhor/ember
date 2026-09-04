@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildProjection } from "../src/projection.ts";
+
 import { describeMeaning, evidenceId, fixtureState, type MeaningId, meaningId, type Projection } from "../src/model.ts";
+import { buildProjection } from "../src/projection.ts";
 import { supersedePreference } from "../src/semantics.ts";
 import { parsePersistentState } from "../src/validation.ts";
 

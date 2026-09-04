@@ -1,7 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
+import test from "node:test";
+
 import { buildCodexPrompt, invokeCodexExec } from "../experiments/external-agent-runtime/codex-provider.ts";
 import { runProbe } from "../experiments/external-agent-runtime/probe.ts";
 import { buildProjection } from "../src/core/projection.ts";

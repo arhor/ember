@@ -1,8 +1,9 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { buildProjection } from "./projection.ts";
-import { startRuntime } from "../runtime/runtime.ts";
+import test from "node:test";
+
 import { populatedState, PRINCIPAL, SCOPE } from "../../tests/support.ts";
+import { startRuntime } from "../runtime/runtime.ts";
+import { buildProjection } from "./projection.ts";
 
 test("ordinary projection should not resolve unused explain IDs", () => {
     // Given

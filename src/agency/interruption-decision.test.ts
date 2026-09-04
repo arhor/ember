@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { initialState, type MeaningId } from "../core/model.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
 import {

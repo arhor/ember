@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const server = new Server({ name: "ember-runtime-evaluation", version: "0.0.0" }, { capabilities: { tools: {} } });

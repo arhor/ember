@@ -1,13 +1,13 @@
 #!/usr/bin/env node
+import type { EndogenousRestartScenarioKind } from "../../eval/endogenous-restart/harness.ts";
+import { createCodexOpportunityEvaluator } from "../../src/agency/codex-opportunity-evaluator.ts";
+import { runCognitionOpportunity, type CognitionOpportunityEvaluator } from "../../src/agency/cognition-opportunity.ts";
 import { initialState, type EmberState, type MeaningId } from "../../src/core/model.ts";
 import { inspectionView } from "../../src/core/projection.ts";
 import { rememberFact, supersede, transitionCommitment, undertake } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
-import { createCodexOpportunityEvaluator } from "../../src/agency/codex-opportunity-evaluator.ts";
-import { runCognitionOpportunity, type CognitionOpportunityEvaluator } from "../../src/agency/cognition-opportunity.ts";
 import { invokeCodexProvider } from "../../src/providers/codex.ts";
-import type { EndogenousRestartScenarioKind } from "../../eval/endogenous-restart/harness.ts";
+import { startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 
 const [
     phase,

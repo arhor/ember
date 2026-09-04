@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
+
 import { cognitionId, fixtureState, meaningId, type PersistentState } from "../src/model.ts";
 import { buildProjection } from "../src/projection.ts";
 import { invokeProvider } from "../src/provider.ts";

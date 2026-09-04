@@ -1,4 +1,5 @@
 import type { Writable } from "node:stream";
+
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import {
     cloneState,
@@ -15,10 +16,10 @@ import {
     validateState,
 } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
-import { CONTRACT_VERSION, type ProviderInvoker, type ProviderRequest } from "../providers/contract.ts";
-import { invokeProvider, providerLabel } from "../providers/process.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import type { StateStore } from "../persistence/state-store.ts";
+import { CONTRACT_VERSION, type ProviderInvoker, type ProviderRequest } from "../providers/contract.ts";
+import { invokeProvider, providerLabel } from "../providers/process.ts";
 
 export function startRuntime(
     state: EmberState,

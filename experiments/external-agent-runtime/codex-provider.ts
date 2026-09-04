@@ -3,6 +3,7 @@
 import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+
 import { validateProviderResult, type ProviderRequest, type ProviderResult } from "../../src/providers/contract.ts";
 
 const MAX_BYTES = 1024 * 1024;

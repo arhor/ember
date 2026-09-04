@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+
 import { createCodexOpportunityEvaluator } from "../src/agency/codex-opportunity-evaluator.ts";
 import {
     parseSelectivityWorkload,

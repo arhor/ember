@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import test from "node:test";
+
 import { runEndogenousRestartScenario, type EndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
 
 test("endogenous restart harness should preserve concern lifecycle and truthful gaps across complete process restart", async () => {

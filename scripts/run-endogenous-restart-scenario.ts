@@ -2,6 +2,7 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
+
 import { runEndogenousRestartScenario, type EndogenousRestartScenario } from "../eval/endogenous-restart/harness.ts";
 
 if (process.env.EMBER_RUN_LIVE_ENDOGENOUS_RESTART !== "1") {

@@ -46,3 +46,8 @@ node scripts/docs-discovery.mjs check
 ```
 
 See `docs/documentation-discovery.md` for the governing contract and `docs/documentation-discovery-guide.md` for authoring and command guidance. Do not duplicate the documentation tree here.
+
+## Linting and formatting
+
+- After making code changes, run `npx oxlint --fix`, then run `npx oxfmt`
+- Before finishing, run `npx oxlint --deny-warnings --format=agent`

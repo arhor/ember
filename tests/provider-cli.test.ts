@@ -1,17 +1,17 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough, Writable } from "node:stream";
+import test from "node:test";
+
 import { parseArgs } from "../src/cli/main.ts";
-import { ProviderError } from "../src/core/errors.ts";
-import { cloneState, initialState, validateState } from "../src/core/model.ts";
+import { cloneState, validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
+import { StateStore } from "../src/persistence/state-store.ts";
 import { validateProviderResult } from "../src/providers/contract.ts";
 import { invokeProvider } from "../src/providers/process.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import {
     captureError,
     command,

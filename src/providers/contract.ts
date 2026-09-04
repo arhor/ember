@@ -1,5 +1,5 @@
 import { ProviderError } from "../core/errors.ts";
-import type { CognitionId, MeaningId } from "../core/model.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, type CognitionId, type MeaningId } from "../core/model.ts";
 import type { Projection } from "../core/projection.ts";
 
 export const CONTRACT_VERSION = 1;
@@ -70,7 +70,7 @@ export function validateProviderResult(
             typeof operational.external_thread_id !== "string" ||
             !operational.external_thread_id.trim() ||
             operational.external_thread_id.length > 512 ||
-            /[\u0000-\u001f\u007f]/.test(operational.external_thread_id)
+            ASCII_CONTROL_CHARACTER_PATTERN.test(operational.external_thread_id)
         )
             throw new ProviderError("provider external thread ID is invalid");
     }

@@ -1,10 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
+import test from "node:test";
+
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { initialState } from "../src/core/model.ts";
-import { attachDetail, rememberEpisode, withholdDetail } from "../src/core/semantics.ts";
 import type { ProjectedMeaning } from "../src/core/projection.ts";
+import { attachDetail, rememberEpisode, withholdDetail } from "../src/core/semantics.ts";
 import type { ProviderResult } from "../src/providers/contract.ts";
 import { ROOT, tempDir } from "./support.ts";
 

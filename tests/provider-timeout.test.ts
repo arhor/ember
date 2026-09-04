@@ -1,5 +1,6 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+
 import { parseArgs } from "../src/cli/main.ts";
 import { ProviderError, ValidationError } from "../src/core/errors.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../src/providers/contract.ts";

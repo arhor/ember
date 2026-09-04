@@ -1,4 +1,5 @@
 import { expectAssignable, expectNotAssignable } from "tsd";
+
 import type { EmberState } from "./model.ts";
 import type { Projection } from "./projection.ts";
 

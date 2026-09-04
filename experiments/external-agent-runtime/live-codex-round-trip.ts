@@ -5,10 +5,11 @@ import { mkdtemp, mkdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { initialState } from "../../src/core/model.ts";
-import { runCognition, startRuntime } from "../../src/runtime/runtime.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
+import { runCognition, startRuntime } from "../../src/runtime/runtime.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "relationship:user-1";

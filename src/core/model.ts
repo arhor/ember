@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+
 import { ValidationError } from "./errors.ts";
 
 declare const idBrand: unique symbol;
@@ -338,6 +339,10 @@ export const SCHEMA_VERSION = 1;
 export const TOPOLOGY = "single-principal-single-writer" as const;
 export const CONSTITUTIVE_TEXT =
     "Ember owns this lineage across temporary cognition loci and must not fabricate experience during inactive intervals.";
+
+export const ASCII_CONTROL_CHARACTER_CLASS = String.raw`[\u0000-\u001f\u007f]`;
+export const ASCII_CONTROL_CHARACTER_PATTERN = new RegExp(ASCII_CONTROL_CHARACTER_CLASS);
+export const ASCII_CONTROL_CHARACTERS_PATTERN = new RegExp(`${ASCII_CONTROL_CHARACTER_CLASS}+`, "g");
 
 const TOP_FIELDS = ["evidence", "lineage", "meanings", "operations", "revision", "runtime_contract", "schema_version"];
 const KINDS = new Set(["relationship", "fact", "preference", "commitment", "episode_meta"]);
@@ -847,7 +852,7 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(typeof c.external_provider_thread_id === "string" &&
                 c.external_provider_thread_id.length > 0 &&
                 c.external_provider_thread_id.length <= 512 &&
-                !/[\u0000-\u001f\u007f]/.test(
+                !ASCII_CONTROL_CHARACTER_PATTERN.test(
                     c.external_provider_thread_id,
                 ), `${p}.external_provider_thread_id is invalid`);
         }

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { cloneState, initialState, type EmberState, type MeaningId } from "../core/model.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
 import { startRuntime } from "../runtime/runtime.ts";

@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
+
 import { initialState, validateState, type EmberState, type RuntimeId } from "../../src/core/model.ts";
-import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 import { inspectionView, type Projection } from "../../src/core/projection.ts";
-import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 import {
     attachDetail,
     rememberDelegatedReport,
@@ -18,6 +17,8 @@ import {
     withholdDetail,
 } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
+import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
+import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 
 type ThreadControl = { mode: "fresh" } | { mode: "reuse"; episode: string };
 

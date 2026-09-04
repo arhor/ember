@@ -1,5 +1,6 @@
-import { spawn } from "node:child_process";
 import { Buffer } from "node:buffer";
+import { spawn } from "node:child_process";
+
 import type { MeaningId, ProviderRequest, ProviderResult } from "./model.ts";
 
 export const MAX_STDOUT_BYTES = 1024 * 1024;

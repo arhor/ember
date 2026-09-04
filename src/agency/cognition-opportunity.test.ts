@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { ValidationError } from "../core/errors.ts";
 import { cloneState, initialState, type MeaningId } from "../core/model.ts";
 import { undertake } from "../core/semantics.ts";

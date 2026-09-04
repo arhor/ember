@@ -1,7 +1,9 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import test from "node:test";
+
+import { tempDir } from "../../tests/support.ts";
 import { initialState } from "../core/model.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import {
@@ -11,7 +13,6 @@ import {
     type SpecialistReport,
 } from "./codex-specialist.ts";
 import { inspectSpecialistReintegration, reintegrateSpecialistResult } from "./specialist-reintegration.ts";
-import { tempDir } from "../../tests/support.ts";
 
 const CURRENT_CHECKPOINT = {
     ember_revision: 0,

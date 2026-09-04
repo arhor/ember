@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { copyFile, readdir, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
+import { copyFile, readdir, readFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
 
 const parsed = parseArgs(process.argv.slice(2));

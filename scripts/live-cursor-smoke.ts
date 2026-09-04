@@ -4,11 +4,12 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { invokeCursorProvider } from "../src/providers/cursor.ts";
+
 import { initialState } from "../src/core/model.ts";
-import { runCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
+import { invokeCursorProvider } from "../src/providers/cursor.ts";
+import { runCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 
 const principal = "user-1";
 const scope = `relationship:${principal}`;

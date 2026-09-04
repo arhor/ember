@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 
+import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
-import { codexArgumentEvidence } from "../src/providers/evidence.ts";
-import { invokeCodexProvider } from "../src/providers/codex.ts";
-import { invokeCursorProvider } from "../src/providers/cursor.ts";
+
 import {
     loadLongitudinalScenario,
     runLongitudinalScenario,
     type HarnessProvider,
 } from "../eval/longitudinal/harness.ts";
+import { invokeCodexProvider } from "../src/providers/codex.ts";
+import { invokeCursorProvider } from "../src/providers/cursor.ts";
+import { codexArgumentEvidence } from "../src/providers/evidence.ts";
 
 const options = parseArguments(process.argv.slice(2));
 if (options.provider !== "scripted" && process.env.EMBER_RUN_LIVE_LONGITUDINAL !== "1") {

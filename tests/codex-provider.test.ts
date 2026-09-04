@@ -1,17 +1,18 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
-import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
+import { describe, test } from "node:test";
+
 import { parseArgs } from "../src/cli/main.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
-import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
+import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
+import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const SCRIPTED_CODEX = join(ROOT, "test-fixtures", "providers", "scripted-codex.ts");

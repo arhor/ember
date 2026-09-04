@@ -60,7 +60,6 @@ const JUDGMENT_RANK: Record<HarmJudgment, number> = {
 
 export function evaluateContextHarm(context: ContextEvaluationInput): ContextHarmEvaluation {
     const relevant = new Set(context.declared.relevant);
-    const superseded = new Set(context.declared.superseded);
     const unavailable = new Set(context.declared.unavailable);
     const unavailableWithGap = new Set(context.degradation_signals.unavailable_with_projection_gap);
     const forbiddenSelected = new Set(context.inclusion_candidates.forbidden_selected);

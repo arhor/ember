@@ -1,5 +1,6 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+
 import { codexArgumentEvidence } from "./evidence.ts";
 
 test("Codex argument evidence should preserve model selection when explicit configuration is supplied", () => {

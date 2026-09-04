@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+
+import { ASCII_CONTROL_CHARACTERS_PATTERN } from "../../src/core/model.ts";
 import type { LongitudinalScenario } from "../longitudinal/harness.ts";
 
 type ScenarioAction = LongitudinalScenario["setup"][number];
@@ -419,10 +421,7 @@ async function runCli(
 
 function requireSuccessfulProcess(label: string, result: ChildResult) {
     if (result.code === 0) return;
-    const diagnostic = result.stderr
-        .replace(/[\u0000-\u001f\u007f]+/g, " ")
-        .trim()
-        .slice(0, 4096);
+    const diagnostic = result.stderr.replace(ASCII_CONTROL_CHARACTERS_PATTERN, " ").trim().slice(0, 4096);
     throw new Error(
         `${label} exited with ${result.signal ? `signal ${result.signal}` : `status ${result.code}`}${diagnostic ? `: ${diagnostic}` : ""}`,
     );

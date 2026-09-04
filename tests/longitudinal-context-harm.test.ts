@@ -1,6 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
+import test from "node:test";
+
 import { evaluateContextHarm, type ContextEvaluationInput } from "../eval/longitudinal/context-harm.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import type { ProviderResult } from "../src/providers/contract.ts";

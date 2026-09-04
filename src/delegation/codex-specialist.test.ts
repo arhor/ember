@@ -1,10 +1,12 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFileSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
+import test from "node:test";
+
+import { ROOT, tempDir } from "../../tests/support.ts";
 import {
     buildSpecialistPrompt,
     createSpecialistEpisode,
@@ -15,7 +17,6 @@ import {
     runCodexSpecialist,
     setSpecialistDisposition,
 } from "./codex-specialist.ts";
-import { ROOT, tempDir } from "../../tests/support.ts";
 
 const FIXTURE = join(ROOT, "test-fixtures/providers/scripted-codex-specialist.ts");
 

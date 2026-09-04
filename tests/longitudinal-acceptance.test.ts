@@ -1,7 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import test from "node:test";
+
 import { command, PRINCIPAL, PROVIDER, RELATIONSHIP_SCOPE, SCOPE, tempDir } from "./support.ts";
 
 test("minimal continuity slice should preserve truthful meaning when complete process restarts", async () => {

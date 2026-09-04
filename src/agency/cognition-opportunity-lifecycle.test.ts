@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import test from "node:test";
+
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { cloneState, initialState, newId, validateState } from "../core/model.ts";
 import { inspectionView } from "../core/projection.ts";

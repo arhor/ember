@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { ValidationError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
 import { undertake } from "../core/semantics.ts";
-import { startRuntime } from "../runtime/runtime.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
-import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
+import { startRuntime } from "../runtime/runtime.ts";
 import { CODEX_OPPORTUNITY_INSTRUCTION, createCodexOpportunityEvaluator } from "./codex-opportunity-evaluator.ts";
+import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";

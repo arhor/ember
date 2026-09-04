@@ -2,8 +2,8 @@
 /** Deterministic, zero-dependency documentation discovery for Ember. */
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { cwd, stderr, stdout } from "node:process";
 import { dirname, extname, join, posix, relative, resolve, sep } from "node:path";
+import { cwd, stderr, stdout } from "node:process";
 import { fileURLToPath } from "node:url";
 
 export const ALLOWED_ROLES = new Set([

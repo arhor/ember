@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { spawn } from "node:child_process";
 
 const deno = process.argv[2];
 if (!deno) throw new Error("usage: deno-lsp-probe.mjs <deno-executable>");

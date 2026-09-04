@@ -1,12 +1,9 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
+
 import { EmberError, ValidationError } from "../core/errors.ts";
-import { invokeCodexProvider } from "../providers/codex.ts";
-import { invokeCursorProvider } from "../providers/cursor.ts";
 import { cloneState, initialState, nowUtc, type EmberState, type MeaningId, type RuntimeId } from "../core/model.ts";
 import { explanationView, inspectionView } from "../core/projection.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
-import { startRuntime, stopRuntime, runCognition } from "../runtime/runtime.ts";
 import {
     attachDetail,
     rememberEpisode,
@@ -18,6 +15,10 @@ import {
     withholdDetail,
 } from "../core/semantics.ts";
 import { StateStore } from "../persistence/state-store.ts";
+import { invokeCodexProvider } from "../providers/codex.ts";
+import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
+import { invokeCursorProvider } from "../providers/cursor.ts";
+import { startRuntime, stopRuntime, runCognition } from "../runtime/runtime.ts";
 
 interface CliIo {
     input: Readable;

@@ -3,7 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Readable, Writable } from "node:stream";
+
 import { ProviderError, type ProviderErrorOptions, type ProviderOutcome } from "../core/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
@@ -392,7 +394,12 @@ function parseCursorResult(output: string): { result: ProviderResult; externalSe
 }
 
 function validExternalId(value: unknown): value is string {
-    return typeof value === "string" && value.length > 0 && value.length <= 512 && !/[\u0000-\u001f\u007f]/.test(value);
+    return (
+        typeof value === "string" &&
+        value.length > 0 &&
+        value.length <= 512 &&
+        !ASCII_CONTROL_CHARACTER_PATTERN.test(value)
+    );
 }
 function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -400,7 +407,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function decodeDiagnostic(bytes: Uint8Array): string {
     return new TextDecoder("utf-8", { fatal: false })
         .decode(bytes)
-        .replace(/[\u0000-\u001f\u007f]+/g, " ")
+        .replace(ASCII_CONTROL_CHARACTERS_PATTERN, " ")
         .trim()
         .slice(0, 4096);
 }

@@ -1,7 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import test from "node:test";
+
 import {
     ConcurrentWriter,
     DurabilityUncertain,
@@ -10,11 +11,9 @@ import {
     StoreUnavailable,
     ValidationError,
 } from "../src/core/errors.ts";
-import { cloneState, initialState, newId, validateState } from "../src/core/model.ts";
-import { startRuntime } from "../src/runtime/runtime.ts";
-import { userEvidence } from "../src/core/semantics.ts";
+import { cloneState, initialState, validateState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { captureError, populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
+import { captureError, populatedState, PRINCIPAL, tempDir } from "./support.ts";
 
 test("state validator should accept state when schema and invariants are complete", () => {
     // Given

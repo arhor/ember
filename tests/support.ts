@@ -1,7 +1,8 @@
+import { spawn } from "node:child_process";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawn } from "node:child_process";
+
 import { initialState } from "../src/core/model.ts";
 import {
     attachDetail,

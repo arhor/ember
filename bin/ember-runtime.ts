@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { readFile } from "node:fs/promises";
+
+import type { SpecialistEpisodeSpec } from "../src/delegation/codex-specialist.ts";
 import {
     SystemdUserSupervisor,
     inspectEpisodicRuntime,
@@ -12,7 +14,6 @@ import {
     startSpecialistEpisode,
     type EpisodicRuntimeConfig,
 } from "../src/runtime/episodic-runtime.ts";
-import type { SpecialistEpisodeSpec } from "../src/delegation/codex-specialist.ts";
 
 const controller = new AbortController();
 const cancel = () => controller.abort();

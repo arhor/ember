@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { createSpecialistEpisode } from "../delegation/codex-specialist.ts";
-import { initialState } from "../core/model.ts";
-import { StateStore } from "../persistence/state-store.ts";
+import test from "node:test";
+
 import { ROOT, PRINCIPAL, SCOPE, tempDir } from "../../tests/support.ts";
+import { initialState } from "../core/model.ts";
+import { createSpecialistEpisode } from "../delegation/codex-specialist.ts";
+import { StateStore } from "../persistence/state-store.ts";
 import {
     EpisodicRecordStore,
     SystemdUserSupervisor,
