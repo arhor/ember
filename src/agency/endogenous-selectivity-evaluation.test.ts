@@ -19,7 +19,7 @@ const SCRIPTED_BACKEND = {
 
 async function workload() {
     const raw = await readFile(
-        new URL("../../test-fixtures/endogenous/selectivity-workload.json", import.meta.url),
+        new URL("../../eval/endogenous/fixtures/selectivity-workload.json", import.meta.url),
         "utf8",
     );
     return parseSelectivityWorkload(JSON.parse(raw));
