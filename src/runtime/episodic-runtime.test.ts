@@ -58,20 +58,23 @@ test("schedule wake should persist intent before creating one-shot systemd activ
   const configPath = join(root, "runtime.json");
   const { calls, runner } = capturingRunner();
 
-  const intent = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+  const intent = await scheduleWake(config, configPath, "2026-09-04T10:00:00.250Z", {
     now: () => "2026-09-03T20:00:00Z",
     runner,
   });
 
-  const persisted = JSON.parse(await readFile(join(config.records_directory, "wakes", intent.wake_id, "intent.json"), "utf8"));
+  const persisted = JSON.parse(
+    await readFile(join(config.records_directory, "wakes", intent.wake_id, "intent.json"), "utf8"),
+  );
   assert.equal(persisted.wake_id, intent.wake_id);
   assert.equal(persisted.mechanism, "external_timing");
+  assert.equal(persisted.due_at, intent.due_at);
   assert.equal(calls.length, 1);
   assert.equal(calls[0]!.command, config.systemd_run_command);
-  assert.ok(calls[0]!.args.includes(`--on-calendar=${intent.due_at}`));
+  assert.ok(calls[0]!.args.includes("--on-calendar=2026-09-04 10:00:01 UTC"));
   assert.ok(calls[0]!.args.includes("--property=Type=exec"));
   assert.ok(calls[0]!.args.includes("--property=Restart=no"));
-  assert.ok(!calls[0]!.args.some(arg => arg.includes("Persistent")));
+  assert.ok(!calls[0]!.args.some((arg) => arg.includes("Persistent")));
   assert.deepEqual(calls[0]!.args.slice(-7), [
     config.node_path,
     config.runtime_entrypoint,
@@ -81,6 +84,20 @@ test("schedule wake should persist intent before creating one-shot systemd activ
     "--wake-id",
     intent.wake_id,
   ]);
+});
+
+test("systemd timer projection should preserve an exact-second UTC due time", async () => {
+  const root = await tempDir();
+  const config = runtimeConfig(root);
+  const configPath = join(root, "runtime.json");
+  const { calls, runner } = capturingRunner();
+
+  await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    now: () => "2026-09-03T20:00:00Z",
+    runner,
+  });
+
+  assert.ok(calls[0]!.args.includes("--on-calendar=2026-09-04 10:00:00 UTC"));
 });
 
 test("schedule wake should dispatch an already-due one-shot without creating a timer in the past", async () => {
@@ -95,7 +112,7 @@ test("schedule wake should dispatch an already-due one-shot without creating a t
   });
 
   assert.equal(calls.length, 1);
-  assert.ok(!calls[0]!.args.some(arg => arg.startsWith("--on-calendar=")));
+  assert.ok(!calls[0]!.args.some((arg) => arg.startsWith("--on-calendar=")));
   assert.equal(calls[0]!.args.at(-1), intent.wake_id);
 });
 
@@ -158,9 +175,9 @@ test("reconciliation should re-arm only future wakes that have not begun dispatc
   assert.deepEqual(result.repairedWakes, [pending.wake_id]);
   assert.deepEqual(result.startedDueWakes, []);
   assert.deepEqual(result.ambiguousWakes, [ambiguous.wake_id]);
-  const wakeStarts = recovery.calls.filter(call => call.command === config.systemd_run_command);
+  const wakeStarts = recovery.calls.filter((call) => call.command === config.systemd_run_command);
   assert.equal(wakeStarts.length, 1);
-  assert.ok(wakeStarts[0]!.args.some(arg => arg.startsWith("--on-calendar=")));
+  assert.ok(wakeStarts[0]!.args.includes("--on-calendar=2026-09-04 10:00:00 UTC"));
   assert.equal(wakeStarts[0]!.args.at(-1), pending.wake_id);
 });
 
@@ -182,9 +199,9 @@ test("reconciliation should dispatch one due pending wake now instead of replayi
 
   assert.deepEqual(result.startedDueWakes, [due.wake_id]);
   assert.deepEqual(result.repairedWakes, []);
-  const start = recovery.calls.find(call => call.command === config.systemd_run_command)!;
+  const start = recovery.calls.find((call) => call.command === config.systemd_run_command)!;
   assert.ok(start);
-  assert.ok(!start.args.some(arg => arg.startsWith("--on-calendar=")));
+  assert.ok(!start.args.some((arg) => arg.startsWith("--on-calendar=")));
   assert.equal(start.args.at(-1), due.wake_id);
 });
 
@@ -229,7 +246,9 @@ test("specialist launch should persist the spec and disable blind process restar
 
   await startSpecialistEpisode(config, configPath, spec, { runner });
 
-  const persisted = JSON.parse(await readFile(join(config.records_directory, "specialists", spec.episode_id, "spec.json"), "utf8"));
+  const persisted = JSON.parse(
+    await readFile(join(config.records_directory, "specialists", spec.episode_id, "spec.json"), "utf8"),
+  );
   assert.equal(persisted.episode_id, spec.episode_id);
   assert.equal(calls.length, 1);
   const args = calls[0]!.args;
@@ -237,7 +256,9 @@ test("specialist launch should persist the spec and disable blind process restar
   assert.ok(args.includes("--property=KillMode=mixed"));
   assert.ok(args.includes(`--property=TimeoutStopSec=${config.stop_timeout_seconds}s`));
   assert.equal(args.at(-1), spec.episode_id);
-  assert.ok(await new EpisodicRecordStore(config.records_directory).specialistObservation(spec.episode_id, "launch_accepted"));
+  assert.ok(
+    await new EpisodicRecordStore(config.records_directory).specialistObservation(spec.episode_id, "launch_accepted"),
+  );
 });
 
 test("status should join durable runtime outcomes with systemd observation", async () => {
