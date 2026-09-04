@@ -60,6 +60,8 @@ Across the 1,500 ms canonical idle observation:
 
 This is the most important steady-state result. systemd owns future activation while Ember continuity remains durable on disk, so there is no resident Node heap to optimize between episodes. A future architecture change that introduces a resident Ember process must compare against this zero-residency baseline rather than against the active-process figures below.
 
+The systemd user manager is shared host infrastructure. This evaluation does not try to allocate the manager's shared RSS/CPU or small per-unit bookkeeping to Ember; the idle claim is specifically **zero resident Ember Node-process cost**, not zero host bookkeeping of any kind.
+
 ## Active-process measurements
 
 RSS values below are Linux `VmRSS`. Ranges are min to max across five retained samples; values in parentheses are the corresponding KiB medians retained in raw evidence.
@@ -91,7 +93,7 @@ RSS values below are Linux `VmRSS`. Ranges are min to max across five retained s
 - External fixture CPU: **70 ms** median, or **4.83%** average CPU.
 - Maximum simultaneous measured processes: **2** in every retained sample.
 
-The three Ember root RSS medians cluster within 1 MiB. On this host there is no evidence that the episodic wake or specialist wrapper introduces a materially different Node memory class from ordinary foreground cognition. The dominant architectural distinction is instead between zero-cost idle residency and a roughly 99 to 100 MiB short-lived Ember process while work is active.
+The three Ember root RSS medians cluster within 1 MiB. On this host there is no evidence that the episodic wake or specialist wrapper introduces a materially different Node memory class from ordinary foreground cognition. The dominant architectural distinction is instead between zero Ember Node-process residency while idle and a roughly 99 to 100 MiB short-lived Ember process while work is active.
 
 ## What the external numbers do and do not mean
 
@@ -140,7 +142,7 @@ npm ci
 npm run eval:runtime-resource
 ```
 
-The dedicated `Runtime resource evaluation` workflow records host identity, validates that the evidence file parses as JSON, and uploads the raw JSON output. The harness is evaluation-only under `eval/runtime-resource/`; it is not imported by production runtime code and introduces no production dependency.
+The on-demand `Runtime resource evaluation` workflow records host identity, validates that the evidence file parses as JSON, and uploads the raw JSON output. The harness is evaluation-only under `eval/runtime-resource/`; it is not imported by production runtime code and introduces no production dependency.
 
 For a narrower local probe:
 
@@ -155,7 +157,7 @@ npm run eval:runtime-resource -- \
 
 ## Baseline conclusion and handoff to #84
 
-The implemented episodic topology meets the key constrained-host objective more strongly than a low-memory daemon would: **Ember itself has no resident Node process while idle**. On the canonical x86_64 hosted runner, a short-lived active Ember root peaks around 99 to 100 MiB RSS, while the fixture-backed two-process tree peaks around 169 to 170 MiB. The latter is not a Codex estimate and can double-count shared physical pages because it sums process RSS.
+The implemented episodic topology keeps **no Ember Node process resident while idle**. On the canonical x86_64 hosted runner, a short-lived active Ember root peaks around 99 to 100 MiB RSS, while the fixture-backed two-process tree peaks around 169 to 170 MiB. The latter is not a Codex estimate and can double-count shared physical pages because it sums process RSS.
 
 Issue #84 should run the same harness on Raspberry Pi-class ARM hardware, preserving the idle observation, active workload definitions, sampling interval, warm-up/repeat policy, and root-versus-descendant attribution wherever practical. Hardware/model-specific deviations should be recorded rather than silently changing the workload.
 
