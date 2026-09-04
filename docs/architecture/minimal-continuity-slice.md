@@ -854,7 +854,7 @@ is explicit without transpilation or a repository-wide `type` switch:
 bin/ember.mjs
 src/ember/*.mjs
 test/*.test.mjs
-test-fixtures/providers/*.mjs
+tests/fixtures/providers/*.ts
 package.json
 ```
 

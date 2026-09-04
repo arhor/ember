@@ -73,7 +73,7 @@ node bin/ember.ts run \
   --principal user-1 \
   --scope project:ember/docs \
   --provider-command "$(command -v node)" \
-  --provider-arg test-fixtures/providers/scripted-provider.ts \
+  --provider-arg tests/fixtures/providers/scripted-provider.ts \
   --provider-timeout-seconds 2
 ```
 
@@ -91,7 +91,7 @@ run=(node bin/ember.ts run
   --principal user-1
   --scope project:ember/docs
   --provider-command "$provider_path"
-  --provider-arg test-fixtures/providers/scripted-provider.ts
+  --provider-arg tests/fixtures/providers/scripted-provider.ts
   --provider-timeout-seconds 2)
 
 node bin/ember.ts init \
