@@ -63,20 +63,11 @@ jobs:
               .split('"test-fixtures", "providers"').join('"tests", "fixtures", "providers"')
               .split("test-fixtures/providers/").join("tests/fixtures/providers/");
             if (file === "tests/provider-cli.test.ts") {
+              const before = "    const automaticDiscoveryRoot = join(ROOT, \"tests\");\n    // When\n    const providerIsInside = PROVIDER === automaticDiscoveryRoot || PROVIDER.startsWith(`${automaticDiscoveryRoot}/`);\n    // Then\n    assert.equal(providerIsInside, false);";
+              const after = "    const automaticDiscoveryPattern = join(ROOT, \"tests\", \"*.test.ts\");\n    // When\n    const providerIsDiscovered = matchesGlob(PROVIDER, automaticDiscoveryPattern);\n    // Then\n    assert.equal(providerIsDiscovered, false);";
               updated = updated
                 .replace('import { join } from "node:path";', 'import { join, matchesGlob } from "node:path";')
-                .replace(
-`    const automaticDiscoveryRoot = join(ROOT, "tests");
-    // When
-    const providerIsInside = PROVIDER === automaticDiscoveryRoot || PROVIDER.startsWith(\`${automaticDiscoveryRoot}/\`);
-    // Then
-    assert.equal(providerIsInside, false);`,
-`    const automaticDiscoveryPattern = join(ROOT, "tests", "*.test.ts");
-    // When
-    const providerIsDiscovered = matchesGlob(PROVIDER, automaticDiscoveryPattern);
-    // Then
-    assert.equal(providerIsDiscovered, false);`,
-                );
+                .replace(before, after);
             }
             if (updated !== original) await writeFile(file, updated, "utf8");
           }
