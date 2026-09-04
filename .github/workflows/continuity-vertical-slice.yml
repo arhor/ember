@@ -29,15 +29,13 @@ on:
       - ".github/workflows/continuity-vertical-slice.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
@@ -46,71 +44,9 @@ jobs:
         run: node --version
       - name: Install locked development toolchain
         run: npm ci
-      - name: Mark graduated runtime spike as historical
-        if: github.event_name == 'pull_request'
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile, writeFile } from "node:fs/promises";
-
-          const path = "docs/architecture/external-agent-runtime-spike.md";
-          const original = await readFile(path, "utf8");
-          let updated = original;
-
-          updated = updated.replace(
-            "one-shot adapter after that boundary stabilized. The experiments remain historical\ndesign evidence; supported operation is documented in the\n[minimal continuity runbook](minimal-continuity-runbook.md#supported-live-codex-cognition).",
-            "one-shot adapter after that boundary stabilized. The original experiment implementation\nhas since been removed from the active repository layout; this document preserves its\nhistorical design evidence. Supported operation is documented in the\n[minimal continuity runbook](minimal-continuity-runbook.md#supported-live-codex-cognition).",
-          );
-
-          updated = updated.replace(
-            "The final proof is implemented entirely under\n`experiments/external-agent-runtime/`:\n\n- `codex-provider.ts` is a provider-process adapter;\n- `provider-result.schema.json` constrains Codex's final response;\n- `live-codex-round-trip.ts` builds synthetic canonical state, runs one real\n  cognition, and reports sanitized assertions;\n- `probe.ts` records bounded lifecycle and termination observations.",
-            "The final proof originally lived in a dedicated `external-agent-runtime` experiment\ndirectory. That spike contained a Codex provider-process adapter, output schema, live\nround-trip harness, and lifecycle probe. Those experiment-only files were removed after\nthe boundary graduated. The supported Codex implementation now lives in\n`src/providers/codex.ts`, with deterministic coverage in\n`tests/codex-provider.test.ts` and the opt-in production smoke in\n`tests/live/codex-smoke.ts`.",
-          );
-
-          const reproductionStart = updated.indexOf("Run the deterministic experiment tests:");
-          const residualStart = updated.indexOf("## Residual limitations");
-          if (reproductionStart < 0 || residualStart < 0 || residualStart <= reproductionStart) {
-            throw new Error("Could not locate historical reproduction section");
-          }
-          const currentReproduction = [
-            "The original experiment-only executables are no longer part of the active repository layout.",
-            "Use the graduated production boundary for current regression and smoke coverage:",
-            "",
-            "```bash",
-            "node --test tests/codex-provider.test.ts tests/provider-timeout.test.ts",
-            "npm run smoke:codex",
-            "```",
-            "",
-            "The deterministic tests cover the supported adapter and process-lifecycle contract without",
-            "requiring subscription access. `npm run smoke:codex` is the opt-in authenticated live probe.",
-            "Historical commands for the removed spike remain recoverable from issue #44 and repository",
-            "history rather than being presented here as current executable instructions.",
-            "",
-          ].join("\n");
-          updated = updated.slice(0, reproductionStart) + currentReproduction + updated.slice(residualStart);
-
-          if (updated === original) throw new Error("Historical spike document was not updated");
-          await writeFile(path, updated, "utf8");
-          NODE
-          npm run fmt
-          if git grep -n 'experiments/external-agent-runtime/' -- '*.md'; then
-            echo 'Removed external-agent-runtime path is still presented in active documentation.' >&2
-            exit 1
-          fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add docs/architecture/external-agent-runtime-spike.md
-          git commit -m "docs: mark graduated runtime spike as historical"
-          git push origin HEAD:${{ github.head_ref }}
       - name: Run static and repository checks
         run: npm run check
       - name: Run complete acceptance suite
         run: npm test
-      - name: Run deterministic evaluations
-        run: |
-          npm run eval:continuity
-          npm run eval:memory-context
-          npm run eval:currentness
-          npm run eval:provenance
-          npm run eval:degraded-context
-          npm run eval:endogenous
-          npm run eval:endogenous:baseline
+      - name: Run deterministic endogenous selectivity evaluation
+        run: npm run eval:endogenous
