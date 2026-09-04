@@ -154,7 +154,7 @@ opportunity boundary applies its stricter outcome validation.
 The optional subscription-backed probe remains:
 
 ```bash
-EMBER_RUN_LIVE_ENDOGENOUS=1 node scripts/live-cognition-opportunity.ts
+EMBER_RUN_LIVE_ENDOGENOUS=1 node tests/live/cognition-opportunity.ts
 ```
 
 Normal tests do not require subscription access. The live probe is empirical model
@@ -181,4 +181,4 @@ or new durable concern class is introduced here.
 | Lack of worthwhile material terminates cleanly                  | `no_cognition` is a validated explicit outcome requiring no selected meaning.                                                 |
 | Decision is inspectable without canonicalising internal reasons | Records use revision/projected IDs/outcome/selected IDs and have no free-form reason field.                                   |
 | Positive and negative scenarios exist                           | Deterministic CO-01/CO-02 controls cover quiet and current-concern states with identical mechanism input.                     |
-| Real-model evaluation is opt-in                                 | `live-cognition-opportunity.ts` is gated by `EMBER_RUN_LIVE_ENDOGENOUS=1`; normal tests use injected evaluators.              |
+| Real-model evaluation is opt-in                                 | `tests/live/cognition-opportunity.ts` is gated by `EMBER_RUN_LIVE_ENDOGENOUS=1`; normal tests use injected evaluators.         |
