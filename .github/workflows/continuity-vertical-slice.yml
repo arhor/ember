@@ -46,50 +46,51 @@ jobs:
         run: node --version
       - name: Install locked development toolchain
         run: npm ci
-      - name: Normalize moved documentation paths
+      - name: Normalize moved test fixture paths
         if: github.event_name == 'pull_request'
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync } from "node:child_process";
           import { readFile, writeFile } from "node:fs/promises";
 
-          const replacements = [
-            ["test-fixtures/providers/*.mjs", "tests/fixtures/providers/*.ts"],
-            ["test-fixtures/endogenous/restart-scenarios.json", "eval/endogenous-restart/fixtures/restart-scenarios.json"],
-            ["test-fixtures/endogenous/selectivity-workload.json", "eval/endogenous/fixtures/selectivity-workload.json"],
-            ["test-fixtures/longitudinal/", "eval/longitudinal/fixtures/"],
-            ["test-fixtures/providers/", "tests/fixtures/providers/"],
-            ["scripts/run-longitudinal-scenario.ts", "eval/longitudinal/run.ts"],
-            ["scripts/run-process-restart-scenario.ts", "eval/process-restart/run.ts"],
-            ["scripts/run-endogenous-restart-scenario.ts", "eval/endogenous-restart/run.ts"],
-            ["scripts/run-endogenous-selectivity-evaluation.ts", "eval/endogenous/run.ts"],
-            ["scripts/live-codex-smoke.ts", "tests/live/codex-smoke.ts"],
-            ["scripts/live-cursor-smoke.ts", "tests/live/cursor-smoke.ts"],
-            ["scripts/live-codex-specialist.ts", "tests/live/codex-specialist.ts"],
-            ["scripts/live-cognition-opportunity.ts", "tests/live/cognition-opportunity.ts"],
-            ["scripts/live-episodic-runtime-smoke.ts", "tests/live/episodic-runtime-smoke.ts"],
-          ];
-          const files = execFileSync("git", ["ls-files", "*.md"], { encoding: "utf8" })
+          const files = execFileSync("git", ["ls-files", "*.ts"], { encoding: "utf8" })
             .trim()
             .split("\n")
             .filter(Boolean);
           for (const file of files) {
             const original = await readFile(file, "utf8");
-            let updated = original;
-            for (const [before, after] of replacements) updated = updated.split(before).join(after);
+            let updated = original
+              .split('"test-fixtures", "providers"').join('"tests", "fixtures", "providers"')
+              .split("test-fixtures/providers/").join("tests/fixtures/providers/");
+            if (file === "tests/provider-cli.test.ts") {
+              updated = updated
+                .replace('import { join } from "node:path";', 'import { join, matchesGlob } from "node:path";')
+                .replace(
+`    const automaticDiscoveryRoot = join(ROOT, "tests");
+    // When
+    const providerIsInside = PROVIDER === automaticDiscoveryRoot || PROVIDER.startsWith(\`${automaticDiscoveryRoot}/\`);
+    // Then
+    assert.equal(providerIsInside, false);`,
+`    const automaticDiscoveryPattern = join(ROOT, "tests", "*.test.ts");
+    // When
+    const providerIsDiscovered = matchesGlob(PROVIDER, automaticDiscoveryPattern);
+    // Then
+    assert.equal(providerIsDiscovered, false);`,
+                );
+            }
             if (updated !== original) await writeFile(file, updated, "utf8");
           }
           NODE
           npm run fmt
-          if git grep -nE 'test-fixtures/|scripts/(run-longitudinal-scenario|run-process-restart-scenario|run-endogenous-restart-scenario|run-endogenous-selectivity-evaluation|live-codex-smoke|live-cursor-smoke|live-codex-specialist|live-cognition-opportunity|live-episodic-runtime-smoke)\.ts' -- '*.md'; then
-            echo 'Stale moved documentation path remains.' >&2
+          if git grep -n 'test-fixtures/' -- '*.ts'; then
+            echo 'Stale test-fixtures path remains in TypeScript.' >&2
             exit 1
           fi
           if ! git diff --quiet; then
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add -- '*.md'
-            git commit -m "docs: update moved evaluation paths"
+            git add -- '*.ts'
+            git commit -m "test: update moved provider fixture paths"
             git push origin HEAD:${{ github.head_ref }}
           fi
       - name: Run static and repository checks
