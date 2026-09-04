@@ -25,7 +25,7 @@ ADR 0003, `docs/research/memory-and-remembering.md`,
 AS-CONT-04, AS-MEM-04, and AS-MEM-05.
 
 The executable fixture is
-`test-fixtures/longitudinal/degraded-context-pressure.json`. Its deterministic
+`eval/longitudinal/fixtures/degraded-context-pressure.json`. Its deterministic
 coverage is `tests/longitudinal-degraded-context.test.ts` and it can be reproduced
 with:
 
@@ -38,8 +38,8 @@ The same fixture can be layered onto the opt-in live longitudinal provider runne
 
 ```sh
 EMBER_RUN_LIVE_LONGITUDINAL=1 \
-  node scripts/run-longitudinal-scenario.ts \
-  --scenario test-fixtures/longitudinal/degraded-context-pressure.json \
+  node eval/longitudinal/run.ts \
+  --scenario eval/longitudinal/fixtures/degraded-context-pressure.json \
   --provider codex \
   --timeout-seconds 180
 ```
