@@ -44,9 +44,8 @@ jobs:
         run: node --version
       - name: Install locked development toolchain
         run: npm ci
-      - name: Run static and repository checks
-        run: npm run check
-      - name: Run complete acceptance suite
-        run: npm test
-      - name: Run deterministic endogenous selectivity evaluation
-        run: npm run eval:endogenous
+      - name: Show recovery formatter diff
+        run: |
+          npx oxfmt docs/architecture/episodic-runtime-recovery-validation.md docs/architecture/episodic-runtime-runbook.md tests/episodic-runtime-recovery.test.ts
+          git diff -- docs/architecture/episodic-runtime-recovery-validation.md docs/architecture/episodic-runtime-runbook.md tests/episodic-runtime-recovery.test.ts
+          exit 1
