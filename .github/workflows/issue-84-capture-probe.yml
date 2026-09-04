@@ -1,0 +1,44 @@
+name: Issue 84 capture probe
+
+on:
+  pull_request:
+    paths:
+      - "eval/runtime-resource/**"
+      - ".github/workflows/issue-84-capture-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - run: npm ci
+      - name: Run short fixture-only capture
+        run: |
+          npm run --silent eval:runtime-resource:constrained -- \
+            --fixture-only \
+            --fixture-repeat 1 \
+            --warmup 0 \
+            --idle-ms 100 \
+            --sample-ms 10 \
+            --hold-ms 100 \
+            > constrained-host-probe.json
+      - name: Validate capture structure
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const value = JSON.parse(fs.readFileSync("constrained-host-probe.json", "utf8"));
+          if (value.constrained_host_resource_evaluation_version !== 1) throw new Error("unexpected wrapper version");
+          if (!value.environment || !value.host_pressure || !value.fixture) throw new Error("capture sections are missing");
+          if (value.external !== null) throw new Error("fixture-only capture unexpectedly ran an external provider");
+          if (value.fixture.idle.max_ember_runtime_process_count !== 0) throw new Error("fixture idle residency is not zero");
+          for (const name of ["foreground_cognition", "endogenous_wake", "specialist_delegation"]) {
+            if (!value.fixture.workloads[name]) throw new Error(`missing fixture workload: ${name}`);
+          }
+          NODE
