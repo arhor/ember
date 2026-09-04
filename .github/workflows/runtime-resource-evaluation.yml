@@ -1,0 +1,35 @@
+name: Runtime resource evaluation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - name: Install locked development toolchain
+        run: npm ci
+      - name: Record host identity
+        run: |
+          uname -a
+          node --version
+          lscpu
+          free -m
+      - name: Measure episodic runtime resource usage
+        run: npm run --silent eval:runtime-resource | tee runtime-resource-evidence.json
+      - name: Validate raw resource evidence
+        run: node -e 'JSON.parse(require("node:fs").readFileSync("runtime-resource-evidence.json", "utf8"))'
+      - name: Upload raw resource evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-resource-evidence
+          path: runtime-resource-evidence.json
+          if-no-files-found: error
