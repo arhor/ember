@@ -40,6 +40,12 @@ Current architecture material:
   `ember-runtime` configuration, systemd user-manager installation, one-shot wake and
   specialist operations, status, shutdown/recovery behavior, deterministic tests, and
   separate Linux/systemd smoke procedure used by issues #82 and #83.
+- [Interaction Surface Boundary](interaction-surface-boundary.md) defines issue #85's
+  transport-independent principal provenance, stable occurrence correlation, and
+  delivery intent/attempt lifecycle without making surface metadata canonical memory.
+- [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete
+  Bot API 10.3 long-polling adapter, private-chat mapping, secret-safe configuration,
+  systemd user service, delivery evidence mapping, and manual end-to-end smoke path.
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
@@ -88,7 +94,7 @@ Current architecture material:
   negative evidence, and implementation-neutral requirements for issue #72.
 - [Longitudinal Provenance Evaluation](longitudinal-provenance-evaluation.md)
   records issue #68 evidence for testimony, inference, external claims, direct
-  observation, delegated reports, derivation roots, and historical provenance.
+  observation, delegated reports, derivation roots, correction, and history.
 - [Process-Restart Continuity Evaluation](process-restart-continuity-evaluation.md)
   records issue #55's true CLI-process restart probe, fresh-Codex-thread oracle,
   sanitized report contract, and live evidence procedure.
