@@ -4,29 +4,17 @@ import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import type {
-    CognitionId,
-    CognitionStatus,
-    EmberState,
-    EvidenceId,
-} from "../core/model.ts";
+import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { RunCognitionOptions } from "./runtime.ts";
 
 import { DurabilityUncertain, StoreUnavailable, ValidationError } from "../core/errors.ts";
-import {
-    ASCII_CONTROL_CHARACTER_PATTERN,
-    contentDigest,
-    isRfc3339Utc,
-    newId,
-    nowUtc,
-} from "../core/model.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, contentDigest, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
+import { findRuntime } from "../core/projection.ts";
+import { requirePrincipal } from "../core/semantics.ts";
 import { findCognition, runCognition } from "./runtime.ts";
 
-export const PRINCIPAL_ASSERTION_PROVENANCE = [
-    "explicit_local_argument",
-    "configured_surface_mapping",
-] as const;
+export const PRINCIPAL_ASSERTION_PROVENANCE = ["explicit_local_argument", "configured_surface_mapping"] as const;
 export type PrincipalAssertionProvenance = (typeof PRINCIPAL_ASSERTION_PROVENANCE)[number];
 
 export interface ExternalOccurrenceMetadata {
@@ -38,7 +26,7 @@ export interface ExternalOccurrenceMetadata {
 }
 
 export interface SurfaceInteractionOptions
-    extends Omit<RunCognitionOptions, "cognitionId" | "hooks" | "output"> {
+    extends Omit<RunCognitionOptions, "cognitionId" | "hooks" | "output" | "surface"> {
     surfaceId: string;
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
@@ -72,6 +60,7 @@ export interface InboundOccurrenceRecord {
     external_thread_id: string | null;
     external_correlation_id: string | null;
     external_occurred_at: string | null;
+    delivery_destination_id: string | null;
 }
 
 export type DeliveryAttemptOutcome = "confirmed" | "failed" | "uncertain";
@@ -111,6 +100,7 @@ interface InboundAcceptance {
     scope: string;
     text: string;
     externalOccurrence: ExternalOccurrenceMetadata | null;
+    deliveryDestinationId: string | null;
 }
 
 export class InteractionLedgerStore {
@@ -182,6 +172,7 @@ export class InteractionLedgerStore {
                 external_thread_id: external.threadId,
                 external_correlation_id: external.correlationId,
                 external_occurred_at: external.occurredAt,
+                delivery_destination_id: input.deliveryDestinationId,
             };
             ledger.inbound_occurrences.push(record);
             return { record: structuredClone(record), replayed: false };
@@ -311,6 +302,9 @@ export async function runSurfaceInteraction(
         output = process.stdout,
         ...cognitionOptions
     } = options;
+    requirePrincipal(state, cognitionOptions.principal);
+    findRuntime(state, cognitionOptions.runtimeId);
+
     const ledger = new InteractionLedgerStore(store.path);
     const plannedCognitionId = newId("cognition");
     const accepted = await ledger.acceptInbound(
@@ -321,6 +315,7 @@ export async function runSurfaceInteraction(
             scope: cognitionOptions.scope,
             text: cognitionOptions.text,
             externalOccurrence,
+            deliveryDestinationId,
         },
         plannedCognitionId,
     );
@@ -328,6 +323,15 @@ export async function runSurfaceInteraction(
     const current = await store.load();
     const existing = current.operations.cognition_episodes.find((episode) => episode.cognition_id === cognitionId);
     if (existing) {
+        let delivery = findDeliveryForCognition(await ledger.load(), cognitionId);
+        if (delivery === null && existing.status === "completed" && existing.expression_evidence_id !== null) {
+            delivery = await ledger.createDeliveryIntent({
+                cognitionId,
+                expressionEvidenceId: existing.expression_evidence_id,
+                surfaceId: accepted.record.surface_id,
+                destinationId: accepted.record.delivery_destination_id,
+            });
+        }
         return {
             state: current,
             providerFailure:
@@ -337,7 +341,7 @@ export async function runSurfaceInteraction(
             cognitionId,
             cognitionStatus: existing.status,
             occurrenceId: accepted.record.occurrence_id,
-            deliveryId: findDeliveryForCognition(await ledger.load(), cognitionId)?.delivery_id ?? null,
+            deliveryId: delivery?.delivery_id ?? null,
             replayed: true,
         };
     }
@@ -347,6 +351,7 @@ export async function runSurfaceInteraction(
     try {
         const result = await runCognition(store, accepted.replayed ? current : state, {
             ...cognitionOptions,
+            surface: surfaceId,
             cognitionId,
             output,
             hooks: {
@@ -357,8 +362,8 @@ export async function runSurfaceInteraction(
                     const intent = await ledger.createDeliveryIntent({
                         cognitionId,
                         expressionEvidenceId: cognition.expression_evidence_id,
-                        surfaceId,
-                        destinationId: deliveryDestinationId,
+                        surfaceId: accepted.record.surface_id,
+                        destinationId: accepted.record.delivery_destination_id,
                     });
                     deliveryId = intent.delivery_id;
                 },
@@ -414,6 +419,7 @@ function validateInboundAcceptance(input: InboundAcceptance, receivedAt: string)
     validateOpaque(input.surfaceId, "surface_id", 128);
     validateOpaque(input.principal, "asserted principal", 256);
     validateOpaque(input.scope, "interaction scope", 256);
+    validateNullableOpaque(input.deliveryDestinationId, "delivery destination_id");
     if (!PRINCIPAL_ASSERTION_PROVENANCE.includes(input.principalProvenance))
         throw new ValidationError("principal assertion provenance is invalid");
     if (typeof input.text !== "string" || !input.text.trim())
@@ -445,8 +451,11 @@ function assertReplayMatches(
         external_thread_id: external.threadId,
         external_correlation_id: external.correlationId,
         external_occurred_at: external.occurredAt,
+        delivery_destination_id: input.deliveryDestinationId,
     };
-    const actual = Object.fromEntries(Object.keys(expected).map((key) => [key, existing[key as keyof typeof existing]]));
+    const actual = Object.fromEntries(
+        Object.keys(expected).map((key) => [key, existing[key as keyof typeof existing]]),
+    );
     if (JSON.stringify(actual) !== JSON.stringify(expected))
         throw new ValidationError("external occurrence replay conflicts with the established occurrence metadata");
 }
@@ -516,6 +525,7 @@ function validateInboundRecord(value: unknown) {
         "external_thread_id",
         "external_correlation_id",
         "external_occurred_at",
+        "delivery_destination_id",
     ].sort();
     if (JSON.stringify(Object.keys(record).sort()) !== JSON.stringify(fields))
         throw new ValidationError("interaction occurrence contains unsupported fields");
@@ -542,6 +552,7 @@ function validateInboundRecord(value: unknown) {
     validateNullableOpaque(record.external_correlation_id, "interaction external_correlation_id");
     if (record.external_occurred_at !== null && !isRfc3339Utc(record.external_occurred_at))
         throw new ValidationError("interaction external_occurred_at is invalid");
+    validateNullableOpaque(record.delivery_destination_id, "interaction delivery_destination_id");
 }
 
 function validateDeliveryRecord(value: unknown) {
