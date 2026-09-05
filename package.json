@@ -29,7 +29,7 @@
     "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node eval/longitudinal/run.ts --provider codex",
     "eval:continuity:process-restart:live": "EMBER_RUN_LIVE_PROCESS_RESTART=1 node eval/process-restart/run.ts",
     "eval:endogenous:live": "EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 node eval/endogenous/run.ts --provider codex",
-    "eval:endogenous:restart:live": "node eval/endogenous-restart/run.ts",
+    "eval:endogenous:restart:live": "EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 node eval/endogenous-restart/run.ts",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
