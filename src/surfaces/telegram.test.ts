@@ -243,6 +243,24 @@ test("Telegram API rejection is a definite failed delivery attempt", async () =>
     });
 });
 
+test("Telegram server-side send failure remains uncertain", async () => {
+    const api = new TelegramBotApi(TOKEN, {
+        baseUrl: "https://telegram.example",
+        fetch_: async () =>
+            new Response(JSON.stringify({ ok: false, error_code: 500, description: "Internal Server Error" }), {
+                status: 500,
+                headers: { "content-type": "application/json" },
+            }),
+    });
+
+    await assert.rejects(api.sendMessage(CHAT_ID, "hello"), (error: unknown) => {
+        assert.ok(error instanceof SurfaceDeliveryFailure);
+        assert.equal(error.outcome, "uncertain");
+        assert.match(error.message, /Internal Server Error/);
+        return true;
+    });
+});
+
 test("network loss during Telegram send remains uncertain", async () => {
     const api = new TelegramBotApi(TOKEN, {
         baseUrl: "https://telegram.example",
