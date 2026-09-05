@@ -83,10 +83,12 @@ Issue #87 makes the mapping policy explicit:
 - `principal` names the already-initialized Ember local principal. A matching Telegram
   chat cannot manufacture a different principal; a configured mismatch is rejected
   before the message becomes an accepted interaction occurrence;
-- `active_scope` is the cognition disclosure envelope for this surface. Telegram
+- `active_scope` is the ordinary cognition selection scope for this surface. Telegram
   update/chat/message history does not broaden it;
-- an explicit explanation request may deepen context only for a meaning already in
-  that active scope. Knowing a meaning ID does not authorize cross-scope disclosure;
+- ordinary Telegram text remains ordinary input even when it names a canonical meaning
+  ID or asks for information outside that scope. The request itself is visible, but it
+  does not opt into Ember's explicit local explanation-selection path or silently add
+  the named meaning to the projection;
 - changing the Telegram account/chat mapping does not rewrite Ember relationship or
   continuity identity. It changes only which transport evidence is accepted for this
   deployment mapping.
@@ -172,10 +174,10 @@ Create an uncommitted local JSON file, for example
 All filesystem/executable paths are absolute because the systemd user manager must
 not depend on an interactive shell's current directory, aliases, or PATH resolution.
 `principal` must already match the principal in the initialized Ember state.
-`active_scope` is not a Telegram label: it is Ember's existing projection scope used
-for every cognition accepted through this configured surface. Choose it deliberately
-for the information appropriate to this remote private-chat setting rather than
-copying a broader CLI/project scope automatically.
+`active_scope` is not a Telegram label: it is Ember's existing ordinary projection
+scope used for cognition accepted through this configured surface. Choose it
+deliberately for the information appropriate to this remote private-chat setting
+rather than copying a broader CLI/project scope automatically.
 
 `chat_id`, `principal`, and `active_scope` together are local deployment policy. They
 remain in the uncommitted configuration file rather than code, test fixtures tied to a
@@ -367,15 +369,17 @@ Focused tests cover:
 - generated systemd unit secrecy and restart policy;
 - CLI and Telegram selecting the same ordinary meanings when given the same active
   scope despite different transport metadata;
-- a matching Telegram chat failing to manufacture a mismatched Ember principal;
-- explicit explanation failing closed across a scope boundary; and
+- a mapped Telegram message naming an out-of-scope meaning ID without causing that
+  meaning or its private content to enter ordinary cognition context;
+- a matching Telegram chat failing to manufacture a mismatched Ember principal; and
 - operator inspection exposing principal/surface/delivery provenance from the sidecar.
 
 ## Deliberate limits and next issues
 
 The current Telegram surface does not add groups, multiple principals, media,
 commands, callback queries, webhooks, automatic uncertain-send retry, device/user
-attestation, or a generic surface/plugin/authorization framework.
+attestation, remote explicit-explanation commands, or a generic
+surface/plugin/authorization framework.
 
 Issue #87 establishes the current single-user principal/privacy policy described
 above. It does not claim that one private Telegram account is universally sufficient
