@@ -359,8 +359,7 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         );
         assert.equal(
             finalView.current_meanings.some(
-                (meaning: any) =>
-                    meaning.content === TELEGRAM_CONFIRMED || meaning.content === TELEGRAM_UNCERTAIN,
+                (meaning: any) => meaning.content === TELEGRAM_CONFIRMED || meaning.content === TELEGRAM_UNCERTAIN,
             ),
             false,
         );
