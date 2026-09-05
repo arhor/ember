@@ -49,7 +49,10 @@ async function fixture() {
     };
 }
 
-async function withRestartedWriter<T>(f: Awaited<ReturnType<typeof fixture>>, operation: (store: StateStore) => Promise<T>) {
+async function withRestartedWriter<T>(
+    f: Awaited<ReturnType<typeof fixture>>,
+    operation: (store: StateStore) => Promise<T>,
+) {
     await f.releaseWriter();
     const restartedStore = new StateStore(f.statePath);
     const lease = await restartedStore.acquireWriteLease();
@@ -203,8 +206,12 @@ test("legacy interaction ledger migrates without inventing a lost delivery repre
             deliveries: current.deliveries.map(({ representation: _representation, attempts, ...delivery }) => ({
                 ...delivery,
                 attempts: attempts.map(
-                    ({ observed_at: _observedAt, retryable: _retryable, retry_after_seconds: _retryAfter, ...attempt }) =>
-                        attempt,
+                    ({
+                        observed_at: _observedAt,
+                        retryable: _retryable,
+                        retry_after_seconds: _retryAfter,
+                        ...attempt
+                    }) => attempt,
                 ),
             })),
         };
@@ -214,7 +221,10 @@ test("legacy interaction ledger migrates without inventing a lost delivery repre
         assert.equal(migrated.ledger_version, 2);
         assert.equal(migrated.deliveries[0]?.representation, null);
         assert.equal(migrated.deliveries[0]?.attempts[0]?.retryable, false);
-        assert.equal(migrated.deliveries[0]?.attempts[0]?.observed_at, migrated.deliveries[0]?.attempts[0]?.attempted_at);
+        assert.equal(
+            migrated.deliveries[0]?.attempts[0]?.observed_at,
+            migrated.deliveries[0]?.attempts[0]?.attempted_at,
+        );
     } finally {
         await f.close();
     }

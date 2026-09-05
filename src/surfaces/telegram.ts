@@ -445,7 +445,8 @@ export async function reconcileTelegramDeliveries(
         const results = [];
         for (const delivery of ledger.deliveries) {
             if (signal?.aborted) break;
-            if (delivery.surface_id !== TELEGRAM_SURFACE_ID || !pendingCognitionIds.has(delivery.cognition_id)) continue;
+            if (delivery.surface_id !== TELEGRAM_SURFACE_ID || !pendingCognitionIds.has(delivery.cognition_id))
+                continue;
             const destination = parseTelegramDestination(delivery.destination_id);
             if (destination.chatId !== config.chat_id)
                 throw new ValidationError("Telegram delivery destination no longer matches configured private chat");

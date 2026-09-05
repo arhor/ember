@@ -58,24 +58,21 @@ test("CLI inspection redacts retained delivery representation while exposing rec
     try {
         let output = "";
         let error = "";
-        const code = await cliMain(
-            ["inspect", "--state", statePath, "--principal", PRINCIPAL, "--json"],
-            {
-                input: Readable.from([]),
-                output: new Writable({
-                    write(chunk, _encoding, callback) {
-                        output += chunk.toString();
-                        callback();
-                    },
-                }),
-                error: new Writable({
-                    write(chunk, _encoding, callback) {
-                        error += chunk.toString();
-                        callback();
-                    },
-                }),
-            },
-        );
+        const code = await cliMain(["inspect", "--state", statePath, "--principal", PRINCIPAL, "--json"], {
+            input: Readable.from([]),
+            output: new Writable({
+                write(chunk, _encoding, callback) {
+                    output += chunk.toString();
+                    callback();
+                },
+            }),
+            error: new Writable({
+                write(chunk, _encoding, callback) {
+                    error += chunk.toString();
+                    callback();
+                },
+            }),
+        });
 
         assert.equal(code, 0, error);
         assert.equal(output.includes(RETAINED_REPLY), false);
@@ -87,7 +84,10 @@ test("CLI inspection redacts retained delivery representation while exposing rec
             };
         };
         assert.equal(inspected.interactions.deliveries[0]?.representation.available, true);
-        assert.match(inspected.interactions.deliveries[0]?.representation.content_digest ?? "", /^sha256:[0-9a-f]{64}$/);
+        assert.match(
+            inspected.interactions.deliveries[0]?.representation.content_digest ?? "",
+            /^sha256:[0-9a-f]{64}$/,
+        );
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

@@ -169,7 +169,10 @@ test("long polling advances update offset after durable cognition even when repl
             },
         } as Pick<TelegramBotApi, "getUpdates" | "sendMessage" | "verifyLongPollingReady">;
 
-        await assert.rejects(runTelegramPolling(f.config, api, { provider: provider(providerCalls) }), /offset-proof-complete/);
+        await assert.rejects(
+            runTelegramPolling(f.config, api, { provider: provider(providerCalls) }),
+            /offset-proof-complete/,
+        );
         assert.equal(polls, 2);
         assert.equal(providerCalls.value, 1);
         assert.equal(sends, 1);
@@ -204,15 +207,12 @@ test("uncertain Telegram send remains blocked across reconciliation instead of b
         assert.equal(outcome.deliveryFailure, "uncertain");
 
         let reconciliationSends = 0;
-        const results = await reconcileTelegramDeliveries(
-            f.config,
-            {
-                sendMessage: async () => {
-                    reconciliationSends += 1;
-                    return { message_id: 9999, chat: { id: CHAT_ID, type: "private" } };
-                },
+        const results = await reconcileTelegramDeliveries(f.config, {
+            sendMessage: async () => {
+                reconciliationSends += 1;
+                return { message_id: 9999, chat: { id: CHAT_ID, type: "private" } };
             },
-        );
+        });
 
         assert.equal(initialSends, 1);
         assert.equal(reconciliationSends, 0);

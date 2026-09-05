@@ -9,7 +9,14 @@ import type { StateStore } from "../persistence/state-store.ts";
 import type { RunCognitionOptions } from "./runtime.ts";
 
 import { DurabilityUncertain, StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, cloneState, contentDigest, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
+import {
+    ASCII_CONTROL_CHARACTER_PATTERN,
+    cloneState,
+    contentDigest,
+    isRfc3339Utc,
+    newId,
+    nowUtc,
+} from "../core/model.ts";
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
 import { findCognition, runCognition } from "./runtime.ts";
@@ -334,16 +341,23 @@ export class InteractionLedgerStore {
         return this.update((ledger) => {
             const delivery = requireDelivery(ledger, deliveryId);
             const latest = latestDeliveryAttempt(delivery);
-            if (latest?.outcome === "confirmed") throw new ValidationError("confirmed delivery cannot be attempted again");
-            if (latest?.outcome === "started") throw new ValidationError("delivery already has an unresolved started attempt");
-            if (latest?.outcome === "uncertain") throw new ValidationError("uncertain delivery requires reconciliation before retry");
+            if (latest?.outcome === "confirmed")
+                throw new ValidationError("confirmed delivery cannot be attempted again");
+            if (latest?.outcome === "started")
+                throw new ValidationError("delivery already has an unresolved started attempt");
+            if (latest?.outcome === "uncertain")
+                throw new ValidationError("uncertain delivery requires reconciliation before retry");
             if (latest?.outcome === "failed") {
                 if (!latest.retryable) throw new ValidationError("failed delivery is not retryable");
                 const retryAt = retryAtForAttempt(latest);
                 if (retryAt !== null && Date.parse(attemptedAt) < Date.parse(retryAt))
                     throw new ValidationError("delivery retry is not due yet");
             }
-            if (latest?.observed_at !== null && latest !== null && Date.parse(attemptedAt) < Date.parse(latest.observed_at))
+            if (
+                latest?.observed_at !== null &&
+                latest !== null &&
+                Date.parse(attemptedAt) < Date.parse(latest.observed_at)
+            )
                 throw new ValidationError("delivery attempt precedes the previous observation");
             const attempt: DeliveryAttemptRecord = {
                 attempt_id: `attempt-${randomUUID()}`,
@@ -378,7 +392,9 @@ export class InteractionLedgerStore {
         validateRetryMetadata(outcome, retryable, retryAfterSeconds);
         if (!isRfc3339Utc(observedAt)) throw new ValidationError("delivery observed_at must be RFC 3339 UTC");
         return this.update((ledger) => {
-            const attempt = ledger.deliveries.flatMap((delivery) => delivery.attempts).find((item) => item.attempt_id === attemptId);
+            const attempt = ledger.deliveries
+                .flatMap((delivery) => delivery.attempts)
+                .find((item) => item.attempt_id === attemptId);
             if (!attempt) throw new ValidationError(`delivery attempt does not exist: ${attemptId}`);
             if (attempt.outcome !== "started") throw new ValidationError("delivery attempt is already terminal");
             if (Date.parse(observedAt) < Date.parse(attempt.attempted_at))
@@ -604,8 +620,7 @@ export async function reconcileSurfaceDelivery(
         const retryAt = terminal.outcome === "failed" ? retryAtForAttempt(terminal) : null;
         if (terminal.outcome === "uncertain")
             return resultFor(delivery, "blocked_uncertain", terminal.attempt_id, null);
-        if (!terminal.retryable)
-            return resultFor(delivery, "failed_non_retryable", terminal.attempt_id, null);
+        if (!terminal.retryable) return resultFor(delivery, "failed_non_retryable", terminal.attempt_id, null);
         return resultFor(delivery, "retryable_failure", terminal.attempt_id, retryAt);
     }
     const terminal = await ledger.finishDeliveryAttempt(attempt.attempt_id, "confirmed", {
@@ -843,11 +858,7 @@ function validateLegacyLedger(value: unknown): asserts value is LegacyInteractio
     validateLedgerRecords(ledger.inbound_occurrences, ledger.deliveries, validateLegacyDeliveryRecord);
 }
 
-function validateLedgerRecords(
-    inbound: unknown[],
-    deliveries: unknown[],
-    validateDelivery: (value: unknown) => void,
-) {
+function validateLedgerRecords(inbound: unknown[], deliveries: unknown[], validateDelivery: (value: unknown) => void) {
     const occurrenceIds = new Set<string>();
     const cognitionIds = new Set<string>();
     const externalKeys = new Set<string>();
@@ -1049,7 +1060,11 @@ function validateLegacyDeliveryAttempt(value: unknown) {
     validateNullableOpaque(attempt.external_message_id, "delivery external_message_id");
 }
 
-function validateRetryMetadata(outcome: TerminalDeliveryAttemptOutcome, retryable: unknown, retryAfterSeconds: unknown) {
+function validateRetryMetadata(
+    outcome: TerminalDeliveryAttemptOutcome,
+    retryable: unknown,
+    retryAfterSeconds: unknown,
+) {
     if (typeof retryable !== "boolean") throw new ValidationError("delivery retryable flag is invalid");
     if (retryable && outcome !== "failed")
         throw new ValidationError("only a definite failed delivery may be retryable");
