@@ -107,7 +107,6 @@ export function buildProjection(
     if (purpose === "explain") {
         for (const id of explicit) {
             const m = findMeaning(state, id);
-            if (m.scope !== scope) throw new ValidationError(`explanation meaning is outside active scope: ${id}`);
             selected.set(m.meaning_id, m);
             for (const linked of [m.supersedes, m.superseded_by]) {
                 if (linked) {
