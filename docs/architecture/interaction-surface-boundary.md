@@ -61,9 +61,10 @@ delivery intent
 attempt -> confirmed | failed | uncertain
 ```
 
-The cognition projection remains built by Ember from canonical state. Transport
-metadata does not enter the provider projection merely because the transport knows
-it.
+The cognition projection remains built by Ember from canonical state. The logical
+surface identifier is explicit cognition context, but transport occurrence, message,
+thread, correlation, destination, and receipt metadata do not enter the provider
+projection merely because the transport knows them.
 
 ## Inbound interaction
 
@@ -72,7 +73,8 @@ An inbound interaction carries:
 - the asserted Ember principal;
 - explicit provenance for that assertion;
 - a surface identifier;
-- Ember scope and user text; and
+- Ember scope and user text;
+- an optional delivery destination established for the occurrence; and
 - optional transport occurrence metadata such as an external occurrence/update ID,
   message ID, thread ID, correlation ID, and source occurrence time.
 
@@ -83,8 +85,9 @@ The currently supported principal-provenance classes are deliberately narrow:
   already been mapped by deployment policy to the supported local principal.
 
 A surface account or transport address is evidence about a principal, not semantic
-authority by itself. #87 owns the stronger principal/privacy validation around a real
-second surface.
+authority by itself. Principal and runtime assertions are validated before an inbound
+occurrence is accepted into the ledger. #87 owns the stronger principal/privacy
+validation around a real second surface.
 
 ### Occurrence identity and replay
 
@@ -96,19 +99,20 @@ key is:
 ```
 
 A replay with the same key must match the previously established principal,
-provenance, scope, payload digest, and associated transport metadata. If it matches,
-it resolves to the same Ember occurrence and the same planned cognition ID. It does
-not create another user-command evidence item, cognition episode, instruction,
-authority grant, or delivery intent.
+provenance, scope, payload digest, delivery destination, and associated transport
+metadata. If it matches, it resolves to the same Ember occurrence and the same planned
+cognition ID. It does not create another user-command evidence item, cognition
+episode, instruction, authority grant, or delivery intent.
 
-If the same transport key arrives with conflicting metadata or payload, Ember rejects
-the replay as contradictory evidence instead of guessing which representation is
-canonical.
+If the same transport key arrives with conflicting metadata, destination, or payload,
+Ember rejects the replay as contradictory evidence instead of guessing which
+representation is canonical. In particular, a replay cannot redirect an already
+established reply destination.
 
 When no stable external occurrence ID exists, no transport-level deduplication is
-performed. In particular, identical text is never proof of occurrence identity. Two
-identical CLI lines are two occurrences; two messaging updates with distinct stable
-IDs are also two occurrences. This is the executable form of AS-OPS-01 and AS-OPS-02.
+performed. Identical text is never proof of occurrence identity. Two identical CLI
+lines are two occurrences; two messaging updates with distinct stable IDs are also
+two occurrences. This is the executable form of AS-OPS-01 and AS-OPS-02.
 
 ### Stable cognition handoff
 
@@ -118,15 +122,21 @@ generating one itself.
 
 The ordering is intentional:
 
-1. establish and durably record the transport occurrence with a planned cognition ID;
-2. create the canonical user evidence and cognition episode using that same ID; and
-3. on transport replay, inspect canonical state for that ID before considering any
+1. validate the principal/runtime assertions;
+2. establish and durably record the transport occurrence with a planned cognition ID;
+3. create the canonical user evidence and cognition episode using that same ID; and
+4. on transport replay, inspect canonical state for that ID before considering any
    new cognition.
 
-If the process disappears after step 1 but before step 2, a later replay can safely
-reuse the planned ID. If step 2 already happened, the replay does not invoke the
+If the process disappears after step 2 but before step 3, a later replay can safely
+reuse the planned ID. If step 3 already happened, the replay does not invoke the
 provider again. This prevents a transport retry from manufacturing a second semantic
 request without requiring exactly-once transport delivery.
+
+If cognition already completed but the process failed before its delivery intent was
+persisted, a replay reconstructs the missing intent from the committed expression and
+the occurrence's already-established surface/destination. It still does not repeat
+cognition or automatically retry delivery; richer reconciliation remains #88 work.
 
 ## Outbound delivery
 
@@ -185,27 +195,31 @@ outbound retry/recovery gaps.
 
 ## CLI and future messaging surface
 
-The existing CLI behavior remains valid. A CLI-shaped caller uses a surface such as
-`cli:local`, principal provenance `explicit_local_argument`, and no external
+The existing CLI behavior remains valid. A CLI-shaped caller uses the existing logical
+surface `local_cli`, principal provenance `explicit_local_argument`, and no external
 occurrence ID. Each submitted line is therefore a fresh occurrence even when text is
-identical.
+identical. Direct callers of `runCognition` retain `local_cli` as the compatibility
+default.
 
 A future Telegram adapter can use the same seam with a Telegram surface identifier,
-`configured_surface_mapping`, and a stable Telegram update/message occurrence ID.
-Replayed transport updates then resolve to the already established occurrence rather
-than reaching cognition twice. Telegram chat/message/thread identifiers remain
-operational metadata and cannot replace Ember principal, scope, lineage, memory, or
-authority semantics.
+`configured_surface_mapping`, a configured delivery destination, and a stable
+Telegram update/message occurrence ID. Replayed transport updates then resolve to the
+already established occurrence rather than reaching cognition twice. Telegram
+chat/message/thread identifiers remain operational metadata and cannot replace Ember
+principal, scope, lineage, memory, or authority semantics.
 
 #86 may add Telegram-specific parsing, polling/webhook behavior, authentication,
 principal mapping configuration, and concrete send operations. It should not need to
-redefine occurrence identity or the delivery lifecycle.
+redefine occurrence identity, cognition surface context, or the delivery lifecycle.
 
 ## Privacy and context selection
 
 The surface boundary does not broaden cognition context. After occurrence
 correlation, `runCognition` still calls Ember's existing projection builder with the
-asserted principal, active scope, current text, purpose, and canonical state.
+asserted principal, active scope, logical surface, current text, purpose, and
+canonical state. The projection receives the logical surface so cognition never
+falsely claims a Telegram-originated interaction came from `local_cli`; it does not
+receive transport IDs or transport history.
 
 This preserves ADR 0003 and AS-OPS-05: a reachable transport or richer transport
 history cannot by itself justify disclosure of more Ember state. Recipient mapping,
@@ -217,18 +231,20 @@ The focused tests in `src/runtime/interaction-boundary.test.ts` instantiate exis
 canonical operational scenarios without adding stronger semantics than the accepted
 catalogue.
 
-| Scenario | Expected result | Canonical trace |
-| --- | --- | --- |
-| SURF-85-01: identical CLI-shaped text is entered twice | Two occurrence IDs, two cognition episodes, two deliveries | AS-OPS-02 |
-| SURF-85-02: one stable messaging update is replayed | One occurrence, one user-command evidence item, one cognition, one delivery intent; receipt count records the replay | AS-OPS-01 |
-| SURF-85-03: two stable messaging IDs carry identical text | Two occurrences and two cognitions | AS-OPS-02 |
-| SURF-85-04: the same stable transport ID reappears with conflicting payload/metadata | Reject the conflicting replay; do not create a second cognition | AS-OPS-01, AS-OPS-02 |
-| SURF-85-05: cognition completes and the output operation then fails | Cognition remains completed; delivery intent exists; attempt is `uncertain` | AS-OPS-03, AS-OPS-06 |
+| Scenario                                                                             | Expected result                                                                                                      | Canonical trace      |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| SURF-85-01: identical CLI-shaped text is entered twice                               | Two occurrence IDs, two cognition episodes, two deliveries                                                          | AS-OPS-02            |
+| SURF-85-02: one stable messaging update is replayed                                  | One occurrence, one user-command evidence item, one cognition, one delivery intent; receipt count records the replay | AS-OPS-01            |
+| SURF-85-03: two stable messaging IDs carry identical text                            | Two occurrences and two cognitions                                                                                   | AS-OPS-02            |
+| SURF-85-04: the same stable transport ID reappears with conflicting payload/metadata | Reject the conflicting replay; do not create a second cognition                                                      | AS-OPS-01, AS-OPS-02 |
+| SURF-85-05: a principal assertion is rejected before acceptance                      | No occurrence and no cognition are established                                                                       | AS-OPS-05            |
+| SURF-85-06: cognition completes and the output operation then fails                  | Cognition remains completed; delivery intent exists; attempt is `uncertain`                                          | AS-OPS-03, AS-OPS-06 |
 
 AS-OPS-05 remains the governing privacy fixture for future cross-surface delivery.
-The implementation supports it by keeping transport metadata outside canonical
-meaning and outside automatic cognition projection; #87 adds dedicated real-surface
-principal/privacy acceptance coverage.
+The implementation supports it by validating the principal before acceptance, keeping
+transport metadata outside canonical meaning, and projecting only the logical surface
+rather than transport-local IDs; #87 adds dedicated real-surface principal/privacy
+acceptance coverage.
 
 ## Deliberate limits
 
@@ -250,13 +266,13 @@ and #88 owns reconnect, retry, replay recovery, and richer delivery uncertainty.
 
 ## Definition-of-done mapping
 
-| Issue #85 requirement | Repository outcome |
-| --- | --- |
-| Explicit principal/surface provenance | `SurfaceInteractionOptions` requires `surfaceId` and `principalProvenance`; inbound records preserve both. |
-| Replay correlation without text dedupe | Stable `(surface_id, external_occurrence_id)` correlation; no-ID inputs remain distinct regardless of text. |
-| Duplicate transport occurrence does not duplicate semantics | Stable planned cognition ID plus replay lookup suppresses duplicate user evidence, cognition, and delivery. |
-| Delivery intent and outcome differ from cognition completion | Expression commits before intent; attempts separately record `confirmed`, `failed`, or `uncertain`. |
-| Surface-local IDs remain operational | IDs are confined to the interaction sidecar and never become canonical meanings or automatic projection input. |
-| Privacy/context remains Ember-owned | Existing `buildProjection` path remains the cognition context boundary. |
-| CLI plus future messaging without generic framework | CLI-shaped and hypothetical messaging cases use one narrow runtime seam with no transport registry/plugin hierarchy. |
-| #86 can implement Telegram without redefining semantics | Adapter only needs to supply mapped principal/surface provenance, stable occurrence metadata, destination, and concrete I/O. |
+| Issue #85 requirement                                        | Repository outcome                                                                                                           |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Explicit principal/surface provenance                        | `SurfaceInteractionOptions` requires `surfaceId` and `principalProvenance`; inbound records preserve both.                   |
+| Replay correlation without text dedupe                       | Stable `(surface_id, external_occurrence_id)` correlation; no-ID inputs remain distinct regardless of text.                  |
+| Duplicate transport occurrence does not duplicate semantics  | Stable planned cognition ID plus replay lookup suppresses duplicate user evidence, cognition, and delivery.                  |
+| Delivery intent and outcome differ from cognition completion | Expression commits before intent; attempts separately record `confirmed`, `failed`, or `uncertain`.                          |
+| Surface-local IDs remain operational                         | Message/thread/update/destination IDs stay in the interaction sidecar and never become canonical meanings or projection.     |
+| Privacy/context remains Ember-owned                          | Existing `buildProjection` remains the context boundary; it receives only the logical surface, not transport-local metadata. |
+| CLI plus future messaging without generic framework          | CLI-shaped and hypothetical messaging cases use one narrow runtime seam with no transport registry/plugin hierarchy.         |
+| #86 can implement Telegram without redefining semantics      | Adapter only needs to supply mapped principal/surface provenance, stable occurrence metadata, destination, and concrete I/O. |
