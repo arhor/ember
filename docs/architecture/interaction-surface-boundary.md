@@ -308,13 +308,13 @@ the same principal/privacy/delivery invariants across both real logical surfaces
 
 Issue #87 adds the following concrete cross-surface fixtures:
 
-| Scenario                                                                  | Expected result                                                                                                               |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| SURF-87-01: CLI and Telegram use the same principal and scope             | Both projections select the same scope-governed meanings; only logical `surface` differs                                      |
-| SURF-87-02: Telegram carries update/chat/message history                  | Transport IDs remain in the interaction ledger and do not expand or appear in cognition projection                            |
-| SURF-87-03: configured chat is paired with a different Ember principal    | Reject before provider invocation, accepted occurrence, cognition, or delivery                                                 |
+| Scenario                                                                  | Expected result                                                                                                                 |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| SURF-87-01: CLI and Telegram use the same principal and scope             | Both projections select the same scope-governed meanings; only logical `surface` differs                                        |
+| SURF-87-02: Telegram carries update/chat/message history                  | Transport IDs remain in the interaction ledger and do not expand or appear in cognition projection                              |
+| SURF-87-03: configured chat is paired with a different Ember principal    | Reject before provider invocation, accepted occurrence, cognition, or delivery                                                  |
 | SURF-87-04: explicit explain requests a meaning from another active scope | Reject before provider invocation and canonical cognition; remembered availability or explicit ID does not authorize disclosure |
-| SURF-87-05: operator inspects interactions after CLI and Telegram use      | Inspection shows surface/principal provenance, destination, delivery intent, attempt outcome, and external receipt when known  |
+| SURF-87-05: operator inspects interactions after CLI and Telegram use     | Inspection shows surface/principal provenance, destination, delivery intent, attempt outcome, and external receipt when known   |
 
 AS-OPS-05 remains the governing privacy fixture for cross-surface delivery. The
 implementation validates the principal before acceptance, keeps transport metadata
@@ -344,12 +344,12 @@ validation.
 
 ## Definition-of-done mapping
 
-| Issue #87 requirement                                           | Repository outcome                                                                                                                              |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Principal assertion/resolution explicit for CLI and Telegram    | Production CLI uses `explicit_local_argument`; Telegram uses `configured_surface_mapping`; both resolve to the initialized local principal.     |
-| Surface identity is not semantic authority                      | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass scope validation.                               |
-| Least-sufficient privacy remains transport-independent          | Both surfaces use `buildProjection`; same scope yields the same ordinary meaning selection and transport metadata adds nothing.                 |
-| Attempted over-disclosure fails closed                          | Explicit explanation rejects meanings outside the active scope before provider invocation or canonical cognition.                              |
-| Delivery provenance remains distinct                            | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition.  |
-| Inspection explains relevant provenance                         | `ember inspect` includes operational occurrences and deliveries with surface, principal provenance, destinations, and observed attempt results. |
-| Deployment mapping stays configurable without committed IDs     | Telegram mapping remains local configuration (`principal`, `active_scope`, `chat_id`); no real personal identifier is committed in repository.  |
+| Issue #87 requirement                                        | Repository outcome                                                                                                                              |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Principal assertion/resolution explicit for CLI and Telegram | Production CLI uses `explicit_local_argument`; Telegram uses `configured_surface_mapping`; both resolve to the initialized local principal.     |
+| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass scope validation.                                 |
+| Least-sufficient privacy remains transport-independent       | Both surfaces use `buildProjection`; same scope yields the same ordinary meaning selection and transport metadata adds nothing.                 |
+| Attempted over-disclosure fails closed                       | Explicit explanation rejects meanings outside the active scope before provider invocation or canonical cognition.                               |
+| Delivery provenance remains distinct                         | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition.   |
+| Inspection explains relevant provenance                      | `ember inspect` includes operational occurrences and deliveries with surface, principal provenance, destinations, and observed attempt results. |
+| Deployment mapping stays configurable without committed IDs  | Telegram mapping remains local configuration (`principal`, `active_scope`, `chat_id`); no real personal identifier is committed in repository.  |
