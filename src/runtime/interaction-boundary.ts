@@ -25,6 +25,39 @@ export interface ExternalOccurrenceMetadata {
     occurredAt?: string | null;
 }
 
+export interface SurfaceDeliveryReceipt {
+    externalMessageId?: string | null;
+}
+
+export type DeliveryAttemptOutcome = "confirmed" | "failed" | "uncertain";
+export type SurfaceDelivery =
+    | Writable
+    | ((text: string) => void | SurfaceDeliveryReceipt | Promise<void | SurfaceDeliveryReceipt>);
+
+export class SurfaceDeliveryFailure extends Error {
+    readonly outcome: Exclude<DeliveryAttemptOutcome, "confirmed">;
+    readonly externalMessageId: string | null;
+
+    constructor(
+        message: string,
+        {
+            outcome = "uncertain",
+            externalMessageId = null,
+            cause,
+        }: {
+            outcome?: Exclude<DeliveryAttemptOutcome, "confirmed">;
+            externalMessageId?: string | null;
+            cause?: unknown;
+        } = {},
+    ) {
+        super(message, { cause });
+        validateNullableOpaque(externalMessageId, "delivery external_message_id");
+        this.name = "SurfaceDeliveryFailure";
+        this.outcome = outcome;
+        this.externalMessageId = externalMessageId;
+    }
+}
+
 export interface SurfaceInteractionOptions extends Omit<
     RunCognitionOptions,
     "cognitionId" | "hooks" | "output" | "surface"
@@ -33,7 +66,7 @@ export interface SurfaceInteractionOptions extends Omit<
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
     deliveryDestinationId?: string | null;
-    output?: Writable | ((text: string) => void | Promise<void>);
+    deliver?: SurfaceDelivery;
 }
 
 export interface SurfaceInteractionResult {
@@ -64,8 +97,6 @@ export interface InboundOccurrenceRecord {
     external_occurred_at: string | null;
     delivery_destination_id: string | null;
 }
-
-export type DeliveryAttemptOutcome = "confirmed" | "failed" | "uncertain";
 
 export interface DeliveryAttemptRecord {
     attempt_id: string;
@@ -301,7 +332,7 @@ export async function runSurfaceInteraction(
         principalProvenance,
         externalOccurrence = null,
         deliveryDestinationId = null,
-        output = process.stdout,
+        deliver = process.stdout,
         ...cognitionOptions
     } = options;
     requirePrincipal(state, cognitionOptions.principal);
@@ -349,13 +380,30 @@ export async function runSurfaceInteraction(
     }
 
     let deliveryId: string | null = null;
+    let deliveryAttemptStarted = false;
     let deliveryAttemptRecorded = false;
+    let deliveredExternalMessageId: string | null = null;
+    const deliveryOutput = async (text: string) => {
+        deliveryAttemptStarted = true;
+        if (typeof deliver === "function") {
+            const receipt = await deliver(text);
+            if (receipt !== undefined) {
+                if (receipt === null || typeof receipt !== "object" || Array.isArray(receipt))
+                    throw new ValidationError("surface delivery receipt must be an object");
+                deliveredExternalMessageId = receipt.externalMessageId ?? null;
+                validateNullableOpaque(deliveredExternalMessageId, "delivery external_message_id");
+            }
+            return;
+        }
+        await writeDeliveryOutput(deliver, text);
+    };
+
     try {
         const result = await runCognition(store, accepted.replayed ? current : state, {
             ...cognitionOptions,
             surface: surfaceId,
             cognitionId,
-            output,
+            output: deliveryOutput,
             hooks: {
                 afterExpressionCommit: async (committed) => {
                     const cognition = findCognition(committed, cognitionId);
@@ -371,7 +419,9 @@ export async function runSurfaceInteraction(
                 },
                 afterDisplay: async () => {
                     if (deliveryId === null) throw new ValidationError("delivery display has no delivery intent");
-                    await ledger.recordDeliveryAttempt(deliveryId, "confirmed");
+                    await ledger.recordDeliveryAttempt(deliveryId, "confirmed", {
+                        externalMessageId: deliveredExternalMessageId,
+                    });
                     deliveryAttemptRecorded = true;
                 },
             },
@@ -385,18 +435,45 @@ export async function runSurfaceInteraction(
             replayed: accepted.replayed,
         };
     } catch (error) {
-        if (deliveryId !== null && !deliveryAttemptRecorded) {
+        if (deliveryId !== null && deliveryAttemptStarted && !deliveryAttemptRecorded) {
+            const failure = error instanceof SurfaceDeliveryFailure ? error : null;
             try {
-                await ledger.recordDeliveryAttempt(deliveryId, "uncertain");
+                await ledger.recordDeliveryAttempt(deliveryId, failure?.outcome ?? "uncertain", {
+                    externalMessageId: failure?.externalMessageId ?? deliveredExternalMessageId,
+                });
             } catch (ledgerError) {
                 throw new AggregateError(
                     [error, ledgerError],
-                    "delivery failed and its uncertainty could not be recorded",
+                    "delivery failed and its outcome could not be recorded",
                 );
             }
         }
         throw error;
     }
+}
+
+async function writeDeliveryOutput(output: Writable, text: string) {
+    await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const finish = (error?: Error | null) => {
+            if (settled) return;
+            settled = true;
+            if (error) {
+                setImmediate(() => output.off("error", onError));
+                reject(error);
+            } else {
+                output.off("error", onError);
+                resolve();
+            }
+        };
+        const onError = (error: Error) => finish(error);
+        output.once("error", onError);
+        try {
+            output.write(text, (error) => finish(error));
+        } catch (error) {
+            finish(error instanceof Error ? error : new Error(String(error)));
+        }
+    });
 }
 
 function findDeliveryForCognition(ledger: InteractionLedgerDocument, cognitionId: CognitionId) {
