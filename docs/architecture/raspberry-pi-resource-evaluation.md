@@ -30,7 +30,8 @@ No hostname, username, IP address, environment dump, credential path, or other p
 - 4,049.13 MiB RAM;
 - Node.js `v26.8.1`;
 - Codex CLI `0.153.2`;
-- systemd user manager available.
+- systemd user manager available; and
+- deployment mode: systemd-user-supervised episodic one-shot Node workers with no resident Ember daemon.
 
 PR [#138](https://github.com/arhor/ember/pull/138) had already validated the real `systemd --user -> Node -> Codex -> durable Ember evidence -> clean exit` runtime path on this deployment class. The measurements below therefore add constrained-host resource evidence rather than substituting a synthetic process tree for operational validation.
 
@@ -113,6 +114,8 @@ Pressure snapshots were taken before measurement, after the fixture phase, and a
 | After real Codex |     2,941.94 MiB |     0 MiB |          0.86 |        53.45 °C | `0x0`              |
 
 The host retained roughly **2.94 GiB available memory** after the full capture. Swap remained unused throughout. `vcgencmd get_throttled` reported `0x0` at every snapshot, so the run recorded no current or historical under-voltage/frequency/thermal throttling flags. Temperature rose about 4.4 °C from the pre-run snapshot to the final snapshot, remaining modest for this host.
+
+Background context remained broadly stable: **20 running user services** were reported at every pressure snapshot, while the total host process count moved from **202 before** to **203 after the fixture phase** and **205 after the live-provider phase**. Those services/processes are not attributed to Ember and are retained only as host-noise context.
 
 The small difference in available memory before versus after the run is host-level context, not attributable Ember retained memory: no Ember worker remained resident, Linux cache/background activity can change `MemAvailable`, and the process-count snapshot also moved slightly during the run.
 
