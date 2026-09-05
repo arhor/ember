@@ -13,7 +13,7 @@ interface TelegramCliArgs {
     config: string;
 }
 
-export async function main(argv = process.argv.slice(2)): Promise<number> {
+async function main(argv = process.argv.slice(2)): Promise<number> {
     try {
         const args = parseArgs(argv);
         const config = await loadTelegramSurfaceConfig(args.config);
@@ -43,8 +43,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         process.once("SIGINT", stop);
         process.once("SIGTERM", stop);
         try {
-            const { bot } = await api.verifyLongPollingReady(controller.signal);
-            process.stdout.write(`Telegram surface started for ${bot.username ? `@${bot.username}` : bot.id}\n`);
+            process.stdout.write("Telegram surface starting\n");
             await runTelegramPolling(config, api, {
                 signal: controller.signal,
                 onOutcome: (outcome) => {
@@ -65,7 +64,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     }
 }
 
-export function parseArgs(argv: string[]): TelegramCliArgs {
+function parseArgs(argv: string[]): TelegramCliArgs {
     const command = argv[0];
     if (!["serve", "check", "delete-webhook", "render-unit"].includes(command ?? ""))
         throw new ValidationError("expected serve, check, delete-webhook, or render-unit command");
@@ -74,4 +73,4 @@ export function parseArgs(argv: string[]): TelegramCliArgs {
     return { command: command as TelegramCliArgs["command"], config: argv[2] };
 }
 
-if (import.meta.main) process.exitCode = await main();
+process.exitCode = await main();
