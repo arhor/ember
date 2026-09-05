@@ -1,115 +1,52 @@
-name: Temporary issue 88 doc refresh
+name: Continuity vertical slice
 
 on:
   pull_request:
     paths:
-      - "**"
+      - "bin/**"
+      - "src/**"
+      - "eval/**"
+      - "tests/**"
+      - "scripts/**"
+      - "docs/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/continuity-vertical-slice.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "bin/**"
+      - "src/**"
+      - "eval/**"
+      - "tests/**"
+      - "scripts/**"
+      - "docs/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/continuity-vertical-slice.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  refresh:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
           cache: npm
-      - name: Refresh issue 88 documentation
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile, writeFile } from "node:fs/promises";
-
-          async function replaceOnce(path, before, after) {
-            const text = await readFile(path, "utf8");
-            if (!text.includes(before)) throw new Error(`missing expected text in ${path}: ${before.slice(0, 80)}`);
-            const next = text.replace(before, after);
-            if (next === text) throw new Error(`replacement made no change in ${path}`);
-            await writeFile(path, next, "utf8");
-          }
-
-          const boundary = "docs/architecture/interaction-surface-boundary.md";
-          await replaceOnce(
-            boundary,
-            `> Status: current design and executable seam from issue #85, exercised by Telegram in\n> issue #86 and hardened across the real CLI and Telegram surfaces by issue #87.\n> Telegram-specific runtime ownership is recorded separately in`,
-            `> Status: current design and executable seam from issue #85, exercised by Telegram in\n> issue #86, hardened across CLI and Telegram by issue #87, and extended with\n> restart-safe delivery reconciliation by issue #88. Telegram-specific runtime\n> ownership is recorded separately in`,
-          );
-          await replaceOnce(
-            boundary,
-            `attempt -> confirmed | failed | uncertain`,
-            `attempt: started -> confirmed | failed | uncertain`,
-          );
-          await replaceOnce(
-            boundary,
-            `If cognition already completed but the process failed before its delivery intent was\npersisted, a replay reconstructs the missing intent from the committed expression and\nthe occurrence's already-established surface/destination. It still does not repeat\ncognition or automatically retry delivery; richer reconciliation remains #88 work.`,
-            `If cognition already completed but the process failed before its delivery intent was\npersisted, a replay reconstructs the missing intent from the committed expression and\nthe occurrence's already-established surface/destination. It still does not repeat\ncognition. Because the exact outbound representation was never durably retained,\nreconciliation cannot invent it and remains blocked until stronger evidence exists.`,
-          );
-          await replaceOnce(
-            boundary,
-            `\`confirmed\` is still transport evidence. It does not prove that a human read or\nunderstood the expression. #88 owns richer reconnect, retry, acknowledgement, and\nreconciliation policy.`,
-            `\`confirmed\` is still transport evidence. It does not prove that a human read or\nunderstood the expression. Issue #88 adds the transport-neutral restart/retry policy\ndocumented in [Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).\nOnly definite retryable failure permits resend; \`uncertain\` remains blocked.`,
-          );
-          await replaceOnce(
-            boundary,
-            `The ledger and canonical state are deliberately separate, so there is no claim of a\ncross-file transaction. The ordering and stable cognition ID make inbound replay\nidempotent across the important crash boundary. #88 owns reconciliation for richer\noutbound retry/recovery gaps.`,
-            `The ledger and canonical state are deliberately separate, so there is no claim of a\ncross-file transaction. The ordering and stable cognition ID make inbound replay\nidempotent across the important crash boundary. Issue #88 extends that ledger with a\ndurable outbound representation and explicit send-start checkpoint so restart\nreconciliation can preserve the same truth discipline across outbound gaps.`,
-          );
-          await replaceOnce(
-            boundary,
-            `- retain provider reply text inside transport metadata;`,
-            `- expose retained delivery representation text through ordinary inspection or cognition context;`,
-          );
-          await replaceOnce(
-            boundary,
-            `The concrete Telegram adapter remains deliberately narrow: one configured private\nchat, one existing local principal, one configured active scope, ordinary text\nmessages, and no automatic uncertain-send retry. #88 owns reconnect/retry/recovery and\nricher delivery uncertainty, and #89 owns end-to-end CLI/Telegram continuity\nvalidation.`,
-            `The concrete Telegram adapter remains deliberately narrow: one configured private\nchat, one existing local principal, one configured active scope, and ordinary text\nmessages. It may retry only a definite retryable failure using the same retained\ndelivery intent; an uncertain send is never retried automatically. #89 owns end-to-end\nCLI/Telegram continuity validation.`,
-          );
-
-          const telegram = "docs/architecture/telegram-surface-runbook.md";
-          await replaceOnce(
-            telegram,
-            `summary: "Current Telegram surface runbook: Bot API 10.3 long polling, issue #87 principal/scope privacy mapping, systemd user supervision, secret-safe configuration, and manual end-to-end validation."`,
-            `summary: "Current Telegram surface runbook: Bot API 10.3 long polling, principal/scope privacy mapping, issue #88 restart-safe delivery reconciliation, systemd user supervision, and secret-safe configuration."`,
-          );
-          await replaceOnce(
-            telegram,
-            `> Status: current implementation/runbook from issue #86, with principal/privacy policy\n> hardened across CLI and Telegram by issue #87. The semantic boundary remains`,
-            `> Status: current implementation/runbook from issue #86, with principal/privacy policy\n> hardened by issue #87 and restart-safe delivery reconciliation added by issue #88.\n> The semantic boundary remains`,
-          );
-          await replaceOnce(
-            telegram,
-            `The Telegram adapter maps transport evidence onto the issue #85 delivery lifecycle:\n\n- a successful \`sendMessage\` response records \`confirmed\` and the returned Telegram\n  message id;\n- an explicit Bot API rejection such as HTTP/API 4xx records \`failed\`;\n- network loss, malformed/unreadable response, or server-side ambiguity records\n  \`uncertain\`.\n\n\`confirmed\` means Telegram accepted the send operation. It does not mean the user read\nor understood the message. The adapter does not automatically retry uncertain sends;\nthat belongs to #88.`,
-            `The Telegram adapter maps transport evidence onto the shared delivery lifecycle:\n\n- a successful \`sendMessage\` response records \`confirmed\` and the returned Telegram\n  message id;\n- an explicit non-retryable Bot API rejection records definite \`failed\`;\n- flood control with a valid \`parameters.retry_after\` records definite retryable\n  \`failed\` plus the transport-neutral retry delay; and\n- network loss, malformed/unreadable acknowledgement, server-side ambiguity, or process\n  loss after the send boundary records or reconciles to \`uncertain\`.\n\n\`confirmed\` means Telegram accepted the send operation. It does not mean the user read\nor understood the message. Before each long-poll cycle the worker reconciles pending\nTelegram deliveries: due definite retryable failures may resend the exact retained\nrepresentation without new cognition, while \`uncertain\` remains blocked. The\ntransport-neutral rules live in\n[Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).`,
-          );
-          await replaceOnce(
-            telegram,
-            `The last restart/replay step exercises #85's duplicate-occurrence guarantee through a\nreal transport. Richer offline/reconnect and uncertain-send recovery belongs to #88.`,
-            `The restart/replay step exercises #85's duplicate-occurrence guarantee through a real\ntransport. Issue #88 additionally keeps outbound recovery separate from inbound replay:\ndefinite retryable delivery can resume from the durable delivery intent, while an\nambiguous prior send remains blocked instead of being duplicated.`,
-          );
-          await replaceOnce(
-            telegram,
-            `- #88 owns offline/reconnect/retry and delivery-uncertainty reconciliation.\n- #89 owns cross-surface continuity validation between CLI and Telegram.`,
-            `- #88 defines the current offline/reconnect/retry and delivery-uncertainty policy in\n  the transport-neutral delivery reconciliation runbook.\n- #89 owns cross-surface continuity validation between CLI and Telegram.`,
-          );
-          NODE
+      - name: Show Node.js version
+        run: node --version
       - name: Install locked development toolchain
         run: npm ci
-      - name: Apply repository formatter
-        run: npm run fmt
-      - name: Restore real workflow and commit refreshed docs
-        run: |
-          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1
-          git checkout FETCH_HEAD -- .github/workflows/continuity-vertical-slice.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "Refresh issue #88 recovery documentation"
-          git push origin HEAD:"${{ github.event.pull_request.head.ref }}"
+      - name: Run static and repository checks
+        run: npm run check
+      - name: Run complete acceptance suite
+        run: npm test
+      - name: Run deterministic endogenous selectivity evaluation
+        run: npm run eval:endogenous
