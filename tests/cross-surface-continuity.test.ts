@@ -343,9 +343,28 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         assert.equal(finalCognitionById.get(uncertainRequest.cognition_id)?.delivery_status, "pending");
         assert.equal(finalCognitionById.get(returnRequest.cognition_id)?.delivery_status, "displayed");
 
-        const canonicalText = await readFile(statePath, "utf8");
-        assert.equal(canonicalText.includes(TELEGRAM_CONFIRMED), false);
-        assert.equal(canonicalText.includes(TELEGRAM_UNCERTAIN), false);
+        const canonical = await readJson(statePath);
+        const retainedTelegramEvidence = canonical.evidence.filter(
+            (evidence: any) =>
+                evidence.source_role === "user_command" &&
+                (evidence.payload === TELEGRAM_CONFIRMED || evidence.payload === TELEGRAM_UNCERTAIN),
+        );
+        assert.deepEqual(
+            retainedTelegramEvidence.map((evidence: any) => evidence.payload).sort(),
+            [TELEGRAM_CONFIRMED, TELEGRAM_UNCERTAIN].sort(),
+        );
+        assert.equal(
+            retainedTelegramEvidence.every((evidence: any) => evidence.payload_mode === "retained_optional"),
+            true,
+        );
+        assert.equal(
+            finalView.current_meanings.some(
+                (meaning: any) =>
+                    meaning.content === TELEGRAM_CONFIRMED || meaning.content === TELEGRAM_UNCERTAIN,
+            ),
+            false,
+        );
+        const canonicalText = JSON.stringify(canonical);
         assert.equal(canonicalText.includes(String(CHAT_ID)), false);
         assert.equal(canonicalText.includes("CONTINUITY_RESPONSE"), false);
     } finally {
