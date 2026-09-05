@@ -36,10 +36,20 @@ Current architecture material:
   selects the first unattended Linux topology: a lingered user-level systemd manager
   supervises short-lived Ember wake/recovery workers and per-episode specialist jobs,
   with no permanently resident Ember Node daemon until later evidence earns one.
+- [ADR 0008: Add a systemd-Supervised Resident Telegram Transport Worker Without Making It Ember's Runtime Owner](decisions/0008-add-systemd-supervised-telegram-transport-worker.md)
+  records issue #86's evidence-derived topology extension: one resident long-poll
+  transport process while canonical Ember work remains short-lived and writer-lease
+  bounded.
 - [Episodic Runtime Runbook](episodic-runtime-runbook.md) records issue #94's runnable
   `ember-runtime` configuration, systemd user-manager installation, one-shot wake and
   specialist operations, status, shutdown/recovery behavior, deterministic tests, and
   separate Linux/systemd smoke procedure used by issues #82 and #83.
+- [Interaction Surface Boundary](interaction-surface-boundary.md) defines issue #85's
+  transport-independent principal provenance, stable occurrence correlation, and
+  delivery intent/attempt lifecycle without making surface metadata canonical memory.
+- [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete
+  Bot API 10.3 long-polling adapter, private-chat mapping, secret-safe configuration,
+  systemd user service, delivery evidence mapping, and manual end-to-end smoke path.
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
@@ -88,7 +98,7 @@ Current architecture material:
   negative evidence, and implementation-neutral requirements for issue #72.
 - [Longitudinal Provenance Evaluation](longitudinal-provenance-evaluation.md)
   records issue #68 evidence for testimony, inference, external claims, direct
-  observation, delegated reports, derivation roots, and historical provenance.
+  observation, delegated reports, derivation roots, correction, and history.
 - [Process-Restart Continuity Evaluation](process-restart-continuity-evaluation.md)
   records issue #55's true CLI-process restart probe, fresh-Codex-thread oracle,
   sanitized report contract, and live evidence procedure.
@@ -109,7 +119,9 @@ Historical material:
   accepted decisions.
 
 Implementation architecture must preserve the semantic baseline. ADR 0006 settles
-the current implementation language/runtime baseline, and ADR 0007 settles the first
-unattended Linux supervision topology beneath it. Neither decision settles memory
-retrieval architecture, future surface transports, generic delegation protocols, or
-package boundaries beyond the concrete requirements they explicitly address.
+the current implementation language/runtime baseline, ADR 0007 settles the episodic
+unattended-work topology, and ADR 0008 narrowly adds the first resident transport
+worker without transferring canonical ownership to it. These decisions still do not
+settle memory retrieval architecture, a generic multi-surface framework, generic
+delegation protocols, or package boundaries beyond the concrete requirements they
+explicitly address.

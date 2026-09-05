@@ -9,8 +9,11 @@ discovery_status: current
 
 # Interaction Surface Boundary
 
-> Status: current design and executable seam for issue #85. It defines the minimum
-> transport-independent contract needed before Telegram is implemented by #86.
+> Status: current design and executable seam from issue #85. Issue #86 now exercises
+> this boundary through the concrete Telegram adapter documented in
+> [Telegram Surface Runbook](telegram-surface-runbook.md). Telegram-specific runtime
+> ownership is recorded separately in
+> [ADR 0008](decisions/0008-add-systemd-supervised-telegram-transport-worker.md).
 
 ## Purpose
 
@@ -26,8 +29,10 @@ transport-independent interruption decision from
 `deliver` decision permits a later delivery attempt, but cognition completion and
 user delivery remain separate facts.
 
-The selected runtime topology from ADR 0007 remains unchanged. This issue adds no
-resident channel framework and no new owner of Ember continuity.
+Issue #85 itself added no resident channel framework and no new owner of Ember
+continuity. Issue #86 later supplied concrete evidence for one resident Telegram
+_transport_ worker under ADR 0008 while preserving this boundary's ownership rules:
+canonical work remains short-lived and writer-lease bounded.
 
 ## Boundary
 
@@ -81,13 +86,15 @@ An inbound interaction carries:
 The currently supported principal-provenance classes are deliberately narrow:
 
 - `explicit_local_argument` for the local CLI-style path; and
-- `configured_surface_mapping` for a future surface whose account/chat identity has
-  already been mapped by deployment policy to the supported local principal.
+- `configured_surface_mapping` for a surface whose account/chat identity has already
+  been mapped by deployment policy to the supported local principal.
 
-A surface account or transport address is evidence about a principal, not semantic
-authority by itself. Principal and runtime assertions are validated before an inbound
-occurrence is accepted into the ledger. #87 owns the stronger principal/privacy
-validation around a real second surface.
+The Telegram adapter in issue #86 uses `configured_surface_mapping` only after
+filtering to one configured private chat. A surface account or transport address is
+evidence about a principal, not semantic authority by itself. Principal and runtime
+assertions are validated before an inbound occurrence is accepted into the ledger.
+#87 owns stronger principal/privacy validation across the real CLI and Telegram
+surfaces.
 
 ### Occurrence identity and replay
 
@@ -113,6 +120,10 @@ When no stable external occurrence ID exists, no transport-level deduplication i
 performed. Identical text is never proof of occurrence identity. Two identical CLI
 lines are two occurrences; two messaging updates with distinct stable IDs are also
 two occurrences. This is the executable form of AS-OPS-01 and AS-OPS-02.
+
+Telegram concretely supplies `update_id` as the stable transport occurrence evidence;
+its `message_id`, optional thread ID, source time, and configured reply destination
+remain correlated operational metadata rather than alternate occurrence identity.
 
 ### Stable cognition handoff
 
@@ -162,9 +173,14 @@ Each attempt has an observed outcome:
 understood the expression. #88 owns richer reconnect, retry, acknowledgement, and
 reconciliation policy.
 
-The current CLI-compatible output path records a delivery intent after expression
-commit and a confirmed attempt after the output write completes. If the write throws,
-the cognition remains completed while the delivery attempt is recorded as uncertain.
+The CLI-compatible output path records a delivery intent after expression commit and
+a confirmed attempt after the output write completes. If the write throws, the
+cognition remains completed while the delivery attempt is recorded as uncertain.
+
+The Telegram adapter uses the same lifecycle. A successful `sendMessage` response is
+`confirmed` and may retain Telegram's returned outbound `message_id` as operational
+evidence; an explicit Bot API rejection is `failed`; network/protocol ambiguity is
+`uncertain`. No Telegram-specific delivery truth bypasses this boundary.
 
 ## Operational ledger, not canonical memory
 
@@ -185,15 +201,16 @@ survive process boundaries. It is not canonical semantic memory:
 
 The sidecar is written atomically with file and directory synchronization, following
 the same local durability discipline as the continuity store. Its mutations are
-expected to occur under the existing single-principal/single-writer lifecycle. This
-issue does not introduce a second concurrent writer model.
+expected to occur under the existing single-principal/single-writer lifecycle. The
+Telegram worker preserves that assumption by acquiring the normal `StateStore` writer
+lease only while processing one accepted update, never while idly long polling.
 
 The ledger and canonical state are deliberately separate, so there is no claim of a
 cross-file transaction. The ordering and stable cognition ID make inbound replay
 idempotent across the important crash boundary. #88 owns reconciliation for richer
 outbound retry/recovery gaps.
 
-## CLI and future messaging surface
+## CLI and Telegram messaging surface
 
 The existing CLI behavior remains valid. A CLI-shaped caller uses the existing logical
 surface `local_cli`, principal provenance `explicit_local_argument`, and no external
@@ -201,16 +218,18 @@ occurrence ID. Each submitted line is therefore a fresh occurrence even when tex
 identical. Direct callers of `runCognition` retain `local_cli` as the compatibility
 default.
 
-A future Telegram adapter can use the same seam with a Telegram surface identifier,
-`configured_surface_mapping`, a configured delivery destination, and a stable
-Telegram update/message occurrence ID. Replayed transport updates then resolve to the
-already established occurrence rather than reaching cognition twice. Telegram
+The issue #86 Telegram adapter uses the same seam with logical surface `telegram_bot`,
+`configured_surface_mapping`, a configured private-chat delivery destination, and
+stable Telegram `update_id` occurrence evidence. Replayed updates resolve to the
+already-established occurrence rather than reaching cognition twice. Telegram
 chat/message/thread identifiers remain operational metadata and cannot replace Ember
 principal, scope, lineage, memory, or authority semantics.
 
-#86 may add Telegram-specific parsing, polling/webhook behavior, authentication,
-principal mapping configuration, and concrete send operations. It should not need to
-redefine occurrence identity, cognition surface context, or the delivery lifecycle.
+Telegram-specific parsing, Bot API long polling, token-file authentication, private
+chat mapping, concrete `sendMessage` delivery, and systemd supervision live outside
+this shared boundary in `src/surfaces/telegram.ts`, `bin/ember-telegram.ts`, the
+Telegram runbook, and ADR 0008. They do not redefine occurrence identity, cognition
+surface context, or the delivery lifecycle.
 
 ## Privacy and context selection
 
@@ -223,13 +242,15 @@ receive transport IDs or transport history.
 
 This preserves ADR 0003 and AS-OPS-05: a reachable transport or richer transport
 history cannot by itself justify disclosure of more Ember state. Recipient mapping,
-privacy policy, and surface-appropriate disclosure remain explicit later decisions.
+privacy policy, and surface-appropriate disclosure remain explicit decisions. Issue
+#87 now owns the next validation step against the concrete Telegram surface.
 
 ## Executable acceptance scenarios
 
 The focused tests in `src/runtime/interaction-boundary.test.ts` instantiate existing
 canonical operational scenarios without adding stronger semantics than the accepted
-catalogue.
+catalogue. `src/surfaces/telegram.test.ts` then exercises the same rules through the
+concrete second transport.
 
 | Scenario                                                                             | Expected result                                                                                                      | Canonical trace      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------- |
@@ -240,39 +261,40 @@ catalogue.
 | SURF-85-05: a principal assertion is rejected before acceptance                      | No occurrence and no cognition are established                                                                       | AS-OPS-05            |
 | SURF-85-06: cognition completes and the output operation then fails                  | Cognition remains completed; delivery intent exists; attempt is `uncertain`                                          | AS-OPS-03, AS-OPS-06 |
 
-AS-OPS-05 remains the governing privacy fixture for future cross-surface delivery.
-The implementation supports it by validating the principal before acceptance, keeping
+AS-OPS-05 remains the governing privacy fixture for cross-surface delivery. The
+implementation supports it by validating the principal before acceptance, keeping
 transport metadata outside canonical meaning, and projecting only the logical surface
-rather than transport-local IDs; #87 adds dedicated real-surface principal/privacy
+rather than transport-local IDs; #87 adds dedicated CLI/Telegram principal/privacy
 acceptance coverage.
 
 ## Deliberate limits
 
-Issue #85 does not:
+The shared issue #85 boundary does not:
 
-- implement Telegram;
 - derive a principal directly from an arbitrary transport account;
 - make message/thread IDs canonical memory;
 - deduplicate by text equality;
 - promise exactly-once delivery;
 - claim `confirmed` means the user observed the message;
 - automatically retry an uncertain delivery;
-- retain provider reply text inside transport metadata;
-- create a generic channel/plugin framework; or
-- change the selected long-lived runtime topology.
+- retain provider reply text inside transport metadata; or
+- create a generic channel/plugin framework.
 
-#86 owns the Telegram adapter, #87 owns cross-surface principal/privacy validation,
-and #88 owns reconnect, retry, replay recovery, and richer delivery uncertainty.
+The concrete Telegram adapter added by #86 remains deliberately narrow: one configured
+private chat, ordinary text messages, and no automatic uncertain-send retry. #87 owns
+cross-surface principal/privacy validation, #88 owns reconnect/retry/recovery and
+richer delivery uncertainty, and #89 owns end-to-end CLI/Telegram continuity
+validation.
 
 ## Definition-of-done mapping
 
-| Issue #85 requirement                                        | Repository outcome                                                                                                           |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Explicit principal/surface provenance                        | `SurfaceInteractionOptions` requires `surfaceId` and `principalProvenance`; inbound records preserve both.                   |
-| Replay correlation without text dedupe                       | Stable `(surface_id, external_occurrence_id)` correlation; no-ID inputs remain distinct regardless of text.                  |
-| Duplicate transport occurrence does not duplicate semantics  | Stable planned cognition ID plus replay lookup suppresses duplicate user evidence, cognition, and delivery.                  |
-| Delivery intent and outcome differ from cognition completion | Expression commits before intent; attempts separately record `confirmed`, `failed`, or `uncertain`.                          |
-| Surface-local IDs remain operational                         | Message/thread/update/destination IDs stay in the interaction sidecar and never become canonical meanings or projection.     |
-| Privacy/context remains Ember-owned                          | Existing `buildProjection` remains the context boundary; it receives only the logical surface, not transport-local metadata. |
-| CLI plus future messaging without generic framework          | CLI-shaped and hypothetical messaging cases use one narrow runtime seam with no transport registry/plugin hierarchy.         |
-| #86 can implement Telegram without redefining semantics      | Adapter only needs to supply mapped principal/surface provenance, stable occurrence metadata, destination, and concrete I/O. |
+| Issue #85 requirement                                        | Repository outcome                                                                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Explicit principal/surface provenance                        | `SurfaceInteractionOptions` requires `surfaceId` and `principalProvenance`; inbound records preserve both.                    |
+| Replay correlation without text dedupe                       | Stable `(surface_id, external_occurrence_id)` correlation; no-ID inputs remain distinct regardless of text.                   |
+| Duplicate transport occurrence does not duplicate semantics  | Stable planned cognition ID plus replay lookup suppresses duplicate user evidence, cognition, and delivery.                   |
+| Delivery intent and outcome differ from cognition completion | Expression commits before intent; attempts separately record `confirmed`, `failed`, or `uncertain`.                           |
+| Surface-local IDs remain operational                         | Message/thread/update/destination IDs stay in the interaction sidecar and never become canonical meanings or projection.      |
+| Privacy/context remains Ember-owned                          | Existing `buildProjection` remains the context boundary; it receives only the logical surface, not transport-local metadata.  |
+| CLI plus messaging without generic framework                 | CLI-shaped and Telegram cases use one narrow runtime seam with no transport registry/plugin hierarchy.                        |
+| Telegram uses the seam without redefining semantics          | #86 supplies mapped principal/surface provenance, stable update metadata, destination, and concrete I/O around this boundary. |
