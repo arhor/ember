@@ -34,10 +34,11 @@ new decision explicitly confronts and supersedes the affected semantic ADR.
 
 ## Implementation and representation decisions
 
-| ID                                                      | Decision                                                                 | Status   | Subordinate to |
-| ------------------------------------------------------- | ------------------------------------------------------------------------ | -------- | -------------- |
-| [0006](0006-adopt-typescript-on-nodejs-26.md)           | Adopt TypeScript on Node.js 26 as Ember's Implementation Runtime         | Accepted | ADRs 0001-0005 |
-| [0007](0007-use-systemd-supervised-episodic-runtime.md) | Use a systemd-Supervised Episodic Runtime Before a Resident Ember Daemon | Accepted | ADRs 0001-0006 |
+| ID                                                               | Decision                                                                                              | Status   | Subordinate to |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------- | -------------- |
+| [0006](0006-adopt-typescript-on-nodejs-26.md)                    | Adopt TypeScript on Node.js 26 as Ember's Implementation Runtime                                      | Accepted | ADRs 0001-0005 |
+| [0007](0007-use-systemd-supervised-episodic-runtime.md)          | Use a systemd-Supervised Episodic Runtime Before a Resident Ember Daemon                              | Accepted | ADRs 0001-0006 |
+| [0008](0008-add-systemd-supervised-telegram-transport-worker.md) | Add a systemd-Supervised Resident Telegram Transport Worker Without Making It Ember's Runtime Owner    | Accepted | ADRs 0001-0007 |
 
 ## Decision discipline
 
@@ -58,8 +59,8 @@ new decision explicitly confronts and supersedes the affected semantic ADR.
 The following cases are the mandatory validation set from
 [issue #20](https://github.com/arhor/ember/issues/20). "Governing ADRs" identifies
 the semantic decisions that jointly constrain each case; it does not prescribe a
-mechanism. Implementation decisions such as ADR 0006 and ADR 0007 must preserve
-every required result below.
+mechanism. Implementation decisions such as ADR 0006, ADR 0007, and ADR 0008 must
+preserve every required result below.
 
 | #   | Case                                                                        | Governing ADRs                                                                                                                                                                                                                                               | Required semantic result                                                                                                                                                                                          |
 | --- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
