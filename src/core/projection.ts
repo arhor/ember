@@ -40,7 +40,7 @@ export interface Projection {
     lineage: EmberState["lineage"];
     principal: string;
     active_scope: string;
-    surface: "local_cli";
+    surface: string;
     current_time: string;
     current_input: string;
     recovery_account: RecoveryAccount;
@@ -57,6 +57,7 @@ export interface Projection {
 export interface BuildProjectionOptions {
     principal: string;
     scope: string;
+    surface?: string;
     currentInput: string;
     currentTime: string;
     runtimeId: RuntimeId | string;
@@ -69,6 +70,7 @@ export function buildProjection(
     {
         principal,
         scope,
+        surface = "local_cli",
         currentInput,
         currentTime,
         runtimeId,
@@ -79,6 +81,9 @@ export function buildProjection(
     validateState(state);
     if (principal !== state.runtime_contract.local_principal) {
         throw new ValidationError("projection principal does not match runtime contract");
+    }
+    if (typeof surface !== "string" || !surface.trim()) {
+        throw new ValidationError("projection surface must be non-empty");
     }
     if (!["ordinary", "explain"].includes(purpose)) {
         throw new ValidationError("projection purpose must be ordinary or explain");
@@ -159,7 +164,7 @@ export function buildProjection(
         lineage: cloneState(state.lineage),
         principal,
         active_scope: scope,
-        surface: "local_cli",
+        surface,
         current_time: currentTime,
         current_input: currentInput,
         recovery_account: cloneState(runtime.recovery_account),
