@@ -91,6 +91,10 @@ Current architecture material:
 - [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
   Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
+- [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md)
+  records issue #92's evidence-based decision to retain the existing shared
+  `ProviderInvoker` cognition seam while keeping Codex and Cursor runtime lifecycle
+  mechanics in separate thin adapters.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
