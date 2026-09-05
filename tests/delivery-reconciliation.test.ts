@@ -26,6 +26,12 @@ async function fixture() {
     const store = new StateStore(statePath);
     await store.create(initialState("Ember", PRINCIPAL));
     const lease = await store.acquireWriteLease();
+    let leaseHeld = true;
+    const releaseWriter = async () => {
+        if (!leaseHeld) return;
+        await store.releaseWriteLease(lease);
+        leaseHeld = false;
+    };
     const loaded = await store.load();
     const started = startRuntime(loaded, PRINCIPAL, SCOPE);
     const state = await store.commit(loaded.revision, started.state);
@@ -35,11 +41,23 @@ async function fixture() {
         store,
         state,
         runtimeId: started.runtimeId,
+        releaseWriter,
         close: async () => {
-            await store.releaseWriteLease(lease);
+            await releaseWriter();
             await rm(directory, { recursive: true, force: true });
         },
     };
+}
+
+async function withRestartedWriter<T>(f: Awaited<ReturnType<typeof fixture>>, operation: (store: StateStore) => Promise<T>) {
+    await f.releaseWriter();
+    const restartedStore = new StateStore(f.statePath);
+    const lease = await restartedStore.acquireWriteLease();
+    try {
+        return await operation(restartedStore);
+    } finally {
+        await restartedStore.releaseWriteLease(lease);
+    }
 }
 
 function provider(calls: { value: number }): ProviderInvoker {
@@ -92,19 +110,21 @@ test("definite retryable delivery failure survives restart and retries the same 
         assert.equal(failed.attempts[0]?.outcome, "failed");
         assert.equal(failed.attempts[0]?.retryable, true);
 
-        const restartedStore = new StateStore(f.statePath);
-        const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, (text) => {
-            calls.delivery += 1;
-            assert.equal(text, "durable reply\n");
-            return { externalMessageId: "message-retry-ok" };
+        await withRestartedWriter(f, async (restartedStore) => {
+            const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, (text) => {
+                calls.delivery += 1;
+                assert.equal(text, "durable reply\n");
+                return { externalMessageId: "message-retry-ok" };
+            });
+
+            assert.equal(result.status, "confirmed");
+            const state = await restartedStore.load();
+            assert.equal(state.operations.cognition_episodes.length, 1);
+            assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "displayed");
         });
 
-        assert.equal(result.status, "confirmed");
         assert.equal(calls.provider, 1);
         assert.equal(calls.delivery, 2);
-        const state = await restartedStore.load();
-        assert.equal(state.operations.cognition_episodes.length, 1);
-        assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "displayed");
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         assert.deepEqual(
             ledger.deliveries[0]?.attempts.map((attempt) => attempt.outcome),
@@ -125,19 +145,20 @@ test("restart turns an unresolved started send into uncertainty instead of blind
         const started = await ledger.startDeliveryAttempt(failed.delivery_id);
         assert.equal(started.outcome, "started");
 
-        const restartedStore = new StateStore(f.statePath);
-        let resendCalls = 0;
-        const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, () => {
-            resendCalls += 1;
-        });
+        await withRestartedWriter(f, async (restartedStore) => {
+            let resendCalls = 0;
+            const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, () => {
+                resendCalls += 1;
+            });
 
-        assert.equal(result.status, "blocked_uncertain");
-        assert.equal(result.attemptId, started.attempt_id);
-        assert.equal(resendCalls, 0);
+            assert.equal(result.status, "blocked_uncertain");
+            assert.equal(result.attemptId, started.attempt_id);
+            assert.equal(resendCalls, 0);
+            const recovered = await new InteractionLedgerStore(f.statePath).load();
+            assert.equal(recovered.deliveries[0]?.attempts.at(-1)?.outcome, "uncertain");
+            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.delivery_status, "pending");
+        });
         assert.equal(calls.provider, 1);
-        const recovered = await new InteractionLedgerStore(f.statePath).load();
-        assert.equal(recovered.deliveries[0]?.attempts.at(-1)?.outcome, "uncertain");
-        assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.delivery_status, "pending");
     } finally {
         await f.close();
     }
@@ -155,14 +176,16 @@ test("confirmed delivery evidence reconciles canonical pending status without se
         });
         assert.equal((await f.store.load()).operations.cognition_episodes[0]?.delivery_status, "pending");
 
-        let resendCalls = 0;
-        const result = await reconcileSurfaceDelivery(new StateStore(f.statePath), failed.delivery_id, () => {
-            resendCalls += 1;
-        });
+        await withRestartedWriter(f, async (restartedStore) => {
+            let resendCalls = 0;
+            const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, () => {
+                resendCalls += 1;
+            });
 
-        assert.equal(result.status, "confirmed");
-        assert.equal(resendCalls, 0);
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.delivery_status, "displayed");
+            assert.equal(result.status, "confirmed");
+            assert.equal(resendCalls, 0);
+            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.delivery_status, "displayed");
+        });
     } finally {
         await f.close();
     }
