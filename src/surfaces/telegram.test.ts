@@ -16,6 +16,7 @@ import {
     type TelegramUpdate,
     processTelegramUpdate,
     renderTelegramSurfaceUnit,
+    runTelegramPolling,
     selectTelegramInbound,
 } from "./telegram.ts";
 
@@ -184,6 +185,45 @@ test("Bot API long polling sends explicit offset and message-only update filter"
     assert.equal(requests.length, 1);
     assert.match(requests[0]!.url, /\/getUpdates$/);
     assert.deepEqual(requests[0]!.body, { offset: 12, timeout: 30, allowed_updates: ["message"] });
+});
+
+test("polling advances acknowledgement offset only after an update is processed", async () => {
+    const f = await fixture();
+    try {
+        let polls = 0;
+        let providerCalls = 0;
+        let sends = 0;
+        const provider: ProviderInvoker = async () => {
+            providerCalls += 1;
+            return { contract_version: 1, reply: "ack reply", used_meaning_ids: [] };
+        };
+        const api = {
+            verifyLongPollingReady: async () => ({
+                bot: { id: 1, is_bot: true },
+                webhook: { url: "", pending_update_count: 0 },
+            }),
+            getUpdates: async ({ offset }: { offset?: number }) => {
+                polls += 1;
+                if (polls === 1) {
+                    assert.equal(offset, undefined);
+                    return [update(88)];
+                }
+                assert.equal(offset, 89);
+                throw new Error("stop-after-offset-proof");
+            },
+            sendMessage: async () => {
+                sends += 1;
+                return { message_id: 9002, chat: { id: CHAT_ID, type: "private" } };
+            },
+        } as Pick<TelegramBotApi, "getUpdates" | "sendMessage" | "verifyLongPollingReady">;
+
+        await assert.rejects(runTelegramPolling(f.config, api, { provider }), /stop-after-offset-proof/);
+        assert.equal(polls, 2);
+        assert.equal(providerCalls, 1);
+        assert.equal(sends, 1);
+    } finally {
+        await f.close();
+    }
 });
 
 test("Telegram API rejection is a definite failed delivery attempt", async () => {
