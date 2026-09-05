@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -139,7 +139,7 @@ test("replayed Telegram update reuses cognition and does not send a second respo
         assert.equal(state.operations.runtime_episodes.length, 2);
         assert.ok(state.operations.runtime_episodes.every((runtime) => runtime.clean_stop_at !== null));
 
-        const ledger = JSON.parse(await (await import("node:fs/promises")).readFile(`${f.statePath}.interactions.json`, "utf8"));
+        const ledger = JSON.parse(await readFile(`${f.statePath}.interactions.json`, "utf8"));
         assert.equal(ledger.inbound_occurrences.length, 1);
         assert.equal(ledger.inbound_occurrences[0].receive_count, 2);
         assert.equal(ledger.inbound_occurrences[0].external_occurrence_id, "update:77");
