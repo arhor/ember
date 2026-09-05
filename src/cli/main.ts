@@ -3,6 +3,7 @@ import type { Readable, Writable } from "node:stream";
 import { createInterface } from "node:readline";
 
 import type { EmberState, MeaningId, RuntimeId } from "../core/model.ts";
+import type { InteractionLedgerDocument } from "../runtime/interaction-boundary.ts";
 
 import { EmberError, ValidationError } from "../core/errors.ts";
 import { cloneState, initialState, nowUtc } from "../core/model.ts";
@@ -21,7 +22,8 @@ import { StateStore } from "../persistence/state-store.ts";
 import { invokeCodexProvider } from "../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { invokeCursorProvider } from "../providers/cursor.ts";
-import { startRuntime, stopRuntime, runCognition } from "../runtime/runtime.ts";
+import { InteractionLedgerStore, runSurfaceInteraction } from "../runtime/interaction-boundary.ts";
+import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 
 interface CliIo {
     input: Readable;
@@ -62,8 +64,12 @@ export async function main(
             case "run":
                 return await runInteractive(args, io);
             case "inspect": {
-                const state = await loadForPrincipal(new StateStore(args.state), args.principal);
-                const view = inspectionView(state);
+                const store = new StateStore(args.state);
+                const state = await loadForPrincipal(store, args.principal);
+                const view = {
+                    ...inspectionView(state),
+                    interactions: await new InteractionLedgerStore(store.path).load(),
+                };
                 io.output.write(args.json ? `${JSON.stringify(view, null, 2)}\n` : renderInspection(view));
                 break;
             }
@@ -155,7 +161,7 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
                     }
                 } else {
                     const result = await withSigintCancellation((signal) =>
-                        runCognition(store, state, {
+                        runSurfaceInteraction(store, state, {
                             runtimeId: started.runtimeId,
                             principal: args.principal,
                             scope: args.scope,
@@ -170,7 +176,9 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
                                     : args.providerKind === "cursor"
                                       ? invokeCursorProvider
                                       : undefined,
-                            output: io.output,
+                            surfaceId: "local_cli",
+                            principalProvenance: "explicit_local_argument",
+                            deliver: io.output,
                         }),
                     );
                     state = result.state;
@@ -239,7 +247,7 @@ async function ask(
         throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
     const ids = parts[2].split(",").filter(Boolean);
     if (!ids.length) throw new ValidationError("at least one explanation ID is required");
-    return runCognition(store, state, {
+    return runSurfaceInteraction(store, state, {
         runtimeId,
         principal: args.principal,
         scope: args.scope,
@@ -254,9 +262,11 @@ async function ask(
                 : args.providerKind === "cursor"
                   ? invokeCursorProvider
                   : undefined,
-        output,
         purpose: "explain",
         explainIds: ids,
+        surfaceId: "local_cli",
+        principalProvenance: "explicit_local_argument",
+        deliver: output,
     });
 }
 
@@ -267,7 +277,9 @@ async function loadForPrincipal(store: StateStore, principal: string) {
     return state;
 }
 
-type InspectionView = ReturnType<typeof inspectionView>;
+type InspectionView = ReturnType<typeof inspectionView> & {
+    interactions: InteractionLedgerDocument;
+};
 function renderInspection(view: InspectionView) {
     let text = `Lineage ${view.lineage.lineage_id} (${view.lineage.display_name}), revision ${view.revision}\nConstitutive boundaries:\n`;
     for (const boundary of view.lineage.constitutive_boundaries)
@@ -278,6 +290,8 @@ function renderInspection(view: InspectionView) {
         ["Unavailable gaps", view.gaps],
         ["Runtime episodes", view.runtime_episodes],
         ["Cognition episodes", view.cognition_episodes],
+        ["Interaction occurrences", view.interactions.inbound_occurrences],
+        ["Delivery records", view.interactions.deliveries],
     ];
     for (const [label, items] of sections) {
         text += `${label}:\n`;

@@ -1,15 +1,16 @@
 ---
-summary: "Issue #86 runbook for Ember's first Telegram messaging surface: Bot API 10.3 long polling, private-chat principal mapping, systemd user supervision, secret-safe configuration, and manual end-to-end validation."
+summary: "Current Telegram surface runbook: Bot API 10.3 long polling, issue #87 principal/scope privacy mapping, systemd user supervision, secret-safe configuration, and manual end-to-end validation."
 read_when:
   - "Setting up, running, debugging, or reviewing Ember's Telegram interaction surface"
-  - "Changing Telegram Bot API polling, bot-token handling, chat mapping, delivery behavior, or Telegram systemd startup"
+  - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior, or Telegram systemd startup"
 role: guide
 discovery_status: current
 ---
 
 # Telegram Surface Runbook
 
-> Status: current implementation/runbook for issue #86. The semantic boundary remains
+> Status: current implementation/runbook from issue #86, with principal/privacy policy
+> hardened across CLI and Telegram by issue #87. The semantic boundary remains
 > [Interaction Surface Boundary](interaction-surface-boundary.md); this document owns
 > Telegram-specific transport and deployment details only.
 
@@ -60,23 +61,41 @@ response delivery for that established occurrence.
 
 ## Current principal/privacy envelope
 
-Issue #86 deliberately supports one narrow mapping:
+The current implementation deliberately supports one narrow deployment mapping:
 
 ```text
 one configured Telegram private chat id
     -> configured_surface_mapping
     -> one existing Ember local principal
-    -> one configured Ember scope
+    -> one configured Ember active scope
 ```
 
 Only ordinary text messages are accepted. The message must come from the configured
 **private** chat, the sender must be the same Telegram user as that chat, and the
 sender must not be a bot. Group chats, channels, arbitrary users, username-based
 identity, forwarded identity, media/captions, edits, callbacks, and multiple principal
-mappings are outside #86.
+mappings are outside the current surface.
 
-This is a deployment mapping, not a claim that a Telegram account _is_ an Ember
-principal. Issue #87 owns stronger cross-surface principal/privacy validation.
+Issue #87 makes the mapping policy explicit:
+
+- `chat_id` is transport evidence selecting this configured mapping. It is not an
+  Ember principal, identity record, permission grant, or canonical meaning;
+- `principal` names the already-initialized Ember local principal. A matching Telegram
+  chat cannot manufacture a different principal; a configured mismatch is rejected
+  before the message becomes an accepted interaction occurrence;
+- `active_scope` is the ordinary cognition selection scope for this surface. Telegram
+  update/chat/message history does not broaden it;
+- ordinary Telegram text remains ordinary input even when it names a canonical meaning
+  ID or asks for information outside that scope. The request itself is visible, but it
+  does not opt into Ember's explicit local explanation-selection path or silently add
+  the named meaning to the projection;
+- changing the Telegram account/chat mapping does not rewrite Ember relationship or
+  continuity identity. It changes only which transport evidence is accepted for this
+  deployment mapping.
+
+The same continuing Ember can therefore have richer canonical relationship/memory
+state than one Telegram interaction is permitted to project. Surface reachability and
+recognized transport identity never imply unrestricted disclosure.
 
 Telegram `update_id`, `message_id`, `message_thread_id`, chat id, and delivery message
 id remain in the operational interaction boundary. They are not canonical meanings
@@ -155,6 +174,15 @@ Create an uncommitted local JSON file, for example
 All filesystem/executable paths are absolute because the systemd user manager must
 not depend on an interactive shell's current directory, aliases, or PATH resolution.
 `principal` must already match the principal in the initialized Ember state.
+`active_scope` is not a Telegram label: it is Ember's existing ordinary projection
+scope used for cognition accepted through this configured surface. Choose it
+deliberately for the information appropriate to this remote private-chat setting
+rather than copying a broader CLI/project scope automatically.
+
+`chat_id`, `principal`, and `active_scope` together are local deployment policy. They
+remain in the uncommitted configuration file rather than code, test fixtures tied to a
+real person, or canonical state. A repository checkout can therefore describe the
+mapping mechanism without embedding a personal Telegram identifier.
 
 Supported `provider_kind` values are `codex`, `cursor`, and `process`; this mirrors the
 existing cognition boundary rather than defining a Telegram-specific cognition
@@ -171,6 +199,12 @@ npm run surface:telegram -- check \
 
 Preflight calls `getMe` and `getWebhookInfo`. It fails closed when a webhook is active,
 because Telegram does not permit `getUpdates` while a webhook owns delivery.
+
+The Bot API preflight proves bot authentication and long-poll availability. It is not
+a substitute for Ember principal policy: when an accepted update is processed, the
+configured principal is resolved against the initialized continuity state before
+`runSurfaceInteraction`; a mismatch fails before provider invocation, interaction
+acceptance, or delivery.
 
 If this bot was previously configured for webhook delivery and switching it to Ember
 is intentional:
@@ -199,16 +233,22 @@ than abandoning a hidden model process.
 The worker does **not** hold the canonical writer lease while waiting for Telegram.
 For each accepted update it:
 
-1. acquires the existing `StateStore` writer lease;
-2. starts one short Ember runtime episode;
-3. calls `runSurfaceInteraction` with surface `telegram_bot`, principal provenance
-   `configured_surface_mapping`, and stable `update_id` correlation;
-4. sends the committed expression through `sendMessage`;
-5. records Telegram's returned outbound `message_id` as operational delivery evidence;
-6. cleanly stops the short runtime episode; and
-7. releases the writer lease before the next network wait.
+1. filters to the configured private-chat mapping;
+2. acquires the existing `StateStore` writer lease;
+3. resolves the configured principal against the initialized local principal while
+   starting one short Ember runtime episode;
+4. calls `runSurfaceInteraction` with surface `telegram_bot`, principal provenance
+   `configured_surface_mapping`, the configured active scope, and stable `update_id`
+   correlation;
+5. builds cognition context through the ordinary Ember projection boundary, without
+   injecting Telegram IDs/history;
+6. sends the committed expression through `sendMessage`;
+7. records Telegram's returned outbound `message_id` as operational delivery evidence;
+8. cleanly stops the short runtime episode; and
+9. releases the writer lease before the next network wait.
 
-An ignored or unmapped update creates no Ember runtime/cognition occurrence.
+An ignored or unmapped update creates no Ember runtime/cognition occurrence. A mapped
+chat paired with a wrong Ember principal fails before accepted interaction/cognition.
 
 ## Delivery truth
 
@@ -224,10 +264,10 @@ The Telegram adapter maps transport evidence onto the issue #85 delivery lifecyc
 or understood the message. The adapter does not automatically retry uncertain sends;
 that belongs to #88.
 
-Telegram currently limits ordinary `sendMessage` text. #86 does not split one Ember
-expression into multiple Telegram messages because that would require multi-message
-delivery semantics not present in the current boundary. An oversized Telegram send
-therefore fails explicitly instead of being silently chunked.
+Telegram currently limits ordinary `sendMessage` text. The current surface does not
+split one Ember expression into multiple Telegram messages because that would require
+multi-message delivery semantics not present in the current boundary. An oversized
+Telegram send therefore fails explicitly instead of being silently chunked.
 
 ## systemd user service
 
@@ -262,6 +302,27 @@ journalctl --user -u ember-telegram.service
 Do not log raw incoming message text or the bot token as part of normal adapter
 operation.
 
+## Inspection
+
+The ordinary CLI inspection command now includes operational interaction provenance:
+
+```bash
+ember inspect \
+  --state "$HOME/.local/share/ember/ember.json" \
+  --principal "YOUR_EMBER_PRINCIPAL" \
+  --json
+```
+
+The `interactions` section contains inbound occurrence and delivery records. For a
+Telegram exchange it can show logical surface `telegram_bot`,
+`configured_surface_mapping`, configured destination, stable update/message metadata,
+and confirmed/failed/uncertain delivery attempts including the outbound Telegram
+message ID when observed.
+
+This operator visibility does not move those values into canonical meanings or
+provider context. Inspection and cognition projection are deliberately different
+views.
+
 ## Manual end-to-end smoke
 
 This smoke is deliberately opt-in and requires a real bot/account/network. Normal
@@ -271,12 +332,12 @@ repository tests use deterministic fake HTTP/provider boundaries and require no 
 2. Start `serve` in the foreground or start `ember-telegram.service`.
 3. Send a fresh ordinary text message from the configured private Telegram chat.
 4. Confirm that exactly one Ember response arrives in that chat.
-5. Inspect canonical state with the ordinary Ember CLI and confirm the cognition
-   episode exists. Search the canonical state file for the Telegram update/chat/message
-   identifiers from this smoke and confirm they are absent.
-6. Inspect `<state_path>.interactions.json` and confirm those identifiers live there as
-   operational metadata, with one delivery intent and one attempt carrying the
-   returned outbound Telegram message id.
+5. Run `ember inspect ... --json` and confirm the cognition episode exists while the
+   Telegram update/chat/message identifiers appear only under `interactions`, not as
+   canonical meanings.
+6. Confirm the Telegram interaction record reports `configured_surface_mapping`, the
+   expected configured principal/scope/destination, one delivery intent, and one
+   attempt carrying the returned outbound Telegram message id.
 7. Restart the surface after forcing the same Telegram update to remain unacknowledged
    (for example by stopping before the next `getUpdates` confirmation call). Confirm
    replay does not create a second cognition or second response.
@@ -302,19 +363,31 @@ Focused tests cover:
 - private-chat mapping and rejection of unmapped chats before Ember work;
 - stable `update_id` replay producing one cognition and one send;
 - exclusion of Telegram ids from the cognition projection;
-- explicit `getUpdates` offset and message-only filter;
-- Bot API rejection versus uncertain network delivery;
-- refusal to long-poll while a webhook is active; and
-- generated systemd unit secrecy and restart policy.
+- explicit `getUpdates` acknowledgement offset and message-only filter;
+- Bot API rejection versus uncertain network/server delivery;
+- refusal to long-poll while a webhook is active;
+- generated systemd unit secrecy and restart policy;
+- CLI and Telegram selecting the same ordinary meanings when given the same active
+  scope despite different transport metadata;
+- a mapped Telegram message naming an out-of-scope meaning ID without causing that
+  meaning or its private content to enter ordinary cognition context;
+- a matching Telegram chat failing to manufacture a mismatched Ember principal; and
+- operator inspection exposing principal/surface/delivery provenance from the sidecar.
 
 ## Deliberate limits and next issues
 
-Issue #86 does not add groups, multiple principals, media, commands, callback queries,
-webhooks, automatic uncertain-send retry, or a generic surface/plugin framework.
+The current Telegram surface does not add groups, multiple principals, media,
+commands, callback queries, webhooks, automatic uncertain-send retry, device/user
+attestation, remote explicit-explanation commands, or a generic
+surface/plugin/authorization framework.
 
-- #87 owns stronger principal/privacy semantics across CLI and Telegram.
+Issue #87 establishes the current single-user principal/privacy policy described
+above. It does not claim that one private Telegram account is universally sufficient
+identity proof for future multi-user, shared-device, group, or forwarded-message
+surfaces.
+
 - #88 owns offline/reconnect/retry and delivery-uncertainty reconciliation.
 - #89 owns cross-surface continuity validation between CLI and Telegram.
 
 The Telegram worker is therefore a concrete second window onto the same Ember, not a
-new owner of Ember identity, memory, or truth.
+new owner of Ember identity, memory, authority, privacy policy, or truth.
