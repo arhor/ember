@@ -213,6 +213,13 @@ test("CLI and Telegram preserve one principal and the same least-sufficient scop
         assert.equal(telegramOccurrence.external_occurrence_id, "update:42");
         assert.equal(telegramOccurrence.delivery_destination_id, `telegram:chat:${CHAT_ID}`);
 
+        const cliDelivery = ledger.deliveries.find((record) => record.surface_id === "local_cli");
+        assert.ok(cliDelivery);
+        assert.equal(cliDelivery.destination_id, null);
+        assert.equal(cliDelivery.attempts.length, 1);
+        assert.equal(cliDelivery.attempts[0]?.outcome, "confirmed");
+        assert.equal(cliDelivery.attempts[0]?.external_message_id, null);
+
         const telegramDelivery = ledger.deliveries.find((record) => record.surface_id === TELEGRAM_SURFACE_ID);
         assert.ok(telegramDelivery);
         assert.equal(telegramDelivery.destination_id, `telegram:chat:${CHAT_ID}`);
@@ -274,7 +281,7 @@ test("matching Telegram chat identity cannot manufacture a different Ember princ
     }
 });
 
-test("explicit explanation cannot widen the active scope on any interaction surface", async () => {
+test("explicit explanation cannot widen the active scope through the shared interaction boundary", async () => {
     const f = await fixture();
     try {
         let providerCalls = 0;
