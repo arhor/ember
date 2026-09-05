@@ -442,10 +442,7 @@ export async function runSurfaceInteraction(
                     externalMessageId: failure?.externalMessageId ?? deliveredExternalMessageId,
                 });
             } catch (ledgerError) {
-                throw new AggregateError(
-                    [error, ledgerError],
-                    "delivery failed and its outcome could not be recorded",
-                );
+                throw new AggregateError([error, ledgerError], "delivery failed and its outcome could not be recorded");
             }
         }
         throw error;
