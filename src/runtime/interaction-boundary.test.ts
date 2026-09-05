@@ -9,11 +9,7 @@ import type { SurfaceDeliveryReceipt } from "./interaction-boundary.ts";
 
 import { initialState } from "../core/model.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import {
-    InteractionLedgerStore,
-    SurfaceDeliveryFailure,
-    runSurfaceInteraction,
-} from "./interaction-boundary.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure, runSurfaceInteraction } from "./interaction-boundary.ts";
 import { startRuntime } from "./runtime.ts";
 
 const PRINCIPAL = "max";
