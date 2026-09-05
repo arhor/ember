@@ -128,6 +128,7 @@ export interface RunCognitionOptions {
     runtimeId: RuntimeId;
     principal: string;
     scope: string;
+    surface?: string;
     text: string;
     command: string;
     arguments_?: string[];
@@ -151,6 +152,7 @@ export async function runCognition(
         runtimeId,
         principal,
         scope,
+        surface = "local_cli",
         text,
         command,
         arguments_: args = [],
@@ -173,6 +175,7 @@ export async function runCognition(
     const projection = buildProjection(state, {
         principal,
         scope,
+        surface,
         currentInput: text,
         currentTime: timestamp,
         runtimeId,
