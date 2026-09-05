@@ -5,10 +5,15 @@ import { join } from "node:path";
 import test from "node:test";
 
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
+import type { SurfaceDeliveryReceipt } from "./interaction-boundary.ts";
 
 import { initialState } from "../core/model.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { InteractionLedgerStore, runSurfaceInteraction } from "./interaction-boundary.ts";
+import {
+    InteractionLedgerStore,
+    SurfaceDeliveryFailure,
+    runSurfaceInteraction,
+} from "./interaction-boundary.ts";
 import { startRuntime } from "./runtime.ts";
 
 const PRINCIPAL = "max";
@@ -54,7 +59,7 @@ function countingProvider(calls: { value: number }, observe?: (request: Provider
 function options(
     runtimeId: Fixture["runtimeId"],
     provider: ProviderInvoker,
-    output: (text: string) => void | Promise<void>,
+    deliver: (text: string) => void | SurfaceDeliveryReceipt | Promise<void | SurfaceDeliveryReceipt>,
 ) {
     return {
         runtimeId,
@@ -64,7 +69,7 @@ function options(
         command: "fixture-provider",
         timeoutSeconds: 1,
         provider,
-        output,
+        deliver,
     } as const;
 }
 
@@ -76,12 +81,16 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
         const provider = countingProvider(calls);
 
         const first = await runSurfaceInteraction(f.store, f.state, {
-            ...options(f.runtimeId, provider, (text) => delivered.push(text)),
+            ...options(f.runtimeId, provider, (text) => {
+                delivered.push(text);
+            }),
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
         });
         const second = await runSurfaceInteraction(f.store, first.state, {
-            ...options(f.runtimeId, provider, (text) => delivered.push(text)),
+            ...options(f.runtimeId, provider, (text) => {
+                delivered.push(text);
+            }),
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
         });
@@ -115,16 +124,20 @@ test("replayed messaging update reuses one occurrence and does not repeat cognit
             correlationId: "correlation-42",
             occurredAt: "2026-09-05T10:00:00Z",
         } as const;
+        const deliver = (text: string) => {
+            delivered.push(text);
+            return { externalMessageId: "outbound-message-7" };
+        };
 
         const first = await runSurfaceInteraction(f.store, f.state, {
-            ...options(f.runtimeId, provider, (text) => delivered.push(text)),
+            ...options(f.runtimeId, provider, deliver),
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
             externalOccurrence,
             deliveryDestinationId: "chat-1",
         });
         const second = await runSurfaceInteraction(f.store, first.state, {
-            ...options(f.runtimeId, provider, (text) => delivered.push(text)),
+            ...options(f.runtimeId, provider, deliver),
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
             externalOccurrence,
@@ -145,6 +158,7 @@ test("replayed messaging update reuses one occurrence and does not repeat cognit
         assert.equal(ledger.deliveries.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "confirmed");
+        assert.equal(ledger.deliveries[0]?.attempts[0]?.external_message_id, "outbound-message-7");
         assert.deepEqual(delivered, ["reply\n"]);
     } finally {
         await f.close();
@@ -277,6 +291,41 @@ test("completed cognition remains separate from an uncertain delivery attempt", 
         assert.equal(ledger.deliveries.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "uncertain");
+    } finally {
+        await f.close();
+    }
+});
+
+test("surface adapter can record a definite failed delivery attempt", async () => {
+    const f = await fixture();
+    try {
+        const calls = { value: 0 };
+        const provider = countingProvider(calls);
+
+        await assert.rejects(
+            runSurfaceInteraction(f.store, f.state, {
+                ...options(f.runtimeId, provider, () => {
+                    throw new SurfaceDeliveryFailure("transport rejected send", {
+                        outcome: "failed",
+                        externalMessageId: "rejected-message-1",
+                    });
+                }),
+                surfaceId: "messaging:test",
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: { occurrenceId: "update-definite-failure" },
+                deliveryDestinationId: "chat-definite-failure",
+            }),
+            /transport rejected send/,
+        );
+
+        const state = await f.store.load();
+        const ledger = await new InteractionLedgerStore(f.store.path).load();
+        assert.equal(calls.value, 1);
+        assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
+        assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "pending");
+        assert.equal(ledger.deliveries[0]?.attempts.length, 1);
+        assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "failed");
+        assert.equal(ledger.deliveries[0]?.attempts[0]?.external_message_id, "rejected-message-1");
     } finally {
         await f.close();
     }
