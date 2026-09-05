@@ -10,7 +10,12 @@ import { StateStore } from "../persistence/state-store.ts";
 import { invokeCodexProvider } from "../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { invokeCursorProvider } from "../providers/cursor.ts";
-import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../runtime/interaction-boundary.ts";
+import {
+    InteractionLedgerStore,
+    SurfaceDeliveryFailure,
+    reconcileSurfaceDelivery,
+    runSurfaceInteraction,
+} from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
@@ -91,6 +96,7 @@ export type TelegramUpdateOutcome =
           updateId: number;
           cognitionId: CognitionId;
           providerFailure: string | null;
+          deliveryFailure: "failed" | "uncertain" | null;
       };
 
 export type TelegramFetch = (url: string, init: RequestInit) => Promise<Response>;
@@ -98,12 +104,19 @@ export type TelegramFetch = (url: string, init: RequestInit) => Promise<Response
 export class TelegramApiError extends Error {
     readonly outcome: "rejected" | "uncertain";
     readonly errorCode: number | null;
+    readonly retryAfterSeconds: number | null;
 
-    constructor(message: string, outcome: "rejected" | "uncertain", errorCode: number | null = null) {
+    constructor(
+        message: string,
+        outcome: "rejected" | "uncertain",
+        errorCode: number | null = null,
+        retryAfterSeconds: number | null = null,
+    ) {
         super(message);
         this.name = "TelegramApiError";
         this.outcome = outcome;
         this.errorCode = errorCode;
+        this.retryAfterSeconds = retryAfterSeconds;
     }
 }
 
@@ -206,8 +219,12 @@ export class TelegramBotApi {
         } catch (error) {
             if (error instanceof SurfaceDeliveryFailure) throw error;
             if (error instanceof TelegramApiError) {
+                const retryable =
+                    error.outcome === "rejected" && error.errorCode === 429 && error.retryAfterSeconds !== null;
                 throw new SurfaceDeliveryFailure(error.message, {
                     outcome: error.outcome === "rejected" ? "failed" : "uncertain",
+                    retryable,
+                    retryAfterSeconds: retryable ? error.retryAfterSeconds : null,
                 });
             }
             throw new SurfaceDeliveryFailure("Telegram sendMessage delivery outcome is uncertain");
@@ -253,7 +270,12 @@ export class TelegramBotApi {
                 : response.status || null;
             const description = typeof envelope.description === "string" ? `: ${envelope.description}` : "";
             const outcome = response.status >= 500 ? "uncertain" : "rejected";
-            throw new TelegramApiError(`Telegram ${method} rejected the request${description}`, outcome, code);
+            throw new TelegramApiError(
+                `Telegram ${method} rejected the request${description}`,
+                outcome,
+                code,
+                telegramRetryAfter(envelope.parameters),
+            );
         }
         if (!response.ok)
             throw new TelegramApiError(
@@ -336,35 +358,56 @@ export async function processTelegramUpdate(
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
         const selectedProvider = provider ?? providerForConfig(config.provider_kind);
-        const result = await runSurfaceInteraction(store, state, {
-            runtimeId,
-            principal: config.principal,
-            scope: config.active_scope,
-            text: inbound.text,
-            command: config.provider_command,
-            arguments_: config.provider_arguments,
-            timeoutSeconds: config.provider_timeout_seconds,
-            signal,
-            ...(selectedProvider === undefined ? {} : { provider: selectedProvider }),
-            surfaceId: TELEGRAM_SURFACE_ID,
-            principalProvenance: "configured_surface_mapping",
-            externalOccurrence: inbound.externalOccurrence,
-            deliveryDestinationId: inbound.deliveryDestinationId,
-            deliver: async (text) => {
-                const sent = await api.sendMessage(inbound.chatId, text, {
-                    messageThreadId: inbound.messageThreadId,
-                    signal,
-                });
-                return { externalMessageId: String(sent.message_id) };
-            },
-        });
-        stopReason = result.providerFailure === null ? "telegram_update_complete" : "telegram_provider_failure";
-        return {
-            kind: result.replayed ? "replayed" : "processed",
-            updateId: update.update_id,
-            cognitionId: result.cognitionId,
-            providerFailure: result.providerFailure,
-        };
+        try {
+            const result = await runSurfaceInteraction(store, state, {
+                runtimeId,
+                principal: config.principal,
+                scope: config.active_scope,
+                text: inbound.text,
+                command: config.provider_command,
+                arguments_: config.provider_arguments,
+                timeoutSeconds: config.provider_timeout_seconds,
+                signal,
+                ...(selectedProvider === undefined ? {} : { provider: selectedProvider }),
+                surfaceId: TELEGRAM_SURFACE_ID,
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: inbound.externalOccurrence,
+                deliveryDestinationId: inbound.deliveryDestinationId,
+                deliver: async (text) => {
+                    const sent = await api.sendMessage(inbound.chatId, text, {
+                        messageThreadId: inbound.messageThreadId,
+                        signal,
+                    });
+                    return { externalMessageId: String(sent.message_id) };
+                },
+            });
+            stopReason = result.providerFailure === null ? "telegram_update_complete" : "telegram_provider_failure";
+            return {
+                kind: result.replayed ? "replayed" : "processed",
+                updateId: update.update_id,
+                cognitionId: result.cognitionId,
+                providerFailure: result.providerFailure,
+                deliveryFailure: null,
+            };
+        } catch (error) {
+            if (!(error instanceof SurfaceDeliveryFailure)) throw error;
+            const ledger = await new InteractionLedgerStore(config.state_path).load();
+            const occurrence = ledger.inbound_occurrences.find(
+                (record) =>
+                    record.surface_id === TELEGRAM_SURFACE_ID &&
+                    record.external_occurrence_id === inbound.externalOccurrence.occurrenceId,
+            );
+            if (!occurrence)
+                throw new AggregateError([error], "Telegram delivery failed after its inbound occurrence was lost");
+            stopReason = "telegram_delivery_failure";
+            return {
+                kind: "processed",
+                updateId: update.update_id,
+                cognitionId: occurrence.cognition_id,
+                providerFailure: null,
+                deliveryFailure: error.outcome,
+            };
+        }
     } finally {
         try {
             if (runtimeId !== null) {
@@ -380,6 +423,51 @@ export async function processTelegramUpdate(
         } finally {
             await store.releaseWriteLease(lease);
         }
+    }
+}
+
+export async function reconcileTelegramDeliveries(
+    config: TelegramSurfaceConfig,
+    api: Pick<TelegramBotApi, "sendMessage">,
+    { signal, observedAt }: { signal?: AbortSignal; observedAt?: string } = {},
+) {
+    validateTelegramSurfaceConfig(config);
+    const store = new StateStore(config.state_path);
+    const lease = await store.acquireWriteLease();
+    try {
+        const state = await store.load();
+        const ledger = await new InteractionLedgerStore(config.state_path).load();
+        const pendingCognitionIds = new Set(
+            state.operations.cognition_episodes
+                .filter((cognition) => cognition.status === "completed" && cognition.delivery_status !== "displayed")
+                .map((cognition) => cognition.cognition_id),
+        );
+        const results = [];
+        for (const delivery of ledger.deliveries) {
+            if (signal?.aborted) break;
+            if (delivery.surface_id !== TELEGRAM_SURFACE_ID || !pendingCognitionIds.has(delivery.cognition_id))
+                continue;
+            const destination = parseTelegramDestination(delivery.destination_id);
+            if (destination.chatId !== config.chat_id)
+                throw new ValidationError("Telegram delivery destination no longer matches configured private chat");
+            results.push(
+                await reconcileSurfaceDelivery(
+                    store,
+                    delivery.delivery_id,
+                    async (text) => {
+                        const sent = await api.sendMessage(destination.chatId, text, {
+                            messageThreadId: destination.messageThreadId,
+                            signal,
+                        });
+                        return { externalMessageId: String(sent.message_id) };
+                    },
+                    observedAt === undefined ? {} : { observedAt },
+                ),
+            );
+        }
+        return results;
+    } finally {
+        await store.releaseWriteLease(lease);
     }
 }
 
@@ -405,6 +493,7 @@ export async function runTelegramPolling(
     let offset: number | undefined;
     let acceptedCount = 0;
     while (!signal?.aborted) {
+        await reconcileTelegramDeliveries(config, api, { signal });
         let updates: TelegramUpdate[];
         try {
             updates = await api.getUpdates({ offset, timeoutSeconds: config.poll_timeout_seconds, signal });
@@ -553,6 +642,24 @@ function validateTelegramChat(value: unknown, field: string): TelegramChat {
     if (typeof record.type !== "string" || !record.type)
         throw new TelegramApiError(`${field} type is invalid`, "uncertain");
     return { id: record.id as number, type: record.type };
+}
+
+function telegramRetryAfter(value: unknown) {
+    if (value === undefined || value === null || typeof value !== "object" || Array.isArray(value)) return null;
+    const retryAfter = (value as Record<string, unknown>).retry_after;
+    return Number.isSafeInteger(retryAfter) && (retryAfter as number) >= 0 ? (retryAfter as number) : null;
+}
+
+function parseTelegramDestination(value: string | null) {
+    if (value === null) throw new ValidationError("Telegram delivery is missing a destination");
+    const match = /^telegram:chat:(\d+)(?::thread:(\d+))?$/.exec(value);
+    if (!match) throw new ValidationError("Telegram delivery destination is invalid");
+    const chatId = Number(match[1]);
+    const messageThreadId = match[2] === undefined ? null : Number(match[2]);
+    validateChatId(chatId);
+    if (messageThreadId !== null && (!Number.isSafeInteger(messageThreadId) || messageThreadId <= 0))
+        throw new ValidationError("Telegram delivery thread is invalid");
+    return { chatId, messageThreadId };
 }
 
 function validateTelegramToken(token: string) {

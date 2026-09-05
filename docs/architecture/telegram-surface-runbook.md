@@ -1,5 +1,5 @@
 ---
-summary: "Current Telegram surface runbook: Bot API 10.3 long polling, issue #87 principal/scope privacy mapping, systemd user supervision, secret-safe configuration, and manual end-to-end validation."
+summary: "Current Telegram surface runbook: Bot API 10.3 long polling, principal/scope privacy mapping, issue #88 restart-safe delivery reconciliation, systemd user supervision, and secret-safe configuration."
 read_when:
   - "Setting up, running, debugging, or reviewing Ember's Telegram interaction surface"
   - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior, or Telegram systemd startup"
@@ -10,7 +10,8 @@ discovery_status: current
 # Telegram Surface Runbook
 
 > Status: current implementation/runbook from issue #86, with principal/privacy policy
-> hardened across CLI and Telegram by issue #87. The semantic boundary remains
+> hardened by issue #87 and restart-safe delivery reconciliation added by issue #88.
+> The semantic boundary remains
 > [Interaction Surface Boundary](interaction-surface-boundary.md); this document owns
 > Telegram-specific transport and deployment details only.
 
@@ -252,17 +253,22 @@ chat paired with a wrong Ember principal fails before accepted interaction/cogni
 
 ## Delivery truth
 
-The Telegram adapter maps transport evidence onto the issue #85 delivery lifecycle:
+The Telegram adapter maps transport evidence onto the shared delivery lifecycle:
 
 - a successful `sendMessage` response records `confirmed` and the returned Telegram
   message id;
-- an explicit Bot API rejection such as HTTP/API 4xx records `failed`;
-- network loss, malformed/unreadable response, or server-side ambiguity records
-  `uncertain`.
+- an explicit non-retryable Bot API rejection records definite `failed`;
+- flood control with a valid `parameters.retry_after` records definite retryable
+  `failed` plus the transport-neutral retry delay; and
+- network loss, malformed/unreadable acknowledgement, server-side ambiguity, or process
+  loss after the send boundary records or reconciles to `uncertain`.
 
 `confirmed` means Telegram accepted the send operation. It does not mean the user read
-or understood the message. The adapter does not automatically retry uncertain sends;
-that belongs to #88.
+or understood the message. Before each long-poll cycle the worker reconciles pending
+Telegram deliveries: due definite retryable failures may resend the exact retained
+representation without new cognition, while `uncertain` remains blocked. The
+transport-neutral rules live in
+[Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
 
 Telegram currently limits ordinary `sendMessage` text. The current surface does not
 split one Ember expression into multiple Telegram messages because that would require
@@ -346,8 +352,10 @@ The logical `telegram_bot` surface supplied to cognition is covered by determini
 provider-boundary tests; it is not claimed to be a new canonical memory field merely
 for observability.
 
-The last restart/replay step exercises #85's duplicate-occurrence guarantee through a
-real transport. Richer offline/reconnect and uncertain-send recovery belongs to #88.
+The restart/replay step exercises #85's duplicate-occurrence guarantee through a real
+transport. Issue #88 additionally keeps outbound recovery separate from inbound replay:
+definite retryable delivery can resume from the durable delivery intent, while an
+ambiguous prior send remains blocked instead of being duplicated.
 
 ## Deterministic confidence path
 
@@ -386,7 +394,8 @@ above. It does not claim that one private Telegram account is universally suffic
 identity proof for future multi-user, shared-device, group, or forwarded-message
 surfaces.
 
-- #88 owns offline/reconnect/retry and delivery-uncertainty reconciliation.
+- #88 defines the current offline/reconnect/retry and delivery-uncertainty policy in
+  the transport-neutral delivery reconciliation runbook.
 - #89 owns cross-surface continuity validation between CLI and Telegram.
 
 The Telegram worker is therefore a concrete second window onto the same Ember, not a

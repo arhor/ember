@@ -10,8 +10,9 @@ discovery_status: current
 # Interaction Surface Boundary
 
 > Status: current design and executable seam from issue #85, exercised by Telegram in
-> issue #86 and hardened across the real CLI and Telegram surfaces by issue #87.
-> Telegram-specific runtime ownership is recorded separately in
+> issue #86, hardened across CLI and Telegram by issue #87, and extended with
+> restart-safe delivery reconciliation by issue #88. Telegram-specific runtime
+> ownership is recorded separately in
 > [ADR 0008](decisions/0008-add-systemd-supervised-telegram-transport-worker.md).
 
 ## Purpose
@@ -64,7 +65,7 @@ cognition completes
 delivery intent
     |
     v
-attempt -> confirmed | failed | uncertain
+attempt: started -> confirmed | failed | uncertain
 ```
 
 The cognition projection remains built by Ember from canonical state. The logical
@@ -158,7 +159,8 @@ delivery.
 If cognition already completed but the process failed before its delivery intent was
 persisted, a replay reconstructs the missing intent from the committed expression and
 the occurrence's already-established surface/destination. It still does not repeat
-cognition or automatically retry delivery; richer reconciliation remains #88 work.
+cognition. Because the exact outbound representation was never durably retained,
+reconciliation cannot invent it and remains blocked until stronger evidence exists.
 
 ## Outbound delivery
 
@@ -181,8 +183,9 @@ Each attempt has an observed outcome:
   have become externally visible.
 
 `confirmed` is still transport evidence. It does not prove that a human read or
-understood the expression. #88 owns richer reconnect, retry, acknowledgement, and
-reconciliation policy.
+understood the expression. Issue #88 adds the transport-neutral restart/retry policy
+documented in [Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
+Only definite retryable failure permits resend; `uncertain` remains blocked.
 
 The production CLI uses the same lifecycle as Telegram. A local output write creates a
 delivery intent after expression commit and records a confirmed attempt after the
@@ -221,8 +224,9 @@ interactive CLI already holds that same writer lease while accepting local input
 
 The ledger and canonical state are deliberately separate, so there is no claim of a
 cross-file transaction. The ordering and stable cognition ID make inbound replay
-idempotent across the important crash boundary. #88 owns reconciliation for richer
-outbound retry/recovery gaps.
+idempotent across the important crash boundary. Issue #88 extends that ledger with a
+durable outbound representation and explicit send-start checkpoint so restart
+reconciliation can preserve the same truth discipline across outbound gaps.
 
 ### Inspection and explanation
 
@@ -343,16 +347,16 @@ The shared boundary does not:
 - promise exactly-once delivery;
 - claim `confirmed` means the user observed the message;
 - automatically retry an uncertain delivery;
-- retain provider reply text inside transport metadata;
+- expose retained delivery representation text through ordinary inspection or cognition context;
 - add per-surface copies of canonical memory;
 - redefine the existing explicit explanation-selection contract; or
 - create a generic channel/plugin or general-purpose authorization framework.
 
 The concrete Telegram adapter remains deliberately narrow: one configured private
-chat, one existing local principal, one configured active scope, ordinary text
-messages, and no automatic uncertain-send retry. #88 owns reconnect/retry/recovery and
-richer delivery uncertainty, and #89 owns end-to-end CLI/Telegram continuity
-validation.
+chat, one existing local principal, one configured active scope, and ordinary text
+messages. It may retry only a definite retryable failure using the same retained
+delivery intent; an uncertain send is never retried automatically. #89 owns end-to-end
+CLI/Telegram continuity validation.
 
 ## Definition-of-done mapping
 

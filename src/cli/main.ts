@@ -3,7 +3,6 @@ import type { Readable, Writable } from "node:stream";
 import { createInterface } from "node:readline";
 
 import type { EmberState, MeaningId, RuntimeId } from "../core/model.ts";
-import type { InteractionLedgerDocument } from "../runtime/interaction-boundary.ts";
 
 import { EmberError, ValidationError } from "../core/errors.ts";
 import { cloneState, initialState, nowUtc } from "../core/model.ts";
@@ -22,7 +21,11 @@ import { StateStore } from "../persistence/state-store.ts";
 import { invokeCodexProvider } from "../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { invokeCursorProvider } from "../providers/cursor.ts";
-import { InteractionLedgerStore, runSurfaceInteraction } from "../runtime/interaction-boundary.ts";
+import {
+    InteractionLedgerStore,
+    interactionLedgerInspectionView,
+    runSurfaceInteraction,
+} from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 
 interface CliIo {
@@ -68,7 +71,7 @@ export async function main(
                 const state = await loadForPrincipal(store, args.principal);
                 const view = {
                     ...inspectionView(state),
-                    interactions: await new InteractionLedgerStore(store.path).load(),
+                    interactions: interactionLedgerInspectionView(await new InteractionLedgerStore(store.path).load()),
                 };
                 io.output.write(args.json ? `${JSON.stringify(view, null, 2)}\n` : renderInspection(view));
                 break;
@@ -278,7 +281,7 @@ async function loadForPrincipal(store: StateStore, principal: string) {
 }
 
 type InspectionView = ReturnType<typeof inspectionView> & {
-    interactions: InteractionLedgerDocument;
+    interactions: ReturnType<typeof interactionLedgerInspectionView>;
 };
 function renderInspection(view: InspectionView) {
     let text = `Lineage ${view.lineage.lineage_id} (${view.lineage.display_name}), revision ${view.revision}\nConstitutive boundaries:\n`;

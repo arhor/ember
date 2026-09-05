@@ -140,7 +140,7 @@ export interface RunCognitionOptions {
     provider?: ProviderInvoker;
     cognitionId?: CognitionId;
     hooks?: {
-        afterExpressionCommit?: (state: EmberState) => void | Promise<void>;
+        afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
         afterDisplay?: (state: EmberState) => void | Promise<void>;
     };
 }
@@ -274,8 +274,9 @@ export async function runCognition(
     });
     findRuntime(completed, runtimeId).last_durable_observation_at = at;
     state = await store.commit(current.revision, completed);
-    await hooks.afterExpressionCommit?.(state);
-    await writeOutput(output, `${result.reply}\n`);
+    const outputText = `${result.reply}\n`;
+    await hooks.afterExpressionCommit?.(state, outputText);
+    await writeOutput(output, outputText);
     await hooks.afterDisplay?.(state);
     const displayed = cloneState(state);
     const displayedCognition = findCognition(displayed, cognitionId);
