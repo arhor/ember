@@ -32,8 +32,8 @@ Issue #85 itself added no resident channel framework and no new owner of Ember
 continuity. Issue #86 later supplied concrete evidence for one resident Telegram
 _transport_ worker under ADR 0008 while preserving this boundary's ownership rules:
 canonical work remains short-lived and writer-lease bounded. Issue #87 does not add a
-new authorization framework; it makes the already-required principal, scope, privacy,
-and delivery distinctions executable across both current surfaces.
+new authorization framework; it makes the already-required principal, ordinary-scope
+privacy, and delivery distinctions executable across both current surfaces.
 
 ## Boundary
 
@@ -99,9 +99,10 @@ configured private chat.
 A surface account, chat ID, transport address, session, or device is evidence about a
 principal. It is not semantic authority by itself. The configured Telegram chat can
 therefore prove that an update arrived through the deployment mapping, but it cannot
-manufacture a different Ember principal or widen the current scope. A configured
-principal that does not match the initialized continuity state's local principal is
-rejected before Telegram input becomes an accepted interaction occurrence.
+manufacture a different Ember principal or widen ordinary context selection. A
+configured principal that does not match the initialized continuity state's local
+principal is rejected before Telegram input becomes an accepted interaction
+occurrence.
 
 ### Occurrence identity and replay
 
@@ -142,7 +143,7 @@ The ordering is intentional:
 
 1. validate the principal/runtime assertions;
 2. establish and durably record the transport occurrence with a planned cognition ID;
-3. build the permitted projection for the current principal/scope/purpose;
+3. build the projection using the existing cognition purpose and selection semantics;
 4. create canonical user evidence and cognition using that same ID only after the
    projection is valid; and
 5. on transport replay, inspect canonical state for that ID before considering any
@@ -241,13 +242,20 @@ Inspection is an operator view of durable evidence, not cognition context. Makin
 transport provenance inspectable does not make it automatically available to a
 provider projection.
 
+The existing explicit CLI explanation paths retain their established semantics. In
+particular, #87 does not globally reinterpret an explicitly requested explanation ID
+as ordinary surface scope selection. Telegram currently exposes only ordinary text
+cognition, not a remote `:ask --explain` command, so no transport mapping gains that
+explicit diagnostic expansion implicitly.
+
 ## CLI and Telegram messaging surface
 
 The production CLI uses logical surface `local_cli`, principal provenance
 `explicit_local_argument`, and no external occurrence ID. Each submitted cognition
 line is therefore a fresh occurrence even when text is identical. `:ask --explain`
-uses the same boundary and delivery lifecycle. Direct lower-level callers of
-`runCognition` retain `local_cli` as the compatibility default.
+uses the same occurrence/delivery boundary while retaining the pre-existing explicit
+explanation selection semantics. Direct lower-level callers of `runCognition` retain
+`local_cli` as the compatibility default.
 
 The Telegram adapter uses logical surface `telegram_bot`,
 `configured_surface_mapping`, a configured private-chat delivery destination, and
@@ -260,35 +268,38 @@ Telegram-specific parsing, Bot API long polling, token-file authentication, priv
 chat mapping, concrete `sendMessage` delivery, and systemd supervision live outside
 this shared boundary in `src/surfaces/telegram.ts`, `bin/ember-telegram.ts`, the
 Telegram runbook, and ADR 0008. They do not redefine occurrence identity, cognition
-surface context, disclosure scope, or the delivery lifecycle.
+surface context, ordinary context selection, or the delivery lifecycle.
 
 ## Privacy and context selection
 
-The surface boundary does not broaden cognition context. After occurrence
-correlation, `runCognition` calls Ember's projection builder with the asserted
-principal, active scope, logical surface, current text, purpose, and canonical state.
-The projection receives the logical surface so cognition never falsely claims a
-Telegram-originated interaction came from `local_cli`; it does not receive transport
+The surface boundary does not broaden cognition context merely because one transport
+carries richer metadata. `runCognition` calls Ember's projection builder with the
+asserted principal, active scope, logical surface, current text, purpose, and canonical
+state. The projection receives the logical surface so cognition never falsely claims
+a Telegram-originated interaction came from `local_cli`; it does not receive transport
 IDs or transport history.
 
-The active scope remains the disclosure boundary independently of transport. A
-meaning available to CLI cognition in one scope is not automatically available to a
-Telegram interaction running in another scope merely because both surfaces belong to
-the same continuing Ember. Conversely, when CLI and Telegram deliberately use the
-same scope, ordinary projection selection is governed by the same semantic rules;
-Telegram's richer update/chat/message metadata does not expand the selected meaning
-set.
+For ordinary cognition, the active scope remains the selection boundary independently
+of transport. A meaning available to CLI cognition in one scope is not automatically
+available to a Telegram interaction running in another scope merely because both
+surfaces belong to the same continuing Ember. Conversely, when CLI and Telegram
+deliberately use the same scope, ordinary projection selection is governed by the same
+semantic rules; Telegram's richer update/chat/message metadata does not expand the
+selected meaning set.
 
-Explicit explanation is also scope-bounded. `purpose: explain` may deepen provenance
-and historical detail for an explicitly requested meaning only when that meaning is
-inside the current active scope. An explicit ID is evidence of user interest, not
-permission to cross a scope boundary. A cross-scope explanation request fails before
-provider invocation and before canonical user evidence/cognition is committed.
+The concrete attempted-over-disclosure fixture makes the distinction explicit: a
+valid, mapped Telegram message can literally name the ID of a canonical meaning from a
+different scope and ask for it to be revealed. The request text is preserved as the
+current input, but ordinary selection still excludes that meaning and its content.
+Knowing an identifier, arriving through a recognized chat, and asking for more context
+are evidence of user intent, not mechanisms that silently rewrite ordinary projection
+policy.
 
-This is the concrete issue #87 application of ADR 0003 and ADR 0004: technical access,
-a remembered meaning ID, or a recognized Telegram chat cannot create disclosure
-authority. Surface identity and transport history remain evidence, while principal and
-permitted scope remain Ember-owned policy inputs.
+This is the issue #87 application of ADR 0003 and ADR 0004 without changing the
+existing explicit explanation contract: technical access, richer transport history,
+or a recognized Telegram chat cannot create ordinary disclosure authority. Surface
+identity and transport history remain evidence, while principal and projection policy
+remain Ember-owned inputs.
 
 ## Executable acceptance scenarios
 
@@ -308,18 +319,18 @@ the same principal/privacy/delivery invariants across both real logical surfaces
 
 Issue #87 adds the following concrete cross-surface fixtures:
 
-| Scenario                                                                  | Expected result                                                                                                                 |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| SURF-87-01: CLI and Telegram use the same principal and scope             | Both projections select the same scope-governed meanings; only logical `surface` differs                                        |
-| SURF-87-02: Telegram carries update/chat/message history                  | Transport IDs remain in the interaction ledger and do not expand or appear in cognition projection                              |
-| SURF-87-03: configured chat is paired with a different Ember principal    | Reject before provider invocation, accepted occurrence, cognition, or delivery                                                  |
-| SURF-87-04: explicit explain requests a meaning from another active scope | Reject before provider invocation and canonical cognition; remembered availability or explicit ID does not authorize disclosure |
-| SURF-87-05: operator inspects interactions after CLI and Telegram use     | Inspection shows surface/principal provenance, destination, delivery intent, attempt outcome, and external receipt when known   |
+| Scenario                                                               | Expected result                                                                                                                  |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| SURF-87-01: CLI and Telegram use the same principal and ordinary scope | Both projections select the same scope-governed meanings; only logical `surface` and current input differ                       |
+| SURF-87-02: Telegram carries update/chat/message history               | Transport IDs remain in the interaction ledger and do not expand or appear in cognition projection                              |
+| SURF-87-03: configured chat is paired with a different Ember principal | Reject before provider invocation, accepted occurrence, cognition, or delivery                                                   |
+| SURF-87-04: mapped Telegram input names an out-of-scope meaning ID      | Request text is visible, but the named meaning and its private content remain absent from ordinary cognition projection          |
+| SURF-87-05: operator inspects interactions after CLI and Telegram use   | Inspection shows surface/principal provenance, destination, delivery intent, attempt outcome, and external receipt when known   |
 
 AS-OPS-05 remains the governing privacy fixture for cross-surface delivery. The
 implementation validates the principal before acceptance, keeps transport metadata
-outside canonical meaning, preserves scope at projection time, and makes operational
-provenance inspectable without injecting it into provider context.
+outside canonical meaning, preserves ordinary scope selection at projection time, and
+makes operational provenance inspectable without injecting it into provider context.
 
 ## Deliberate limits
 
@@ -333,7 +344,8 @@ The shared boundary does not:
 - claim `confirmed` means the user observed the message;
 - automatically retry an uncertain delivery;
 - retain provider reply text inside transport metadata;
-- add per-surface copies of canonical memory; or
+- add per-surface copies of canonical memory;
+- redefine the existing explicit explanation-selection contract; or
 - create a generic channel/plugin or general-purpose authorization framework.
 
 The concrete Telegram adapter remains deliberately narrow: one configured private
@@ -347,9 +359,9 @@ validation.
 | Issue #87 requirement                                        | Repository outcome                                                                                                                              |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Principal assertion/resolution explicit for CLI and Telegram | Production CLI uses `explicit_local_argument`; Telegram uses `configured_surface_mapping`; both resolve to the initialized local principal.     |
-| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass scope validation.                                 |
-| Least-sufficient privacy remains transport-independent       | Both surfaces use `buildProjection`; same scope yields the same ordinary meaning selection and transport metadata adds nothing.                 |
-| Attempted over-disclosure fails closed                       | Explicit explanation rejects meanings outside the active scope before provider invocation or canonical cognition.                               |
+| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass ordinary projection selection.                   |
+| Least-sufficient privacy remains transport-independent       | Both surfaces use `buildProjection`; same ordinary scope yields the same selected meanings and transport metadata adds nothing.                 |
+| Attempted over-disclosure fails closed                       | Telegram may name an out-of-scope meaning ID in current input, but ordinary projection excludes the meaning and its private content.            |
 | Delivery provenance remains distinct                         | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition.   |
 | Inspection explains relevant provenance                      | `ember inspect` includes operational occurrences and deliveries with surface, principal provenance, destinations, and observed attempt results. |
 | Deployment mapping stays configurable without committed IDs  | Telegram mapping remains local configuration (`principal`, `active_scope`, `chat_id`); no real personal identifier is committed in repository.  |
