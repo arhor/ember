@@ -63,11 +63,11 @@ This confirms the intended steady-state property on the target hardware: Ember d
 
 Medians below are compared with issue #82's x86_64 GitHub-hosted canonical fixture run. The external fixture is a bounded Node protocol child and is not Codex cost.
 
-| Workload | Pi Ember root RSS | #82 root RSS | Pi total tree RSS | #82 total tree RSS | Pi wall median | #82 wall median |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Foreground cognition | 96.72 MiB | 99.79 MiB | 154.11 MiB | 170.43 MiB | 1,527.48 ms | 1,506.61 ms |
-| Endogenous wake | 99.78 MiB | 99.12 MiB | 156.64 MiB | 170.08 MiB | 1,541.48 ms | 1,471.87 ms |
-| Specialist delegation | 96.73 MiB | 99.50 MiB | 161.03 MiB | 169.39 MiB | 1,534.04 ms | 1,461.60 ms |
+| Workload              | Pi Ember root RSS | #82 root RSS | Pi total tree RSS | #82 total tree RSS | Pi wall median | #82 wall median |
+| --------------------- | ----------------: | -----------: | ----------------: | -----------------: | -------------: | --------------: |
+| Foreground cognition  |         96.72 MiB |    99.79 MiB |        154.11 MiB |         170.43 MiB |    1,527.48 ms |     1,506.61 ms |
+| Endogenous wake       |         99.78 MiB |    99.12 MiB |        156.64 MiB |         170.08 MiB |    1,541.48 ms |     1,471.87 ms |
+| Specialist delegation |         96.73 MiB |    99.50 MiB |        161.03 MiB |         169.39 MiB |    1,534.04 ms |     1,461.60 ms |
 
 The Ember root RSS class is effectively unchanged across platforms: the three Pi medians remain roughly **96.7 to 99.8 MiB**, within about -3.1% to +0.7% of the #82 root medians. The Pi fixture tree is lower mainly because the ARM Node fixture child is smaller, at roughly **64.4 to 64.5 MiB** median rather than roughly 70 MiB on the hosted x86_64 runner.
 
@@ -84,11 +84,11 @@ Fixture ranges on the Pi:
 
 The real provider changes the external process tree materially while leaving the Ember root in the same memory class.
 
-| Workload | Ember root RSS median | External descendants RSS median | Total tree RSS median | Wall median | Total CPU median | Max process count median |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Foreground cognition | 95.44 MiB | 107.16 MiB | 197.27 MiB | 7.87 s | 750 ms | 5 |
-| Endogenous wake | 97.89 MiB | 105.19 MiB | 202.62 MiB | 6.95 s | 780 ms | 6 |
-| Specialist delegation | 96.81 MiB | 149.77 MiB | 240.88 MiB | 23.98 s | 940 ms | 7 |
+| Workload              | Ember root RSS median | External descendants RSS median | Total tree RSS median | Wall median | Total CPU median | Max process count median |
+| --------------------- | --------------------: | ------------------------------: | --------------------: | ----------: | ---------------: | -----------------------: |
+| Foreground cognition  |             95.44 MiB |                      107.16 MiB |            197.27 MiB |      7.87 s |           750 ms |                        5 |
+| Endogenous wake       |             97.89 MiB |                      105.19 MiB |            202.62 MiB |      6.95 s |           780 ms |                        6 |
+| Specialist delegation |             96.81 MiB |                      149.77 MiB |            240.88 MiB |     23.98 s |           940 ms |                        7 |
 
 Real-provider ranges:
 
@@ -106,11 +106,11 @@ The long specialist wall window is not CPU saturation: its median sampled proces
 
 Pressure snapshots were taken before measurement, after the fixture phase, and after the live-provider phase.
 
-| Snapshot | Available memory | Swap used | 1-minute load | CPU temperature | Pi throttled flags |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Before | 2,987.14 MiB | 0 MiB | 0.16 | 49.05 °C | `0x0` |
-| After fixture | 2,891.53 MiB | 0 MiB | 1.00 | 52.90 °C | `0x0` |
-| After real Codex | 2,941.94 MiB | 0 MiB | 0.86 | 53.45 °C | `0x0` |
+| Snapshot         | Available memory | Swap used | 1-minute load | CPU temperature | Pi throttled flags |
+| ---------------- | ---------------: | --------: | ------------: | --------------: | ------------------ |
+| Before           |     2,987.14 MiB |     0 MiB |          0.16 |        49.05 °C | `0x0`              |
+| After fixture    |     2,891.53 MiB |     0 MiB |          1.00 |        52.90 °C | `0x0`              |
+| After real Codex |     2,941.94 MiB |     0 MiB |          0.86 |        53.45 °C | `0x0`              |
 
 The host retained roughly **2.94 GiB available memory** after the full capture. Swap remained unused throughout. `vcgencmd get_throttled` reported `0x0` at every snapshot, so the run recorded no current or historical under-voltage/frequency/thermal throttling flags. Temperature rose about 4.4 °C from the pre-run snapshot to the final snapshot, remaining modest for this host.
 
