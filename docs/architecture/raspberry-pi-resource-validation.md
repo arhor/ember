@@ -29,14 +29,16 @@ Run from a clean checkout of the issue #84 branch on the target Raspberry Pi-cla
 ```bash
 npm ci
 npm run check
-npm run eval:runtime-resource:constrained > raspberry-pi-resource-evidence.json
+npm run --silent eval:runtime-resource:constrained > raspberry-pi-resource-evidence.json
 node -e 'JSON.parse(require("node:fs").readFileSync("raspberry-pi-resource-evidence.json", "utf8"))'
 ```
+
+`--silent` is required when redirecting stdout to the evidence file. Without it, npm writes its script banner to stdout before the JSON payload, producing a human-readable file whose first lines are not valid JSON.
 
 The constrained-host wrapper discovers `codex` from `PATH`. If the executable is intentionally outside `PATH`, pass it explicitly without committing the machine-local path:
 
 ```bash
-npm run eval:runtime-resource:constrained -- \
+npm run --silent eval:runtime-resource:constrained -- \
   --provider-command "$(command -v codex)" \
   > raspberry-pi-resource-evidence.json
 ```
@@ -46,7 +48,7 @@ Do not commit shell history, credentials, environment dumps, hostnames, username
 For a fixture-only diagnostic that performs no real provider calls:
 
 ```bash
-npm run eval:runtime-resource:constrained -- --fixture-only
+npm run --silent eval:runtime-resource:constrained -- --fixture-only
 ```
 
 Fixture-only output is useful for debugging the measurement harness but is insufficient to close issue #84 because it does not validate the real external-runtime process tree.
