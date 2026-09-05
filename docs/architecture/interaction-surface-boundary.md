@@ -319,13 +319,13 @@ the same principal/privacy/delivery invariants across both real logical surfaces
 
 Issue #87 adds the following concrete cross-surface fixtures:
 
-| Scenario                                                               | Expected result                                                                                                                  |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| SURF-87-01: CLI and Telegram use the same principal and ordinary scope | Both projections select the same scope-governed meanings; only logical `surface` and current input differ                       |
-| SURF-87-02: Telegram carries update/chat/message history               | Transport IDs remain in the interaction ledger and do not expand or appear in cognition projection                              |
-| SURF-87-03: configured chat is paired with a different Ember principal | Reject before provider invocation, accepted occurrence, cognition, or delivery                                                   |
-| SURF-87-04: mapped Telegram input names an out-of-scope meaning ID      | Request text is visible, but the named meaning and its private content remain absent from ordinary cognition projection          |
-| SURF-87-05: operator inspects interactions after CLI and Telegram use   | Inspection shows surface/principal provenance, destination, delivery intent, attempt outcome, and external receipt when known   |
+| Scenario                                                               | Expected result                                                                                                               |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| SURF-87-01: CLI and Telegram use the same principal and ordinary scope | Both projections select the same scope-governed meanings; only logical `surface` and current input differ                     |
+| SURF-87-02: Telegram carries update/chat/message history               | Transport IDs remain in the interaction ledger and do not expand or appear in cognition projection                            |
+| SURF-87-03: configured chat is paired with a different Ember principal | Reject before provider invocation, accepted occurrence, cognition, or delivery                                                |
+| SURF-87-04: mapped Telegram input names an out-of-scope meaning ID     | Request text is visible, but the named meaning and its private content remain absent from ordinary cognition projection       |
+| SURF-87-05: operator inspects interactions after CLI and Telegram use  | Inspection shows surface/principal provenance, destination, delivery intent, attempt outcome, and external receipt when known |
 
 AS-OPS-05 remains the governing privacy fixture for cross-surface delivery. The
 implementation validates the principal before acceptance, keeps transport metadata
@@ -359,7 +359,7 @@ validation.
 | Issue #87 requirement                                        | Repository outcome                                                                                                                              |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Principal assertion/resolution explicit for CLI and Telegram | Production CLI uses `explicit_local_argument`; Telegram uses `configured_surface_mapping`; both resolve to the initialized local principal.     |
-| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass ordinary projection selection.                   |
+| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass ordinary projection selection.                    |
 | Least-sufficient privacy remains transport-independent       | Both surfaces use `buildProjection`; same ordinary scope yields the same selected meanings and transport metadata adds nothing.                 |
 | Attempted over-disclosure fails closed                       | Telegram may name an out-of-scope meaning ID in current input, but ordinary projection excludes the meaning and its private content.            |
 | Delivery provenance remains distinct                         | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition.   |
