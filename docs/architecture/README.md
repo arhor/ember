@@ -50,6 +50,10 @@ Current architecture material:
 - [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete
   Bot API 10.3 long-polling adapter, private-chat mapping, secret-safe configuration,
   systemd user service, delivery evidence mapping, and manual end-to-end smoke path.
+- [Cross-Surface Continuity Validation](cross-surface-continuity-validation.md) records
+  issue #89's CLI-to-Telegram-to-CLI restart proof, selected-meaning and provenance
+  assertions, delivery-uncertainty isolation, and opt-in real Telegram reproduction
+  procedure.
 - [Ember Architecture Acceptance Scenarios](acceptance-scenarios.md) turn the
   cross-cutting scenarios into a representation-neutral architecture oracle that
   implementation choices must preserve.
