@@ -233,7 +233,7 @@ catalogue.
 
 | Scenario                                                                             | Expected result                                                                                                      | Canonical trace      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| SURF-85-01: identical CLI-shaped text is entered twice                               | Two occurrence IDs, two cognition episodes, two deliveries                                                          | AS-OPS-02            |
+| SURF-85-01: identical CLI-shaped text is entered twice                               | Two occurrence IDs, two cognition episodes, two deliveries                                                           | AS-OPS-02            |
 | SURF-85-02: one stable messaging update is replayed                                  | One occurrence, one user-command evidence item, one cognition, one delivery intent; receipt count records the replay | AS-OPS-01            |
 | SURF-85-03: two stable messaging IDs carry identical text                            | Two occurrences and two cognitions                                                                                   | AS-OPS-02            |
 | SURF-85-04: the same stable transport ID reappears with conflicting payload/metadata | Reject the conflicting replay; do not create a second cognition                                                      | AS-OPS-01, AS-OPS-02 |
