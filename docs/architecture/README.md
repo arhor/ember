@@ -36,6 +36,10 @@ Current architecture material:
   selects the first unattended Linux topology: a lingered user-level systemd manager
   supervises short-lived Ember wake/recovery workers and per-episode specialist jobs,
   with no permanently resident Ember Node daemon until later evidence earns one.
+- [ADR 0008: Add a systemd-Supervised Resident Telegram Transport Worker Without Making It Ember's Runtime Owner](decisions/0008-add-systemd-supervised-telegram-transport-worker.md)
+  records issue #86's evidence-derived topology extension: one resident long-poll
+  transport process while canonical Ember work remains short-lived and writer-lease
+  bounded.
 - [Episodic Runtime Runbook](episodic-runtime-runbook.md) records issue #94's runnable
   `ember-runtime` configuration, systemd user-manager installation, one-shot wake and
   specialist operations, status, shutdown/recovery behavior, deterministic tests, and
@@ -115,7 +119,9 @@ Historical material:
   accepted decisions.
 
 Implementation architecture must preserve the semantic baseline. ADR 0006 settles
-the current implementation language/runtime baseline, and ADR 0007 settles the first
-unattended Linux supervision topology beneath it. Neither decision settles memory
-retrieval architecture, future surface transports, generic delegation protocols, or
-package boundaries beyond the concrete requirements they explicitly address.
+the current implementation language/runtime baseline, ADR 0007 settles the episodic
+unattended-work topology, and ADR 0008 narrowly adds the first resident transport
+worker without transferring canonical ownership to it. These decisions still do not
+settle memory retrieval architecture, a generic multi-surface framework, generic
+delegation protocols, or package boundaries beyond the concrete requirements they
+explicitly address.
