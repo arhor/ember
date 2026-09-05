@@ -97,10 +97,7 @@ async function fixture() {
 async function runLocalSurface(
     store: StateStore,
     provider: ProviderInvoker,
-    {
-        purpose = "ordinary",
-        explainIds = [],
-    }: { purpose?: "ordinary" | "explain"; explainIds?: string[] } = {},
+    { purpose = "ordinary", explainIds = [] }: { purpose?: "ordinary" | "explain"; explainIds?: string[] } = {},
 ) {
     const lease = await store.acquireWriteLease();
     let runtimeId: ReturnType<typeof startRuntime>["runtimeId"] | null = null;
@@ -228,10 +225,11 @@ test("CLI and Telegram preserve one principal and the same least-sufficient scop
         assert.equal(telegramDelivery.attempts[0]?.external_message_id, "9001");
 
         const output: string[] = [];
-        const code = await cliMain(
-            ["inspect", "--state", f.statePath, "--principal", PRINCIPAL, "--json"],
-            { input: Readable.from([]), output: memoryOutput(output), error: memoryOutput([]) },
-        );
+        const code = await cliMain(["inspect", "--state", f.statePath, "--principal", PRINCIPAL, "--json"], {
+            input: Readable.from([]),
+            output: memoryOutput(output),
+            error: memoryOutput([]),
+        });
         assert.equal(code, 0);
         const inspection = JSON.parse(output.join(""));
         assert.equal(inspection.interactions.inbound_occurrences.length, 2);
