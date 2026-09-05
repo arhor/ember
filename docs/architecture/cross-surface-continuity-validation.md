@@ -83,7 +83,7 @@ local_cli -> telegram_bot -> telegram_bot -> local_cli
 
 Each projection receives only its own `current_input`. The final CLI projection must not contain either prior Telegram input, and Telegram projections must not contain the fake chat id or Telegram update identifiers.
 
-The canonical state file is also checked not to contain the Telegram input strings, chat id, or provider reply text. Surface-local transport evidence remains in the operational interaction ledger, not canonical memory or cognition context.
+Ordinary user input is still retained by the existing canonical evidence model as attributable `user_command` evidence with `payload_mode: retained_optional`. That retained occurrence evidence is not a transport transcript and does not automatically become a current meaning or later cognition context. The oracle therefore requires both Telegram inputs to remain attributable in evidence while proving that neither is promoted to a meaning or selected into the returning CLI projection. The fake chat id and Telegram update ids remain operational interaction metadata, and provider reply text remains outside canonical state.
 
 ### Restart is a real operational boundary
 
