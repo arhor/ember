@@ -1,9 +1,9 @@
 ---
-summary: "Issue #82 reproducible Linux resource baseline for Ember's episodic runtime, separating idle residency, active Ember workers, and external provider processes."
+summary: "Issue #82 reproducible Linux resource baseline for Ember's episodic runtime, with issue #84 Raspberry Pi-class validation recorded separately."
 read_when:
   - "Reviewing Ember runtime RSS, CPU, process count, or steady-state resource cost"
   - "Comparing future runtime changes with the issue #82 Linux baseline"
-  - "Running issue #84 resource measurements on Raspberry Pi-class hardware"
+  - "Reviewing issue #84 Raspberry Pi-class runtime resource evidence"
 role: evidence
 discovery_status: current
 ---
@@ -121,7 +121,7 @@ For each observed PID the harness reads Linux `/proc/<pid>/stat`, `/proc/<pid>/s
 - Average CPU percentage is sampled CPU milliseconds divided by the measured wall window. It is not a scheduler or per-core utilization trace.
 - Process count is the maximum concurrently observed root+descendant count.
 
-Summed `VmRSS` is not proportional-set-size accounting and can count shared physical pages once per process. The tree total is therefore a process-RSS attribution metric, not a claim about unique physical RAM. If #84 encounters real memory pressure, PSS or `/proc/*/smaps_rollup` may be recorded alongside this baseline rather than silently replacing it.
+Summed `VmRSS` is not proportional-set-size accounting and can count shared physical pages once per process. The tree total is therefore a process-RSS attribution metric, not a claim about unique physical RAM. If constrained hardware encounters real memory pressure, PSS or `/proc/*/smaps_rollup` may be recorded alongside this baseline rather than silently replacing it.
 
 Because processes can exit between 10 ms samples, sampled CPU can slightly undercount the final few ticks. RSS is likewise a sampled peak rather than an allocator/heap high-water mark. The evaluation harness itself runs outside the measured Ember process tree and can perturb the host slightly while scanning `/proc`; repeated samples and medians reduce but do not eliminate hosted-runner noise.
 
@@ -155,10 +155,10 @@ npm run eval:runtime-resource -- \
   --hold-ms 1200
 ```
 
-## Baseline conclusion and handoff to #84
+## Baseline conclusion and constrained-host validation
 
 The implemented episodic topology keeps **no Ember Node process resident while idle**. On the canonical x86_64 hosted runner, a short-lived active Ember root peaks around 99 to 100 MiB RSS, while the fixture-backed two-process tree peaks around 169 to 170 MiB. The latter is not a Codex estimate and can double-count shared physical pages because it sums process RSS.
 
-Issue #84 should run the same harness on Raspberry Pi-class ARM hardware, preserving the idle observation, active workload definitions, sampling interval, warm-up/repeat policy, and root-versus-descendant attribution wherever practical. Hardware/model-specific deviations should be recorded rather than silently changing the workload.
+Issue #84 has now repeated the same workload boundary on a Raspberry Pi 5 ARM64 host and additionally measured real Codex. The target-host evidence is recorded in [raspberry-pi-resource-evaluation.md](raspberry-pi-resource-evaluation.md), with the reproducible manual capture procedure in [raspberry-pi-resource-validation.md](raspberry-pi-resource-validation.md).
 
-No optimization issue is justified by the hosted-runner figures alone. Any constrained-host optimization should be tied to #84 measurements that demonstrate actual memory, CPU, swap, thermal, or latency pressure on the intended deployment class.
+The constrained-host result preserves zero Ember residency at idle, keeps the active Ember root in roughly the same 95 to 100 MiB memory class, uses no swap, records no Raspberry Pi throttling flags, and shows no concrete memory/CPU/thermal pressure requiring an optimization follow-up. The heaviest live case is specialist delegation at about 241 MiB median summed process-tree `VmRSS`, dominated by external Codex descendants rather than a larger Ember root.
