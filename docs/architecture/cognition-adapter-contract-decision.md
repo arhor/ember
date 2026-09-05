@@ -89,17 +89,17 @@ Those are Ember semantics. The evidence used to establish them remains adapter-s
 
 ## Where Codex and Cursor remain materially different
 
-| Concern | Codex production adapter | Cursor production adapter | Abstraction consequence |
-| --- | --- | --- | --- |
-| Authentication ownership | Runtime-owned Codex login; allowlisted environment includes `CODEX_HOME` | Runtime-owned Cursor login; separate environment allowlist | Keep environment policy adapter-local |
-| Working directory | Isolated temporary cwd; output schema file written there | Isolated temporary trusted workspace; adapter writes `.cursor/cli.json` deny policy | Workspace preparation is not one generic setup step |
-| Context isolation | Explicitly ignores user config and rules, disables plugins/apps/skill instructions, uses read-only sandbox | Ask mode, sandbox enabled, trusted isolated workspace, explicit deny policy for shell/file/web/MCP tools | Do not normalize to a single `isolated=true` claim |
-| Explicit arguments | Codex adapter composes Codex `exec` grammar and thread mode | Cursor validates the prefix and currently permits only explicit model selection | Argument capability remains runtime-specific |
-| Structured output | JSONL event stream plus strict output schema | One terminal JSON envelope whose `result` string contains the ProviderResult JSON | Parsing cannot share a truthful terminal contract below `ProviderResult` |
-| Continuation evidence | `thread.started` can expose a thread ID before final completion; supports ephemeral, fresh-persistent, and resume modes | Session ID is obtained from the terminal result; supports fresh and resume modes | Failure-time continuation evidence differs |
-| Diagnostics | Bounded stderr plus Codex structured error inspection from stdout | Bounded stderr and Cursor terminal envelope validation | Error extraction remains adapter-specific |
-| Cancellation/timeout | Kill escalation plus possible previously observed Codex thread ID | Kill escalation without a session ID unless a terminal result was obtained | Same Ember outcome can rest on different evidence |
-| Temporary-state cleanup | Temporary cwd is retained when direct-child termination is unconfirmed | Temporary workspace is retained under the same broad uncertainty condition | Similar policy, but tied to different runtime-local files |
+| Concern                  | Codex production adapter                                                                                                | Cursor production adapter                                                                                | Abstraction consequence                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Authentication ownership | Runtime-owned Codex login; allowlisted environment includes `CODEX_HOME`                                                | Runtime-owned Cursor login; separate environment allowlist                                               | Keep environment policy adapter-local                                    |
+| Working directory        | Isolated temporary cwd; output schema file written there                                                                | Isolated temporary trusted workspace; adapter writes `.cursor/cli.json` deny policy                      | Workspace preparation is not one generic setup step                      |
+| Context isolation        | Explicitly ignores user config and rules, disables plugins/apps/skill instructions, uses read-only sandbox              | Ask mode, sandbox enabled, trusted isolated workspace, explicit deny policy for shell/file/web/MCP tools | Do not normalize to a single `isolated=true` claim                       |
+| Explicit arguments       | Codex adapter composes Codex `exec` grammar and thread mode                                                             | Cursor validates the prefix and currently permits only explicit model selection                          | Argument capability remains runtime-specific                             |
+| Structured output        | JSONL event stream plus strict output schema                                                                            | One terminal JSON envelope whose `result` string contains the ProviderResult JSON                        | Parsing cannot share a truthful terminal contract below `ProviderResult` |
+| Continuation evidence    | `thread.started` can expose a thread ID before final completion; supports ephemeral, fresh-persistent, and resume modes | Session ID is obtained from the terminal result; supports fresh and resume modes                         | Failure-time continuation evidence differs                               |
+| Diagnostics              | Bounded stderr plus Codex structured error inspection from stdout                                                       | Bounded stderr and Cursor terminal envelope validation                                                   | Error extraction remains adapter-specific                                |
+| Cancellation/timeout     | Kill escalation plus possible previously observed Codex thread ID                                                       | Kill escalation without a session ID unless a terminal result was obtained                               | Same Ember outcome can rest on different evidence                        |
+| Temporary-state cleanup  | Temporary cwd is retained when direct-child termination is unconfirmed                                                  | Temporary workspace is retained under the same broad uncertainty condition                               | Similar policy, but tied to different runtime-local files                |
 
 The September 1 live cross-provider evaluation adds another important negative fact: Cursor's tested CLI configuration did not prove exclusion of all runtime-owned account/team rules or MCP metadata, while the Codex adapter makes stronger explicit user-config/rule suppression claims. A shared abstraction must not erase that difference merely because both adapters are suitable for the same bounded Ember cognition seam.
 
@@ -194,12 +194,12 @@ Any future extraction should begin from those concrete pressures and preserve re
 
 ## Definition-of-done mapping
 
-| Issue #92 requirement | Decision evidence |
-| --- | --- |
-| comparison is based on proven production adapters | `codex.ts`, `cursor.ts`, contract/runtime code, and issue #57 live replacement evidence |
-| common concepts are separated from provider-specific capabilities | common-contract and differences sections above |
-| auth/model/session/cancellation/implicit context are not flattened | differences table and rejected alternatives |
-| common contract exists only where it reduces semantic duplication | retain the already-used `ProviderInvoker` seam; reject a lower lifecycle framework |
-| separate adapters remain a valid outcome | explicit decision and consequences |
-| abstraction stays narrower than a plugin/runtime framework | no new production abstraction introduced |
-| repository artifacts explain the result | this document plus existing adapter/evaluation sources |
+| Issue #92 requirement                                              | Decision evidence                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| comparison is based on proven production adapters                  | `codex.ts`, `cursor.ts`, contract/runtime code, and issue #57 live replacement evidence |
+| common concepts are separated from provider-specific capabilities  | common-contract and differences sections above                                          |
+| auth/model/session/cancellation/implicit context are not flattened | differences table and rejected alternatives                                             |
+| common contract exists only where it reduces semantic duplication  | retain the already-used `ProviderInvoker` seam; reject a lower lifecycle framework      |
+| separate adapters remain a valid outcome                           | explicit decision and consequences                                                      |
+| abstraction stays narrower than a plugin/runtime framework         | no new production abstraction introduced                                                |
+| repository artifacts explain the result                            | this document plus existing adapter/evaluation sources                                  |
