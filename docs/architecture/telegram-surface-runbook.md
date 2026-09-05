@@ -42,8 +42,7 @@ timeout. It does not use short polling as an always-on mechanism.
 
 ## Why long polling
 
-The first deployment target is the existing single-user Linux/systemd host from ADR
-0007. Long polling needs no public HTTPS endpoint, certificate, reverse proxy, inbound
+The first deployment target is the existing single-user Linux/systemd host from ADR 0007. Long polling needs no public HTTPS endpoint, certificate, reverse proxy, inbound
 firewall rule, or webhook secret. A systemd user service can therefore own the network
 wait while Ember itself still acquires canonical writer ownership only around an
 accepted update.
@@ -51,7 +50,8 @@ accepted update.
 This is the first concrete evidence that a continuously open transport is useful. It
 does **not** convert the transport worker into Ember identity or canonical continuity.
 The worker may disappear and restart; durable state and the interaction ledger remain
-the truth sources.
+the truth sources. [ADR 0008](decisions/0008-add-systemd-supervised-telegram-transport-worker.md)
+records that narrow topology extension explicitly.
 
 `Restart=on-failure` is safe for this transport worker because restarting the poller is
 not itself a cognition retry. Telegram may replay an unacknowledged `update_id`, and
@@ -75,7 +75,7 @@ sender must not be a bot. Group chats, channels, arbitrary users, username-based
 identity, forwarded identity, media/captions, edits, callbacks, and multiple principal
 mappings are outside #86.
 
-This is a deployment mapping, not a claim that a Telegram account *is* an Ember
+This is a deployment mapping, not a claim that a Telegram account _is_ an Ember
 principal. Issue #87 owns stronger cross-surface principal/privacy validation.
 
 Telegram `update_id`, `message_id`, `message_thread_id`, chat id, and delivery message
@@ -271,15 +271,19 @@ repository tests use deterministic fake HTTP/provider boundaries and require no 
 2. Start `serve` in the foreground or start `ember-telegram.service`.
 3. Send a fresh ordinary text message from the configured private Telegram chat.
 4. Confirm that exactly one Ember response arrives in that chat.
-5. Inspect canonical state with the ordinary Ember CLI and confirm a cognition episode
-   exists with logical surface `telegram_bot` in its provider projection evidence,
-   while Telegram update/chat/message ids do not appear as canonical meanings.
-6. Inspect `<state_path>.interactions.json` and confirm the update/message/destination
-   identifiers live there as operational metadata, with one delivery intent and one
-   attempt.
+5. Inspect canonical state with the ordinary Ember CLI and confirm the cognition
+   episode exists. Search the canonical state file for the Telegram update/chat/message
+   identifiers from this smoke and confirm they are absent.
+6. Inspect `<state_path>.interactions.json` and confirm those identifiers live there as
+   operational metadata, with one delivery intent and one attempt carrying the
+   returned outbound Telegram message id.
 7. Restart the surface after forcing the same Telegram update to remain unacknowledged
    (for example by stopping before the next `getUpdates` confirmation call). Confirm
    replay does not create a second cognition or second response.
+
+The logical `telegram_bot` surface supplied to cognition is covered by deterministic
+provider-boundary tests; it is not claimed to be a new canonical memory field merely
+for observability.
 
 The last restart/replay step exercises #85's duplicate-occurrence guarantee through a
 real transport. Richer offline/reconnect and uncertain-send recovery belongs to #88.
