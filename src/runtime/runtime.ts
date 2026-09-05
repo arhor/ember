@@ -137,6 +137,7 @@ export interface RunCognitionOptions {
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
     provider?: ProviderInvoker;
+    cognitionId?: CognitionId;
     hooks?: {
         afterExpressionCommit?: (state: EmberState) => void | Promise<void>;
         afterDisplay?: (state: EmberState) => void | Promise<void>;
@@ -159,10 +160,15 @@ export async function runCognition(
         purpose = "ordinary",
         explainIds = [],
         provider = invokeProvider,
+        cognitionId: requestedCognitionId,
         hooks = {},
     }: RunCognitionOptions,
 ): Promise<{ state: EmberState; providerFailure: string | null; cognitionId: CognitionId }> {
     requirePrincipal(state, principal);
+    const cognitionId = requestedCognitionId ?? newId("cognition");
+    if (state.operations.cognition_episodes.some((episode) => episode.cognition_id === cognitionId)) {
+        throw new ValidationError(`cognition already exists: ${cognitionId}`);
+    }
     const timestamp = nowUtc();
     const projection = buildProjection(state, {
         principal,
@@ -173,7 +179,6 @@ export async function runCognition(
         purpose,
         explainIds,
     });
-    const cognitionId = newId("cognition");
     const label = providerLabel(command);
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
