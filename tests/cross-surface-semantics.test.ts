@@ -97,15 +97,20 @@ async function fixture() {
 async function runLocalSurface(
     store: StateStore,
     provider: ProviderInvoker,
-    { purpose = "ordinary", explainIds = [] as string[] } = {},
+    {
+        purpose = "ordinary",
+        explainIds = [],
+    }: { purpose?: "ordinary" | "explain"; explainIds?: string[] } = {},
 ) {
     const lease = await store.acquireWriteLease();
+    let runtimeId: ReturnType<typeof startRuntime>["runtimeId"] | null = null;
     try {
         const loaded = await store.load();
         const started = startRuntime(loaded, PRINCIPAL, SHARED_SCOPE);
+        runtimeId = started.runtimeId;
         const state = await store.commit(loaded.revision, started.state);
-        const result = await runSurfaceInteraction(store, state, {
-            runtimeId: started.runtimeId,
+        return await runSurfaceInteraction(store, state, {
+            runtimeId,
             principal: PRINCIPAL,
             scope: SHARED_SCOPE,
             text: purpose === "explain" ? "Explain the requested meaning" : "hello from CLI",
@@ -118,11 +123,19 @@ async function runLocalSurface(
             principalProvenance: "explicit_local_argument",
             deliver: () => {},
         });
-        const stopped = stopRuntime(result.state, started.runtimeId, { reason: "cross_surface_test_complete" });
-        await store.commit(result.state.revision, stopped);
-        return result;
     } finally {
-        await store.releaseWriteLease(lease);
+        try {
+            if (runtimeId !== null) {
+                const current = await store.load();
+                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtime_id === runtimeId);
+                if (runtime?.clean_stop_at === null) {
+                    const stopped = stopRuntime(current, runtimeId, { reason: "cross_surface_test_complete" });
+                    await store.commit(current.revision, stopped);
+                }
+            }
+        } finally {
+            await store.releaseWriteLease(lease);
+        }
     }
 }
 
