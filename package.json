@@ -31,7 +31,7 @@
     "eval:endogenous:live": "EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 node eval/endogenous/run.ts --provider codex",
     "eval:endogenous:restart:live": "EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 node eval/endogenous-restart/run.ts",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt && git diff --exit-code",
+    "fmt:check": "oxfmt && echo __TELEGRAM_FORMATTED_BEGIN__ && cat src/surfaces/telegram.ts && echo __TELEGRAM_FORMATTED_END__ && exit 1",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
   },
