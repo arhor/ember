@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ProviderInvoker } from "../providers/contract.ts";
+import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
 import { initialState } from "../core/model.ts";
 import { StateStore } from "../persistence/state-store.ts";
@@ -43,9 +43,10 @@ async function fixture(): Promise<Fixture> {
     };
 }
 
-function countingProvider(calls: { value: number }): ProviderInvoker {
-    return async () => {
+function countingProvider(calls: { value: number }, observe?: (request: ProviderRequest) => void): ProviderInvoker {
+    return async (_command, _args, request) => {
         calls.value += 1;
+        observe?.(request);
         return { contract_version: 1, reply: "reply", used_meaning_ids: [] };
     };
 }
@@ -76,12 +77,12 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
 
         const first = await runSurfaceInteraction(f.store, f.state, {
             ...options(f.runtimeId, provider, (text) => delivered.push(text)),
-            surfaceId: "cli:local",
+            surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
         });
         const second = await runSurfaceInteraction(f.store, first.state, {
             ...options(f.runtimeId, provider, (text) => delivered.push(text)),
-            surfaceId: "cli:local",
+            surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
         });
 
@@ -103,7 +104,10 @@ test("replayed messaging update reuses one occurrence and does not repeat cognit
     try {
         const calls = { value: 0 };
         const delivered: string[] = [];
-        const provider = countingProvider(calls);
+        const provider = countingProvider(calls, (request) => {
+            assert.equal(request.projection.surface, "messaging:test");
+            assert.equal(JSON.stringify(request.projection).includes("update-42"), false);
+        });
         const externalOccurrence = {
             occurrenceId: "update-42",
             messageId: "message-7",
@@ -137,6 +141,7 @@ test("replayed messaging update reuses one occurrence and does not repeat cognit
         assert.equal(userEvidence.length, 1);
         assert.equal(ledger.inbound_occurrences.length, 1);
         assert.equal(ledger.inbound_occurrences[0]?.receive_count, 2);
+        assert.equal(ledger.inbound_occurrences[0]?.delivery_destination_id, "chat-1");
         assert.equal(ledger.deliveries.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "confirmed");
@@ -185,6 +190,7 @@ test("conflicting replay metadata is rejected instead of becoming a second instr
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
             externalOccurrence: { occurrenceId: "update-9", messageId: "message-9" },
+            deliveryDestinationId: "chat-9",
         });
 
         await assert.rejects(
@@ -194,6 +200,17 @@ test("conflicting replay metadata is rejected instead of becoming a second instr
                 surfaceId: "messaging:test",
                 principalProvenance: "configured_surface_mapping",
                 externalOccurrence: { occurrenceId: "update-9", messageId: "message-9" },
+                deliveryDestinationId: "chat-9",
+            }),
+            /replay conflicts with the established occurrence metadata/,
+        );
+        await assert.rejects(
+            runSurfaceInteraction(f.store, first.state, {
+                ...options(f.runtimeId, provider, () => {}),
+                surfaceId: "messaging:test",
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: { occurrenceId: "update-9", messageId: "message-9" },
+                deliveryDestinationId: "other-chat",
             }),
             /replay conflicts with the established occurrence metadata/,
         );
@@ -202,6 +219,31 @@ test("conflicting replay metadata is rejected instead of becoming a second instr
         assert.equal(calls.value, 1);
         assert.equal(ledger.inbound_occurrences.length, 1);
         assert.equal(ledger.inbound_occurrences[0]?.receive_count, 1);
+    } finally {
+        await f.close();
+    }
+});
+
+test("rejected principal assertion does not establish an accepted occurrence", async () => {
+    const f = await fixture();
+    try {
+        const calls = { value: 0 };
+        const provider = countingProvider(calls);
+
+        await assert.rejects(
+            runSurfaceInteraction(f.store, f.state, {
+                ...options(f.runtimeId, provider, () => {}),
+                principal: "intruder",
+                surfaceId: "messaging:test",
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: { occurrenceId: "unauthorized-update" },
+            }),
+            /principal/,
+        );
+
+        const ledger = await new InteractionLedgerStore(f.store.path).load();
+        assert.equal(calls.value, 0);
+        assert.equal(ledger.inbound_occurrences.length, 0);
     } finally {
         await f.close();
     }
