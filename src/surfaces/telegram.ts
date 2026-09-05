@@ -114,7 +114,10 @@ export class TelegramBotApi {
 
     constructor(
         token: string,
-        { baseUrl = TELEGRAM_BOT_API_BASE_URL, fetch_ = defaultFetch }: { baseUrl?: string; fetch_?: TelegramFetch } = {},
+        {
+            baseUrl = TELEGRAM_BOT_API_BASE_URL,
+            fetch_ = defaultFetch,
+        }: { baseUrl?: string; fetch_?: TelegramFetch } = {},
     ) {
         validateTelegramToken(token);
         if (!/^https:\/\//.test(baseUrl)) throw new ValidationError("Telegram Bot API base URL must use HTTPS");
@@ -130,8 +133,9 @@ export class TelegramBotApi {
 
     async getWebhookInfo(signal?: AbortSignal): Promise<TelegramWebhookInfo> {
         const value = await this.call("getWebhookInfo", {}, signal);
-        const record = requireRecord(value, "getWebhookInfo result");
-        if (typeof record.url !== "string") throw new TelegramApiError("Telegram getWebhookInfo returned invalid url", "uncertain");
+        const record = requireApiRecord(value, "getWebhookInfo result");
+        if (typeof record.url !== "string")
+            throw new TelegramApiError("Telegram getWebhookInfo returned invalid url", "uncertain");
         if (!Number.isSafeInteger(record.pending_update_count) || (record.pending_update_count as number) < 0)
             throw new TelegramApiError("Telegram getWebhookInfo returned invalid pending_update_count", "uncertain");
         return { url: record.url, pending_update_count: record.pending_update_count as number };
@@ -139,12 +143,19 @@ export class TelegramBotApi {
 
     async deleteWebhook(signal?: AbortSignal): Promise<void> {
         const value = await this.call("deleteWebhook", { drop_pending_updates: false }, signal);
-        if (value !== true) throw new TelegramApiError("Telegram deleteWebhook returned an invalid result", "uncertain");
+        if (value !== true)
+            throw new TelegramApiError("Telegram deleteWebhook returned an invalid result", "uncertain");
     }
 
-    async getUpdates(
-        { offset, timeoutSeconds, signal }: { offset?: number; timeoutSeconds: number; signal?: AbortSignal },
-    ): Promise<TelegramUpdate[]> {
+    async getUpdates({
+        offset,
+        timeoutSeconds,
+        signal,
+    }: {
+        offset?: number;
+        timeoutSeconds: number;
+        signal?: AbortSignal;
+    }): Promise<TelegramUpdate[]> {
         if (offset !== undefined && (!Number.isSafeInteger(offset) || offset < 0))
             throw new ValidationError("Telegram update offset must be a non-negative safe integer");
         validatePollTimeout(timeoutSeconds);
@@ -157,7 +168,8 @@ export class TelegramBotApi {
             },
             signal,
         );
-        if (!Array.isArray(value)) throw new TelegramApiError("Telegram getUpdates returned a non-list result", "uncertain");
+        if (!Array.isArray(value))
+            throw new TelegramApiError("Telegram getUpdates returned a non-list result", "uncertain");
         const updates = value.map(validateTelegramUpdate);
         for (let index = 1; index < updates.length; index += 1) {
             if (updates[index]!.update_id <= updates[index - 1]!.update_id)
@@ -172,7 +184,8 @@ export class TelegramBotApi {
         { messageThreadId = null, signal }: { messageThreadId?: number | null; signal?: AbortSignal } = {},
     ): Promise<TelegramSentMessage> {
         validateChatId(chatId);
-        if (typeof text !== "string" || !text.length) throw new ValidationError("Telegram delivery text must be non-empty");
+        if (typeof text !== "string" || !text.length)
+            throw new ValidationError("Telegram delivery text must be non-empty");
         if (messageThreadId !== null && (!Number.isSafeInteger(messageThreadId) || messageThreadId <= 0))
             throw new ValidationError("Telegram message thread id is invalid");
         try {
@@ -185,7 +198,7 @@ export class TelegramBotApi {
                 },
                 signal,
             );
-            const record = requireRecord(value, "sendMessage result");
+            const record = requireApiRecord(value, "sendMessage result");
             if (!Number.isSafeInteger(record.message_id) || (record.message_id as number) <= 0)
                 throw new TelegramApiError("Telegram sendMessage returned an invalid message id", "uncertain");
             const chat = validateTelegramChat(record.chat, "sendMessage chat");
@@ -232,10 +245,12 @@ export class TelegramBotApi {
         } catch {
             throw new TelegramApiError(`Telegram ${method} returned unreadable JSON`, "uncertain");
         }
-        const envelope = requireRecord(value, `${method} response`);
+        const envelope = requireApiRecord(value, `${method} response`);
         const ok = envelope.ok;
         if (ok !== true) {
-            const code = Number.isSafeInteger(envelope.error_code) ? (envelope.error_code as number) : response.status || null;
+            const code = Number.isSafeInteger(envelope.error_code)
+                ? (envelope.error_code as number)
+                : response.status || null;
             const description = typeof envelope.description === "string" ? `: ${envelope.description}` : "";
             const outcome = response.status >= 500 ? "uncertain" : "rejected";
             throw new TelegramApiError(`Telegram ${method} rejected the request${description}`, outcome, code);
@@ -270,7 +285,10 @@ export async function readTelegramBotToken(path: string) {
     return token;
 }
 
-export function selectTelegramInbound(update: TelegramUpdate, config: TelegramSurfaceConfig): TelegramInboundMessage | null {
+export function selectTelegramInbound(
+    update: TelegramUpdate,
+    config: TelegramSurfaceConfig,
+): TelegramInboundMessage | null {
     validateTelegramSurfaceConfig(config);
     const message = update.message;
     if (message === undefined) return null;
@@ -282,9 +300,7 @@ export function selectTelegramInbound(update: TelegramUpdate, config: TelegramSu
     if (threadId !== null && (!Number.isSafeInteger(threadId) || threadId <= 0)) return null;
     const occurredAt = new Date(message.date * 1000).toISOString();
     const destination =
-        threadId === null
-            ? `telegram:chat:${message.chat.id}`
-            : `telegram:chat:${message.chat.id}:thread:${threadId}`;
+        threadId === null ? `telegram:chat:${message.chat.id}` : `telegram:chat:${message.chat.id}:thread:${threadId}`;
     return {
         updateId: update.update_id,
         text: message.text,
@@ -420,7 +436,9 @@ export function renderTelegramSurfaceUnit(config: TelegramSurfaceConfig, configP
 }
 
 export function validateTelegramSurfaceConfig(value: unknown): asserts value is TelegramSurfaceConfig {
-    const config = requireRecord(value, "Telegram surface config");
+    if (value === null || typeof value !== "object" || Array.isArray(value))
+        throw new ValidationError("Telegram surface config must be an object");
+    const config = value as Record<string, unknown>;
     const fields = [
         "active_scope",
         "chat_id",
@@ -460,12 +478,18 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
     }
     validatePollTimeout(config.poll_timeout_seconds);
     if (
+        typeof config.provider_timeout_seconds !== "number" ||
         !Number.isFinite(config.provider_timeout_seconds) ||
         config.provider_timeout_seconds <= 0 ||
         config.provider_timeout_seconds > MAX_PROVIDER_TIMEOUT_SECONDS
     )
         throw new ValidationError(`Telegram provider timeout must be in (0, ${MAX_PROVIDER_TIMEOUT_SECONDS}]`);
-    if (!Number.isSafeInteger(config.stop_timeout_seconds) || config.stop_timeout_seconds < 1 || config.stop_timeout_seconds > 3600)
+    if (
+        typeof config.stop_timeout_seconds !== "number" ||
+        !Number.isSafeInteger(config.stop_timeout_seconds) ||
+        config.stop_timeout_seconds < 1 ||
+        config.stop_timeout_seconds > 3600
+    )
         throw new ValidationError("Telegram stop timeout must be an integer between 1 and 3600 seconds");
 }
 
@@ -476,7 +500,7 @@ function providerForConfig(kind: TelegramSurfaceConfig["provider_kind"]): Provid
 }
 
 function validateTelegramUpdate(value: unknown): TelegramUpdate {
-    const record = requireRecord(value, "Telegram update");
+    const record = requireApiRecord(value, "Telegram update");
     if (!Number.isSafeInteger(record.update_id) || (record.update_id as number) < 0)
         throw new TelegramApiError("Telegram update id is invalid", "uncertain");
     const update: TelegramUpdate = { update_id: record.update_id as number };
@@ -485,7 +509,7 @@ function validateTelegramUpdate(value: unknown): TelegramUpdate {
 }
 
 function validateTelegramMessage(value: unknown): TelegramMessage {
-    const record = requireRecord(value, "Telegram message");
+    const record = requireApiRecord(value, "Telegram message");
     if (!Number.isSafeInteger(record.message_id) || (record.message_id as number) <= 0)
         throw new TelegramApiError("Telegram message id is invalid", "uncertain");
     if (!Number.isSafeInteger(record.date) || (record.date as number) < 0)
@@ -502,43 +526,47 @@ function validateTelegramMessage(value: unknown): TelegramMessage {
         message.message_thread_id = record.message_thread_id as number;
     }
     if (record.text !== undefined) {
-        if (typeof record.text !== "string") throw new TelegramApiError("Telegram message text is invalid", "uncertain");
+        if (typeof record.text !== "string")
+            throw new TelegramApiError("Telegram message text is invalid", "uncertain");
         message.text = record.text;
     }
     return message;
 }
 
 function validateTelegramUser(value: unknown, field: string): TelegramUser {
-    const record = requireRecord(value, field);
+    const record = requireApiRecord(value, field);
     if (!Number.isSafeInteger(record.id) || (record.id as number) <= 0)
         throw new TelegramApiError(`${field} id is invalid`, "uncertain");
     if (typeof record.is_bot !== "boolean") throw new TelegramApiError(`${field} is_bot is invalid`, "uncertain");
     const user: TelegramUser = { id: record.id as number, is_bot: record.is_bot };
     if (record.username !== undefined) {
-        if (typeof record.username !== "string") throw new TelegramApiError(`${field} username is invalid`, "uncertain");
+        if (typeof record.username !== "string")
+            throw new TelegramApiError(`${field} username is invalid`, "uncertain");
         user.username = record.username;
     }
     return user;
 }
 
 function validateTelegramChat(value: unknown, field: string): TelegramChat {
-    const record = requireRecord(value, field);
+    const record = requireApiRecord(value, field);
     if (!Number.isSafeInteger(record.id)) throw new TelegramApiError(`${field} id is invalid`, "uncertain");
-    if (typeof record.type !== "string" || !record.type) throw new TelegramApiError(`${field} type is invalid`, "uncertain");
+    if (typeof record.type !== "string" || !record.type)
+        throw new TelegramApiError(`${field} type is invalid`, "uncertain");
     return { id: record.id as number, type: record.type };
 }
 
 function validateTelegramToken(token: string) {
-    if (!/^\d{5,}:[A-Za-z0-9_-]{20,}$/.test(token)) throw new ValidationError("Telegram bot token has an invalid shape");
+    if (!/^\d{5,}:[A-Za-z0-9_-]{20,}$/.test(token))
+        throw new ValidationError("Telegram bot token has an invalid shape");
 }
 
 function validatePollTimeout(value: unknown) {
-    if (!Number.isSafeInteger(value) || (value as number) < 1 || (value as number) > 60)
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1 || value > 60)
         throw new ValidationError("Telegram poll timeout must be an integer between 1 and 60 seconds");
 }
 
 function validateChatId(value: unknown) {
-    if (!Number.isSafeInteger(value) || (value as number) <= 0)
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0)
         throw new ValidationError("Telegram chat id must be a positive safe integer");
 }
 
@@ -557,7 +585,7 @@ function requireAbsolutePath(value: unknown, field: string): asserts value is st
         throw new ValidationError(`${field} must be an absolute path without control characters`);
 }
 
-function requireRecord(value: unknown, field: string): Record<string, unknown> {
+function requireApiRecord(value: unknown, field: string): Record<string, unknown> {
     if (value === null || typeof value !== "object" || Array.isArray(value))
         throw new TelegramApiError(`${field} must be an object`, "uncertain");
     return value as Record<string, unknown>;
