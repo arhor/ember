@@ -288,13 +288,13 @@ validation.
 
 ## Definition-of-done mapping
 
-| Issue #85 requirement                                        | Repository outcome                                                                                                           |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Explicit principal/surface provenance                        | `SurfaceInteractionOptions` requires `surfaceId` and `principalProvenance`; inbound records preserve both.                   |
-| Replay correlation without text dedupe                       | Stable `(surface_id, external_occurrence_id)` correlation; no-ID inputs remain distinct regardless of text.                  |
-| Duplicate transport occurrence does not duplicate semantics  | Stable planned cognition ID plus replay lookup suppresses duplicate user evidence, cognition, and delivery.                  |
-| Delivery intent and outcome differ from cognition completion | Expression commits before intent; attempts separately record `confirmed`, `failed`, or `uncertain`.                          |
-| Surface-local IDs remain operational                         | Message/thread/update/destination IDs stay in the interaction sidecar and never become canonical meanings or projection.     |
-| Privacy/context remains Ember-owned                          | Existing `buildProjection` remains the context boundary; it receives only the logical surface, not transport-local metadata. |
-| CLI plus messaging without generic framework                 | CLI-shaped and Telegram cases use one narrow runtime seam with no transport registry/plugin hierarchy.                       |
+| Issue #85 requirement                                        | Repository outcome                                                                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Explicit principal/surface provenance                        | `SurfaceInteractionOptions` requires `surfaceId` and `principalProvenance`; inbound records preserve both.                    |
+| Replay correlation without text dedupe                       | Stable `(surface_id, external_occurrence_id)` correlation; no-ID inputs remain distinct regardless of text.                   |
+| Duplicate transport occurrence does not duplicate semantics  | Stable planned cognition ID plus replay lookup suppresses duplicate user evidence, cognition, and delivery.                   |
+| Delivery intent and outcome differ from cognition completion | Expression commits before intent; attempts separately record `confirmed`, `failed`, or `uncertain`.                           |
+| Surface-local IDs remain operational                         | Message/thread/update/destination IDs stay in the interaction sidecar and never become canonical meanings or projection.      |
+| Privacy/context remains Ember-owned                          | Existing `buildProjection` remains the context boundary; it receives only the logical surface, not transport-local metadata.  |
+| CLI plus messaging without generic framework                 | CLI-shaped and Telegram cases use one narrow runtime seam with no transport registry/plugin hierarchy.                        |
 | Telegram uses the seam without redefining semantics          | #86 supplies mapped principal/surface provenance, stable update metadata, destination, and concrete I/O around this boundary. |
