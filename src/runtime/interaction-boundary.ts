@@ -25,8 +25,10 @@ export interface ExternalOccurrenceMetadata {
     occurredAt?: string | null;
 }
 
-export interface SurfaceInteractionOptions
-    extends Omit<RunCognitionOptions, "cognitionId" | "hooks" | "output" | "surface"> {
+export interface SurfaceInteractionOptions extends Omit<
+    RunCognitionOptions,
+    "cognitionId" | "hooks" | "output" | "surface"
+> {
     surfaceId: string;
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
