@@ -33,12 +33,12 @@ node --test tests/cross-surface-continuity.test.ts
 
 The test creates a fresh Ember state and then crosses four independently executed cognition episodes:
 
-| Step | Process/surface | Durable input | Delivery observation |
-| --- | --- | --- | --- |
-| 1 | fresh CLI process | establishes relationship, fact, preference, live commitment, then performs cognition | confirmed local output |
-| 2 | separate Telegram fixture process | continues from the same state with a stable Telegram occurrence id | confirmed Telegram send |
-| 3 | another Telegram fixture process | continues again without either prior process/session | outbound send becomes `uncertain` |
-| 4 | fresh CLI process | continues locally from the same state after the ambiguous Telegram delivery | confirmed local output |
+| Step | Process/surface                   | Durable input                                                                        | Delivery observation              |
+| ---- | --------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
+| 1    | fresh CLI process                 | establishes relationship, fact, preference, live commitment, then performs cognition | confirmed local output            |
+| 2    | separate Telegram fixture process | continues from the same state with a stable Telegram occurrence id                   | confirmed Telegram send           |
+| 3    | another Telegram fixture process  | continues again without either prior process/session                                 | outbound send becomes `uncertain` |
+| 4    | fresh CLI process                 | continues locally from the same state after the ambiguous Telegram delivery          | confirmed local output            |
 
 Every cognition invokes `tests/fixtures/providers/scripted-provider.ts` as a fresh child process. A shared deterministic counter proves four provider invocations rather than one hidden provider conversation. The only durable continuity-bearing inputs shared between episodes are Ember's state file and its operational interaction ledger.
 
@@ -233,12 +233,12 @@ After the deterministic-provider live Telegram pass succeeds, repeat the same su
 
 ## Definition-of-done mapping
 
-| Issue #89 requirement | Repository proof |
-| --- | --- |
-| controlled scenario crosses surfaces on one canonical state | real CLI process, separate Telegram process, and fresh CLI process share one state file |
-| lineage, meanings, commitments, provenance remain consistent | captured projections plus before/final inspection assertions |
-| transcript/session history is not required | fresh processes/provider invocations; `raw_transcript_included=false`; prior Telegram text excluded from final CLI projection |
-| least-sufficient context remains surface-appropriate | identical selected durable meaning set for the controlled scope; transport ids excluded from cognition |
-| restart preserves continuity | every surface transition crosses a complete Node-process boundary with recovery assertions |
-| delivery uncertainty does not create false semantic state | uncertain Telegram delivery stays pending while later CLI cognition continues unchanged |
-| proof is reproducible without hidden chat history | deterministic test and fixture driver are token/network-free; manual live procedure is fully repository-described |
+| Issue #89 requirement                                        | Repository proof                                                                                                              |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| controlled scenario crosses surfaces on one canonical state  | real CLI process, separate Telegram process, and fresh CLI process share one state file                                       |
+| lineage, meanings, commitments, provenance remain consistent | captured projections plus before/final inspection assertions                                                                  |
+| transcript/session history is not required                   | fresh processes/provider invocations; `raw_transcript_included=false`; prior Telegram text excluded from final CLI projection |
+| least-sufficient context remains surface-appropriate         | identical selected durable meaning set for the controlled scope; transport ids excluded from cognition                        |
+| restart preserves continuity                                 | every surface transition crosses a complete Node-process boundary with recovery assertions                                    |
+| delivery uncertainty does not create false semantic state    | uncertain Telegram delivery stays pending while later CLI cognition continues unchanged                                       |
+| proof is reproducible without hidden chat history            | deterministic test and fixture driver are token/network-free; manual live procedure is fully repository-described             |

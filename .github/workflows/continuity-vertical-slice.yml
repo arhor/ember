@@ -1,34 +1,52 @@
-name: Temporary issue 89 formatter
+name: Continuity vertical slice
 
 on:
   pull_request:
+    paths:
+      - "bin/**"
+      - "src/**"
+      - "eval/**"
+      - "tests/**"
+      - "scripts/**"
+      - "docs/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/continuity-vertical-slice.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "bin/**"
+      - "src/**"
+      - "eval/**"
+      - "tests/**"
+      - "scripts/**"
+      - "docs/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/continuity-vertical-slice.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  format:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
           cache: npm
+      - name: Show Node.js version
+        run: node --version
       - name: Install locked development toolchain
         run: npm ci
-      - name: Apply repository formatter
-        run: npx oxfmt
-      - name: Restore real workflow and commit formatter output
-        run: |
-          git fetch origin issue-89-cross-surface-continuity --depth=1
-          git checkout FETCH_HEAD -- .github/workflows/continuity-vertical-slice.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "Apply oxfmt to issue #89"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
+      - name: Run static and repository checks
+        run: npm run check
+      - name: Run complete acceptance suite
+        run: npm test
+      - name: Run deterministic endogenous selectivity evaluation
+        run: npm run eval:endogenous

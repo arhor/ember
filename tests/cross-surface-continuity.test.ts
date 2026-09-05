@@ -239,7 +239,10 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         assert.equal(await readFile(counterPath, "utf8"), "4");
         assert.equal(finalView.lineage.lineage_id, lineageId);
         assert.equal(new Set(requests.map((request) => request.projection.lineage.lineage_id)).size, 1);
-        assert.equal(requests.every((request) => request.projection.lineage.lineage_id === lineageId), true);
+        assert.equal(
+            requests.every((request) => request.projection.lineage.lineage_id === lineageId),
+            true,
+        );
         assert.deepEqual(meaningSnapshot(finalView), meaningSnapshot(afterOpening));
 
         assert.deepEqual(
@@ -250,7 +253,10 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
             requests.map((request) => request.projection.current_input),
             [CLI_OPENING, TELEGRAM_CONFIRMED, TELEGRAM_UNCERTAIN, CLI_RETURN],
         );
-        assert.equal(requests.every((request) => request.projection.selection.raw_transcript_included === false), true);
+        assert.equal(
+            requests.every((request) => request.projection.selection.raw_transcript_included === false),
+            true,
+        );
 
         const selection = [...openingRequest.projection.selection.meaning_ids].sort();
         for (const request of requests.slice(1))
@@ -267,7 +273,9 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
             );
             assert.equal(selectedCommitment.prospective_lifecycle, "live");
             assert.deepEqual(
-                new Set(selectedCommitment.source_evidence.map((evidence: { source_role: string }) => evidence.source_role)),
+                new Set(
+                    selectedCommitment.source_evidence.map((evidence: { source_role: string }) => evidence.source_role),
+                ),
                 new Set(["ember_adoption", "user_command"]),
             );
             const selectedFact = requireMeaning(
@@ -280,9 +288,15 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         }
 
         assert.equal(confirmedRequest.projection.recovery_account.gap_kind, "known_clean_stop_interval");
-        assert.equal(confirmedRequest.projection.recovery_account.ember_cognition_during_interval, "none_in_supported_runtime");
+        assert.equal(
+            confirmedRequest.projection.recovery_account.ember_cognition_during_interval,
+            "none_in_supported_runtime",
+        );
         assert.equal(returnRequest.projection.recovery_account.gap_kind, "known_clean_stop_interval");
-        assert.equal(returnRequest.projection.recovery_account.ember_cognition_during_interval, "none_in_supported_runtime");
+        assert.equal(
+            returnRequest.projection.recovery_account.ember_cognition_during_interval,
+            "none_in_supported_runtime",
+        );
 
         const telegramProjectionText = JSON.stringify([confirmedRequest.projection, uncertainRequest.projection]);
         assert.equal(telegramProjectionText.includes(String(CHAT_ID)), false);
@@ -298,10 +312,22 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         const occurrenceByCognition = new Map(occurrences.map((record: any) => [record.cognition_id, record]));
         const deliveryByCognition = new Map(deliveries.map((record: any) => [record.cognition_id, record]));
 
-        assert.equal(occurrenceByCognition.get(openingRequest.cognition_id)?.principal_provenance, "explicit_local_argument");
-        assert.equal(occurrenceByCognition.get(confirmedRequest.cognition_id)?.principal_provenance, "configured_surface_mapping");
-        assert.equal(occurrenceByCognition.get(uncertainRequest.cognition_id)?.principal_provenance, "configured_surface_mapping");
-        assert.equal(occurrenceByCognition.get(returnRequest.cognition_id)?.principal_provenance, "explicit_local_argument");
+        assert.equal(
+            occurrenceByCognition.get(openingRequest.cognition_id)?.principal_provenance,
+            "explicit_local_argument",
+        );
+        assert.equal(
+            occurrenceByCognition.get(confirmedRequest.cognition_id)?.principal_provenance,
+            "configured_surface_mapping",
+        );
+        assert.equal(
+            occurrenceByCognition.get(uncertainRequest.cognition_id)?.principal_provenance,
+            "configured_surface_mapping",
+        );
+        assert.equal(
+            occurrenceByCognition.get(returnRequest.cognition_id)?.principal_provenance,
+            "explicit_local_argument",
+        );
         assert.equal(occurrenceByCognition.get(confirmedRequest.cognition_id)?.external_occurrence_id, "update:890");
         assert.equal(occurrenceByCognition.get(uncertainRequest.cognition_id)?.external_occurrence_id, "update:891");
 

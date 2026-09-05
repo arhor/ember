@@ -34,8 +34,7 @@ const capturePath = required("--capture");
 const counterPath = required("--counter");
 const text = required("--text");
 const delivery = required("--delivery");
-if (delivery !== "confirmed" && delivery !== "uncertain")
-    throw new Error("--delivery must be confirmed or uncertain");
+if (delivery !== "confirmed" && delivery !== "uncertain") throw new Error("--delivery must be confirmed or uncertain");
 
 const config: TelegramSurfaceConfig = {
     config_version: 1,
