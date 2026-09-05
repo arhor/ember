@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 import type { ProviderInvoker } from "../providers/contract.ts";
+import type { TelegramSurfaceConfig, TelegramUpdate } from "./telegram.ts";
 
 import { initialState } from "../core/model.ts";
 import { StateStore } from "../persistence/state-store.ts";
@@ -12,8 +13,6 @@ import { SurfaceDeliveryFailure } from "../runtime/interaction-boundary.ts";
 import {
     TELEGRAM_SURFACE_ID,
     TelegramBotApi,
-    type TelegramSurfaceConfig,
-    type TelegramUpdate,
     processTelegramUpdate,
     renderTelegramSurfaceUnit,
     runTelegramPolling,
@@ -286,7 +285,7 @@ test("systemd unit keeps token and chat identifiers out of process arguments", (
     assert.match(unit, /Type=exec/);
     assert.match(unit, /Restart=on-failure/);
     assert.match(unit, /KillMode=mixed/);
-    assert.match(unit, /ember-telegram\.ts\" serve --config/);
+    assert.match(unit, /ember-telegram\.ts" serve --config/);
     assert.equal(unit.includes(TOKEN), false);
     assert.equal(unit.includes(String(CHAT_ID)), false);
 });
