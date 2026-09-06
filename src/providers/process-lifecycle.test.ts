@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
@@ -6,7 +7,7 @@ import type { ProviderProcessChild } from "./process-lifecycle.ts";
 
 import { runProviderProcess } from "./process-lifecycle.ts";
 
-class TestChild extends EventTarget implements ProviderProcessChild {
+class TestChild extends EventEmitter implements ProviderProcessChild {
     readonly stdin = new PassThrough();
     readonly stdout = new PassThrough();
     readonly stderr = new PassThrough();
@@ -17,30 +18,8 @@ class TestChild extends EventTarget implements ProviderProcessChild {
         return true;
     }
 
-    on(event: "error" | "close", listener: (...args: any[]) => void): this {
-        if (event === "error") {
-            this.addEventListener("error", ((value: Event) => listener((value as CustomEvent<Error>).detail)) as EventListener);
-        } else {
-            this.addEventListener(
-                "close",
-                ((value: Event) => {
-                    const { code, signal } = (value as CustomEvent<{
-                        code: number | null;
-                        signal: NodeJS.Signals | null;
-                    }>).detail;
-                    listener(code, signal);
-                }) as EventListener,
-            );
-        }
-        return this;
-    }
-
-    off(): this {
-        return this;
-    }
-
     close(code: number | null = 0, signal: NodeJS.Signals | null = null) {
-        this.dispatchEvent(new CustomEvent("close", { detail: { code, signal } }));
+        this.emit("close", code, signal);
     }
 }
 
