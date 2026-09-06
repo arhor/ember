@@ -57,167 +57,208 @@ export type ProviderProcessResult =
           terminationConfirmed: boolean;
       };
 
-export async function runProviderProcess<TOptions>({
-    command,
-    arguments_,
-    spawnImpl,
-    spawnOptions,
-    stdin,
-    timeoutSeconds,
-    signal,
-    maxStdoutBytes,
-    maxStderrBytes,
-    terminationGraceMs,
-    finalTerminationMs,
-    destroyOutputOnTerminate = false,
-    onStdoutChunk,
-}: RunProviderProcessOptions<TOptions>): Promise<ProviderProcessResult> {
-    let child: ProviderProcessChild;
-    try {
-        child = spawnImpl(command, [...arguments_], spawnOptions);
-    } catch (error) {
-        return { spawned: false, spawnError: asError(error) };
+export interface ProviderProcessExecution {
+    run(): Promise<ProviderProcessResult>;
+}
+
+export function createProviderProcessExecution<TOptions>(
+    options: RunProviderProcessOptions<TOptions>,
+): ProviderProcessExecution {
+    return new ProviderProcessExecutionImpl(options);
+}
+
+export function runProviderProcess<TOptions>(
+    options: RunProviderProcessOptions<TOptions>,
+): Promise<ProviderProcessResult> {
+    return createProviderProcessExecution(options).run();
+}
+
+class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution {
+    private child: ProviderProcessChild | null = null;
+    private readonly stdout: Buffer[] = [];
+    private readonly stderr: Buffer[] = [];
+
+    private stdoutBytes = 0;
+    private stderrBytes = 0;
+    private outputLimited = false;
+    private terminationReason: ProviderProcessTerminationReason | null = null;
+    private spawnError: Error | null = null;
+    private closed = false;
+    private exitCode: number | null = null;
+    private exitSignal: NodeJS.Signals | null = null;
+    private settled = false;
+
+    private timeoutTimer: NodeJS.Timeout | null = null;
+    private killTimer: NodeJS.Timeout | null = null;
+    private finalTimer: NodeJS.Timeout | null = null;
+
+    private resolveDone: ((terminationConfirmed: boolean) => void) | null = null;
+    private execution: Promise<ProviderProcessResult> | null = null;
+
+    constructor(private readonly options: RunProviderProcessOptions<TOptions>) {}
+
+    run(): Promise<ProviderProcessResult> {
+        this.execution ??= this.execute();
+        return this.execution;
     }
 
-    const stdout: Buffer[] = [];
-    const stderr: Buffer[] = [];
-    let stdoutBytes = 0;
-    let stderrBytes = 0;
-    let outputLimited = false;
-    let terminationReason: ProviderProcessTerminationReason | null = null;
-    let spawnError: Error | null = null;
-    let closed = false;
-    let exitCode: number | null = null;
-    let exitSignal: NodeJS.Signals | null = null;
-    let settled = false;
-    let killTimer: NodeJS.Timeout | null = null;
-    let finalTimer: NodeJS.Timeout | null = null;
+    private async execute(): Promise<ProviderProcessResult> {
+        try {
+            this.child = this.options.spawnImpl(
+                this.options.command,
+                [...this.options.arguments_],
+                this.options.spawnOptions,
+            );
+        } catch (error) {
+            return { spawned: false, spawnError: asError(error) };
+        }
 
-    let resolveDone!: (terminationConfirmed: boolean) => void;
-    const done = new Promise<boolean>((resolve) => {
-        resolveDone = resolve;
-    });
+        const done = new Promise<boolean>((resolve) => {
+            this.resolveDone = resolve;
+        });
 
-    const closePipes = () => {
+        this.attachListeners();
+        this.timeoutTimer = setTimeout(() => this.terminate("timeout"), this.options.timeoutSeconds * 1000);
+        this.options.signal?.addEventListener("abort", this.onAbort, { once: true });
+        if (this.options.signal?.aborted) {
+            this.onAbort();
+        }
+        if (this.terminationReason === null) {
+            try {
+                this.child.stdin.end(this.options.stdin);
+            } catch (error) {
+                this.spawnError = asError(error);
+                this.terminate("provider_failure");
+            }
+        }
+
+        const terminationConfirmed = await done;
+        this.cleanup(terminationConfirmed);
+
+        return {
+            spawned: true,
+            stdout: Buffer.concat(this.stdout),
+            stderr: Buffer.concat(this.stderr),
+            stdoutBytes: this.stdoutBytes,
+            outputLimited: this.outputLimited,
+            spawnError: this.spawnError,
+            exitCode: this.exitCode,
+            exitSignal: this.exitSignal,
+            terminationReason: this.terminationReason,
+            terminationConfirmed,
+        };
+    }
+
+    private attachListeners(): void {
+        const child = this.child;
+        if (child === null) {
+            return;
+        }
+        child.stdout.on("data", this.onStdout);
+        child.stderr.on("data", this.onStderr);
+        child.on("error", this.onSpawnError);
+        child.on("close", this.onClose);
+        child.stdin.on("error", this.onStdinError);
+    }
+
+    private cleanup(terminationConfirmed: boolean): void {
+        const child = this.child;
+        if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
+        if (this.killTimer) clearTimeout(this.killTimer);
+        if (this.finalTimer) clearTimeout(this.finalTimer);
+        this.options.signal?.removeEventListener("abort", this.onAbort);
+        if (child !== null) {
+            child.stdin.off("error", this.onStdinError);
+            child.stdout.off("data", this.onStdout);
+            child.stderr.off("data", this.onStderr);
+            child.off("error", this.onSpawnError);
+            child.off("close", this.onClose);
+        }
+        if (!terminationConfirmed) {
+            this.closePipes();
+        }
+    }
+
+    private closePipes(): void {
+        const child = this.child;
+        if (child === null) {
+            return;
+        }
         child.stdin.destroy();
         child.stdout.destroy();
         child.stderr.destroy();
-    };
-    const terminate = (reason: ProviderProcessTerminationReason) => {
-        if (settled || terminationReason !== null) {
+    }
+
+    private terminate(reason: ProviderProcessTerminationReason): void {
+        const child = this.child;
+        if (child === null || this.settled || this.terminationReason !== null) {
             return;
         }
-        terminationReason = reason;
+        this.terminationReason = reason;
         child.stdin.destroy();
-        if (destroyOutputOnTerminate) {
+        if (this.options.destroyOutputOnTerminate) {
             child.stdout.destroy();
             child.stderr.destroy();
         }
         try {
             child.kill("SIGTERM");
         } catch {}
-        killTimer = setTimeout(() => {
-            if (!closed) {
+        this.killTimer = setTimeout(() => {
+            if (!this.closed) {
                 try {
                     child.kill("SIGKILL");
                 } catch {}
             }
-        }, terminationGraceMs);
-        finalTimer = setTimeout(() => {
-            if (!closed && !settled) {
-                settled = true;
-                closePipes();
-                resolveDone(false);
+        }, this.options.terminationGraceMs);
+        this.finalTimer = setTimeout(() => {
+            if (!this.closed && !this.settled) {
+                this.settled = true;
+                this.closePipes();
+                this.resolveDone?.(false);
             }
-        }, finalTerminationMs);
-    };
-    const onStdout = (chunk: Buffer) => {
-        stdoutBytes += chunk.length;
-        if (stdoutBytes <= maxStdoutBytes) {
-            stdout.push(chunk);
-            onStdoutChunk?.(chunk);
-        } else if (!outputLimited) {
-            outputLimited = true;
-            terminate("output_limit");
+        }, this.options.finalTerminationMs);
+    }
+
+    private readonly onStdout = (chunk: Buffer): void => {
+        this.stdoutBytes += chunk.length;
+        if (this.stdoutBytes <= this.options.maxStdoutBytes) {
+            this.stdout.push(chunk);
+            this.options.onStdoutChunk?.(chunk);
+        } else if (!this.outputLimited) {
+            this.outputLimited = true;
+            this.terminate("output_limit");
         }
     };
-    const onStderr = (chunk: Buffer) => {
-        if (stderrBytes >= maxStderrBytes) {
+
+    private readonly onStderr = (chunk: Buffer): void => {
+        if (this.stderrBytes >= this.options.maxStderrBytes) {
             return;
         }
-        const keep = chunk.subarray(0, maxStderrBytes - stderrBytes);
-        stderr.push(keep);
-        stderrBytes += keep.length;
+        const keep = chunk.subarray(0, this.options.maxStderrBytes - this.stderrBytes);
+        this.stderr.push(keep);
+        this.stderrBytes += keep.length;
     };
-    const onSpawnError = (error: Error) => {
-        spawnError = error;
+
+    private readonly onSpawnError = (error: Error): void => {
+        this.spawnError = error;
     };
-    const onClose = (code: number | null, signal_: NodeJS.Signals | null) => {
-        closed = true;
-        exitCode = code;
-        exitSignal = signal_;
-        if (killTimer) {
-            clearTimeout(killTimer);
-        }
-        if (finalTimer) {
-            clearTimeout(finalTimer);
-        }
-        if (!settled) {
-            settled = true;
-            resolveDone(true);
+
+    private readonly onClose = (code: number | null, signal: NodeJS.Signals | null): void => {
+        this.closed = true;
+        this.exitCode = code;
+        this.exitSignal = signal;
+        if (this.killTimer) clearTimeout(this.killTimer);
+        if (this.finalTimer) clearTimeout(this.finalTimer);
+        if (!this.settled) {
+            this.settled = true;
+            this.resolveDone?.(true);
         }
     };
-    const onStdinError = () => {};
-    const onAbort = () => terminate("explicit_cancellation");
 
-    child.stdout.on("data", onStdout);
-    child.stderr.on("data", onStderr);
-    child.on("error", onSpawnError);
-    child.on("close", onClose);
-    child.stdin.on("error", onStdinError);
-    const timeoutTimer = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
-    signal?.addEventListener("abort", onAbort, { once: true });
-    if (signal?.aborted) {
-        onAbort();
-    }
-    if (terminationReason === null) {
-        try {
-            child.stdin.end(stdin);
-        } catch (error) {
-            spawnError = asError(error);
-            terminate("provider_failure");
-        }
-    }
+    private readonly onStdinError = (): void => {};
 
-    const terminationConfirmed = await done;
-    clearTimeout(timeoutTimer);
-    signal?.removeEventListener("abort", onAbort);
-    if (killTimer) {
-        clearTimeout(killTimer);
-    }
-    if (finalTimer) {
-        clearTimeout(finalTimer);
-    }
-    child.stdin.off("error", onStdinError);
-    child.stdout.off("data", onStdout);
-    child.stderr.off("data", onStderr);
-    child.off("error", onSpawnError);
-    child.off("close", onClose);
-    if (!terminationConfirmed) {
-        closePipes();
-    }
-
-    return {
-        spawned: true,
-        stdout: Buffer.concat(stdout),
-        stderr: Buffer.concat(stderr),
-        stdoutBytes,
-        outputLimited,
-        spawnError,
-        exitCode,
-        exitSignal,
-        terminationReason,
-        terminationConfirmed,
+    private readonly onAbort = (): void => {
+        this.terminate("explicit_cancellation");
     };
 }
 
