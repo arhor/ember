@@ -7,10 +7,11 @@ import test from "node:test";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
 import { ProviderError, ValidationError } from "../core/errors.ts";
-import { cloneState, initialState, newId, validateState } from "../core/model.ts";
+import { initialState, newId, validateState } from "../core/model.ts";
 import { inspectionView } from "../core/projection.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 import {
     buildCognitionOpportunityProjection,
     cognitionOpportunityMetrics,

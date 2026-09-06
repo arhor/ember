@@ -16,8 +16,9 @@ import type {
     UnavailableUserDetailEvidence,
 } from "./model.ts";
 
+import { contentDigest } from "../util.ts";
 import { ValidationError } from "./errors.ts";
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+import { newId, nowUtc, validateState } from "./model.ts";
 
 export function userEvidence(
     state: EmberState,

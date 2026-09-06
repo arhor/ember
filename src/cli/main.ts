@@ -5,7 +5,7 @@ import { createInterface } from "node:readline";
 import type { EmberState, MeaningId, RuntimeId } from "../core/model.ts";
 
 import { EmberError, ValidationError } from "../core/errors.ts";
-import { cloneState, initialState, nowUtc } from "../core/model.ts";
+import { initialState, nowUtc } from "../core/model.ts";
 import { explanationView, inspectionView } from "../core/projection.ts";
 import {
     attachDetail,
@@ -27,6 +27,7 @@ import {
     runSurfaceInteraction,
 } from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 
 interface CliIo {
     input: Readable;

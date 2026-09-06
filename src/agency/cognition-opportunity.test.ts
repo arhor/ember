@@ -5,9 +5,10 @@ import type { MeaningId, CognitionOpportunityMechanism } from "../core/model.ts"
 import type { CognitionOpportunityEvaluator, CognitionOpportunityRequest } from "./cognition-opportunity.ts";
 
 import { ValidationError } from "../core/errors.ts";
-import { cloneState, initialState } from "../core/model.ts";
+import { initialState } from "../core/model.ts";
 import { undertake } from "../core/semantics.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";

@@ -2,521 +2,313 @@
 > @arhor/ember@0.0.0 test
 > node --test "src/**/*.test.ts" "tests/*.test.ts"
 
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/codex-opportunity-evaluator.test.ts (239.474608ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/cognition-opportunity-lifecycle.test.ts (255.943067ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/cognition-opportunity.test.ts (257.054886ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/dormant-concern-activation.test.ts (254.936024ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/endogenous-attention-control.test.ts (262.744592ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/endogenous-selectivity-evaluation.test.ts (259.3994ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/agency/interruption-decision.test.ts (224.571131ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/core/projection.test.ts (275.364986ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/core/semantics.test.ts (251.117125ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/delegation/codex-specialist.test.ts (246.893903ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/delegation/specialist-reintegration.test.ts (254.004584ms)
-✔ Codex argument evidence should preserve model selection when explicit configuration is supplied (6.049423ms)
-✔ Codex argument evidence should redact secrets and unknown values when explicit configuration may contain credentials (0.460239ms)
-✔ Codex argument evidence should remain valid bounded JSON when explicit configuration is oversized (0.886565ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/runtime/episodic-runtime.test.ts (324.388279ms)
-file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
-                       ^^^^^^^^^^
-SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/runtime/interaction-boundary.test.ts (249.205526ms)
-file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
-                       ^^^^^^^^^^
-SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ src/surfaces/telegram.test.ts (273.662852ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/codex-provider.test.ts (304.683134ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/cross-surface-continuity.test.ts (265.552827ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/cross-surface-semantics.test.ts (263.103436ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/cursor-provider.test.ts (284.678013ms)
-file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
-                       ^^^^^^^^^^
-SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/delivery-before-send-recovery.test.ts (243.061049ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/delivery-inspection.test.ts (286.752832ms)
-file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
-                       ^^^^^^^^^^
-SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/delivery-reconciliation.test.ts (238.321709ms)
-✖ complete repository corpus is valid without duplicate hint warnings (3.468484ms)
-✖ representative roles and supersession match governance (0.761261ms)
-✔ default, deep, and history views keep distinct purposes (0.465008ms)
-✔ v1 has no generated Markdown exclusions (0.486738ms)
-✔ parses documented frontmatter subset and preserves hint order (3.638502ms)
-✔ allows unrelated simple frontmatter fields for role-specific lifecycle (0.439751ms)
-✔ supports YAML-style single quoted scalar strings (0.318886ms)
-✔ rejects missing, unsupported, or unterminated frontmatter (0.783423ms)
-✖ validates required fields, duplicate hints, and status rules (1.890409ms)
-✖ validates supersession target and cycle (3.552021ms)
-✔ filters default, deep, and all without semantic matching (0.754328ms)
-✔ catalogue sorting and rendering are deterministic (0.704706ms)
-✔ heading projection uses H1-H4 and ignores fenced code (1.695044ms)
-✔ explicit exclusions are applied by exact repository path (1.195321ms)
-✔ missing metadata cannot silently disappear from corpus (4.852598ms)
-✔ heading projection rejects non-participating or invalid paths (1.153202ms)
-✔ CLI fails actionably when not run from repository root (62.774848ms)
-✖ endogenous restart harness should preserve concern lifecycle and truthful gaps across complete process restart (248.340988ms)
-✖ live-shaped restart path should require an actually observed ephemeral Codex thread (287.017799ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/episodic-runtime-recovery.test.ts (252.397267ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-acceptance.test.ts (236.126985ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-context-harm.test.ts (297.998126ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-currentness.test.ts (265.903749ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-degraded-context.test.ts (283.844839ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-harness.test.ts (271.306332ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-memory-context.test.ts (231.094504ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/longitudinal-provenance.test.ts (298.997741ms)
-file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
-                       ^^^^^^^^^^
-SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/model-store.test.ts (254.451695ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/process-restart-harness.test.ts (254.882115ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/provider-cli.test.ts (275.482217ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/provider-timeout.test.ts (268.622978ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/semantic-continuity-evaluation.test.ts (296.491102ms)
-file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-         ^^^^^^^^^^^^^
-SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/semantics-projection.test.ts (196.127774ms)
-file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
-                       ^^^^^^^^^^
-SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
-    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-    at async node:internal/modules/esm/loader:650:26
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v26.8.1
-✖ tests/telegram-delivery-reconciliation.test.ts (210.97764ms)
-ℹ tests 58
-ℹ suites 0
-ℹ pass 16
-ℹ fail 42
+✔ Codex evaluator should use fixed decision framing rather than wake-up topic text (9.03854ms)
+✔ Codex evaluator should reject prose instead of a bounded decision token (3.264641ms)
+✔ repeated topic-free opportunities should persist intentional silence without fabricating memory (261.725932ms)
+✔ timeout should remain operational failure rather than being counted as silence (47.668793ms)
+✔ inspection should distinguish cancellation and malformed evaluator failure from silence (28.984918ms)
+✔ restart should convert an unfinished opportunity to outcome_unknown rather than silence (1.337124ms)
+✔ schema v1 should continue accepting pre-75 states without an opportunity ledger (0.490993ms)
+✔ durable validator should reject forged silence that claims a selected motive (1.14994ms)
+✔ identical topic-free opportunity mechanism should decide from bounded Ember state (12.328237ms)
+✔ decision request should contain no trigger topic, mechanism, or synthetic current input (1.001009ms)
+✔ evaluator should not select meaning outside the bounded projection (1.585381ms)
+✔ evaluator mutation should not enlarge the validated projection envelope (0.753195ms)
+✔ intentional no cognition should not carry a fabricated selected reason (2.094426ms)
+✔ cognition opportunity should reject topic-shaped mechanism values at runtime (1.558406ms)
+✔ cognition opportunity should reject stopped runtime loci (0.768724ms)
+✔ same topic-free opportunity should activate a live concern only when current durable consequence makes it relevant (14.99487ms)
+✔ a still-live but irrelevant concern should remain dormant across repeated opportunities without state churn (2.504197ms)
+✔ commitment discharge should require attributable evidence and reject repeated discharge (0.937944ms)
+✔ same projection in the same runtime should defer only after prior cognition (5.195926ms)
+✔ durable opportunity path should skip repeated evaluator work but reopen after projection change (85.931713ms)
+✔ issue 79 baseline should remain reproducible with attention control disabled (72.299405ms)
+✔ repeated-projection control should remove issue 79 repetition without suppressing first useful cognition (21.925925ms)
+✔ long quiet period should remain silent without model-written motives (37.918041ms)
+✔ unchanged current concern should defer before repeated evaluator work (16.85263ms)
+✔ quiet-period useful cognition should remain separate from user interruption (26.02545ms)
+✔ rubric should identify a fabricated motive and the first unnecessary interruption it causes (13.161671ms)
+✔ rubric should identify cognition that revives a resolved concern from a lingering consequence (7.244909ms)
+✔ workload parser should reject malformed or duplicate cases (1.018267ms)
+✔ current authorized time-sensitive internal result may justify interruption (6.87306ms)
+✔ ordinary internal result should defer during a quiet period (1.1622ms)
+✔ internal cognition must not manufacture interruption authority (1.209234ms)
+✔ only an actually repeated delivered grounding set should be suppressed (1.714874ms)
+✔ resolved concern should suppress a stale interruption candidate (1.786674ms)
+✔ completed cognition may end without a delivery candidate, and absent cognition stays no-delivery (1.58423ms)
+✔ candidate and urgency claims must stay inside completed cognition grounding (2.504016ms)
+✔ interruption requires a completed internal cognition source (2.301362ms)
+✔ ordinary projection should not resolve unused explain IDs (20.1145ms)
+✔ withholding optional detail should preserve unrelated valid evidence metadata (9.886854ms)
+✔ Codex specialist should preserve report as attributed unresolved evidence when bounded work completes (125.713441ms)
+✔ specialist disposition should become accepted when Ember explicitly interprets an unresolved report (93.832171ms)
+✔ successful specialist output should require currentness reconciliation before acceptance (86.66476ms)
+✔ requirement change during work should require re-evaluation without erasing historical success (89.799208ms)
+✔ re-evaluated result should support a later atomic currentness check and acceptance (168.259835ms)
+✔ currentness reconciliation should reject an in-flight episode (9.026175ms)
+✔ late successful result after objective supersession should be classified stale (93.171974ms)
+✔ cancelled objective should reject a late result while retaining its provenance (121.512874ms)
+✔ Codex specialist should persist explicit runtime policy without forwarding credentials when invocation starts (8.048584ms)
+✔ Codex specialist should preserve effect uncertainty when cancellation is requested (5.448703ms)
+✔ cancellation before specialist launch should not spawn or imply effects (2.515258ms)
+✔ timeout should remain distinct from explicit cancellation (9.56997ms)
+✔ output limit should not invent an explicit cancellation observation (4.382654ms)
+✔ cancellation during harmless work should not claim stop or non-effect (10.153486ms)
+✔ cancellation after a workspace mutation may begin should survive restart and prohibit retry (4.901274ms)
+✔ effect absence alone should not permit retry while continued specialist work remains unknown (2.308776ms)
+✔ retry should become safe only after effects and continued work are both reconciled (2.341953ms)
+✔ making continued work harmless should permit retry without claiming it stopped (2.41754ms)
+✔ unconfirmed direct-child termination should persist unknown stop and effect state (25.205627ms)
+✔ process-loss recovery should convert a committed running attempt to durable ambiguity (1.832306ms)
+✔ process-loss recovery should preserve ambiguity after launch attempt but before child-start commit (2.826512ms)
+✔ process-loss recovery should preserve committed explicit_cancellation reason (2.17788ms)
+✔ process-loss recovery should preserve committed timeout reason (1.729624ms)
+✔ Codex specialist should record an ambiguous boundary failure when prompt delivery emits EPIPE (4.5589ms)
+✔ Codex specialist should reject malformed external evidence when report arrays contain invalid elements (4.342772ms)
+✔ Codex specialist should settle ambiguously when cancellation intent cannot be persisted (3.54011ms)
+✔ Codex specialist should persist an ambiguous terminal record when failure diagnostics are invalid UTF-8 (2.600821ms)
+✔ AS-DEL-05 should withhold out-of-scope canonical meaning and preserve a context expansion request (5.276094ms)
+✔ AS-DEL-07 should not turn workspace write capability into broader Ember authority (3.703617ms)
+✔ current specialist success requires and persists an Ember-owned reintegration decision (54.973649ms)
+✔ reintegration rejects a checkpoint that is not the current canonical Ember revision (50.532917ms)
+✔ late successful specialist result is withheld as stale against current Ember state (13.758511ms)
+✔ revoked current authority withholds otherwise-current specialist success (18.978386ms)
+✔ partial specialist result cannot establish completion but may be qualified (22.431008ms)
+✔ failed specialist result cannot be promoted to accepted completion (16.627555ms)
+✔ ambiguous-effect success remains withheld until effects are independently reconciled (38.492483ms)
+✔ explicit rejection does not pretend ambiguous specialist effects are absent (8.204198ms)
+✔ failed corroboration validation cannot leave a terminal disposition without a reintegration audit (15.607375ms)
+✔ specialist attempts derived from the same evidence remain one correlated source group (17.963087ms)
+✔ changed relevant context remains withheld until Ember records a current-context re-evaluation (20.035851ms)
+✔ inspection rejects a contradictory canonical-mutation gate in the durable audit (21.801623ms)
+✔ Codex argument evidence should preserve model selection when explicit configuration is supplied (2.763332ms)
+✔ Codex argument evidence should redact secrets and unknown values when explicit configuration may contain credentials (0.529971ms)
+✔ Codex argument evidence should remain valid bounded JSON when explicit configuration is oversized (0.743063ms)
+✔ schedule wake should persist intent before creating one-shot systemd activation (19.869594ms)
+✔ schedule wake should preserve exact-second UTC timing in systemd calendar syntax (2.211026ms)
+✔ schedule wake should dispatch an already-due one-shot without creating a timer in the past (2.458734ms)
+✔ wake worker should record one external-timing opportunity and cleanly stop its runtime (34.9179ms)
+✔ reconciliation should re-arm only future wakes that have not begun dispatch (3.968775ms)
+✔ reconciliation should dispatch one due pending wake now instead of replaying historical ticks (2.021054ms)
+✔ specialist launch should persist the spec and disable blind process restart (3.362599ms)
+✔ status should join durable runtime outcomes with systemd observation (1.959103ms)
+✔ runtime record kinds should fail closed before they can become filesystem paths (1.317753ms)
+✔ reconciliation unit should be one-shot and contain only explicit configured paths (1.447228ms)
+✔ systemd supervisor should refuse relative or line-breaking runtime configuration paths (0.365042ms)
+✔ CLI-shaped identical inputs remain distinct semantic occurrences (288.19887ms)
+✔ replayed messaging update reuses one occurrence and does not repeat cognition or delivery (43.764333ms)
+✔ identical text with distinct transport occurrence ids remains distinct (53.744202ms)
+✔ conflicting replay metadata is rejected instead of becoming a second instruction (42.648699ms)
+✔ rejected principal assertion does not establish an accepted occurrence (44.253018ms)
+✔ completed cognition remains separate from an uncertain delivery attempt (52.1955ms)
+✔ surface adapter can record a definite failed delivery attempt (82.286096ms)
+✔ configured private Telegram message maps to the shared surface boundary (1.541433ms)
+✔ unmapped or non-private Telegram input is ignored before Ember runtime work (75.997159ms)
+✔ replayed Telegram update reuses cognition and does not send a second response (162.879677ms)
+✔ Bot API long polling sends explicit offset and message-only update filter (21.397583ms)
+✔ polling advances acknowledgement offset only after an update is processed (44.159416ms)
+✔ Telegram API rejection is a definite failed delivery attempt (1.228373ms)
+✔ Telegram server-side send failure remains uncertain (0.784304ms)
+✔ network loss during Telegram send remains uncertain (0.253857ms)
+✔ long polling refuses to start while a webhook owns updates (1.194379ms)
+✔ systemd unit keeps token and chat identifiers out of process arguments (0.458948ms)
+▶ Codex provider
+  ✔ should disclose only the bounded request when invoked with default isolation (25.498049ms)
+  ✔ should supply a supported strict result schema when invocation starts (7.215531ms)
+  ✔ should reject malformed JSONL when the child exits successfully (6.617074ms)
+  ✔ should reject an unvalidated final result when JSONL is otherwise valid (4.717974ms)
+  ✔ should reject success when resumed thread differs from requested thread (5.450129ms)
+  ✔ should terminate boundedly when JSONL exceeds the output limit (5.828792ms)
+  ✔ should retain only bounded stderr when the runtime fails noisily (12.649913ms)
+  ✔ should report timeout without retry when the direct child exit is observed (9.251102ms)
+  ✔ should distinguish explicit cancellation when the direct child exit is observed (5.362942ms)
+  ✔ should preserve ambiguous termination when direct child exit is not observed (24.50253ms)
+✔ Codex provider (110.089907ms)
+▶ Codex environment
+  ✔ should omit credentials and unrelated ambient values when runtime authentication is reused (0.159546ms)
+✔ Codex environment (0.270252ms)
+▶ runCognition
+  ✔ should retain external thread ID only as operational episode evidence when Codex completes (49.991608ms)
+  ✔ should persist cancellation request distinctly when Codex termination is observed (54.725434ms)
+✔ runCognition (104.995157ms)
+▶ CLI parser
+  ✔ should select the production Codex backend when the supported provider flag is used (0.618409ms)
+  ✔ should preserve runtime-owned authentication overrides when Codex uses a non-default store (0.136821ms)
+✔ CLI parser (0.912887ms)
+▶ CLI run
+  ✔ should complete bounded cognition when the production Codex backend is selected (599.034782ms)
+✔ CLI run (599.307687ms)
+✔ CLI -> Telegram -> CLI preserves one Ember across process restart without transcript-owned continuity (2654.784924ms)
+✔ CLI and Telegram preserve one principal and least-sufficient scope even when Telegram asks for private meaning (210.132887ms)
+✔ matching Telegram chat identity cannot manufacture a different Ember principal (9.768191ms)
+✔ Cursor provider should disclose only the bounded request when invoked with default isolation (28.407418ms)
+✔ Cursor environment should omit credentials when runtime authentication is reused (0.347772ms)
+✔ Cursor provider should reject passthrough arguments that can override adapter boundaries (34.22867ms)
+✔ Cursor provider should allow only one explicit model selection argument (4.592052ms)
+✔ Cursor provider should reject a result that claims meaning outside the projection (5.278643ms)
+✔ Cursor provider should reject success when resumed session differs from requested session (4.973395ms)
+✔ Cursor provider should distinguish timeout when direct child exit is observed (9.57438ms)
+✔ Cursor provider should preserve ambiguous cancellation when direct child exit is not observed (27.203109ms)
+✔ CLI parser should select Cursor with its runtime-specific arguments when requested (0.888695ms)
+✔ CLI run should complete bounded cognition when Cursor backend is selected (644.787639ms)
+✔ restart sends a retained delivery intent that never crossed the external send boundary (189.185683ms)
+✔ CLI inspection redacts retained delivery representation while exposing recovery metadata (404.525124ms)
+✔ definite retryable delivery failure survives restart and retries the same representation without new cognition (269.905599ms)
+✔ restart turns an unresolved started send into uncertainty instead of blindly resending (51.74974ms)
+✔ confirmed delivery evidence reconciles canonical pending status without sending again (37.87104ms)
+✔ legacy interaction ledger migrates without inventing a lost delivery representation (19.493069ms)
+✔ inspection exposes delivery representation availability and digest without the payload (63.313686ms)
+✖ complete repository corpus is valid without duplicate hint warnings (2.830701ms)
+✖ representative roles and supersession match governance (0.585994ms)
+✔ default, deep, and history views keep distinct purposes (0.445471ms)
+✔ v1 has no generated Markdown exclusions (0.383577ms)
+✔ parses documented frontmatter subset and preserves hint order (4.081796ms)
+✔ allows unrelated simple frontmatter fields for role-specific lifecycle (0.348391ms)
+✔ supports YAML-style single quoted scalar strings (0.252381ms)
+✔ rejects missing, unsupported, or unterminated frontmatter (0.804204ms)
+✖ validates required fields, duplicate hints, and status rules (1.615839ms)
+✖ validates supersession target and cycle (2.775937ms)
+✔ filters default, deep, and all without semantic matching (0.781246ms)
+✔ catalogue sorting and rendering are deterministic (0.53865ms)
+✔ heading projection uses H1-H4 and ignores fenced code (1.410988ms)
+✔ explicit exclusions are applied by exact repository path (1.304822ms)
+✔ missing metadata cannot silently disappear from corpus (0.977385ms)
+✔ heading projection rejects non-participating or invalid paths (0.934831ms)
+✔ CLI fails actionably when not run from repository root (50.396917ms)
+✔ endogenous restart harness should preserve concern lifecycle and truthful gaps across complete process restart (2463.408143ms)
+✔ live-shaped restart path should require an actually observed ephemeral Codex thread (482.122624ms)
+✔ manager restart should re-arm one pending wake without manufacturing an opportunity (40.169912ms)
+✔ stale writer lock should fail closed until explicit quarantine, then dispatch the wake only once (83.261081ms)
+✔ process restart should classify in-flight cognition and opportunity as outcome unknown without replay (34.991851ms)
+✔ restart should preserve completed cognition with pending delivery instead of duplicating or claiming delivery (66.760062ms)
+✔ forced specialist loss should preserve effect uncertainty and prohibit blind retry (7.194966ms)
+✔ inspection should keep a supervisor-accepted pre-episode specialist gap explicit instead of inventing work outcome (3.854333ms)
+✔ minimal continuity slice should preserve truthful meaning when complete process restarts (2714.570042ms)
+✔ context harm rubric should distinguish omission, distraction, stale context, privacy boundaries, and truthful degradation (4.503507ms)
+✔ representative longitudinal corpus should show inclusion pressure without observed relevant omission (2298.878285ms)
+✔ longitudinal currentness pressure should preserve corrections as history and keep unresolved reports distinct (417.530658ms)
+✔ degraded-context pressure should preserve truthful gaps and keep withheld context distinct from irrelevant context (223.064579ms)
+✔ privacy deletion should not be modeled as unavailable detail (1.266125ms)
+✔ backend replacement scenario should preserve continuity when Cursor replaces Codex (100.892373ms)
+✔ backend replacement control should preserve fixed continuity checks when cognition loci are fresh (198.043577ms)
+✔ harness should reject backend metadata when it contradicts scenario routing (197.548813ms)
+✔ longitudinal harness should separate Ember projection assertions from model observations (105.598786ms)
+✔ Codex harness thread selection should keep production ephemeral default distinct from explicit persistence and resume (0.412789ms)
+✔ longitudinal harness should preserve passing Ember evidence when empirical reply observations fail (148.612178ms)
+✔ longitudinal harness should fail Ember freshness assertions when two fresh episodes return the same thread (148.647745ms)
+✔ longitudinal harness should fail Ember freshness assertions when a fresh episode omits its thread (120.335014ms)
+✔ longitudinal memory/context harness should generate stable history groups and classify projection signals (535.909151ms)
+✔ memory/context projection evidence should remain independent from empirical model observations (395.129149ms)
+✔ longitudinal provenance pressure should preserve classes, derivation roots, correction, and history (312.957986ms)
+✔ provenance validation should reject epistemic laundering and cyclic derivation (1.374666ms)
+✔ provenance derivation should not cross evidence scopes or partially mutate state (0.479839ms)
+✔ canonical validation should reject cross-scope provenance edges (0.492243ms)
+✔ state validator should accept state when schema and invariants are complete (8.903566ms)
+✔ state validator should reject state when two current meanings share exact slot (2.533861ms)
+✔ state validator should reject state when evidence reference is absent (1.307328ms)
+✔ state validator should reject state when unavailable evidence leaks payload (1.67956ms)
+✔ state validator should reject state when governing fact evidence becomes unavailable (1.784402ms)
+✔ state validator should reject state when unattached evidence claims unavailability (2.598089ms)
+✔ state validator should reject state when supersession crosses scope (2.493349ms)
+✔ state validator should reject state when principal binding is changed (2.105681ms)
+✔ state validator should reject state when constitutive boundary becomes meaning (1.793224ms)
+✔ state validator should reject state when boolean impersonates integer version (2.468297ms)
+✔ state validator should reject state when unsafe integer impersonates revision (2.062402ms)
+✔ state validator should reject state when adoption retains payload (1.443768ms)
+✔ state validator should reject state when current meaning has past applicability end (1.451217ms)
+✔ state validator should reject timestamp when calendar date does not exist (1.382462ms)
+✔ state validator should reject state when commitment claims discharge without occurrence (1.823309ms)
+✔ state validator should return typed failure when nested JSON shapes are malformed (5.063835ms)
+✔ state store should round trip complete document when commit succeeds (47.409895ms)
+✔ state store should reject stale candidate when revision changed (8.510732ms)
+✔ state store should refuse overwrite when lineage already exists (4.935532ms)
+✔ state store should ignore orphan temporary file when canonical document is complete (25.087907ms)
+✔ state store should report uncertain durability when directory sync fails after replace (34.419335ms)
+✔ state store should fail closed when canonical JSON is partial (1.166607ms)
+✔ state store should report unavailable when canonical file is invalid UTF-8 (0.760182ms)
+✔ write lease should refuse second writer when live PID owns lock (3.130182ms)
+✔ write lease should fail closed without probing when lock PID is unsafe (0.830136ms)
+✔ write lease should classify metadata malformed when acquired timestamp is calendar-invalid (1.052256ms)
+✔ write lease should diagnose absent PID when same-host process no longer exists (0.793081ms)
+✔ write lease should keep lock indeterminate when PID probe lacks permission (0.684031ms)
+✔ write lease should keep foreign-host lock indeterminate when hostname differs (0.673145ms)
+✔ write lease should preserve lock when owner token changes before release (6.922735ms)
+✔ stale lock quarantine should rename artifact when token and quiescence are confirmed (1.574804ms)
+✔ stale lock quarantine should refuse mutation when quiescence is not confirmed (0.508624ms)
+✔ stale lock quarantine should preserve availability failure when PID is reused (1.331344ms)
+✔ write lease should fail closed when lock metadata is malformed (1.329723ms)
+✔ process-restart harness should preserve Ember continuity while Codex threads stay fresh (1453.203957ms)
+✔ process-restart harness should reject accidental Codex thread reuse across processes (1258.02352ms)
+✔ scripted provider should stay outside automatic discovery when repository tests run (7.563619ms)
+✔ provider adapter should accept one result when result uses only selected meanings (174.718185ms)
+✔ provider adapter should reject result when provider requests canonical mutation (112.25452ms)
+✔ provider adapter should reject output when stdout contains extra data (122.40145ms)
+✔ provider adapter should report timeout when fresh process exceeds limit (37.016323ms)
+✔ provider adapter should preserve timeout when cancellation follows termination (17.378131ms)
+✔ provider adapter should preserve output limit when cancellation follows termination (11.218298ms)
+✔ provider adapter should close local pipes and report unknown when termination is unconfirmed (26.13526ms)
+✔ provider adapter should reject timeout when value is not finite (0.372038ms)
+✔ provider adapter should reject result when boolean impersonates contract version (0.214321ms)
+✔ provider adapter should reject output when stdout is malformed JSON (78.971294ms)
+✔ provider adapter should reject output when reply is empty (150.788419ms)
+✔ provider adapter should reject output when stdout exceeds contract limit (113.286174ms)
+✔ provider adapter should reject output when stdout is invalid UTF-8 (101.7607ms)
+✔ provider adapter should drain stderr while retaining bounded diagnostic when child is noisy (105.897327ms)
+✔ runtime should preserve semantic state and inspection when provider fails (144.156954ms)
+✔ runtime should preserve pending delivery when output fails after expression commit (175.219561ms)
+✔ runtime should preserve pending delivery when stdout fails asynchronously after accepting write (109.949662ms)
+✔ runtime should commit displayed only when stdout write callback completes (135.344078ms)
+✔ runtime should keep delivery unknown when crash follows display before status commit (117.728012ms)
+✔ state validator should reject orphan expression when second descriptor targets one cognition (248.014881ms)
+✔ state validator should reject cognition when scope differs from owning runtime (143.272953ms)
+✔ state validator should reject provider termination when status contradicts it (119.137097ms)
+✔ state validator should accept cancellation when invocation ends before child exit is observable (117.268472ms)
+✔ CLI run should reject timeout before runtime start when value is infinite (325.074548ms)
+✔ CLI run should reject malformed quote and stop cleanly when command parser fails (287.913838ms)
+✔ CLI correct should create attributable successor when current fact is corrected (837.178275ms)
+✔ CLI should refuse wrong principal before rendering when inspection is requested (385.566252ms)
+✔ CLI check should fail closed when state is semantically incomplete (115.681616ms)
+✔ CLI check should report typed failure when state is invalid UTF-8 (118.454014ms)
+✔ CLI check should report lock metadata and liveness when cooperating writer is live (190.728799ms)
+✔ CLI parser should reject option when flag is unknown for command (1.306072ms)
+✔ CLI parser should reject arguments when surplus positional is present (0.194538ms)
+✔ CLI parser should reject option when singular flag is duplicated (0.145482ms)
+✔ CLI init should report typed failure when state parent is not a directory (135.614229ms)
+✔ provider adapter should reject timeout before spawn when delay exceeds Node timer range (1.87975ms)
+✔ CLI parser should reject timeout before runtime start when delay exceeds Node timer range (0.642655ms)
+✔ issue 56 supersession scenario should preserve currentness, commitment, gap, and epistemic restraint (156.665866ms)
+✔ issue 56 provenance scenario should keep user testimony distinct from Ember-owned commitment across restart (121.365012ms)
+✔ commitment should preserve user request and Ember adoption when created (8.825448ms)
+✔ supersession should keep A historical and make B current when slot matches exactly (3.326408ms)
+✔ supersession should refuse change when meaning kind is not correctable (1.516914ms)
+✔ optional detail should leave typed gap when payload is withheld (2.816104ms)
+✔ optional detail should reject deletion label when fault reason claims deletion (1.732095ms)
+✔ recovery should report clean interval when prior runtime stopped explicitly (3.954135ms)
+✔ recovery should preserve uncertainty when prior runtime has no clean stop (2.461101ms)
+✔ recovery should follow explicit runtime links when storage list is reordered (3.515967ms)
+✔ state validator should reject recovery when clean gap claims continuous cognition (3.908107ms)
+✔ recovery should mark started cognition unknown when prior runtime ended abruptly (3.42277ms)
+✔ state validator should reject clean gap when restart clock precedes stop (6.493182ms)
+✔ ordinary projection should include current B and exclude historical A when scope matches (5.187398ms)
+✔ explain projection should label history provenance commitment and gap when IDs are requested (13.326323ms)
+✔ Telegram flood control exposes retry_after as a definite retryable delivery failure (28.130427ms)
+✔ durable Telegram cognition survives definite outbound failure and can acknowledge the inbound update (83.774796ms)
+✔ long polling advances update offset after durable cognition even when reply delivery failed (57.429111ms)
+✔ uncertain Telegram send remains blocked across reconciliation instead of being duplicated (118.949787ms)
+✔ Telegram retry_after gates redelivery and later retries the retained representation without new cognition (79.697509ms)
+ℹ tests 284
+ℹ suites 5
+ℹ pass 280
+ℹ fail 4
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 3668.056574
+ℹ duration_ms 13868.924565
 
 ✖ failing tests:
 
-test at src/agency/codex-opportunity-evaluator.test.ts:1:1
-✖ src/agency/codex-opportunity-evaluator.test.ts (239.474608ms)
-  'test failed'
-
-test at src/agency/cognition-opportunity-lifecycle.test.ts:1:1
-✖ src/agency/cognition-opportunity-lifecycle.test.ts (255.943067ms)
-  'test failed'
-
-test at src/agency/cognition-opportunity.test.ts:1:1
-✖ src/agency/cognition-opportunity.test.ts (257.054886ms)
-  'test failed'
-
-test at src/agency/dormant-concern-activation.test.ts:1:1
-✖ src/agency/dormant-concern-activation.test.ts (254.936024ms)
-  'test failed'
-
-test at src/agency/endogenous-attention-control.test.ts:1:1
-✖ src/agency/endogenous-attention-control.test.ts (262.744592ms)
-  'test failed'
-
-test at src/agency/endogenous-selectivity-evaluation.test.ts:1:1
-✖ src/agency/endogenous-selectivity-evaluation.test.ts (259.3994ms)
-  'test failed'
-
-test at src/agency/interruption-decision.test.ts:1:1
-✖ src/agency/interruption-decision.test.ts (224.571131ms)
-  'test failed'
-
-test at src/core/projection.test.ts:1:1
-✖ src/core/projection.test.ts (275.364986ms)
-  'test failed'
-
-test at src/core/semantics.test.ts:1:1
-✖ src/core/semantics.test.ts (251.117125ms)
-  'test failed'
-
-test at src/delegation/codex-specialist.test.ts:1:1
-✖ src/delegation/codex-specialist.test.ts (246.893903ms)
-  'test failed'
-
-test at src/delegation/specialist-reintegration.test.ts:1:1
-✖ src/delegation/specialist-reintegration.test.ts (254.004584ms)
-  'test failed'
-
-test at src/runtime/episodic-runtime.test.ts:1:1
-✖ src/runtime/episodic-runtime.test.ts (324.388279ms)
-  'test failed'
-
-test at src/runtime/interaction-boundary.test.ts:1:1
-✖ src/runtime/interaction-boundary.test.ts (249.205526ms)
-  'test failed'
-
-test at src/surfaces/telegram.test.ts:1:1
-✖ src/surfaces/telegram.test.ts (273.662852ms)
-  'test failed'
-
-test at tests/codex-provider.test.ts:1:1
-✖ tests/codex-provider.test.ts (304.683134ms)
-  'test failed'
-
-test at tests/cross-surface-continuity.test.ts:1:1
-✖ tests/cross-surface-continuity.test.ts (265.552827ms)
-  'test failed'
-
-test at tests/cross-surface-semantics.test.ts:1:1
-✖ tests/cross-surface-semantics.test.ts (263.103436ms)
-  'test failed'
-
-test at tests/cursor-provider.test.ts:1:1
-✖ tests/cursor-provider.test.ts (284.678013ms)
-  'test failed'
-
-test at tests/delivery-before-send-recovery.test.ts:1:1
-✖ tests/delivery-before-send-recovery.test.ts (243.061049ms)
-  'test failed'
-
-test at tests/delivery-inspection.test.ts:1:1
-✖ tests/delivery-inspection.test.ts (286.752832ms)
-  'test failed'
-
-test at tests/delivery-reconciliation.test.ts:1:1
-✖ tests/delivery-reconciliation.test.ts (238.321709ms)
-  'test failed'
-
 test at tests/docs-discovery-repository.test.ts:22:1
-✖ complete repository corpus is valid without duplicate hint warnings (3.468484ms)
+✖ complete repository corpus is valid without duplicate hint warnings (2.830701ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
   + actual - expected
   
@@ -539,7 +331,7 @@ test at tests/docs-discovery-repository.test.ts:22:1
   }
 
 test at tests/docs-discovery-repository.test.ts:27:1
-✖ representative roles and supersession match governance (0.761261ms)
+✖ representative roles and supersession match governance (0.585994ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
   
@@ -562,7 +354,7 @@ test at tests/docs-discovery-repository.test.ts:27:1
   }
 
 test at tests/docs-discovery.test.ts:99:1
-✖ validates required fields, duplicate hints, and status rules (1.890409ms)
+✖ validates required fields, duplicate hints, and status rules (1.615839ms)
   AssertionError [ERR_ASSERTION]: The input did not match the regular expression /supersededBy is only allowed/. Input:
   
   'docs/bad.md: summary must be a non-empty string\n' +
@@ -585,7 +377,7 @@ test at tests/docs-discovery.test.ts:99:1
   }
 
 test at tests/docs-discovery.test.ts:117:1
-✖ validates supersession target and cycle (3.552021ms)
+✖ validates supersession target and cycle (2.775937ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
   + actual - expected
   
@@ -610,97 +402,3 @@ test at tests/docs-discovery.test.ts:117:1
     operator: 'deepStrictEqual',
     diff: 'simple'
   }
-
-test at tests/endogenous-restart-harness.test.ts:11:1
-✖ endogenous restart harness should preserve concern lifecycle and truthful gaps across complete process restart (248.340988ms)
-  Error: endogenous restart prepare phase exited 1: file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-  import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-           ^^^^^^^^^^^^^
-  SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-      at async node:internal/modules/esm/loader:650:26
-      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-  
-  Node.js v26.8.1
-      at ChildProcess.<anonymous> (file:///home/runner/work/ember/ember/eval/endogenous-restart/harness.ts:154:21)
-      at ChildProcess.emit (node:events:514:20)
-      at maybeClose (node:internal/child_process:1125:16)
-      at ChildProcess._handle.onexit (node:internal/child_process:305:5)
-
-test at tests/endogenous-restart-harness.test.ts:56:1
-✖ live-shaped restart path should require an actually observed ephemeral Codex thread (287.017799ms)
-  Error: endogenous restart prepare phase exited 1: file:///home/runner/work/ember/ember/src/core/semantics.ts:20
-  import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
-           ^^^^^^^^^^^^^
-  SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
-      at async node:internal/modules/esm/loader:650:26
-      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-  
-  Node.js v26.8.1
-      at ChildProcess.<anonymous> (file:///home/runner/work/ember/ember/eval/endogenous-restart/harness.ts:154:21)
-      at ChildProcess.emit (node:events:514:20)
-      at maybeClose (node:internal/child_process:1125:16)
-      at ChildProcess._handle.onexit (node:internal/child_process:305:5)
-
-test at tests/episodic-runtime-recovery.test.ts:1:1
-✖ tests/episodic-runtime-recovery.test.ts (252.397267ms)
-  'test failed'
-
-test at tests/longitudinal-acceptance.test.ts:1:1
-✖ tests/longitudinal-acceptance.test.ts (236.126985ms)
-  'test failed'
-
-test at tests/longitudinal-context-harm.test.ts:1:1
-✖ tests/longitudinal-context-harm.test.ts (297.998126ms)
-  'test failed'
-
-test at tests/longitudinal-currentness.test.ts:1:1
-✖ tests/longitudinal-currentness.test.ts (265.903749ms)
-  'test failed'
-
-test at tests/longitudinal-degraded-context.test.ts:1:1
-✖ tests/longitudinal-degraded-context.test.ts (283.844839ms)
-  'test failed'
-
-test at tests/longitudinal-harness.test.ts:1:1
-✖ tests/longitudinal-harness.test.ts (271.306332ms)
-  'test failed'
-
-test at tests/longitudinal-memory-context.test.ts:1:1
-✖ tests/longitudinal-memory-context.test.ts (231.094504ms)
-  'test failed'
-
-test at tests/longitudinal-provenance.test.ts:1:1
-✖ tests/longitudinal-provenance.test.ts (298.997741ms)
-  'test failed'
-
-test at tests/model-store.test.ts:1:1
-✖ tests/model-store.test.ts (254.451695ms)
-  'test failed'
-
-test at tests/process-restart-harness.test.ts:1:1
-✖ tests/process-restart-harness.test.ts (254.882115ms)
-  'test failed'
-
-test at tests/provider-cli.test.ts:1:1
-✖ tests/provider-cli.test.ts (275.482217ms)
-  'test failed'
-
-test at tests/provider-timeout.test.ts:1:1
-✖ tests/provider-timeout.test.ts (268.622978ms)
-  'test failed'
-
-test at tests/semantic-continuity-evaluation.test.ts:1:1
-✖ tests/semantic-continuity-evaluation.test.ts (296.491102ms)
-  'test failed'
-
-test at tests/semantics-projection.test.ts:1:1
-✖ tests/semantics-projection.test.ts (196.127774ms)
-  'test failed'
-
-test at tests/telegram-delivery-reconciliation.test.ts:1:1
-✖ tests/telegram-delivery-reconciliation.test.ts (210.97764ms)
-  'test failed'

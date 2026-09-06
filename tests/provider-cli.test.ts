@@ -6,12 +6,13 @@ import { PassThrough, Writable } from "node:stream";
 import test from "node:test";
 
 import { parseArgs } from "../src/cli/main.ts";
-import { cloneState, validateState } from "../src/core/model.ts";
+import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { validateProviderResult } from "../src/providers/contract.ts";
 import { invokeProvider } from "../src/providers/process.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { cloneState } from "../src/util.ts";
 import {
     captureError,
     command,

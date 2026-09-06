@@ -9,16 +9,10 @@ import type { StateStore } from "../persistence/state-store.ts";
 import type { RunCognitionOptions } from "./runtime.ts";
 
 import { DurabilityUncertain, StoreUnavailable, ValidationError } from "../core/errors.ts";
-import {
-    ASCII_CONTROL_CHARACTER_PATTERN,
-    cloneState,
-    contentDigest,
-    isRfc3339Utc,
-    newId,
-    nowUtc,
-} from "../core/model.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
+import { cloneState, contentDigest } from "../util.ts";
 import { findCognition, runCognition } from "./runtime.ts";
 
 export const PRINCIPAL_ASSERTION_PROVENANCE = ["explicit_local_argument", "configured_surface_mapping"] as const;

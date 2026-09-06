@@ -8,7 +8,8 @@ import { basename, dirname, join } from "node:path";
 import type { EmberState } from "../core/model.ts";
 
 import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
-import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+import { isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
+import { cloneState } from "../util.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
