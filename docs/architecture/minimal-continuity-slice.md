@@ -570,7 +570,7 @@ Before every commit and after every load, ordinary code enforces at least:
 14. deletion requests and a `deleted` status are rejected because privacy
     deletion semantics are outside this slice;
 15. the provider result schema admits only `contract_version`, `reply`, and
-    `used_meaning_ids`, plus an adapter-attached bounded operational envelope
+    `usedMeaningIds`, plus an adapter-attached bounded operational envelope
     containing only an external thread ID; unknown fields are rejected, so a
     result cannot request state mutation, evidence creation, or lineage revision.
     The external ID remains cognition-operation evidence and ambient subprocess
@@ -692,7 +692,7 @@ The projection contains a recovery account such as:
 For an unclean prior run, `gap_kind` becomes
 `uncertain_interruption_boundary`, no exact stop time is asserted, and any
 started-but-unfinished provider episode remains `outcome_unknown`. The projection
-may say only that no durable observation after `last_durable_observation_at`
+may say only that no durable observation after `lastDurableObservationAt`
 survived. Any user input, provider cognition or result, Ember observation,
 display, or other supported runtime activity after that durable boundary may
 have happened without being persisted; recovery must not deny it or invent its
@@ -716,7 +716,7 @@ current input, and explicit selection purpose.
    not fabricate experience during inactive intervals.
 2. It refuses to overwrite or merge an existing lineage.
 3. `ember run` acquires the exclusive-create write lease, validates the entire document, adds a
-   runtime episode with `started_at`, commits it, and begins the foreground loop.
+   runtime episode with `startedAt`, commits it, and begins the foreground loop.
 4. Each semantic command constructs its one source occurrence and validated
    meaning transition in one candidate revision; the store either exposes that
    complete revision or leaves the prior complete revision visible under the
@@ -732,7 +732,7 @@ current input, and explicit selection purpose.
 ### Clean full stop
 
 `:quit` stops accepting input, commits the runtime's
-`last_durable_observation_at`, `clean_stop_at`, and
+`lastDurableObservationAt`, `clean_stop_at`, and
 `stop_reason=explicit_cli_exit`, token-checks and releases the lock, and exits.
 The test verifies the operating-system process is gone and the lock path is
 absent. No worker, provider thread, scheduler, or daemon remains. Only the
@@ -774,7 +774,7 @@ resolved outside the supported experiment.
 The store can preserve only the complete canonical revision actually exposed by
 recovery, while the next process observes an open prior runtime episode. It records
 `uncertain_interruption_boundary` beginning at the prior episode's
-`last_durable_observation_at` and preserves any started-but-not-terminal cognition
+`lastDurableObservationAt` and preserves any started-but-not-terminal cognition
 episode as `outcome_unknown`. It makes no negative claim about cognition,
 observation, accepted input, provider completion, or display after that durable
 boundary: any of them may have occurred without a surviving commit.
@@ -980,7 +980,7 @@ and a provider can express continuity without owning it.
 | Optional detail payload unavailable with valid descriptor/meta-memory                                                                                | Produce typed AS-MEM-04 gap and continue within bounded uncertainty.                                                                                                                                                       |
 | Evidence reference absent or digest/availability invariants inconsistent                                                                             | Treat as canonical corruption, not ordinary failed recall.                                                                                                                                                                 |
 | Provider unavailable, malformed, oversized, timed out, explicitly cancellation-requested, exits non-zero, emits extra stdout, or returns empty reply | Record only justified attempt status; leave semantic state unchanged; keep inspect/check/correct usable; never retry automatically. Cancellation request, direct-child exit, remote effects, and rollback remain distinct. |
-| Crash after provider start but before terminal record                                                                                                | Preserve `outcome_unknown`; the provider may have completed and other unpersisted observation may have occurred after `last_durable_observation_at`. Do not claim otherwise or reconstruct/display a reply on restart.     |
+| Crash after provider start but before terminal record                                                                                                | Preserve `outcome_unknown`; the provider may have completed and other unpersisted observation may have occurred after `lastDurableObservationAt`. Do not claim otherwise or reconstruct/display a reply on restart.     |
 | Crash after the payload-free expression occurrence commits but before CLI display                                                                    | Inspection shows the expression occurrence and selection manifest; no meaning or reply payload was retained. `delivery_status=pending` means delivery is unknown, not that the response was seen.                          |
 | Crash after CLI display but before the delivery-status commit                                                                                        | The human may have seen all or part of the transient reply, while canonical `delivery_status=pending` still means unknown. Recovery never replays the unavailable reply or upgrades the delivery claim.                    |
 | Replace became visible but directory synchronization failed or crashed                                                                               | Commit durability is indeterminate. Recovery reloads and validates the complete canonical revision actually present and does not claim that either revision definitely survived before observing it.                       |
@@ -1106,7 +1106,7 @@ IDs, reasons, digests, and diagnostics, while episode meta-memory survives.
 Implement runtime/cognition episode evidence with an injected clock. Test initial
 start, clean stop/restart, open prior runtime, started-but-unknown provider
 outcome, crash after expression commit, crash after display but before delivery
-commit, and the exact claims allowed after `last_durable_observation_at` for each
+commit, and the exact claims allowed after `lastDurableObservationAt` for each
 gap kind.
 
 ### 7. Deterministic projector

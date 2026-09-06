@@ -146,7 +146,7 @@ That text is invariant across opportunities and only asks the provider to choose
 topic, concern name, or scenario-specific answer.
 
 The actual opportunity mechanism remains absent from the provider request. Existing
-`used_meaning_ids` becomes the evaluator's selected grounding IDs, and the core
+`usedMeaningIds` becomes the evaluator's selected grounding IDs, and the core
 opportunity boundary applies its stricter outcome validation.
 
 ### Reproduction

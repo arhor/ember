@@ -465,7 +465,7 @@ describe("runCognition", () => {
 
         // Then
         assert.equal(
-            result.state.operations.cognition_episodes.at(-1).external_provider_thread_id,
+            result.state.operations.cognition_episodes.at(-1).externalProviderThreadId,
             "thread-operational-46",
         );
         assert.equal(
@@ -508,8 +508,8 @@ describe("runCognition", () => {
         assert.deepEqual(
             [
                 result.state.operations.cognition_episodes.at(-1).status,
-                result.state.operations.cognition_episodes.at(-1).external_provider_thread_id,
-                result.state.operations.cognition_episodes.at(-1).provider_termination,
+                result.state.operations.cognition_episodes.at(-1).externalProviderThreadId,
+                result.state.operations.cognition_episodes.at(-1).providerTermination,
             ],
             [
                 "cancellation_requested",
@@ -520,7 +520,7 @@ describe("runCognition", () => {
                 },
             ],
         );
-        assert.equal(result.state.operations.cognition_episodes.at(-1).expression_evidence_id, null);
+        assert.equal(result.state.operations.cognition_episodes.at(-1).expressionEvidenceId, null);
     });
 });
 

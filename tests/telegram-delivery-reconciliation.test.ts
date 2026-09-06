@@ -128,7 +128,7 @@ test("durable Telegram cognition survives definite outbound failure and can ackn
         const state = await f.store.load();
         assert.equal(state.operations.cognition_episodes.length, 1);
         assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
-        assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "pending");
+        assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "pending");
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         assert.equal(ledger.inbound_occurrences[0]?.external_occurrence_id, "update:70");
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "failed");
@@ -219,7 +219,7 @@ test("uncertain Telegram send remains blocked across reconciliation instead of b
         assert.equal(providerCalls.value, 1);
         assert.equal(results.length, 1);
         assert.equal(results[0]?.status, "blocked_uncertain");
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.delivery_status, "pending");
+        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.deliveryStatus, "pending");
     } finally {
         await f.close();
     }
@@ -268,7 +268,7 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
         assert.equal(retrySends, 1);
         assert.equal(sends, 1);
         assert.equal(providerCalls.value, 1);
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.delivery_status, "displayed");
+        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.deliveryStatus, "displayed");
     } finally {
         await f.close();
     }

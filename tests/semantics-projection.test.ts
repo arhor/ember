@@ -117,7 +117,7 @@ test("recovery should follow explicit runtime links when storage list is reorder
     // When
     const third = startRuntime(second.state, PRINCIPAL, SCOPE, { timestamp: "2026-08-31T11:00:00Z" }),
         recovery = third.state.operations.runtime_episodes.find(
-            (r) => r.runtime_id === third.runtimeId,
+            (r) => r.runtimeId === third.runtimeId,
         ).recovery_account;
     // Then
     assert.deepEqual(
@@ -148,26 +148,26 @@ test("recovery should mark started cognition unknown when prior runtime ended ab
         cognitionId = newId("cognition");
     open.state.operations.runtime_episodes[0].last_durable_observation_at = "2026-08-29T10:01:00Z";
     open.state.operations.cognition_episodes.push({
-        cognition_id: cognitionId,
-        runtime_id: open.runtimeId,
+        cognitionId: cognitionId,
+        runtimeId: open.runtimeId,
         principal: PRINCIPAL,
-        active_scope: SCOPE,
-        provider_label: "provider",
+        activeScope: SCOPE,
+        providerLabel: "provider",
         purpose: "ordinary",
-        started_at: "2026-08-29T10:01:00Z",
-        last_durable_observation_at: "2026-08-29T10:01:00Z",
+        startedAt: "2026-08-29T10:01:00Z",
+        lastDurableObservationAt: "2026-08-29T10:01:00Z",
         status: "started",
-        selected_meaning_ids: [],
-        selected_evidence_ids: [],
-        used_meaning_ids: [],
-        input_evidence_id: input.evidence_id,
-        expression_evidence_id: null,
-        delivery_status: "not_attempted",
+        selectedMeaningIds: [],
+        selectedEvidenceIds: [],
+        usedMeaningIds: [],
+        inputEvidenceId: input.evidence_id,
+        expressionEvidenceId: null,
+        deliveryStatus: "not_attempted",
     });
     validateState(open.state);
     // When
     const recovered = startRuntime(open.state, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" }),
-        cognition = recovered.state.operations.cognition_episodes.find((c) => c.cognition_id === cognitionId);
+        cognition = recovered.state.operations.cognition_episodes.find((c) => c.cognitionId === cognitionId);
     // Then
     assert.deepEqual(
         [cognition.status, recovered.state.operations.runtime_episodes.at(-1).recovery_account.gap_kind],

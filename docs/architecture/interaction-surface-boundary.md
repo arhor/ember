@@ -368,4 +368,4 @@ CLI/Telegram continuity validation.
 | Attempted over-disclosure fails closed                       | Telegram may name an out-of-scope meaning ID in current input, but ordinary projection excludes the meaning and its private content.            |
 | Delivery provenance remains distinct                         | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition.   |
 | Inspection explains relevant provenance                      | `ember inspect` includes operational occurrences and deliveries with surface, principal provenance, destinations, and observed attempt results. |
-| Deployment mapping stays configurable without committed IDs  | Telegram mapping remains local configuration (`principal`, `active_scope`, `chat_id`); no real personal identifier is committed in repository.  |
+| Deployment mapping stays configurable without committed IDs  | Telegram mapping remains local configuration (`principal`, `activeScope`, `chat_id`); no real personal identifier is committed in repository.  |

@@ -27,12 +27,12 @@ function decidedCognition({
     evidenceIds: EvidenceId[];
 }): CognitionOpportunityOccurrence {
     return {
-        opportunity_id: newId("opportunity"),
-        runtime_id: runtimeId,
+        opportunityId: newId("opportunity"),
+        runtimeId: runtimeId,
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         mechanism: "foreground_probe",
-        observed_at: "2026-09-03T00:01:00Z",
+        observedAt: "2026-09-03T00:01:00Z",
         last_durable_observation_at: "2026-09-03T00:01:01Z",
         validated_revision: 1,
         projected_meaning_ids: [...meaningIds],

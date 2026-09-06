@@ -12,8 +12,9 @@ import type {
 } from "./model.ts";
 
 import { ValidationError } from "./errors.ts";
-import { cloneState, validateState } from "./model.ts";
+import { validateState } from "./model.ts";
 import { findMeaning } from "./semantics.ts";
+import { cloneState } from "../util.ts";
 
 export type ProjectedEvidence = Omit<Evidence, "payload" | "content_digest"> & {
     payload?: string;
@@ -232,8 +233,8 @@ export function explanationView(state: EmberState, id: MeaningId | string) {
         related_detail_evidence: state.evidence.filter((e) => e.related_meaning_id === m.meaning_id).map(cloneState),
         linked_meanings: linked,
         selected_by_cognition_ids: state.operations.cognition_episodes
-            .filter((c) => c.selected_meaning_ids.includes(m.meaning_id))
-            .map((c) => c.cognition_id),
+            .filter((c) => c.selectedMeaningIds.includes(m.meaning_id))
+            .map((c) => c.cognitionId),
     };
 }
 
@@ -273,7 +274,7 @@ function projectEvidence(ev: Evidence, includePayload: boolean): ProjectedEviden
 }
 
 export function findRuntime(state: EmberState, id: RuntimeId | string): RuntimeEpisode {
-    const value = state.operations.runtime_episodes.find((r) => r.runtime_id === id);
+    const value = state.operations.runtime_episodes.find((r) => r.runtimeId === id);
     if (!value) {
         throw new ValidationError(`runtime does not exist: ${id}`);
     }

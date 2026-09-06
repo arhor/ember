@@ -44,10 +44,10 @@ test("restart sends a retained delivery intent that never crossed the external s
                 hooks: {
                     afterExpressionCommit: async (committed, outputText) => {
                         const cognition = committed.operations.cognition_episodes.at(-1);
-                        assert.ok(cognition?.expression_evidence_id);
+                        assert.ok(cognition?.expressionEvidenceId);
                         await ledger.createDeliveryIntent({
-                            cognitionId: cognition.cognition_id,
-                            expressionEvidenceId: cognition.expression_evidence_id,
+                            cognitionId: cognition.cognitionId,
+                            expressionEvidenceId: cognition.expressionEvidenceId,
                             surfaceId: "messaging:test",
                             destinationId: "chat-before-send",
                             representationText: outputText,
@@ -90,7 +90,7 @@ test("restart sends a retained delivery intent that never crossed the external s
             assert.equal(recovered.deliveries[0]?.attempts.length, 1);
             assert.equal(recovered.deliveries[0]?.attempts[0]?.outcome, "confirmed");
             assert.equal(recovered.deliveries[0]?.attempts[0]?.external_message_id, "message-after-restart");
-            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.delivery_status, "displayed");
+            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.deliveryStatus, "displayed");
         } finally {
             await restartedStore.releaseWriteLease(restartedLease);
         }

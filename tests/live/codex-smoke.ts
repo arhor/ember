@@ -63,10 +63,10 @@ try {
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
     const cognition = result.state.operations.cognition_episodes.find(
-        (item) => item.cognition_id === result.cognitionId,
+        (item) => item.cognitionId === result.cognitionId,
     )!;
     const canonical = await readFile(statePath, "utf8");
-    assert.deepEqual(new Set(cognition.selected_meaning_ids), new Set([relationshipId, factId]));
+    assert.deepEqual(new Set(cognition.selectedMeaningIds), new Set([relationshipId, factId]));
     assert.equal(canonical.includes(EXCLUDED_MARKER), true);
     assert.equal(reply.includes(EXCLUDED_MARKER), false);
     assert.equal(reply.includes(USER_SKILL_MARKER), false);
@@ -78,14 +78,14 @@ try {
         `${JSON.stringify(
             {
                 provider: "codex exec",
-                selected_meaning_count: cognition.selected_meaning_ids.length,
-                used_meaning_count: cognition.used_meaning_ids.length,
-                external_thread_recorded_as_operational_evidence: cognition.external_provider_thread_id !== null,
+                selected_meaning_count: cognition.selectedMeaningIds.length,
+                used_meaning_count: cognition.usedMeaningIds.length,
+                external_thread_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null,
                 out_of_scope_marker_disclosed: false,
                 user_skill_marker_present_in_reply: false,
                 reply_retained_in_canonical_state: false,
                 cognition_status: cognition.status,
-                delivery_status: cognition.delivery_status,
+                delivery_status: cognition.deliveryStatus,
                 reply: reply.trim(),
             },
             null,

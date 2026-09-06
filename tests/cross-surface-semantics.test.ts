@@ -119,7 +119,7 @@ async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
         try {
             if (runtimeId !== null) {
                 const current = await store.load();
-                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtime_id === runtimeId);
+                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtimeId === runtimeId);
                 if (runtime?.clean_stop_at === null) {
                     const stopped = stopRuntime(current, runtimeId, { reason: "cross_surface_test_complete" });
                     await store.commit(current.revision, stopped);

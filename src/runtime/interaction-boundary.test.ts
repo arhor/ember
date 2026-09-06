@@ -283,7 +283,7 @@ test("completed cognition remains separate from an uncertain delivery attempt", 
         assert.equal(calls.value, 1);
         assert.equal(state.operations.cognition_episodes.length, 1);
         assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
-        assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "pending");
+        assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "pending");
         assert.equal(ledger.deliveries.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "uncertain");
@@ -318,7 +318,7 @@ test("surface adapter can record a definite failed delivery attempt", async () =
         const ledger = await new InteractionLedgerStore(f.store.path).load();
         assert.equal(calls.value, 1);
         assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
-        assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "pending");
+        assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "pending");
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "failed");
         assert.equal(ledger.deliveries[0]?.attempts[0]?.external_message_id, "rejected-message-1");

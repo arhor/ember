@@ -330,10 +330,10 @@ test("restart should preserve completed cognition with pending delivery instead 
     assert.match(displayed, /recovery-boundary reply/);
     assert.equal(beforeRestart.operations.cognition_episodes.length, 1);
     assert.equal(beforeRestart.operations.cognition_episodes[0]!.status, "completed");
-    assert.equal(beforeRestart.operations.cognition_episodes[0]!.delivery_status, "pending");
+    assert.equal(beforeRestart.operations.cognition_episodes[0]!.deliveryStatus, "pending");
     assert.equal(afterRestart.operations.cognition_episodes.length, 1);
     assert.equal(afterRestart.operations.cognition_episodes[0]!.status, "completed");
-    assert.equal(afterRestart.operations.cognition_episodes[0]!.delivery_status, "pending");
+    assert.equal(afterRestart.operations.cognition_episodes[0]!.deliveryStatus, "pending");
 });
 
 test("forced specialist loss should preserve effect uncertainty and prohibit blind retry", async () => {

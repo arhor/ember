@@ -73,7 +73,7 @@ The decision order is:
 
 - canonical cognition already `displayed`: return `confirmed`; do not send;
 - latest attempt `started`: record `uncertain`; do not send;
-- latest attempt `confirmed`: reconcile canonical `delivery_status` to `displayed`;
+- latest attempt `confirmed`: reconcile canonical `deliveryStatus` to `displayed`;
   do not send;
 - latest attempt `uncertain`: return `blocked_uncertain`; do not send;
 - latest attempt definite non-retryable `failed`: return `failed_non_retryable`;

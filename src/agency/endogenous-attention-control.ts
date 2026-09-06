@@ -6,6 +6,8 @@ import type {
     RuntimeId,
 } from "../core/model.ts";
 
+import { sameContent } from "../util.ts";
+
 export type RepeatedCognitionAttentionOutcome = "evaluate" | "defer_repeated_projection";
 
 export interface RepeatedCognitionAttentionRequest {
@@ -38,12 +40,12 @@ export function decideRepeatedCognitionAttention(
 ): RepeatedCognitionAttentionDecision {
     for (let index = history.length - 1; index >= 0; index -= 1) {
         const occurrence = history[index];
-        if (!sameContext(occurrence, request)) continue;
-
+        if (!sameContext(occurrence, request)) {
+            continue;
+        }
         if (!sameSnapshot(occurrence, request)) {
             return evaluate();
         }
-
         if (
             occurrence.status === "decided" &&
             occurrence.decision === "cognition" &&
@@ -51,7 +53,7 @@ export function decideRepeatedCognitionAttention(
         ) {
             return {
                 outcome: "defer_repeated_projection",
-                source_opportunity_id: occurrence.opportunity_id,
+                source_opportunity_id: occurrence.opportunityId,
                 selected_meaning_ids: [...occurrence.selected_meaning_ids],
             };
         }
@@ -62,24 +64,18 @@ export function decideRepeatedCognitionAttention(
 
 function sameContext(occurrence: CognitionOpportunityOccurrence, request: RepeatedCognitionAttentionRequest): boolean {
     return (
-        occurrence.runtime_id === request.runtime_id &&
+        occurrence.runtimeId === request.runtime_id &&
         occurrence.principal === request.principal &&
-        occurrence.active_scope === request.active_scope &&
+        occurrence.activeScope === request.active_scope &&
         occurrence.mechanism === request.mechanism
     );
 }
 
 function sameSnapshot(occurrence: CognitionOpportunityOccurrence, request: RepeatedCognitionAttentionRequest): boolean {
     return (
-        sameIds(occurrence.projected_meaning_ids, request.projected_meaning_ids) &&
-        sameIds(occurrence.projected_evidence_ids, request.projected_evidence_ids)
+        sameContent(occurrence.projected_meaning_ids, request.projected_meaning_ids) &&
+        sameContent(occurrence.projected_evidence_ids, request.projected_evidence_ids)
     );
-}
-
-function sameIds(left: readonly string[], right: readonly string[]): boolean {
-    if (left.length !== right.length) return false;
-    const expected = new Set(left);
-    return right.every((id) => expected.has(id));
 }
 
 function evaluate(): RepeatedCognitionAttentionDecision {

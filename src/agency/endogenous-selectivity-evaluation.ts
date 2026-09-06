@@ -290,12 +290,12 @@ export async function runEndogenousSelectivityEvaluation(
             }
 
             history.push({
-                opportunity_id: historyOpportunityId,
-                runtime_id: scenario.runtimeId,
+                opportunityId: historyOpportunityId,
+                runtimeId: scenario.runtimeId,
                 principal: validated.principal,
-                active_scope: validated.scope,
+                activeScope: validated.scope,
                 mechanism: "foreground_probe",
-                observed_at: consideredAt,
+                observedAt: consideredAt,
                 last_durable_observation_at: consideredAt,
                 validated_revision: projection.validated_revision,
                 projected_meaning_ids: [...projection.selection.meaning_ids],

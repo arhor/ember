@@ -49,10 +49,10 @@ try {
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
     const cognition = result.state.operations.cognition_episodes.find(
-        (item) => item.cognition_id === result.cognitionId,
+        (item) => item.cognitionId === result.cognitionId,
     )!;
     const canonical = await readFile(statePath, "utf8");
-    assert.deepEqual(new Set(cognition.selected_meaning_ids), new Set([relationshipId, factId]));
+    assert.deepEqual(new Set(cognition.selectedMeaningIds), new Set([relationshipId, factId]));
     assert.equal(reply.includes(marker), false);
     assert.equal(canonical.includes(reply.trim()), false);
     assert.match(reply, /EmberBoard 90/);
@@ -61,7 +61,7 @@ try {
         stopRuntime(result.state, started.runtimeId, { reason: "live_smoke_complete" }),
     );
     process.stdout.write(
-        `${JSON.stringify({ provider: "Cursor Agent CLI", selected_meaning_count: cognition.selected_meaning_ids.length, used_meaning_count: cognition.used_meaning_ids.length, external_session_recorded_as_operational_evidence: cognition.external_provider_thread_id !== null, out_of_scope_marker_disclosed: false, reply_retained_in_canonical_state: false, cognition_status: cognition.status, delivery_status: cognition.delivery_status, reply: reply.trim() }, null, 2)}\n`,
+        `${JSON.stringify({ provider: "Cursor Agent CLI", selected_meaning_count: cognition.selectedMeaningIds.length, used_meaning_count: cognition.usedMeaningIds.length, external_session_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null, out_of_scope_marker_disclosed: false, reply_retained_in_canonical_state: false, cognition_status: cognition.status, delivery_status: cognition.deliveryStatus, reply: reply.trim() }, null, 2)}\n`,
     );
 } finally {
     try {

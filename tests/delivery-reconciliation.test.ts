@@ -123,7 +123,7 @@ test("definite retryable delivery failure survives restart and retries the same 
             assert.equal(result.status, "confirmed");
             const state = await restartedStore.load();
             assert.equal(state.operations.cognition_episodes.length, 1);
-            assert.equal(state.operations.cognition_episodes[0]?.delivery_status, "displayed");
+            assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "displayed");
         });
 
         assert.equal(calls.provider, 1);
@@ -159,7 +159,7 @@ test("restart turns an unresolved started send into uncertainty instead of blind
             assert.equal(resendCalls, 0);
             const recovered = await new InteractionLedgerStore(f.statePath).load();
             assert.equal(recovered.deliveries[0]?.attempts.at(-1)?.outcome, "uncertain");
-            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.delivery_status, "pending");
+            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.deliveryStatus, "pending");
         });
         assert.equal(calls.provider, 1);
     } finally {
@@ -177,7 +177,7 @@ test("confirmed delivery evidence reconciles canonical pending status without se
         await ledger.finishDeliveryAttempt(started.attempt_id, "confirmed", {
             externalMessageId: "already-sent",
         });
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.delivery_status, "pending");
+        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.deliveryStatus, "pending");
 
         await withRestartedWriter(f, async (restartedStore) => {
             let resendCalls = 0;
@@ -187,7 +187,7 @@ test("confirmed delivery evidence reconciles canonical pending status without se
 
             assert.equal(result.status, "confirmed");
             assert.equal(resendCalls, 0);
-            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.delivery_status, "displayed");
+            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.deliveryStatus, "displayed");
         });
     } finally {
         await f.close();

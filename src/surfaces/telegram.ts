@@ -412,7 +412,7 @@ export async function processTelegramUpdate(
         try {
             if (runtimeId !== null) {
                 const current = await store.load();
-                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtime_id === runtimeId);
+                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtimeId === runtimeId);
                 if (runtime?.clean_stop_at === null) {
                     const stopped = stopRuntime(current, runtimeId, {
                         reason: signal?.aborted ? "telegram_surface_shutdown" : stopReason,
@@ -439,8 +439,8 @@ export async function reconcileTelegramDeliveries(
         const ledger = await new InteractionLedgerStore(config.state_path).load();
         const pendingCognitionIds = new Set(
             state.operations.cognition_episodes
-                .filter((cognition) => cognition.status === "completed" && cognition.delivery_status !== "displayed")
-                .map((cognition) => cognition.cognition_id),
+                .filter((cognition) => cognition.status === "completed" && cognition.deliveryStatus !== "displayed")
+                .map((cognition) => cognition.cognitionId),
         );
         const results = [];
         for (const delivery of ledger.deliveries) {

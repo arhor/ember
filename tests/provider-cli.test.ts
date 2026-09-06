@@ -305,7 +305,7 @@ test("runtime should preserve pending delivery when output fails after expressio
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual(
-        [error.message, persisted.status, persisted.delivery_status, Boolean(persisted.expression_evidence_id)],
+        [error.message, persisted.status, persisted.deliveryStatus, Boolean(persisted.expressionEvidenceId)],
         ["display failed", "completed", "pending", true],
     );
 });
@@ -333,7 +333,7 @@ test("runtime should preserve pending delivery when stdout fails asynchronously 
         persisted = (await fixture.store.load()).operations.cognition_episodes.at(-1);
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
-    assert.deepEqual([error.message, persisted.delivery_status], ["async display failed", "pending"]);
+    assert.deepEqual([error.message, persisted.deliveryStatus], ["async display failed", "pending"]);
 });
 test("runtime should commit displayed only when stdout write callback completes", async () => {
     // Given
@@ -367,7 +367,7 @@ test("runtime should commit displayed only when stdout write callback completes"
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual(
-        [observed, result.state.operations.cognition_episodes.at(-1).delivery_status],
+        [observed, result.state.operations.cognition_episodes.at(-1).deliveryStatus],
         [true, "displayed"],
     );
 });
@@ -399,7 +399,7 @@ test("runtime should keep delivery unknown when crash follows display before sta
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual(
-        [error.message, output.includes("CONTINUITY_RESPONSE"), persisted.delivery_status],
+        [error.message, output.includes("CONTINUITY_RESPONSE"), persisted.deliveryStatus],
         ["simulated crash", true, "pending"],
     );
 });
@@ -438,7 +438,7 @@ test("state validator should reject cognition when scope differs from owning run
             timeoutSeconds: 1,
             output: () => {},
         });
-    result.state.operations.cognition_episodes.at(-1).active_scope = "project:other";
+    result.state.operations.cognition_episodes.at(-1).activeScope = "project:other";
     await fixture.store.releaseWriteLease(fixture.lease);
     // When
     const error = await captureError(() => validateState(result.state));

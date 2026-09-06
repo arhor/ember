@@ -335,7 +335,7 @@ function requestFor(prepared: PreparedOpportunity): CognitionOpportunityRequest 
 }
 
 function validateMechanism(mechanism: CognitionOpportunityMechanism) {
-    if (!(COGNITION_OPPORTUNITY_MECHANISMS as readonly unknown[]).includes(mechanism)) {
+    if (!COGNITION_OPPORTUNITY_MECHANISMS.includes(mechanism)) {
         throw new ValidationError("cognition opportunity mechanism is invalid");
     }
 }

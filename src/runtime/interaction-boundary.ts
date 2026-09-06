@@ -483,13 +483,13 @@ export async function runSurfaceInteraction(
     );
     const cognitionId = accepted.record.cognition_id;
     const current = await store.load();
-    const existing = current.operations.cognition_episodes.find((episode) => episode.cognition_id === cognitionId);
+    const existing = current.operations.cognition_episodes.find((episode) => episode.cognitionId === cognitionId);
     if (existing) {
         let delivery = findDeliveryForCognition(await ledger.load(), cognitionId);
-        if (delivery === null && existing.status === "completed" && existing.expression_evidence_id !== null) {
+        if (delivery === null && existing.status === "completed" && existing.expressionEvidenceId !== null) {
             delivery = await ledger.createDeliveryIntent({
                 cognitionId,
-                expressionEvidenceId: existing.expression_evidence_id,
+                expressionEvidenceId: existing.expressionEvidenceId,
                 surfaceId: accepted.record.surface_id,
                 destinationId: accepted.record.delivery_destination_id,
                 representationText: null,
@@ -540,11 +540,11 @@ export async function runSurfaceInteraction(
         hooks: {
             afterExpressionCommit: async (committed, outputText) => {
                 const cognition = findCognition(committed, cognitionId);
-                if (cognition.expression_evidence_id === null)
+                if (cognition.expressionEvidenceId === null)
                     throw new ValidationError("completed cognition is missing expression evidence");
                 const intent = await ledger.createDeliveryIntent({
                     cognitionId,
-                    expressionEvidenceId: cognition.expression_evidence_id,
+                    expressionEvidenceId: cognition.expressionEvidenceId,
                     surfaceId: accepted.record.surface_id,
                     destinationId: accepted.record.delivery_destination_id,
                     representationText: outputText,
@@ -575,9 +575,9 @@ export async function reconcileSurfaceDelivery(
     let delivery = requireDelivery(document, deliveryId);
     const state = await store.load();
     const cognition = findCognition(state, delivery.cognition_id);
-    if (cognition.status !== "completed" || cognition.expression_evidence_id !== delivery.expression_evidence_id)
+    if (cognition.status !== "completed" || cognition.expressionEvidenceId !== delivery.expression_evidence_id)
         throw new ValidationError("delivery does not refer to a completed matching cognition");
-    if (cognition.delivery_status === "displayed") {
+    if (cognition.deliveryStatus === "displayed") {
         return resultFor(delivery, "confirmed", latestDeliveryAttempt(delivery)?.attempt_id ?? null, null);
     }
 
@@ -690,10 +690,10 @@ async function writeDeliveryOutput(output: Writable, text: string) {
 async function markCanonicalDeliveryDisplayed(store: StateStore, cognitionId: CognitionId) {
     const current = await store.load();
     const cognition = findCognition(current, cognitionId);
-    if (cognition.delivery_status === "displayed") return current;
+    if (cognition.deliveryStatus === "displayed") return current;
     if (cognition.status !== "completed") throw new ValidationError("only completed cognition can reconcile delivery");
     const candidate = cloneState(current);
-    findCognition(candidate, cognitionId).delivery_status = "displayed";
+    findCognition(candidate, cognitionId).deliveryStatus = "displayed";
     return store.commit(current.revision, candidate);
 }
 
