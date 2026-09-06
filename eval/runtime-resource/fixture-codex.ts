@@ -30,15 +30,15 @@ function providerResult(promptText: string) {
     };
     const isOpportunity = request.input?.text?.includes("discretionary cognition now") ?? false;
     return {
-        contract_version: 1,
+        contractVersion: 1,
         reply: isOpportunity ? "no_cognition" : "RESOURCE_EVALUATION_REPLY",
-        used_meaning_ids: isOpportunity ? [] : (request.projection?.selection?.meaning_ids ?? []),
+        usedMeaningIds: isOpportunity ? [] : (request.projection?.selection?.meaning_ids ?? []),
     };
 }
 
 function specialistReport() {
     return {
-        contract_version: 1,
+        contractVersion: 1,
         summary: "Inspected the bounded resource-evaluation workspace without mutation.",
         objective_disposition: "completed",
         artifacts_changed: [],

@@ -136,7 +136,7 @@ cancellation. Neither result permits an automatic retry.
 The revised experiment harness records `termination_reason` as
 `explicit_cancel`, `timeout`, or `null`. It sends `SIGTERM`, optionally escalates
 to `SIGKILL`, and uses a separate final deadline. If no `close` event arrives by
-that deadline it reports `direct_child_exit_observed: false` rather than waiting
+that deadline it reports `directChildExitObserved: false` rather than waiting
 forever or inventing confirmation. Deterministic tests cover successful completion,
 explicit cancellation, timeout, forced kill, and unconfirmed termination.
 
@@ -199,7 +199,7 @@ The live result was:
   "out_of_scope_marker_disclosed": false,
   "raw_transcript_included": false,
   "cognition_status": "completed",
-  "delivery_status": "displayed",
+  "deliveryStatus": "displayed",
   "expression_evidence_role": "ember_expression_via_provider",
   "reply_retained_in_canonical_state": false,
   "reply": "The synthetic fixture server uses EmberBoard 42 hardware."

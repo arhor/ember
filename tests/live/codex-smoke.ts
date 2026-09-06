@@ -62,7 +62,7 @@ try {
         },
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
-    const cognition = result.state.operations.cognition_episodes.find(
+    const cognition = result.state.operations.cognitionEpisodes.find(
         (item) => item.cognitionId === result.cognitionId,
     )!;
     const canonical = await readFile(statePath, "utf8");
@@ -85,7 +85,7 @@ try {
                 user_skill_marker_present_in_reply: false,
                 reply_retained_in_canonical_state: false,
                 cognition_status: cognition.status,
-                delivery_status: cognition.deliveryStatus,
+                deliveryStatus: cognition.deliveryStatus,
                 reply: reply.trim(),
             },
             null,

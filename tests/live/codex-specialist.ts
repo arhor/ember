@@ -93,7 +93,7 @@ if (process.env.EMBER_RUN_LIVE_SPECIALIST !== "1") {
                     report_state: record.report_state,
                     ember_disposition: record.ember_disposition,
                     report_provenance: record.report_provenance,
-                    external_thread_recorded_as_operational_metadata: Boolean(record.external_thread_id),
+                    external_thread_recorded_as_operational_metadata: Boolean(record.externalThreadId),
                     controlled_artifact_verified: true,
                     report: record.report,
                 },

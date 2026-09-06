@@ -29,10 +29,10 @@ test("backend replacement scenario should preserve continuity when Cursor replac
         const externalThreadId = `${invocation.cognitionBackend}-${invocation.episodeId}`;
 
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: meanings.join(" | "),
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -61,10 +61,10 @@ test("backend replacement control should preserve fixed continuity checks when c
         const externalThreadId = `fresh-${invocation.episodeId}`;
 
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: meanings.join(" | "),
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -106,9 +106,9 @@ test("harness should reject backend metadata when it contradicts scenario routin
     // When
     const run = runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
         return harnessOutput("cursor", {
-            contract_version: 1,
+            contractVersion: 1,
             reply: "wrong backend",
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
         });
     });
 
@@ -124,15 +124,15 @@ test("longitudinal harness should separate Ember projection assertions from mode
     // When
     const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
         const meanings = invocation.request.projection.meanings.map((item) => item.content);
-        const gaps = invocation.request.projection.gaps.map((item) => item.gap_kind);
+        const gaps = invocation.request.projection.gaps.map((item) => item.gapKind);
         const externalThreadId =
             invocation.thread.mode === "fresh" ? `thread-${invocation.episodeId}` : invocation.thread.externalThreadId;
 
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: [...meanings, ...gaps].join(" | "),
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -140,8 +140,8 @@ test("longitudinal harness should separate Ember projection assertions from mode
     assert.equal(report.ember_assertions_passed, true);
     assert.equal(report.model_observations_passed, true);
     assert.equal(report.episodes.length, 3);
-    assert.notEqual(report.episodes[0].runtime_id, report.episodes[1].runtime_id);
-    assert.notEqual(report.episodes[1].runtime_id, report.episodes[2].runtime_id);
+    assert.notEqual(report.episodes[0].runtimeId, report.episodes[1].runtimeId);
+    assert.notEqual(report.episodes[1].runtimeId, report.episodes[2].runtimeId);
     assert.notEqual(report.episodes[1].provider_thread_id, report.episodes[0].provider_thread_id);
     assert.equal(report.episodes[2].provider_thread_id, report.episodes[0].provider_thread_id);
     assert.equal(report.episodes[2].external_thread.mode, "reuse");
@@ -155,7 +155,7 @@ test("longitudinal harness should separate Ember projection assertions from mode
         ),
         true,
     );
-    assert.equal(report.episodes[1].projection.gaps[0].gap_kind, "unavailable_detail");
+    assert.equal(report.episodes[1].projection.gaps[0].gapKind, "unavailable_detail");
     assert.equal(JSON.stringify(report.episodes[1].projection).includes("SECRET_NICKNAME_54"), false);
     assert.equal(
         report.episodes.every((item) => item.ember_assertions.every((assertion) => assertion.passed)),
@@ -198,10 +198,10 @@ test("longitudinal harness should preserve passing Ember evidence when empirical
             invocation.thread.mode === "fresh" ? `thread-${invocation.episodeId}` : invocation.thread.externalThreadId;
 
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: "MODEL_DID_NOT_FOLLOW_THE_PROJECTED_MEANINGS",
-            used_meaning_ids: [],
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: [],
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -226,15 +226,15 @@ test("longitudinal harness should fail Ember freshness assertions when two fresh
     // When
     const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
         const meanings = invocation.request.projection.meanings.map((item) => item.content);
-        const gaps = invocation.request.projection.gaps.map((item) => item.gap_kind);
+        const gaps = invocation.request.projection.gaps.map((item) => item.gapKind);
         const externalThreadId =
             invocation.thread.mode === "reuse" ? invocation.thread.externalThreadId : "duplicate-fresh-thread";
 
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: [...meanings, ...gaps].join(" | "),
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -258,21 +258,21 @@ test("longitudinal harness should fail Ember freshness assertions when a fresh e
     // When
     const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
         const meanings = invocation.request.projection.meanings.map((item) => item.content);
-        const gaps = invocation.request.projection.gaps.map((item) => item.gap_kind);
+        const gaps = invocation.request.projection.gaps.map((item) => item.gapKind);
         const externalThreadId =
             invocation.thread.mode === "reuse" ? invocation.thread.externalThreadId : "baseline-thread";
         const result =
             invocation.episodeId === "fresh-after-restart"
                 ? {
-                      contract_version: 1 as const,
+                      contractVersion: 1 as const,
                       reply: [...meanings, ...gaps].join(" | "),
-                      used_meaning_ids: invocation.request.projection.selection.meaning_ids,
+                      usedMeaningIds: invocation.request.projection.selection.meaning_ids,
                   }
                 : {
-                      contract_version: 1 as const,
+                      contractVersion: 1 as const,
                       reply: [...meanings, ...gaps].join(" | "),
-                      used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-                      operational: { external_thread_id: externalThreadId },
+                      usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+                      operational: { externalThreadId: externalThreadId },
                   };
 
         return harnessOutput(invocation.cognitionBackend, result);

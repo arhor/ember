@@ -95,10 +95,10 @@ test("representative longitudinal corpus should show inclusion pressure without 
                     ? `thread-${invocation.scenarioId}-${invocation.episodeId}`
                     : invocation.thread.externalThreadId;
             return harnessOutput(invocation.cognitionBackend, {
-                contract_version: 1,
+                contractVersion: 1,
                 reply: "deterministic context-harm evaluation",
-                used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-                operational: { external_thread_id: externalThreadId },
+                usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+                operational: { externalThreadId: externalThreadId },
             });
         });
         assert.equal(report.ember_assertions_passed, true);

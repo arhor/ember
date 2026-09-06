@@ -37,59 +37,59 @@ export function startRuntime(
     const recovery =
         previous === null
             ? {
-                  previous_runtime: null,
-                  current_runtime: runtimeId,
-                  gap_kind: "initial_start" as const,
-                  last_durable_observation_at: null,
-                  clean_stop_at: null,
-                  restart_at: timestamp,
-                  ember_cognition_during_interval: "not_applicable" as const,
-                  external_changes_during_interval: "unknown" as const,
+                  previousRuntime: null,
+                  currentRuntime: runtimeId,
+                  gapKind: "initial_start" as const,
+                  lastDurableObservationAt: null,
+                  cleanStopAt: null,
+                  restartAt: timestamp,
+                  emberCognitionDuringInterval: "not_applicable" as const,
+                  externalChangesDuringInterval: "unknown" as const,
               }
-            : previous.clean_stop_at !== null
+            : previous.cleanStopAt !== null
               ? {
-                    previous_runtime: previous.runtimeId,
-                    current_runtime: runtimeId,
-                    gap_kind: "known_clean_stop_interval" as const,
-                    last_durable_observation_at: previous.last_durable_observation_at,
-                    clean_stop_at: previous.clean_stop_at,
-                    restart_at: timestamp,
-                    ember_cognition_during_interval: "none_in_supported_runtime" as const,
-                    external_changes_during_interval: "unknown" as const,
+                    previousRuntime: previous.runtimeId,
+                    currentRuntime: runtimeId,
+                    gapKind: "known_clean_stop_interval" as const,
+                    lastDurableObservationAt: previous.lastDurableObservationAt,
+                    cleanStopAt: previous.cleanStopAt,
+                    restartAt: timestamp,
+                    emberCognitionDuringInterval: "none_in_supported_runtime" as const,
+                    externalChangesDuringInterval: "unknown" as const,
                 }
               : {
-                    previous_runtime: previous.runtimeId,
-                    current_runtime: runtimeId,
-                    gap_kind: "uncertain_interruption_boundary" as const,
-                    last_durable_observation_at: previous.last_durable_observation_at,
-                    clean_stop_at: null,
-                    restart_at: timestamp,
-                    ember_cognition_during_interval: "unknown_after_last_durable_observation" as const,
-                    external_changes_during_interval: "unknown" as const,
+                    previousRuntime: previous.runtimeId,
+                    currentRuntime: runtimeId,
+                    gapKind: "uncertain_interruption_boundary" as const,
+                    lastDurableObservationAt: previous.lastDurableObservationAt,
+                    cleanStopAt: null,
+                    restartAt: timestamp,
+                    emberCognitionDuringInterval: "unknown_after_last_durable_observation" as const,
+                    externalChangesDuringInterval: "unknown" as const,
                 };
-    if (previous?.clean_stop_at === null) {
-        for (const cognition of candidate.operations.cognition_episodes) {
+    if (previous?.cleanStopAt === null) {
+        for (const cognition of candidate.operations.cognitionEpisodes) {
             if (cognition.runtimeId === previous.runtimeId && cognition.status === "started") {
                 cognition.status = "outcome_unknown";
             }
         }
-        for (const opportunity of candidate.operations.cognition_opportunities ?? []) {
+        for (const opportunity of candidate.operations.cognitionOpportunities ?? []) {
             if (opportunity.runtimeId === previous.runtimeId && opportunity.status === "evaluating") {
                 opportunity.status = "outcome_unknown";
-                opportunity.last_durable_observation_at = timestamp;
-                opportunity.provider_termination = null;
+                opportunity.lastDurableObservationAt = timestamp;
+                opportunity.providerTermination = null;
             }
         }
     }
-    candidate.operations.runtime_episodes.push({
+    candidate.operations.runtimeEpisodes.push({
         runtimeId: runtimeId,
         principal,
-        active_scope: scope,
-        started_at: timestamp,
-        last_durable_observation_at: timestamp,
-        clean_stop_at: null,
-        stop_reason: null,
-        recovery_account: recovery,
+        activeScope: scope,
+        startedAt: timestamp,
+        lastDurableObservationAt: timestamp,
+        cleanStopAt: null,
+        stopReason: null,
+        recoveryAccount: recovery,
     });
     validateState(candidate);
     return { state: candidate, runtimeId };
@@ -108,19 +108,19 @@ export function stopRuntime(
 ): EmberState {
     const candidate = cloneState(state);
     const runtime = findRuntime(candidate, runtimeId);
-    if (runtime.clean_stop_at !== null) {
+    if (runtime.cleanStopAt !== null) {
         throw new ValidationError("runtime is already stopped");
     }
-    for (const opportunity of candidate.operations.cognition_opportunities ?? []) {
+    for (const opportunity of candidate.operations.cognitionOpportunities ?? []) {
         if (opportunity.runtimeId === runtime.runtimeId && opportunity.status === "evaluating") {
             opportunity.status = "outcome_unknown";
-            opportunity.last_durable_observation_at = timestamp;
-            opportunity.provider_termination = null;
+            opportunity.lastDurableObservationAt = timestamp;
+            opportunity.providerTermination = null;
         }
     }
-    runtime.last_durable_observation_at = timestamp;
-    runtime.clean_stop_at = timestamp;
-    runtime.stop_reason = reason;
+    runtime.lastDurableObservationAt = timestamp;
+    runtime.cleanStopAt = timestamp;
+    runtime.stopReason = reason;
     validateState(candidate);
     return candidate;
 }
@@ -169,7 +169,7 @@ export async function runCognition(
 ): Promise<{ state: EmberState; providerFailure: string | null; cognitionId: CognitionId }> {
     requirePrincipal(state, principal);
     const cognitionId = requestedCognitionId ?? newId("cognition");
-    if (state.operations.cognition_episodes.some((episode) => episode.cognitionId === cognitionId)) {
+    if (state.operations.cognitionEpisodes.some((episode) => episode.cognitionId === cognitionId)) {
         throw new ValidationError(`cognition already exists: ${cognitionId}`);
     }
     const timestamp = nowUtc();
@@ -186,8 +186,8 @@ export async function runCognition(
     const label = providerLabel(command);
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
-    findRuntime(started, runtimeId).last_durable_observation_at = timestamp;
-    started.operations.cognition_episodes.push({
+    findRuntime(started, runtimeId).lastDurableObservationAt = timestamp;
+    started.operations.cognitionEpisodes.push({
         cognitionId: cognitionId,
         runtimeId: runtimeId,
         principal,
@@ -200,7 +200,7 @@ export async function runCognition(
         selectedMeaningIds: projection.selection.meaning_ids,
         selectedEvidenceIds: projection.selection.evidence_ids,
         usedMeaningIds: [],
-        inputEvidenceId: input.evidence_id,
+        inputEvidenceId: input.evidenceId,
         expressionEvidenceId: null,
         deliveryStatus: "not_attempted",
         externalProviderThreadId: null,
@@ -209,8 +209,8 @@ export async function runCognition(
     state = await store.commit(state.revision, started);
 
     const request: ProviderRequest = {
-        contract_version: CONTRACT_VERSION,
-        cognition_id: cognitionId,
+        contractVersion: CONTRACT_VERSION,
+        cognitionId: cognitionId,
         projection,
         input: { text },
     };
@@ -235,10 +235,10 @@ export async function runCognition(
                 ? null
                 : {
                       reason: error.termination.reason,
-                      direct_child_exit_observed: error.termination.directChildExitObserved,
+                      directChildExitObserved: error.termination.directChildExitObserved,
                   };
         cognition.lastDurableObservationAt = at;
-        findRuntime(failed, runtimeId).last_durable_observation_at = at;
+        findRuntime(failed, runtimeId).lastDurableObservationAt = at;
         state = await store.commit(current.revision, failed);
         return { state, providerFailure: error.message, cognitionId };
     }
@@ -252,28 +252,28 @@ export async function runCognition(
     const expressionId = newId("evidence");
     const at = nowUtc();
     const expression: EmberExpressionEvidence = {
-        evidence_id: expressionId,
-        source_role: "ember_expression_via_provider",
-        source_actor: "ember",
-        asserted_principal: principal,
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: [],
+        evidenceId: expressionId,
+        sourceRole: "ember_expression_via_provider",
+        sourceActor: "ember",
+        assertedPrincipal: principal,
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: [],
         scope,
-        payload_mode: "descriptor_only",
-        cognition_id: cognitionId,
-        provider_label: label,
+        payloadMode: "descriptor_only",
+        cognitionId: cognitionId,
+        providerLabel: label,
     };
     completed.evidence.push(expression);
     Object.assign(cognition, {
         status: "completed",
-        last_durable_observation_at: at,
-        used_meaning_ids: result.used_meaning_ids,
-        expression_evidence_id: expressionId,
-        delivery_status: "pending",
-        external_provider_thread_id: result.operational?.external_thread_id ?? null,
+        lastDurableObservationAt: at,
+        usedMeaningIds: result.usedMeaningIds,
+        expressionEvidenceId: expressionId,
+        deliveryStatus: "pending",
+        externalProviderThreadId: result.operational?.externalThreadId ?? null,
     });
-    findRuntime(completed, runtimeId).last_durable_observation_at = at;
+    findRuntime(completed, runtimeId).lastDurableObservationAt = at;
     state = await store.commit(current.revision, completed);
     const outputText = `${result.reply}\n`;
     await hooks.afterExpressionCommit?.(state, outputText);
@@ -284,13 +284,13 @@ export async function runCognition(
     const displayedAt = nowUtc();
     displayedCognition.deliveryStatus = "displayed";
     displayedCognition.lastDurableObservationAt = displayedAt;
-    findRuntime(displayed, runtimeId).last_durable_observation_at = displayedAt;
+    findRuntime(displayed, runtimeId).lastDurableObservationAt = displayedAt;
     state = await store.commit(state.revision, displayed);
     return { state, providerFailure: null, cognitionId };
 }
 
 export function findCognition(state: EmberState, id: CognitionId | string): CognitionEpisode {
-    const value = state.operations.cognition_episodes.find((c) => c.cognitionId === id);
+    const value = state.operations.cognitionEpisodes.find((c) => c.cognitionId === id);
     if (!value) {
         throw new ValidationError(`cognition does not exist: ${id}`);
     }
@@ -298,12 +298,12 @@ export function findCognition(state: EmberState, id: CognitionId | string): Cogn
 }
 
 function latestRuntime(state: EmberState): RuntimeEpisode | null {
-    const runtimes = state.operations.runtime_episodes;
+    const runtimes = state.operations.runtimeEpisodes;
     if (!runtimes.length) {
         return null;
     }
     const referenced = new Set(
-        runtimes.map((r) => r.recovery_account.previous_runtime).filter((id): id is RuntimeId => id !== null),
+        runtimes.map((r) => r.recoveryAccount.previousRuntime).filter((id): id is RuntimeId => id !== null),
     );
     const tails = runtimes.filter((r) => !referenced.has(r.runtimeId));
     if (tails.length !== 1) {

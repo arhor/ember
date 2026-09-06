@@ -9,9 +9,9 @@ const match = /<ember_provider_request>\n([^\n]+)\n<\/ember_provider_request>/.e
 if (!match) throw new Error("bounded Ember request is missing");
 const request = JSON.parse(match[1]);
 const result = {
-    contract_version: 1,
+    contractVersion: 1,
     reply: "CODEX_CLI_RESPONSE",
-    used_meaning_ids: request.projection.selection.meaning_ids,
+    usedMeaningIds: request.projection.selection.meaning_ids,
 };
 process.stdout.write(`${JSON.stringify({ type: "thread.started", thread_id: "thread-cli-46" })}\n`);
 process.stdout.write(`${JSON.stringify({ type: "turn.started" })}\n`);

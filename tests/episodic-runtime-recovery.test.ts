@@ -30,7 +30,7 @@ function runtimeConfig(root: string): EpisodicRuntimeConfig {
         state_path: join(root, "ember.json"),
         records_directory: join(root, "runtime-records"),
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         node_path: process.execPath,
         runtime_entrypoint: join(ROOT, "bin", "ember-runtime.ts"),
         codex_command: "/usr/bin/codex",
@@ -159,7 +159,7 @@ test("manager restart should re-arm one pending wake without manufacturing an op
     assert.deepEqual(first.repairedWakes, [wake.wake_id]);
     assert.deepEqual(second.repairedWakes, []);
     assert.equal(recoveryCalls.filter((call) => call.command === config.systemd_run_command).length, 1);
-    assert.equal(state.operations.cognition_opportunities?.length ?? 0, 0);
+    assert.equal(state.operations.cognitionOpportunities?.length ?? 0, 0);
 });
 
 test("stale writer lock should fail closed until explicit quarantine, then dispatch the wake only once", async () => {
@@ -193,11 +193,11 @@ test("stale writer lock should fail closed until explicit quarantine, then dispa
         confirmQuiescent: true,
     });
     const completed = await runWakeWorker(config, wake.wake_id, {
-        evaluator: async () => ({ contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] }),
+        evaluator: async () => ({ contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] }),
         now: () => "2026-09-04T18:02:00Z",
     });
     const duplicate = await runWakeWorker(config, wake.wake_id, {
-        evaluator: async () => ({ contract_version: 1, decision: "cognition", selected_meaning_ids: [] }),
+        evaluator: async () => ({ contractVersion: 1, decision: "cognition", selectedMeaningIds: [] }),
         now: () => "2026-09-04T18:03:00Z",
     });
     const afterRecovery = await new StateStore(config.state_path).load();
@@ -205,10 +205,10 @@ test("stale writer lock should fail closed until explicit quarantine, then dispa
     // Then
     assert.ok(blocked instanceof ConcurrentWriter);
     assert.equal(blocked.diagnosis.status, "apparently_stale");
-    assert.equal(beforeRecovery.operations.cognition_opportunities?.length ?? 0, 0);
+    assert.equal(beforeRecovery.operations.cognitionOpportunities?.length ?? 0, 0);
     assert.equal(completed.status, "completed");
     assert.equal(duplicate.status, "already_dispatched");
-    assert.equal(afterRecovery.operations.cognition_opportunities?.length, 1);
+    assert.equal(afterRecovery.operations.cognitionOpportunities?.length, 1);
 });
 
 test("process restart should classify in-flight cognition and opportunity as outcome unknown without replay", async () => {
@@ -264,16 +264,16 @@ test("process restart should classify in-flight cognition and opportunity as out
     // Then
     assert.match(cognitionError.message, /simulated abrupt cognition process loss/);
     assert.match(opportunityError.message, /simulated abrupt opportunity process loss/);
-    assert.equal(beforeRestart.operations.cognition_episodes.length, 1);
-    assert.equal(beforeRestart.operations.cognition_episodes[0]!.status, "started");
-    assert.equal(beforeRestart.operations.cognition_opportunities?.length, 1);
-    assert.equal(beforeRestart.operations.cognition_opportunities?.[0]!.status, "evaluating");
-    assert.equal(afterRestart.operations.cognition_episodes.length, 1);
-    assert.equal(afterRestart.operations.cognition_episodes[0]!.status, "outcome_unknown");
-    assert.equal(afterRestart.operations.cognition_opportunities?.length, 1);
-    assert.equal(afterRestart.operations.cognition_opportunities?.[0]!.status, "outcome_unknown");
+    assert.equal(beforeRestart.operations.cognitionEpisodes.length, 1);
+    assert.equal(beforeRestart.operations.cognitionEpisodes[0]!.status, "started");
+    assert.equal(beforeRestart.operations.cognitionOpportunities?.length, 1);
+    assert.equal(beforeRestart.operations.cognitionOpportunities?.[0]!.status, "evaluating");
+    assert.equal(afterRestart.operations.cognitionEpisodes.length, 1);
+    assert.equal(afterRestart.operations.cognitionEpisodes[0]!.status, "outcome_unknown");
+    assert.equal(afterRestart.operations.cognitionOpportunities?.length, 1);
+    assert.equal(afterRestart.operations.cognitionOpportunities?.[0]!.status, "outcome_unknown");
     assert.equal(
-        afterRestart.operations.runtime_episodes.at(-1)!.recovery_account.gap_kind,
+        afterRestart.operations.runtimeEpisodes.at(-1)!.recoveryAccount.gapKind,
         "uncertain_interruption_boundary",
     );
 });
@@ -301,9 +301,9 @@ test("restart should preserve completed cognition with pending delivery instead 
                 command: "/unused/provider",
                 timeoutSeconds: 1,
                 provider: async () => ({
-                    contract_version: 1,
+                    contractVersion: 1,
                     reply: "recovery-boundary reply",
-                    used_meaning_ids: [],
+                    usedMeaningIds: [],
                 }),
                 output: (text) => {
                     displayed += text;
@@ -328,12 +328,12 @@ test("restart should preserve completed cognition with pending delivery instead 
     // Then
     assert.match(crash.message, /simulated process loss after display/);
     assert.match(displayed, /recovery-boundary reply/);
-    assert.equal(beforeRestart.operations.cognition_episodes.length, 1);
-    assert.equal(beforeRestart.operations.cognition_episodes[0]!.status, "completed");
-    assert.equal(beforeRestart.operations.cognition_episodes[0]!.deliveryStatus, "pending");
-    assert.equal(afterRestart.operations.cognition_episodes.length, 1);
-    assert.equal(afterRestart.operations.cognition_episodes[0]!.status, "completed");
-    assert.equal(afterRestart.operations.cognition_episodes[0]!.deliveryStatus, "pending");
+    assert.equal(beforeRestart.operations.cognitionEpisodes.length, 1);
+    assert.equal(beforeRestart.operations.cognitionEpisodes[0]!.status, "completed");
+    assert.equal(beforeRestart.operations.cognitionEpisodes[0]!.deliveryStatus, "pending");
+    assert.equal(afterRestart.operations.cognitionEpisodes.length, 1);
+    assert.equal(afterRestart.operations.cognitionEpisodes[0]!.status, "completed");
+    assert.equal(afterRestart.operations.cognitionEpisodes[0]!.deliveryStatus, "pending");
 });
 
 test("forced specialist loss should preserve effect uncertainty and prohibit blind retry", async () => {
@@ -363,9 +363,9 @@ test("forced specialist loss should preserve effect uncertainty and prohibit bli
         known_effects: [],
         possible_effects: [],
         observations: [
-            { observed_at: OBSERVED_AT, kind: "specification_persisted" },
-            { observed_at: OBSERVED_AT, kind: "launch_attempted" },
-            { observed_at: OBSERVED_AT, kind: "child_started" },
+            { observedAt: OBSERVED_AT, kind: "specification_persisted" },
+            { observedAt: OBSERVED_AT, kind: "launch_attempted" },
+            { observedAt: OBSERVED_AT, kind: "child_started" },
         ],
     };
     await writeFile(records.specialistRecordPath(spec.episode_id), `${JSON.stringify(record, null, 2)}\n`, "utf8");
@@ -413,7 +413,7 @@ test("inspection should keep a supervisor-accepted pre-episode specialist gap ex
     const records = new EpisodicRecordStore(config.records_directory);
     await records.observeSpecialist(spec.episode_id, {
         record_version: 1,
-        observed_at: "2026-09-04T18:00:01Z",
+        observedAt: "2026-09-04T18:00:01Z",
         kind: "worker_started",
     });
     const recovery = missingUnitRunner();

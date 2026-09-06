@@ -30,10 +30,10 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
         const externalThreadId =
             invocation.thread.mode === "fresh" ? `thread-${invocation.episodeId}` : invocation.thread.externalThreadId;
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: `${selected} | ${audit}`,
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -51,27 +51,27 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     const inferenceA = meaningWith(baseline.projection.meanings, "PROV_INFERENCE_A_GREEN");
     const inferenceB = meaningWith(baseline.projection.meanings, "PROV_INFERENCE_B_GREEN");
 
-    assert.equal(user.epistemic_role, "user_testimony");
-    assert.equal(external.epistemic_role, "external_claim");
-    assert.equal(observation.epistemic_role, "direct_observation");
-    assert.equal(delegateA.epistemic_role, "delegated_report");
-    assert.equal(delegateB.epistemic_role, "delegated_report");
-    assert.equal(inferenceA.epistemic_role, "ember_inference");
-    assert.equal(inferenceB.epistemic_role, "ember_inference");
+    assert.equal(user.epistemicRole, "user_testimony");
+    assert.equal(external.epistemicRole, "external_claim");
+    assert.equal(observation.epistemicRole, "direct_observation");
+    assert.equal(delegateA.epistemicRole, "delegated_report");
+    assert.equal(delegateB.epistemicRole, "delegated_report");
+    assert.equal(inferenceA.epistemicRole, "ember_inference");
+    assert.equal(inferenceB.epistemicRole, "ember_inference");
 
-    assert.equal(user.source_evidence[0]!.source_role, "user_command");
-    assert.equal(external.source_evidence[0]!.source_role, "external_claim");
-    assert.equal(external.source_evidence[0]!.source_actor, "external:release-dashboard");
-    assert.equal(observation.source_evidence[0]!.source_role, "ember_observation");
-    assert.equal(delegateA.source_evidence[0]!.source_role, "delegated_report");
-    assert.equal(delegateA.source_evidence[0]!.source_actor, "delegate:codex-a");
-    assert.equal(inferenceA.source_evidence[0]!.source_role, "ember_inference");
+    assert.equal(user.source_evidence[0]!.sourceRole, "user_command");
+    assert.equal(external.source_evidence[0]!.sourceRole, "external_claim");
+    assert.equal(external.source_evidence[0]!.sourceActor, "external:release-dashboard");
+    assert.equal(observation.source_evidence[0]!.sourceRole, "ember_observation");
+    assert.equal(delegateA.source_evidence[0]!.sourceRole, "delegated_report");
+    assert.equal(delegateA.source_evidence[0]!.sourceActor, "delegate:codex-a");
+    assert.equal(inferenceA.source_evidence[0]!.sourceRole, "ember_inference");
     assert.deepEqual(
-        inferenceA.source_evidence.map((item) => item.source_role),
+        inferenceA.source_evidence.map((item) => item.sourceRole),
         ["ember_inference", "delegated_report", "external_claim"],
     );
     assert.deepEqual(
-        inferenceB.source_evidence.map((item) => item.source_role),
+        inferenceB.source_evidence.map((item) => item.sourceRole),
         ["ember_inference", "delegated_report", "external_claim"],
     );
 
@@ -102,15 +102,15 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
         false,
     );
     const correctedUser = meaningWith(corrected.projection.meanings, "PROV_USER_NEW_RED");
-    assert.equal(correctedUser.epistemic_role, "user_testimony");
-    assert.equal(correctedUser.source_evidence[0]!.source_role, "user_command");
+    assert.equal(correctedUser.epistemicRole, "user_testimony");
+    assert.equal(correctedUser.source_evidence[0]!.sourceRole, "user_command");
     const historicalOld = corrected.canonical_before.historical_meanings.find((item) =>
         item.content.includes("PROV_USER_OLD"),
     );
     assert.ok(historicalOld);
     assert.equal(historicalOld.currentness, "superseded");
-    assert.equal(historicalOld.epistemic_role, "user_testimony");
-    assert.deepEqual(historicalOld.source_evidence_ids.map(String), user.source_evidence_ids.map(String));
+    assert.equal(historicalOld.epistemicRole, "user_testimony");
+    assert.deepEqual(historicalOld.sourceEvidenceIds.map(String), user.sourceEvidenceIds.map(String));
     assert.deepEqual(corrected.context_evaluation.inclusion_candidates.superseded_selected, []);
 
     const historical = report.episodes[2]!;
@@ -118,10 +118,10 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     const historicalOldProjection = meaningWith(historical.projection.meanings, "PROV_USER_OLD");
     const historicalNewProjection = meaningWith(historical.projection.meanings, "PROV_USER_NEW_RED");
     assert.equal(historicalOldProjection.currentness, "superseded");
-    assert.equal(historicalOldProjection.epistemic_role, "user_testimony");
-    assert.equal(historicalOldProjection.source_evidence[0]!.source_role, "user_command");
+    assert.equal(historicalOldProjection.epistemicRole, "user_testimony");
+    assert.equal(historicalOldProjection.source_evidence[0]!.sourceRole, "user_command");
     assert.equal(historicalNewProjection.currentness, "current");
-    assert.equal(historicalNewProjection.epistemic_role, "user_testimony");
+    assert.equal(historicalNewProjection.epistemicRole, "user_testimony");
     assert.deepEqual(historical.context_evaluation.inclusion_candidates.superseded_selected, ["user_report_old"]);
     const historicalInference = meaningWith(historical.projection.meanings, "PROV_INFERENCE_A_GREEN");
     assert.deepEqual(roots(historicalInference), [externalRoot]);
@@ -131,22 +131,22 @@ test("provenance validation should reject epistemic laundering and cyclic deriva
     // Given
     const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
     const first = rememberDelegatedReport(state, "user-1", "codex-a", "a", "project:ember/provenance", "A", []);
-    const firstEvidenceId = findMeaning(state, first).source_evidence_ids[0]!;
+    const firstEvidenceId = findMeaning(state, first).sourceEvidenceIds[0]!;
     const second = rememberDelegatedReport(state, "user-1", "codex-b", "b", "project:ember/provenance", "B", [
         firstEvidenceId,
     ]);
     const secondMeaning = findMeaning(state, second);
-    const secondEvidenceId = secondMeaning.source_evidence_ids[0]!;
+    const secondEvidenceId = secondMeaning.sourceEvidenceIds[0]!;
 
     // When / Then: attribution cannot be rewritten into user testimony.
-    (secondMeaning as { epistemic_role: string }).epistemic_role = "user_testimony";
+    (secondMeaning as { epistemicRole: string }).epistemicRole = "user_testimony";
     assert.throws(() => validateState(state), /user testimony owner|user testimony must cite/);
-    (secondMeaning as { epistemic_role: string }).epistemic_role = "delegated_report";
+    (secondMeaning as { epistemicRole: string }).epistemicRole = "delegated_report";
     validateState(state);
 
     // When / Then: correlated evidence must remain an acyclic derivation graph.
     const firstEvidence = findEvidence(state, firstEvidenceId);
-    (firstEvidence.derived_from_evidence_ids as EvidenceId[]).push(secondEvidenceId);
+    (firstEvidence.derivedFromEvidenceIds as EvidenceId[]).push(secondEvidenceId);
     assert.throws(() => validateState(state), /evidence derivation cycle/);
 });
 
@@ -162,7 +162,7 @@ test("provenance derivation should not cross evidence scopes or partially mutate
         "Private report",
         [],
     );
-    const privateEvidenceId = findMeaning(state, privateReport).source_evidence_ids[0]!;
+    const privateEvidenceId = findMeaning(state, privateReport).sourceEvidenceIds[0]!;
     const evidenceCount = state.evidence.length;
     const meaningCount = state.meanings.length;
 
@@ -197,7 +197,7 @@ test("canonical validation should reject cross-scope provenance edges", () => {
         "Private root",
         [],
     );
-    const privateEvidenceId = findMeaning(state, privateRoot).source_evidence_ids[0]!;
+    const privateEvidenceId = findMeaning(state, privateRoot).sourceEvidenceIds[0]!;
     const publicChild = rememberDelegatedReport(
         state,
         "user-1",
@@ -207,11 +207,11 @@ test("canonical validation should reject cross-scope provenance edges", () => {
         "Public child",
         [],
     );
-    const publicEvidenceId = findMeaning(state, publicChild).source_evidence_ids[0]!;
+    const publicEvidenceId = findMeaning(state, publicChild).sourceEvidenceIds[0]!;
     const publicEvidence = findEvidence(state, publicEvidenceId);
 
     // When
-    (publicEvidence.derived_from_evidence_ids as EvidenceId[]).push(privateEvidenceId);
+    (publicEvidence.derivedFromEvidenceIds as EvidenceId[]).push(privateEvidenceId);
 
     // Then
     assert.throws(() => validateState(state), /derivation crosses evidence scope/);
@@ -224,10 +224,10 @@ function meaningWith(meanings: ProjectedMeaning[], marker: string): ProjectedMea
 }
 
 function roots(meaning: ProjectedMeaning): string[] {
-    const ids = new Set(meaning.source_evidence.map((item) => String(item.evidence_id)));
+    const ids = new Set(meaning.source_evidence.map((item) => String(item.evidenceId)));
     return meaning.source_evidence
-        .filter((item) => item.derived_from_evidence_ids.length === 0)
-        .map((item) => String(item.evidence_id))
+        .filter((item) => item.derivedFromEvidenceIds.length === 0)
+        .map((item) => String(item.evidenceId))
         .filter((id) => ids.has(id))
         .sort();
 }

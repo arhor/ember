@@ -35,8 +35,8 @@ function requestFixture() {
         runtimeId: started.runtimeId,
     });
     return {
-        contract_version: 1 as const,
-        cognition_id: "cognition-cursor-test",
+        contractVersion: 1 as const,
+        cognitionId: "cognition-cursor-test",
         projection,
         input: { text: "What should I remember?" },
     };
@@ -80,7 +80,7 @@ test("Cursor provider should disclose only the bounded request when invoked with
     let invocation: any;
     let prompt = "";
     const fixture = childDouble({
-        output: success({ contract_version: 1, reply: "bounded answer", used_meaning_ids: [used] }),
+        output: success({ contractVersion: 1, reply: "bounded answer", usedMeaningIds: [used] }),
     });
     // When
     const result = await invokeCursorProvider("cursor-agent", [], request, {
@@ -107,10 +107,10 @@ test("Cursor provider should disclose only the bounded request when invoked with
     });
     // Then
     assert.deepEqual(result, {
-        contract_version: 1,
+        contractVersion: 1,
         reply: "bounded answer",
-        used_meaning_ids: [used],
-        operational: { external_thread_id: "session-operational-90" },
+        usedMeaningIds: [used],
+        operational: { externalThreadId: "session-operational-90" },
     });
     assert.equal(prompt, buildCursorPrompt(request));
     assert.equal(prompt.includes("PRIVATE_CANONICAL_MARKER_90"), false);
@@ -181,7 +181,7 @@ test("Cursor provider should reject passthrough arguments that can override adap
 test("Cursor provider should allow only one explicit model selection argument", async () => {
     // Given
     const request = requestFixture();
-    const fixture = childDouble({ output: success({ contract_version: 1, reply: "answer", used_meaning_ids: [] }) });
+    const fixture = childDouble({ output: success({ contractVersion: 1, reply: "answer", usedMeaningIds: [] }) });
     const cwd = await tempDir();
     let arguments_: string[] = [];
     // When
@@ -202,7 +202,7 @@ test("Cursor provider should reject a result that claims meaning outside the pro
     // Given
     const request = requestFixture();
     const fixture = childDouble({
-        output: success({ contract_version: 1, reply: "bad", used_meaning_ids: ["outside"] }),
+        output: success({ contractVersion: 1, reply: "bad", usedMeaningIds: ["outside"] }),
     });
     const cwd = await tempDir();
     // When
@@ -225,7 +225,7 @@ test("Cursor provider should reject success when resumed session differs from re
     // Given
     const request = requestFixture();
     const fixture = childDouble({
-        output: success({ contract_version: 1, reply: "answer", used_meaning_ids: [] }, "other-session"),
+        output: success({ contractVersion: 1, reply: "answer", usedMeaningIds: [] }, "other-session"),
     });
     const cwd = await tempDir();
     // When
@@ -355,14 +355,14 @@ test("CLI run should complete bounded cognition when Cursor backend is selected"
         { stdin: "hello through Cursor\n:quit\n" },
     );
     const state = JSON.parse(await readFile(statePath, "utf8"));
-    const cognition = state.operations.cognition_episodes.at(-1);
+    const cognition = state.operations.cognitionEpisodes.at(-1);
     // Then
     assert.deepEqual(
         [
             executed.code,
             executed.stdout.includes("CURSOR_CLI_RESPONSE"),
             cognition.status,
-            cognition.external_provider_thread_id,
+            cognition.externalProviderThreadId,
         ],
         [0, true, "completed", "session-cli-90"],
     );

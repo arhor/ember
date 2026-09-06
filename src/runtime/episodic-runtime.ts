@@ -24,7 +24,7 @@ export interface EpisodicRuntimeConfig {
     state_path: string;
     records_directory: string;
     principal: string;
-    active_scope: string;
+    activeScope: string;
     node_path: string;
     runtime_entrypoint: string;
     codex_command: string;
@@ -39,7 +39,7 @@ export interface WakeIntent {
     record_version: 1;
     wake_id: string;
     principal: string;
-    active_scope: string;
+    activeScope: string;
     mechanism: "external_timing";
     due_at: string;
     created_at: string;
@@ -47,10 +47,10 @@ export interface WakeIntent {
 
 export interface RuntimeObservation {
     record_version: 1;
-    observed_at: string;
+    observedAt: string;
     kind: string;
     detail?: string;
-    opportunity_id?: string;
+    opportunityId?: string;
     decision?: string | null;
     evaluator_failure?: string | null;
 }
@@ -317,7 +317,7 @@ export async function scheduleWake(
         record_version: 1,
         wake_id: wakeId,
         principal: config.principal,
-        active_scope: config.active_scope,
+        activeScope: config.activeScope,
         mechanism: "external_timing",
         due_at: dueAt,
         created_at: createdAt,
@@ -357,7 +357,7 @@ export async function runWakeWorker(config: EpisodicRuntimeConfig, wakeId: strin
     const now = options.now ?? (() => new Date().toISOString());
     const records = new EpisodicRecordStore(config.records_directory);
     const intent = await records.readWake(wakeId);
-    if (intent.principal !== config.principal || intent.active_scope !== config.active_scope) {
+    if (intent.principal !== config.principal || intent.activeScope !== config.activeScope) {
         throw new ValidationError("wake intent principal/scope differs from runtime configuration");
     }
     if (
@@ -375,10 +375,10 @@ export async function runWakeWorker(config: EpisodicRuntimeConfig, wakeId: strin
     let cleanStopped = false;
     try {
         state = await store.load();
-        if (state.runtime_contract.local_principal !== config.principal) {
+        if (state.runtimeContract.localPrincipal !== config.principal) {
             throw new ValidationError("runtime config principal differs from continuity state");
         }
-        const started = startRuntime(state, config.principal, config.active_scope);
+        const started = startRuntime(state, config.principal, config.activeScope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
         await records.observeWake(wakeId, observation("dispatching", now()));
@@ -394,7 +394,7 @@ export async function runWakeWorker(config: EpisodicRuntimeConfig, wakeId: strin
         const result = await runCognitionOpportunity(store, state, {
             runtimeId,
             principal: config.principal,
-            scope: config.active_scope,
+            scope: config.activeScope,
             mechanism: "external_timing",
             evaluator,
         });
@@ -404,7 +404,7 @@ export async function runWakeWorker(config: EpisodicRuntimeConfig, wakeId: strin
         cleanStopped = true;
         await records.observeWake(wakeId, {
             ...observation("completed", now()),
-            opportunity_id: result.opportunityId,
+            opportunityId: result.opportunityId,
             decision: occurrence.decision,
             evaluator_failure: result.evaluatorFailure,
         });
@@ -641,7 +641,7 @@ async function readOptionalSpecialist(path: string): Promise<SpecialistEpisodeRe
 function observation(kind: string, observedAt: string, detail?: string): RuntimeObservation {
     const value: RuntimeObservation = {
         record_version: 1,
-        observed_at: observedAt,
+        observedAt: observedAt,
         kind,
         ...(detail ? { detail: detail.slice(0, 32_768) } : {}),
     };
@@ -665,8 +665,8 @@ function validateConfig(value: EpisodicRuntimeConfig) {
         requireAbsolute(path, name);
     if (typeof value.principal !== "string" || !value.principal.trim())
         throw new ValidationError("runtime principal must be non-empty");
-    if (typeof value.active_scope !== "string" || !value.active_scope.trim())
-        throw new ValidationError("runtime active_scope must be non-empty");
+    if (typeof value.activeScope !== "string" || !value.activeScope.trim())
+        throw new ValidationError("runtime activeScope must be non-empty");
     if (!Array.isArray(value.codex_arguments) || !value.codex_arguments.every((item) => typeof item === "string"))
         throw new ValidationError("codex_arguments must be a string list");
     if (!Number.isFinite(value.opportunity_timeout_seconds) || value.opportunity_timeout_seconds <= 0)
@@ -683,17 +683,17 @@ function validateWakeIntent(value: WakeIntent) {
     if (value.mechanism !== "external_timing") throw new ValidationError("wake mechanism must be external_timing");
     if (typeof value.principal !== "string" || !value.principal)
         throw new ValidationError("wake principal must be non-empty");
-    if (typeof value.active_scope !== "string" || !value.active_scope)
+    if (typeof value.activeScope !== "string" || !value.activeScope)
         throw new ValidationError("wake active scope must be non-empty");
 }
 
 function validateSpecialistIdentity(spec: SpecialistEpisodeSpec) {
-    if (!spec || spec.contract_version !== 2) throw new ValidationError("specialist spec contract_version must be 2");
+    if (!spec || spec.contractVersion !== 2) throw new ValidationError("specialist spec contractVersion must be 2");
     validateOpaqueId(spec.episode_id, "specialist episode id");
 }
 
 function validateObservation(value: RuntimeObservation) {
-    if (!value || value.record_version !== 1 || typeof value.kind !== "string" || !isRfc3339Utc(value.observed_at)) {
+    if (!value || value.record_version !== 1 || typeof value.kind !== "string" || !isRfc3339Utc(value.observedAt)) {
         throw new ValidationError("runtime observation is invalid");
     }
     validateRecordKind(value.kind);

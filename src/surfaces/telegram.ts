@@ -26,7 +26,7 @@ export interface TelegramSurfaceConfig {
     config_version: 1;
     state_path: string;
     principal: string;
-    active_scope: string;
+    activeScope: string;
     chat_id: number;
     token_file: string;
     poll_timeout_seconds: number;
@@ -354,7 +354,7 @@ export async function processTelegramUpdate(
     let stopReason = "telegram_update_failed";
     try {
         let state = await store.load();
-        const started = startRuntime(state, config.principal, config.active_scope);
+        const started = startRuntime(state, config.principal, config.activeScope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
         const selectedProvider = provider ?? providerForConfig(config.provider_kind);
@@ -362,7 +362,7 @@ export async function processTelegramUpdate(
             const result = await runSurfaceInteraction(store, state, {
                 runtimeId,
                 principal: config.principal,
-                scope: config.active_scope,
+                scope: config.activeScope,
                 text: inbound.text,
                 command: config.provider_command,
                 arguments_: config.provider_arguments,
@@ -403,7 +403,7 @@ export async function processTelegramUpdate(
             return {
                 kind: "processed",
                 updateId: update.update_id,
-                cognitionId: occurrence.cognition_id,
+                cognitionId: occurrence.cognitionId,
                 providerFailure: null,
                 deliveryFailure: error.outcome,
             };
@@ -412,8 +412,8 @@ export async function processTelegramUpdate(
         try {
             if (runtimeId !== null) {
                 const current = await store.load();
-                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtimeId === runtimeId);
-                if (runtime?.clean_stop_at === null) {
+                const runtime = current.operations.runtimeEpisodes.find((episode) => episode.runtimeId === runtimeId);
+                if (runtime?.cleanStopAt === null) {
                     const stopped = stopRuntime(current, runtimeId, {
                         reason: signal?.aborted ? "telegram_surface_shutdown" : stopReason,
                     });
@@ -438,15 +438,14 @@ export async function reconcileTelegramDeliveries(
         const state = await store.load();
         const ledger = await new InteractionLedgerStore(config.state_path).load();
         const pendingCognitionIds = new Set(
-            state.operations.cognition_episodes
+            state.operations.cognitionEpisodes
                 .filter((cognition) => cognition.status === "completed" && cognition.deliveryStatus !== "displayed")
                 .map((cognition) => cognition.cognitionId),
         );
         const results = [];
         for (const delivery of ledger.deliveries) {
             if (signal?.aborted) break;
-            if (delivery.surface_id !== TELEGRAM_SURFACE_ID || !pendingCognitionIds.has(delivery.cognition_id))
-                continue;
+            if (delivery.surface_id !== TELEGRAM_SURFACE_ID || !pendingCognitionIds.has(delivery.cognitionId)) continue;
             const destination = parseTelegramDestination(delivery.destination_id);
             if (destination.chatId !== config.chat_id)
                 throw new ValidationError("Telegram delivery destination no longer matches configured private chat");
@@ -529,7 +528,7 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         throw new ValidationError("Telegram surface config must be an object");
     const config = value as Record<string, unknown>;
     const fields = [
-        "active_scope",
+        "activeScope",
         "chat_id",
         "config_version",
         "node_path",
@@ -549,7 +548,7 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         throw new ValidationError("Telegram surface config contains unsupported fields");
     if (config.config_version !== 1) throw new ValidationError("Telegram surface config version is unsupported");
     validateOpaque(config.principal, "Telegram principal", 256);
-    validateOpaque(config.active_scope, "Telegram active scope", 256);
+    validateOpaque(config.activeScope, "Telegram active scope", 256);
     validateChatId(config.chat_id);
     requireAbsolutePath(config.state_path, "Telegram state path");
     requireAbsolutePath(config.token_file, "Telegram token file");

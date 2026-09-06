@@ -7,10 +7,11 @@ import test from "node:test";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
 import { ProviderError, ValidationError } from "../core/errors.ts";
-import { cloneState, initialState, newId, validateState } from "../core/model.ts";
+import { initialState, newId, validateState } from "../core/model.ts";
 import { inspectionView } from "../core/projection.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 import {
     buildCognitionOpportunityProjection,
     cognitionOpportunityMetrics,
@@ -20,9 +21,9 @@ import {
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";
 const silent: CognitionOpportunityEvaluator = async () => ({
-    contract_version: 1,
+    contractVersion: 1,
     decision: "no_cognition",
-    selected_meaning_ids: [],
+    selectedMeaningIds: [],
 });
 
 async function fixture() {
@@ -68,16 +69,16 @@ test("repeated topic-free opportunities should persist intentional silence witho
         }
 
         // Then
-        const opportunities = state.operations.cognition_opportunities ?? [];
+        const opportunities = state.operations.cognitionOpportunities ?? [];
         assert.equal(opportunities.length, 3);
         assert.ok(opportunities.every((item) => item.status === "decided" && item.decision === "no_cognition"));
         assert.ok(
             opportunities.every(
-                (item) => item.selected_meaning_ids.length === 0 && item.interruption_status === "not_attempted",
+                (item) => item.selectedMeaningIds.length === 0 && item.interruptionStatus === "not_attempted",
             ),
         );
         assert.deepEqual(
-            [state.meanings.length, state.evidence.length, state.operations.cognition_episodes.length],
+            [state.meanings.length, state.evidence.length, state.operations.cognitionEpisodes.length],
             [0, 0, 0],
         );
         assert.deepEqual(cognitionOpportunityMetrics(state), {
@@ -92,7 +93,7 @@ test("repeated topic-free opportunities should persist intentional silence witho
             cancellation_requested: 0,
             outcome_unknown: 0,
         });
-        assert.equal(inspectionView(state).cognition_opportunities.length, 3);
+        assert.equal(inspectionView(state).cognitionOpportunities.length, 3);
         assert.equal(JSON.stringify(opportunities).includes("reason"), false);
 
         // And when a clean restart occurs, established silence remains established history.
@@ -105,11 +106,11 @@ test("repeated topic-free opportunities should persist intentional silence witho
         try {
             const restarted = startRuntime(loaded, PRINCIPAL, SCOPE);
             const committed = await reopened.commit(loaded.revision, restarted.state);
-            const persisted = committed.operations.cognition_opportunities ?? [];
+            const persisted = committed.operations.cognitionOpportunities ?? [];
             assert.equal(persisted.length, 3);
             assert.ok(persisted.every((item) => item.status === "decided" && item.decision === "no_cognition"));
             assert.deepEqual(
-                [committed.meanings.length, committed.evidence.length, committed.operations.cognition_episodes.length],
+                [committed.meanings.length, committed.evidence.length, committed.operations.cognitionEpisodes.length],
                 [0, 0, 0],
             );
         } finally {
@@ -156,7 +157,7 @@ test("timeout should remain operational failure rather than being counted as sil
 
         // Then
         assert.match(failed.evaluatorFailure ?? "", /synthetic timeout/);
-        const [timedOut, noCognition] = state.operations.cognition_opportunities ?? [];
+        const [timedOut, noCognition] = state.operations.cognitionOpportunities ?? [];
         assert.deepEqual([timedOut.status, timedOut.decision], ["timed_out", null]);
         assert.deepEqual([noCognition.status, noCognition.decision], ["decided", "no_cognition"]);
         const metrics = cognitionOpportunityMetrics(state);
@@ -179,9 +180,9 @@ test("inspection should distinguish cancellation and malformed evaluator failure
         });
     };
     const malformed: CognitionOpportunityEvaluator = async () => ({
-        contract_version: 1,
+        contractVersion: 1,
         decision: "invented" as never,
-        selected_meaning_ids: [],
+        selectedMeaningIds: [],
     });
     try {
         // When
@@ -216,7 +217,7 @@ test("inspection should distinguish cancellation and malformed evaluator failure
         // Then
         assert.match(cancellation.evaluatorFailure ?? "", /synthetic cancellation/);
         assert.match(failure.evaluatorFailure ?? "", /decision is invalid/);
-        const inspected = inspectionView(state).cognition_opportunities;
+        const inspected = inspectionView(state).cognitionOpportunities;
         assert.deepEqual(
             inspected.map((item) => [item.status, item.decision]),
             [
@@ -243,22 +244,22 @@ test("restart should convert an unfinished opportunity to outcome_unknown rather
         scope: SCOPE,
         timestamp: "2026-09-03T00:01:00Z",
     });
-    (state.operations.cognition_opportunities ??= []).push({
-        opportunity_id: newId("opportunity"),
-        runtime_id: started.runtimeId,
+    (state.operations.cognitionOpportunities ??= []).push({
+        opportunityId: newId("opportunity"),
+        runtimeId: started.runtimeId,
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         mechanism: "runtime_start",
-        observed_at: "2026-09-03T00:01:00Z",
-        last_durable_observation_at: "2026-09-03T00:01:00Z",
-        validated_revision: state.revision,
-        projected_meaning_ids: [...projection.selection.meaning_ids],
-        projected_evidence_ids: [...projection.selection.evidence_ids],
+        observedAt: "2026-09-03T00:01:00Z",
+        lastDurableObservationAt: "2026-09-03T00:01:00Z",
+        validatedRevision: state.revision,
+        projectedMeaningIds: [...projection.selection.meaning_ids],
+        projectedEvidenceIds: [...projection.selection.evidence_ids],
         status: "evaluating",
         decision: null,
-        selected_meaning_ids: [],
-        interruption_status: "not_attempted",
-        provider_termination: null,
+        selectedMeaningIds: [],
+        interruptionStatus: "not_attempted",
+        providerTermination: null,
     });
     validateState(state);
 
@@ -266,7 +267,7 @@ test("restart should convert an unfinished opportunity to outcome_unknown rather
     const restarted = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-03T01:00:00Z" });
 
     // Then
-    const occurrence = restarted.state.operations.cognition_opportunities?.[0];
+    const occurrence = restarted.state.operations.cognitionOpportunities?.[0];
     assert.equal(occurrence?.status, "outcome_unknown");
     assert.equal(occurrence?.decision, null);
     assert.equal(cognitionOpportunityMetrics(restarted.state).no_cognition, 0);
@@ -276,11 +277,11 @@ test("restart should convert an unfinished opportunity to outcome_unknown rather
 test("schema v1 should continue accepting pre-75 states without an opportunity ledger", () => {
     // Given
     const legacy = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
-    delete legacy.operations.cognition_opportunities;
+    delete legacy.operations.cognitionOpportunities;
 
     // When / Then
     assert.doesNotThrow(() => validateState(legacy));
-    assert.deepEqual(inspectionView(legacy).cognition_opportunities, []);
+    assert.deepEqual(inspectionView(legacy).cognitionOpportunities, []);
     assert.equal(cognitionOpportunityMetrics(legacy).total, 0);
 });
 
@@ -290,22 +291,22 @@ test("durable validator should reject forged silence that claims a selected moti
     const started = startRuntime(initial, PRINCIPAL, SCOPE, { timestamp: "2026-09-03T00:00:01Z" });
     const state = cloneState(started.state);
     const fake = "meaning-fabricated" as never;
-    (state.operations.cognition_opportunities ??= []).push({
-        opportunity_id: newId("opportunity"),
-        runtime_id: started.runtimeId,
+    (state.operations.cognitionOpportunities ??= []).push({
+        opportunityId: newId("opportunity"),
+        runtimeId: started.runtimeId,
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         mechanism: "foreground_probe",
-        observed_at: "2026-09-03T00:01:00Z",
-        last_durable_observation_at: "2026-09-03T00:01:00Z",
-        validated_revision: state.revision,
-        projected_meaning_ids: [fake],
-        projected_evidence_ids: [],
+        observedAt: "2026-09-03T00:01:00Z",
+        lastDurableObservationAt: "2026-09-03T00:01:00Z",
+        validatedRevision: state.revision,
+        projectedMeaningIds: [fake],
+        projectedEvidenceIds: [],
         status: "decided",
         decision: "no_cognition",
-        selected_meaning_ids: [fake],
-        interruption_status: "not_attempted",
-        provider_termination: null,
+        selectedMeaningIds: [fake],
+        interruptionStatus: "not_attempted",
+        providerTermination: null,
     });
 
     // When / Then

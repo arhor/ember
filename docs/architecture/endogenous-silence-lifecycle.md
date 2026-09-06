@@ -30,7 +30,7 @@ that is still in progress.
 
 ## Durable occurrence model
 
-New v1 state records may contain `operations.cognition_opportunities`. Older v1
+New v1 state records may contain `operations.cognitionOpportunities`. Older v1
 states that predate issue #75 remain valid without the field; inspection treats the
 missing legacy ledger as empty. New `initialState()` documents create it explicitly.
 
@@ -44,7 +44,7 @@ Each occurrence records only bounded operational evidence:
 - lifecycle status;
 - a validated decision only when one was actually established;
 - selected grounding meaning IDs for `cognition` or `defer`;
-- `interruption_status: not_attempted`; and
+- `interruptionStatus: not_attempted`; and
 - bounded provider-termination evidence when one exists.
 
 There is deliberately no free-form reason, model-written motivation, prompt text,
@@ -103,7 +103,7 @@ not be rewritten into a convenient semantic outcome.
 
 ## Inspection and metrics
 
-`inspectionView()` exposes `cognition_opportunities` alongside runtime and cognition
+`inspectionView()` exposes `cognitionOpportunities` alongside runtime and cognition
 episodes. `cognitionOpportunityMetrics()` counts:
 
 - total and currently evaluating occurrences;
@@ -146,7 +146,7 @@ scheduler, motivational store, or second memory system.
 
 | Issue #75 requirement                                    | Implemented evidence                                                                                                                 |
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Explicit successful no-cognition/no-interruption outcome | Durable `decided / no_cognition` occurrence with empty selected meanings and `interruption_status: not_attempted`.                   |
+| Explicit successful no-cognition/no-interruption outcome | Durable `decided / no_cognition` occurrence with empty selected meanings and `interruptionStatus: not_attempted`.                    |
 | Distinguish silence from failure/cancellation            | Separate `failed`, `timed_out`, `cancellation_requested`, and `outcome_unknown` statuses.                                            |
 | No fabricated motives or memory                          | Occurrences contain IDs/status only; repeated-silence tests leave meanings, evidence, commitments, and cognition episodes unchanged. |
 | Repeated quiet scenarios                                 | Deterministic tests persist three independent successful silent opportunities.                                                       |

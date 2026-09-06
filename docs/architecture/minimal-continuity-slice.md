@@ -229,8 +229,8 @@ provider protocol:
 
 ```json
 {
-  "contract_version": 1,
-  "cognition_id": "cognition-...",
+  "contractVersion": 1,
+  "cognitionId": "cognition-...",
   "projection": {},
   "input": { "text": "..." }
 }
@@ -242,9 +242,9 @@ stdout:
 
 ```json
 {
-  "contract_version": 1,
+  "contractVersion": 1,
   "reply": "...",
-  "used_meaning_ids": ["meaning-..."]
+  "usedMeaningIds": ["meaning-..."]
 }
 ```
 
@@ -453,31 +453,31 @@ document, while explicit links preserve the change that matters to the fixture.
 
 ```json
 {
-  "schema_version": 1,
+  "schemaVersion": 1,
   "revision": 12,
-  "runtime_contract": {
-    "local_principal": "user-1",
+  "runtimeContract": {
+    "localPrincipal": "user-1",
     "topology": "single-principal-single-writer"
   },
   "lineage": {},
   "evidence": [],
   "meanings": [],
   "operations": {
-    "runtime_episodes": [],
-    "cognition_episodes": []
+    "runtimeEpisodes": [],
+    "cognitionEpisodes": []
   }
 }
 ```
 
 The top-level split is semantic:
 
-| Area               | Minimum content                                                                                                                                                                                                                                                                                                          | Why it exists                                                                                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runtime_contract` | One locally asserted supported principal and the single-principal/single-writer topology.                                                                                                                                                                                                                                | The selected relationship must reconstruct for the same principal rather than silently switching users after restart. This technical binding is not Ember identity or relationship meaning. |
-| `lineage`          | Stable random `lineage_id`, display name, establishment time, and the individually identified constitutive boundary.                                                                                                                                                                                                     | AS-CONT-01 needs recognised succession and constitutive state outside the provider.                                                                                                         |
-| `evidence`         | Stable occurrence ID, source role and source actor (`user:<principal>`, `ember`, or runtime), asserted local principal where an interaction has one, occurrence and observation times, derivation links, scope, payload mode, optional availability state and payload, and digest while a retained payload is available. | ADR-0002 requires attributable source evidence and AS-MEM-04 requires unavailable to differ from absent.                                                                                    |
-| `meanings`         | Stable ID, narrow kind, owner, slot, scope, content, evidence references, learned/applicability times, currentness, prospective lifecycle, uncertainty, and semantic links.                                                                                                                                              | The fixture needs relationship, fact, preference change, commitment, and episode meta-memory without treating raw interaction as memory.                                                    |
-| `operations`       | Runtime and cognition episode IDs, start/last-durable-observation/clean-stop times, provider label, selected meaning IDs, optional external thread ID, bounded termination reason/direct-child observation, expression-occurrence status, delivery status, and known outcome.                                            | ADR-0005 requires truthful operational claims, separation of occurrence from delivery, and inspection of why a projection was built. External IDs remain operational evidence only.         |
+| Area              | Minimum content                                                                                                                                                                                                                                                                                                          | Why it exists                                                                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runtimeContract` | One locally asserted supported principal and the single-principal/single-writer topology.                                                                                                                                                                                                                                | The selected relationship must reconstruct for the same principal rather than silently switching users after restart. This technical binding is not Ember identity or relationship meaning. |
+| `lineage`         | Stable random `lineageId`, display name, establishment time, and the individually identified constitutive boundary.                                                                                                                                                                                                      | AS-CONT-01 needs recognised succession and constitutive state outside the provider.                                                                                                         |
+| `evidence`        | Stable occurrence ID, source role and source actor (`user:<principal>`, `ember`, or runtime), asserted local principal where an interaction has one, occurrence and observation times, derivation links, scope, payload mode, optional availability state and payload, and digest while a retained payload is available. | ADR-0002 requires attributable source evidence and AS-MEM-04 requires unavailable to differ from absent.                                                                                    |
+| `meanings`        | Stable ID, narrow kind, owner, slot, scope, content, evidence references, learned/applicability times, currentness, prospective lifecycle, uncertainty, and semantic links.                                                                                                                                              | The fixture needs relationship, fact, preference change, commitment, and episode meta-memory without treating raw interaction as memory.                                                    |
+| `operations`      | Runtime and cognition episode IDs, start/last-durable-observation/clean-stop times, provider label, selected meaning IDs, optional external thread ID, bounded termination reason/direct-child observation, expression-occurrence status, delivery status, and known outcome.                                            | ADR-0005 requires truthful operational claims, separation of occurrence from delivery, and inspection of why a projection was built. External IDs remain operational evidence only.         |
 
 Random IDs provide stable correlation inside the one supported store. They do not
 prove unique metaphysical lineage, establish ordering, or resolve copies and
@@ -493,21 +493,21 @@ null to accidental implementation choice:
 
 ```json
 {
-  "meaning_id": "meaning-...",
+  "meaningId": "meaning-...",
   "kind": "preference",
   "owner": "user:user-1",
   "slot": "docs-rationale-detail",
   "scope": "project:ember/docs",
   "content": "Prefer detailed architectural rationale.",
-  "source_evidence_ids": ["evidence-..."],
-  "epistemic_role": "user_testimony",
-  "learned_at": "...Z",
-  "applicable_from": "...Z",
-  "applicable_until": null,
+  "sourceEvidenceIds": ["evidence-..."],
+  "epistemicRole": "user_testimony",
+  "learnedAt": "...Z",
+  "applicableFrom": "...Z",
+  "applicableUntil": null,
   "currentness": "current",
-  "prospective_lifecycle": "none",
+  "prospectiveLifecycle": "none",
   "supersedes": "meaning-a",
-  "superseded_by": null,
+  "supersededBy": null,
   "uncertainty": null
 }
 ```
@@ -553,11 +553,11 @@ Before every commit and after every load, ordinary code enforces at least:
     applicability interval;
 11. a live Ember commitment has owner `ember`, currentness `current`, prospective
     lifecycle `live`, and an `ember_adoption` source whose
-    `derived_from_evidence_ids` contains exactly the requesting user-command
+    `derivedFromEvidenceIds` contains exactly the requesting user-command
     occurrence; the projector exposes both links, the adoption supports only the
     fact that Ember accepted the commitment, and discharge is an explicit
     transition;
-12. evidence declares `payload_mode=retained_optional` or `descriptor_only`.
+12. evidence declares `payloadMode=retained_optional` or `descriptor_only`.
     Retained-optional evidence has availability `available` or `unavailable`;
     descriptor-only evidence, including provider-expression occurrences, has no
     availability field and can never carry a payload. Absent references are
@@ -569,7 +569,7 @@ Before every commit and after every load, ordinary code enforces at least:
     derived from or repeat the missing detail;
 14. deletion requests and a `deleted` status are rejected because privacy
     deletion semantics are outside this slice;
-15. the provider result schema admits only `contract_version`, `reply`, and
+15. the provider result schema admits only `contractVersion`, `reply`, and
     `usedMeaningIds`, plus an adapter-attached bounded operational envelope
     containing only an external thread ID; unknown fields are rejected, so a
     result cannot request state mutation, evidence creation, or lineage revision.
@@ -600,7 +600,7 @@ completed-expression descriptor cites its cognition episode and provider label
 without retaining the reply payload; it is neither user testimony nor Ember's
 direct observation of external facts. An `ember_adoption` is a distinct
 occurrence created when the runtime accepts `:undertake`; its mandatory
-`derived_from_evidence_ids` link names the one user's requesting command. It is
+`derivedFromEvidenceIds` link names the one user's requesting command. It is
 evidence that Ember accepted the commitment under the explicit transition, not
 independent evidence for the proposition or reasons asserted by the user.
 The fixture fault is operational evidence that a payload was withheld, not
@@ -678,18 +678,18 @@ The projection contains a recovery account such as:
 
 ```json
 {
-  "previous_runtime": "runtime-1",
-  "current_runtime": "runtime-2",
-  "gap_kind": "known_clean_stop_interval",
-  "last_durable_observation_at": "...Z",
-  "clean_stop_at": "...Z",
-  "restart_at": "...Z",
-  "ember_cognition_during_interval": "none_in_supported_runtime",
-  "external_changes_during_interval": "unknown"
+  "previousRuntime": "runtime-1",
+  "currentRuntime": "runtime-2",
+  "gapKind": "known_clean_stop_interval",
+  "lastDurableObservationAt": "...Z",
+  "cleanStopAt": "...Z",
+  "restartAt": "...Z",
+  "emberCognitionDuringInterval": "none_in_supported_runtime",
+  "externalChangesDuringInterval": "unknown"
 }
 ```
 
-For an unclean prior run, `gap_kind` becomes
+For an unclean prior run, `gapKind` becomes
 `uncertain_interruption_boundary`, no exact stop time is asserted, and any
 started-but-unfinished provider episode remains `outcome_unknown`. The projection
 may say only that no durable observation after `lastDurableObservationAt`
@@ -724,16 +724,16 @@ current input, and explicit selection purpose.
 5. Each cognition attempt is durably marked `started` before the provider call.
    On valid return, the runtime first commits a payload-free expression
    occurrence, selected meaning IDs, terminal cognition status, and
-   `delivery_status=pending`. It then writes and flushes the transient reply to
-   CLI stdout. A second commit may record `delivery_status=displayed`; until that
+   `deliveryStatus=pending`. It then writes and flushes the transient reply to
+   CLI stdout. A second commit may record `deliveryStatus=displayed`; until that
    commit survives, delivery remains unknown. The provider reply payload is
    never written to canonical state.
 
 ### Clean full stop
 
 `:quit` stops accepting input, commits the runtime's
-`lastDurableObservationAt`, `clean_stop_at`, and
-`stop_reason=explicit_cli_exit`, token-checks and releases the lock, and exits.
+`lastDurableObservationAt`, `cleanStopAt`, and
+`stopReason=explicit_cli_exit`, token-checks and releases the lock, and exits.
 The test verifies the operating-system process is gone and the lock path is
 absent. No worker, provider thread, scheduler, or daemon remains. Only the
 continuity document persists.
@@ -980,9 +980,9 @@ and a provider can express continuity without owning it.
 | Optional detail payload unavailable with valid descriptor/meta-memory                                                                                | Produce typed AS-MEM-04 gap and continue within bounded uncertainty.                                                                                                                                                       |
 | Evidence reference absent or digest/availability invariants inconsistent                                                                             | Treat as canonical corruption, not ordinary failed recall.                                                                                                                                                                 |
 | Provider unavailable, malformed, oversized, timed out, explicitly cancellation-requested, exits non-zero, emits extra stdout, or returns empty reply | Record only justified attempt status; leave semantic state unchanged; keep inspect/check/correct usable; never retry automatically. Cancellation request, direct-child exit, remote effects, and rollback remain distinct. |
-| Crash after provider start but before terminal record                                                                                                | Preserve `outcome_unknown`; the provider may have completed and other unpersisted observation may have occurred after `lastDurableObservationAt`. Do not claim otherwise or reconstruct/display a reply on restart.     |
-| Crash after the payload-free expression occurrence commits but before CLI display                                                                    | Inspection shows the expression occurrence and selection manifest; no meaning or reply payload was retained. `delivery_status=pending` means delivery is unknown, not that the response was seen.                          |
-| Crash after CLI display but before the delivery-status commit                                                                                        | The human may have seen all or part of the transient reply, while canonical `delivery_status=pending` still means unknown. Recovery never replays the unavailable reply or upgrades the delivery claim.                    |
+| Crash after provider start but before terminal record                                                                                                | Preserve `outcome_unknown`; the provider may have completed and other unpersisted observation may have occurred after `lastDurableObservationAt`. Do not claim otherwise or reconstruct/display a reply on restart.        |
+| Crash after the payload-free expression occurrence commits but before CLI display                                                                    | Inspection shows the expression occurrence and selection manifest; no meaning or reply payload was retained. `deliveryStatus=pending` means delivery is unknown, not that the response was seen.                           |
+| Crash after CLI display but before the delivery-status commit                                                                                        | The human may have seen all or part of the transient reply, while canonical `deliveryStatus=pending` still means unknown. Recovery never replays the unavailable reply or upgrades the delivery claim.                     |
 | Replace became visible but directory synchronization failed or crashed                                                                               | Commit durability is indeterminate. Recovery reloads and validates the complete canonical revision actually present and does not claim that either revision definitely survived before observing it.                       |
 | Existing live, unknown, or cross-host lock                                                                                                           | Refuse mutation and report only the bounded lock diagnosis; do not break it by age or convenience.                                                                                                                         |
 | Malformed or partially initialized lock                                                                                                              | Refuse every supported writer. The token-based command cannot quarantine unverifiable ownership; only explicit manual quarantine after independently established quiescence can restore availability.                      |
@@ -1029,7 +1029,7 @@ response cannot compensate for broken durable state or reconstruction.
 Several limitations must remain visible rather than being accidentally settled by
 the chosen representation:
 
-- `lineage_id` records which local state this runtime recognises; copying the JSON
+- `lineageId` records which local state this runtime recognises; copying the JSON
   duplicates the identifier and does not resolve AS-CONT-05.
 - exact scope equality is enough for the selected preference change; overlapping
   scopes remain unresolved instead of using latest-wins.

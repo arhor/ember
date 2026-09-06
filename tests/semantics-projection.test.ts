@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { ValidationError } from "../src/core/errors.ts";
-import { cloneState, newId, validateState } from "../src/core/model.ts";
+import { newId, validateState } from "../src/core/model.ts";
 import { buildProjection, inspectionView } from "../src/core/projection.ts";
 import { findMeaning, supersede, userEvidence, withholdDetail } from "../src/core/semantics.ts";
 import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+import { cloneState } from "../src/util.ts";
 import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 test("commitment should preserve user request and Ember adoption when created", () => {
@@ -13,11 +14,11 @@ test("commitment should preserve user request and Ember adoption when created", 
     const { state, ids } = populatedState(),
         commitment = findMeaning(state, ids.commitment);
     // When
-    const adoption = state.evidence.find((e) => commitment.source_evidence_ids.includes(e.evidence_id)),
-        request = state.evidence.find((e) => e.evidence_id === adoption.derived_from_evidence_ids[0]);
+    const adoption = state.evidence.find((e) => commitment.sourceEvidenceIds.includes(e.evidenceId)),
+        request = state.evidence.find((e) => e.evidenceId === adoption.derivedFromEvidenceIds[0]);
     // Then
     assert.deepEqual(
-        [adoption.source_role, request.source_role, commitment.owner],
+        [adoption.sourceRole, request.sourceRole, commitment.owner],
         ["ember_adoption", "user_command", "ember"],
     );
 });
@@ -33,13 +34,13 @@ test("supersession should keep A historical and make B current when slot matches
     assert.deepEqual(
         [
             changed.currentness,
-            changed.superseded_by,
+            changed.supersededBy,
             next.currentness,
             changed.content,
-            changed.source_evidence_ids,
-            changed.applicable_until,
+            changed.sourceEvidenceIds,
+            changed.applicableUntil,
         ],
-        ["superseded", nextId, "current", original.content, original.source_evidence_ids, original.applicable_until],
+        ["superseded", nextId, "current", original.content, original.sourceEvidenceIds, original.applicableUntil],
     );
 });
 test("supersession should refuse change when meaning kind is not correctable", async () => {
@@ -60,7 +61,7 @@ test("optional detail should leave typed gap when payload is withheld", () => {
         view = inspectionView(state);
     // Then
     assert.deepEqual(
-        [(before.match(/Cinder/g) ?? []).length, (after.match(/Cinder/g) ?? []).length, view.gaps[0].meaning_id],
+        [(before.match(/Cinder/g) ?? []).length, (after.match(/Cinder/g) ?? []).length, view.gaps[0].meaningId],
         [1, 0, ids.episode],
     );
 });
@@ -84,10 +85,10 @@ test("recovery should report clean interval when prior runtime stopped explicitl
         });
     // When
     const restarted = startRuntime(stopped, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" }),
-        recovery = restarted.state.operations.runtime_episodes.at(-1).recovery_account;
+        recovery = restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount;
     // Then
     assert.deepEqual(
-        [recovery.gap_kind, recovery.ember_cognition_during_interval, recovery.external_changes_during_interval],
+        [recovery.gapKind, recovery.emberCognitionDuringInterval, recovery.externalChangesDuringInterval],
         ["known_clean_stop_interval", "none_in_supported_runtime", "unknown"],
     );
 });
@@ -97,10 +98,10 @@ test("recovery should preserve uncertainty when prior runtime has no clean stop"
         open = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-08-29T10:00:00Z" });
     // When
     const restarted = startRuntime(open.state, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" }),
-        recovery = restarted.state.operations.runtime_episodes.at(-1).recovery_account;
+        recovery = restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount;
     // Then
     assert.deepEqual(
-        [recovery.gap_kind, recovery.ember_cognition_during_interval],
+        [recovery.gapKind, recovery.emberCognitionDuringInterval],
         ["uncertain_interruption_boundary", "unknown_after_last_durable_observation"],
     );
 });
@@ -113,15 +114,13 @@ test("recovery should follow explicit runtime links when storage list is reorder
             timestamp: "2026-08-29T11:00:00Z",
         }),
         second = startRuntime(stopped, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" });
-    second.state.operations.runtime_episodes.reverse();
+    second.state.operations.runtimeEpisodes.reverse();
     // When
     const third = startRuntime(second.state, PRINCIPAL, SCOPE, { timestamp: "2026-08-31T11:00:00Z" }),
-        recovery = third.state.operations.runtime_episodes.find(
-            (r) => r.runtimeId === third.runtimeId,
-        ).recovery_account;
+        recovery = third.state.operations.runtimeEpisodes.find((r) => r.runtimeId === third.runtimeId).recoveryAccount;
     // Then
     assert.deepEqual(
-        [recovery.previous_runtime, recovery.gap_kind],
+        [recovery.previousRuntime, recovery.gapKind],
         [second.runtimeId, "uncertain_interruption_boundary"],
     );
 });
@@ -134,7 +133,7 @@ test("state validator should reject recovery when clean gap claims continuous co
             timestamp: "2026-08-29T11:00:00Z",
         }),
         restarted = startRuntime(stopped, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" });
-    restarted.state.operations.runtime_episodes.at(-1).recovery_account.ember_cognition_during_interval = "continuous";
+    restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount.emberCognitionDuringInterval = "continuous";
     // When
     const error = await captureError(() => validateState(restarted.state));
     // Then
@@ -146,8 +145,8 @@ test("recovery should mark started cognition unknown when prior runtime ended ab
         open = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-08-29T10:00:00Z" }),
         input = userEvidence(open.state, PRINCIPAL, SCOPE, "input", { timestamp: "2026-08-29T10:01:00Z" }),
         cognitionId = newId("cognition");
-    open.state.operations.runtime_episodes[0].last_durable_observation_at = "2026-08-29T10:01:00Z";
-    open.state.operations.cognition_episodes.push({
+    open.state.operations.runtimeEpisodes[0].lastDurableObservationAt = "2026-08-29T10:01:00Z";
+    open.state.operations.cognitionEpisodes.push({
         cognitionId: cognitionId,
         runtimeId: open.runtimeId,
         principal: PRINCIPAL,
@@ -160,17 +159,17 @@ test("recovery should mark started cognition unknown when prior runtime ended ab
         selectedMeaningIds: [],
         selectedEvidenceIds: [],
         usedMeaningIds: [],
-        inputEvidenceId: input.evidence_id,
+        inputEvidenceId: input.evidenceId,
         expressionEvidenceId: null,
         deliveryStatus: "not_attempted",
     });
     validateState(open.state);
     // When
     const recovered = startRuntime(open.state, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" }),
-        cognition = recovered.state.operations.cognition_episodes.find((c) => c.cognitionId === cognitionId);
+        cognition = recovered.state.operations.cognitionEpisodes.find((c) => c.cognitionId === cognitionId);
     // Then
     assert.deepEqual(
-        [cognition.status, recovered.state.operations.runtime_episodes.at(-1).recovery_account.gap_kind],
+        [cognition.status, recovered.state.operations.runtimeEpisodes.at(-1).recoveryAccount.gapKind],
         ["outcome_unknown", "uncertain_interruption_boundary"],
     );
 });
@@ -230,15 +229,15 @@ test("explain projection should label history provenance commitment and gap when
             purpose: "explain",
             explainIds: [ids.fact, ids.preference, ids.episode],
         }),
-        byId = Object.fromEntries(projection.meanings.map((m) => [m.meaning_id, m]));
+        byId = Object.fromEntries(projection.meanings.map((m) => [m.meaningId, m]));
     // Then
     assert.deepEqual(
         [
-            byId[ids.fact].epistemic_role,
+            byId[ids.fact].epistemicRole,
             byId[ids.preference].currentness,
             byId[replacement].currentness,
             byId[ids.commitment].applicability,
-            projection.gaps[0].gap_kind,
+            projection.gaps[0].gapKind,
             projection.selection.raw_transcript_included,
         ],
         [

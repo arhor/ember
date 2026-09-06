@@ -26,7 +26,7 @@ function telegramConfig(directory: string, statePath: string): TelegramSurfaceCo
         config_version: 1,
         state_path: statePath,
         principal: PRINCIPAL,
-        active_scope: "private",
+        activeScope: "private",
         chat_id: CHAT_ID,
         token_file: join(directory, "telegram.token"),
         poll_timeout_seconds: 30,
@@ -71,7 +71,7 @@ async function fixture() {
 function provider(calls: { value: number }): ProviderInvoker {
     return async () => {
         calls.value += 1;
-        return { contract_version: 1, reply: "telegram reply", used_meaning_ids: [] };
+        return { contractVersion: 1, reply: "telegram reply", usedMeaningIds: [] };
     };
 }
 
@@ -126,9 +126,9 @@ test("durable Telegram cognition survives definite outbound failure and can ackn
         assert.equal(providerCalls.value, 1);
         assert.equal(sends, 1);
         const state = await f.store.load();
-        assert.equal(state.operations.cognition_episodes.length, 1);
-        assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
-        assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "pending");
+        assert.equal(state.operations.cognitionEpisodes.length, 1);
+        assert.equal(state.operations.cognitionEpisodes[0]?.status, "completed");
+        assert.equal(state.operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         assert.equal(ledger.inbound_occurrences[0]?.external_occurrence_id, "update:70");
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "failed");
@@ -219,7 +219,7 @@ test("uncertain Telegram send remains blocked across reconciliation instead of b
         assert.equal(providerCalls.value, 1);
         assert.equal(results.length, 1);
         assert.equal(results[0]?.status, "blocked_uncertain");
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.deliveryStatus, "pending");
+        assert.equal((await f.store.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
     } finally {
         await f.close();
     }
@@ -247,9 +247,9 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
         );
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         const failed = ledger.deliveries[0]!.attempts[0]!;
-        assert.equal(failed.observed_at === null, false);
-        const beforeDue = new Date(Date.parse(failed.observed_at!) + 9_000).toISOString();
-        const due = new Date(Date.parse(failed.observed_at!) + 10_000).toISOString();
+        assert.equal(failed.observedAt === null, false);
+        const beforeDue = new Date(Date.parse(failed.observedAt!) + 9_000).toISOString();
+        const due = new Date(Date.parse(failed.observedAt!) + 10_000).toISOString();
 
         let retrySends = 0;
         const api = {
@@ -268,7 +268,7 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
         assert.equal(retrySends, 1);
         assert.equal(sends, 1);
         assert.equal(providerCalls.value, 1);
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.deliveryStatus, "displayed");
+        assert.equal((await f.store.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
     } finally {
         await f.close();
     }

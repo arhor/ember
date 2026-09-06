@@ -157,7 +157,7 @@ Create an uncommitted local JSON file, for example
   "config_version": 1,
   "state_path": "/home/USER/.local/share/ember/ember.json",
   "principal": "YOUR_EMBER_PRINCIPAL",
-  "active_scope": "private",
+  "activeScope": "private",
   "chat_id": 123456789,
   "token_file": "/home/USER/.config/ember/telegram.token",
   "poll_timeout_seconds": 30,

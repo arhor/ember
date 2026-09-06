@@ -59,7 +59,7 @@ Every successful backend must return:
 
 `validateProviderResult` enforces that shared semantic result boundary independently of Codex or Cursor's native output envelope.
 
-The current field name `operational.external_thread_id` is intentionally interpreted as an opaque runtime-owned continuation handle. Codex currently supplies a thread identifier and Cursor supplies a session identifier. Sharing this storage slot does **not** claim that their lifecycle, resumption, retention, or cancellation semantics are equivalent. No current Ember semantic decision depends on the vendor-specific meaning of that identifier.
+The current field name `operational.externalThreadId` is intentionally interpreted as an opaque runtime-owned continuation handle. Codex currently supplies a thread identifier and Cursor supplies a session identifier. Sharing this storage slot does **not** claim that their lifecycle, resumption, retention, or cancellation semantics are equivalent. No current Ember semantic decision depends on the vendor-specific meaning of that identifier.
 
 A rename to a more generic term would create repository-wide churn without changing current behavior or eliminating a demonstrated semantic ambiguity. Revisit the name only if another backend or consumer needs materially different continuation evidence.
 

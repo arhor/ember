@@ -16,8 +16,8 @@ export const CODEX_OPPORTUNITY_INSTRUCTION = [
     "The opportunity itself supplies no topic or motive; select only from projected Ember-owned meaning.",
     "Do not use tools, files, prior threads, or outside context.",
     "Reply with exactly one token: cognition, defer, or no_cognition.",
-    "For cognition or defer, set used_meaning_ids to at least one projected meaning that materially grounds the decision.",
-    "For no_cognition, set used_meaning_ids to an empty list.",
+    "For cognition or defer, set usedMeaningIds to at least one projected meaning that materially grounds the decision.",
+    "For no_cognition, set usedMeaningIds to an empty list.",
 ].join(" ");
 
 export interface CodexOpportunityEvaluatorOptions {
@@ -61,8 +61,8 @@ export async function evaluateCognitionOpportunityWithCodex(
         current_input: CODEX_OPPORTUNITY_INSTRUCTION,
     };
     const providerRequest: ProviderRequest = {
-        contract_version: 1,
-        cognition_id: newId("cognition"),
+        contractVersion: 1,
+        cognitionId: newId("cognition"),
         projection,
         input: { text: CODEX_OPPORTUNITY_INSTRUCTION },
     };
@@ -72,8 +72,8 @@ export async function evaluateCognitionOpportunityWithCodex(
         throw new ValidationError("Codex opportunity evaluator reply must be cognition, defer, or no_cognition");
     }
     return {
-        contract_version: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
+        contractVersion: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
         decision,
-        selected_meaning_ids: [...result.used_meaning_ids],
+        selectedMeaningIds: [...result.usedMeaningIds],
     };
 }

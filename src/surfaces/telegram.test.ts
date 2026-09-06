@@ -28,7 +28,7 @@ function telegramConfig(directory: string, statePath: string): TelegramSurfaceCo
         config_version: 1,
         state_path: statePath,
         principal: PRINCIPAL,
-        active_scope: "private",
+        activeScope: "private",
         chat_id: CHAT_ID,
         token_file: join(directory, "telegram.token"),
         poll_timeout_seconds: 30,
@@ -98,8 +98,8 @@ test("unmapped or non-private Telegram input is ignored before Ember runtime wor
         );
         assert.deepEqual(outcome, { kind: "ignored", updateId: 50 });
         const state = await f.store.load();
-        assert.equal(state.operations.runtime_episodes.length, 0);
-        assert.equal(state.operations.cognition_episodes.length, 0);
+        assert.equal(state.operations.runtimeEpisodes.length, 0);
+        assert.equal(state.operations.cognitionEpisodes.length, 0);
     } finally {
         await f.close();
     }
@@ -115,7 +115,7 @@ test("replayed Telegram update reuses cognition and does not send a second respo
             const projection = JSON.stringify(request.projection);
             assert.equal(projection.includes("update:77"), false);
             assert.equal(projection.includes(String(CHAT_ID)), false);
-            return { contract_version: 1, reply: "telegram reply", used_meaning_ids: [] };
+            return { contractVersion: 1, reply: "telegram reply", usedMeaningIds: [] };
         };
         const api = {
             sendMessage: async (chatId: number, text: string) => {
@@ -134,10 +134,10 @@ test("replayed Telegram update reuses cognition and does not send a second respo
         assert.equal(calls.send, 1);
 
         const state = await f.store.load();
-        assert.equal(state.operations.cognition_episodes.length, 1);
-        assert.equal(state.evidence.filter((evidence) => evidence.source_role === "user_command").length, 1);
-        assert.equal(state.operations.runtime_episodes.length, 2);
-        assert.ok(state.operations.runtime_episodes.every((runtime) => runtime.clean_stop_at !== null));
+        assert.equal(state.operations.cognitionEpisodes.length, 1);
+        assert.equal(state.evidence.filter((evidence) => evidence.sourceRole === "user_command").length, 1);
+        assert.equal(state.operations.runtimeEpisodes.length, 2);
+        assert.ok(state.operations.runtimeEpisodes.every((runtime) => runtime.cleanStopAt !== null));
 
         const ledger = JSON.parse(await readFile(`${f.statePath}.interactions.json`, "utf8"));
         assert.equal(ledger.inbound_occurrences.length, 1);
@@ -194,7 +194,7 @@ test("polling advances acknowledgement offset only after an update is processed"
         let sends = 0;
         const provider: ProviderInvoker = async () => {
             providerCalls += 1;
-            return { contract_version: 1, reply: "ack reply", used_meaning_ids: [] };
+            return { contractVersion: 1, reply: "ack reply", usedMeaningIds: [] };
         };
         const api = {
             verifyLongPollingReady: async () => ({

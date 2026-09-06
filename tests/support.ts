@@ -120,8 +120,8 @@ export async function captureError(action: any) {
 
 export function emptyRequest() {
     return {
-        contract_version: 1,
-        cognition_id: "cognition-test",
+        contractVersion: 1,
+        cognitionId: "cognition-test",
         projection: { selection: { meaning_ids: [] } },
         input: { text: "hello" },
     };

@@ -161,7 +161,7 @@ does not invent reliable mid-turn steering or interactive approval mediation.
 A schema-valid report receives explicit record-level provenance:
 
 ```text
-source_role: specialist_report
+sourceRole: specialist_report
 source:      codex_specialist
 episode_id:  <Ember episode id>
 ```

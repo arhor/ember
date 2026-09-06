@@ -47,20 +47,20 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
     const firstView = JSON.parse(
         (await command(["inspect", "--state", statePath, "--principal", PRINCIPAL, "--json"])).stdout,
     );
-    const lineageId = firstView.lineage.lineage_id;
-    const factId = firstView.current_meanings.find((m) => m.kind === "fact" && m.slot === "home-server").meaning_id;
-    const preferenceA = firstView.current_meanings.find(
+    const lineageId = firstView.lineage.lineageId;
+    const factId = firstView.currentMeanings.find((m) => m.kind === "fact" && m.slot === "home-server").meaningId;
+    const preferenceA = firstView.currentMeanings.find(
         (m) => m.kind === "preference" && m.slot === "docs-rationale-detail",
-    ).meaning_id;
-    const episodeId = firstView.current_meanings.find((m) => m.kind === "episode_meta").meaning_id;
+    ).meaningId;
+    const episodeId = firstView.currentMeanings.find((m) => m.kind === "episode_meta").meaningId;
     const attach = await command(runArgs, {
         stdin: `:attach-detail ${episodeId} Cinder\n:quit\n`,
         now: "2026-08-29T10:00:00Z",
     });
     const afterAttach = JSON.parse(await readFile(statePath, "utf8"));
     const detailId = afterAttach.evidence.find(
-        (evidence) => evidence.related_meaning_id === episodeId && evidence.source_role === "user_command",
-    ).evidence_id;
+        (evidence) => evidence.relatedMeaningId === episodeId && evidence.sourceRole === "user_command",
+    ).evidenceId;
     const replace = await command(runArgs, {
         stdin: `:supersede ${preferenceA} Prefer detailed architectural rationale\n:quit\n`,
         now: "2026-08-29T11:00:00Z",
@@ -80,16 +80,14 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
     );
     const canonicalText = await readFile(statePath, "utf8");
     const request = JSON.parse(await readFile(capturePath, "utf8"));
-    const current = Object.fromEntries(finalView.current_meanings.map((meaning) => [meaning.slot, meaning]));
-    const historical = Object.fromEntries(
-        finalView.historical_meanings.map((meaning) => [meaning.meaning_id, meaning]),
-    );
-    const projected = Object.fromEntries(request.projection.meanings.map((meaning) => [meaning.meaning_id, meaning]));
+    const current = Object.fromEntries(finalView.currentMeanings.map((meaning) => [meaning.slot, meaning]));
+    const historical = Object.fromEntries(finalView.historical_meanings.map((meaning) => [meaning.meaningId, meaning]));
+    const projected = Object.fromEntries(request.projection.meanings.map((meaning) => [meaning.meaningId, meaning]));
     const relationship = request.projection.meanings.find((meaning) => meaning.kind === "relationship");
     const commitment = request.projection.meanings.find((meaning) => meaning.kind === "commitment");
     const fact = projected[factId];
-    const finalRuntime = finalView.runtime_episodes.at(-1);
-    const finalCognition = finalView.cognition_episodes.at(-1);
+    const finalRuntime = finalView.runtimeEpisodes.at(-1);
+    const finalCognition = finalView.cognitionEpisodes.at(-1);
     // Then
     assert.deepEqual(
         [
@@ -97,23 +95,23 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
             await readFile(counterPath, "utf8"),
             current["docs-rationale-detail"].content,
             historical[preferenceA].currentness,
-            fact.epistemic_role,
-            current["restart-provenance-check"].prospective_lifecycle,
-            finalRuntime.recovery_account.gap_kind,
-            finalRuntime.recovery_account.ember_cognition_during_interval,
-            request.projection.gaps[0].gap_kind,
+            fact.epistemicRole,
+            current["restart-provenance-check"].prospectiveLifecycle,
+            finalRuntime.recoveryAccount.gapKind,
+            finalRuntime.recoveryAccount.emberCognitionDuringInterval,
+            request.projection.gaps[0].gapKind,
             request.projection.selection.raw_transcript_included,
             projected[preferenceA].currentness,
-            projected[current["docs-rationale-detail"].meaning_id].currentness,
-            finalCognition.delivery_status,
-            lineageId === finalView.lineage.lineage_id && lineageId === request.projection.lineage.lineage_id,
-            request.projection.lineage.constitutive_boundaries.length,
+            projected[current["docs-rationale-detail"].meaningId].currentness,
+            finalCognition.deliveryStatus,
+            lineageId === finalView.lineage.lineageId && lineageId === request.projection.lineage.lineageId,
+            request.projection.lineage.constitutiveBoundaries.length,
             relationship.owner,
             fact.owner,
             fact.scope,
-            fact.source_evidence[0].source_actor,
+            fact.source_evidence[0].sourceActor,
             commitment.applicability,
-            new Set(commitment.source_evidence.map((evidence) => evidence.source_role)),
+            new Set(commitment.source_evidence.map((evidence) => evidence.sourceRole)),
             canonicalText.includes("Cinder"),
             canonicalText.includes("CONTINUITY_RESPONSE"),
             [

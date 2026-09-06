@@ -28,18 +28,18 @@ test("semantic variants are exhaustive and preference supersession stays typed",
         meaningId("meaning-preference-a"),
         "Prefer detailed architectural rationale",
     );
-    const old = updated.meanings.find((meaning) => meaning.meaning_id === meaningId("meaning-preference-a"));
+    const old = updated.meanings.find((meaning) => meaning.meaningId === meaningId("meaning-preference-a"));
     const current = updated.meanings.find(
         (meaning) => meaning.kind === "preference" && meaning.currentness === "current",
     );
     const successorEvidence = updated.evidence.find(
-        (evidence) => evidence.evidence_id === current?.source_evidence_ids[0],
+        (evidence) => evidence.evidenceId === current?.sourceEvidenceIds[0],
     );
     assert.equal(old?.currentness, "superseded");
     assert.equal(current?.content, "Prefer detailed architectural rationale");
-    assert.notDeepEqual(current?.source_evidence_ids, old?.source_evidence_ids);
-    assert.equal(successorEvidence?.source_role, "user_command");
-    if (successorEvidence?.source_role === "user_command") {
+    assert.notDeepEqual(current?.sourceEvidenceIds, old?.sourceEvidenceIds);
+    assert.equal(successorEvidence?.sourceRole, "user_command");
+    if (successorEvidence?.sourceRole === "user_command") {
         assert.equal(successorEvidence.payload, "Prefer detailed architectural rationale");
     }
     assert.doesNotThrow(() => parsePersistentState(JSON.stringify(updated)));
@@ -70,8 +70,8 @@ test("ordinary and explain projections stay purpose and scope bounded", () => {
 
 test("persisted JSON remains a runtime validation boundary", () => {
     const state = fixtureState();
-    assert.equal(parsePersistentState(JSON.stringify(state)).lineage.lineage_id, state.lineage.lineage_id);
-    assert.throws(() => parsePersistentState(JSON.stringify({ ...state, schema_version: 99 })), /schema_version/);
+    assert.equal(parsePersistentState(JSON.stringify(state)).lineage.lineageId, state.lineage.lineageId);
+    assert.throws(() => parsePersistentState(JSON.stringify({ ...state, schemaVersion: 99 })), /schemaVersion/);
     const malformed = structuredClone(state) as unknown as {
         meanings: Array<Record<string, unknown>>;
     };
@@ -86,7 +86,7 @@ test("runtime validation rejects semantic corruption that static types can be fo
     };
     duplicate.meanings.push({
         ...duplicate.meanings[2],
-        meaning_id: "meaning-preference-duplicate",
+        meaningId: "meaning-preference-duplicate",
     });
     assert.throws(
         () => parsePersistentState(JSON.stringify(duplicate)),
@@ -101,7 +101,7 @@ test("runtime validation rejects semantic corruption that static types can be fo
     const broken = structuredClone(updated) as unknown as {
         meanings: Array<Record<string, unknown>>;
     };
-    const successor = broken.meanings.find((meaning) => meaning.meaning_id === "meaning-preference-a-successor");
+    const successor = broken.meanings.find((meaning) => meaning.meaningId === "meaning-preference-a-successor");
     assert.ok(successor);
     successor.supersedes = "meaning-missing";
     assert.throws(() => parsePersistentState(JSON.stringify(broken)), /supersession/);

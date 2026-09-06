@@ -7,54 +7,54 @@ import { evidenceId, meaningId } from "./model.ts";
 export function supersedePreference(state: PersistentState, oldId: MeaningId, replacement: string): PersistentState {
     if (!replacement.trim()) throw new Error("replacement preference must not be empty");
     const old = state.meanings.find(
-        (meaning): meaning is PreferenceMeaning => meaning.kind === "preference" && meaning.meaning_id === oldId,
+        (meaning): meaning is PreferenceMeaning => meaning.kind === "preference" && meaning.meaningId === oldId,
     );
     if (!old || old.currentness !== "current") {
         throw new Error("only a current preference can be superseded");
     }
-    const principal = state.runtime_contract.local_principal;
+    const principal = state.runtimeContract.localPrincipal;
     if (old.owner !== `user:${principal}`) {
         throw new Error("preference owner must match the local principal");
     }
 
-    const successorId = meaningId(`${old.meaning_id}-successor`);
-    const successorEvidenceId = evidenceId(`evidence-${old.meaning_id.slice("meaning-".length)}-successor`);
-    if (state.meanings.some((meaning) => meaning.meaning_id === successorId)) {
+    const successorId = meaningId(`${old.meaningId}-successor`);
+    const successorEvidenceId = evidenceId(`evidence-${old.meaningId.slice("meaning-".length)}-successor`);
+    if (state.meanings.some((meaning) => meaning.meaningId === successorId)) {
         throw new Error("successor meaning identifier already exists");
     }
-    if (state.evidence.some((evidence) => evidence.evidence_id === successorEvidenceId)) {
+    if (state.evidence.some((evidence) => evidence.evidenceId === successorEvidenceId)) {
         throw new Error("successor evidence identifier already exists");
     }
 
     const now = "2026-08-30T12:00:00.000Z";
     const successorEvidence: UserEvidence = {
-        evidence_id: successorEvidenceId,
-        source_role: "user_command",
-        source_actor: old.owner,
-        asserted_principal: principal,
-        occurred_at: now,
-        observed_at: now,
-        derived_from_evidence_ids: [],
+        evidenceId: successorEvidenceId,
+        sourceRole: "user_command",
+        sourceActor: old.owner,
+        assertedPrincipal: principal,
+        occurredAt: now,
+        observedAt: now,
+        derivedFromEvidenceIds: [],
         scope: old.scope,
-        payload_mode: "retained_optional",
+        payloadMode: "retained_optional",
         availability: "available",
         payload: replacement,
-        content_digest: digest(replacement),
+        contentDigest: digest(replacement),
     };
     const successor: PreferenceMeaning = {
         ...old,
-        meaning_id: successorId,
+        meaningId: successorId,
         content: replacement,
-        source_evidence_ids: [successorEvidence.evidence_id],
-        learned_at: now,
-        applicable_from: now,
+        sourceEvidenceIds: [successorEvidence.evidenceId],
+        learnedAt: now,
+        applicableFrom: now,
         currentness: "current",
-        supersedes: old.meaning_id,
-        superseded_by: null,
+        supersedes: old.meaningId,
+        supersededBy: null,
     };
     const meanings = state.meanings.map((meaning) =>
-        meaning.meaning_id === old.meaning_id
-            ? { ...old, currentness: "superseded" as const, superseded_by: successorId }
+        meaning.meaningId === old.meaningId
+            ? { ...old, currentness: "superseded" as const, supersededBy: successorId }
             : meaning,
     );
     return {

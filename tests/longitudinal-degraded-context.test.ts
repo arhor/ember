@@ -23,15 +23,15 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
         const reply = [
             ...invocation.request.projection.meanings.map((item) => item.content),
-            ...invocation.request.projection.gaps.map((item) => item.gap_kind),
+            ...invocation.request.projection.gaps.map((item) => item.gapKind),
         ].join(" | ");
         const externalThreadId =
             invocation.thread.mode === "fresh" ? `thread-${invocation.episodeId}` : invocation.thread.externalThreadId;
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply,
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -49,7 +49,7 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     assert.deepEqual(baseline.context_evaluation.inclusion_candidates.irrelevant_selected, ["irrelevant_permitted"]);
     assert.deepEqual(baseline.context_evaluation.inclusion_candidates.forbidden_selected, []);
     assert.equal(
-        baseline.canonical_before.current_meanings.some((item) => item.content.includes(PRIVATE)),
+        baseline.canonical_before.currentMeanings.some((item) => item.content.includes(PRIVATE)),
         true,
     );
     assert.equal(
@@ -58,10 +58,10 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     );
 
     const unavailable = report.episodes[1]!;
-    assert.notEqual(unavailable.runtime_id, baseline.runtime_id);
+    assert.notEqual(unavailable.runtimeId, baseline.runtimeId);
     assert.equal(unavailable.canonical_before.gaps.length, 1);
     assert.equal(unavailable.projection.gaps.length, 1);
-    assert.equal(unavailable.projection.gaps[0]!.gap_kind, "unavailable_detail");
+    assert.equal(unavailable.projection.gaps[0]!.gapKind, "unavailable_detail");
     assert.match(unavailable.projection.gaps[0]!.claim, /cannot be recovered/);
     const unavailableEpisode = meaningWith(unavailable.projection.meanings, "optional exact detail");
     assert.equal(unavailableEpisode.requested_detail_evidence, undefined);
@@ -74,7 +74,7 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     assert.deepEqual(unavailable.context_evaluation.inclusion_candidates.irrelevant_selected, ["irrelevant_permitted"]);
     assert.deepEqual(unavailable.context_evaluation.inclusion_candidates.forbidden_selected, []);
     assert.equal(
-        unavailable.canonical_before.current_meanings.some((item) => item.content.includes(PRIVATE)),
+        unavailable.canonical_before.currentMeanings.some((item) => item.content.includes(PRIVATE)),
         true,
     );
     assert.equal(
@@ -85,7 +85,7 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     assert.equal(JSON.stringify(unavailable.projection).includes("copper-fern-17"), false);
 
     const ordinary = report.episodes[2]!;
-    assert.notEqual(ordinary.runtime_id, unavailable.runtime_id);
+    assert.notEqual(ordinary.runtimeId, unavailable.runtimeId);
     assert.equal(ordinary.canonical_before.gaps.length, 1);
     assert.deepEqual(ordinary.projection.gaps, []);
     assert.equal(
@@ -98,7 +98,7 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
     assert.deepEqual(ordinary.context_evaluation.inclusion_candidates.irrelevant_selected, ["irrelevant_permitted"]);
     assert.deepEqual(ordinary.context_evaluation.inclusion_candidates.forbidden_selected, []);
     assert.equal(
-        ordinary.canonical_before.current_meanings.some((item) => item.content.includes(PRIVATE)),
+        ordinary.canonical_before.currentMeanings.some((item) => item.content.includes(PRIVATE)),
         true,
     );
     assert.equal(

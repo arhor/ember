@@ -11,12 +11,12 @@ import type {
     RuntimeId,
 } from "./model.ts";
 
+import { cloneState } from "../util.ts";
 import { ValidationError } from "./errors.ts";
 import { validateState } from "./model.ts";
 import { findMeaning } from "./semantics.ts";
-import { cloneState } from "../util.ts";
 
-export type ProjectedEvidence = Omit<Evidence, "payload" | "content_digest"> & {
+export type ProjectedEvidence = Omit<Evidence, "payload" | "contentDigest"> & {
     payload?: string;
 };
 
@@ -27,9 +27,9 @@ export type ProjectedMeaning = Meaning & {
 };
 
 export interface ProjectionGap {
-    gap_kind: "unavailable_detail";
-    meaning_id: MeaningId;
-    evidence_id: EvidenceId;
+    gapKind: "unavailable_detail";
+    meaningId: MeaningId;
+    evidenceId: EvidenceId;
     reason: string;
     claim: string;
 }
@@ -37,14 +37,14 @@ export interface ProjectionGap {
 export interface Projection {
     projection_version: 1;
     purpose: CognitionPurpose;
-    validated_revision: number;
+    validatedRevision: number;
     lineage: EmberState["lineage"];
     principal: string;
-    active_scope: string;
+    activeScope: string;
     surface: string;
     current_time: string;
     current_input: string;
-    recovery_account: RecoveryAccount;
+    recoveryAccount: RecoveryAccount;
     meanings: ProjectedMeaning[];
     gaps: ProjectionGap[];
     selection: {
@@ -80,7 +80,7 @@ export function buildProjection(
     }: BuildProjectionOptions,
 ): Projection {
     validateState(state);
-    if (principal !== state.runtime_contract.local_principal) {
+    if (principal !== state.runtimeContract.localPrincipal) {
         throw new ValidationError("projection principal does not match runtime contract");
     }
     if (typeof surface !== "string" || !surface.trim()) {
@@ -99,17 +99,17 @@ export function buildProjection(
             ((m.kind === "fact" || m.kind === "preference") && m.currentness === "current" && m.scope === scope) ||
             (m.kind === "commitment" &&
                 m.currentness === "current" &&
-                m.prospective_lifecycle === "live" &&
+                m.prospectiveLifecycle === "live" &&
                 m.scope === scope)
         ) {
-            selected.set(m.meaning_id, m);
+            selected.set(m.meaningId, m);
         }
     }
     if (purpose === "explain") {
         for (const id of explicit) {
             const m = findMeaning(state, id);
-            selected.set(m.meaning_id, m);
-            for (const linked of [m.supersedes, m.superseded_by]) {
+            selected.set(m.meaningId, m);
+            for (const linked of [m.supersedes, m.supersededBy]) {
                 if (linked) {
                     selected.set(linked, findMeaning(state, linked));
                 }
@@ -117,41 +117,41 @@ export function buildProjection(
         }
     }
 
-    const evidenceById = new Map(state.evidence.map((e) => [e.evidence_id, e]));
+    const evidenceById = new Map(state.evidence.map((e) => [e.evidenceId, e]));
     const selectedEvidence = new Map<EvidenceId, Evidence>();
     const gaps: ProjectionGap[] = [];
     const projected: ProjectedMeaning[] = [];
 
     for (const m of selected.values()) {
         const item = cloneState(m) as ProjectedMeaning;
-        if (m.kind === "commitment" && m.currentness === "current" && m.prospective_lifecycle === "live") {
+        if (m.kind === "commitment" && m.currentness === "current" && m.prospectiveLifecycle === "live") {
             item.applicability =
-                runtime.recovery_account.gap_kind === "initial_start"
+                runtime.recoveryAccount.gapKind === "initial_start"
                     ? "current_live"
                     : "last_known_live_needs_currentness_check";
         }
         const descriptors: ProjectedEvidence[] = [];
-        for (const ev of evidenceLineage(m.source_evidence_ids, evidenceById)) {
+        for (const ev of evidenceLineage(m.sourceEvidenceIds, evidenceById)) {
             descriptors.push(projectEvidence(ev, purpose === "explain"));
-            selectedEvidence.set(ev.evidence_id, ev);
+            selectedEvidence.set(ev.evidenceId, ev);
         }
         item.source_evidence = descriptors;
         projected.push(item);
-        if (purpose === "explain" && explicit.includes(m.meaning_id)) {
+        if (purpose === "explain" && explicit.includes(m.meaningId)) {
             for (const ev of state.evidence) {
-                if (ev.related_meaning_id !== m.meaning_id) {
+                if (ev.relatedMeaningId !== m.meaningId) {
                     continue;
                 }
-                selectedEvidence.set(ev.evidence_id, ev);
-                if (ev.payload_mode === "retained_optional" && ev.availability === "unavailable") {
+                selectedEvidence.set(ev.evidenceId, ev);
+                if (ev.payloadMode === "retained_optional" && ev.availability === "unavailable") {
                     gaps.push({
-                        gap_kind: "unavailable_detail",
-                        meaning_id: m.meaning_id,
-                        evidence_id: ev.evidence_id,
-                        reason: ev.unavailable_reason,
+                        gapKind: "unavailable_detail",
+                        meaningId: m.meaningId,
+                        evidenceId: ev.evidenceId,
+                        reason: ev.unavailableReason,
                         claim: "the episode is supported, but this detail cannot be recovered from this store",
                     });
-                } else if (ev.source_role === "user_command") {
+                } else if (ev.sourceRole === "user_command") {
                     (item.requested_detail_evidence ??= []).push(projectEvidence(ev, true));
                 }
             }
@@ -161,14 +161,14 @@ export function buildProjection(
     return {
         projection_version: 1,
         purpose,
-        validated_revision: state.revision,
+        validatedRevision: state.revision,
         lineage: cloneState(state.lineage),
         principal,
-        active_scope: scope,
+        activeScope: scope,
         surface,
         current_time: currentTime,
         current_input: currentInput,
-        recovery_account: cloneState(runtime.recovery_account),
+        recoveryAccount: cloneState(runtime.recoveryAccount),
         meanings: projected,
         gaps,
         selection: {
@@ -185,43 +185,43 @@ export function inspectionView(state: EmberState) {
     const current = state.meanings.filter((m) => m.currentness === "current").map(cloneState);
     const historical = state.meanings.filter((m) => m.currentness !== "current").map(cloneState);
     const gaps = state.evidence
-        .filter((e) => e.payload_mode === "retained_optional" && e.availability === "unavailable")
+        .filter((e) => e.payloadMode === "retained_optional" && e.availability === "unavailable")
         .map((e) => ({
-            gap_kind: "unavailable_detail" as const,
-            evidence_id: e.evidence_id,
-            meaning_id: e.related_meaning_id,
-            reason: e.unavailable_reason,
+            gapKind: "unavailable_detail" as const,
+            evidenceId: e.evidenceId,
+            meaningId: e.relatedMeaningId,
+            reason: e.unavailableReason,
         }));
     return {
-        schema_version: state.schema_version,
+        schemaVersion: state.schemaVersion,
         revision: state.revision,
         lineage: cloneState(state.lineage),
-        current_meanings: current,
+        currentMeanings: current,
         historical_meanings: historical,
         live_commitments: current
-            .filter((m) => m.kind === "commitment" && m.prospective_lifecycle === "live")
+            .filter((m) => m.kind === "commitment" && m.prospectiveLifecycle === "live")
             .map(cloneState),
         closed_commitments: historical
             .filter(
                 (m) =>
                     m.kind === "commitment" &&
-                    (m.prospective_lifecycle === "fulfilled" || m.prospective_lifecycle === "cancelled"),
+                    (m.prospectiveLifecycle === "fulfilled" || m.prospectiveLifecycle === "cancelled"),
             )
             .map(cloneState),
         gaps,
-        runtime_episodes: cloneState(state.operations.runtime_episodes),
-        cognition_episodes: cloneState(state.operations.cognition_episodes),
-        cognition_opportunities: cloneState(state.operations.cognition_opportunities ?? []),
+        runtimeEpisodes: cloneState(state.operations.runtimeEpisodes),
+        cognitionEpisodes: cloneState(state.operations.cognitionEpisodes),
+        cognitionOpportunities: cloneState(state.operations.cognitionOpportunities ?? []),
     };
 }
 
 export function explanationView(state: EmberState, id: MeaningId | string) {
     validateState(state);
     const m = cloneState(findMeaning(state, id));
-    const byId = new Map(state.evidence.map((e) => [e.evidence_id, e]));
-    const source = evidenceLineage(m.source_evidence_ids, byId).map(cloneState);
-    const linked: Partial<Record<"supersedes" | "superseded_by", Meaning>> = {};
-    for (const field of ["supersedes", "superseded_by"] as const) {
+    const byId = new Map(state.evidence.map((e) => [e.evidenceId, e]));
+    const source = evidenceLineage(m.sourceEvidenceIds, byId).map(cloneState);
+    const linked: Partial<Record<"supersedes" | "supersededBy", Meaning>> = {};
+    for (const field of ["supersedes", "supersededBy"] as const) {
         const meaningId = m[field];
         if (meaningId) {
             linked[field] = cloneState(findMeaning(state, meaningId));
@@ -230,10 +230,10 @@ export function explanationView(state: EmberState, id: MeaningId | string) {
     return {
         meaning: m,
         source_evidence: source,
-        related_detail_evidence: state.evidence.filter((e) => e.related_meaning_id === m.meaning_id).map(cloneState),
+        related_detail_evidence: state.evidence.filter((e) => e.relatedMeaningId === m.meaningId).map(cloneState),
         linked_meanings: linked,
-        selected_by_cognition_ids: state.operations.cognition_episodes
-            .filter((c) => c.selectedMeaningIds.includes(m.meaning_id))
+        selected_by_cognition_ids: state.operations.cognitionEpisodes
+            .filter((c) => c.selectedMeaningIds.includes(m.meaningId))
             .map((c) => c.cognitionId),
     };
 }
@@ -251,7 +251,7 @@ function evidenceLineage(ids: EvidenceId[], byId: Map<EvidenceId, Evidence>): Ev
         }
         seen.add(id);
         result.push(evidence);
-        for (const parent of evidence.derived_from_evidence_ids) {
+        for (const parent of evidence.derivedFromEvidenceIds) {
             visit(parent);
         }
     };
@@ -265,16 +265,16 @@ function projectEvidence(ev: Evidence, includePayload: boolean): ProjectedEviden
     const result = cloneState(ev) as ProjectedEvidence;
 
     delete (result as { payload?: string }).payload;
-    delete (result as { content_digest?: string }).content_digest;
+    delete (result as { contentDigest?: string }).contentDigest;
 
-    if (includePayload && ev.payload_mode === "retained_optional" && ev.availability === "available") {
+    if (includePayload && ev.payloadMode === "retained_optional" && ev.availability === "available") {
         result.payload = ev.payload;
     }
     return result;
 }
 
 export function findRuntime(state: EmberState, id: RuntimeId | string): RuntimeEpisode {
-    const value = state.operations.runtime_episodes.find((r) => r.runtimeId === id);
+    const value = state.operations.runtimeEpisodes.find((r) => r.runtimeId === id);
     if (!value) {
         throw new ValidationError(`runtime does not exist: ${id}`);
     }

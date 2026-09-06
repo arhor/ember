@@ -8,18 +8,18 @@ import { withholdDetail } from "./semantics.ts";
 test("withholding optional detail should preserve unrelated valid evidence metadata", () => {
     // Given
     const { state, ids } = populatedState();
-    const detail = state.evidence.find((evidence) => evidence.evidence_id === ids.detail);
+    const detail = state.evidence.find((evidence) => evidence.evidenceId === ids.detail);
     assert.ok(detail);
-    detail.provider_label = "preserved-descriptor";
+    detail.providerLabel = "preserved-descriptor";
     validateState(state);
 
     // When
     withholdDetail(state, PRINCIPAL, ids.detail);
-    const unavailable = state.evidence.find((evidence) => evidence.evidence_id === ids.detail);
+    const unavailable = state.evidence.find((evidence) => evidence.evidenceId === ids.detail);
 
     // Then
     assert.ok(unavailable);
-    assert.equal(unavailable.provider_label, "preserved-descriptor");
+    assert.equal(unavailable.providerLabel, "preserved-descriptor");
     assert.equal("payload" in unavailable, false);
-    assert.equal("content_digest" in unavailable, false);
+    assert.equal("contentDigest" in unavailable, false);
 });

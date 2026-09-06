@@ -29,18 +29,18 @@ const store = new StateStore(statePath);
 
 const deterministicEvaluator: CognitionOpportunityEvaluator = async (request) => {
     const concern = request.projection.meanings.find(
-        (item) => item.kind === "commitment" && item.prospective_lifecycle === "live",
+        (item) => item.kind === "commitment" && item.prospectiveLifecycle === "live",
     );
     const consequence = request.projection.meanings.find(
         (item) => item.slot === "release-window" && item.content === "Release is imminent",
     );
     return concern && consequence
         ? {
-              contract_version: 1,
+              contractVersion: 1,
               decision: "cognition",
-              selected_meaning_ids: [concern.meaning_id, consequence.meaning_id],
+              selectedMeaningIds: [concern.meaningId, consequence.meaningId],
           }
-        : { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+        : { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
 };
 
 if (phase === "prepare") {
@@ -88,8 +88,8 @@ if (phase === "prepare") {
         );
         process.stdout.write(
             JSON.stringify({
-                lineage_id: state.lineage.lineage_id,
-                runtime_id: started.runtimeId,
+                lineageId: state.lineage.lineageId,
+                runtimeId: started.runtimeId,
                 provider_thread_observed: false,
             }),
         );
@@ -115,7 +115,7 @@ if (phase === "prepare") {
                               ...options,
                               thread: { mode: "ephemeral" },
                           });
-                          providerThreadObserved = typeof providerResult.operational?.external_thread_id === "string";
+                          providerThreadObserved = typeof providerResult.operational?.externalThreadId === "string";
                           return providerResult;
                       },
                   })
@@ -130,7 +130,7 @@ if (phase === "prepare") {
         });
         if (result.evaluatorFailure) throw new Error(result.evaluatorFailure);
         state = result.state;
-        const occurrence = state.operations.cognition_opportunities!.at(-1)!;
+        const occurrence = state.operations.cognitionOpportunities!.at(-1)!;
         const view = inspectionView(state);
         const oldConsequence = state.meanings.find(
             (item) => item.slot === "release-window" && item.content === "Release is imminent",
@@ -140,21 +140,21 @@ if (phase === "prepare") {
         );
         process.stdout.write(
             JSON.stringify({
-                lineage_id: state.lineage.lineage_id,
-                runtime_id: started.runtimeId,
+                lineageId: state.lineage.lineageId,
+                runtimeId: started.runtimeId,
                 decision: occurrence.decision,
-                selected_aliases: occurrence.selected_meaning_ids.map((id) => aliases.get(id) ?? "<unaliased>").sort(),
-                current_aliases: view.current_meanings
-                    .map((item) => aliases.get(item.meaning_id))
+                selected_aliases: occurrence.selectedMeaningIds.map((id) => aliases.get(id) ?? "<unaliased>").sort(),
+                current_aliases: view.currentMeanings
+                    .map((item) => aliases.get(item.meaningId))
                     .filter(Boolean)
                     .sort(),
                 historical_aliases: view.historical_meanings
-                    .map((item) => aliases.get(item.meaning_id))
+                    .map((item) => aliases.get(item.meaningId))
                     .filter(Boolean)
                     .sort(),
-                gap_kind: state.operations.runtime_episodes.at(-1)!.recovery_account.gap_kind,
+                gapKind: state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.gapKind,
                 downtime_cognition:
-                    state.operations.runtime_episodes.at(-1)!.recovery_account.ember_cognition_during_interval,
+                    state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.emberCognitionDuringInterval,
                 provider_thread_policy: mode === "live" ? "ephemeral" : "deterministic_no_session",
                 provider_thread_observed: providerThreadObserved,
                 supersession:
@@ -162,7 +162,7 @@ if (phase === "prepare") {
                         ? {
                               old_currentness: oldConsequence.currentness,
                               current_currentness: currentConsequence.currentness,
-                              old_superseded_by_alias: aliasFor(aliases, oldConsequence.superseded_by),
+                              old_superseded_by_alias: aliasFor(aliases, oldConsequence.supersededBy),
                               current_supersedes_alias: aliasFor(aliases, currentConsequence.supersedes),
                           }
                         : undefined,
@@ -176,10 +176,10 @@ if (phase === "prepare") {
 function aliasesFor(state: EmberState) {
     const aliases = new Map<string, string>();
     for (const meaning of state.meanings) {
-        if (meaning.kind === "commitment") aliases.set(meaning.meaning_id, "concern");
+        if (meaning.kind === "commitment") aliases.set(meaning.meaningId, "concern");
         else if (meaning.slot === "release-window" && meaning.content === "Release is imminent")
-            aliases.set(meaning.meaning_id, "old-consequence");
-        else if (meaning.slot === "release-window") aliases.set(meaning.meaning_id, "current-consequence");
+            aliases.set(meaning.meaningId, "old-consequence");
+        else if (meaning.slot === "release-window") aliases.set(meaning.meaningId, "current-consequence");
     }
     return aliases;
 }

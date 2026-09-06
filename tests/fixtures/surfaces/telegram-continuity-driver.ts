@@ -40,7 +40,7 @@ const config: TelegramSurfaceConfig = {
     config_version: 1,
     state_path: statePath,
     principal,
-    active_scope: scope,
+    activeScope: scope,
     chat_id: chatId,
     token_file: `${statePath}.telegram-token`,
     poll_timeout_seconds: 30,

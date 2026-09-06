@@ -89,9 +89,9 @@ An evaluator returns exactly:
 
 ```json
 {
-  "contract_version": 1,
+  "contractVersion": 1,
   "decision": "cognition | defer | no_cognition",
-  "selected_meaning_ids": []
+  "selectedMeaningIds": []
 }
 ```
 

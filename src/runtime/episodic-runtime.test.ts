@@ -27,7 +27,7 @@ function runtimeConfig(root: string): EpisodicRuntimeConfig {
         state_path: join(root, "ember.json"),
         records_directory: join(root, "runtime-records"),
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         node_path: process.execPath,
         runtime_entrypoint: join(ROOT, "bin", "ember-runtime.ts"),
         codex_command: "/usr/bin/codex",
@@ -129,16 +129,16 @@ test("wake worker should record one external-timing opportunity and cleanly stop
     });
 
     const result = await runWakeWorker(config, intent.wake_id, {
-        evaluator: async () => ({ contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] }),
+        evaluator: async () => ({ contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] }),
     });
 
     assert.equal(result.status, "completed");
     assert.equal(result.decision, "no_cognition");
     const state = await new StateStore(config.state_path).load();
-    const runtime = state.operations.runtime_episodes.at(-1)!;
-    assert.equal(runtime.clean_stop_at === null, false);
-    assert.equal(runtime.stop_reason, "episodic_wake_complete");
-    const opportunity = state.operations.cognition_opportunities!.at(-1)!;
+    const runtime = state.operations.runtimeEpisodes.at(-1)!;
+    assert.equal(runtime.cleanStopAt === null, false);
+    assert.equal(runtime.stopReason, "episodic_wake_complete");
+    const opportunity = state.operations.cognitionOpportunities!.at(-1)!;
     assert.equal(opportunity.mechanism, "external_timing");
     assert.equal(opportunity.status, "decided");
     assert.equal(opportunity.decision, "no_cognition");
@@ -164,7 +164,7 @@ test("reconciliation should re-arm only future wakes that have not begun dispatc
     await records.observeWake(ambiguous.wake_id, {
         record_version: 1,
         kind: "dispatching",
-        observed_at: "2026-09-03T20:00:00Z",
+        observedAt: "2026-09-03T20:00:00Z",
     });
     const recovery = capturingRunner();
 
@@ -297,7 +297,7 @@ test("runtime record kinds should fail closed before they can become filesystem 
         records.observeWake("wake-safe", {
             record_version: 1,
             kind: "../../escape",
-            observed_at: "2026-09-03T20:00:00Z",
+            observedAt: "2026-09-03T20:00:00Z",
         }),
         /record kind is invalid/,
     );

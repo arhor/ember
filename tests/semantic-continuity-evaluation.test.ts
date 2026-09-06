@@ -30,26 +30,26 @@ const semanticAuditProvider: HarnessProvider = async (invocation) => {
         `CURRENT_PREFERENCE=${currentPreference?.content ?? "NONE"}`,
         `HISTORICAL_PREFERENCE=${historicalPreference?.content ?? "NONE"}`,
         `LIVE_COMMITMENT=${commitment?.content ?? "NONE"}`,
-        `COMMITMENT_LIFECYCLE=${commitment?.prospective_lifecycle ?? "none"}`,
+        `COMMITMENT_LIFECYCLE=${commitment?.prospectiveLifecycle ?? "none"}`,
         `COMMITMENT_APPLICABILITY=${commitment?.applicability ?? "none"}`,
-        `NICKNAME_STATUS=${gap?.gap_kind ?? "none"}`,
+        `NICKNAME_STATUS=${gap?.gapKind ?? "none"}`,
         `NICKNAME_VALUE=${gap ? "UNAVAILABLE" : "NONE"}`,
-        `FACT_EPISTEMIC_ROLE=${fact?.epistemic_role ?? "none"}`,
+        `FACT_EPISTEMIC_ROLE=${fact?.epistemicRole ?? "none"}`,
         `FACT_SOURCE_ROLE=${firstSourceRole(fact)}`,
         `FACT_OWNER=${fact?.owner ?? "none"}`,
-        `FACT_DIRECTLY_OBSERVED_BY_EMBER=${fact?.epistemic_role === "user_testimony" ? "no" : "unknown"}`,
-        `COMMITMENT_EPISTEMIC_ROLE=${commitment?.epistemic_role ?? "none"}`,
+        `FACT_DIRECTLY_OBSERVED_BY_EMBER=${fact?.epistemicRole === "user_testimony" ? "no" : "unknown"}`,
+        `COMMITMENT_EPISTEMIC_ROLE=${commitment?.epistemicRole ?? "none"}`,
         `COMMITMENT_SOURCE_ROLE=${firstSourceRole(commitment)}`,
         `COMMITMENT_OWNER=${commitment?.owner ?? "none"}`,
-        `COMMITMENT_IS_EMBER_OWNED=${commitment?.owner === "ember" && commitment.epistemic_role === "ember_commitment" ? "yes" : "no"}`,
-        `DOWNTIME_COGNITION=${projection.recovery_account.ember_cognition_during_interval}`,
+        `COMMITMENT_IS_EMBER_OWNED=${commitment?.owner === "ember" && commitment.epistemicRole === "ember_commitment" ? "yes" : "no"}`,
+        `DOWNTIME_COGNITION=${projection.recoveryAccount.emberCognitionDuringInterval}`,
     ];
     return {
         result: {
-            contract_version: 1,
+            contractVersion: 1,
             reply: lines.join("\n"),
-            used_meaning_ids: projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         },
         backend_metadata: {
             backend: invocation.cognitionBackend,
@@ -96,13 +96,13 @@ test("issue 56 supersession scenario should preserve currentness, commitment, ga
         explained.projection.meanings.some(
             (item) =>
                 item.kind === "commitment" &&
-                item.prospective_lifecycle === "live" &&
+                item.prospectiveLifecycle === "live" &&
                 item.applicability === "last_known_live_needs_currentness_check",
         ),
         true,
     );
     assert.equal(
-        explained.projection.gaps.some((item) => item.gap_kind === "unavailable_detail"),
+        explained.projection.gaps.some((item) => item.gapKind === "unavailable_detail"),
         true,
     );
     assert.equal(JSON.stringify(explained.projection).includes("HIDDEN_NICKNAME_56"), false);
@@ -117,9 +117,7 @@ test("issue 56 supersession scenario should preserve currentness, commitment, ga
         true,
     );
     assert.equal(
-        ordinary.projection.meanings.some(
-            (item) => item.kind === "commitment" && item.prospective_lifecycle === "live",
-        ),
+        ordinary.projection.meanings.some((item) => item.kind === "commitment" && item.prospectiveLifecycle === "live"),
         true,
     );
 });
@@ -136,17 +134,17 @@ test("issue 56 provenance scenario should keep user testimony distinct from Embe
     assert.equal(report.ember_assertions_passed, true);
     assert.equal(report.model_observations_passed, true);
     assert.equal(report.episodes.length, 2);
-    assert.notEqual(report.episodes[0].runtime_id, report.episodes[1].runtime_id);
+    assert.notEqual(report.episodes[0].runtimeId, report.episodes[1].runtimeId);
     assert.notEqual(report.episodes[0].provider_thread_id, report.episodes[1].provider_thread_id);
 
     for (const episode of report.episodes) {
         const fact = requireMeaning(episode.projection.meanings, "fact");
         const commitment = requireMeaning(episode.projection.meanings, "commitment");
-        assert.equal(fact.epistemic_role, "user_testimony");
-        assert.equal(fact.source_evidence[0]?.source_role, "user_command");
-        assert.equal(commitment.epistemic_role, "ember_commitment");
+        assert.equal(fact.epistemicRole, "user_testimony");
+        assert.equal(fact.source_evidence[0]?.sourceRole, "user_command");
+        assert.equal(commitment.epistemicRole, "ember_commitment");
         assert.deepEqual(
-            commitment.source_evidence.map((item) => item.source_role),
+            commitment.source_evidence.map((item) => item.sourceRole),
             ["ember_adoption", "user_command"],
         );
         assert.equal(commitment.owner, "ember");
@@ -165,7 +163,7 @@ test("issue 56 provenance scenario should keep user testimony distinct from Embe
 });
 
 function firstSourceRole(meaning: ProjectedMeaning | undefined) {
-    return meaning?.source_evidence[0]?.source_role ?? "none";
+    return meaning?.source_evidence[0]?.sourceRole ?? "none";
 }
 
 function requireMeaning(meanings: ProjectedMeaning[], kind: ProjectedMeaning["kind"]) {

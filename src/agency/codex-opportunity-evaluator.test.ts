@@ -32,7 +32,7 @@ test("Codex evaluator should use fixed decision framing rather than wake-up topi
     let captured: ProviderRequest | null = null;
     const provider: ProviderInvoker = async (_command, _args, request) => {
         captured = request;
-        return { contract_version: 1, reply: "cognition", used_meaning_ids: [state.commitment] };
+        return { contractVersion: 1, reply: "cognition", usedMeaningIds: [state.commitment] };
     };
 
     // When
@@ -58,9 +58,9 @@ test("Codex evaluator should reject prose instead of a bounded decision token", 
     // Given
     const state = fixture();
     const provider: ProviderInvoker = async () => ({
-        contract_version: 1,
+        contractVersion: 1,
         reply: "I think cognition would be useful",
-        used_meaning_ids: [state.commitment],
+        usedMeaningIds: [state.commitment],
     });
 
     // When / Then

@@ -48,8 +48,8 @@ appeared since, the new opportunity is recorded as:
 ```text
 status: decided
 decision: defer
-selected_meaning_ids: <the prior cognition grounding>
-interruption_status: not_attempted
+selectedMeaningIds: <the prior cognition grounding>
+interruptionStatus: not_attempted
 ```
 
 The evaluator is not invoked.

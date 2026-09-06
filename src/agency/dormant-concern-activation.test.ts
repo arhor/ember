@@ -4,9 +4,10 @@ import test from "node:test";
 import type { EmberState, MeaningId } from "../core/model.ts";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
-import { cloneState, initialState } from "../core/model.ts";
+import { initialState } from "../core/model.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
 import { startRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";
@@ -15,7 +16,7 @@ const OPPORTUNITY_AT = "2026-09-04T12:00:00Z";
 
 const consequenceAwareEvaluator: CognitionOpportunityEvaluator = async (request) => {
     const commitment = request.projection.meanings.find(
-        (item) => item.kind === "commitment" && item.currentness === "current" && item.prospective_lifecycle === "live",
+        (item) => item.kind === "commitment" && item.currentness === "current" && item.prospectiveLifecycle === "live",
     );
     const consequence = request.projection.meanings.find(
         (item) =>
@@ -24,11 +25,11 @@ const consequenceAwareEvaluator: CognitionOpportunityEvaluator = async (request)
             item.currentness === "current" &&
             item.content === "Release is imminent",
     );
-    if (!commitment || !consequence) return { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+    if (!commitment || !consequence) return { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
     return {
-        contract_version: 1,
+        contractVersion: 1,
         decision: "cognition",
-        selected_meaning_ids: [commitment.meaning_id, consequence.meaning_id],
+        selectedMeaningIds: [commitment.meaningId, consequence.meaningId],
     };
 };
 
@@ -93,19 +94,19 @@ test("same topic-free opportunity should activate a live concern only when curre
         ["no_cognition", "no_cognition", "cognition", "no_cognition"],
     );
 
-    assert.equal(absentResult.projected_meaning_ids.length, 0);
-    assert.ok(irrelevant.commitmentId && irrelevantResult.projected_meaning_ids.includes(irrelevant.commitmentId));
-    assert.deepEqual(irrelevantResult.selected_meaning_ids, []);
-    assert.ok(relevant.commitmentId && relevantResult.selected_meaning_ids.includes(relevant.commitmentId));
-    assert.equal(relevantResult.selected_meaning_ids.length, 2);
-    assert.ok(resolved.commitmentId && !resolvedResult.projected_meaning_ids.includes(resolved.commitmentId));
+    assert.equal(absentResult.projectedMeaningIds.length, 0);
+    assert.ok(irrelevant.commitmentId && irrelevantResult.projectedMeaningIds.includes(irrelevant.commitmentId));
+    assert.deepEqual(irrelevantResult.selectedMeaningIds, []);
+    assert.ok(relevant.commitmentId && relevantResult.selectedMeaningIds.includes(relevant.commitmentId));
+    assert.equal(relevantResult.selectedMeaningIds.length, 2);
+    assert.ok(resolved.commitmentId && !resolvedResult.projectedMeaningIds.includes(resolved.commitmentId));
 
-    const closed = resolved.state.meanings.find((item) => item.meaning_id === resolved.commitmentId);
+    const closed = resolved.state.meanings.find((item) => item.meaningId === resolved.commitmentId);
     assert.deepEqual(
-        [closed?.currentness, closed?.prospective_lifecycle, closed?.applicable_until],
+        [closed?.currentness, closed?.prospectiveLifecycle, closed?.applicableUntil],
         ["historical", "fulfilled", "2026-09-03T10:00:00Z"],
     );
-    assert.equal(closed?.source_evidence_ids.length, 2);
+    assert.equal(closed?.sourceEvidenceIds.length, 2);
 });
 
 test("a still-live but irrelevant concern should remain dormant across repeated opportunities without state churn", async () => {
@@ -114,8 +115,8 @@ test("a still-live but irrelevant concern should remain dormant across repeated 
     const first = await evaluate(fixture.state, fixture.runtimeId);
     const second = await evaluate(fixture.state, fixture.runtimeId);
     assert.deepEqual([first.decision, second.decision], ["no_cognition", "no_cognition"]);
-    assert.ok(fixture.commitmentId && first.projected_meaning_ids.includes(fixture.commitmentId));
-    assert.ok(fixture.commitmentId && second.projected_meaning_ids.includes(fixture.commitmentId));
+    assert.ok(fixture.commitmentId && first.projectedMeaningIds.includes(fixture.commitmentId));
+    assert.ok(fixture.commitmentId && second.projectedMeaningIds.includes(fixture.commitmentId));
     assert.deepEqual(fixture.state, before);
 });
 
@@ -130,10 +131,10 @@ test("commitment discharge should require attributable evidence and reject repea
         "The release work was cancelled",
         { timestamp: "2026-09-04T01:00:00Z" },
     );
-    const commitment = fixture.state.meanings.find((item) => item.meaning_id === fixture.commitmentId);
-    const evidence = fixture.state.evidence.find((item) => item.evidence_id === transitionEvidence);
+    const commitment = fixture.state.meanings.find((item) => item.meaningId === fixture.commitmentId);
+    const evidence = fixture.state.evidence.find((item) => item.evidenceId === transitionEvidence);
     assert.deepEqual(
-        [commitment?.currentness, commitment?.prospective_lifecycle, evidence?.source_role, evidence?.source_actor],
+        [commitment?.currentness, commitment?.prospectiveLifecycle, evidence?.sourceRole, evidence?.sourceActor],
         ["historical", "cancelled", "user_command", `user:${PRINCIPAL}`],
     );
     assert.throws(

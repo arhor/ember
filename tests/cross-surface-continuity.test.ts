@@ -89,19 +89,19 @@ function telegramArguments({
     ];
 }
 
-function meaningSnapshot(view: { current_meanings: Array<Record<string, unknown>> }) {
-    return view.current_meanings
+function meaningSnapshot(view: { currentMeanings: Array<Record<string, unknown>> }) {
+    return view.currentMeanings
         .map((meaning) => ({
-            meaning_id: meaning.meaning_id,
+            meaningId: meaning.meaningId,
             kind: meaning.kind,
             slot: meaning.slot,
             owner: meaning.owner,
             scope: meaning.scope,
             content: meaning.content,
             currentness: meaning.currentness,
-            prospective_lifecycle: meaning.prospective_lifecycle,
+            prospectiveLifecycle: meaning.prospectiveLifecycle,
         }))
-        .sort((left, right) => String(left.meaning_id).localeCompare(String(right.meaning_id)));
+        .sort((left, right) => String(left.meaningId).localeCompare(String(right.meaningId)));
 }
 
 function requireMeaning(
@@ -158,23 +158,23 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         const afterOpening = JSON.parse(
             (await command(["inspect", "--state", statePath, "--principal", PRINCIPAL, "--json"])).stdout,
         );
-        const lineageId = afterOpening.lineage.lineage_id;
+        const lineageId = afterOpening.lineage.lineageId;
         const commitment = requireMeaning(
-            afterOpening.current_meanings,
+            afterOpening.currentMeanings,
             (meaning) => meaning.kind === "commitment" && meaning.slot === "cross-surface-proof",
             "cross-surface commitment",
         );
         const fact = requireMeaning(
-            afterOpening.current_meanings,
+            afterOpening.currentMeanings,
             (meaning) => meaning.kind === "fact" && meaning.slot === "home-server",
             "home-server fact",
         );
         const preference = requireMeaning(
-            afterOpening.current_meanings,
+            afterOpening.currentMeanings,
             (meaning) => meaning.kind === "preference" && meaning.slot === "cross-surface-detail",
             "cross-surface preference",
         );
-        assert.equal(commitment.prospective_lifecycle, "live");
+        assert.equal(commitment.prospectiveLifecycle, "live");
 
         const telegramConfirmed = await telegramCommand(
             telegramArguments({
@@ -237,10 +237,10 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         const requests = [openingRequest, confirmedRequest, uncertainRequest, returnRequest];
 
         assert.equal(await readFile(counterPath, "utf8"), "4");
-        assert.equal(finalView.lineage.lineage_id, lineageId);
-        assert.equal(new Set(requests.map((request) => request.projection.lineage.lineage_id)).size, 1);
+        assert.equal(finalView.lineage.lineageId, lineageId);
+        assert.equal(new Set(requests.map((request) => request.projection.lineage.lineageId)).size, 1);
         assert.equal(
-            requests.every((request) => request.projection.lineage.lineage_id === lineageId),
+            requests.every((request) => request.projection.lineage.lineageId === lineageId),
             true,
         );
         assert.deepEqual(meaningSnapshot(finalView), meaningSnapshot(afterOpening));
@@ -261,40 +261,40 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         const selection = [...openingRequest.projection.selection.meaning_ids].sort();
         for (const request of requests.slice(1))
             assert.deepEqual([...request.projection.selection.meaning_ids].sort(), selection);
-        assert.equal(selection.includes(commitment.meaning_id), true);
-        assert.equal(selection.includes(fact.meaning_id), true);
-        assert.equal(selection.includes(preference.meaning_id), true);
+        assert.equal(selection.includes(commitment.meaningId), true);
+        assert.equal(selection.includes(fact.meaningId), true);
+        assert.equal(selection.includes(preference.meaningId), true);
 
         for (const request of requests) {
             const selectedCommitment = requireMeaning(
                 request.projection.meanings,
-                (meaning) => meaning.meaning_id === commitment.meaning_id,
+                (meaning) => meaning.meaningId === commitment.meaningId,
                 "selected cross-surface commitment",
             );
-            assert.equal(selectedCommitment.prospective_lifecycle, "live");
+            assert.equal(selectedCommitment.prospectiveLifecycle, "live");
             assert.deepEqual(
                 new Set(
-                    selectedCommitment.source_evidence.map((evidence: { source_role: string }) => evidence.source_role),
+                    selectedCommitment.source_evidence.map((evidence: { sourceRole: string }) => evidence.sourceRole),
                 ),
                 new Set(["ember_adoption", "user_command"]),
             );
             const selectedFact = requireMeaning(
                 request.projection.meanings,
-                (meaning) => meaning.meaning_id === fact.meaning_id,
+                (meaning) => meaning.meaningId === fact.meaningId,
                 "selected home-server fact",
             );
-            assert.equal(selectedFact.epistemic_role, "user_testimony");
-            assert.equal(selectedFact.source_evidence[0]?.source_actor, `user:${PRINCIPAL}`);
+            assert.equal(selectedFact.epistemicRole, "user_testimony");
+            assert.equal(selectedFact.source_evidence[0]?.sourceActor, `user:${PRINCIPAL}`);
         }
 
-        assert.equal(confirmedRequest.projection.recovery_account.gap_kind, "known_clean_stop_interval");
+        assert.equal(confirmedRequest.projection.recoveryAccount.gapKind, "known_clean_stop_interval");
         assert.equal(
-            confirmedRequest.projection.recovery_account.ember_cognition_during_interval,
+            confirmedRequest.projection.recoveryAccount.emberCognitionDuringInterval,
             "none_in_supported_runtime",
         );
-        assert.equal(returnRequest.projection.recovery_account.gap_kind, "known_clean_stop_interval");
+        assert.equal(returnRequest.projection.recoveryAccount.gapKind, "known_clean_stop_interval");
         assert.equal(
-            returnRequest.projection.recovery_account.ember_cognition_during_interval,
+            returnRequest.projection.recoveryAccount.emberCognitionDuringInterval,
             "none_in_supported_runtime",
         );
 
@@ -309,44 +309,44 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         const deliveries = finalView.interactions.deliveries;
         assert.equal(occurrences.length, 4);
         assert.equal(deliveries.length, 4);
-        const occurrenceByCognition = new Map(occurrences.map((record: any) => [record.cognition_id, record]));
-        const deliveryByCognition = new Map(deliveries.map((record: any) => [record.cognition_id, record]));
+        const occurrenceByCognition = new Map(occurrences.map((record: any) => [record.cognitionId, record]));
+        const deliveryByCognition = new Map(deliveries.map((record: any) => [record.cognitionId, record]));
 
         assert.equal(
-            occurrenceByCognition.get(openingRequest.cognition_id)?.principal_provenance,
+            occurrenceByCognition.get(openingRequest.cognitionId)?.principal_provenance,
             "explicit_local_argument",
         );
         assert.equal(
-            occurrenceByCognition.get(confirmedRequest.cognition_id)?.principal_provenance,
+            occurrenceByCognition.get(confirmedRequest.cognitionId)?.principal_provenance,
             "configured_surface_mapping",
         );
         assert.equal(
-            occurrenceByCognition.get(uncertainRequest.cognition_id)?.principal_provenance,
+            occurrenceByCognition.get(uncertainRequest.cognitionId)?.principal_provenance,
             "configured_surface_mapping",
         );
         assert.equal(
-            occurrenceByCognition.get(returnRequest.cognition_id)?.principal_provenance,
+            occurrenceByCognition.get(returnRequest.cognitionId)?.principal_provenance,
             "explicit_local_argument",
         );
-        assert.equal(occurrenceByCognition.get(confirmedRequest.cognition_id)?.external_occurrence_id, "update:890");
-        assert.equal(occurrenceByCognition.get(uncertainRequest.cognition_id)?.external_occurrence_id, "update:891");
+        assert.equal(occurrenceByCognition.get(confirmedRequest.cognitionId)?.external_occurrence_id, "update:890");
+        assert.equal(occurrenceByCognition.get(uncertainRequest.cognitionId)?.external_occurrence_id, "update:891");
 
-        assert.equal(deliveryByCognition.get(openingRequest.cognition_id)?.attempts.at(-1)?.outcome, "confirmed");
-        assert.equal(deliveryByCognition.get(confirmedRequest.cognition_id)?.attempts.at(-1)?.outcome, "confirmed");
-        assert.equal(deliveryByCognition.get(uncertainRequest.cognition_id)?.attempts.at(-1)?.outcome, "uncertain");
-        assert.equal(deliveryByCognition.get(returnRequest.cognition_id)?.attempts.at(-1)?.outcome, "confirmed");
+        assert.equal(deliveryByCognition.get(openingRequest.cognitionId)?.attempts.at(-1)?.outcome, "confirmed");
+        assert.equal(deliveryByCognition.get(confirmedRequest.cognitionId)?.attempts.at(-1)?.outcome, "confirmed");
+        assert.equal(deliveryByCognition.get(uncertainRequest.cognitionId)?.attempts.at(-1)?.outcome, "uncertain");
+        assert.equal(deliveryByCognition.get(returnRequest.cognitionId)?.attempts.at(-1)?.outcome, "confirmed");
 
         const finalCognitionById = new Map(
-            finalView.cognition_episodes.map((cognition: any) => [cognition.cognition_id, cognition]),
+            finalView.cognitionEpisodes.map((cognition: any) => [cognition.cognitionId, cognition]),
         );
-        assert.equal(finalCognitionById.get(uncertainRequest.cognition_id)?.status, "completed");
-        assert.equal(finalCognitionById.get(uncertainRequest.cognition_id)?.delivery_status, "pending");
-        assert.equal(finalCognitionById.get(returnRequest.cognition_id)?.delivery_status, "displayed");
+        assert.equal(finalCognitionById.get(uncertainRequest.cognitionId)?.status, "completed");
+        assert.equal(finalCognitionById.get(uncertainRequest.cognitionId)?.deliveryStatus, "pending");
+        assert.equal(finalCognitionById.get(returnRequest.cognitionId)?.deliveryStatus, "displayed");
 
         const canonical = await readJson(statePath);
         const retainedTelegramEvidence = canonical.evidence.filter(
             (evidence: any) =>
-                evidence.source_role === "user_command" &&
+                evidence.sourceRole === "user_command" &&
                 (evidence.payload === TELEGRAM_CONFIRMED || evidence.payload === TELEGRAM_UNCERTAIN),
         );
         assert.deepEqual(
@@ -354,11 +354,11 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
             [TELEGRAM_CONFIRMED, TELEGRAM_UNCERTAIN].sort(),
         );
         assert.equal(
-            retainedTelegramEvidence.every((evidence: any) => evidence.payload_mode === "retained_optional"),
+            retainedTelegramEvidence.every((evidence: any) => evidence.payloadMode === "retained_optional"),
             true,
         );
         assert.equal(
-            finalView.current_meanings.some(
+            finalView.currentMeanings.some(
                 (meaning: any) => meaning.content === TELEGRAM_CONFIRMED || meaning.content === TELEGRAM_UNCERTAIN,
             ),
             false,

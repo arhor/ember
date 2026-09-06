@@ -177,8 +177,8 @@ test("rubric should identify a fabricated motive and the first unnecessary inter
     const fabricateFromLiveConcern: CognitionOpportunityEvaluator = async (request) => {
         const commitment = request.projection.meanings.find((item) => item.kind === "commitment");
         return commitment
-            ? { contract_version: 1, decision: "cognition", selected_meaning_ids: [commitment.meaning_id] }
-            : { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+            ? { contractVersion: 1, decision: "cognition", selectedMeaningIds: [commitment.meaningId] }
+            : { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
     };
 
     const result = await runEndogenousSelectivityEvaluation(
@@ -208,9 +208,9 @@ test("rubric should identify cognition that revives a resolved concern from a li
             (item) => item.kind === "fact" && item.slot === "release-window",
         );
         if (!commitment && urgency) {
-            return { contract_version: 1, decision: "cognition", selected_meaning_ids: [urgency.meaning_id] };
+            return { contractVersion: 1, decision: "cognition", selectedMeaningIds: [urgency.meaningId] };
         }
-        return { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+        return { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
     };
 
     const result = await runEndogenousSelectivityEvaluation(await workload(), reviveFromConsequence, SCRIPTED_BACKEND, {

@@ -7,7 +7,7 @@ for await (const chunk of process.stdin) prompt += chunk;
 if (!prompt.includes("SAFE_SPECIALIST_MARKER_60")) throw new Error("bounded context marker missing");
 await writeFile(join(process.cwd(), "specialist-result.txt"), "controlled specialist work\n", "utf8");
 const report = {
-    contract_version: 1,
+    contractVersion: 1,
     summary: "Created the requested controlled artifact.",
     objective_disposition: "completed",
     artifacts_changed: ["specialist-result.txt"],

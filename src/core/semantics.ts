@@ -16,8 +16,9 @@ import type {
     UnavailableUserDetailEvidence,
 } from "./model.ts";
 
+import { contentDigest } from "../util.ts";
 import { ValidationError } from "./errors.ts";
-import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+import { newId, nowUtc, validateState } from "./model.ts";
 
 export function userEvidence(
     state: EmberState,
@@ -28,35 +29,35 @@ export function userEvidence(
 ): AvailableUserEvidence {
     requirePrincipal(state, principal);
     const evidence: AvailableUserEvidence = {
-        evidence_id: newId("evidence"),
-        source_role: "user_command",
-        source_actor: `user:${principal}`,
-        asserted_principal: principal,
-        occurred_at: timestamp,
-        observed_at: timestamp,
-        derived_from_evidence_ids: [],
+        evidenceId: newId("evidence"),
+        sourceRole: "user_command",
+        sourceActor: `user:${principal}`,
+        assertedPrincipal: principal,
+        occurredAt: timestamp,
+        observedAt: timestamp,
+        derivedFromEvidenceIds: [],
         scope,
-        payload_mode: "retained_optional",
+        payloadMode: "retained_optional",
         availability: "available",
         payload,
-        content_digest: contentDigest(payload),
+        contentDigest: contentDigest(payload),
     };
     state.evidence.push(evidence);
     return evidence;
 }
 
 interface MeaningCommon {
-    meaning_id: MeaningId;
+    meaningId: MeaningId;
     slot: string;
     scope: string;
     content: string;
-    source_evidence_ids: EvidenceId[];
-    learned_at: string;
-    applicable_from: string;
-    applicable_until: null;
+    sourceEvidenceIds: EvidenceId[];
+    learnedAt: string;
+    applicableFrom: string;
+    applicableUntil: null;
     currentness: "current";
     supersedes: null;
-    superseded_by: null;
+    supersededBy: null;
     uncertainty: null;
 }
 
@@ -66,17 +67,17 @@ function meaningCommon(slot: string, scope: string, content: string, sourceEvide
     }
     const at = nowUtc();
     return {
-        meaning_id: newId("meaning"),
+        meaningId: newId("meaning"),
         slot,
         scope,
         content,
-        source_evidence_ids: [sourceEvidenceId],
-        learned_at: at,
-        applicable_from: at,
-        applicable_until: null,
+        sourceEvidenceIds: [sourceEvidenceId],
+        learnedAt: at,
+        applicableFrom: at,
+        applicableUntil: null,
         currentness: "current",
         supersedes: null,
-        superseded_by: null,
+        supersededBy: null,
         uncertainty: null,
     };
 }
@@ -110,7 +111,7 @@ function resolveEvidenceIds(state: EmberState, ids: Array<EvidenceId | string>, 
     for (const evidence of resolved) {
         if (evidence.scope !== scope) throw new ValidationError("evidence derivation cannot cross scope");
     }
-    return [...new Set(resolved.map((evidence) => evidence.evidence_id))];
+    return [...new Set(resolved.map((evidence) => evidence.evidenceId))];
 }
 
 function rememberAttributedFact(
@@ -120,23 +121,23 @@ function rememberAttributedFact(
     slot: string,
     scope: string,
     text: string,
-    epistemicRole: FactMeaning["epistemic_role"],
+    epistemicRole: FactMeaning["epistemicRole"],
     evidence: Evidence,
 ): MeaningId {
     requirePrincipal(state, principal);
     ensureNoCurrent(state, "fact", owner, slot, scope);
-    const common = meaningCommon(slot, scope, text, evidence.evidence_id);
+    const common = meaningCommon(slot, scope, text, evidence.evidenceId);
     const meaning: FactMeaning = {
         ...common,
         kind: "fact",
         owner,
-        epistemic_role: epistemicRole,
-        prospective_lifecycle: "none",
+        epistemicRole: epistemicRole,
+        prospectiveLifecycle: "none",
     };
     state.evidence.push(evidence);
     state.meanings.push(meaning);
     validateState(state);
-    return meaning.meaning_id;
+    return meaning.meaningId;
 }
 
 export function rememberExternalClaim(
@@ -150,14 +151,14 @@ export function rememberExternalClaim(
     const owner = attributedOwner("external", source) as `external:${string}`;
     const at = nowUtc();
     const evidence: ExternalClaimEvidence = {
-        evidence_id: newId("evidence"),
-        source_role: "external_claim",
-        source_actor: owner,
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: [],
+        evidenceId: newId("evidence"),
+        sourceRole: "external_claim",
+        sourceActor: owner,
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: [],
         scope,
-        payload_mode: "descriptor_only",
+        payloadMode: "descriptor_only",
     };
     return rememberAttributedFact(state, principal, owner, slot, scope, text, "external_claim", evidence);
 }
@@ -171,14 +172,14 @@ export function rememberDirectObservation(
 ): MeaningId {
     const at = nowUtc();
     const evidence: EmberObservationEvidence = {
-        evidence_id: newId("evidence"),
-        source_role: "ember_observation",
-        source_actor: "ember",
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: [],
+        evidenceId: newId("evidence"),
+        sourceRole: "ember_observation",
+        sourceActor: "ember",
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: [],
         scope,
-        payload_mode: "descriptor_only",
+        payloadMode: "descriptor_only",
     };
     return rememberAttributedFact(state, principal, "ember", slot, scope, text, "direct_observation", evidence);
 }
@@ -195,14 +196,14 @@ export function rememberDelegatedReport(
     const owner = attributedOwner("delegate", delegate) as `delegate:${string}`;
     const at = nowUtc();
     const evidence: DelegatedReportEvidence = {
-        evidence_id: newId("evidence"),
-        source_role: "delegated_report",
-        source_actor: owner,
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: resolveEvidenceIds(state, derivedFrom, scope),
+        evidenceId: newId("evidence"),
+        sourceRole: "delegated_report",
+        sourceActor: owner,
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: resolveEvidenceIds(state, derivedFrom, scope),
         scope,
-        payload_mode: "descriptor_only",
+        payloadMode: "descriptor_only",
     };
     return rememberAttributedFact(state, principal, owner, slot, scope, text, "delegated_report", evidence);
 }
@@ -220,14 +221,14 @@ export function rememberInference(
         throw new ValidationError("Ember inference requires at least one source evidence occurrence");
     const at = nowUtc();
     const evidence: EmberInferenceEvidence = {
-        evidence_id: newId("evidence"),
-        source_role: "ember_inference",
-        source_actor: "ember",
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: derived as [EvidenceId, ...EvidenceId[]],
+        evidenceId: newId("evidence"),
+        sourceRole: "ember_inference",
+        sourceActor: "ember",
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: derived as [EvidenceId, ...EvidenceId[]],
         scope,
-        payload_mode: "descriptor_only",
+        payloadMode: "descriptor_only",
     };
     return rememberAttributedFact(state, principal, "ember", slot, scope, text, "ember_inference", evidence);
 }
@@ -244,15 +245,15 @@ export function rememberRelationship(
     ensureNoCurrent(state, "relationship", owner, "relationship", scope);
     const ev = userEvidence(state, principal, scope, text);
     const m: Meaning = {
-        ...meaningCommon("relationship", scope, text, ev.evidence_id),
+        ...meaningCommon("relationship", scope, text, ev.evidenceId),
         kind: "relationship",
         owner: `relationship:${principal}`,
-        epistemic_role: "user_testimony",
-        prospective_lifecycle: "none",
+        epistemicRole: "user_testimony",
+        prospectiveLifecycle: "none",
     };
     state.meanings.push(m);
     validateState(state);
-    return m.meaning_id;
+    return m.meaningId;
 }
 
 export function rememberFact(
@@ -267,15 +268,15 @@ export function rememberFact(
     ensureNoCurrent(state, "fact", owner, slot, scope);
     const ev = userEvidence(state, principal, scope, text);
     const m: FactMeaning = {
-        ...meaningCommon(slot, scope, text, ev.evidence_id),
+        ...meaningCommon(slot, scope, text, ev.evidenceId),
         kind: "fact",
         owner: `user:${principal}`,
-        epistemic_role: "user_testimony",
-        prospective_lifecycle: "none",
+        epistemicRole: "user_testimony",
+        prospectiveLifecycle: "none",
     };
     state.meanings.push(m);
     validateState(state);
-    return m.meaning_id;
+    return m.meaningId;
 }
 
 export function rememberPreference(
@@ -290,15 +291,15 @@ export function rememberPreference(
     ensureNoCurrent(state, "preference", owner, slot, scope);
     const ev = userEvidence(state, principal, scope, text);
     const m: PreferenceMeaning = {
-        ...meaningCommon(slot, scope, text, ev.evidence_id),
+        ...meaningCommon(slot, scope, text, ev.evidenceId),
         kind: "preference",
         owner: `user:${principal}`,
-        epistemic_role: "user_testimony",
-        prospective_lifecycle: "none",
+        epistemicRole: "user_testimony",
+        prospectiveLifecycle: "none",
     };
     state.meanings.push(m);
     validateState(state);
-    return m.meaning_id;
+    return m.meaningId;
 }
 
 export function rememberEpisode(
@@ -314,15 +315,15 @@ export function rememberEpisode(
     ensureNoCurrent(state, "episode_meta", owner, slot, scope);
     const ev = userEvidence(state, principal, scope, summary);
     const m: Meaning = {
-        ...meaningCommon(slot, scope, summary, ev.evidence_id),
+        ...meaningCommon(slot, scope, summary, ev.evidenceId),
         kind: "episode_meta",
         owner: owner as "ember" | `relationship:${string}`,
-        epistemic_role: "user_testimony",
-        prospective_lifecycle: "none",
+        epistemicRole: "user_testimony",
+        prospectiveLifecycle: "none",
     };
     state.meanings.push(m);
     validateState(state);
-    return m.meaning_id;
+    return m.meaningId;
 }
 
 export function undertake(state: EmberState, principal: string, slot: string, scope: string, text: string): MeaningId {
@@ -330,27 +331,27 @@ export function undertake(state: EmberState, principal: string, slot: string, sc
     const request = userEvidence(state, principal, scope, text);
     const at = nowUtc();
     const adoption: EmberAdoptionEvidence = {
-        evidence_id: newId("evidence"),
-        source_role: "ember_adoption",
-        source_actor: "ember",
-        asserted_principal: principal,
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: [request.evidence_id],
+        evidenceId: newId("evidence"),
+        sourceRole: "ember_adoption",
+        sourceActor: "ember",
+        assertedPrincipal: principal,
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: [request.evidenceId],
         scope,
-        payload_mode: "descriptor_only",
+        payloadMode: "descriptor_only",
     };
     state.evidence.push(adoption);
     const m: Meaning = {
-        ...meaningCommon(slot, scope, text, adoption.evidence_id),
+        ...meaningCommon(slot, scope, text, adoption.evidenceId),
         kind: "commitment",
         owner: "ember",
-        epistemic_role: "ember_commitment",
-        prospective_lifecycle: "live",
+        epistemicRole: "ember_commitment",
+        prospectiveLifecycle: "live",
     };
     state.meanings.push(m);
     validateState(state);
-    return m.meaning_id;
+    return m.meaningId;
 }
 
 export function transitionCommitment(
@@ -369,15 +370,15 @@ export function transitionCommitment(
     const commitment = findMeaning(state, commitmentId);
     if (commitment.kind !== "commitment")
         throw new ValidationError("only a commitment can receive a commitment transition");
-    if (commitment.currentness !== "current" || commitment.prospective_lifecycle !== "live")
+    if (commitment.currentness !== "current" || commitment.prospectiveLifecycle !== "live")
         throw new ValidationError("only a live current commitment can be discharged");
     const evidence = userEvidence(state, principal, commitment.scope, evidenceText, { timestamp });
-    commitment.source_evidence_ids.push(evidence.evidence_id);
+    commitment.sourceEvidenceIds.push(evidence.evidenceId);
     commitment.currentness = "historical";
-    commitment.prospective_lifecycle = outcome;
-    commitment.applicable_until = timestamp;
+    commitment.prospectiveLifecycle = outcome;
+    commitment.applicableUntil = timestamp;
     validateState(state);
-    return evidence.evidence_id;
+    return evidence.evidenceId;
 }
 
 export function supersede(
@@ -390,37 +391,37 @@ export function supersede(
     const old = findMeaning(state, meaningId);
     if (old.kind !== "fact" && old.kind !== "preference")
         throw new ValidationError("only fact and preference correction/supersession is supported");
-    if (old.currentness !== "current" || old.superseded_by !== null)
+    if (old.currentness !== "current" || old.supersededBy !== null)
         throw new ValidationError("only a current, unsuperseded meaning can be superseded");
-    if (old.epistemic_role !== "user_testimony")
+    if (old.epistemicRole !== "user_testimony")
         throw new ValidationError("only user-testimony fact or preference supersession is supported in v1");
     requireUserOwner(principal, old.owner);
     const payload = reason === null ? text : `Correction: ${text}\nReason: ${reason}`;
     const ev = userEvidence(state, principal, old.scope, payload);
-    const common = meaningCommon(old.slot, old.scope, text, ev.evidence_id);
+    const common = meaningCommon(old.slot, old.scope, text, ev.evidenceId);
     const next: FactMeaning | PreferenceMeaning =
         old.kind === "fact"
             ? {
                   ...common,
                   kind: "fact",
                   owner: old.owner,
-                  epistemic_role: "user_testimony",
-                  prospective_lifecycle: "none",
-                  supersedes: old.meaning_id,
+                  epistemicRole: "user_testimony",
+                  prospectiveLifecycle: "none",
+                  supersedes: old.meaningId,
               }
             : {
                   ...common,
                   kind: "preference",
                   owner: old.owner,
-                  epistemic_role: "user_testimony",
-                  prospective_lifecycle: "none",
-                  supersedes: old.meaning_id,
+                  epistemicRole: "user_testimony",
+                  prospectiveLifecycle: "none",
+                  supersedes: old.meaningId,
               };
     old.currentness = "superseded";
-    old.superseded_by = next.meaning_id;
+    old.supersededBy = next.meaningId;
     state.meanings.push(next);
     validateState(state);
-    return next.meaning_id;
+    return next.meaningId;
 }
 
 export function attachDetail(
@@ -433,12 +434,12 @@ export function attachDetail(
     const episode = findMeaning(state, episodeId);
     if (episode.kind !== "episode_meta")
         throw new ValidationError("optional detail can be attached only to episode_meta");
-    if (state.evidence.some((e) => e.related_meaning_id === episode.meaning_id))
+    if (state.evidence.some((e) => e.relatedMeaningId === episode.meaningId))
         throw new ValidationError("episode already has optional detail evidence");
     const ev = userEvidence(state, principal, episode.scope, detail);
-    ev.related_meaning_id = episode.meaning_id;
+    ev.relatedMeaningId = episode.meaningId;
     validateState(state);
-    return ev.evidence_id;
+    return ev.evidenceId;
 }
 
 export function withholdDetail(
@@ -448,58 +449,58 @@ export function withholdDetail(
     { reason = "fixture detail payload unavailable" }: { reason?: string } = {},
 ): EvidenceId {
     requirePrincipal(state, principal);
-    const index = state.evidence.findIndex((e) => e.evidence_id === evidenceId);
+    const index = state.evidence.findIndex((e) => e.evidenceId === evidenceId);
     if (index < 0) throw new ValidationError(`evidence does not exist: ${evidenceId}`);
     const ev = state.evidence[index];
-    if (ev.related_meaning_id === undefined)
+    if (ev.relatedMeaningId === undefined)
         throw new ValidationError("fixture fault can withhold only attached episode detail");
-    if (ev.payload_mode !== "retained_optional" || ev.availability !== "available")
+    if (ev.payloadMode !== "retained_optional" || ev.availability !== "available")
         throw new ValidationError("detail evidence is not currently available");
     if (reason.toLowerCase().includes("delet"))
         throw new ValidationError("privacy deletion semantics are unsupported by fixture fault");
     if (!reason.trim() || reason.includes(ev.payload))
         throw new ValidationError("unavailability reason must not reveal detail");
 
-    const { payload: _payload, content_digest: _contentDigest, availability: _availability, ...retained } = ev;
+    const { payload: _payload, contentDigest: _contentDigest, availability: _availability, ...retained } = ev;
     const unavailable: UnavailableUserDetailEvidence = {
         ...retained,
         availability: "unavailable",
-        related_meaning_id: ev.related_meaning_id,
-        unavailable_reason: reason,
+        relatedMeaningId: ev.relatedMeaningId,
+        unavailableReason: reason,
     };
     state.evidence[index] = unavailable;
     const at = nowUtc();
     const fault: Evidence = {
-        evidence_id: newId("evidence"),
-        source_role: "fixture_fault",
-        source_actor: "runtime",
-        asserted_principal: principal,
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: [ev.evidence_id],
+        evidenceId: newId("evidence"),
+        sourceRole: "fixture_fault",
+        sourceActor: "runtime",
+        assertedPrincipal: principal,
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: [ev.evidenceId],
         scope: ev.scope,
-        payload_mode: "descriptor_only",
-        related_meaning_id: ev.related_meaning_id,
+        payloadMode: "descriptor_only",
+        relatedMeaningId: ev.relatedMeaningId,
     };
     state.evidence.push(fault);
     validateState(state);
-    return fault.evidence_id;
+    return fault.evidenceId;
 }
 
 export function findMeaning(state: EmberState, id: MeaningId | string): Meaning {
-    const value = state.meanings.find((m) => m.meaning_id === id);
+    const value = state.meanings.find((m) => m.meaningId === id);
     if (!value) throw new ValidationError(`meaning does not exist: ${id}`);
     return value;
 }
 
 export function findEvidence(state: EmberState, id: EvidenceId | string): Evidence {
-    const value = state.evidence.find((e) => e.evidence_id === id);
+    const value = state.evidence.find((e) => e.evidenceId === id);
     if (!value) throw new ValidationError(`evidence does not exist: ${id}`);
     return value;
 }
 
 export function requirePrincipal(state: EmberState, principal: string) {
-    if (principal !== state.runtime_contract.local_principal)
+    if (principal !== state.runtimeContract.localPrincipal)
         throw new ValidationError("asserted principal does not match initialized local principal");
 }
 

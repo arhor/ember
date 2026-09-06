@@ -28,7 +28,7 @@ The superseded control is deliberately precise about the current model. Commitme
 are discharged as fulfilled or cancelled; current v1 supersession is defined for
 user-testimony facts and preferences. The fixture therefore proves that the durable
 reason making a still-live concern relevant can be superseded before restart, that
-both `superseded_by` and `supersedes` survive the process boundary, and that only the
+both `supersededBy` and `supersedes` survive the process boundary, and that only the
 replacement reason remains current afterwards. It does not invent an unsupported
 "superseded commitment" lifecycle.
 
@@ -51,10 +51,10 @@ The proof relies on existing canonical fields rather than a second concern store
 
 - current and historical meanings preserve commitment lifecycle and the exact
   supersession links of concern-driving state;
-- `runtime_episodes[].recovery_account` records a `known_clean_stop_interval`,
+- `runtimeEpisodes[].recoveryAccount` records a `known_clean_stop_interval`,
   `none_in_supported_runtime` for Ember cognition during that interval, and unknown
   external changes;
-- `cognition_opportunities[]` records projected and selected meaning IDs, status,
+- `cognitionOpportunities[]` records projected and selected meaning IDs, status,
   decision, and interruption status without raw reasoning; and
 - distinct process and runtime IDs establish a complete restart while the lineage ID
   remains stable.
@@ -82,7 +82,7 @@ process performs no model call and exposes no thread to resume.
 
 The live assertion does not infer freshness merely from the selected execution mode.
 The worker wraps the production provider invocation, observes the provider's actual
-`thread.started` evidence through `ProviderResult.operational.external_thread_id`,
+`thread.started` evidence through `ProviderResult.operational.externalThreadId`,
 and retains only a boolean `provider_thread_observed` signal in the sanitized report.
 The live proof fails if no external thread ID is actually observed after restart.
 

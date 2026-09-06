@@ -20,10 +20,10 @@ test("longitudinal currentness pressure should preserve corrections as history a
         const externalThreadId =
             invocation.thread.mode === "fresh" ? `thread-${invocation.episodeId}` : invocation.thread.externalThreadId;
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply,
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: externalThreadId },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: externalThreadId },
         });
     });
 
@@ -40,15 +40,15 @@ test("longitudinal currentness pressure should preserve corrections as history a
         true,
     );
     assert.equal(
-        conflictMeanings.every((item) => item.supersedes === null && item.superseded_by === null),
+        conflictMeanings.every((item) => item.supersedes === null && item.supersededBy === null),
         true,
     );
     assert.notEqual(
-        conflictMeanings[0]!.source_evidence[0]!.evidence_id,
-        conflictMeanings[1]!.source_evidence[0]!.evidence_id,
+        conflictMeanings[0]!.source_evidence[0]!.evidenceId,
+        conflictMeanings[1]!.source_evidence[0]!.evidenceId,
     );
     assert.equal(
-        conflictMeanings.every((item) => item.source_evidence[0]!.source_actor === "user:user-1"),
+        conflictMeanings.every((item) => item.source_evidence[0]!.sourceActor === "user:user-1"),
         true,
     );
     assert.deepEqual(baseline.context_evaluation.omission_candidates.relevant_not_selected, []);

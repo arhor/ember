@@ -5,7 +5,7 @@ import { createInterface } from "node:readline";
 import type { EmberState, MeaningId, RuntimeId } from "../core/model.ts";
 
 import { EmberError, ValidationError } from "../core/errors.ts";
-import { cloneState, initialState, nowUtc } from "../core/model.ts";
+import { initialState, nowUtc } from "../core/model.ts";
 import { explanationView, inspectionView } from "../core/projection.ts";
 import {
     attachDetail,
@@ -27,6 +27,7 @@ import {
     runSurfaceInteraction,
 } from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 
 interface CliIo {
     input: Readable;
@@ -230,9 +231,9 @@ async function semanticCommand(
             throw new ValidationError("fixture fault command is available only to deterministic test harness");
         id = withholdDetail(candidate, principal, parts[1]);
     } else throw new ValidationError("unsupported or malformed semantic command");
-    const runtime = candidate.operations.runtime_episodes.find((r) => r.runtime_id === runtimeId);
+    const runtime = candidate.operations.runtimeEpisodes.find((r) => r.runtimeId === runtimeId);
     if (!runtime) throw new ValidationError(`runtime does not exist: ${runtimeId}`);
-    if (runtime.clean_stop_at === null) runtime.last_durable_observation_at = nowUtc();
+    if (runtime.cleanStopAt === null) runtime.lastDurableObservationAt = nowUtc();
     return { state: await store.commit(state.revision, candidate), id };
 }
 
@@ -275,7 +276,7 @@ async function ask(
 
 async function loadForPrincipal(store: StateStore, principal: string) {
     const state = await store.load();
-    if (principal !== state.runtime_contract.local_principal)
+    if (principal !== state.runtimeContract.localPrincipal)
         throw new ValidationError("asserted principal does not match initialized local principal");
     return state;
 }
@@ -284,15 +285,14 @@ type InspectionView = ReturnType<typeof inspectionView> & {
     interactions: ReturnType<typeof interactionLedgerInspectionView>;
 };
 function renderInspection(view: InspectionView) {
-    let text = `Lineage ${view.lineage.lineage_id} (${view.lineage.display_name}), revision ${view.revision}\nConstitutive boundaries:\n`;
-    for (const boundary of view.lineage.constitutive_boundaries)
-        text += `  ${boundary.boundary_id}: ${boundary.text}\n`;
+    let text = `Lineage ${view.lineage.lineageId} (${view.lineage.displayName}), revision ${view.revision}\nConstitutive boundaries:\n`;
+    for (const boundary of view.lineage.constitutiveBoundaries) text += `  ${boundary.boundaryId}: ${boundary.text}\n`;
     const sections: Array<[string, Array<unknown>]> = [
-        ["Current meanings", view.current_meanings],
+        ["Current meanings", view.currentMeanings],
         ["Historical/superseded meanings", view.historical_meanings],
         ["Unavailable gaps", view.gaps],
-        ["Runtime episodes", view.runtime_episodes],
-        ["Cognition episodes", view.cognition_episodes],
+        ["Runtime episodes", view.runtimeEpisodes],
+        ["Cognition episodes", view.cognitionEpisodes],
         ["Interaction occurrences", view.interactions.inbound_occurrences],
         ["Delivery records", view.interactions.deliveries],
     ];

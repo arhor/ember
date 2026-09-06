@@ -63,7 +63,7 @@ async function main() {
         state_path: statePath,
         records_directory: recordsDirectory,
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         node_path: process.execPath,
         runtime_entrypoint: resolve(ROOT, "bin", "ember-runtime.ts"),
         codex_command: codex,

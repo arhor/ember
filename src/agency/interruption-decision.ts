@@ -18,13 +18,13 @@ export type InterruptionBasis =
     | "current_authorized_candidate";
 
 export interface CompletedInternalCognition {
-    opportunity_id: OpportunityId;
-    cognition_id: CognitionId;
+    opportunityId: OpportunityId;
+    cognitionId: CognitionId;
     principal: string;
-    active_scope: string;
-    validated_revision: number;
+    activeScope: string;
+    validatedRevision: number;
     status: "completed";
-    used_meaning_ids: MeaningId[];
+    usedMeaningIds: MeaningId[];
 }
 
 export interface InterruptionCandidate {
@@ -43,10 +43,10 @@ export interface InterruptionDecisionRequest {
 }
 
 export interface InterruptionDecisionRecord {
-    opportunity_id: OpportunityId | null;
-    cognition_id: CognitionId | null;
+    opportunityId: OpportunityId | null;
+    cognitionId: CognitionId | null;
     considered_at: string;
-    validated_revision: number | null;
+    validatedRevision: number | null;
     current_revision: number;
     outcome: InterruptionOutcome;
     basis: InterruptionBasis;
@@ -64,10 +64,10 @@ export function decideUserInterruption(
     validateRequest(state, request);
 
     const base = {
-        opportunity_id: request.source?.opportunity_id ?? null,
-        cognition_id: request.source?.cognition_id ?? null,
+        opportunityId: request.source?.opportunityId ?? null,
+        cognitionId: request.source?.cognitionId ?? null,
         considered_at: request.considered_at,
-        validated_revision: request.source?.validated_revision ?? null,
+        validatedRevision: request.source?.validatedRevision ?? null,
         current_revision: state.revision,
         authority: request.authority,
         attention: request.attention,
@@ -101,12 +101,12 @@ export function decideUserInterruption(
             .filter(
                 (meaning) =>
                     meaning.currentness === "current" &&
-                    meaning.scope === source.active_scope &&
-                    Date.parse(meaning.applicable_from) <= consideredAt &&
-                    (meaning.applicable_until === null || Date.parse(meaning.applicable_until) > consideredAt) &&
-                    (meaning.kind !== "commitment" || meaning.prospective_lifecycle === "live"),
+                    meaning.scope === source.activeScope &&
+                    Date.parse(meaning.applicableFrom) <= consideredAt &&
+                    (meaning.applicableUntil === null || Date.parse(meaning.applicableUntil) > consideredAt) &&
+                    (meaning.kind !== "commitment" || meaning.prospectiveLifecycle === "live"),
             )
-            .map((meaning) => meaning.meaning_id),
+            .map((meaning) => meaning.meaningId),
     );
 
     if (!candidate.grounding_meaning_ids.every((id) => currentMeaningIds.has(id))) {
@@ -184,16 +184,16 @@ function validateRequest(state: EmberState, request: InterruptionDecisionRequest
     if (source.status !== "completed") {
         throw new ValidationError("interruption source cognition must be completed");
     }
-    if (source.principal !== state.runtime_contract.local_principal) {
+    if (source.principal !== state.runtimeContract.localPrincipal) {
         throw new ValidationError("interruption source principal differs from Ember runtime contract");
     }
-    if (!Number.isSafeInteger(source.validated_revision) || source.validated_revision < 0) {
-        throw new ValidationError("interruption source validated_revision must be a non-negative safe integer");
+    if (!Number.isSafeInteger(source.validatedRevision) || source.validatedRevision < 0) {
+        throw new ValidationError("interruption source validatedRevision must be a non-negative safe integer");
     }
-    if (source.validated_revision > state.revision) {
+    if (source.validatedRevision > state.revision) {
         throw new ValidationError("interruption source cannot validate against a future Ember revision");
     }
-    if (new Set(source.used_meaning_ids).size !== source.used_meaning_ids.length) {
+    if (new Set(source.usedMeaningIds).size !== source.usedMeaningIds.length) {
         throw new ValidationError("interruption source used meanings must be unique");
     }
 
@@ -210,7 +210,7 @@ function validateRequest(state: EmberState, request: InterruptionDecisionRequest
         throw new ValidationError("interruption candidate grounding meanings must be unique");
     }
 
-    const used = new Set(source.used_meaning_ids);
+    const used = new Set(source.usedMeaningIds);
     if (!candidate.grounding_meaning_ids.every((id) => used.has(id))) {
         throw new ValidationError("interruption candidate must remain grounded in completed cognition usage");
     }

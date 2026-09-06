@@ -9,16 +9,10 @@ import type { StateStore } from "../persistence/state-store.ts";
 import type { RunCognitionOptions } from "./runtime.ts";
 
 import { DurabilityUncertain, StoreUnavailable, ValidationError } from "../core/errors.ts";
-import {
-    ASCII_CONTROL_CHARACTER_PATTERN,
-    cloneState,
-    contentDigest,
-    isRfc3339Utc,
-    newId,
-    nowUtc,
-} from "../core/model.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
+import { cloneState, contentDigest } from "../util.ts";
 import { findCognition, runCognition } from "./runtime.ts";
 
 export const PRINCIPAL_ASSERTION_PROVENANCE = ["explicit_local_argument", "configured_surface_mapping"] as const;
@@ -100,18 +94,18 @@ export interface SurfaceInteractionResult {
 
 export interface InboundOccurrenceRecord {
     occurrence_id: string;
-    cognition_id: CognitionId;
+    cognitionId: CognitionId;
     surface_id: string;
-    asserted_principal: string;
+    assertedPrincipal: string;
     principal_provenance: PrincipalAssertionProvenance;
     scope: string;
-    content_digest: `sha256:${string}`;
+    contentDigest: `sha256:${string}`;
     first_received_at: string;
     last_received_at: string;
     receive_count: number;
     external_occurrence_id: string | null;
     external_message_id: string | null;
-    external_thread_id: string | null;
+    externalThreadId: string | null;
     external_correlation_id: string | null;
     external_occurred_at: string | null;
     delivery_destination_id: string | null;
@@ -119,13 +113,13 @@ export interface InboundOccurrenceRecord {
 
 export interface DeliveryRepresentation {
     text: string;
-    content_digest: `sha256:${string}`;
+    contentDigest: `sha256:${string}`;
 }
 
 export interface DeliveryAttemptRecord {
     attempt_id: string;
     attempted_at: string;
-    observed_at: string | null;
+    observedAt: string | null;
     outcome: DeliveryAttemptOutcome;
     retryable: boolean;
     retry_after_seconds: number | null;
@@ -134,8 +128,8 @@ export interface DeliveryAttemptRecord {
 
 export interface DeliveryRecord {
     delivery_id: string;
-    cognition_id: CognitionId;
-    expression_evidence_id: EvidenceId;
+    cognitionId: CognitionId;
+    expressionEvidenceId: EvidenceId;
     surface_id: string;
     destination_id: string | null;
     intended_at: string;
@@ -158,8 +152,8 @@ interface LegacyDeliveryAttemptRecord {
 
 interface LegacyDeliveryRecord {
     delivery_id: string;
-    cognition_id: CognitionId;
-    expression_evidence_id: EvidenceId;
+    cognitionId: CognitionId;
+    expressionEvidenceId: EvidenceId;
     surface_id: string;
     destination_id: string | null;
     intended_at: string;
@@ -261,18 +255,18 @@ export class InteractionLedgerStore {
 
             const record: InboundOccurrenceRecord = {
                 occurrence_id: `occurrence-${randomUUID()}`,
-                cognition_id: cognitionId,
+                cognitionId: cognitionId,
                 surface_id: input.surfaceId,
-                asserted_principal: input.principal,
+                assertedPrincipal: input.principal,
                 principal_provenance: input.principalProvenance,
                 scope: input.scope,
-                content_digest: contentDigest(input.text),
+                contentDigest: contentDigest(input.text),
                 first_received_at: receivedAt,
                 last_received_at: receivedAt,
                 receive_count: 1,
                 external_occurrence_id: external.occurrenceId,
                 external_message_id: external.messageId,
-                external_thread_id: external.threadId,
+                externalThreadId: external.threadId,
                 external_correlation_id: external.correlationId,
                 external_occurred_at: external.occurredAt,
                 delivery_destination_id: input.deliveryDestinationId,
@@ -306,8 +300,8 @@ export class InteractionLedgerStore {
         return this.update((ledger) => {
             const existing = ledger.deliveries.find(
                 (record) =>
-                    record.cognition_id === cognitionId &&
-                    record.expression_evidence_id === expressionEvidenceId &&
+                    record.cognitionId === cognitionId &&
+                    record.expressionEvidenceId === expressionEvidenceId &&
                     record.surface_id === surfaceId &&
                     record.destination_id === destinationId,
             );
@@ -315,7 +309,7 @@ export class InteractionLedgerStore {
                 if (representationText !== null) {
                     const representation = deliveryRepresentation(representationText);
                     if (existing.representation === null) existing.representation = representation;
-                    else if (existing.representation.content_digest !== representation.content_digest)
+                    else if (existing.representation.contentDigest !== representation.contentDigest)
                         throw new ValidationError("delivery representation conflicts with the established intent");
                 }
                 return structuredClone(existing);
@@ -323,8 +317,8 @@ export class InteractionLedgerStore {
 
             const record: DeliveryRecord = {
                 delivery_id: `delivery-${randomUUID()}`,
-                cognition_id: cognitionId,
-                expression_evidence_id: expressionEvidenceId,
+                cognitionId: cognitionId,
+                expressionEvidenceId: expressionEvidenceId,
                 surface_id: surfaceId,
                 destination_id: destinationId,
                 intended_at: intendedAt,
@@ -354,15 +348,15 @@ export class InteractionLedgerStore {
                     throw new ValidationError("delivery retry is not due yet");
             }
             if (
-                latest?.observed_at !== null &&
+                latest?.observedAt !== null &&
                 latest !== null &&
-                Date.parse(attemptedAt) < Date.parse(latest.observed_at)
+                Date.parse(attemptedAt) < Date.parse(latest.observedAt)
             )
                 throw new ValidationError("delivery attempt precedes the previous observation");
             const attempt: DeliveryAttemptRecord = {
                 attempt_id: `attempt-${randomUUID()}`,
                 attempted_at: attemptedAt,
-                observed_at: null,
+                observedAt: null,
                 outcome: "started",
                 retryable: false,
                 retry_after_seconds: null,
@@ -390,7 +384,7 @@ export class InteractionLedgerStore {
     ): Promise<DeliveryAttemptRecord> {
         validateNullableOpaque(externalMessageId, "delivery external_message_id");
         validateRetryMetadata(outcome, retryable, retryAfterSeconds);
-        if (!isRfc3339Utc(observedAt)) throw new ValidationError("delivery observed_at must be RFC 3339 UTC");
+        if (!isRfc3339Utc(observedAt)) throw new ValidationError("delivery observedAt must be RFC 3339 UTC");
         return this.update((ledger) => {
             const attempt = ledger.deliveries
                 .flatMap((delivery) => delivery.attempts)
@@ -400,7 +394,7 @@ export class InteractionLedgerStore {
             if (Date.parse(observedAt) < Date.parse(attempt.attempted_at))
                 throw new ValidationError("delivery observation precedes attempt start");
             Object.assign(attempt, {
-                observed_at: observedAt,
+                observedAt: observedAt,
                 outcome,
                 retryable,
                 retry_after_seconds: retryAfterSeconds,
@@ -481,9 +475,9 @@ export async function runSurfaceInteraction(
         },
         plannedCognitionId,
     );
-    const cognitionId = accepted.record.cognition_id;
+    const cognitionId = accepted.record.cognitionId;
     const current = await store.load();
-    const existing = current.operations.cognition_episodes.find((episode) => episode.cognitionId === cognitionId);
+    const existing = current.operations.cognitionEpisodes.find((episode) => episode.cognitionId === cognitionId);
     if (existing) {
         let delivery = findDeliveryForCognition(await ledger.load(), cognitionId);
         if (delivery === null && existing.status === "completed" && existing.expressionEvidenceId !== null) {
@@ -574,8 +568,8 @@ export async function reconcileSurfaceDelivery(
     let document = await ledger.load();
     let delivery = requireDelivery(document, deliveryId);
     const state = await store.load();
-    const cognition = findCognition(state, delivery.cognition_id);
-    if (cognition.status !== "completed" || cognition.expressionEvidenceId !== delivery.expression_evidence_id)
+    const cognition = findCognition(state, delivery.cognitionId);
+    if (cognition.status !== "completed" || cognition.expressionEvidenceId !== delivery.expressionEvidenceId)
         throw new ValidationError("delivery does not refer to a completed matching cognition");
     if (cognition.deliveryStatus === "displayed") {
         return resultFor(delivery, "confirmed", latestDeliveryAttempt(delivery)?.attempt_id ?? null, null);
@@ -587,7 +581,7 @@ export async function reconcileSurfaceDelivery(
         return resultFor(delivery, "blocked_uncertain", latest.attempt_id, null);
     }
     if (latest?.outcome === "confirmed") {
-        await markCanonicalDeliveryDisplayed(store, delivery.cognition_id);
+        await markCanonicalDeliveryDisplayed(store, delivery.cognitionId);
         return resultFor(delivery, "confirmed", latest.attempt_id, null);
     }
     if (latest?.outcome === "uncertain") {
@@ -627,7 +621,7 @@ export async function reconcileSurfaceDelivery(
         externalMessageId,
         observedAt,
     });
-    await markCanonicalDeliveryDisplayed(store, delivery.cognition_id);
+    await markCanonicalDeliveryDisplayed(store, delivery.cognitionId);
     document = await ledger.load();
     delivery = requireDelivery(document, deliveryId);
     latest = latestDeliveryAttempt(delivery);
@@ -643,7 +637,7 @@ export function interactionLedgerInspectionView(ledger: InteractionLedgerDocumen
             ...structuredClone(delivery),
             representation: {
                 available: representation !== null,
-                content_digest: representation?.content_digest ?? null,
+                contentDigest: representation?.contentDigest ?? null,
             },
         })),
     };
@@ -698,7 +692,7 @@ async function markCanonicalDeliveryDisplayed(store: StateStore, cognitionId: Co
 }
 
 function findDeliveryForCognition(ledger: InteractionLedgerDocument, cognitionId: CognitionId) {
-    return ledger.deliveries.find((record) => record.cognition_id === cognitionId) ?? null;
+    return ledger.deliveries.find((record) => record.cognitionId === cognitionId) ?? null;
 }
 
 function requireDelivery(ledger: InteractionLedgerDocument, deliveryId: string) {
@@ -713,8 +707,8 @@ function latestDeliveryAttempt(delivery: DeliveryRecord) {
 
 function retryAtForAttempt(attempt: DeliveryAttemptRecord) {
     if (attempt.outcome !== "failed" || !attempt.retryable || attempt.retry_after_seconds === null) return null;
-    if (attempt.observed_at === null) throw new ValidationError("retryable terminal delivery is missing observed_at");
-    return new Date(Date.parse(attempt.observed_at) + attempt.retry_after_seconds * 1000).toISOString();
+    if (attempt.observedAt === null) throw new ValidationError("retryable terminal delivery is missing observedAt");
+    return new Date(Date.parse(attempt.observedAt) + attempt.retry_after_seconds * 1000).toISOString();
 }
 
 function resultFor(
@@ -742,8 +736,8 @@ function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): Interacti
         inbound_occurrences: structuredClone(legacy.inbound_occurrences),
         deliveries: legacy.deliveries.map((delivery) => ({
             delivery_id: delivery.delivery_id,
-            cognition_id: delivery.cognition_id,
-            expression_evidence_id: delivery.expression_evidence_id,
+            cognitionId: delivery.cognitionId,
+            expressionEvidenceId: delivery.expressionEvidenceId,
             surface_id: delivery.surface_id,
             destination_id: delivery.destination_id,
             intended_at: delivery.intended_at,
@@ -751,7 +745,7 @@ function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): Interacti
             attempts: delivery.attempts.map((attempt) => ({
                 attempt_id: attempt.attempt_id,
                 attempted_at: attempt.attempted_at,
-                observed_at: attempt.attempted_at,
+                observedAt: attempt.attempted_at,
                 outcome: attempt.outcome,
                 retryable: false,
                 retry_after_seconds: null,
@@ -763,7 +757,7 @@ function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): Interacti
 
 function deliveryRepresentation(text: string): DeliveryRepresentation {
     validateDeliveryRepresentationText(text);
-    return { text, content_digest: contentDigest(text) };
+    return { text, contentDigest: contentDigest(text) };
 }
 
 function validateDeliveryRepresentationText(text: string) {
@@ -797,7 +791,7 @@ function validateInboundAcceptance(input: InboundAcceptance, receivedAt: string)
         validateNullableOpaque(input.externalOccurrence.threadId ?? null, "external thread_id");
         validateNullableOpaque(input.externalOccurrence.correlationId ?? null, "external correlation_id");
         if (input.externalOccurrence.occurredAt != null && !isRfc3339Utc(input.externalOccurrence.occurredAt))
-            throw new ValidationError("external occurred_at must be RFC 3339 UTC");
+            throw new ValidationError("external occurredAt must be RFC 3339 UTC");
     }
 }
 
@@ -808,13 +802,13 @@ function assertReplayMatches(
 ) {
     const expected = {
         surface_id: input.surfaceId,
-        asserted_principal: input.principal,
+        assertedPrincipal: input.principal,
         principal_provenance: input.principalProvenance,
         scope: input.scope,
-        content_digest: contentDigest(input.text),
+        contentDigest: contentDigest(input.text),
         external_occurrence_id: external.occurrenceId,
         external_message_id: external.messageId,
-        external_thread_id: external.threadId,
+        externalThreadId: external.threadId,
         external_correlation_id: external.correlationId,
         external_occurred_at: external.occurredAt,
         delivery_destination_id: input.deliveryDestinationId,
@@ -867,8 +861,8 @@ function validateLedgerRecords(inbound: unknown[], deliveries: unknown[], valida
         const record = raw as InboundOccurrenceRecord;
         if (occurrenceIds.has(record.occurrence_id)) throw new ValidationError("duplicate interaction occurrence_id");
         occurrenceIds.add(record.occurrence_id);
-        if (cognitionIds.has(record.cognition_id)) throw new ValidationError("duplicate interaction cognition_id");
-        cognitionIds.add(record.cognition_id);
+        if (cognitionIds.has(record.cognitionId)) throw new ValidationError("duplicate interaction cognitionId");
+        cognitionIds.add(record.cognitionId);
         if (record.external_occurrence_id !== null) {
             const key = JSON.stringify([record.surface_id, record.external_occurrence_id]);
             if (externalKeys.has(key)) throw new ValidationError("duplicate external occurrence correlation key");
@@ -896,18 +890,18 @@ function validateInboundRecord(value: unknown) {
     const record = value as Record<string, unknown>;
     const fields = [
         "occurrence_id",
-        "cognition_id",
+        "cognitionId",
         "surface_id",
-        "asserted_principal",
+        "assertedPrincipal",
         "principal_provenance",
         "scope",
-        "content_digest",
+        "contentDigest",
         "first_received_at",
         "last_received_at",
         "receive_count",
         "external_occurrence_id",
         "external_message_id",
-        "external_thread_id",
+        "externalThreadId",
         "external_correlation_id",
         "external_occurred_at",
         "delivery_destination_id",
@@ -916,15 +910,15 @@ function validateInboundRecord(value: unknown) {
         throw new ValidationError("interaction occurrence contains unsupported fields");
     if (typeof record.occurrence_id !== "string" || !record.occurrence_id.startsWith("occurrence-"))
         throw new ValidationError("interaction occurrence_id is invalid");
-    if (typeof record.cognition_id !== "string" || !record.cognition_id.startsWith("cognition-"))
-        throw new ValidationError("interaction cognition_id is invalid");
+    if (typeof record.cognitionId !== "string" || !record.cognitionId.startsWith("cognition-"))
+        throw new ValidationError("interaction cognitionId is invalid");
     validateOpaque(record.surface_id, "interaction surface_id", 128);
-    validateOpaque(record.asserted_principal, "interaction asserted_principal", 256);
+    validateOpaque(record.assertedPrincipal, "interaction assertedPrincipal", 256);
     validateOpaque(record.scope, "interaction scope", 256);
     if (!PRINCIPAL_ASSERTION_PROVENANCE.includes(record.principal_provenance as PrincipalAssertionProvenance))
         throw new ValidationError("interaction principal provenance is invalid");
-    if (typeof record.content_digest !== "string" || !/^sha256:[0-9a-f]{64}$/.test(record.content_digest))
-        throw new ValidationError("interaction content_digest is invalid");
+    if (typeof record.contentDigest !== "string" || !/^sha256:[0-9a-f]{64}$/.test(record.contentDigest))
+        throw new ValidationError("interaction contentDigest is invalid");
     if (!isRfc3339Utc(record.first_received_at) || !isRfc3339Utc(record.last_received_at))
         throw new ValidationError("interaction receipt timestamps are invalid");
     if (Date.parse(record.first_received_at as string) > Date.parse(record.last_received_at as string))
@@ -933,7 +927,7 @@ function validateInboundRecord(value: unknown) {
         throw new ValidationError("interaction receive_count is invalid");
     validateNullableOpaque(record.external_occurrence_id, "interaction external_occurrence_id");
     validateNullableOpaque(record.external_message_id, "interaction external_message_id");
-    validateNullableOpaque(record.external_thread_id, "interaction external_thread_id");
+    validateNullableOpaque(record.externalThreadId, "interaction externalThreadId");
     validateNullableOpaque(record.external_correlation_id, "interaction external_correlation_id");
     if (record.external_occurred_at !== null && !isRfc3339Utc(record.external_occurred_at))
         throw new ValidationError("interaction external_occurred_at is invalid");
@@ -946,8 +940,8 @@ function validateDeliveryRecord(value: unknown) {
     const record = value as Record<string, unknown>;
     const fields = [
         "delivery_id",
-        "cognition_id",
-        "expression_evidence_id",
+        "cognitionId",
+        "expressionEvidenceId",
         "surface_id",
         "destination_id",
         "intended_at",
@@ -968,8 +962,8 @@ function validateLegacyDeliveryRecord(value: unknown) {
     const record = value as Record<string, unknown>;
     const fields = [
         "delivery_id",
-        "cognition_id",
-        "expression_evidence_id",
+        "cognitionId",
+        "expressionEvidenceId",
         "surface_id",
         "destination_id",
         "intended_at",
@@ -985,10 +979,10 @@ function validateLegacyDeliveryRecord(value: unknown) {
 function validateDeliveryIdentityFields(record: Record<string, unknown>) {
     if (typeof record.delivery_id !== "string" || !record.delivery_id.startsWith("delivery-"))
         throw new ValidationError("delivery_id is invalid");
-    if (typeof record.cognition_id !== "string" || !record.cognition_id.startsWith("cognition-"))
-        throw new ValidationError("delivery cognition_id is invalid");
-    if (typeof record.expression_evidence_id !== "string" || !record.expression_evidence_id.startsWith("evidence-"))
-        throw new ValidationError("delivery expression_evidence_id is invalid");
+    if (typeof record.cognitionId !== "string" || !record.cognitionId.startsWith("cognition-"))
+        throw new ValidationError("delivery cognitionId is invalid");
+    if (typeof record.expressionEvidenceId !== "string" || !record.expressionEvidenceId.startsWith("evidence-"))
+        throw new ValidationError("delivery expressionEvidenceId is invalid");
     validateOpaque(record.surface_id, "delivery surface_id", 128);
     validateNullableOpaque(record.destination_id, "delivery destination_id");
     if (!isRfc3339Utc(record.intended_at)) throw new ValidationError("delivery intended_at is invalid");
@@ -998,11 +992,11 @@ function validateDeliveryRepresentation(value: unknown) {
     if (value === null || typeof value !== "object" || Array.isArray(value))
         throw new ValidationError("delivery representation must be an object");
     const representation = value as Record<string, unknown>;
-    if (JSON.stringify(Object.keys(representation).sort()) !== JSON.stringify(["content_digest", "text"]))
+    if (JSON.stringify(Object.keys(representation).sort()) !== JSON.stringify(["contentDigest", "text"]))
         throw new ValidationError("delivery representation contains unsupported fields");
     validateDeliveryRepresentationText(representation.text as string);
-    if (representation.content_digest !== contentDigest(representation.text as string))
-        throw new ValidationError("delivery representation content_digest does not match text");
+    if (representation.contentDigest !== contentDigest(representation.text as string))
+        throw new ValidationError("delivery representation contentDigest does not match text");
 }
 
 function validateDeliveryAttempt(value: unknown) {
@@ -1012,7 +1006,7 @@ function validateDeliveryAttempt(value: unknown) {
     const fields = [
         "attempt_id",
         "attempted_at",
-        "observed_at",
+        "observedAt",
         "outcome",
         "retryable",
         "retry_after_seconds",
@@ -1027,14 +1021,14 @@ function validateDeliveryAttempt(value: unknown) {
         throw new ValidationError("delivery attempt outcome is invalid");
     validateNullableOpaque(attempt.external_message_id, "delivery external_message_id");
     if (attempt.outcome === "started") {
-        if (attempt.observed_at !== null || attempt.retryable !== false || attempt.retry_after_seconds !== null)
+        if (attempt.observedAt !== null || attempt.retryable !== false || attempt.retry_after_seconds !== null)
             throw new ValidationError("started delivery attempt contains terminal metadata");
         if (attempt.external_message_id !== null)
             throw new ValidationError("started delivery attempt cannot have an external message id");
         return;
     }
-    if (!isRfc3339Utc(attempt.observed_at)) throw new ValidationError("delivery observed_at is invalid");
-    if (Date.parse(attempt.observed_at as string) < Date.parse(attempt.attempted_at as string))
+    if (!isRfc3339Utc(attempt.observedAt)) throw new ValidationError("delivery observedAt is invalid");
+    if (Date.parse(attempt.observedAt as string) < Date.parse(attempt.attempted_at as string))
         throw new ValidationError("delivery observation precedes attempt start");
     validateRetryMetadata(
         attempt.outcome as TerminalDeliveryAttemptOutcome,

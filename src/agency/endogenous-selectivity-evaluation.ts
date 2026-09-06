@@ -192,7 +192,7 @@ export function parseSelectivityWorkload(value: unknown): SelectivityWorkload {
 
 export const scriptedSelectivityEvaluator: CognitionOpportunityEvaluator = async (request) => {
     const commitment = request.projection.meanings.find(
-        (item) => item.kind === "commitment" && item.currentness === "current" && item.prospective_lifecycle === "live",
+        (item) => item.kind === "commitment" && item.currentness === "current" && item.prospectiveLifecycle === "live",
     );
     const urgency = request.projection.meanings.find(
         (item) =>
@@ -202,12 +202,12 @@ export const scriptedSelectivityEvaluator: CognitionOpportunityEvaluator = async
             item.content === "Release is imminent",
     );
     if (!commitment || !urgency) {
-        return { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+        return { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
     }
     return {
-        contract_version: 1,
+        contractVersion: 1,
         decision: "cognition",
-        selected_meaning_ids: [commitment.meaning_id, urgency.meaning_id],
+        selectedMeaningIds: [commitment.meaningId, urgency.meaningId],
     };
 };
 
@@ -243,17 +243,17 @@ export async function runEndogenousSelectivityEvaluation(
             const attention =
                 attentionControl === "repeated_projection"
                     ? decideRepeatedCognitionAttention(history, {
-                          runtime_id: scenario.runtimeId,
+                          runtimeId: scenario.runtimeId,
                           principal: validated.principal,
-                          active_scope: validated.scope,
+                          activeScope: validated.scope,
                           mechanism: "foreground_probe",
-                          projected_meaning_ids: [...projection.selection.meaning_ids],
-                          projected_evidence_ids: [...projection.selection.evidence_ids],
+                          projectedMeaningIds: [...projection.selection.meaning_ids],
+                          projectedEvidenceIds: [...projection.selection.evidence_ids],
                       })
                     : {
                           outcome: "evaluate" as const,
                           source_opportunity_id: null,
-                          selected_meaning_ids: [] as MeaningId[],
+                          selectedMeaningIds: [] as MeaningId[],
                       };
 
             let decision: CognitionOpportunityDecision | "error" = "error";
@@ -265,7 +265,7 @@ export async function runEndogenousSelectivityEvaluation(
 
             if (attention.outcome === "defer_repeated_projection") {
                 decision = "defer";
-                selectedMeaningIds = [...attention.selected_meaning_ids];
+                selectedMeaningIds = [...attention.selectedMeaningIds];
             } else {
                 evaluatorCalls += 1;
                 const startedAt = performance.now();
@@ -279,8 +279,8 @@ export async function runEndogenousSelectivityEvaluation(
                         timestamp: consideredAt,
                     });
                     decision = evaluated.decision;
-                    selectedMeaningIds = [...evaluated.selected_meaning_ids];
-                    historyOpportunityId = evaluated.opportunity_id;
+                    selectedMeaningIds = [...evaluated.selectedMeaningIds];
+                    historyOpportunityId = evaluated.opportunityId;
                 } catch {
                     evaluatorFailed = true;
                     historyStatus = "failed";
@@ -296,15 +296,15 @@ export async function runEndogenousSelectivityEvaluation(
                 activeScope: validated.scope,
                 mechanism: "foreground_probe",
                 observedAt: consideredAt,
-                last_durable_observation_at: consideredAt,
-                validated_revision: projection.validated_revision,
-                projected_meaning_ids: [...projection.selection.meaning_ids],
-                projected_evidence_ids: [...projection.selection.evidence_ids],
+                lastDurableObservationAt: consideredAt,
+                validatedRevision: projection.validatedRevision,
+                projectedMeaningIds: [...projection.selection.meaning_ids],
+                projectedEvidenceIds: [...projection.selection.evidence_ids],
                 status: historyStatus,
                 decision: historyStatus === "decided" ? (decision as CognitionOpportunityDecision) : null,
-                selected_meaning_ids: historyStatus === "decided" ? [...selectedMeaningIds] : [],
-                interruption_status: "not_attempted",
-                provider_termination: null,
+                selectedMeaningIds: historyStatus === "decided" ? [...selectedMeaningIds] : [],
+                interruptionStatus: "not_attempted",
+                providerTermination: null,
             });
 
             peakRss = Math.max(peakRss, process.memoryUsage().rss);
@@ -321,13 +321,13 @@ export async function runEndogenousSelectivityEvaluation(
 
             if (decision === "cognition") {
                 const source: CompletedInternalCognition = {
-                    opportunity_id: newId("opportunity"),
-                    cognition_id: newId("cognition"),
+                    opportunityId: newId("opportunity"),
+                    cognitionId: newId("cognition"),
                     principal: validated.principal,
-                    active_scope: validated.scope,
-                    validated_revision: scenario.state.revision,
+                    activeScope: validated.scope,
+                    validatedRevision: scenario.state.revision,
                     status: "completed",
-                    used_meaning_ids: selectedMeaningIds,
+                    usedMeaningIds: selectedMeaningIds,
                 };
                 const urgencyGrounded =
                     testCase.interruption_urgency === "time_sensitive" &&

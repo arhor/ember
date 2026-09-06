@@ -99,7 +99,7 @@ It contains no provider token and points at the already authenticated runtime.
   "state_path": "/ABSOLUTE/PATH/ember.json",
   "records_directory": "/ABSOLUTE/PATH/runtime-records",
   "principal": "local-user",
-  "active_scope": "project:ember",
+  "activeScope": "project:ember",
   "node_path": "/ABSOLUTE/PATH/node",
   "runtime_entrypoint": "/ABSOLUTE/PATH/ember/bin/ember-runtime.ts",
   "codex_command": "/ABSOLUTE/PATH/codex",
@@ -466,7 +466,7 @@ quarantine.
 
 ### Ambiguous delivery
 
-A cognition that is `completed` with `delivery_status=pending` after process loss is a
+A cognition that is `completed` with `deliveryStatus=pending` after process loss is a
 durable semantic occurrence with uncertain presentation. Recovery must preserve it as
 such. Do not rerun cognition to make the output appear again. Any future redelivery
 mechanism must operate on the delivery occurrence and its privacy/currentness policy,
