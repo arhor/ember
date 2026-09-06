@@ -12,7 +12,7 @@ import { DurabilityUncertain, StoreUnavailable, ValidationError } from "../core/
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
-import { cloneState, contentDigest } from "../util.ts";
+import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
 import { findCognition, runCognition } from "./runtime.ts";
 
 export const PRINCIPAL_ASSERTION_PROVENANCE = ["explicit_local_argument", "configured_surface_mapping"] as const;
@@ -647,8 +647,7 @@ async function performSurfaceDelivery(deliver: SurfaceDelivery, text: string) {
     if (typeof deliver === "function") {
         const receipt = await deliver(text);
         if (receipt === undefined) return null;
-        if (receipt === null || typeof receipt !== "object" || Array.isArray(receipt))
-            throw new ValidationError("surface delivery receipt must be an object");
+        if (!isObject(receipt)) throw new ValidationError("surface delivery receipt must be an object");
         const externalMessageId = receipt.externalMessageId ?? null;
         validateNullableOpaque(externalMessageId, "delivery external_message_id");
         return externalMessageId;
@@ -725,9 +724,7 @@ function emptyLedger(): InteractionLedgerDocument {
 }
 
 function ledgerVersion(value: unknown) {
-    return value !== null && typeof value === "object" && !Array.isArray(value) && "ledger_version" in value
-        ? (value as { ledger_version?: unknown }).ledger_version
-        : undefined;
+    return isObject(value) && "ledger_version" in value ? value.ledger_version : undefined;
 }
 
 function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): InteractionLedgerDocument {
@@ -821,35 +818,25 @@ function assertReplayMatches(
 }
 
 function validateLedger(value: unknown): asserts value is InteractionLedgerDocument {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("interaction ledger must be an object");
-    const ledger = value as Record<string, unknown>;
-    if (
-        JSON.stringify(Object.keys(ledger).sort()) !==
-        JSON.stringify(["deliveries", "inbound_occurrences", "ledger_version"])
-    )
+    if (!isObject(value)) throw new ValidationError("interaction ledger must be an object");
+    if (!exactKeys(value, ["deliveries", "inbound_occurrences", "ledger_version"]))
         throw new ValidationError("interaction ledger contains unsupported fields");
-    if (ledger.ledger_version !== 2) throw new ValidationError("interaction ledger version is unsupported");
-    if (!Array.isArray(ledger.inbound_occurrences))
+    if (value.ledger_version !== 2) throw new ValidationError("interaction ledger version is unsupported");
+    if (!Array.isArray(value.inbound_occurrences))
         throw new ValidationError("interaction ledger inbound_occurrences must be a list");
-    if (!Array.isArray(ledger.deliveries)) throw new ValidationError("interaction ledger deliveries must be a list");
-    validateLedgerRecords(ledger.inbound_occurrences, ledger.deliveries, validateDeliveryRecord);
+    if (!Array.isArray(value.deliveries)) throw new ValidationError("interaction ledger deliveries must be a list");
+    validateLedgerRecords(value.inbound_occurrences, value.deliveries, validateDeliveryRecord);
 }
 
 function validateLegacyLedger(value: unknown): asserts value is LegacyInteractionLedgerDocument {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("interaction ledger must be an object");
-    const ledger = value as Record<string, unknown>;
-    if (
-        JSON.stringify(Object.keys(ledger).sort()) !==
-        JSON.stringify(["deliveries", "inbound_occurrences", "ledger_version"])
-    )
+    if (!isObject(value)) throw new ValidationError("interaction ledger must be an object");
+    if (!exactKeys(value, ["deliveries", "inbound_occurrences", "ledger_version"]))
         throw new ValidationError("interaction ledger contains unsupported fields");
-    if (ledger.ledger_version !== 1) throw new ValidationError("interaction ledger version is unsupported");
-    if (!Array.isArray(ledger.inbound_occurrences))
+    if (value.ledger_version !== 1) throw new ValidationError("interaction ledger version is unsupported");
+    if (!Array.isArray(value.inbound_occurrences))
         throw new ValidationError("interaction ledger inbound_occurrences must be a list");
-    if (!Array.isArray(ledger.deliveries)) throw new ValidationError("interaction ledger deliveries must be a list");
-    validateLedgerRecords(ledger.inbound_occurrences, ledger.deliveries, validateLegacyDeliveryRecord);
+    if (!Array.isArray(value.deliveries)) throw new ValidationError("interaction ledger deliveries must be a list");
+    validateLedgerRecords(value.inbound_occurrences, value.deliveries, validateLegacyDeliveryRecord);
 }
 
 function validateLedgerRecords(inbound: unknown[], deliveries: unknown[], validateDelivery: (value: unknown) => void) {
@@ -885,9 +872,7 @@ function validateLedgerRecords(inbound: unknown[], deliveries: unknown[], valida
 }
 
 function validateInboundRecord(value: unknown) {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("interaction occurrence must be an object");
-    const record = value as Record<string, unknown>;
+    if (!isObject(value)) throw new ValidationError("interaction occurrence must be an object");
     const fields = [
         "occurrence_id",
         "cognitionId",
@@ -905,39 +890,36 @@ function validateInboundRecord(value: unknown) {
         "external_correlation_id",
         "external_occurred_at",
         "delivery_destination_id",
-    ].sort();
-    if (JSON.stringify(Object.keys(record).sort()) !== JSON.stringify(fields))
-        throw new ValidationError("interaction occurrence contains unsupported fields");
-    if (typeof record.occurrence_id !== "string" || !record.occurrence_id.startsWith("occurrence-"))
+    ];
+    if (!exactKeys(value, fields)) throw new ValidationError("interaction occurrence contains unsupported fields");
+    if (typeof value.occurrence_id !== "string" || !value.occurrence_id.startsWith("occurrence-"))
         throw new ValidationError("interaction occurrence_id is invalid");
-    if (typeof record.cognitionId !== "string" || !record.cognitionId.startsWith("cognition-"))
+    if (typeof value.cognitionId !== "string" || !value.cognitionId.startsWith("cognition-"))
         throw new ValidationError("interaction cognitionId is invalid");
-    validateOpaque(record.surface_id, "interaction surface_id", 128);
-    validateOpaque(record.assertedPrincipal, "interaction assertedPrincipal", 256);
-    validateOpaque(record.scope, "interaction scope", 256);
-    if (!PRINCIPAL_ASSERTION_PROVENANCE.includes(record.principal_provenance as PrincipalAssertionProvenance))
+    validateOpaque(value.surface_id, "interaction surface_id", 128);
+    validateOpaque(value.assertedPrincipal, "interaction assertedPrincipal", 256);
+    validateOpaque(value.scope, "interaction scope", 256);
+    if (!PRINCIPAL_ASSERTION_PROVENANCE.includes(value.principal_provenance as PrincipalAssertionProvenance))
         throw new ValidationError("interaction principal provenance is invalid");
-    if (typeof record.contentDigest !== "string" || !/^sha256:[0-9a-f]{64}$/.test(record.contentDigest))
+    if (typeof value.contentDigest !== "string" || !/^sha256:[0-9a-f]{64}$/.test(value.contentDigest))
         throw new ValidationError("interaction contentDigest is invalid");
-    if (!isRfc3339Utc(record.first_received_at) || !isRfc3339Utc(record.last_received_at))
+    if (!isRfc3339Utc(value.first_received_at) || !isRfc3339Utc(value.last_received_at))
         throw new ValidationError("interaction receipt timestamps are invalid");
-    if (Date.parse(record.first_received_at as string) > Date.parse(record.last_received_at as string))
+    if (Date.parse(value.first_received_at as string) > Date.parse(value.last_received_at as string))
         throw new ValidationError("interaction last receipt precedes first receipt");
-    if (!Number.isSafeInteger(record.receive_count) || (record.receive_count as number) < 1)
+    if (!Number.isSafeInteger(value.receive_count) || (value.receive_count as number) < 1)
         throw new ValidationError("interaction receive_count is invalid");
-    validateNullableOpaque(record.external_occurrence_id, "interaction external_occurrence_id");
-    validateNullableOpaque(record.external_message_id, "interaction external_message_id");
-    validateNullableOpaque(record.externalThreadId, "interaction externalThreadId");
-    validateNullableOpaque(record.external_correlation_id, "interaction external_correlation_id");
-    if (record.external_occurred_at !== null && !isRfc3339Utc(record.external_occurred_at))
+    validateNullableOpaque(value.external_occurrence_id, "interaction external_occurrence_id");
+    validateNullableOpaque(value.external_message_id, "interaction external_message_id");
+    validateNullableOpaque(value.externalThreadId, "interaction externalThreadId");
+    validateNullableOpaque(value.external_correlation_id, "interaction external_correlation_id");
+    if (value.external_occurred_at !== null && !isRfc3339Utc(value.external_occurred_at))
         throw new ValidationError("interaction external_occurred_at is invalid");
-    validateNullableOpaque(record.delivery_destination_id, "interaction delivery_destination_id");
+    validateNullableOpaque(value.delivery_destination_id, "interaction delivery_destination_id");
 }
 
 function validateDeliveryRecord(value: unknown) {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("delivery record must be an object");
-    const record = value as Record<string, unknown>;
+    if (!isObject(value)) throw new ValidationError("delivery record must be an object");
     const fields = [
         "delivery_id",
         "cognitionId",
@@ -947,19 +929,16 @@ function validateDeliveryRecord(value: unknown) {
         "intended_at",
         "representation",
         "attempts",
-    ].sort();
-    if (JSON.stringify(Object.keys(record).sort()) !== JSON.stringify(fields))
-        throw new ValidationError("delivery record contains unsupported fields");
-    validateDeliveryIdentityFields(record);
-    if (record.representation !== null) validateDeliveryRepresentation(record.representation);
-    if (!Array.isArray(record.attempts)) throw new ValidationError("delivery attempts must be a list");
-    for (const attempt of record.attempts) validateDeliveryAttempt(attempt);
+    ];
+    if (!exactKeys(value, fields)) throw new ValidationError("delivery record contains unsupported fields");
+    validateDeliveryIdentityFields(value);
+    if (value.representation !== null) validateDeliveryRepresentation(value.representation);
+    if (!Array.isArray(value.attempts)) throw new ValidationError("delivery attempts must be a list");
+    for (const attempt of value.attempts) validateDeliveryAttempt(attempt);
 }
 
 function validateLegacyDeliveryRecord(value: unknown) {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("delivery record must be an object");
-    const record = value as Record<string, unknown>;
+    if (!isObject(value)) throw new ValidationError("delivery record must be an object");
     const fields = [
         "delivery_id",
         "cognitionId",
@@ -968,12 +947,11 @@ function validateLegacyDeliveryRecord(value: unknown) {
         "destination_id",
         "intended_at",
         "attempts",
-    ].sort();
-    if (JSON.stringify(Object.keys(record).sort()) !== JSON.stringify(fields))
-        throw new ValidationError("delivery record contains unsupported fields");
-    validateDeliveryIdentityFields(record);
-    if (!Array.isArray(record.attempts)) throw new ValidationError("delivery attempts must be a list");
-    for (const attempt of record.attempts) validateLegacyDeliveryAttempt(attempt);
+    ];
+    if (!exactKeys(value, fields)) throw new ValidationError("delivery record contains unsupported fields");
+    validateDeliveryIdentityFields(value);
+    if (!Array.isArray(value.attempts)) throw new ValidationError("delivery attempts must be a list");
+    for (const attempt of value.attempts) validateLegacyDeliveryAttempt(attempt);
 }
 
 function validateDeliveryIdentityFields(record: Record<string, unknown>) {
@@ -989,20 +967,16 @@ function validateDeliveryIdentityFields(record: Record<string, unknown>) {
 }
 
 function validateDeliveryRepresentation(value: unknown) {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("delivery representation must be an object");
-    const representation = value as Record<string, unknown>;
-    if (JSON.stringify(Object.keys(representation).sort()) !== JSON.stringify(["contentDigest", "text"]))
+    if (!isObject(value)) throw new ValidationError("delivery representation must be an object");
+    if (!exactKeys(value, ["contentDigest", "text"]))
         throw new ValidationError("delivery representation contains unsupported fields");
-    validateDeliveryRepresentationText(representation.text as string);
-    if (representation.contentDigest !== contentDigest(representation.text as string))
+    validateDeliveryRepresentationText(value.text as string);
+    if (value.contentDigest !== contentDigest(value.text as string))
         throw new ValidationError("delivery representation contentDigest does not match text");
 }
 
 function validateDeliveryAttempt(value: unknown) {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("delivery attempt must be an object");
-    const attempt = value as Record<string, unknown>;
+    if (!isObject(value)) throw new ValidationError("delivery attempt must be an object");
     const fields = [
         "attempt_id",
         "attempted_at",
@@ -1011,47 +985,41 @@ function validateDeliveryAttempt(value: unknown) {
         "retryable",
         "retry_after_seconds",
         "external_message_id",
-    ].sort();
-    if (JSON.stringify(Object.keys(attempt).sort()) !== JSON.stringify(fields))
-        throw new ValidationError("delivery attempt contains unsupported fields");
-    if (typeof attempt.attempt_id !== "string" || !attempt.attempt_id.startsWith("attempt-"))
+    ];
+    if (!exactKeys(value, fields)) throw new ValidationError("delivery attempt contains unsupported fields");
+    if (typeof value.attempt_id !== "string" || !value.attempt_id.startsWith("attempt-"))
         throw new ValidationError("delivery attempt_id is invalid");
-    if (!isRfc3339Utc(attempt.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
-    if (!["started", "confirmed", "failed", "uncertain"].includes(attempt.outcome as string))
+    if (!isRfc3339Utc(value.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
+    if (!["started", "confirmed", "failed", "uncertain"].includes(value.outcome as string))
         throw new ValidationError("delivery attempt outcome is invalid");
-    validateNullableOpaque(attempt.external_message_id, "delivery external_message_id");
-    if (attempt.outcome === "started") {
-        if (attempt.observedAt !== null || attempt.retryable !== false || attempt.retry_after_seconds !== null)
+    validateNullableOpaque(value.external_message_id, "delivery external_message_id");
+    if (value.outcome === "started") {
+        if (value.observedAt !== null || value.retryable !== false || value.retry_after_seconds !== null)
             throw new ValidationError("started delivery attempt contains terminal metadata");
-        if (attempt.external_message_id !== null)
+        if (value.external_message_id !== null)
             throw new ValidationError("started delivery attempt cannot have an external message id");
         return;
     }
-    if (!isRfc3339Utc(attempt.observedAt)) throw new ValidationError("delivery observedAt is invalid");
-    if (Date.parse(attempt.observedAt as string) < Date.parse(attempt.attempted_at as string))
+    if (!isRfc3339Utc(value.observedAt)) throw new ValidationError("delivery observedAt is invalid");
+    if (Date.parse(value.observedAt as string) < Date.parse(value.attempted_at as string))
         throw new ValidationError("delivery observation precedes attempt start");
     validateRetryMetadata(
-        attempt.outcome as TerminalDeliveryAttemptOutcome,
-        attempt.retryable,
-        attempt.retry_after_seconds as number | null,
+        value.outcome as TerminalDeliveryAttemptOutcome,
+        value.retryable,
+        value.retry_after_seconds as number | null,
     );
 }
 
 function validateLegacyDeliveryAttempt(value: unknown) {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("delivery attempt must be an object");
-    const attempt = value as Record<string, unknown>;
-    if (
-        JSON.stringify(Object.keys(attempt).sort()) !==
-        JSON.stringify(["attempt_id", "attempted_at", "external_message_id", "outcome"])
-    )
+    if (!isObject(value)) throw new ValidationError("delivery attempt must be an object");
+    if (!exactKeys(value, ["attempt_id", "attempted_at", "external_message_id", "outcome"]))
         throw new ValidationError("delivery attempt contains unsupported fields");
-    if (typeof attempt.attempt_id !== "string" || !attempt.attempt_id.startsWith("attempt-"))
+    if (typeof value.attempt_id !== "string" || !value.attempt_id.startsWith("attempt-"))
         throw new ValidationError("delivery attempt_id is invalid");
-    if (!isRfc3339Utc(attempt.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
-    if (!["confirmed", "failed", "uncertain"].includes(attempt.outcome as string))
+    if (!isRfc3339Utc(value.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
+    if (!["confirmed", "failed", "uncertain"].includes(value.outcome as string))
         throw new ValidationError("delivery attempt outcome is invalid");
-    validateNullableOpaque(attempt.external_message_id, "delivery external_message_id");
+    validateNullableOpaque(value.external_message_id, "delivery external_message_id");
 }
 
 function validateRetryMetadata(
