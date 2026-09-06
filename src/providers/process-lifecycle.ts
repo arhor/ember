@@ -74,6 +74,7 @@ export function runProviderProcess<TOptions>(
 }
 
 class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution {
+    private readonly options: RunProviderProcessOptions<TOptions>;
     private child: ProviderProcessChild | null = null;
     private readonly stdout: Buffer[] = [];
     private readonly stderr: Buffer[] = [];
@@ -95,7 +96,9 @@ class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution
     private resolveDone: ((terminationConfirmed: boolean) => void) | null = null;
     private execution: Promise<ProviderProcessResult> | null = null;
 
-    constructor(private readonly options: RunProviderProcessOptions<TOptions>) {}
+    constructor(options: RunProviderProcessOptions<TOptions>) {
+        this.options = options;
+    }
 
     run(): Promise<ProviderProcessResult> {
         this.execution ??= this.execute();
