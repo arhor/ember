@@ -20,5 +20,12 @@ jobs:
           cache: npm
       - name: Install locked development toolchain
         run: npm ci
-      - name: Report snake_case property declarations
-        run: node scripts/report-snake-case.mjs
+      - name: Report snake_case property-like names
+        run: node scripts/report-snake-case.mjs > snake-report.txt
+      - name: Publish report to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add snake-report.txt
+          git commit -m "chore: capture snake-case report"
+          git push
