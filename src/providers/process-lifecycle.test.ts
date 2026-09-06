@@ -3,9 +3,9 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import type { ProviderProcessChild } from "./process-lifecycle.ts";
+import type { ProviderProcessChild, ProviderProcessExecution } from "./process-lifecycle.ts";
 
-import { runProviderProcess } from "./process-lifecycle.ts";
+import { createProviderProcessExecution, runProviderProcess } from "./process-lifecycle.ts";
 
 class TestChild extends EventEmitter implements ProviderProcessChild {
     readonly stdin = new PassThrough();
@@ -22,6 +22,34 @@ class TestChild extends EventEmitter implements ProviderProcessChild {
         this.emit("close", code, signal);
     }
 }
+
+test("public execution interface represents one provider process run", async () => {
+    const child = new TestChild();
+    const execution: ProviderProcessExecution = createProviderProcessExecution({
+        command: "provider",
+        arguments_: [],
+        spawnImpl: () => child,
+        spawnOptions: {},
+        stdin: "request",
+        timeoutSeconds: 1,
+        maxStdoutBytes: 1024,
+        maxStderrBytes: 1024,
+        terminationGraceMs: 10,
+        finalTerminationMs: 20,
+    });
+
+    const firstRun = execution.run();
+    const secondRun = execution.run();
+    assert.equal(firstRun, secondRun);
+
+    child.stdout.write("reply");
+    child.close();
+
+    const result = await firstRun;
+    assert.equal(result.spawned, true);
+    if (!result.spawned) return;
+    assert.equal(result.stdout.toString("utf8"), "reply");
+});
 
 test("shared lifecycle captures bounded output and normal exit", async () => {
     const child = new TestChild();
