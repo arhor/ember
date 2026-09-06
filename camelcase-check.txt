@@ -9,15 +9,15 @@
 Checking formatting...
 
 All matched files use the correct format.
-Finished in 3205ms on 226 files using 4 threads.
+Finished in 3797ms on 226 files using 4 threads.
 
 > @arhor/ember@0.0.0 lint
 > oxlint
 
 Found 0 warnings and 0 errors.
-Finished in 71ms on 117 files with 60 rules using 4 threads.
+Finished in 72ms on 117 files with 60 rules using 4 threads.
 
 > @arhor/ember@0.0.0 test:types
 > tsd --typings src/core/model.ts --files "src/**/*.test-d.ts"
 
-error: docs/architecture/initial-model.md: superseded documents require superseded_by
+OK: 84 participating documentation files validated.

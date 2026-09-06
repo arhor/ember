@@ -5,7 +5,7 @@ read_when:
   - "Comparing current design directions with the project's pre-research model"
 role: design
 discovery_status: superseded
-supersededBy: docs/architecture/design-directions.md
+superseded_by: docs/architecture/design-directions.md
 ---
 
 # Initial Architecture Model
