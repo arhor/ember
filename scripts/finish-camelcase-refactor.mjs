@@ -112,6 +112,9 @@ async function visit(path) {
         if ([".ts", ".mts", ".cts"].includes(extname(entry.name))) {
             updated = migrateUtilityImports(child, updated);
         }
+        if (extname(entry.name) === ".md" && child.startsWith(`docs/`)) {
+            updated = restoreDocumentationFrontmatter(updated);
+        }
         if (updated !== original) {
             await writeFile(child, updated);
             changedFiles += 1;
@@ -156,4 +159,12 @@ function migrateUtilityImports(path, source) {
 
     if (!merged) updated = `import { ${[...moved].sort().join(", ")} } from "${utilSpecifier}";\n${updated}`;
     return updated;
+}
+
+function restoreDocumentationFrontmatter(source) {
+    if (!source.startsWith("---\n")) return source;
+    const end = source.indexOf("\n---\n", 4);
+    if (end < 0) return source;
+    const frontmatter = source.slice(0, end).replace(/^supersededBy:/gm, "superseded_by:");
+    return frontmatter + source.slice(end);
 }
