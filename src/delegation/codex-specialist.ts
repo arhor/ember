@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
+import { exactKeys, isObject } from "../util.ts";
 import { codexEnvironment } from "./codex.ts";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
@@ -773,10 +774,10 @@ function sameCheckpoint(left: SpecialistCurrentnessCheckpoint, right: Specialist
 }
 
 function validatePersistedRecord(record: SpecialistEpisodeRecord) {
-    if (!recordLike(record) || record.record_version !== 3) throw new Error("specialist episode record is invalid");
+    if (!isObject(record) || record.record_version !== 3) throw new Error("specialist episode record is invalid");
     validateSpec(record.specification);
     if (
-        !recordLike(record.recovery) ||
+        !isObject(record.recovery) ||
         !["no_effect_established", "effects_possible", "effects_known"].includes(record.recovery.effect_state) ||
         !["not_applicable", "unknown", "stopped", "made_harmless"].includes(record.recovery.continued_work_state) ||
         !["not_applicable", "safe_without_reconciliation", "prohibited_pending_reconciliation"].includes(
@@ -814,11 +815,11 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
         } catch {
             throw new Error(`Codex JSONL line ${index + 1} is invalid`);
         }
-        if (!recordLike(event) || typeof event.type !== "string") {
+        if (!isObject(event) || typeof event.type !== "string") {
             throw new Error(`Codex JSONL line ${index + 1} is not a typed event`);
         }
         observedTypes.push(
-            recordLike(event.item) && typeof event.item.type === "string"
+            isObject(event.item) && typeof event.item.type === "string"
                 ? `${event.type}:${event.item.type}`
                 : event.type,
         );
@@ -827,13 +828,13 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
         }
         if (
             event.type === "item.completed" &&
-            recordLike(event.item) &&
+            isObject(event.item) &&
             event.item.type === "agent_message" &&
             typeof event.item.text === "string"
         ) {
             try {
                 const candidate: unknown = JSON.parse(event.item.text);
-                if (recordLike(candidate) && candidate.contractVersion === 1 && "objective_disposition" in candidate) {
+                if (isObject(candidate) && candidate.contractVersion === 1 && "objective_disposition" in candidate) {
                     report = candidate as SpecialistReport;
                 }
             } catch {}
@@ -872,7 +873,7 @@ function validateSpec(spec: SpecialistEpisodeSpec) {
         !Array.isArray(spec.context_projection) ||
         !spec.context_projection.every(
             (item) =>
-                recordLike(item) &&
+                isObject(item) &&
                 bounded(item.content, 32_768) &&
                 bounded(item.provenance, 8192) &&
                 bounded(item.scope, 8192) &&
@@ -897,7 +898,7 @@ function validateSpec(spec: SpecialistEpisodeSpec) {
 
     const capability = spec.runtime_capability;
     if (
-        !recordLike(capability.filesystem) ||
+        !isObject(capability.filesystem) ||
         capability.filesystem.scope !== "selected_workspace" ||
         capability.filesystem.mode !== "read_write" ||
         capability.network_reach !== "not_established" ||
@@ -927,8 +928,8 @@ function validateSpec(spec: SpecialistEpisodeSpec) {
 
 function validDerivationBasis(value: unknown): value is SpecialistDerivationBasis {
     return (
-        recordLike(value) &&
-        Object.keys(value).length === 2 &&
+        isObject(value) &&
+        exactKeys(value, ["context_revision", "objective_revision"]) &&
         bounded(value.objective_revision, 8192) &&
         bounded(value.context_revision, 8192)
     );
@@ -936,8 +937,7 @@ function validDerivationBasis(value: unknown): value is SpecialistDerivationBasi
 
 function validateCheckpoint(value: SpecialistCurrentnessCheckpoint) {
     if (
-        !recordLike(value) ||
-        Object.keys(value).length !== 3 ||
+        !exactKeys(value, ["context_revision", "objective_revision", "objective_status"]) ||
         !validDerivationBasis({
             objective_revision: value.objective_revision,
             context_revision: value.context_revision,
@@ -962,8 +962,7 @@ function validateReport(value: SpecialistReport) {
         "summary",
     ];
     if (
-        !recordLike(value) ||
-        JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(fields) ||
+        !exactKeys(value, fields) ||
         value.contractVersion !== 1 ||
         !bounded(value.summary, 32_768) ||
         !["completed", "blocked", "failed"].includes(value.objective_disposition)
@@ -984,8 +983,8 @@ function validateReport(value: SpecialistReport) {
         !Array.isArray(value.checks) ||
         !value.checks.every(
             (check) =>
-                recordLike(check) &&
-                JSON.stringify(Object.keys(check).sort()) === JSON.stringify(["command", "outcome"]) &&
+                isObject(check) &&
+                exactKeys(check, ["command", "outcome"]) &&
                 typeof check.command === "string" &&
                 typeof check.outcome === "string",
         )
@@ -998,10 +997,10 @@ function validateReport(value: SpecialistReport) {
 }
 
 function validExpansionRequest(value: unknown): value is SpecialistExpansionRequest {
-    if (!recordLike(value)) return false;
+    if (!isObject(value)) return false;
     const fields = ["consequence", "kind", "purpose", "request", "requires_decision_from"];
     return (
-        JSON.stringify(Object.keys(value).sort()) === JSON.stringify(fields) &&
+        exactKeys(value, fields) &&
         ["additional_context", "additional_authority", "additional_capability"].includes(value.kind) &&
         bounded(value.request, 32_768) &&
         bounded(value.purpose, 32_768) &&
@@ -1018,10 +1017,6 @@ function stringArray(value: unknown): value is string[] {
     return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
-function recordLike(value: unknown): value is Record<string, any> {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
 function errorMessage(error: unknown) {
     return error instanceof Error ? error.message : String(error);
 }
@@ -1031,9 +1026,9 @@ function codexErrorDiagnostic(bytes: Uint8Array): string {
     for (const line of text.split("\n")) {
         try {
             const event: unknown = JSON.parse(line);
-            if (!recordLike(event)) continue;
+            if (!isObject(event)) continue;
             if (event.type === "error" && typeof event.message === "string") return event.message.slice(0, 4096);
-            if (event.type === "turn.failed" && recordLike(event.error) && typeof event.error.message === "string") {
+            if (event.type === "turn.failed" && isObject(event.error) && typeof event.error.message === "string") {
                 return event.error.message.slice(0, 4096);
             }
         } catch {}

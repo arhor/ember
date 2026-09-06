@@ -14,7 +14,7 @@ import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-c
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { COGNITION_OPPORTUNITY_MECHANISMS, newId, nowUtc, validateState, isRfc3339Utc } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
-import { cloneState } from "../util.ts";
+import { cloneState, exactKeys, isObject } from "../util.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 
 export const COGNITION_OPPORTUNITY_CONTRACT_VERSION = 1 as const;
@@ -365,35 +365,31 @@ function validateEvaluation(
     value: unknown,
     projectedMeaningIds: ReadonlySet<MeaningId | string>,
 ): asserts value is CognitionOpportunityEvaluation {
-    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    if (!isObject(value)) {
         throw new ValidationError("cognition opportunity evaluation must be an object");
     }
-    const object = value as Record<string, unknown>;
-    const fields = Object.keys(object).sort();
-    const expected = ["contractVersion", "decision", "selectedMeaningIds"].sort();
-
-    if (JSON.stringify(fields) !== JSON.stringify(expected)) {
+    if (!exactKeys(value, ["contractVersion", "decision", "selectedMeaningIds"])) {
         throw new ValidationError("cognition opportunity evaluation contains missing or unsupported fields");
     }
-    if (object.contractVersion !== COGNITION_OPPORTUNITY_CONTRACT_VERSION) {
+    if (value.contractVersion !== COGNITION_OPPORTUNITY_CONTRACT_VERSION) {
         throw new ValidationError("cognition opportunity evaluation contractVersion is unsupported");
     }
-    if (!["cognition", "defer", "no_cognition"].includes(String(object.decision))) {
+    if (!["cognition", "defer", "no_cognition"].includes(String(value.decision))) {
         throw new ValidationError("cognition opportunity evaluation decision is invalid");
     }
-    if (!Array.isArray(object.selectedMeaningIds) || !object.selectedMeaningIds.every((id) => typeof id === "string")) {
+    if (!Array.isArray(value.selectedMeaningIds) || !value.selectedMeaningIds.every((id) => typeof id === "string")) {
         throw new ValidationError("cognition opportunity selectedMeaningIds must be a string list");
     }
-    if (new Set(object.selectedMeaningIds).size !== object.selectedMeaningIds.length) {
+    if (new Set(value.selectedMeaningIds).size !== value.selectedMeaningIds.length) {
         throw new ValidationError("cognition opportunity selectedMeaningIds must not contain duplicates");
     }
-    if (!object.selectedMeaningIds.every((id) => projectedMeaningIds.has(id))) {
+    if (!value.selectedMeaningIds.every((id) => projectedMeaningIds.has(id))) {
         throw new ValidationError("cognition opportunity selected a meaning outside its projection");
     }
-    if (object.decision === "no_cognition" && object.selectedMeaningIds.length !== 0) {
+    if (value.decision === "no_cognition" && value.selectedMeaningIds.length !== 0) {
         throw new ValidationError("no_cognition must not select a meaning");
     }
-    if ((object.decision === "cognition" || object.decision === "defer") && object.selectedMeaningIds.length === 0) {
-        throw new ValidationError(`${object.decision} must select at least one projected meaning`);
+    if ((value.decision === "cognition" || value.decision === "defer") && value.selectedMeaningIds.length === 0) {
+        throw new ValidationError(`${value.decision} must select at least one projected meaning`);
     }
 }

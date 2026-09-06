@@ -9,7 +9,7 @@ import type { EmberState } from "../core/model.ts";
 
 import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
 import { isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
-import { cloneState } from "../util.ts";
+import { cloneState, exactKeys } from "../util.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
@@ -287,12 +287,7 @@ export async function readLock(path: string): Promise<LockStatus> {
     } catch {
         return { status: "malformed", reason: "lock metadata is not valid JSON" };
     }
-    const exact =
-        metadata !== null &&
-        typeof metadata === "object" &&
-        !Array.isArray(metadata) &&
-        JSON.stringify(Object.keys(metadata).sort()) ===
-            JSON.stringify(["acquired_at", "hostname", "lock_version", "owner_token", "pid"].sort());
+    const exact = exactKeys(metadata, ["acquired_at", "hostname", "lock_version", "owner_token", "pid"]);
     const m = metadata as Partial<LockMetadata>;
     if (
         !exact ||

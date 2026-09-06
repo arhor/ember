@@ -17,6 +17,7 @@ import {
     runSurfaceInteraction,
 } from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { exactKeys, isObject } from "../util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";
@@ -524,9 +525,7 @@ export function renderTelegramSurfaceUnit(config: TelegramSurfaceConfig, configP
 }
 
 export function validateTelegramSurfaceConfig(value: unknown): asserts value is TelegramSurfaceConfig {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new ValidationError("Telegram surface config must be an object");
-    const config = value as Record<string, unknown>;
+    if (!isObject(value)) throw new ValidationError("Telegram surface config must be an object");
     const fields = [
         "activeScope",
         "chat_id",
@@ -543,40 +542,39 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         "surface_entrypoint",
         "token_file",
         "working_directory",
-    ].sort();
-    if (JSON.stringify(Object.keys(config).sort()) !== JSON.stringify(fields))
-        throw new ValidationError("Telegram surface config contains unsupported fields");
-    if (config.config_version !== 1) throw new ValidationError("Telegram surface config version is unsupported");
-    validateOpaque(config.principal, "Telegram principal", 256);
-    validateOpaque(config.activeScope, "Telegram active scope", 256);
-    validateChatId(config.chat_id);
-    requireAbsolutePath(config.state_path, "Telegram state path");
-    requireAbsolutePath(config.token_file, "Telegram token file");
-    requireAbsolutePath(config.provider_command, "Telegram provider command");
-    requireAbsolutePath(config.working_directory, "Telegram working directory");
-    requireAbsolutePath(config.node_path, "Telegram Node path");
-    requireAbsolutePath(config.surface_entrypoint, "Telegram surface entrypoint");
-    if (!["process", "codex", "cursor"].includes(config.provider_kind as string))
+    ];
+    if (!exactKeys(value, fields)) throw new ValidationError("Telegram surface config contains unsupported fields");
+    if (value.config_version !== 1) throw new ValidationError("Telegram surface config version is unsupported");
+    validateOpaque(value.principal, "Telegram principal", 256);
+    validateOpaque(value.activeScope, "Telegram active scope", 256);
+    validateChatId(value.chat_id);
+    requireAbsolutePath(value.state_path, "Telegram state path");
+    requireAbsolutePath(value.token_file, "Telegram token file");
+    requireAbsolutePath(value.provider_command, "Telegram provider command");
+    requireAbsolutePath(value.working_directory, "Telegram working directory");
+    requireAbsolutePath(value.node_path, "Telegram Node path");
+    requireAbsolutePath(value.surface_entrypoint, "Telegram surface entrypoint");
+    if (!["process", "codex", "cursor"].includes(value.provider_kind as string))
         throw new ValidationError("Telegram provider kind is unsupported");
-    if (!Array.isArray(config.provider_arguments) || config.provider_arguments.some((arg) => typeof arg !== "string"))
+    if (!Array.isArray(value.provider_arguments) || value.provider_arguments.some((arg) => typeof arg !== "string"))
         throw new ValidationError("Telegram provider arguments must be a string list");
-    for (const argument of config.provider_arguments as string[]) {
+    for (const argument of value.provider_arguments as string[]) {
         if (ASCII_CONTROL_CHARACTER_PATTERN.test(argument))
             throw new ValidationError("Telegram provider argument contains a control character");
     }
-    validatePollTimeout(config.poll_timeout_seconds);
+    validatePollTimeout(value.poll_timeout_seconds);
     if (
-        typeof config.provider_timeout_seconds !== "number" ||
-        !Number.isFinite(config.provider_timeout_seconds) ||
-        config.provider_timeout_seconds <= 0 ||
-        config.provider_timeout_seconds > MAX_PROVIDER_TIMEOUT_SECONDS
+        typeof value.provider_timeout_seconds !== "number" ||
+        !Number.isFinite(value.provider_timeout_seconds) ||
+        value.provider_timeout_seconds <= 0 ||
+        value.provider_timeout_seconds > MAX_PROVIDER_TIMEOUT_SECONDS
     )
         throw new ValidationError(`Telegram provider timeout must be in (0, ${MAX_PROVIDER_TIMEOUT_SECONDS}]`);
     if (
-        typeof config.stop_timeout_seconds !== "number" ||
-        !Number.isSafeInteger(config.stop_timeout_seconds) ||
-        config.stop_timeout_seconds < 1 ||
-        config.stop_timeout_seconds > 3600
+        typeof value.stop_timeout_seconds !== "number" ||
+        !Number.isSafeInteger(value.stop_timeout_seconds) ||
+        value.stop_timeout_seconds < 1 ||
+        value.stop_timeout_seconds > 3600
     )
         throw new ValidationError("Telegram stop timeout must be an integer between 1 and 3600 seconds");
 }
@@ -644,8 +642,8 @@ function validateTelegramChat(value: unknown, field: string): TelegramChat {
 }
 
 function telegramRetryAfter(value: unknown) {
-    if (value === undefined || value === null || typeof value !== "object" || Array.isArray(value)) return null;
-    const retryAfter = (value as Record<string, unknown>).retry_after;
+    if (!isObject(value)) return null;
+    const retryAfter = value.retry_after;
     return Number.isSafeInteger(retryAfter) && (retryAfter as number) >= 0 ? (retryAfter as number) : null;
 }
 
@@ -692,9 +690,8 @@ function requireAbsolutePath(value: unknown, field: string): asserts value is st
 }
 
 function requireApiRecord(value: unknown, field: string): Record<string, unknown> {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-        throw new TelegramApiError(`${field} must be an object`, "uncertain");
-    return value as Record<string, unknown>;
+    if (!isObject(value)) throw new TelegramApiError(`${field} must be an object`, "uncertain");
+    return value;
 }
 
 function systemdQuote(value: string) {

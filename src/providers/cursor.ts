@@ -10,6 +10,7 @@ import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from 
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
+import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
@@ -376,7 +377,7 @@ function parseCursorResult(output: string): { result: ProviderResult; externalSe
         });
     }
     if (
-        !isRecord(envelope) ||
+        !isObject(envelope) ||
         envelope.type !== "result" ||
         envelope.subtype !== "success" ||
         envelope.is_error !== false
@@ -401,9 +402,6 @@ function validExternalId(value: unknown): value is string {
         value.length <= 512 &&
         !ASCII_CONTROL_CHARACTER_PATTERN.test(value)
     );
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 function decodeDiagnostic(bytes: Uint8Array): string {
     return new TextDecoder("utf-8", { fatal: false })
