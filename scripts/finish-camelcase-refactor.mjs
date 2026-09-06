@@ -1,8 +1,11 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
-import { extname, join } from "node:path";
+import { dirname, extname, join, relative, resolve } from "node:path";
 
 const roots = ["bin", "docs", "eval", "experiments", "src", "tests"];
 const extensions = new Set([".ts", ".mts", ".cts", ".js", ".mjs", ".cjs", ".md", ".json"]);
+const modelPath = resolve("src/core/model.ts");
+const utilPath = resolve("src/util.ts");
+const movedUtilities = new Set(["cloneState", "contentDigest", "exactKeys", "isNotBlankString", "isObject"]);
 
 // Ember-owned model / projection / provider contract names. String-valued
 // semantic vocabulary and third-party protocol keys (notably Telegram) are
@@ -106,9 +109,51 @@ async function visit(path) {
         for (const [from, to] of renames) {
             updated = updated.replace(new RegExp(`\\b${from}\\b`, "g"), to);
         }
+        if ([".ts", ".mts", ".cts"].includes(extname(entry.name))) {
+            updated = migrateUtilityImports(child, updated);
+        }
         if (updated !== original) {
             await writeFile(child, updated);
             changedFiles += 1;
         }
     }
+}
+
+function migrateUtilityImports(path, source) {
+    const moved = new Set();
+    const modelImport = /import\s*\{([\s\S]*?)\}\s*from\s*"([^"]+)";/g;
+    let updated = source.replace(modelImport, (whole, body, specifier) => {
+        if (resolve(dirname(path), specifier) !== modelPath) return whole;
+
+        const kept = [];
+        for (const raw of body.split(",")) {
+            const spec = raw.trim();
+            if (!spec) continue;
+            const imported = /^(?:type\s+)?([A-Za-z_$][\w$]*)/.exec(spec)?.[1];
+            if (imported && movedUtilities.has(imported)) moved.add(imported);
+            else kept.push(spec);
+        }
+        if (kept.length === 0) return "";
+        return `import { ${kept.join(", ")} } from "${specifier}";`;
+    });
+
+    if (moved.size === 0) return updated;
+
+    let utilSpecifier = relative(dirname(path), utilPath).replaceAll("\\", "/");
+    if (!utilSpecifier.startsWith(".")) utilSpecifier = `./${utilSpecifier}`;
+
+    let merged = false;
+    updated = updated.replace(modelImport, (whole, body, specifier) => {
+        if (resolve(dirname(path), specifier) !== utilPath) return whole;
+        const existing = body
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean);
+        const names = [...new Set([...existing, ...moved])].sort();
+        merged = true;
+        return `import { ${names.join(", ")} } from "${specifier}";`;
+    });
+
+    if (!merged) updated = `import { ${[...moved].sort().join(", ")} } from "${utilSpecifier}";\n${updated}`;
+    return updated;
 }
