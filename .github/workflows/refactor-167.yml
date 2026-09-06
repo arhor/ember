@@ -1,0 +1,56 @@
+name: Refactor provider process lifecycle
+
+on:
+  push:
+    branches:
+      - refactor/167-provider-process-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - name: Install locked development toolchain
+        run: npm ci
+      - name: Apply provider lifecycle refactor
+        run: node scripts/refactor-167.mjs
+      - name: Fix lint and format
+        run: |
+          npx oxlint --fix
+          npx oxfmt
+      - name: Validate
+        shell: bash
+        run: |
+          set +e
+          npm run check > refactor-167-check.txt 2>&1
+          check_status=$?
+          npm test > refactor-167-test.txt 2>&1
+          test_status=$?
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$check_status" -ne 0 ] || [ "$test_status" -ne 0 ]; then
+            cat refactor-167-check.txt
+            cat refactor-167-test.txt
+            git add -A
+            git commit -m "chore: capture provider lifecycle refactor failure"
+            git push
+            exit 1
+          fi
+
+          rm refactor-167-check.txt refactor-167-test.txt
+          rm scripts/refactor-167.mjs
+          rm .github/workflows/refactor-167.yml
+          git add -A
+          git commit -m "refactor: share provider process lifecycle"
+          git push
