@@ -11,18 +11,18 @@ import { sameContent } from "../util.ts";
 export type RepeatedCognitionAttentionOutcome = "evaluate" | "defer_repeated_projection";
 
 export interface RepeatedCognitionAttentionRequest {
-    runtime_id: RuntimeId;
+    runtimeId: RuntimeId;
     principal: string;
-    active_scope: string;
+    activeScope: string;
     mechanism: CognitionOpportunityMechanism;
-    projected_meaning_ids: MeaningId[];
-    projected_evidence_ids: CognitionOpportunityOccurrence["projected_evidence_ids"];
+    projectedMeaningIds: MeaningId[];
+    projectedEvidenceIds: CognitionOpportunityOccurrence["projectedEvidenceIds"];
 }
 
 export interface RepeatedCognitionAttentionDecision {
     outcome: RepeatedCognitionAttentionOutcome;
     source_opportunity_id: OpportunityId | null;
-    selected_meaning_ids: MeaningId[];
+    selectedMeaningIds: MeaningId[];
 }
 
 /**
@@ -49,12 +49,12 @@ export function decideRepeatedCognitionAttention(
         if (
             occurrence.status === "decided" &&
             occurrence.decision === "cognition" &&
-            occurrence.selected_meaning_ids.length > 0
+            occurrence.selectedMeaningIds.length > 0
         ) {
             return {
                 outcome: "defer_repeated_projection",
                 source_opportunity_id: occurrence.opportunityId,
-                selected_meaning_ids: [...occurrence.selected_meaning_ids],
+                selectedMeaningIds: [...occurrence.selectedMeaningIds],
             };
         }
     }
@@ -64,17 +64,17 @@ export function decideRepeatedCognitionAttention(
 
 function sameContext(occurrence: CognitionOpportunityOccurrence, request: RepeatedCognitionAttentionRequest): boolean {
     return (
-        occurrence.runtimeId === request.runtime_id &&
+        occurrence.runtimeId === request.runtimeId &&
         occurrence.principal === request.principal &&
-        occurrence.activeScope === request.active_scope &&
+        occurrence.activeScope === request.activeScope &&
         occurrence.mechanism === request.mechanism
     );
 }
 
 function sameSnapshot(occurrence: CognitionOpportunityOccurrence, request: RepeatedCognitionAttentionRequest): boolean {
     return (
-        sameContent(occurrence.projected_meaning_ids, request.projected_meaning_ids) &&
-        sameContent(occurrence.projected_evidence_ids, request.projected_evidence_ids)
+        sameContent(occurrence.projectedMeaningIds, request.projectedMeaningIds) &&
+        sameContent(occurrence.projectedEvidenceIds, request.projectedEvidenceIds)
     );
 }
 
@@ -82,6 +82,6 @@ function evaluate(): RepeatedCognitionAttentionDecision {
     return {
         outcome: "evaluate",
         source_opportunity_id: null,
-        selected_meaning_ids: [],
+        selectedMeaningIds: [],
     };
 }

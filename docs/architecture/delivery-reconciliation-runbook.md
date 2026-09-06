@@ -145,7 +145,7 @@ is rendered only as:
 ```json
 {
   "available": true,
-  "content_digest": "sha256:..."
+  "contentDigest": "sha256:..."
 }
 ```
 

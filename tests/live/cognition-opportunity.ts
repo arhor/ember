@@ -51,7 +51,7 @@ const concerned = await evaluateCognitionOpportunity(concernedRuntime.state, {
 
 assert.equal(quiet.decision, "no_cognition", "quiet state should permit successful no_cognition");
 assert.notEqual(concerned.decision, "no_cognition", "live current commitment should influence the endogenous decision");
-assert.ok(concerned.selected_meaning_ids.length > 0, "positive decision should identify projected grounding meaning");
+assert.ok(concerned.selectedMeaningIds.length > 0, "positive decision should identify projected grounding meaning");
 
 process.stdout.write(
     `${JSON.stringify(
@@ -63,15 +63,15 @@ process.stdout.write(
             scenarios: [
                 {
                     name: "quiet-state",
-                    projected_meaning_count: quiet.projected_meaning_ids.length,
+                    projected_meaning_count: quiet.projectedMeaningIds.length,
                     decision: quiet.decision,
-                    selected_meaning_count: quiet.selected_meaning_ids.length,
+                    selected_meaning_count: quiet.selectedMeaningIds.length,
                 },
                 {
                     name: "live-current-commitment",
-                    projected_meaning_count: concerned.projected_meaning_ids.length,
+                    projected_meaning_count: concerned.projectedMeaningIds.length,
                     decision: concerned.decision,
-                    selected_meaning_count: concerned.selected_meaning_ids.length,
+                    selected_meaning_count: concerned.selectedMeaningIds.length,
                 },
             ],
             raw_reasoning_retained: false,

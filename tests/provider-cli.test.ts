@@ -63,11 +63,11 @@ test("provider adapter should accept one result when result uses only selected m
             currentTime: "2026-08-29T10:00:01Z",
             runtimeId: started.runtimeId,
         }),
-        request = { contract_version: 1, cognition_id: "cognition-test", projection, input: { text: "hello" } };
+        request = { contractVersion: 1, cognitionId: "cognition-test", projection, input: { text: "hello" } };
     // When
     const result = await invokeProvider(process.execPath, [PROVIDER], request, { timeoutSeconds: 1 });
     // Then
-    assert.deepEqual(new Set(result.used_meaning_ids), new Set(projection.selection.meaning_ids));
+    assert.deepEqual(new Set(result.usedMeaningIds), new Set(projection.selection.meaning_ids));
 });
 test("provider adapter should reject result when provider requests canonical mutation", async () => {
     // Given
@@ -209,7 +209,7 @@ test("provider adapter should reject timeout when value is not finite", async ()
 });
 test("provider adapter should reject result when boolean impersonates contract version", async () => {
     // Given
-    const result = { contract_version: true, reply: "text", used_meaning_ids: [] };
+    const result = { contractVersion: true, reply: "text", usedMeaningIds: [] };
     // When
     const error = await captureError(() => validateProviderResult(result, new Set()));
     // Then
@@ -276,7 +276,7 @@ test("runtime should preserve semantic state and inspection when provider fails"
     assert.deepEqual(
         [
             result.state.meanings,
-            result.state.operations.cognition_episodes.at(-1).status,
+            result.state.operations.cognitionEpisodes.at(-1).status,
             serialized.includes("provider diagnostic"),
             serialized.includes("fail safely"),
         ],
@@ -301,7 +301,7 @@ test("runtime should preserve pending delivery when output fails after expressio
                 },
             }),
         ),
-        persisted = (await fixture.store.load()).operations.cognition_episodes.at(-1);
+        persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual(
@@ -330,7 +330,7 @@ test("runtime should preserve pending delivery when stdout fails asynchronously 
                 output,
             }),
         ),
-        persisted = (await fixture.store.load()).operations.cognition_episodes.at(-1);
+        persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual([error.message, persisted.deliveryStatus], ["async display failed", "pending"]);
@@ -366,10 +366,7 @@ test("runtime should commit displayed only when stdout write callback completes"
     });
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
-    assert.deepEqual(
-        [observed, result.state.operations.cognition_episodes.at(-1).deliveryStatus],
-        [true, "displayed"],
-    );
+    assert.deepEqual([observed, result.state.operations.cognitionEpisodes.at(-1).deliveryStatus], [true, "displayed"]);
 });
 test("runtime should keep delivery unknown when crash follows display before status commit", async () => {
     // Given
@@ -395,7 +392,7 @@ test("runtime should keep delivery unknown when crash follows display before sta
                 },
             }),
         ),
-        persisted = (await fixture.store.load()).operations.cognition_episodes.at(-1);
+        persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual(
@@ -416,8 +413,8 @@ test("state validator should reject orphan expression when second descriptor tar
             timeoutSeconds: 1,
             output: () => {},
         }),
-        duplicate = cloneState(result.state.evidence.find((e) => e.source_role === "ember_expression_via_provider"));
-    duplicate.evidence_id += "-orphan";
+        duplicate = cloneState(result.state.evidence.find((e) => e.sourceRole === "ember_expression_via_provider"));
+    duplicate.evidenceId += "-orphan";
     result.state.evidence.push(duplicate);
     await fixture.store.releaseWriteLease(fixture.lease);
     // When
@@ -438,7 +435,7 @@ test("state validator should reject cognition when scope differs from owning run
             timeoutSeconds: 1,
             output: () => {},
         });
-    result.state.operations.cognition_episodes.at(-1).activeScope = "project:other";
+    result.state.operations.cognitionEpisodes.at(-1).activeScope = "project:other";
     await fixture.store.releaseWriteLease(fixture.lease);
     // When
     const error = await captureError(() => validateState(result.state));
@@ -466,21 +463,21 @@ test("state validator should reject provider termination when status contradicts
         ["failed", "output_limit", false],
     ]) {
         const state = cloneState(result.state),
-            episode = state.operations.cognition_episodes.at(-1);
+            episode = state.operations.cognitionEpisodes.at(-1);
         episode.status = status;
-        episode.provider_termination = { reason, direct_child_exit_observed: observed };
+        episode.providerTermination = { reason, directChildExitObserved: observed };
         if (status !== "completed") {
-            episode.expression_evidence_id = null;
-            episode.delivery_status = "not_attempted";
-            episode.used_meaning_ids = [];
-            state.evidence = state.evidence.filter((e) => e.source_role !== "ember_expression_via_provider");
+            episode.expressionEvidenceId = null;
+            episode.deliveryStatus = "not_attempted";
+            episode.usedMeaningIds = [];
+            state.evidence = state.evidence.filter((e) => e.sourceRole !== "ember_expression_via_provider");
         }
         variants.push(state);
     }
     // When
     const errors = await Promise.all(variants.map((state) => captureError(() => validateState(state))));
     // Then
-    assert.ok(errors.every((error) => /provider_termination contradicts cognition status/.test(error.message)));
+    assert.ok(errors.every((error) => /providerTermination contradicts cognition status/.test(error.message)));
 });
 test("state validator should accept cancellation when invocation ends before child exit is observable", async () => {
     // Given
@@ -496,14 +493,14 @@ test("state validator should accept cancellation when invocation ends before chi
             output: () => {},
         }),
         state = cloneState(result.state),
-        episode = state.operations.cognition_episodes.at(-1);
+        episode = state.operations.cognitionEpisodes.at(-1);
     await fixture.store.releaseWriteLease(fixture.lease);
     episode.status = "cancellation_requested";
-    episode.provider_termination = { reason: "explicit_cancellation", direct_child_exit_observed: false };
-    episode.expression_evidence_id = null;
-    episode.delivery_status = "not_attempted";
-    episode.used_meaning_ids = [];
-    state.evidence = state.evidence.filter((e) => e.source_role !== "ember_expression_via_provider");
+    episode.providerTermination = { reason: "explicit_cancellation", directChildExitObserved: false };
+    episode.expressionEvidenceId = null;
+    episode.deliveryStatus = "not_attempted";
+    episode.usedMeaningIds = [];
+    state.evidence = state.evidence.filter((e) => e.sourceRole !== "ember_expression_via_provider");
     // When
     const validated = () => validateState(state);
     // Then
@@ -530,7 +527,7 @@ test("CLI run should reject timeout before runtime start when value is infinite"
         ]),
         state = await readJson(path);
     // Then
-    assert.deepEqual([attempted.code, state.operations.runtime_episodes], [2, []]);
+    assert.deepEqual([attempted.code, state.operations.runtimeEpisodes], [2, []]);
 });
 test("CLI run should reject malformed quote and stop cleanly when command parser fails", async () => {
     // Given
@@ -560,7 +557,7 @@ test("CLI run should reject malformed quote and stop cleanly when command parser
         [
             attempted.code,
             attempted.stderr.includes("command rejected"),
-            state.operations.runtime_episodes.at(-1).stop_reason,
+            state.operations.runtimeEpisodes.at(-1).stopReason,
         ],
         [0, true, "input_eof"],
     );
@@ -589,7 +586,7 @@ test("CLI correct should create attributable successor when current fact is corr
         { stdin: `:remember fact user:${PRINCIPAL} server ${SCOPE} "It is a Pi 4"\n:quit\n` },
     );
     const before = JSON.parse((await command(["inspect", "--state", path, "--principal", PRINCIPAL, "--json"])).stdout),
-        original = before.current_meanings.find((m) => m.slot === "server").meaning_id;
+        original = before.currentMeanings.find((m) => m.slot === "server").meaningId;
     // When
     const corrected = await command([
             "correct",
@@ -609,8 +606,8 @@ test("CLI correct should create attributable successor when current fact is corr
     assert.deepEqual(
         [
             corrected.code,
-            after.current_meanings.find((m) => m.slot === "server").content,
-            after.historical_meanings.find((m) => m.meaning_id === original).currentness,
+            after.currentMeanings.find((m) => m.slot === "server").content,
+            after.historical_meanings.find((m) => m.meaningId === original).currentness,
             explained.stdout.includes("The user corrected the model"),
         ],
         [0, "It is a Pi 5", "superseded", true],
@@ -652,7 +649,7 @@ test("CLI check should fail closed when state is semantically incomplete", async
     // Given
     const directory = await tempDir(),
         path = join(directory, "ember.json");
-    await writeFile(path, JSON.stringify({ schema_version: 1, revision: 0 }));
+    await writeFile(path, JSON.stringify({ schemaVersion: 1, revision: 0 }));
     // When
     const checked = await command(["check", "--state", path]);
     // Then

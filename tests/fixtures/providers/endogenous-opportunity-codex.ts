@@ -11,9 +11,9 @@ const request = JSON.parse(match[1]) as {
     projection: { selection: { meaning_ids: string[] } };
 };
 const result = {
-    contract_version: 1,
+    contractVersion: 1,
     reply: "cognition",
-    used_meaning_ids: request.projection.selection.meaning_ids,
+    usedMeaningIds: request.projection.selection.meaning_ids,
 };
 process.stdout.write(`${JSON.stringify({ type: "thread.started", thread_id: "thread-endogenous-restart-fixture" })}\n`);
 process.stdout.write(

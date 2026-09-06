@@ -18,14 +18,14 @@ test("longitudinal memory/context harness should generate stable history groups 
     const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) => {
         const reply = [
             ...invocation.request.projection.meanings.map((item) => item.content),
-            ...invocation.request.projection.gaps.map((item) => item.gap_kind),
+            ...invocation.request.projection.gaps.map((item) => item.gapKind),
         ].join(" | ");
 
         return harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply,
-            used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-            operational: { external_thread_id: `thread-${invocation.episodeId}` },
+            usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+            operational: { externalThreadId: `thread-${invocation.episodeId}` },
         });
     });
 
@@ -81,10 +81,10 @@ test("memory/context projection evidence should remain independent from empirica
     // When
     const report = await runLongitudinalScenario(scenario, join(directory, "ember.json"), async (invocation) =>
         harnessOutput(invocation.cognitionBackend, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: "MODEL_DID_NOT_FOLLOW_THE_PROJECTED_CONTEXT",
-            used_meaning_ids: [],
-            operational: { external_thread_id: `thread-${invocation.episodeId}` },
+            usedMeaningIds: [],
+            operational: { externalThreadId: `thread-${invocation.episodeId}` },
         }),
     );
 

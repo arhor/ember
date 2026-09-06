@@ -397,7 +397,7 @@ function validateAuditDecision(decision: SpecialistReintegrationDecision, episod
         !bounded(decision.reason, 8192) ||
         !decision.checkpoint ||
         !decision.report_provenance ||
-        decision.report_provenance.source_role !== "specialist_report" ||
+        decision.report_provenance.sourceRole !== "specialist_report" ||
         decision.report_provenance.source !== "codex_specialist" ||
         decision.report_provenance.episode_id !== episodeId ||
         !validCorroboration(decision.corroboration, episodeId) ||
@@ -460,9 +460,7 @@ function uniqueBoundedStrings(values: string[]) {
 }
 
 function sameProvenance(left: SpecialistReportProvenance, right: SpecialistReportProvenance) {
-    return (
-        left.source_role === right.source_role && left.source === right.source && left.episode_id === right.episode_id
-    );
+    return left.sourceRole === right.sourceRole && left.source === right.source && left.episode_id === right.episode_id;
 }
 
 function invalidAudit(): never {

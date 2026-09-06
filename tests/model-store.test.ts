@@ -21,13 +21,13 @@ test("state validator should accept state when schema and invariants are complet
     // When
     validateState(state);
     // Then
-    assert.equal(state.schema_version, 1);
+    assert.equal(state.schemaVersion, 1);
 });
 test("state validator should reject state when two current meanings share exact slot", async () => {
     // Given
     const { state, ids } = populatedState(),
-        duplicate = cloneState(state.meanings.find((m) => m.meaning_id === ids.preference));
-    duplicate.meaning_id += "-duplicate";
+        duplicate = cloneState(state.meanings.find((m) => m.meaningId === ids.preference));
+    duplicate.meaningId += "-duplicate";
     state.meanings.push(duplicate);
     // When
     const error = await captureError(() => validateState(state));
@@ -37,7 +37,7 @@ test("state validator should reject state when two current meanings share exact 
 test("state validator should reject state when evidence reference is absent", async () => {
     // Given
     const { state, ids } = populatedState();
-    state.meanings.find((m) => m.meaning_id === ids.fact).source_evidence_ids = ["evidence-absent"];
+    state.meanings.find((m) => m.meaningId === ids.fact).sourceEvidenceIds = ["evidence-absent"];
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -46,9 +46,9 @@ test("state validator should reject state when evidence reference is absent", as
 test("state validator should reject state when unavailable evidence leaks payload", async () => {
     // Given
     const { state, ids } = populatedState(),
-        e = state.evidence.find((e) => e.evidence_id === ids.detail);
+        e = state.evidence.find((e) => e.evidenceId === ids.detail);
     e.availability = "unavailable";
-    e.unavailable_reason = "fixture detail payload unavailable";
+    e.unavailableReason = "fixture detail payload unavailable";
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -57,12 +57,12 @@ test("state validator should reject state when unavailable evidence leaks payloa
 test("state validator should reject state when governing fact evidence becomes unavailable", async () => {
     // Given
     const { state, ids } = populatedState(),
-        m = state.meanings.find((m) => m.meaning_id === ids.fact),
-        e = state.evidence.find((e) => e.evidence_id === m.source_evidence_ids[0]);
+        m = state.meanings.find((m) => m.meaningId === ids.fact),
+        e = state.evidence.find((e) => e.evidenceId === m.sourceEvidenceIds[0]);
     e.availability = "unavailable";
-    e.unavailable_reason = "source unavailable";
+    e.unavailableReason = "source unavailable";
     delete e.payload;
-    delete e.content_digest;
+    delete e.contentDigest;
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -71,11 +71,11 @@ test("state validator should reject state when governing fact evidence becomes u
 test("state validator should reject state when unattached evidence claims unavailability", async () => {
     // Given
     const { state } = populatedState(),
-        e = state.evidence.find((e) => e.source_role === "user_command");
+        e = state.evidence.find((e) => e.sourceRole === "user_command");
     e.availability = "unavailable";
-    e.unavailable_reason = "source unavailable";
+    e.unavailableReason = "source unavailable";
     delete e.payload;
-    delete e.content_digest;
+    delete e.contentDigest;
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -84,13 +84,13 @@ test("state validator should reject state when unattached evidence claims unavai
 test("state validator should reject state when supersession crosses scope", async () => {
     // Given
     const { state, ids } = populatedState(),
-        old = state.meanings.find((m) => m.meaning_id === ids.preference),
+        old = state.meanings.find((m) => m.meaningId === ids.preference),
         later = cloneState(old);
-    later.meaning_id += "-later";
+    later.meaningId += "-later";
     later.scope = "project:other";
-    later.supersedes = old.meaning_id;
+    later.supersedes = old.meaningId;
     old.currentness = "superseded";
-    old.superseded_by = later.meaning_id;
+    old.supersededBy = later.meaningId;
     state.meanings.push(later);
     // When
     const error = await captureError(() => validateState(state));
@@ -100,7 +100,7 @@ test("state validator should reject state when supersession crosses scope", asyn
 test("state validator should reject state when principal binding is changed", async () => {
     // Given
     const { state } = populatedState();
-    state.runtime_contract.local_principal = "intruder";
+    state.runtimeContract.localPrincipal = "intruder";
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -109,7 +109,7 @@ test("state validator should reject state when principal binding is changed", as
 test("state validator should reject state when constitutive boundary becomes meaning", async () => {
     // Given
     const { state, ids } = populatedState();
-    state.meanings.find((m) => m.meaning_id === ids.fact).kind = "constitutive";
+    state.meanings.find((m) => m.meaningId === ids.fact).kind = "constitutive";
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -118,12 +118,12 @@ test("state validator should reject state when constitutive boundary becomes mea
 test("state validator should reject state when boolean impersonates integer version", async () => {
     // Given
     const { state } = populatedState();
-    state.schema_version = true;
+    state.schemaVersion = true;
     state.revision = true;
     // When
     const error = await captureError(() => validateState(state));
     // Then
-    assert.match(error.message, /unsupported schema_version/);
+    assert.match(error.message, /unsupported schemaVersion/);
 });
 test("state validator should reject state when unsafe integer impersonates revision", async () => {
     // Given
@@ -137,12 +137,12 @@ test("state validator should reject state when unsafe integer impersonates revis
 test("state validator should reject state when adoption retains payload", async () => {
     // Given
     const { state } = populatedState(),
-        e = state.evidence.find((e) => e.source_role === "ember_adoption");
+        e = state.evidence.find((e) => e.sourceRole === "ember_adoption");
     Object.assign(e, {
-        payload_mode: "retained_optional",
+        payloadMode: "retained_optional",
         availability: "available",
         payload: "duplicated",
-        content_digest: "sha256:wrong",
+        contentDigest: "sha256:wrong",
     });
     // When
     const error = await captureError(() => validateState(state));
@@ -152,7 +152,7 @@ test("state validator should reject state when adoption retains payload", async 
 test("state validator should reject state when current meaning has past applicability end", async () => {
     // Given
     const { state, ids } = populatedState();
-    state.meanings.find((m) => m.meaning_id === ids.fact).applicable_until = "2026-08-28T10:00:00Z";
+    state.meanings.find((m) => m.meaningId === ids.fact).applicableUntil = "2026-08-28T10:00:00Z";
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -161,7 +161,7 @@ test("state validator should reject state when current meaning has past applicab
 test("state validator should reject timestamp when calendar date does not exist", async () => {
     // Given
     const { state } = populatedState();
-    state.lineage.established_at = "2026-02-31T10:00:00Z";
+    state.lineage.establishedAt = "2026-02-31T10:00:00Z";
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -170,9 +170,9 @@ test("state validator should reject timestamp when calendar date does not exist"
 test("state validator should reject state when commitment claims discharge without occurrence", async () => {
     // Given
     const { state, ids } = populatedState(),
-        m = state.meanings.find((m) => m.meaning_id === ids.commitment);
+        m = state.meanings.find((m) => m.meaningId === ids.commitment);
     m.currentness = "historical";
-    m.prospective_lifecycle = "fulfilled";
+    m.prospectiveLifecycle = "fulfilled";
     // When
     const error = await captureError(() => validateState(state));
     // Then
@@ -184,18 +184,18 @@ test("state validator should return typed failure when nested JSON shapes are ma
         variants = [];
     for (const value of [null, [["nested"]]]) {
         const c = cloneState(state);
-        c.meanings.find((m) => m.meaning_id === ids.fact).source_evidence_ids = value;
+        c.meanings.find((m) => m.meaningId === ids.fact).sourceEvidenceIds = value;
         variants.push(c);
     }
     const derived = cloneState(state);
-    derived.evidence[0].derived_from_evidence_ids = null;
+    derived.evidence[0].derivedFromEvidenceIds = null;
     variants.push(derived);
     for (const value of ["not-an-object", 7, [], {}]) {
         const c = cloneState(state);
-        if (value === "not-an-object") c.operations.runtime_episodes = [value];
-        else if (value === 7) c.operations.cognition_episodes = [value];
+        if (value === "not-an-object") c.operations.runtimeEpisodes = [value];
+        else if (value === 7) c.operations.cognitionEpisodes = [value];
         else if (Array.isArray(value)) c.meanings[0].currentness = value;
-        else c.evidence[0].payload_mode = value;
+        else c.evidence[0].payloadMode = value;
         variants.push(c);
     }
     // When
@@ -277,7 +277,7 @@ test("state store should fail closed when canonical JSON is partial", async () =
     // Given
     const directory = await tempDir(),
         path = join(directory, "ember.json");
-    await writeFile(path, '{"schema_version":1');
+    await writeFile(path, '{"schemaVersion":1');
     // When
     const error = await captureError(() => new StateStore(path).load());
     // Then

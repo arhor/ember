@@ -10,18 +10,18 @@ export const MAX_STDERR_BYTES = 64 * 1024;
 export const MAX_PROVIDER_TIMEOUT_SECONDS = 2_147_483_647 / 1000;
 
 export interface ProviderRequest {
-    contract_version: 1;
-    cognition_id: CognitionId;
+    contractVersion: 1;
+    cognitionId: CognitionId;
     projection: Projection;
     input: { text: string };
 }
 
 export interface ProviderResult {
-    contract_version: 1;
+    contractVersion: 1;
     reply: string;
-    used_meaning_ids: MeaningId[];
+    usedMeaningIds: MeaningId[];
     operational?: {
-        external_thread_id: string;
+        externalThreadId: string;
     };
 }
 
@@ -45,34 +45,34 @@ export function validateProviderResult(
         throw new ProviderError("provider result must be an object");
     const object = result as Record<string, unknown>;
     const fields = Object.keys(object).sort();
-    const requiredFields = ["contract_version", "reply", "used_meaning_ids"].sort();
+    const requiredFields = ["contractVersion", "reply", "usedMeaningIds"].sort();
     const allowedFields = [...requiredFields, "operational"].sort();
     if (
         JSON.stringify(fields) !== JSON.stringify(requiredFields) &&
         JSON.stringify(fields) !== JSON.stringify(allowedFields)
     )
         throw new ProviderError("provider result contains missing or unsupported fields");
-    if (!Number.isSafeInteger(object.contract_version) || object.contract_version !== 1)
-        throw new ProviderError("provider result contract_version is unsupported");
+    if (!Number.isSafeInteger(object.contractVersion) || object.contractVersion !== 1)
+        throw new ProviderError("provider result contractVersion is unsupported");
     if (typeof object.reply !== "string" || !object.reply.trim())
         throw new ProviderError("provider reply must be non-empty");
-    if (!Array.isArray(object.used_meaning_ids) || !object.used_meaning_ids.every((v) => typeof v === "string"))
-        throw new ProviderError("used_meaning_ids must be a string list");
-    if (new Set(object.used_meaning_ids).size !== object.used_meaning_ids.length)
-        throw new ProviderError("used_meaning_ids must not contain duplicates");
-    if (!object.used_meaning_ids.every((id) => selected.has(id as string)))
+    if (!Array.isArray(object.usedMeaningIds) || !object.usedMeaningIds.every((v) => typeof v === "string"))
+        throw new ProviderError("usedMeaningIds must be a string list");
+    if (new Set(object.usedMeaningIds).size !== object.usedMeaningIds.length)
+        throw new ProviderError("usedMeaningIds must not contain duplicates");
+    if (!object.usedMeaningIds.every((id) => selected.has(id as string)))
         throw new ProviderError("provider claimed a meaning outside its projection");
     if ("operational" in object) {
         if (object.operational === null || typeof object.operational !== "object" || Array.isArray(object.operational))
             throw new ProviderError("provider operational evidence must be an object");
         const operational = object.operational as Record<string, unknown>;
-        if (JSON.stringify(Object.keys(operational).sort()) !== JSON.stringify(["external_thread_id"]))
+        if (JSON.stringify(Object.keys(operational).sort()) !== JSON.stringify(["externalThreadId"]))
             throw new ProviderError("provider operational evidence contains missing or unsupported fields");
         if (
-            typeof operational.external_thread_id !== "string" ||
-            !operational.external_thread_id.trim() ||
-            operational.external_thread_id.length > 512 ||
-            ASCII_CONTROL_CHARACTER_PATTERN.test(operational.external_thread_id)
+            typeof operational.externalThreadId !== "string" ||
+            !operational.externalThreadId.trim() ||
+            operational.externalThreadId.length > 512 ||
+            ASCII_CONTROL_CHARACTER_PATTERN.test(operational.externalThreadId)
         )
             throw new ProviderError("provider external thread ID is invalid");
     }

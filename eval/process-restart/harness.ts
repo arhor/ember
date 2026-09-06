@@ -8,20 +8,20 @@ type ScenarioAction = LongitudinalScenario["setup"][number];
 type ScenarioEpisode = LongitudinalScenario["episodes"][number];
 
 interface InspectionSnapshot {
-    lineage: { lineage_id: string };
-    current_meanings: Array<{ meaning_id: string }>;
-    runtime_episodes: Array<{
-        runtime_id: string;
-        recovery_account: {
-            gap_kind: string;
-            ember_cognition_during_interval: string;
+    lineage: { lineageId: string };
+    currentMeanings: Array<{ meaningId: string }>;
+    runtimeEpisodes: Array<{
+        runtimeId: string;
+        recoveryAccount: {
+            gapKind: string;
+            emberCognitionDuringInterval: string;
         };
     }>;
-    cognition_episodes: Array<{
+    cognitionEpisodes: Array<{
         status: string;
-        delivery_status: string;
-        selected_meaning_ids: string[];
-        external_provider_thread_id?: string | null;
+        deliveryStatus: string;
+        selectedMeaningIds: string[];
+        externalProviderThreadId?: string | null;
     }>;
 }
 
@@ -127,16 +127,16 @@ export async function runProcessRestartScenario(
     const restartedReply = extractRunReply(restarted.stdout, 0);
     const restartedView = await inspectState(options, scenario, restartedEpisode.at, baseEnvironment);
 
-    const baselineRuntime = requireLast(baselineView.runtime_episodes, "baseline runtime evidence");
-    const restartedRuntime = requireLast(restartedView.runtime_episodes, "restarted runtime evidence");
-    const baselineCognition = requireLast(baselineView.cognition_episodes, "baseline cognition evidence");
-    const restartedCognition = requireLast(restartedView.cognition_episodes, "restarted cognition evidence");
-    const baselineThreadId = baselineCognition.external_provider_thread_id ?? null;
-    const restartedThreadId = restartedCognition.external_provider_thread_id ?? null;
+    const baselineRuntime = requireLast(baselineView.runtimeEpisodes, "baseline runtime evidence");
+    const restartedRuntime = requireLast(restartedView.runtimeEpisodes, "restarted runtime evidence");
+    const baselineCognition = requireLast(baselineView.cognitionEpisodes, "baseline cognition evidence");
+    const restartedCognition = requireLast(restartedView.cognitionEpisodes, "restarted cognition evidence");
+    const baselineThreadId = baselineCognition.externalProviderThreadId ?? null;
+    const restartedThreadId = restartedCognition.externalProviderThreadId ?? null;
     const reverseAliases = new Map([...aliases.entries()].map(([alias, id]) => [id, alias]));
 
-    const selectedAliases = (cognition: InspectionSnapshot["cognition_episodes"][number]) =>
-        cognition.selected_meaning_ids.map((id) => reverseAliases.get(id) ?? "<unaliased>").sort();
+    const selectedAliases = (cognition: InspectionSnapshot["cognitionEpisodes"][number]) =>
+        cognition.selectedMeaningIds.map((id) => reverseAliases.get(id) ?? "<unaliased>").sort();
     const expectedBaseline = baselineEpisode.expect.selected_meanings.slice().sort();
     const expectedRestarted = restartedEpisode.expect.selected_meanings.slice().sort();
     const forbiddenBaseline = baselineEpisode.expect.forbidden_meanings;
@@ -144,8 +144,8 @@ export async function runProcessRestartScenario(
     const baselineSelected = selectedAliases(baselineCognition);
     const restartedSelected = selectedAliases(restartedCognition);
     const expectedCurrentAliases = scenario.setup.map((action) => action.as).sort();
-    const restartedCurrentAliases = restartedView.current_meanings
-        .map((meaning) => reverseAliases.get(meaning.meaning_id) ?? "<unaliased>")
+    const restartedCurrentAliases = restartedView.currentMeanings
+        .map((meaning) => reverseAliases.get(meaning.meaningId) ?? "<unaliased>")
         .sort();
 
     const emberAssertions: ProcessRestartObservation[] = [
@@ -170,26 +170,26 @@ export async function runProcessRestartScenario(
         observation(
             "Ember runtime restarted",
             true,
-            baselineRuntime.runtime_id !== restartedRuntime.runtime_id,
-            baselineRuntime.runtime_id !== restartedRuntime.runtime_id,
+            baselineRuntime.runtimeId !== restartedRuntime.runtimeId,
+            baselineRuntime.runtimeId !== restartedRuntime.runtimeId,
         ),
         observation(
             "lineage preserved across process restart",
             true,
-            baselineView.lineage.lineage_id === restartedView.lineage.lineage_id,
-            baselineView.lineage.lineage_id === restartedView.lineage.lineage_id,
+            baselineView.lineage.lineageId === restartedView.lineage.lineageId,
+            baselineView.lineage.lineageId === restartedView.lineage.lineageId,
         ),
         observation(
             "restart recovery records clean downtime",
             "known_clean_stop_interval",
-            restartedRuntime.recovery_account.gap_kind,
-            restartedRuntime.recovery_account.gap_kind === "known_clean_stop_interval",
+            restartedRuntime.recoveryAccount.gapKind,
+            restartedRuntime.recoveryAccount.gapKind === "known_clean_stop_interval",
         ),
         observation(
             "restart recovery records no supported cognition during downtime",
             "none_in_supported_runtime",
-            restartedRuntime.recovery_account.ember_cognition_during_interval,
-            restartedRuntime.recovery_account.ember_cognition_during_interval === "none_in_supported_runtime",
+            restartedRuntime.recoveryAccount.emberCognitionDuringInterval,
+            restartedRuntime.recoveryAccount.emberCognitionDuringInterval === "none_in_supported_runtime",
         ),
         observation(
             "durable meanings remain canonical across process restart",
@@ -212,14 +212,14 @@ export async function runProcessRestartScenario(
         observation(
             "baseline cognition completed",
             "completed/displayed",
-            `${baselineCognition.status}/${baselineCognition.delivery_status}`,
-            baselineCognition.status === "completed" && baselineCognition.delivery_status === "displayed",
+            `${baselineCognition.status}/${baselineCognition.deliveryStatus}`,
+            baselineCognition.status === "completed" && baselineCognition.deliveryStatus === "displayed",
         ),
         observation(
             "restarted cognition completed",
             "completed/displayed",
-            `${restartedCognition.status}/${restartedCognition.delivery_status}`,
-            restartedCognition.status === "completed" && restartedCognition.delivery_status === "displayed",
+            `${restartedCognition.status}/${restartedCognition.deliveryStatus}`,
+            restartedCognition.status === "completed" && restartedCognition.deliveryStatus === "displayed",
         ),
         observation(
             "baseline fresh provider thread observed",
@@ -379,10 +379,10 @@ function isInspectionSnapshot(value: unknown): value is InspectionSnapshot {
     const candidate = value as Partial<InspectionSnapshot>;
     return (
         candidate.lineage !== undefined &&
-        typeof candidate.lineage.lineage_id === "string" &&
-        Array.isArray(candidate.current_meanings) &&
-        Array.isArray(candidate.runtime_episodes) &&
-        Array.isArray(candidate.cognition_episodes)
+        typeof candidate.lineage.lineageId === "string" &&
+        Array.isArray(candidate.currentMeanings) &&
+        Array.isArray(candidate.runtimeEpisodes) &&
+        Array.isArray(candidate.cognitionEpisodes)
     );
 }
 

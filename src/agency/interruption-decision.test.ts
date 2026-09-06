@@ -32,13 +32,13 @@ function fixture() {
         else process.env.EMBER_TEST_NOW = previousNow;
     }
     const source: CompletedInternalCognition = {
-        opportunity_id: "opportunity-1" as CompletedInternalCognition["opportunity_id"],
-        cognition_id: "cognition-1" as CompletedInternalCognition["cognition_id"],
+        opportunityId: "opportunity-1" as CompletedInternalCognition["opportunityId"],
+        cognitionId: "cognition-1" as CompletedInternalCognition["cognitionId"],
         principal: PRINCIPAL,
-        active_scope: SCOPE,
-        validated_revision: state.revision,
+        activeScope: SCOPE,
+        validatedRevision: state.revision,
         status: "completed",
-        used_meaning_ids: [commitmentId, urgencyId],
+        usedMeaningIds: [commitmentId, urgencyId],
     };
     return { state, source, commitmentId, urgencyId };
 }
@@ -74,7 +74,7 @@ test("current authorized time-sensitive internal result may justify interruption
     const result = decideUserInterruption(f.state, request(f.source, f.commitmentId, f.urgencyId));
 
     assert.deepEqual([result.outcome, result.basis], ["deliver", "current_authorized_candidate"]);
-    assert.equal(result.cognition_id, f.source.cognition_id);
+    assert.equal(result.cognitionId, f.source.cognitionId);
     assert.deepEqual(f.state, before);
 });
 

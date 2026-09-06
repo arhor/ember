@@ -74,7 +74,7 @@ current + live
 
 `transitionCommitment` requires a non-empty attributable user occurrence in the same
 scope. That occurrence is appended to the commitment's provenance and establishes
-`applicable_until`; the original Ember adoption evidence remains intact. The
+`applicableUntil`; the original Ember adoption evidence remains intact. The
 transition therefore changes current normative force without erasing that Ember once
 undertook the commitment.
 
@@ -95,7 +95,7 @@ Ordinary projection includes a commitment only when all are true:
 
 - `kind === commitment`;
 - `currentness === current`;
-- `prospective_lifecycle === live`; and
+- `prospectiveLifecycle === live`; and
 - scope matches the active cognition scope.
 
 Explicit explanation may still reconstruct a historical fulfilled/cancelled

@@ -98,13 +98,13 @@ try {
                           : invocation.thread.externalThreadId;
                   return {
                       result: {
-                          contract_version: 1,
+                          contractVersion: 1,
                           reply: [
                               ...invocation.request.projection.meanings.map((item) => item.content),
-                              ...invocation.request.projection.gaps.map((item) => item.gap_kind),
+                              ...invocation.request.projection.gaps.map((item) => item.gapKind),
                           ].join(" | "),
-                          used_meaning_ids: invocation.request.projection.selection.meaning_ids,
-                          operational: { external_thread_id: externalThreadId },
+                          usedMeaningIds: invocation.request.projection.selection.meaning_ids,
+                          operational: { externalThreadId: externalThreadId },
                       },
                       backend_metadata: {
                           backend: invocation.cognitionBackend,

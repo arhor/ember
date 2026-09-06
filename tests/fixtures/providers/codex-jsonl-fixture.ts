@@ -15,19 +15,19 @@ const request = JSON.parse(match[1]) as {
     projection: {
         meanings?: Array<{ content?: string }>;
         selection: { meaning_ids: string[] };
-        recovery_account?: { ember_cognition_during_interval?: string };
+        recoveryAccount?: { emberCognitionDuringInterval?: string };
     };
 };
 const reply = [
     ...(request.projection.meanings ?? []).map((item) => item.content ?? ""),
-    request.projection.recovery_account?.ember_cognition_during_interval ?? "unknown_downtime",
+    request.projection.recoveryAccount?.emberCognitionDuringInterval ?? "unknown_downtime",
 ]
     .filter(Boolean)
     .join(" | ");
 const result = {
-    contract_version: 1,
+    contractVersion: 1,
     reply,
-    used_meaning_ids: request.projection.selection.meaning_ids,
+    usedMeaningIds: request.projection.selection.meaning_ids,
 };
 process.stdout.write(`${JSON.stringify({ type: "thread.started", thread_id: threadId })}\n`);
 process.stdout.write(

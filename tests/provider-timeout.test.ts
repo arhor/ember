@@ -12,8 +12,8 @@ test("provider adapter should reject timeout before spawn when delay exceeds Nod
     // Given
     const spawnCalls = [];
     const request = {
-        contract_version: 1,
-        cognition_id: "cognition-test",
+        contractVersion: 1,
+        cognitionId: "cognition-test",
         projection: { selection: { meaning_ids: [] } },
         input: { text: "hello" },
     };

@@ -44,8 +44,8 @@ function requestFixture() {
         state: started.state,
         runtimeId: started.runtimeId,
         request: {
-            contract_version: 1,
-            cognition_id: "cognition-codex-test",
+            contractVersion: 1,
+            cognitionId: "cognition-codex-test",
             projection,
             input: { text: "What should I remember?" },
         },
@@ -90,7 +90,7 @@ function successfulJsonl(reply = "bounded answer", usedMeaningIds = [] as string
             type: "item.completed",
             item: {
                 type: "agent_message",
-                text: JSON.stringify({ contract_version: 1, reply, used_meaning_ids: usedMeaningIds }),
+                text: JSON.stringify({ contractVersion: 1, reply, usedMeaningIds: usedMeaningIds }),
             },
         }),
         JSON.stringify({ type: "turn.completed", usage: { input_tokens: 1, output_tokens: 1 } }),
@@ -133,10 +133,10 @@ describe("Codex provider", () => {
 
         // Then
         assert.deepEqual(result, {
-            contract_version: 1,
+            contractVersion: 1,
             reply: "bounded answer",
-            used_meaning_ids: [used],
-            operational: { external_thread_id: "thread-operational-46" },
+            usedMeaningIds: [used],
+            operational: { externalThreadId: "thread-operational-46" },
         });
         assert.equal(prompt, buildCodexPrompt(request));
         assert.equal(prompt.includes("PRIVATE_CANONICAL_MARKER_46"), false);
@@ -181,7 +181,7 @@ describe("Codex provider", () => {
 
         // Then
         assert.equal(schema.additionalProperties, false);
-        assert.equal("uniqueItems" in schema.properties.used_meaning_ids, false);
+        assert.equal("uniqueItems" in schema.properties.usedMeaningIds, false);
     });
 
     test("should reject malformed JSONL when the child exits successfully", async () => {
@@ -443,10 +443,10 @@ describe("runCognition", () => {
         const lease = await store.acquireWriteLease();
         const loaded = await store.load();
         const provider = async (_command, _arguments, request) => ({
-            contract_version: 1,
+            contractVersion: 1,
             reply: "transient reply",
-            used_meaning_ids: request.projection.selection.meaning_ids,
-            operational: { external_thread_id: "thread-operational-46" },
+            usedMeaningIds: request.projection.selection.meaning_ids,
+            operational: { externalThreadId: "thread-operational-46" },
         });
 
         // When
@@ -465,7 +465,7 @@ describe("runCognition", () => {
 
         // Then
         assert.equal(
-            result.state.operations.cognition_episodes.at(-1).externalProviderThreadId,
+            result.state.operations.cognitionEpisodes.at(-1).externalProviderThreadId,
             "thread-operational-46",
         );
         assert.equal(
@@ -507,20 +507,20 @@ describe("runCognition", () => {
         // Then
         assert.deepEqual(
             [
-                result.state.operations.cognition_episodes.at(-1).status,
-                result.state.operations.cognition_episodes.at(-1).externalProviderThreadId,
-                result.state.operations.cognition_episodes.at(-1).providerTermination,
+                result.state.operations.cognitionEpisodes.at(-1).status,
+                result.state.operations.cognitionEpisodes.at(-1).externalProviderThreadId,
+                result.state.operations.cognitionEpisodes.at(-1).providerTermination,
             ],
             [
                 "cancellation_requested",
                 "thread-operational-46",
                 {
                     reason: "explicit_cancellation",
-                    direct_child_exit_observed: true,
+                    directChildExitObserved: true,
                 },
             ],
         );
-        assert.equal(result.state.operations.cognition_episodes.at(-1).expressionEvidenceId, null);
+        assert.equal(result.state.operations.cognitionEpisodes.at(-1).expressionEvidenceId, null);
     });
 });
 
@@ -618,7 +618,7 @@ describe("CLI run", () => {
             },
         );
         const state = JSON.parse(await readFile(statePath, "utf8"));
-        const cognition = state.operations.cognition_episodes.at(-1);
+        const cognition = state.operations.cognitionEpisodes.at(-1);
 
         // Then
         assert.deepEqual(
@@ -626,8 +626,8 @@ describe("CLI run", () => {
                 executed.code,
                 executed.stdout.includes("CODEX_CLI_RESPONSE"),
                 cognition.status,
-                cognition.delivery_status,
-                cognition.external_provider_thread_id,
+                cognition.deliveryStatus,
+                cognition.externalProviderThreadId,
             ],
             [0, true, "completed", "displayed", "thread-cli-46"],
         );

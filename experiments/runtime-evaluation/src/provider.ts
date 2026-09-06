@@ -74,15 +74,15 @@ function validateProviderResult(value: unknown, selected: ReadonlySet<MeaningId>
     }
     const result = value as Record<string, unknown>;
     if (
-        result.contract_version !== 1 ||
+        result.contractVersion !== 1 ||
         typeof result.reply !== "string" ||
         !result.reply.trim() ||
-        !Array.isArray(result.used_meaning_ids)
+        !Array.isArray(result.usedMeaningIds)
     ) {
         throw new Error("provider result is invalid");
     }
-    const used = result.used_meaning_ids;
+    const used = result.usedMeaningIds;
     if (!used.every((id): id is MeaningId => typeof id === "string" && selected.has(id as MeaningId)))
         throw new Error("provider claimed a meaning outside its projection");
-    return { contract_version: 1, reply: result.reply, used_meaning_ids: used };
+    return { contractVersion: 1, reply: result.reply, usedMeaningIds: used };
 }

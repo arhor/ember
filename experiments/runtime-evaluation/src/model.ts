@@ -12,45 +12,45 @@ export type Currentness = "current" | "superseded" | "historical";
 export type MeaningKind = "relationship" | "fact" | "preference" | "commitment" | "episode_meta";
 
 export interface UserEvidence {
-    evidence_id: EvidenceId;
-    source_role: "user_command";
-    source_actor: `user:${string}`;
-    asserted_principal: string;
-    occurred_at: string;
-    observed_at: string;
-    derived_from_evidence_ids: readonly [];
+    evidenceId: EvidenceId;
+    sourceRole: "user_command";
+    sourceActor: `user:${string}`;
+    assertedPrincipal: string;
+    occurredAt: string;
+    observedAt: string;
+    derivedFromEvidenceIds: readonly [];
     scope: string;
-    payload_mode: "retained_optional";
+    payloadMode: "retained_optional";
     availability: "available";
     payload: string;
-    content_digest: `sha256:${string}`;
+    contentDigest: `sha256:${string}`;
 }
 
 export interface EmberAdoptionEvidence {
-    evidence_id: EvidenceId;
-    source_role: "ember_adoption";
-    source_actor: "ember";
-    asserted_principal: string;
-    occurred_at: string;
-    observed_at: string;
-    derived_from_evidence_ids: readonly [EvidenceId];
+    evidenceId: EvidenceId;
+    sourceRole: "ember_adoption";
+    sourceActor: "ember";
+    assertedPrincipal: string;
+    occurredAt: string;
+    observedAt: string;
+    derivedFromEvidenceIds: readonly [EvidenceId];
     scope: string;
-    payload_mode: "descriptor_only";
+    payloadMode: "descriptor_only";
 }
 
 export type Evidence = UserEvidence | EmberAdoptionEvidence;
 
 interface MeaningBase {
-    meaning_id: MeaningId;
+    meaningId: MeaningId;
     owner: string;
     slot: string;
     scope: string;
     content: string;
-    source_evidence_ids: readonly EvidenceId[];
-    epistemic_role: string;
-    learned_at: string;
-    applicable_from: string;
-    applicable_until: string | null;
+    sourceEvidenceIds: readonly EvidenceId[];
+    epistemicRole: string;
+    learnedAt: string;
+    applicableFrom: string;
+    applicableUntil: string | null;
     currentness: Currentness;
     uncertainty: string | null;
 }
@@ -58,65 +58,65 @@ interface MeaningBase {
 export interface RelationshipMeaning extends MeaningBase {
     kind: "relationship";
     owner: `relationship:${string}`;
-    prospective_lifecycle: "none";
+    prospectiveLifecycle: "none";
     supersedes: null;
-    superseded_by: null;
+    supersededBy: null;
 }
 
 export interface FactMeaning extends MeaningBase {
     kind: "fact";
     owner: `user:${string}`;
-    prospective_lifecycle: "none";
+    prospectiveLifecycle: "none";
     supersedes: MeaningId | null;
-    superseded_by: MeaningId | null;
+    supersededBy: MeaningId | null;
 }
 
 export interface PreferenceMeaning extends MeaningBase {
     kind: "preference";
     owner: `user:${string}`;
-    prospective_lifecycle: "none";
+    prospectiveLifecycle: "none";
     supersedes: MeaningId | null;
-    superseded_by: MeaningId | null;
+    supersededBy: MeaningId | null;
 }
 
 export interface CommitmentMeaning extends MeaningBase {
     kind: "commitment";
     owner: "ember";
-    prospective_lifecycle: "live";
+    prospectiveLifecycle: "live";
     supersedes: null;
-    superseded_by: null;
+    supersededBy: null;
 }
 
 export interface EpisodeMetaMeaning extends MeaningBase {
     kind: "episode_meta";
-    prospective_lifecycle: "none";
+    prospectiveLifecycle: "none";
     supersedes: null;
-    superseded_by: null;
+    supersededBy: null;
 }
 
 export type Meaning = RelationshipMeaning | FactMeaning | PreferenceMeaning | CommitmentMeaning | EpisodeMetaMeaning;
 
 export interface PersistentState {
-    schema_version: 1;
+    schemaVersion: 1;
     revision: number;
-    runtime_contract: {
-        local_principal: string;
+    runtimeContract: {
+        localPrincipal: string;
         topology: "single-principal-single-writer";
     };
     lineage: {
-        lineage_id: LineageId;
-        display_name: string;
-        established_at: string;
-        constitutive_boundaries: readonly {
-            boundary_id: "minimal-continuity-v1";
+        lineageId: LineageId;
+        displayName: string;
+        establishedAt: string;
+        constitutiveBoundaries: readonly {
+            boundaryId: "minimal-continuity-v1";
             text: string;
         }[];
     };
     evidence: readonly Evidence[];
     meanings: readonly Meaning[];
     operations: {
-        runtime_episodes: readonly unknown[];
-        cognition_episodes: readonly unknown[];
+        runtimeEpisodes: readonly unknown[];
+        cognitionEpisodes: readonly unknown[];
     };
 }
 
@@ -127,21 +127,21 @@ export interface CliInput {
 }
 
 export interface ProjectionMeaning {
-    meaning_id: MeaningId;
+    meaningId: MeaningId;
     kind: MeaningKind;
     owner: string;
     slot: string;
     scope: string;
     content: string;
-    source_evidence_ids: readonly EvidenceId[];
+    sourceEvidenceIds: readonly EvidenceId[];
     currentness: Currentness;
 }
 
 export interface Projection {
     purpose: "ordinary" | "explain";
     lineage: {
-        lineage_id: LineageId;
-        display_name: string;
+        lineageId: LineageId;
+        displayName: string;
     };
     selection: {
         meaning_ids: readonly MeaningId[];
@@ -151,16 +151,16 @@ export interface Projection {
 }
 
 export interface ProviderRequest {
-    contract_version: 1;
-    cognition_id: CognitionId;
+    contractVersion: 1;
+    cognitionId: CognitionId;
     projection: Projection;
     input: Pick<CliInput, "text">;
 }
 
 export interface ProviderResult {
-    contract_version: 1;
+    contractVersion: 1;
     reply: string;
-    used_meaning_ids: readonly MeaningId[];
+    usedMeaningIds: readonly MeaningId[];
 }
 
 function branded<Name extends string>(value: string, prefix: string): Brand<Name> {
@@ -200,18 +200,18 @@ function digest(payload: string): `sha256:${string}` {
 
 function userEvidence(id: string, scope: string, payload: string, at: string): UserEvidence {
     return {
-        evidence_id: evidenceId(id),
-        source_role: "user_command",
-        source_actor: "user:user-1",
-        asserted_principal: "user-1",
-        occurred_at: at,
-        observed_at: at,
-        derived_from_evidence_ids: [],
+        evidenceId: evidenceId(id),
+        sourceRole: "user_command",
+        sourceActor: "user:user-1",
+        assertedPrincipal: "user-1",
+        occurredAt: at,
+        observedAt: at,
+        derivedFromEvidenceIds: [],
         scope,
-        payload_mode: "retained_optional",
+        payloadMode: "retained_optional",
         availability: "available",
         payload,
-        content_digest: digest(payload),
+        contentDigest: digest(payload),
     };
 }
 
@@ -237,15 +237,15 @@ export function fixtureState(): PersistentState {
         learned,
     );
     const commitmentAdoption: EmberAdoptionEvidence = {
-        evidence_id: evidenceId("evidence-commitment-adoption"),
-        source_role: "ember_adoption",
-        source_actor: "ember",
-        asserted_principal: "user-1",
-        occurred_at: learned,
-        observed_at: learned,
-        derived_from_evidence_ids: [commitmentRequest.evidence_id],
+        evidenceId: evidenceId("evidence-commitment-adoption"),
+        sourceRole: "ember_adoption",
+        sourceActor: "ember",
+        assertedPrincipal: "user-1",
+        occurredAt: learned,
+        observedAt: learned,
+        derivedFromEvidenceIds: [commitmentRequest.evidenceId],
         scope: "project:ember/docs",
-        payload_mode: "descriptor_only",
+        payloadMode: "descriptor_only",
     };
     const episode = userEvidence(
         "evidence-episode",
@@ -254,25 +254,25 @@ export function fixtureState(): PersistentState {
         learned,
     );
     const base = (source: EvidenceId, epistemicRole: string) => ({
-        source_evidence_ids: [source],
-        epistemic_role: epistemicRole,
-        learned_at: learned,
-        applicable_from: learned,
-        applicable_until: null,
+        sourceEvidenceIds: [source],
+        epistemicRole: epistemicRole,
+        learnedAt: learned,
+        applicableFrom: learned,
+        applicableUntil: null,
         currentness: "current" as const,
         uncertainty: null,
     });
     return {
-        schema_version: 1,
+        schemaVersion: 1,
         revision: 0,
-        runtime_contract: { local_principal: "user-1", topology: "single-principal-single-writer" },
+        runtimeContract: { localPrincipal: "user-1", topology: "single-principal-single-writer" },
         lineage: {
-            lineage_id: lineageId("lineage-evaluation"),
-            display_name: "Ember",
-            established_at: learned,
-            constitutive_boundaries: [
+            lineageId: lineageId("lineage-evaluation"),
+            displayName: "Ember",
+            establishedAt: learned,
+            constitutiveBoundaries: [
                 {
-                    boundary_id: "minimal-continuity-v1",
+                    boundaryId: "minimal-continuity-v1",
                     text: "Ember owns this lineage across temporary cognition loci and must not fabricate experience during inactive intervals.",
                 },
             ],
@@ -280,66 +280,66 @@ export function fixtureState(): PersistentState {
         evidence: [relationship, fact, preference, commitmentRequest, commitmentAdoption, episode],
         meanings: [
             {
-                ...base(relationship.evidence_id, "user_testimony"),
-                meaning_id: meaningId("meaning-relationship"),
+                ...base(relationship.evidenceId, "user_testimony"),
+                meaningId: meaningId("meaning-relationship"),
                 kind: "relationship",
                 owner: "relationship:user-1",
                 slot: "relationship",
                 scope: "relationship:user-1",
                 content: "Continuing collaborators",
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             },
             {
-                ...base(fact.evidence_id, "user_testimony"),
-                meaning_id: meaningId("meaning-fact"),
+                ...base(fact.evidenceId, "user_testimony"),
+                meaningId: meaningId("meaning-fact"),
                 kind: "fact",
                 owner: "user:user-1",
                 slot: "home-server",
                 scope: "relationship:user-1",
                 content: "Home server is a Raspberry Pi 5",
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             },
             {
-                ...base(preference.evidence_id, "user_testimony"),
-                meaning_id: meaningId("meaning-preference-a"),
+                ...base(preference.evidenceId, "user_testimony"),
+                meaningId: meaningId("meaning-preference-a"),
                 kind: "preference",
                 owner: "user:user-1",
                 slot: "docs-rationale-detail",
                 scope: "project:ember/docs",
                 content: "Prefer concise architectural rationale",
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             },
             {
-                ...base(commitmentAdoption.evidence_id, "ember_commitment"),
-                meaning_id: meaningId("meaning-commitment"),
+                ...base(commitmentAdoption.evidenceId, "ember_commitment"),
+                meaningId: meaningId("meaning-commitment"),
                 kind: "commitment",
                 owner: "ember",
                 slot: "restart-provenance-check",
                 scope: "project:ember/docs",
                 content: "Check restart reconstruction preserves provenance",
-                prospective_lifecycle: "live",
+                prospectiveLifecycle: "live",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             },
             {
-                ...base(episode.evidence_id, "user_testimony"),
-                meaning_id: meaningId("meaning-episode"),
+                ...base(episode.evidenceId, "user_testimony"),
+                meaningId: meaningId("meaning-episode"),
                 kind: "episode_meta",
                 owner: "relationship:user-1",
                 slot: "first-continuity-experiment",
                 scope: "relationship:user-1",
                 content: "The first continuity experiment received a nickname",
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             },
         ],
-        operations: { runtime_episodes: [], cognition_episodes: [] },
+        operations: { runtimeEpisodes: [], cognitionEpisodes: [] },
     };
 }

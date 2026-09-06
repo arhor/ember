@@ -21,13 +21,13 @@ export interface EndogenousRestartReport {
 
 interface PhaseResult {
     pid: number;
-    lineage_id: string;
-    runtime_id: string;
+    lineageId: string;
+    runtimeId: string;
     decision?: string;
     selected_aliases?: string[];
     current_aliases?: string[];
     historical_aliases?: string[];
-    gap_kind?: string;
+    gapKind?: string;
     downtime_cognition?: string;
     provider_thread_policy?: string;
     provider_thread_observed?: boolean;
@@ -63,9 +63,9 @@ export async function runEndogenousRestartScenario(
     ]);
     const checks = [
         check("complete Ember process restarted", true, prepared.pid !== restarted.pid),
-        check("Ember runtime restarted", true, prepared.runtime_id !== restarted.runtime_id),
-        check("lineage survived restart", true, prepared.lineage_id === restarted.lineage_id),
-        check("recovery exposes clean operational gap", "known_clean_stop_interval", restarted.gap_kind),
+        check("Ember runtime restarted", true, prepared.runtimeId !== restarted.runtimeId),
+        check("lineage survived restart", true, prepared.lineageId === restarted.lineageId),
+        check("recovery exposes clean operational gap", "known_clean_stop_interval", restarted.gapKind),
         check("downtime cognition is bounded truthfully", "none_in_supported_runtime", restarted.downtime_cognition),
         check("post-restart opportunity decision", scenario.expected_decision, restarted.decision),
         check(

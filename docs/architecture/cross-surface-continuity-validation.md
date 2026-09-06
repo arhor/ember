@@ -48,7 +48,7 @@ The Telegram fixture driver is `tests/fixtures/surfaces/telegram-continuity-driv
 
 ### One lineage across both surfaces
 
-Every captured provider projection and the final `ember inspect` view must carry the same `lineage_id` established before the first surface switch. Process exit, Telegram entry, another Telegram process, and return to CLI do not establish a successor lineage or surface-local Ember.
+Every captured provider projection and the final `ember inspect` view must carry the same `lineageId` established before the first surface switch. Process exit, Telegram entry, another Telegram process, and return to CLI do not establish a successor lineage or surface-local Ember.
 
 ### Current durable meanings survive the switch
 
@@ -63,7 +63,7 @@ The final canonical meaning snapshot must equal the snapshot taken after the fir
 
 ### Commitment and provenance survive restart
 
-The cross-surface commitment keeps `prospective_lifecycle: live`. Provider projections after each restart still expose its original evidence roles, `user_command` and `ember_adoption`, rather than attributing the commitment to Telegram, the CLI, or a later provider invocation.
+The cross-surface commitment keeps `prospectiveLifecycle: live`. Provider projections after each restart still expose its original evidence roles, `user_command` and `ember_adoption`, rather than attributing the commitment to Telegram, the CLI, or a later provider invocation.
 
 The selected fact remains `user_testimony` and retains `user:<principal>` as its source actor. A surface switch therefore cannot launder transport or model evidence into canonical user testimony.
 
@@ -83,7 +83,7 @@ local_cli -> telegram_bot -> telegram_bot -> local_cli
 
 Each projection receives only its own `current_input`. The final CLI projection must not contain either prior Telegram input, and Telegram projections must not contain the fake chat id or Telegram update identifiers.
 
-Ordinary user input is still retained by the existing canonical evidence model as attributable `user_command` evidence with `payload_mode: retained_optional`. That retained occurrence evidence is not a transport transcript and does not automatically become a current meaning or later cognition context. The oracle therefore requires both Telegram inputs to remain attributable in evidence while proving that neither is promoted to a meaning or selected into the returning CLI projection. The fake chat id and Telegram update ids remain operational interaction metadata, and provider reply text remains outside canonical state.
+Ordinary user input is still retained by the existing canonical evidence model as attributable `user_command` evidence with `payloadMode: retained_optional`. That retained occurrence evidence is not a transport transcript and does not automatically become a current meaning or later cognition context. The oracle therefore requires both Telegram inputs to remain attributable in evidence while proving that neither is promoted to a meaning or selected into the returning CLI projection. The fake chat id and Telegram update ids remain operational interaction metadata, and provider reply text remains outside canonical state.
 
 ### Restart is a real operational boundary
 
@@ -93,7 +93,7 @@ The Telegram and returning CLI projections assert a `known_clean_stop_interval` 
 
 ### Delivery uncertainty does not become semantic continuity
 
-The second Telegram fixture deliberately loses the outbound acknowledgement after the send boundary. The interaction ledger records the attempt as `uncertain`; its cognition remains `completed` with canonical `delivery_status: pending`.
+The second Telegram fixture deliberately loses the outbound acknowledgement after the send boundary. The interaction ledger records the attempt as `uncertain`; its cognition remains `completed` with canonical `deliveryStatus: pending`.
 
 The subsequent CLI cognition still receives the same selected durable meanings and lineage, and its own confirmed delivery becomes `displayed`. The pending Telegram delivery is neither rewritten as successful nor promoted into a canonical meaning merely because another surface is available.
 

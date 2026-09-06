@@ -134,13 +134,13 @@ Every participating document declares one `discovery_status`:
 - `superseded` means a newer participating document replaces it for current guidance;
 - `historical` means the document is intentionally retained as history and makes no claim to govern current work.
 
-A `superseded` document must also declare `superseded_by` with a repository-relative path.
+A `superseded` document must also declare `supersededBy` with a repository-relative path.
 
 The field is deliberately named `discovery_status`, not plain `status`. ADRs or other document conventions may legitimately have their own lifecycle field such as `status: accepted` or `status: proposed`. Those meanings are independent. Discovery currentness must not overwrite or impersonate role-specific lifecycle.
 
 If role-specific lifecycle affects authority, an agent must read the source document before relying on it as governing. The compact catalogue is not proof that a `decision` is accepted.
 
-The current `docs/architecture/initial-model.md`, for example, should be `discovery_status: superseded` with `superseded_by: docs/architecture/design-directions.md`. It remains available for historical investigation without competing with the current synthesis in ordinary routing.
+The current `docs/architecture/initial-model.md`, for example, should be `discovery_status: superseded` with `supersededBy: docs/architecture/design-directions.md`. It remains available for historical investigation without competing with the current synthesis in ordinary routing.
 
 ## Representative Ember classification
 
@@ -228,7 +228,7 @@ Required. One role from the table above.
 
 Required. One of `current`, `superseded`, or `historical`.
 
-### `superseded_by`
+### `supersededBy`
 
 Required only for `discovery_status: superseded`. The value is a repository-relative path to a participating document.
 
@@ -242,7 +242,7 @@ read_when:
   - "Comparing current design directions with the project's pre-research model"
 role: design
 discovery_status: superseded
-superseded_by: docs/architecture/design-directions.md
+supersededBy: docs/architecture/design-directions.md
 ---
 ```
 
@@ -250,7 +250,7 @@ superseded_by: docs/architecture/design-directions.md
 
 The first version does **not** add:
 
-- `schema_version` or `doc-schema-version`: the corpus is small enough to migrate atomically if the contract changes;
+- `schemaVersion` or `doc-schema-version`: the corpus is small enough to migrate atomically if the contract changes;
 - `canonical: true/false`: canonicality continues to come from role semantics and existing governance rather than a free-floating boolean that can disagree with them;
 - `discovery_tier`: default versus deep discovery is derived from `role` and `discovery_status`;
 - generic approval or proposal state: role-specific lifecycle remains with ADR or document governance until a recurring cross-role need justifies another projected field;
@@ -469,7 +469,7 @@ The concrete invocation may be a repository script, build task, or executable wr
 - emits current default-depth documents;
 - sorts entries lexicographically by normalized repository-relative path;
 - preserves author order inside `read_when`;
-- emits path, role, discovery status, summary, applicability hints, and `superseded_by` when relevant;
+- emits path, role, discovery status, summary, applicability hints, and `supersededBy` when relevant;
 - writes only to stdout/stderr and does not modify repository files.
 
 ### `docs:list --deep`
@@ -533,11 +533,11 @@ For every participating document:
 - exact duplicate `read_when` entries inside one document are rejected after trimming whitespace;
 - `role` is one allowed value;
 - `discovery_status` is one allowed value;
-- `discovery_status: superseded` requires `superseded_by`;
-- `superseded_by` points to an existing participating document and cannot point to itself;
+- `discovery_status: superseded` requires `supersededBy`;
+- `supersededBy` points to an existing participating document and cannot point to itself;
 - a supersession target has discovery status `current` or `superseded`, never `historical`;
 - supersession chains are acyclic and every chain terminates at a `current` document;
-- `superseded_by` is absent for `current` and `historical` documents;
+- `supersededBy` is absent for `current` and `historical` documents;
 - generated/excluded paths are explicit and test-covered;
 - output ordering and formatting are deterministic across repeated runs.
 
@@ -712,7 +712,7 @@ For Ember v1:
 - use human-authored Markdown frontmatter;
 - keep OpenClaw's `summary` / `read_when` distinction;
 - add `role` because Ember has materially different repository knowledge classes;
-- add `discovery_status` plus conditional `superseded_by` because current and historical architecture intentionally coexist, while avoiding collision with ADR or other role-specific `status`;
+- add `discovery_status` plus conditional `supersededBy` because current and historical architecture intentionally coexist, while avoiding collision with ADR or other role-specific `status`;
 - keep role-specific authority and lifecycle in their governing source conventions rather than pretending discovery metadata can replace them;
 - derive discovery depth from `role + discovery_status` rather than adding another field;
 - default to current foundations, decisions, design, scenarios, canonical research, and guides;

@@ -161,7 +161,7 @@ async function hostPressureSnapshot() {
     ]);
     const load = loadavg();
     return {
-        observed_at: new Date().toISOString(),
+        observedAt: new Date().toISOString(),
         uptime_seconds: round(uptime()),
         load_average: {
             one_minute: round(load[0] ?? 0),

@@ -48,7 +48,7 @@ function countingProvider(calls: { value: number }, observe?: (request: Provider
     return async (_command, _args, request) => {
         calls.value += 1;
         observe?.(request);
-        return { contract_version: 1, reply: "reply", used_meaning_ids: [] };
+        return { contractVersion: 1, reply: "reply", usedMeaningIds: [] };
     };
 }
 
@@ -95,7 +95,7 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
         assert.equal(calls.value, 2);
         assert.notEqual(first.occurrenceId, second.occurrenceId);
         assert.notEqual(first.cognitionId, second.cognitionId);
-        assert.equal(second.state.operations.cognition_episodes.length, 2);
+        assert.equal(second.state.operations.cognitionEpisodes.length, 2);
         assert.equal(ledger.inbound_occurrences.length, 2);
         assert.equal(ledger.deliveries.length, 2);
         assert.deepEqual(delivered, ["reply\n", "reply\n"]);
@@ -141,12 +141,12 @@ test("replayed messaging update reuses one occurrence and does not repeat cognit
         });
 
         const ledger = await new InteractionLedgerStore(f.store.path).load();
-        const userEvidence = second.state.evidence.filter((evidence) => evidence.source_role === "user_command");
+        const userEvidence = second.state.evidence.filter((evidence) => evidence.sourceRole === "user_command");
         assert.equal(calls.value, 1);
         assert.equal(second.replayed, true);
         assert.equal(first.occurrenceId, second.occurrenceId);
         assert.equal(first.cognitionId, second.cognitionId);
-        assert.equal(second.state.operations.cognition_episodes.length, 1);
+        assert.equal(second.state.operations.cognitionEpisodes.length, 1);
         assert.equal(userEvidence.length, 1);
         assert.equal(ledger.inbound_occurrences.length, 1);
         assert.equal(ledger.inbound_occurrences[0]?.receive_count, 2);
@@ -281,9 +281,9 @@ test("completed cognition remains separate from an uncertain delivery attempt", 
         const state = await f.store.load();
         const ledger = await new InteractionLedgerStore(f.store.path).load();
         assert.equal(calls.value, 1);
-        assert.equal(state.operations.cognition_episodes.length, 1);
-        assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
-        assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "pending");
+        assert.equal(state.operations.cognitionEpisodes.length, 1);
+        assert.equal(state.operations.cognitionEpisodes[0]?.status, "completed");
+        assert.equal(state.operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
         assert.equal(ledger.deliveries.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "uncertain");
@@ -317,8 +317,8 @@ test("surface adapter can record a definite failed delivery attempt", async () =
         const state = await f.store.load();
         const ledger = await new InteractionLedgerStore(f.store.path).load();
         assert.equal(calls.value, 1);
-        assert.equal(state.operations.cognition_episodes[0]?.status, "completed");
-        assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "pending");
+        assert.equal(state.operations.cognitionEpisodes[0]?.status, "completed");
+        assert.equal(state.operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "failed");
         assert.equal(ledger.deliveries[0]?.attempts[0]?.external_message_id, "rejected-message-1");

@@ -18,42 +18,42 @@ export function parsePersistentState(text: string): PersistentState {
 
 export function validatePersistentState(value: unknown): PersistentState {
     if (!record(value)) throw new Error("state must be an object");
-    if (value.schema_version !== 1) throw new Error("unsupported schema_version");
+    if (value.schemaVersion !== 1) throw new Error("unsupported schemaVersion");
     if (!Number.isSafeInteger(value.revision) || Number(value.revision) < 0) {
         throw new Error("revision must be a non-negative safe integer");
     }
 
-    const contract = value.runtime_contract;
+    const contract = value.runtimeContract;
     if (
         !record(contract) ||
-        !nonempty(contract.local_principal) ||
+        !nonempty(contract.localPrincipal) ||
         contract.topology !== "single-principal-single-writer"
     ) {
-        throw new Error("runtime_contract is invalid");
+        throw new Error("runtimeContract is invalid");
     }
     const lineage = value.lineage;
     if (
         !record(lineage) ||
-        !nonempty(lineage.lineage_id) ||
-        !nonempty(lineage.display_name) ||
-        !nonempty(lineage.established_at) ||
-        !Array.isArray(lineage.constitutive_boundaries)
+        !nonempty(lineage.lineageId) ||
+        !nonempty(lineage.displayName) ||
+        !nonempty(lineage.establishedAt) ||
+        !Array.isArray(lineage.constitutiveBoundaries)
     ) {
         throw new Error("lineage is invalid");
     }
-    lineageId(lineage.lineage_id);
+    lineageId(lineage.lineageId);
 
     if (!Array.isArray(value.evidence) || !Array.isArray(value.meanings)) {
         throw new Error("state collections are invalid");
     }
     const evidence = value.evidence.map(validateEvidence);
-    const evidenceById = new Map(evidence.map((item) => [item.evidence_id, item]));
+    const evidenceById = new Map(evidence.map((item) => [item.evidenceId, item]));
     if (evidenceById.size !== evidence.length) throw new Error("evidence IDs must be unique");
     for (const item of evidence) {
-        if (item.source_role === "ember_adoption") {
-            const source = evidenceById.get(item.derived_from_evidence_ids[0]);
+        if (item.sourceRole === "ember_adoption") {
+            const source = evidenceById.get(item.derivedFromEvidenceIds[0]);
             if (!source) throw new Error("adoption source evidence does not exist");
-            if (source.source_role !== "user_command") {
+            if (source.sourceRole !== "user_command") {
                 throw new Error("Ember adoption must derive from attributable user evidence");
             }
         }
@@ -65,68 +65,68 @@ export function validatePersistentState(value: unknown): PersistentState {
     const operations = value.operations;
     if (
         !record(operations) ||
-        !Array.isArray(operations.runtime_episodes) ||
-        !Array.isArray(operations.cognition_episodes)
+        !Array.isArray(operations.runtimeEpisodes) ||
+        !Array.isArray(operations.cognitionEpisodes)
     ) {
         throw new Error("operations are invalid");
     }
 
     return {
-        schema_version: 1,
+        schemaVersion: 1,
         revision: Number(value.revision),
-        runtime_contract: {
-            local_principal: contract.local_principal,
+        runtimeContract: {
+            localPrincipal: contract.localPrincipal,
             topology: "single-principal-single-writer",
         },
         lineage: {
-            lineage_id: lineageId(lineage.lineage_id),
-            display_name: lineage.display_name,
-            established_at: lineage.established_at,
-            constitutive_boundaries: lineage.constitutive_boundaries.map((boundary) => {
-                if (!record(boundary) || boundary.boundary_id !== "minimal-continuity-v1" || !nonempty(boundary.text)) {
+            lineageId: lineageId(lineage.lineageId),
+            displayName: lineage.displayName,
+            establishedAt: lineage.establishedAt,
+            constitutiveBoundaries: lineage.constitutiveBoundaries.map((boundary) => {
+                if (!record(boundary) || boundary.boundaryId !== "minimal-continuity-v1" || !nonempty(boundary.text)) {
                     throw new Error("constitutive boundary is invalid");
                 }
-                return { boundary_id: "minimal-continuity-v1" as const, text: boundary.text };
+                return { boundaryId: "minimal-continuity-v1" as const, text: boundary.text };
             }),
         },
         evidence,
         meanings,
         operations: {
-            runtime_episodes: operations.runtime_episodes,
-            cognition_episodes: operations.cognition_episodes,
+            runtimeEpisodes: operations.runtimeEpisodes,
+            cognitionEpisodes: operations.cognitionEpisodes,
         },
     };
 }
 
 function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: ReadonlyMap<string, Evidence>) {
-    const meaningsById = new Map(meanings.map((meaning) => [meaning.meaning_id, meaning]));
+    const meaningsById = new Map(meanings.map((meaning) => [meaning.meaningId, meaning]));
     if (meaningsById.size !== meanings.length) throw new Error("meaning IDs must be unique");
 
     const currentSlots = new Set<string>();
     for (const meaning of meanings) {
-        if (!meaning.source_evidence_ids.every((id) => evidenceById.has(id))) {
+        if (!meaning.sourceEvidenceIds.every((id) => evidenceById.has(id))) {
             throw new Error("meaning source evidence does not exist");
         }
         if (meaning.currentness === "current") {
             const slot = `${meaning.kind}\u0000${meaning.owner}\u0000${meaning.slot}\u0000${meaning.scope}`;
             if (currentSlots.has(slot)) throw new Error("two current meanings share one semantic slot");
             currentSlots.add(slot);
-            if (meaning.superseded_by !== null) {
+            if (meaning.supersededBy !== null) {
                 throw new Error("current meaning cannot already be superseded");
             }
         }
-        if (meaning.currentness === "superseded" && meaning.superseded_by === null) {
+        if (meaning.currentness === "superseded" && meaning.supersededBy === null) {
             throw new Error("superseded meaning must identify its successor");
         }
 
         if (meaning.supersedes !== null) {
-            if (meaning.supersedes === meaning.meaning_id) {
+            if (meaning.supersedes === meaning.meaningId) {
                 throw new Error("meaning cannot supersede itself");
             }
             const predecessor = meaningsById.get(meaning.supersedes);
             if (!predecessor) throw new Error("supersession predecessor does not exist");
             assertCompatibleSupersession(predecessor, meaning);
-            if (predecessor.superseded_by !== meaning.meaning_id) {
+            if (predecessor.supersededBy !== meaning.meaningId) {
                 throw new Error("supersession predecessor does not link back to successor");
             }
             if (predecessor.currentness === "current") {
@@ -134,14 +134,14 @@ function validateMeaningGraph(meanings: readonly Meaning[], evidenceById: Readon
             }
         }
 
-        if (meaning.superseded_by !== null) {
-            if (meaning.superseded_by === meaning.meaning_id) {
+        if (meaning.supersededBy !== null) {
+            if (meaning.supersededBy === meaning.meaningId) {
                 throw new Error("meaning cannot supersede itself");
             }
-            const successor = meaningsById.get(meaning.superseded_by);
+            const successor = meaningsById.get(meaning.supersededBy);
             if (!successor) throw new Error("supersession successor does not exist");
             assertCompatibleSupersession(meaning, successor);
-            if (successor.supersedes !== meaning.meaning_id) {
+            if (successor.supersedes !== meaning.meaningId) {
                 throw new Error("supersession successor does not link back to predecessor");
             }
         }
@@ -166,69 +166,69 @@ function assertCompatibleSupersession(predecessor: Meaning, successor: Meaning):
 }
 
 function validateEvidence(value: unknown): Evidence {
-    if (!record(value) || !nonempty(value.evidence_id) || !nonempty(value.source_role)) {
+    if (!record(value) || !nonempty(value.evidenceId) || !nonempty(value.sourceRole)) {
         throw new Error("evidence identity or role is invalid");
     }
-    const id = evidenceId(value.evidence_id);
+    const id = evidenceId(value.evidenceId);
     if (
-        !nonempty(value.source_actor) ||
-        !nonempty(value.asserted_principal) ||
-        !nonempty(value.occurred_at) ||
-        !nonempty(value.observed_at) ||
+        !nonempty(value.sourceActor) ||
+        !nonempty(value.assertedPrincipal) ||
+        !nonempty(value.occurredAt) ||
+        !nonempty(value.observedAt) ||
         !nonempty(value.scope) ||
-        !Array.isArray(value.derived_from_evidence_ids) ||
-        !value.derived_from_evidence_ids.every(nonempty)
+        !Array.isArray(value.derivedFromEvidenceIds) ||
+        !value.derivedFromEvidenceIds.every(nonempty)
     ) {
         throw new Error("evidence provenance fields are invalid");
     }
 
-    if (value.source_role === "user_command") {
+    if (value.sourceRole === "user_command") {
         if (
-            value.source_actor !== `user:${value.asserted_principal}` ||
-            value.derived_from_evidence_ids.length !== 0 ||
-            value.payload_mode !== "retained_optional" ||
+            value.sourceActor !== `user:${value.assertedPrincipal}` ||
+            value.derivedFromEvidenceIds.length !== 0 ||
+            value.payloadMode !== "retained_optional" ||
             value.availability !== "available" ||
             typeof value.payload !== "string" ||
-            !nonempty(value.content_digest) ||
-            value.content_digest !== digest(value.payload)
+            !nonempty(value.contentDigest) ||
+            value.contentDigest !== digest(value.payload)
         ) {
             throw new Error("user evidence is invalid");
         }
         const result: UserEvidence = {
-            evidence_id: id,
-            source_role: "user_command",
-            source_actor: value.source_actor as `user:${string}`,
-            asserted_principal: value.asserted_principal,
-            occurred_at: value.occurred_at,
-            observed_at: value.observed_at,
-            derived_from_evidence_ids: [],
+            evidenceId: id,
+            sourceRole: "user_command",
+            sourceActor: value.sourceActor as `user:${string}`,
+            assertedPrincipal: value.assertedPrincipal,
+            occurredAt: value.occurredAt,
+            observedAt: value.observedAt,
+            derivedFromEvidenceIds: [],
             scope: value.scope,
-            payload_mode: "retained_optional",
+            payloadMode: "retained_optional",
             availability: "available",
             payload: value.payload,
-            content_digest: value.content_digest as `sha256:${string}`,
+            contentDigest: value.contentDigest as `sha256:${string}`,
         };
         return result;
     }
 
-    if (value.source_role === "ember_adoption") {
+    if (value.sourceRole === "ember_adoption") {
         if (
-            value.source_actor !== "ember" ||
-            value.derived_from_evidence_ids.length !== 1 ||
-            value.payload_mode !== "descriptor_only"
+            value.sourceActor !== "ember" ||
+            value.derivedFromEvidenceIds.length !== 1 ||
+            value.payloadMode !== "descriptor_only"
         ) {
             throw new Error("Ember adoption evidence is invalid");
         }
         const result: EmberAdoptionEvidence = {
-            evidence_id: id,
-            source_role: "ember_adoption",
-            source_actor: "ember",
-            asserted_principal: value.asserted_principal,
-            occurred_at: value.occurred_at,
-            observed_at: value.observed_at,
-            derived_from_evidence_ids: [evidenceId(value.derived_from_evidence_ids[0])],
+            evidenceId: id,
+            sourceRole: "ember_adoption",
+            sourceActor: "ember",
+            assertedPrincipal: value.assertedPrincipal,
+            occurredAt: value.occurredAt,
+            observedAt: value.observedAt,
+            derivedFromEvidenceIds: [evidenceId(value.derivedFromEvidenceIds[0])],
             scope: value.scope,
-            payload_mode: "descriptor_only",
+            payloadMode: "descriptor_only",
         };
         return result;
     }
@@ -237,24 +237,24 @@ function validateEvidence(value: unknown): Evidence {
 }
 
 function validateMeaning(value: unknown): Meaning {
-    if (!record(value) || !nonempty(value.meaning_id) || !nonempty(value.kind) || !KINDS.has(value.kind)) {
+    if (!record(value) || !nonempty(value.meaningId) || !nonempty(value.kind) || !KINDS.has(value.kind)) {
         throw new Error("meaning identity or kind is invalid");
     }
     if (!nonempty(value.owner) || !nonempty(value.slot) || !nonempty(value.scope) || !nonempty(value.content)) {
         throw new Error("meaning routing fields are invalid");
     }
     if (
-        !Array.isArray(value.source_evidence_ids) ||
-        value.source_evidence_ids.length === 0 ||
-        !value.source_evidence_ids.every(nonempty)
+        !Array.isArray(value.sourceEvidenceIds) ||
+        value.sourceEvidenceIds.length === 0 ||
+        !value.sourceEvidenceIds.every(nonempty)
     ) {
         throw new Error("meaning source evidence is invalid");
     }
-    if (!nonempty(value.epistemic_role) || !nonempty(value.learned_at) || !nonempty(value.applicable_from)) {
+    if (!nonempty(value.epistemicRole) || !nonempty(value.learnedAt) || !nonempty(value.applicableFrom)) {
         throw new Error("meaning temporal fields are invalid");
     }
-    if (value.applicable_until !== null && !nonempty(value.applicable_until)) {
-        throw new Error("meaning applicable_until is invalid");
+    if (value.applicableUntil !== null && !nonempty(value.applicableUntil)) {
+        throw new Error("meaning applicableUntil is invalid");
     }
     if (!nonempty(value.currentness) || !CURRENTNESS.has(value.currentness)) {
         throw new Error("meaning currentness is invalid");
@@ -262,22 +262,22 @@ function validateMeaning(value: unknown): Meaning {
     if (!("uncertainty" in value) || (value.uncertainty !== null && typeof value.uncertainty !== "string")) {
         throw new Error("meaning uncertainty is invalid");
     }
-    if (!nonempty(value.prospective_lifecycle)) {
+    if (!nonempty(value.prospectiveLifecycle)) {
         throw new Error("meaning prospective lifecycle is invalid");
     }
     const supersedes = optionalMeaningId(value.supersedes);
-    const supersededBy = optionalMeaningId(value.superseded_by);
+    const supersededBy = optionalMeaningId(value.supersededBy);
     const common = {
-        meaning_id: meaningId(value.meaning_id),
+        meaningId: meaningId(value.meaningId),
         owner: value.owner,
         slot: value.slot,
         scope: value.scope,
         content: value.content,
-        source_evidence_ids: value.source_evidence_ids.map(evidenceId),
-        epistemic_role: value.epistemic_role,
-        learned_at: value.learned_at,
-        applicable_from: value.applicable_from,
-        applicable_until: value.applicable_until,
+        sourceEvidenceIds: value.sourceEvidenceIds.map(evidenceId),
+        epistemicRole: value.epistemicRole,
+        learnedAt: value.learnedAt,
+        applicableFrom: value.applicableFrom,
+        applicableUntil: value.applicableUntil,
         currentness: value.currentness as Meaning["currentness"],
         uncertainty: value.uncertainty,
     };
@@ -285,7 +285,7 @@ function validateMeaning(value: unknown): Meaning {
         case "relationship":
             if (
                 !value.owner.startsWith("relationship:") ||
-                value.prospective_lifecycle !== "none" ||
+                value.prospectiveLifecycle !== "none" ||
                 supersedes ||
                 supersededBy
             ) {
@@ -295,45 +295,45 @@ function validateMeaning(value: unknown): Meaning {
                 ...common,
                 kind: "relationship",
                 owner: value.owner as `relationship:${string}`,
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             };
         case "fact":
         case "preference":
-            if (!value.owner.startsWith("user:") || value.prospective_lifecycle !== "none") {
+            if (!value.owner.startsWith("user:") || value.prospectiveLifecycle !== "none") {
                 throw new Error(`${value.kind} meaning is invalid`);
             }
             return {
                 ...common,
                 kind: value.kind,
                 owner: value.owner as `user:${string}`,
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes,
-                superseded_by: supersededBy,
+                supersededBy: supersededBy,
             };
         case "commitment":
-            if (value.owner !== "ember" || value.prospective_lifecycle !== "live" || supersedes || supersededBy) {
+            if (value.owner !== "ember" || value.prospectiveLifecycle !== "live" || supersedes || supersededBy) {
                 throw new Error("commitment meaning is invalid");
             }
             return {
                 ...common,
                 kind: "commitment",
                 owner: "ember",
-                prospective_lifecycle: "live",
+                prospectiveLifecycle: "live",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             };
         case "episode_meta":
-            if (value.prospective_lifecycle !== "none" || supersedes || supersededBy) {
+            if (value.prospectiveLifecycle !== "none" || supersedes || supersededBy) {
                 throw new Error("episode meaning is invalid");
             }
             return {
                 ...common,
                 kind: "episode_meta",
-                prospective_lifecycle: "none",
+                prospectiveLifecycle: "none",
                 supersedes: null,
-                superseded_by: null,
+                supersededBy: null,
             };
         default:
             throw new Error("unsupported meaning kind");

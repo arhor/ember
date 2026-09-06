@@ -25,7 +25,7 @@ const CURRENT_CHECKPOINT = {
 
 function specialistReport(overrides: Partial<SpecialistReport> = {}): SpecialistReport {
     return {
-        contract_version: 1,
+        contractVersion: 1,
         summary: "Specialist reports the bounded objective complete.",
         objective_disposition: "completed",
         artifacts_changed: ["result.txt"],
@@ -113,7 +113,7 @@ async function recordFixture(
         ember_disposition: "unresolved",
         report,
         report_provenance: {
-            source_role: "specialist_report",
+            sourceRole: "specialist_report",
             source: "codex_specialist",
             episode_id: spec.episode_id,
         },
@@ -133,8 +133,8 @@ async function recordFixture(
         known_effects: [],
         possible_effects: [],
         observations: [
-            { observed_at: "2026-09-02T14:00:00.000Z", kind: "report_received" },
-            { observed_at: "2026-09-02T14:00:01.000Z", kind: "child_exit_observed" },
+            { observedAt: "2026-09-02T14:00:00.000Z", kind: "report_received" },
+            { observedAt: "2026-09-02T14:00:01.000Z", kind: "child_exit_observed" },
         ],
     };
     await writeRecord(recordPath, record);

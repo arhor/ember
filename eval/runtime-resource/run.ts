@@ -156,7 +156,7 @@ async function prepareWorkload(name: WorkloadName, cli: CliOptions): Promise<Pre
         state_path: statePath,
         records_directory: recordsDirectory,
         principal: PRINCIPAL,
-        active_scope: SCOPE,
+        activeScope: SCOPE,
         node_path: process.execPath,
         runtime_entrypoint: RUNTIME_ENTRYPOINT,
         codex_command: configuredProvider.command,
@@ -201,7 +201,7 @@ async function prepareWorkload(name: WorkloadName, cli: CliOptions): Promise<Pre
             record_version: 1,
             wake_id: wakeId,
             principal: PRINCIPAL,
-            active_scope: SCOPE,
+            activeScope: SCOPE,
             mechanism: "external_timing",
             due_at: at,
             created_at: at,
@@ -280,7 +280,7 @@ function specialistSpec(workspace: string, command: string, argumentPrefix: stri
 function observation(kind: string): RuntimeObservation {
     return {
         record_version: 1,
-        observed_at: FIXED_RUNTIME_AT,
+        observedAt: FIXED_RUNTIME_AT,
         kind,
     };
 }

@@ -30,15 +30,15 @@ export type CognitionOpportunityProjection = Omit<Projection, "purpose" | "curre
 };
 
 export interface CognitionOpportunityRequest {
-    contract_version: 1;
-    opportunity_id: OpportunityId;
+    contractVersion: 1;
+    opportunityId: OpportunityId;
     projection: CognitionOpportunityProjection;
 }
 
 export interface CognitionOpportunityEvaluation {
-    contract_version: 1;
+    contractVersion: 1;
     decision: CognitionOpportunityDecision;
-    selected_meaning_ids: MeaningId[];
+    selectedMeaningIds: MeaningId[];
 }
 
 export type CognitionOpportunityEvaluator = (
@@ -46,17 +46,17 @@ export type CognitionOpportunityEvaluator = (
 ) => Promise<CognitionOpportunityEvaluation>;
 
 export interface CognitionOpportunityRecord {
-    opportunity_id: OpportunityId;
-    runtime_id: RuntimeId;
+    opportunityId: OpportunityId;
+    runtimeId: RuntimeId;
     principal: string;
-    active_scope: string;
+    activeScope: string;
     mechanism: CognitionOpportunityMechanism;
-    observed_at: string;
-    validated_revision: number;
-    projected_meaning_ids: MeaningId[];
-    projected_evidence_ids: CognitionOpportunityOccurrence["projected_evidence_ids"];
+    observedAt: string;
+    validatedRevision: number;
+    projectedMeaningIds: MeaningId[];
+    projectedEvidenceIds: CognitionOpportunityOccurrence["projectedEvidenceIds"];
     decision: CognitionOpportunityDecision;
-    selected_meaning_ids: MeaningId[];
+    selectedMeaningIds: MeaningId[];
 }
 
 export interface EvaluateCognitionOpportunityOptions {
@@ -81,7 +81,7 @@ interface PreparedOpportunity {
     opportunityId: OpportunityId;
     projection: CognitionOpportunityProjection;
     projectedMeaningIds: MeaningId[];
-    projectedEvidenceIds: CognitionOpportunityOccurrence["projected_evidence_ids"];
+    projectedEvidenceIds: CognitionOpportunityOccurrence["projectedEvidenceIds"];
     timestamp: string;
 }
 
@@ -107,13 +107,13 @@ export function buildCognitionOpportunityProjection(
     return {
         projection_version: projection.projection_version,
         purpose: "endogenous_decision",
-        validated_revision: projection.validated_revision,
+        validatedRevision: projection.validatedRevision,
         lineage: projection.lineage,
         principal: projection.principal,
-        active_scope: projection.active_scope,
+        activeScope: projection.activeScope,
         surface: projection.surface,
         current_time: projection.current_time,
-        recovery_account: projection.recovery_account,
+        recoveryAccount: projection.recoveryAccount,
         meanings: projection.meanings,
         gaps: projection.gaps,
         selection: projection.selection,
@@ -129,17 +129,17 @@ export async function evaluateCognitionOpportunity(
     validateEvaluation(result, new Set(prepared.projectedMeaningIds));
 
     return {
-        opportunity_id: prepared.opportunityId,
-        runtime_id: options.runtimeId,
+        opportunityId: prepared.opportunityId,
+        runtimeId: options.runtimeId,
         principal: options.principal,
-        active_scope: options.scope,
+        activeScope: options.scope,
         mechanism: options.mechanism,
-        observed_at: prepared.timestamp,
-        validated_revision: prepared.projection.validated_revision,
-        projected_meaning_ids: prepared.projectedMeaningIds,
-        projected_evidence_ids: prepared.projectedEvidenceIds,
+        observedAt: prepared.timestamp,
+        validatedRevision: prepared.projection.validatedRevision,
+        projectedMeaningIds: prepared.projectedMeaningIds,
+        projectedEvidenceIds: prepared.projectedEvidenceIds,
         decision: result.decision,
-        selected_meaning_ids: [...result.selected_meaning_ids],
+        selectedMeaningIds: [...result.selectedMeaningIds],
     };
 }
 
@@ -149,35 +149,35 @@ export async function runCognitionOpportunity(
     options: EvaluateCognitionOpportunityOptions,
 ): Promise<RunCognitionOpportunityResult> {
     const prepared = prepareOpportunity(state, options);
-    const attention = decideRepeatedCognitionAttention(state.operations.cognition_opportunities ?? [], {
-        runtime_id: options.runtimeId,
+    const attention = decideRepeatedCognitionAttention(state.operations.cognitionOpportunities ?? [], {
+        runtimeId: options.runtimeId,
         principal: options.principal,
-        active_scope: options.scope,
+        activeScope: options.scope,
         mechanism: options.mechanism,
-        projected_meaning_ids: prepared.projectedMeaningIds,
-        projected_evidence_ids: prepared.projectedEvidenceIds,
+        projectedMeaningIds: prepared.projectedMeaningIds,
+        projectedEvidenceIds: prepared.projectedEvidenceIds,
     });
 
     if (attention.outcome === "defer_repeated_projection") {
         const deferred = cloneState(state);
-        findRuntime(deferred, options.runtimeId).last_durable_observation_at = prepared.timestamp;
-        const occurrences = (deferred.operations.cognition_opportunities ??= []);
+        findRuntime(deferred, options.runtimeId).lastDurableObservationAt = prepared.timestamp;
+        const occurrences = (deferred.operations.cognitionOpportunities ??= []);
         occurrences.push({
-            opportunity_id: prepared.opportunityId,
-            runtime_id: options.runtimeId,
+            opportunityId: prepared.opportunityId,
+            runtimeId: options.runtimeId,
             principal: options.principal,
-            active_scope: options.scope,
+            activeScope: options.scope,
             mechanism: options.mechanism,
-            observed_at: prepared.timestamp,
-            last_durable_observation_at: prepared.timestamp,
-            validated_revision: prepared.projection.validated_revision,
-            projected_meaning_ids: prepared.projectedMeaningIds,
-            projected_evidence_ids: prepared.projectedEvidenceIds,
+            observedAt: prepared.timestamp,
+            lastDurableObservationAt: prepared.timestamp,
+            validatedRevision: prepared.projection.validatedRevision,
+            projectedMeaningIds: prepared.projectedMeaningIds,
+            projectedEvidenceIds: prepared.projectedEvidenceIds,
             status: "decided",
             decision: "defer",
-            selected_meaning_ids: [...attention.selected_meaning_ids],
-            interruption_status: "not_attempted",
-            provider_termination: null,
+            selectedMeaningIds: [...attention.selectedMeaningIds],
+            interruptionStatus: "not_attempted",
+            providerTermination: null,
         });
         state = await store.commit(state.revision, deferred);
         return {
@@ -192,24 +192,24 @@ export async function runCognitionOpportunity(
 
     const started = cloneState(state);
     const runtime = findRuntime(started, options.runtimeId);
-    runtime.last_durable_observation_at = prepared.timestamp;
-    const occurrences = (started.operations.cognition_opportunities ??= []);
+    runtime.lastDurableObservationAt = prepared.timestamp;
+    const occurrences = (started.operations.cognitionOpportunities ??= []);
     occurrences.push({
-        opportunity_id: prepared.opportunityId,
-        runtime_id: options.runtimeId,
+        opportunityId: prepared.opportunityId,
+        runtimeId: options.runtimeId,
         principal: options.principal,
-        active_scope: options.scope,
+        activeScope: options.scope,
         mechanism: options.mechanism,
-        observed_at: prepared.timestamp,
-        last_durable_observation_at: prepared.timestamp,
-        validated_revision: prepared.projection.validated_revision,
-        projected_meaning_ids: prepared.projectedMeaningIds,
-        projected_evidence_ids: prepared.projectedEvidenceIds,
+        observedAt: prepared.timestamp,
+        lastDurableObservationAt: prepared.timestamp,
+        validatedRevision: prepared.projection.validatedRevision,
+        projectedMeaningIds: prepared.projectedMeaningIds,
+        projectedEvidenceIds: prepared.projectedEvidenceIds,
         status: "evaluating",
         decision: null,
-        selected_meaning_ids: [],
-        interruption_status: "not_attempted",
-        provider_termination: null,
+        selectedMeaningIds: [],
+        interruptionStatus: "not_attempted",
+        providerTermination: null,
     });
     state = await store.commit(state.revision, started);
 
@@ -232,16 +232,16 @@ export async function runCognitionOpportunity(
         const at = nowUtc();
 
         occurrence.status = error instanceof ProviderError ? error.outcome : "failed";
-        occurrence.last_durable_observation_at = at;
-        occurrence.provider_termination =
+        occurrence.lastDurableObservationAt = at;
+        occurrence.providerTermination =
             error instanceof ProviderError && error.termination !== null
                 ? {
                       reason: error.termination.reason,
-                      direct_child_exit_observed: error.termination.directChildExitObserved,
+                      directChildExitObserved: error.termination.directChildExitObserved,
                   }
                 : null;
 
-        findRuntime(failed, options.runtimeId).last_durable_observation_at = at;
+        findRuntime(failed, options.runtimeId).lastDurableObservationAt = at;
         state = await store.commit(current.revision, failed);
         return {
             state,
@@ -263,11 +263,11 @@ export async function runCognitionOpportunity(
 
     occurrence.status = "decided";
     occurrence.decision = result.decision;
-    occurrence.selected_meaning_ids = [...result.selected_meaning_ids];
-    occurrence.last_durable_observation_at = at;
-    occurrence.provider_termination = null;
+    occurrence.selectedMeaningIds = [...result.selectedMeaningIds];
+    occurrence.lastDurableObservationAt = at;
+    occurrence.providerTermination = null;
 
-    findRuntime(completed, options.runtimeId).last_durable_observation_at = at;
+    findRuntime(completed, options.runtimeId).lastDurableObservationAt = at;
     state = await store.commit(current.revision, completed);
     return {
         state,
@@ -283,7 +283,7 @@ export function findCognitionOpportunity(
     state: EmberState,
     id: OpportunityId | string,
 ): CognitionOpportunityOccurrence {
-    const value = state.operations.cognition_opportunities?.find((item) => item.opportunity_id === id);
+    const value = state.operations.cognitionOpportunities?.find((item) => item.opportunityId === id);
     if (!value) {
         throw new ValidationError(`cognition opportunity does not exist: ${id}`);
     }
@@ -292,7 +292,7 @@ export function findCognitionOpportunity(
 
 export function cognitionOpportunityMetrics(state: EmberState) {
     validateState(state);
-    const occurrences = state.operations.cognition_opportunities ?? [];
+    const occurrences = state.operations.cognitionOpportunities ?? [];
     const decided = occurrences.filter((item) => item.status === "decided");
     return {
         total: occurrences.length,
@@ -328,8 +328,8 @@ function prepareOpportunity(state: EmberState, options: EvaluateCognitionOpportu
 
 function requestFor(prepared: PreparedOpportunity): CognitionOpportunityRequest {
     return {
-        contract_version: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
-        opportunity_id: prepared.opportunityId,
+        contractVersion: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
+        opportunityId: prepared.opportunityId,
         projection: cloneState(prepared.projection),
     };
 }
@@ -353,16 +353,16 @@ function validateOpportunityContext(
     }
     const runtime = findRuntime(state, runtimeId);
 
-    if (runtime.clean_stop_at !== null) {
+    if (runtime.cleanStopAt !== null) {
         throw new ValidationError("cognition opportunity requires an active runtime");
     }
     if (runtime.principal !== principal) {
         throw new ValidationError("cognition opportunity principal differs from owning runtime");
     }
-    if (runtime.active_scope !== scope) {
+    if (runtime.activeScope !== scope) {
         throw new ValidationError("cognition opportunity scope differs from owning runtime");
     }
-    if (Date.parse(timestamp) < Date.parse(runtime.started_at)) {
+    if (Date.parse(timestamp) < Date.parse(runtime.startedAt)) {
         throw new ValidationError("cognition opportunity cannot precede its runtime");
     }
 }
@@ -376,33 +376,30 @@ function validateEvaluation(
     }
     const object = value as Record<string, unknown>;
     const fields = Object.keys(object).sort();
-    const expected = ["contract_version", "decision", "selected_meaning_ids"].sort();
+    const expected = ["contractVersion", "decision", "selectedMeaningIds"].sort();
 
     if (JSON.stringify(fields) !== JSON.stringify(expected)) {
         throw new ValidationError("cognition opportunity evaluation contains missing or unsupported fields");
     }
-    if (object.contract_version !== COGNITION_OPPORTUNITY_CONTRACT_VERSION) {
-        throw new ValidationError("cognition opportunity evaluation contract_version is unsupported");
+    if (object.contractVersion !== COGNITION_OPPORTUNITY_CONTRACT_VERSION) {
+        throw new ValidationError("cognition opportunity evaluation contractVersion is unsupported");
     }
     if (!["cognition", "defer", "no_cognition"].includes(String(object.decision))) {
         throw new ValidationError("cognition opportunity evaluation decision is invalid");
     }
-    if (
-        !Array.isArray(object.selected_meaning_ids) ||
-        !object.selected_meaning_ids.every((id) => typeof id === "string")
-    ) {
-        throw new ValidationError("cognition opportunity selected_meaning_ids must be a string list");
+    if (!Array.isArray(object.selectedMeaningIds) || !object.selectedMeaningIds.every((id) => typeof id === "string")) {
+        throw new ValidationError("cognition opportunity selectedMeaningIds must be a string list");
     }
-    if (new Set(object.selected_meaning_ids).size !== object.selected_meaning_ids.length) {
-        throw new ValidationError("cognition opportunity selected_meaning_ids must not contain duplicates");
+    if (new Set(object.selectedMeaningIds).size !== object.selectedMeaningIds.length) {
+        throw new ValidationError("cognition opportunity selectedMeaningIds must not contain duplicates");
     }
-    if (!object.selected_meaning_ids.every((id) => projectedMeaningIds.has(id))) {
+    if (!object.selectedMeaningIds.every((id) => projectedMeaningIds.has(id))) {
         throw new ValidationError("cognition opportunity selected a meaning outside its projection");
     }
-    if (object.decision === "no_cognition" && object.selected_meaning_ids.length !== 0) {
+    if (object.decision === "no_cognition" && object.selectedMeaningIds.length !== 0) {
         throw new ValidationError("no_cognition must not select a meaning");
     }
-    if ((object.decision === "cognition" || object.decision === "defer") && object.selected_meaning_ids.length === 0) {
+    if ((object.decision === "cognition" || object.decision === "defer") && object.selectedMeaningIds.length === 0) {
         throw new ValidationError(`${object.decision} must select at least one projected meaning`);
     }
 }

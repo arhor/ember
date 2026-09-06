@@ -39,7 +39,7 @@ function docText({
         `discovery_status: ${status}`,
     ];
     if (supersededBy !== null) {
-        lines.push(`superseded_by: ${supersededBy}`);
+        lines.push(`supersededBy: ${supersededBy}`);
     }
     lines.push("---", "", body);
     return lines.join("\n");
@@ -111,7 +111,7 @@ test("validates required fields, duplicate hints, and status rules", () => {
     assert.match(joined, /summary must be a non-empty string/);
     assert.match(joined, /exact duplicate/);
     assert.match(joined, /role must be one of/);
-    assert.match(joined, /superseded_by is only allowed/);
+    assert.match(joined, /supersededBy is only allowed/);
 });
 
 test("validates supersession target and cycle", () => {

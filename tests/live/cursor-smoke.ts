@@ -48,7 +48,7 @@ try {
         },
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
-    const cognition = result.state.operations.cognition_episodes.find(
+    const cognition = result.state.operations.cognitionEpisodes.find(
         (item) => item.cognitionId === result.cognitionId,
     )!;
     const canonical = await readFile(statePath, "utf8");
@@ -61,7 +61,7 @@ try {
         stopRuntime(result.state, started.runtimeId, { reason: "live_smoke_complete" }),
     );
     process.stdout.write(
-        `${JSON.stringify({ provider: "Cursor Agent CLI", selected_meaning_count: cognition.selectedMeaningIds.length, used_meaning_count: cognition.usedMeaningIds.length, external_session_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null, out_of_scope_marker_disclosed: false, reply_retained_in_canonical_state: false, cognition_status: cognition.status, delivery_status: cognition.deliveryStatus, reply: reply.trim() }, null, 2)}\n`,
+        `${JSON.stringify({ provider: "Cursor Agent CLI", selected_meaning_count: cognition.selectedMeaningIds.length, used_meaning_count: cognition.usedMeaningIds.length, external_session_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null, out_of_scope_marker_disclosed: false, reply_retained_in_canonical_state: false, cognition_status: cognition.status, deliveryStatus: cognition.deliveryStatus, reply: reply.trim() }, null, 2)}\n`,
     );
 } finally {
     try {

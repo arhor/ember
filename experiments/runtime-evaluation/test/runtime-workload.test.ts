@@ -42,13 +42,13 @@ test("exclusive-create locking and fsync-rename-fsync replacement survive a fres
     assert.equal(committed.revision, 1);
 
     const restarted = await new EvaluationStore(path).load();
-    const old = restarted.meanings.find((meaning) => meaning.meaning_id === meaningId("meaning-preference-a"));
+    const old = restarted.meanings.find((meaning) => meaning.meaningId === meaningId("meaning-preference-a"));
     const current = restarted.meanings.find(
         (meaning) => meaning.kind === "preference" && meaning.currentness === "current",
     );
     assert.equal(old?.currentness, "superseded");
     assert.equal(current?.content, "Prefer detailed architectural rationale");
-    assert.notDeepEqual(current?.source_evidence_ids, old?.source_evidence_ids);
+    assert.notDeepEqual(current?.sourceEvidenceIds, old?.sourceEvidenceIds);
 });
 
 test("store validates a typed candidate again before replacing canonical state", async () => {
@@ -62,7 +62,7 @@ test("store validates a typed candidate again before replacing canonical state",
     const mutable = candidate as unknown as { meanings: Array<Record<string, unknown>> };
     mutable.meanings.push({
         ...mutable.meanings[2],
-        meaning_id: "meaning-preference-duplicate",
+        meaningId: "meaning-preference-duplicate",
     });
 
     await assert.rejects(
@@ -81,13 +81,13 @@ test("provider subprocess uses bounded one-shot JSON and preserves projection se
     const projection = buildProjection(state, "ordinary", input);
     const { command, args } = providerCommand();
     const result = await invokeProvider(command, args, {
-        contract_version: 1,
-        cognition_id: cognitionId("cognition-provider"),
+        contractVersion: 1,
+        cognitionId: cognitionId("cognition-provider"),
         projection,
         input: { text: input.text },
     });
     assert.match(result.reply, /lineage-evaluation/);
-    assert.deepEqual(result.used_meaning_ids, projection.selection.meaning_ids.slice(0, 2));
+    assert.deepEqual(result.usedMeaningIds, projection.selection.meaning_ids.slice(0, 2));
 });
 
 test("provider timeout terminates the direct child", async () => {
@@ -101,8 +101,8 @@ test("provider timeout terminates the direct child", async () => {
                 command,
                 args,
                 {
-                    contract_version: 1,
-                    cognition_id: cognitionId("cognition-timeout"),
+                    contractVersion: 1,
+                    cognitionId: cognitionId("cognition-timeout"),
                     projection,
                     input: { text: input.text },
                 },
@@ -142,5 +142,5 @@ test("restart reconstruction preserves corrected scoped meaning for a fresh prov
     const { command, args } = providerCommand();
     const result = await runCognition(command, args, restarted, input);
     assert.match(result.reply, /lineage-evaluation/);
-    assert.deepEqual(result.used_meaning_ids, projection.selection.meaning_ids.slice(0, 2));
+    assert.deepEqual(result.usedMeaningIds, projection.selection.meaning_ids.slice(0, 2));
 });

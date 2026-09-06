@@ -1,0 +1,706 @@
+
+> @arhor/ember@0.0.0 test
+> node --test "src/**/*.test.ts" "tests/*.test.ts"
+
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/codex-opportunity-evaluator.test.ts (239.474608ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/cognition-opportunity-lifecycle.test.ts (255.943067ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/cognition-opportunity.test.ts (257.054886ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/dormant-concern-activation.test.ts (254.936024ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/endogenous-attention-control.test.ts (262.744592ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/endogenous-selectivity-evaluation.test.ts (259.3994ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/agency/interruption-decision.test.ts (224.571131ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/core/projection.test.ts (275.364986ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/core/semantics.test.ts (251.117125ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/delegation/codex-specialist.test.ts (246.893903ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/delegation/specialist-reintegration.test.ts (254.004584ms)
+✔ Codex argument evidence should preserve model selection when explicit configuration is supplied (6.049423ms)
+✔ Codex argument evidence should redact secrets and unknown values when explicit configuration may contain credentials (0.460239ms)
+✔ Codex argument evidence should remain valid bounded JSON when explicit configuration is oversized (0.886565ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/runtime/episodic-runtime.test.ts (324.388279ms)
+file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
+import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+                       ^^^^^^^^^^
+SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/runtime/interaction-boundary.test.ts (249.205526ms)
+file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
+import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+                       ^^^^^^^^^^
+SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ src/surfaces/telegram.test.ts (273.662852ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/codex-provider.test.ts (304.683134ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/cross-surface-continuity.test.ts (265.552827ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/cross-surface-semantics.test.ts (263.103436ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/cursor-provider.test.ts (284.678013ms)
+file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
+import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+                       ^^^^^^^^^^
+SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/delivery-before-send-recovery.test.ts (243.061049ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/delivery-inspection.test.ts (286.752832ms)
+file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
+import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+                       ^^^^^^^^^^
+SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/delivery-reconciliation.test.ts (238.321709ms)
+✖ complete repository corpus is valid without duplicate hint warnings (3.468484ms)
+✖ representative roles and supersession match governance (0.761261ms)
+✔ default, deep, and history views keep distinct purposes (0.465008ms)
+✔ v1 has no generated Markdown exclusions (0.486738ms)
+✔ parses documented frontmatter subset and preserves hint order (3.638502ms)
+✔ allows unrelated simple frontmatter fields for role-specific lifecycle (0.439751ms)
+✔ supports YAML-style single quoted scalar strings (0.318886ms)
+✔ rejects missing, unsupported, or unterminated frontmatter (0.783423ms)
+✖ validates required fields, duplicate hints, and status rules (1.890409ms)
+✖ validates supersession target and cycle (3.552021ms)
+✔ filters default, deep, and all without semantic matching (0.754328ms)
+✔ catalogue sorting and rendering are deterministic (0.704706ms)
+✔ heading projection uses H1-H4 and ignores fenced code (1.695044ms)
+✔ explicit exclusions are applied by exact repository path (1.195321ms)
+✔ missing metadata cannot silently disappear from corpus (4.852598ms)
+✔ heading projection rejects non-participating or invalid paths (1.153202ms)
+✔ CLI fails actionably when not run from repository root (62.774848ms)
+✖ endogenous restart harness should preserve concern lifecycle and truthful gaps across complete process restart (248.340988ms)
+✖ live-shaped restart path should require an actually observed ephemeral Codex thread (287.017799ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/episodic-runtime-recovery.test.ts (252.397267ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-acceptance.test.ts (236.126985ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-context-harm.test.ts (297.998126ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-currentness.test.ts (265.903749ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-degraded-context.test.ts (283.844839ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-harness.test.ts (271.306332ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-memory-context.test.ts (231.094504ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/longitudinal-provenance.test.ts (298.997741ms)
+file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
+import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+                       ^^^^^^^^^^
+SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/model-store.test.ts (254.451695ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/process-restart-harness.test.ts (254.882115ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/provider-cli.test.ts (275.482217ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/provider-timeout.test.ts (268.622978ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/semantic-continuity-evaluation.test.ts (296.491102ms)
+file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+         ^^^^^^^^^^^^^
+SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/semantics-projection.test.ts (196.127774ms)
+file:///home/runner/work/ember/ember/src/persistence/state-store.ts:11
+import { isRfc3339Utc, cloneState, nowUtc, validateState } from "../core/model.ts";
+                       ^^^^^^^^^^
+SyntaxError: The requested module '../core/model.ts' does not provide an export named 'cloneState'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v26.8.1
+✖ tests/telegram-delivery-reconciliation.test.ts (210.97764ms)
+ℹ tests 58
+ℹ suites 0
+ℹ pass 16
+ℹ fail 42
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3668.056574
+
+✖ failing tests:
+
+test at src/agency/codex-opportunity-evaluator.test.ts:1:1
+✖ src/agency/codex-opportunity-evaluator.test.ts (239.474608ms)
+  'test failed'
+
+test at src/agency/cognition-opportunity-lifecycle.test.ts:1:1
+✖ src/agency/cognition-opportunity-lifecycle.test.ts (255.943067ms)
+  'test failed'
+
+test at src/agency/cognition-opportunity.test.ts:1:1
+✖ src/agency/cognition-opportunity.test.ts (257.054886ms)
+  'test failed'
+
+test at src/agency/dormant-concern-activation.test.ts:1:1
+✖ src/agency/dormant-concern-activation.test.ts (254.936024ms)
+  'test failed'
+
+test at src/agency/endogenous-attention-control.test.ts:1:1
+✖ src/agency/endogenous-attention-control.test.ts (262.744592ms)
+  'test failed'
+
+test at src/agency/endogenous-selectivity-evaluation.test.ts:1:1
+✖ src/agency/endogenous-selectivity-evaluation.test.ts (259.3994ms)
+  'test failed'
+
+test at src/agency/interruption-decision.test.ts:1:1
+✖ src/agency/interruption-decision.test.ts (224.571131ms)
+  'test failed'
+
+test at src/core/projection.test.ts:1:1
+✖ src/core/projection.test.ts (275.364986ms)
+  'test failed'
+
+test at src/core/semantics.test.ts:1:1
+✖ src/core/semantics.test.ts (251.117125ms)
+  'test failed'
+
+test at src/delegation/codex-specialist.test.ts:1:1
+✖ src/delegation/codex-specialist.test.ts (246.893903ms)
+  'test failed'
+
+test at src/delegation/specialist-reintegration.test.ts:1:1
+✖ src/delegation/specialist-reintegration.test.ts (254.004584ms)
+  'test failed'
+
+test at src/runtime/episodic-runtime.test.ts:1:1
+✖ src/runtime/episodic-runtime.test.ts (324.388279ms)
+  'test failed'
+
+test at src/runtime/interaction-boundary.test.ts:1:1
+✖ src/runtime/interaction-boundary.test.ts (249.205526ms)
+  'test failed'
+
+test at src/surfaces/telegram.test.ts:1:1
+✖ src/surfaces/telegram.test.ts (273.662852ms)
+  'test failed'
+
+test at tests/codex-provider.test.ts:1:1
+✖ tests/codex-provider.test.ts (304.683134ms)
+  'test failed'
+
+test at tests/cross-surface-continuity.test.ts:1:1
+✖ tests/cross-surface-continuity.test.ts (265.552827ms)
+  'test failed'
+
+test at tests/cross-surface-semantics.test.ts:1:1
+✖ tests/cross-surface-semantics.test.ts (263.103436ms)
+  'test failed'
+
+test at tests/cursor-provider.test.ts:1:1
+✖ tests/cursor-provider.test.ts (284.678013ms)
+  'test failed'
+
+test at tests/delivery-before-send-recovery.test.ts:1:1
+✖ tests/delivery-before-send-recovery.test.ts (243.061049ms)
+  'test failed'
+
+test at tests/delivery-inspection.test.ts:1:1
+✖ tests/delivery-inspection.test.ts (286.752832ms)
+  'test failed'
+
+test at tests/delivery-reconciliation.test.ts:1:1
+✖ tests/delivery-reconciliation.test.ts (238.321709ms)
+  'test failed'
+
+test at tests/docs-discovery-repository.test.ts:22:1
+✖ complete repository corpus is valid without duplicate hint warnings (3.468484ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'docs/architecture/initial-model.md: superseded documents require superseded_by'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///home/runner/work/ember/ember/tests/docs-discovery-repository.test.ts:23:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'docs/architecture/initial-model.md: superseded documents require superseded_by' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/docs-discovery-repository.test.ts:27:1
+✖ representative roles and supersession match governance (0.761261ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + null
+  - 'docs/architecture/design-directions.md'
+  
+      at TestContext.<anonymous> (file:///home/runner/work/ember/ember/tests/docs-discovery-repository.test.ts:40:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'docs/architecture/design-directions.md',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/docs-discovery.test.ts:99:1
+✖ validates required fields, duplicate hints, and status rules (1.890409ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /supersededBy is only allowed/. Input:
+  
+  'docs/bad.md: summary must be a non-empty string\n' +
+    'docs/bad.md: read_when contains an exact duplicate after trimming\n' +
+    'docs/bad.md: role must be one of decision, design, evidence, foundation, guide, reference, research, scenario, source'
+  
+      at TestContext.<anonymous> (file:///home/runner/work/ember/ember/tests/docs-discovery.test.ts:114:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'docs/bad.md: summary must be a non-empty string\ndocs/bad.md: read_when contains an exact duplicate after trimming\ndocs/bad.md: role must be one of decision, design, evidence, foundation, guide, reference, research, scenario, source',
+    expected: /supersededBy is only allowed/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/docs-discovery.test.ts:117:1
+✖ validates supersession target and cycle (3.552021ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'docs/old.md: superseded documents require superseded_by'
+  + ]
+  - []
+  
+      at file:///home/runner/work/ember/ember/tests/docs-discovery.test.ts:123:16
+      at withRepo (file:///home/runner/work/ember/ember/tests/docs-discovery.test.ts:65:9)
+      at TestContext.<anonymous> (file:///home/runner/work/ember/ember/tests/docs-discovery.test.ts:118:5)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'docs/old.md: superseded documents require superseded_by' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/endogenous-restart-harness.test.ts:11:1
+✖ endogenous restart harness should preserve concern lifecycle and truthful gaps across complete process restart (248.340988ms)
+  Error: endogenous restart prepare phase exited 1: file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+  import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+           ^^^^^^^^^^^^^
+  SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+      at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+      at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+      at async node:internal/modules/esm/loader:650:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+  
+  Node.js v26.8.1
+      at ChildProcess.<anonymous> (file:///home/runner/work/ember/ember/eval/endogenous-restart/harness.ts:154:21)
+      at ChildProcess.emit (node:events:514:20)
+      at maybeClose (node:internal/child_process:1125:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:305:5)
+
+test at tests/endogenous-restart-harness.test.ts:56:1
+✖ live-shaped restart path should require an actually observed ephemeral Codex thread (287.017799ms)
+  Error: endogenous restart prepare phase exited 1: file:///home/runner/work/ember/ember/src/core/semantics.ts:20
+  import { contentDigest, newId, nowUtc, validateState } from "./model.ts";
+           ^^^^^^^^^^^^^
+  SyntaxError: The requested module './model.ts' does not provide an export named 'contentDigest'
+      at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+      at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+      at async node:internal/modules/esm/loader:650:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+  
+  Node.js v26.8.1
+      at ChildProcess.<anonymous> (file:///home/runner/work/ember/ember/eval/endogenous-restart/harness.ts:154:21)
+      at ChildProcess.emit (node:events:514:20)
+      at maybeClose (node:internal/child_process:1125:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:305:5)
+
+test at tests/episodic-runtime-recovery.test.ts:1:1
+✖ tests/episodic-runtime-recovery.test.ts (252.397267ms)
+  'test failed'
+
+test at tests/longitudinal-acceptance.test.ts:1:1
+✖ tests/longitudinal-acceptance.test.ts (236.126985ms)
+  'test failed'
+
+test at tests/longitudinal-context-harm.test.ts:1:1
+✖ tests/longitudinal-context-harm.test.ts (297.998126ms)
+  'test failed'
+
+test at tests/longitudinal-currentness.test.ts:1:1
+✖ tests/longitudinal-currentness.test.ts (265.903749ms)
+  'test failed'
+
+test at tests/longitudinal-degraded-context.test.ts:1:1
+✖ tests/longitudinal-degraded-context.test.ts (283.844839ms)
+  'test failed'
+
+test at tests/longitudinal-harness.test.ts:1:1
+✖ tests/longitudinal-harness.test.ts (271.306332ms)
+  'test failed'
+
+test at tests/longitudinal-memory-context.test.ts:1:1
+✖ tests/longitudinal-memory-context.test.ts (231.094504ms)
+  'test failed'
+
+test at tests/longitudinal-provenance.test.ts:1:1
+✖ tests/longitudinal-provenance.test.ts (298.997741ms)
+  'test failed'
+
+test at tests/model-store.test.ts:1:1
+✖ tests/model-store.test.ts (254.451695ms)
+  'test failed'
+
+test at tests/process-restart-harness.test.ts:1:1
+✖ tests/process-restart-harness.test.ts (254.882115ms)
+  'test failed'
+
+test at tests/provider-cli.test.ts:1:1
+✖ tests/provider-cli.test.ts (275.482217ms)
+  'test failed'
+
+test at tests/provider-timeout.test.ts:1:1
+✖ tests/provider-timeout.test.ts (268.622978ms)
+  'test failed'
+
+test at tests/semantic-continuity-evaluation.test.ts:1:1
+✖ tests/semantic-continuity-evaluation.test.ts (296.491102ms)
+  'test failed'
+
+test at tests/semantics-projection.test.ts:1:1
+✖ tests/semantics-projection.test.ts (196.127774ms)
+  'test failed'
+
+test at tests/telegram-delivery-reconciliation.test.ts:1:1
+✖ tests/telegram-delivery-reconciliation.test.ts (210.97764ms)
+  'test failed'

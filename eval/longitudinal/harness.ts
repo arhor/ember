@@ -175,7 +175,7 @@ export interface LongitudinalReport {
     report_version: 1;
     scenario_id: string;
     description: string;
-    lineage_id: string;
+    lineageId: string;
     history: {
         generated_action_count: number;
         groups: Record<string, string[]>;
@@ -184,7 +184,7 @@ export interface LongitudinalReport {
     model_observations_passed: boolean;
     episodes: Array<{
         episode_id: string;
-        runtime_id: string;
+        runtimeId: string;
         cognition_backend: string;
         backend_metadata: BackendMetadata;
         external_thread: HarnessProviderInvocation["thread"];
@@ -303,7 +303,7 @@ export async function runLongitudinalScenario(
             const providerResult = observedResult as ProviderResult;
             const request = observedRequest as ProviderRequest;
             const backendMetadata = observedBackendMetadata as BackendMetadata;
-            const providerThreadId = providerResult.operational?.external_thread_id ?? null;
+            const providerThreadId = providerResult.operational?.externalThreadId ?? null;
             if (providerThreadId !== null) episodeThreads.set(episode.id, providerThreadId);
             const expectedSelected = resolveReferences(
                 expectationReferences(episode.expect.selected_meanings, episode.expect.selected_meaning_groups),
@@ -333,9 +333,9 @@ export async function runLongitudinalScenario(
                 ),
                 observation(
                     "lineage remains canonical",
-                    canonicalBefore.lineage.lineage_id,
-                    request.projection.lineage.lineage_id,
-                    canonicalBefore.lineage.lineage_id === request.projection.lineage.lineage_id,
+                    canonicalBefore.lineage.lineageId,
+                    request.projection.lineage.lineageId,
+                    canonicalBefore.lineage.lineageId === request.projection.lineage.lineageId,
                 ),
                 observation(
                     "raw transcript excluded",
@@ -373,7 +373,7 @@ export async function runLongitudinalScenario(
                         "Ember runtime restarted",
                         "different runtime id",
                         runtimeId,
-                        reports.at(-1)!.runtime_id !== runtimeId,
+                        reports.at(-1)!.runtimeId !== runtimeId,
                     ),
                 );
             }
@@ -407,7 +407,7 @@ export async function runLongitudinalScenario(
             ];
             reports.push({
                 episode_id: episode.id,
-                runtime_id: runtimeId,
+                runtimeId: runtimeId,
                 cognition_backend: episode.cognition_backend,
                 backend_metadata: backendMetadata,
                 external_thread: thread,
@@ -429,7 +429,7 @@ export async function runLongitudinalScenario(
         report_version: 1,
         scenario_id: scenario.id,
         description: scenario.description,
-        lineage_id: state.lineage.lineage_id,
+        lineageId: state.lineage.lineageId,
         history: {
             generated_action_count: history.actions.length,
             groups: Object.fromEntries(history.groups),
@@ -531,9 +531,9 @@ function resolveEvidenceAliases(state: EmberState, aliases: Map<string, string>,
     const ids = references.flatMap((alias) => {
         const id = requireAlias(aliases, alias);
         if (id.startsWith("evidence-")) return [id];
-        const meaning = state.meanings.find((item) => String(item.meaning_id) === id);
+        const meaning = state.meanings.find((item) => String(item.meaningId) === id);
         if (!meaning) throw new Error(`provenance derivation alias does not resolve to meaning or evidence: ${alias}`);
-        return meaning.source_evidence_ids.map(String);
+        return meaning.sourceEvidenceIds.map(String);
     });
     return [...new Set(ids)];
 }
@@ -554,7 +554,7 @@ function evaluateContext(
         groups,
     );
     const selectedIds = new Set(projection.selection.meaning_ids.map(String));
-    const projectionGapIds = new Set(projection.gaps.map((item) => String(item.meaning_id)));
+    const projectionGapIds = new Set(projection.gaps.map((item) => String(item.meaningId)));
     const aliasById = new Map([...aliases].map(([alias, id]) => [id, alias]));
 
     return {
@@ -593,7 +593,7 @@ function appendClassificationAssertions(
         const supersededIds = new Set(
             canonicalBefore.historical_meanings
                 .filter((item) => item.currentness === "superseded")
-                .map((item) => String(item.meaning_id)),
+                .map((item) => String(item.meaningId)),
         );
         const observed = filterAliases(declared, (id) => supersededIds.has(id));
         assertions.push(
@@ -607,7 +607,7 @@ function appendClassificationAssertions(
     }
     if (expectations.unavailable_meanings) {
         const declared = resolveReferences(expectations.unavailable_meanings, aliases, groups);
-        const unavailableIds = new Set(canonicalBefore.gaps.map((item) => String(item.meaning_id)));
+        const unavailableIds = new Set(canonicalBefore.gaps.map((item) => String(item.meaningId)));
         const observed = filterAliases(declared, (id) => unavailableIds.has(id));
         assertions.push(
             observation(
@@ -701,7 +701,7 @@ function applyReplacementAssertions(scenario: LongitudinalScenario, reports: Lon
 function durableContinuityView(view: ReturnType<typeof inspectionView>) {
     return {
         lineage: view.lineage,
-        current_meanings: view.current_meanings,
+        currentMeanings: view.currentMeanings,
         historical_meanings: view.historical_meanings,
         live_commitments: view.live_commitments,
         gaps: view.gaps,

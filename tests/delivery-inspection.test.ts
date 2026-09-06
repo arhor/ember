@@ -34,9 +34,9 @@ test("CLI inspection redacts retained delivery representation while exposing rec
                 command: "fixture-provider",
                 timeoutSeconds: 1,
                 provider: async () => ({
-                    contract_version: 1,
+                    contractVersion: 1,
                     reply: RETAINED_REPLY,
-                    used_meaning_ids: [],
+                    usedMeaningIds: [],
                 }),
                 surfaceId: "messaging:test",
                 principalProvenance: "configured_surface_mapping",
@@ -79,15 +79,12 @@ test("CLI inspection redacts retained delivery representation while exposing rec
         const inspected = JSON.parse(output) as {
             interactions: {
                 deliveries: Array<{
-                    representation: { available: boolean; content_digest: string | null };
+                    representation: { available: boolean; contentDigest: string | null };
                 }>;
             };
         };
         assert.equal(inspected.interactions.deliveries[0]?.representation.available, true);
-        assert.match(
-            inspected.interactions.deliveries[0]?.representation.content_digest ?? "",
-            /^sha256:[0-9a-f]{64}$/,
-        );
+        assert.match(inspected.interactions.deliveries[0]?.representation.contentDigest ?? "", /^sha256:[0-9a-f]{64}$/);
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

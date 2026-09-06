@@ -66,7 +66,7 @@ async function withRestartedWriter<T>(
 function provider(calls: { value: number }): ProviderInvoker {
     return async () => {
         calls.value += 1;
-        return { contract_version: 1, reply: "durable reply", used_meaning_ids: [] };
+        return { contractVersion: 1, reply: "durable reply", usedMeaningIds: [] };
     };
 }
 
@@ -122,8 +122,8 @@ test("definite retryable delivery failure survives restart and retries the same 
 
             assert.equal(result.status, "confirmed");
             const state = await restartedStore.load();
-            assert.equal(state.operations.cognition_episodes.length, 1);
-            assert.equal(state.operations.cognition_episodes[0]?.deliveryStatus, "displayed");
+            assert.equal(state.operations.cognitionEpisodes.length, 1);
+            assert.equal(state.operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
         });
 
         assert.equal(calls.provider, 1);
@@ -159,7 +159,7 @@ test("restart turns an unresolved started send into uncertainty instead of blind
             assert.equal(resendCalls, 0);
             const recovered = await new InteractionLedgerStore(f.statePath).load();
             assert.equal(recovered.deliveries[0]?.attempts.at(-1)?.outcome, "uncertain");
-            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.deliveryStatus, "pending");
+            assert.equal((await restartedStore.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
         });
         assert.equal(calls.provider, 1);
     } finally {
@@ -177,7 +177,7 @@ test("confirmed delivery evidence reconciles canonical pending status without se
         await ledger.finishDeliveryAttempt(started.attempt_id, "confirmed", {
             externalMessageId: "already-sent",
         });
-        assert.equal((await f.store.load()).operations.cognition_episodes[0]?.deliveryStatus, "pending");
+        assert.equal((await f.store.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
 
         await withRestartedWriter(f, async (restartedStore) => {
             let resendCalls = 0;
@@ -187,7 +187,7 @@ test("confirmed delivery evidence reconciles canonical pending status without se
 
             assert.equal(result.status, "confirmed");
             assert.equal(resendCalls, 0);
-            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.deliveryStatus, "displayed");
+            assert.equal((await restartedStore.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
         });
     } finally {
         await f.close();
@@ -207,7 +207,7 @@ test("legacy interaction ledger migrates without inventing a lost delivery repre
                 ...delivery,
                 attempts: attempts.map(
                     ({
-                        observed_at: _observedAt,
+                        observedAt: _observedAt,
                         retryable: _retryable,
                         retry_after_seconds: _retryAfter,
                         ...attempt
@@ -222,7 +222,7 @@ test("legacy interaction ledger migrates without inventing a lost delivery repre
         assert.equal(migrated.deliveries[0]?.representation, null);
         assert.equal(migrated.deliveries[0]?.attempts[0]?.retryable, false);
         assert.equal(
-            migrated.deliveries[0]?.attempts[0]?.observed_at,
+            migrated.deliveries[0]?.attempts[0]?.observedAt,
             migrated.deliveries[0]?.attempts[0]?.attempted_at,
         );
     } finally {
@@ -240,7 +240,7 @@ test("inspection exposes delivery representation availability and digest without
         const serialized = JSON.stringify(inspected);
         assert.equal(serialized.includes("durable reply"), false);
         assert.equal(inspected.deliveries[0]?.representation.available, true);
-        assert.match(inspected.deliveries[0]?.representation.content_digest ?? "", /^sha256:[0-9a-f]{64}$/);
+        assert.match(inspected.deliveries[0]?.representation.contentDigest ?? "", /^sha256:[0-9a-f]{64}$/);
     } finally {
         await f.close();
     }

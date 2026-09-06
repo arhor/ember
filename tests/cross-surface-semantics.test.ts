@@ -27,7 +27,7 @@ function telegramConfig(directory: string, statePath: string): TelegramSurfaceCo
         config_version: 1,
         state_path: statePath,
         principal: PRINCIPAL,
-        active_scope: SHARED_SCOPE,
+        activeScope: SHARED_SCOPE,
         chat_id: CHAT_ID,
         token_file: join(directory, "telegram.token"),
         poll_timeout_seconds: 30,
@@ -58,7 +58,7 @@ function telegramUpdate(updateId: number, text = "hello from Telegram"): Telegra
 function captureProvider(requests: ProviderRequest[]): ProviderInvoker {
     return async (_command, _args, request) => {
         requests.push(request);
-        return { contract_version: 1, reply: "accepted", used_meaning_ids: [] };
+        return { contractVersion: 1, reply: "accepted", usedMeaningIds: [] };
     };
 }
 
@@ -119,8 +119,8 @@ async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
         try {
             if (runtimeId !== null) {
                 const current = await store.load();
-                const runtime = current.operations.runtime_episodes.find((episode) => episode.runtimeId === runtimeId);
-                if (runtime?.clean_stop_at === null) {
+                const runtime = current.operations.runtimeEpisodes.find((episode) => episode.runtimeId === runtimeId);
+                if (runtime?.cleanStopAt === null) {
                     const stopped = stopRuntime(current, runtimeId, { reason: "cross_surface_test_complete" });
                     await store.commit(current.revision, stopped);
                 }
@@ -172,8 +172,8 @@ test("CLI and Telegram preserve one principal and least-sufficient scope even wh
         const telegramProjection = telegramRequests[0]!.projection;
         assert.equal(cliProjection.principal, PRINCIPAL);
         assert.equal(telegramProjection.principal, PRINCIPAL);
-        assert.equal(cliProjection.active_scope, SHARED_SCOPE);
-        assert.equal(telegramProjection.active_scope, SHARED_SCOPE);
+        assert.equal(cliProjection.activeScope, SHARED_SCOPE);
+        assert.equal(telegramProjection.activeScope, SHARED_SCOPE);
         assert.equal(cliProjection.surface, "local_cli");
         assert.equal(telegramProjection.surface, TELEGRAM_SURFACE_ID);
         assert.equal(telegramProjection.current_input, disclosureAttempt);
@@ -200,10 +200,10 @@ test("CLI and Telegram preserve one principal and least-sufficient scope even wh
         );
         assert.ok(cliOccurrence);
         assert.ok(telegramOccurrence);
-        assert.equal(cliOccurrence.asserted_principal, PRINCIPAL);
+        assert.equal(cliOccurrence.assertedPrincipal, PRINCIPAL);
         assert.equal(cliOccurrence.principal_provenance, "explicit_local_argument");
         assert.equal(cliOccurrence.delivery_destination_id, null);
-        assert.equal(telegramOccurrence.asserted_principal, PRINCIPAL);
+        assert.equal(telegramOccurrence.assertedPrincipal, PRINCIPAL);
         assert.equal(telegramOccurrence.principal_provenance, "configured_surface_mapping");
         assert.equal(telegramOccurrence.external_occurrence_id, "update:42");
         assert.equal(telegramOccurrence.delivery_destination_id, `telegram:chat:${CHAT_ID}`);
@@ -262,7 +262,7 @@ test("matching Telegram chat identity cannot manufacture a different Ember princ
                 {
                     provider: async () => {
                         providerCalls += 1;
-                        return { contract_version: 1, reply: "must not happen", used_meaning_ids: [] };
+                        return { contractVersion: 1, reply: "must not happen", usedMeaningIds: [] };
                     },
                 },
             ),
@@ -271,7 +271,7 @@ test("matching Telegram chat identity cannot manufacture a different Ember princ
         assert.equal(providerCalls, 0);
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         assert.equal(ledger.inbound_occurrences.length, 0);
-        assert.equal((await f.store.load()).operations.cognition_episodes.length, 0);
+        assert.equal((await f.store.load()).operations.cognitionEpisodes.length, 0);
     } finally {
         await f.close();
     }

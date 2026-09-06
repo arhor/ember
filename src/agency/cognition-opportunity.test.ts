@@ -30,11 +30,11 @@ function startedState(withCommitment = false) {
 
 const selectLiveCommitment: CognitionOpportunityEvaluator = async (request) => {
     const commitment = request.projection.meanings.find(
-        (meaning) => meaning.kind === "commitment" && meaning.prospective_lifecycle === "live",
+        (meaning) => meaning.kind === "commitment" && meaning.prospectiveLifecycle === "live",
     );
     return commitment
-        ? { contract_version: 1, decision: "cognition", selected_meaning_ids: [commitment.meaning_id] }
-        : { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+        ? { contractVersion: 1, decision: "cognition", selectedMeaningIds: [commitment.meaningId] }
+        : { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
 };
 
 test("identical topic-free opportunity mechanism should decide from bounded Ember state", async () => {
@@ -59,9 +59,9 @@ test("identical topic-free opportunity mechanism should decide from bounded Embe
 
     // Then
     assert.equal(quietDecision.decision, "no_cognition");
-    assert.deepEqual(quietDecision.selected_meaning_ids, []);
+    assert.deepEqual(quietDecision.selectedMeaningIds, []);
     assert.equal(concernedDecision.decision, "cognition");
-    assert.deepEqual(concernedDecision.selected_meaning_ids, [concerned.commitment]);
+    assert.deepEqual(concernedDecision.selectedMeaningIds, [concerned.commitment]);
     assert.equal(quietDecision.mechanism, concernedDecision.mechanism);
     assert.deepEqual(quiet.state, quietBefore);
     assert.deepEqual(concerned.state, concernedBefore);
@@ -73,7 +73,7 @@ test("decision request should contain no trigger topic, mechanism, or synthetic 
     let captured: CognitionOpportunityRequest | null = null;
     const evaluator: CognitionOpportunityEvaluator = async (request) => {
         captured = request;
-        return { contract_version: 1, decision: "no_cognition", selected_meaning_ids: [] };
+        return { contractVersion: 1, decision: "no_cognition", selectedMeaningIds: [] };
     };
 
     // When
@@ -98,9 +98,9 @@ test("evaluator should not select meaning outside the bounded projection", async
     // Given
     const fixture = startedState(false);
     const evaluator: CognitionOpportunityEvaluator = async () => ({
-        contract_version: 1,
+        contractVersion: 1,
         decision: "cognition",
-        selected_meaning_ids: ["meaning-not-projected" as MeaningId],
+        selectedMeaningIds: ["meaning-not-projected" as MeaningId],
     });
 
     // When / Then
@@ -122,7 +122,7 @@ test("evaluator mutation should not enlarge the validated projection envelope", 
     const injected = "meaning-injected-by-evaluator" as MeaningId;
     const evaluator: CognitionOpportunityEvaluator = async (request) => {
         request.projection.selection.meaning_ids.push(injected);
-        return { contract_version: 1, decision: "cognition", selected_meaning_ids: [injected] };
+        return { contractVersion: 1, decision: "cognition", selectedMeaningIds: [injected] };
     };
 
     // When / Then
@@ -142,9 +142,9 @@ test("intentional no cognition should not carry a fabricated selected reason", a
     // Given
     const fixture = startedState(true);
     const evaluator: CognitionOpportunityEvaluator = async (request) => ({
-        contract_version: 1,
+        contractVersion: 1,
         decision: "no_cognition",
-        selected_meaning_ids: [request.projection.meanings[0].meaning_id],
+        selectedMeaningIds: [request.projection.meanings[0].meaningId],
     });
 
     // When / Then

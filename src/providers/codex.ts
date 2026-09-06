@@ -42,11 +42,11 @@ const RESULT_SCHEMA = `${JSON.stringify(
         $schema: "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         additionalProperties: false,
-        required: ["contract_version", "reply", "used_meaning_ids"],
+        required: ["contractVersion", "reply", "usedMeaningIds"],
         properties: {
-            contract_version: { type: "integer", const: 1 },
+            contractVersion: { type: "integer", const: 1 },
             reply: { type: "string", minLength: 1 },
-            used_meaning_ids: { type: "array", items: { type: "string" } },
+            usedMeaningIds: { type: "array", items: { type: "string" } },
         },
     },
     null,
@@ -85,7 +85,7 @@ export function buildCodexPrompt(request: ProviderRequest): string {
         "The JSON below contains the complete permitted projection and current input for this episode.",
         "Do not use tools, files, prior threads, or outside context.",
         "Return one ProviderResult matching the supplied output schema.",
-        "Set used_meaning_ids to only projected meaning IDs materially used in the reply.",
+        "Set usedMeaningIds to only projected meaning IDs materially used in the reply.",
         "The external runtime does not own Ember continuity, memory, canonical state, or authority.",
         "<ember_provider_request>",
         JSON.stringify(request),
@@ -391,7 +391,7 @@ export async function invokeCodexProvider(
         validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
         return parsed.externalThreadId === undefined
             ? parsed.result
-            : { ...parsed.result, operational: { external_thread_id: parsed.externalThreadId } };
+            : { ...parsed.result, operational: { externalThreadId: parsed.externalThreadId } };
     } finally {
         if (ownsCwd && !terminationUnconfirmed) await rm(runtimeCwd, { recursive: true, force: true }).catch(() => {});
     }

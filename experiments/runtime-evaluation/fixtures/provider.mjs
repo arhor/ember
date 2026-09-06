@@ -9,9 +9,9 @@ if (request.input.text === "hang") {
 } else {
     stdout.write(
         JSON.stringify({
-            contract_version: 1,
-            reply: `lineage=${request.projection.lineage.lineage_id}`,
-            used_meaning_ids: request.projection.selection.meaning_ids.slice(0, 2),
+            contractVersion: 1,
+            reply: `lineage=${request.projection.lineage.lineageId}`,
+            usedMeaningIds: request.projection.selection.meaning_ids.slice(0, 2),
         }),
     );
 }

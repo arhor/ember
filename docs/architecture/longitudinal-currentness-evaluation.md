@@ -84,7 +84,7 @@ report meanings:
 - `CONFLICT_REPORT_B: The migration did not complete successfully`.
 
 Both retain their own user-command evidence occurrence, scope, timestamp, and
-currentness. Neither carries a `supersedes` or `superseded_by` link. This avoids the
+currentness. Neither carries a `supersedes` or `supersededBy` link. This avoids the
 failure mode where Ember invents a correction merely because one contradictory
 statement arrived later.
 

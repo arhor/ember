@@ -247,7 +247,7 @@ pass but model observations fail. A polished live reply cannot repair a projecti
 failure. Conversely, a live model failure does not prove that canonical state was
 lost or that context selection failed when the state/projection layers are correct.
 
-For provenance-aware facts, `projection.meanings[*].epistemic_role` preserves the
+For provenance-aware facts, `projection.meanings[*].epistemicRole` preserves the
 claim class and `source_evidence` contains the immediate source occurrence plus its
 transitive ancestors. Independent support is therefore counted at derivation roots,
 not by the number of summaries, delegates, or inferences that repeat a root. See

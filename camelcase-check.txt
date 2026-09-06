@@ -1,0 +1,25 @@
+
+> @arhor/ember@0.0.0 check
+> npm run fmt:check && npm run lint && tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.mjs check
+
+
+> @arhor/ember@0.0.0 fmt:check
+> oxfmt --check
+
+Checking formatting...
+
+All matched files use the correct format.
+Finished in 3627ms on 226 files using 4 threads.
+
+> @arhor/ember@0.0.0 lint
+> oxlint
+
+Found 0 warnings and 0 errors.
+Finished in 79ms on 117 files with 60 rules using 4 threads.
+src/agency/cognition-opportunity.ts(16,5): error TS2305: Module '"../core/model.ts"' has no exported member 'cloneState'.
+src/cli/main.ts(8,10): error TS2305: Module '"../core/model.ts"' has no exported member 'cloneState'.
+src/cli/main.ts(233,64): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/core/semantics.ts(20,10): error TS2459: Module '"./model.ts"' declares 'contentDigest' locally, but it is not exported.
+src/persistence/state-store.ts(11,24): error TS2305: Module '"../core/model.ts"' has no exported member 'cloneState'.
+src/runtime/interaction-boundary.ts(14,5): error TS2305: Module '"../core/model.ts"' has no exported member 'cloneState'.
+src/runtime/interaction-boundary.ts(15,5): error TS2459: Module '"../core/model.ts"' declares 'contentDigest' locally, but it is not exported.

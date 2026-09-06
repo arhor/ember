@@ -74,8 +74,8 @@ export function buildCursorPrompt(request: ProviderRequest): string {
         "Act only as a bounded cognition provider for Ember.",
         "The JSON below contains the complete permitted projection and current input for this episode.",
         "Do not use tools, files, prior sessions, or outside context.",
-        "Return exactly one JSON object with only contract_version, reply, and used_meaning_ids.",
-        "contract_version must be 1; reply must be a non-empty string; used_meaning_ids must contain only projected meaning IDs materially used in the reply.",
+        "Return exactly one JSON object with only contractVersion, reply, and usedMeaningIds.",
+        "contractVersion must be 1; reply must be a non-empty string; usedMeaningIds must contain only projected meaning IDs materially used in the reply.",
         "The external runtime does not own Ember continuity, memory, canonical state, or authority.",
         "<ember_provider_request>",
         JSON.stringify(request),
@@ -360,7 +360,7 @@ export async function invokeCursorProvider(
                 errorOptions("failed", true, parsed.externalSessionId),
             );
         validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
-        return { ...parsed.result, operational: { external_thread_id: parsed.externalSessionId } };
+        return { ...parsed.result, operational: { externalThreadId: parsed.externalSessionId } };
     } finally {
         if (ownsCwd && !terminationUnconfirmed) await rm(runtimeCwd, { recursive: true, force: true }).catch(() => {});
     }

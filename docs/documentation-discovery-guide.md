@@ -72,7 +72,7 @@ discovery_status: current
 A superseded document additionally declares a repository-relative replacement:
 
 ```yaml
-superseded_by: docs/architecture/design-directions.md
+supersededBy: docs/architecture/design-directions.md
 ```
 
 ### `summary`
@@ -131,7 +131,7 @@ Use one of:
 - `superseded`: retained but replaced by another participating document;
 - `historical`: retained as history without a current governing claim.
 
-A superseded document must point through `superseded_by` to another participating document. Supersession chains must be acyclic and end at a current document.
+A superseded document must point through `supersededBy` to another participating document. Supersession chains must be acyclic and end at a current document.
 
 Do not use `discovery_status` as a substitute for role-specific lifecycle. For example, an ADR may simultaneously have `role: decision`, `discovery_status: current`, and its own `status: proposed`. The first two make it discoverable; only the ADR lifecycle says whether it governs.
 
@@ -180,7 +180,7 @@ When adding `docs/**/*.md`:
 2. add a distinguishing `summary`;
 3. add a few task-oriented `read_when` hints;
 4. set `discovery_status` independently from any document-specific lifecycle;
-5. add `superseded_by` only when the document is actually superseded;
+5. add `supersededBy` only when the document is actually superseded;
 6. inspect `list`, `--deep`, or `--all` to make sure it appears at the intended disclosure depth;
 7. run unit tests and `check` before merging.
 

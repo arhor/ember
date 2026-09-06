@@ -84,7 +84,7 @@ export interface SpecialistExpansionRequest {
 }
 
 export interface SpecialistEpisodeSpec {
-    contract_version: 2;
+    contractVersion: 2;
     episode_id: string;
     objective: string;
     acceptance: string[];
@@ -115,7 +115,7 @@ export interface SpecialistEpisodeSpec {
 }
 
 export interface SpecialistReport {
-    contract_version: 1;
+    contractVersion: 1;
     summary: string;
     objective_disposition: "completed" | "blocked" | "failed";
     artifacts_changed: string[];
@@ -129,7 +129,7 @@ export interface SpecialistReport {
 }
 
 export interface SpecialistObservation {
-    observed_at: string;
+    observedAt: string;
     kind:
         | "specification_persisted"
         | "launch_attempted"
@@ -147,7 +147,7 @@ export interface SpecialistObservation {
 
 export interface SpecialistTermination {
     reason: "explicit_cancellation" | "timeout" | "output_limit" | "boundary_failure";
-    direct_child_exit_observed: boolean;
+    directChildExitObserved: boolean;
     all_specialist_work_stopped: "unknown" | "established";
 }
 
@@ -159,7 +159,7 @@ export interface SpecialistRecoveryState {
 }
 
 export interface SpecialistReportProvenance {
-    source_role: "specialist_report";
+    sourceRole: "specialist_report";
     source: "codex_specialist";
     episode_id: string;
 }
@@ -170,7 +170,7 @@ export interface SpecialistEpisodeRecord {
     runtime_state: SpecialistRuntimeState;
     report_state: SpecialistReportState;
     ember_disposition: SpecialistDisposition;
-    external_thread_id?: string;
+    externalThreadId?: string;
     report?: SpecialistReport;
     report_provenance?: SpecialistReportProvenance;
     currentness_evaluation?: SpecialistCurrentnessEvaluation;
@@ -212,7 +212,7 @@ const REPORT_SCHEMA = `${JSON.stringify(
         type: "object",
         additionalProperties: false,
         required: [
-            "contract_version",
+            "contractVersion",
             "summary",
             "objective_disposition",
             "artifacts_changed",
@@ -225,7 +225,7 @@ const REPORT_SCHEMA = `${JSON.stringify(
             "expansion_requests",
         ],
         properties: {
-            contract_version: { type: "integer", const: 1 },
+            contractVersion: { type: "integer", const: 1 },
             summary: { type: "string", minLength: 1 },
             objective_disposition: { type: "string", enum: ["completed", "blocked", "failed"] },
             artifacts_changed: { type: "array", items: { type: "string" } },
@@ -268,10 +268,10 @@ const REPORT_SCHEMA = `${JSON.stringify(
 )}\n`;
 
 export function createSpecialistEpisode(
-    input: Omit<SpecialistEpisodeSpec, "contract_version" | "episode_id"> & { episode_id?: string },
+    input: Omit<SpecialistEpisodeSpec, "contractVersion" | "episode_id"> & { episode_id?: string },
 ): SpecialistEpisodeSpec {
     const spec: SpecialistEpisodeSpec = {
-        contract_version: 2,
+        contractVersion: 2,
         episode_id: input.episode_id ?? `delegation-${randomUUID()}`,
         ...input,
     };
@@ -325,14 +325,14 @@ export async function runCodexSpecialist(
         possible_effects: [],
         observations: [],
     };
-    record.observations.push({ observed_at: now(), kind: "specification_persisted" });
+    record.observations.push({ observedAt: now(), kind: "specification_persisted" });
     await persistRecord(options.recordPath, record, true);
 
     if (options.signal?.aborted) {
         record.runtime_state = "cancellation_requested";
         record.report_state = "ambiguous";
         record.recovery.retry_state = "safe_without_reconciliation";
-        record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: "before launch" });
+        record.observations.push({ observedAt: now(), kind: "cancellation_requested", detail: "before launch" });
         await persistRecord(options.recordPath, record);
         return structuredClone(record);
     }
@@ -343,7 +343,7 @@ export async function runCodexSpecialist(
     const prompt = buildSpecialistPrompt(spec);
     if (Buffer.byteLength(prompt) > MAX_TEXT_BYTES) throw new Error("specialist prompt exceeds 256 KiB");
 
-    record.observations.push({ observed_at: now(), kind: "launch_attempted" });
+    record.observations.push({ observedAt: now(), kind: "launch_attempted" });
     await persistRecord(options.recordPath, record);
     const args = [
         ...spec.runtime_policy.argument_prefix,
@@ -378,14 +378,14 @@ export async function runCodexSpecialist(
     } catch (error) {
         record.runtime_state = "lost";
         record.report_state = "ambiguous";
-        record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: errorMessage(error) });
+        record.observations.push({ observedAt: now(), kind: "boundary_failure", detail: errorMessage(error) });
         await persistRecord(options.recordPath, record);
         await rm(runtimeDir, { recursive: true, force: true });
         return record;
     }
 
     record.runtime_state = "running";
-    record.observations.push({ observed_at: now(), kind: "child_started" });
+    record.observations.push({ observedAt: now(), kind: "child_started" });
     await persistRecord(options.recordPath, record);
 
     const stdout: Buffer[] = [];
@@ -417,23 +417,23 @@ export async function runCodexSpecialist(
                       : reason === "output_limit"
                         ? "output_limit"
                         : "boundary_failure",
-            direct_child_exit_observed: false,
+            directChildExitObserved: false,
             all_specialist_work_stopped: "unknown",
         };
         if (reason === "cancel") {
             record.runtime_state = "cancellation_requested";
-            record.observations.push({ observed_at: now(), kind: "cancellation_requested", detail: reason });
+            record.observations.push({ observedAt: now(), kind: "cancellation_requested", detail: reason });
         } else if (reason === "timeout") {
             record.runtime_state = "timed_out";
-            record.observations.push({ observed_at: now(), kind: "timeout_observed", detail: reason });
+            record.observations.push({ observedAt: now(), kind: "timeout_observed", detail: reason });
         } else if (reason === "output_limit") {
-            record.observations.push({ observed_at: now(), kind: "output_limit_observed", detail: reason });
+            record.observations.push({ observedAt: now(), kind: "output_limit_observed", detail: reason });
         }
         terminationPersistence = persistRecord(options.recordPath, record)
             .catch((error) => {
                 terminationPersistenceError = errorMessage(error);
                 record.observations.push({
-                    observed_at: now(),
+                    observedAt: now(),
                     kind: "boundary_failure",
                     detail: `Cancellation intent could not be persisted before signalling: ${terminationPersistenceError}`,
                 });
@@ -494,10 +494,10 @@ export async function runCodexSpecialist(
     if (finalTimer) clearTimeout(finalTimer);
 
     record.runtime_state = exitObserved ? "exited" : "lost";
-    if (record.termination) record.termination.direct_child_exit_observed = exitObserved;
+    if (record.termination) record.termination.directChildExitObserved = exitObserved;
     if (exitObserved) {
         record.observations.push({
-            observed_at: now(),
+            observedAt: now(),
             kind: "child_exit_observed",
             detail: JSON.stringify({ exitCode, exitSignal }),
         });
@@ -520,7 +520,7 @@ export async function runCodexSpecialist(
             codexErrorDiagnostic(Buffer.concat(stdout));
         if (!terminationPersistenceError) {
             record.observations.push({
-                observed_at: now(),
+                observedAt: now(),
                 kind: "boundary_failure",
                 detail: stdinErrorMessage ?? termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`),
             });
@@ -529,13 +529,13 @@ export async function runCodexSpecialist(
         try {
             const parsed = parseJsonl(contractDecoder.decode(Buffer.concat(stdout)));
             validateReport(parsed.report);
-            record.external_thread_id = parsed.threadId;
+            record.externalThreadId = parsed.threadId;
             if (parsed.threadId) {
-                record.observations.push({ observed_at: now(), kind: "thread_observed", detail: parsed.threadId });
+                record.observations.push({ observedAt: now(), kind: "thread_observed", detail: parsed.threadId });
             }
             record.report = parsed.report;
             record.report_provenance = {
-                source_role: "specialist_report",
+                sourceRole: "specialist_report",
                 source: "codex_specialist",
                 episode_id: spec.episode_id,
             };
@@ -553,7 +553,7 @@ export async function runCodexSpecialist(
                 record.recovery.reconciliation_required =
                     "Independently observe reported or possible effects before consequential retry.";
             }
-            record.observations.push({ observed_at: now(), kind: "report_received" });
+            record.observations.push({ observedAt: now(), kind: "report_received" });
         } catch (error) {
             record.report_state = "ambiguous";
             record.possible_effects.push(
@@ -566,7 +566,7 @@ export async function runCodexSpecialist(
                 reconciliation_required:
                     "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
             };
-            record.observations.push({ observed_at: now(), kind: "boundary_failure", detail: errorMessage(error) });
+            record.observations.push({ observedAt: now(), kind: "boundary_failure", detail: errorMessage(error) });
         }
     }
 
@@ -609,7 +609,7 @@ export async function recordSpecialistProcessLoss(
                 : priorRuntimeState === "timed_out"
                   ? "timeout"
                   : "boundary_failure",
-        direct_child_exit_observed: false,
+        directChildExitObserved: false,
         all_specialist_work_stopped: "unknown",
     };
     record.possible_effects.push(
@@ -623,7 +623,7 @@ export async function recordSpecialistProcessLoss(
             "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
     };
     record.observations.push({
-        observed_at: observedAt,
+        observedAt: observedAt,
         kind: "boundary_failure",
         detail: `Supervisor process loss: ${detail}`,
     });
@@ -647,7 +647,7 @@ export async function reconcileInterruptedSpecialist(
         throw new Error("specialist episode does not require effect reconciliation");
     }
     record.observations.push({
-        observed_at: (options.now ?? (() => new Date().toISOString()))(),
+        observedAt: (options.now ?? (() => new Date().toISOString()))(),
         kind: "recovery_reconciled",
         detail: observation.detail,
     });
@@ -833,7 +833,7 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
         ) {
             try {
                 const candidate: unknown = JSON.parse(event.item.text);
-                if (recordLike(candidate) && candidate.contract_version === 1 && "objective_disposition" in candidate) {
+                if (recordLike(candidate) && candidate.contractVersion === 1 && "objective_disposition" in candidate) {
                     report = candidate as SpecialistReport;
                 }
             } catch {}
@@ -849,7 +849,7 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
 
 function validateSpec(spec: SpecialistEpisodeSpec) {
     if (
-        spec.contract_version !== 2 ||
+        spec.contractVersion !== 2 ||
         !bounded(spec.episode_id, 512) ||
         !bounded(spec.objective, 32_768) ||
         !validDerivationBasis(spec.currentness_basis)
@@ -953,7 +953,7 @@ function validateReport(value: SpecialistReport) {
         "artifacts_inspected",
         "blockers",
         "checks",
-        "contract_version",
+        "contractVersion",
         "expansion_requests",
         "known_effects",
         "objective_disposition",
@@ -964,7 +964,7 @@ function validateReport(value: SpecialistReport) {
     if (
         !recordLike(value) ||
         JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(fields) ||
-        value.contract_version !== 1 ||
+        value.contractVersion !== 1 ||
         !bounded(value.summary, 32_768) ||
         !["completed", "blocked", "failed"].includes(value.objective_disposition)
     ) {

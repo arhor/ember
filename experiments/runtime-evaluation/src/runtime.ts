@@ -13,8 +13,8 @@ export function runCognition(
 ): Promise<ProviderResult> {
     const projection = buildProjection(state, purpose, input);
     return invokeProvider(command, args, {
-        contract_version: 1,
-        cognition_id: cognitionId("cognition-evaluation"),
+        contractVersion: 1,
+        cognitionId: cognitionId("cognition-evaluation"),
         projection,
         input: { text: input.text },
     });

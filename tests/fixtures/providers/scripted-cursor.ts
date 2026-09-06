@@ -16,9 +16,9 @@ process.stdout.write(
         duration_ms: 1,
         duration_api_ms: 1,
         result: JSON.stringify({
-            contract_version: 1,
+            contractVersion: 1,
             reply: "CURSOR_CLI_RESPONSE",
-            used_meaning_ids: request.projection.selection.meaning_ids,
+            usedMeaningIds: request.projection.selection.meaning_ids,
         }),
         session_id: "session-cli-90",
     })}\n`,

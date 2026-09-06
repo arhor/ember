@@ -36,14 +36,14 @@ test("restart sends a retained delivery intent that never crossed the external s
                 timeoutSeconds: 1,
                 provider: async () => {
                     providerCalls += 1;
-                    return { contract_version: 1, reply: "reply retained before send", used_meaning_ids: [] };
+                    return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
                 },
                 output: () => {
                     outputCalls += 1;
                 },
                 hooks: {
                     afterExpressionCommit: async (committed, outputText) => {
-                        const cognition = committed.operations.cognition_episodes.at(-1);
+                        const cognition = committed.operations.cognitionEpisodes.at(-1);
                         assert.ok(cognition?.expressionEvidenceId);
                         await ledger.createDeliveryIntent({
                             cognitionId: cognition.cognitionId,
@@ -90,7 +90,7 @@ test("restart sends a retained delivery intent that never crossed the external s
             assert.equal(recovered.deliveries[0]?.attempts.length, 1);
             assert.equal(recovered.deliveries[0]?.attempts[0]?.outcome, "confirmed");
             assert.equal(recovered.deliveries[0]?.attempts[0]?.external_message_id, "message-after-restart");
-            assert.equal((await restartedStore.load()).operations.cognition_episodes[0]?.deliveryStatus, "displayed");
+            assert.equal((await restartedStore.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
         } finally {
             await restartedStore.releaseWriteLease(restartedLease);
         }

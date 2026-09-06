@@ -110,17 +110,17 @@ node bin/ember.ts inspect \
 preference_a=$(node --input-type=module -e '
   import {readFileSync} from "node:fs";
   const view=JSON.parse(readFileSync(process.argv[1],"utf8"));
-  console.log(view.current_meanings.find(item=>item.kind==="preference").meaning_id);
+  console.log(view.currentMeanings.find(item=>item.kind==="preference").meaningId);
 ' "$probe_dir/before.json")
 fact_id=$(node --input-type=module -e '
   import {readFileSync} from "node:fs";
   const view=JSON.parse(readFileSync(process.argv[1],"utf8"));
-  console.log(view.current_meanings.find(item=>item.kind==="fact").meaning_id);
+  console.log(view.currentMeanings.find(item=>item.kind==="fact").meaningId);
 ' "$probe_dir/before.json")
 episode_id=$(node --input-type=module -e '
   import {readFileSync} from "node:fs";
   const view=JSON.parse(readFileSync(process.argv[1],"utf8"));
-  console.log(view.current_meanings.find(item=>item.kind==="episode_meta").meaning_id);
+  console.log(view.currentMeanings.find(item=>item.kind==="episode_meta").meaningId);
 ' "$probe_dir/before.json")
 
 printf ':attach-detail %s Cinder\n:quit\n' "$episode_id" | "${run[@]}"
@@ -129,7 +129,7 @@ detail_id=$(node --input-type=module -e '
   const state=JSON.parse(readFileSync(process.argv[1],"utf8"));
   const episode=process.argv[2];
   console.log(state.evidence.find(item=>
-    item.related_meaning_id===episode&&item.source_role==="user_command").evidence_id);
+    item.relatedMeaningId===episode&&item.sourceRole==="user_command").evidenceId);
 ' "$state_path" "$episode_id")
 
 printf ':supersede %s Prefer detailed architectural rationale\n:quit\n' \

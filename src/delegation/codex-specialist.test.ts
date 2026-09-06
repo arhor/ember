@@ -79,7 +79,7 @@ async function episodeFixture() {
 
 function blockedReport(overrides: Record<string, unknown> = {}) {
     return {
-        contract_version: 1,
+        contractVersion: 1,
         summary: "blocked safely",
         objective_disposition: "blocked",
         artifacts_changed: [],
@@ -123,12 +123,12 @@ test("Codex specialist should preserve report as attributed unresolved evidence 
         "controlled specialist work\n",
     );
     assert.deepEqual(
-        [record.runtime_state, record.report_state, record.ember_disposition, record.external_thread_id],
+        [record.runtime_state, record.report_state, record.ember_disposition, record.externalThreadId],
         ["exited", "reported_success", "unresolved", "thread-operational-60"],
     );
     assert.equal(record.report?.summary, "Created the requested controlled artifact.");
     assert.deepEqual(record.report_provenance, {
-        source_role: "specialist_report",
+        sourceRole: "specialist_report",
         source: "codex_specialist",
         episode_id: fixture.spec.episode_id,
     });
@@ -352,7 +352,7 @@ test("Codex specialist should preserve effect uncertainty when cancellation is r
     assert.equal((durableStateAtSignal as any).termination.reason, "explicit_cancellation");
     assert.deepEqual(record.termination, {
         reason: "explicit_cancellation",
-        direct_child_exit_observed: true,
+        directChildExitObserved: true,
         all_specialist_work_stopped: "unknown",
     });
     assert.equal(record.recovery.retry_state, "prohibited_pending_reconciliation");
@@ -529,7 +529,7 @@ test("effect absence alone should not permit retry while continued specialist wo
         ember_disposition: "unresolved",
         termination: {
             reason: "explicit_cancellation",
-            direct_child_exit_observed: true,
+            directChildExitObserved: true,
             all_specialist_work_stopped: "unknown",
         },
         recovery: {
@@ -566,7 +566,7 @@ test("retry should become safe only after effects and continued work are both re
         runtime_state: "lost",
         report_state: "ambiguous",
         ember_disposition: "unresolved",
-        termination: { reason: "timeout", direct_child_exit_observed: true, all_specialist_work_stopped: "unknown" },
+        termination: { reason: "timeout", directChildExitObserved: true, all_specialist_work_stopped: "unknown" },
         recovery: {
             effect_state: "effects_possible",
             continued_work_state: "unknown",
@@ -601,7 +601,7 @@ test("making continued work harmless should permit retry without claiming it sto
         ember_disposition: "unresolved",
         termination: {
             reason: "explicit_cancellation",
-            direct_child_exit_observed: true,
+            directChildExitObserved: true,
             all_specialist_work_stopped: "unknown",
         },
         recovery: {
@@ -654,7 +654,7 @@ test("unconfirmed direct-child termination should persist unknown stop and effec
     assert.deepEqual(
         [
             record.runtime_state,
-            record.termination?.direct_child_exit_observed,
+            record.termination?.directChildExitObserved,
             record.termination?.all_specialist_work_stopped,
         ],
         ["lost", false, "unknown"],
@@ -682,8 +682,8 @@ test("process-loss recovery should convert a committed running attempt to durabl
         known_effects: [],
         possible_effects: [],
         observations: [
-            { observed_at: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
-            { observed_at: "2026-09-02T10:00:00.000Z", kind: "child_started" },
+            { observedAt: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
+            { observedAt: "2026-09-02T10:00:00.000Z", kind: "child_started" },
         ],
     };
     await mkdir(join(fixture.root, "episodes"));
@@ -696,7 +696,7 @@ test("process-loss recovery should convert a committed running attempt to durabl
     const restartedInspection = await inspectSpecialistEpisode(fixture.recordPath);
 
     assert.deepEqual([recovered.runtime_state, recovered.report_state], ["lost", "ambiguous"]);
-    assert.equal(restartedInspection.termination?.direct_child_exit_observed, false);
+    assert.equal(restartedInspection.termination?.directChildExitObserved, false);
     assert.equal(restartedInspection.termination?.all_specialist_work_stopped, "unknown");
     assert.equal(restartedInspection.recovery.retry_state, "prohibited_pending_reconciliation");
     assert.match(restartedInspection.possible_effects.join(" "), /continued across process loss/);
@@ -718,7 +718,7 @@ test("process-loss recovery should preserve ambiguity after launch attempt but b
         },
         known_effects: [],
         possible_effects: [],
-        observations: [{ observed_at: "2026-09-02T10:00:00.000Z", kind: "launch_attempted" }],
+        observations: [{ observedAt: "2026-09-02T10:00:00.000Z", kind: "launch_attempted" }],
     };
     await mkdir(join(fixture.root, "episodes"));
     await writeFile(fixture.recordPath, `${JSON.stringify(launching)}\n`);
@@ -733,7 +733,7 @@ test("process-loss recovery should preserve ambiguity after launch attempt but b
     assert.equal(recovered.recovery.continued_work_state, "unknown");
     assert.equal(recovered.recovery.retry_state, "prohibited_pending_reconciliation");
     assert.equal(recovered.termination?.reason, "boundary_failure");
-    assert.equal(recovered.termination?.direct_child_exit_observed, false);
+    assert.equal(recovered.termination?.directChildExitObserved, false);
 });
 
 for (const interrupted of [
@@ -750,7 +750,7 @@ for (const interrupted of [
             ember_disposition: "unresolved",
             termination: {
                 reason: interrupted.reason,
-                direct_child_exit_observed: false,
+                directChildExitObserved: false,
                 all_specialist_work_stopped: "unknown",
             },
             recovery: {
@@ -762,8 +762,8 @@ for (const interrupted of [
             known_effects: [],
             possible_effects: [],
             observations: [
-                { observed_at: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
-                { observed_at: "2026-09-02T10:00:00.000Z", kind: interrupted.observation },
+                { observedAt: "2026-09-02T09:59:59.000Z", kind: "launch_attempted" },
+                { observedAt: "2026-09-02T10:00:00.000Z", kind: interrupted.observation },
             ],
         };
         await mkdir(join(fixture.root, "episodes"));
@@ -775,7 +775,7 @@ for (const interrupted of [
         );
 
         assert.equal(recovered.termination?.reason, interrupted.reason);
-        assert.equal(recovered.termination?.direct_child_exit_observed, false);
+        assert.equal(recovered.termination?.directChildExitObserved, false);
         assert.equal(recovered.termination?.all_specialist_work_stopped, "unknown");
     });
 }
@@ -807,7 +807,7 @@ test("Codex specialist should record an ambiguous boundary failure when prompt d
 test("Codex specialist should reject malformed external evidence when report arrays contain invalid elements", async () => {
     const fixture = await episodeFixture();
     const malformed = {
-        contract_version: 1,
+        contractVersion: 1,
         summary: "unsupported evidence",
         objective_disposition: "completed",
         artifacts_changed: [42],
