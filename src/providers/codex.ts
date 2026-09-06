@@ -10,6 +10,7 @@ import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from 
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
+import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
@@ -246,7 +247,7 @@ export async function invokeCodexProvider(
             for (const line of lines) {
                 try {
                     const event: unknown = JSON.parse(line);
-                    if (isRecord(event) && event.type === "thread.started" && validExternalId(event.thread_id))
+                    if (isObject(event) && event.type === "thread.started" && validExternalId(event.thread_id))
                         observedThreadId = event.thread_id;
                 } catch {}
             }
@@ -411,7 +412,7 @@ function parseCodexJsonl(output: string): { result: ProviderResult; externalThre
                 cause: error,
             });
         }
-        if (!isRecord(event) || typeof event.type !== "string" || !event.type.trim())
+        if (!isObject(event) || typeof event.type !== "string" || !event.type.trim())
             throw new ProviderError(`Codex JSONL line ${index + 1} is not a typed event object`);
         if (event.type === "thread.started") {
             if (!validExternalId(event.thread_id))
@@ -420,7 +421,7 @@ function parseCodexJsonl(output: string): { result: ProviderResult; externalThre
                 throw new ProviderError("Codex JSONL contains inconsistent thread identifiers");
             externalThreadId = event.thread_id;
         }
-        if (event.type === "item.completed" && isRecord(event.item) && event.item.type === "agent_message") {
+        if (event.type === "item.completed" && isObject(event.item) && event.item.type === "agent_message") {
             if (typeof event.item.text !== "string") throw new ProviderError("Codex agent message is invalid");
             agentMessages += 1;
             try {
@@ -445,10 +446,6 @@ function validExternalId(value: unknown): value is string {
     );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
 function decodeDiagnostic(bytes: Uint8Array): string {
     return new TextDecoder("utf-8", { fatal: false }).decode(bytes).trim();
 }
@@ -458,11 +455,11 @@ function codexErrorDiagnostic(bytes: Uint8Array): string {
     for (const line of text.split("\n")) {
         try {
             const event: unknown = JSON.parse(line);
-            if (!isRecord(event)) continue;
+            if (!isObject(event)) continue;
             const message =
                 event.type === "error" && typeof event.message === "string"
                     ? event.message
-                    : event.type === "turn.failed" && isRecord(event.error) && typeof event.error.message === "string"
+                    : event.type === "turn.failed" && isObject(event.error) && typeof event.error.message === "string"
                       ? event.error.message
                       : null;
             if (message !== null) return message.replace(ASCII_CONTROL_CHARACTERS_PATTERN, " ").trim().slice(0, 4096);
