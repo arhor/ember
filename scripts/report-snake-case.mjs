@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
-import { extname, join, relative } from "node:path";
+import { extname, join } from "node:path";
 
-import ts from "typescript";
+import * as ts from "typescript";
 
 const ROOTS = ["src", "bin", "eval", "experiments", "tests"];
 const SOURCE_EXTENSIONS = new Set([".ts", ".mts", ".cts", ".js", ".mjs", ".cjs"]);
