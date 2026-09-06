@@ -114,6 +114,9 @@ async function visit(path) {
         if (extname(entry.name) === ".md" && child.startsWith(`docs/`)) {
             updated = restoreDocumentationFrontmatter(updated);
         }
+        if (child === join("tests", "docs-discovery.test.ts")) {
+            updated = restoreDocumentationTestWireKeys(updated);
+        }
         if (updated !== original) {
             await writeFile(child, updated);
             changedFiles += 1;
@@ -166,4 +169,10 @@ function restoreDocumentationFrontmatter(source) {
     if (end < 0) return source;
     const frontmatter = source.slice(0, end).replace(/^supersededBy:/gm, "superseded_by:");
     return frontmatter + source.slice(end);
+}
+
+function restoreDocumentationTestWireKeys(source) {
+    return source
+        .replace("lines.push(`supersededBy: ${supersededBy}`);", "lines.push(`superseded_by: ${supersededBy}`);")
+        .replace("/supersededBy is only allowed/", "/superseded_by is only allowed/");
 }
