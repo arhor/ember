@@ -3,6 +3,7 @@ import type { Projection } from "../core/projection.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
+import { exactKeys, isObject } from "../util.ts";
 
 export const CONTRACT_VERSION = 1;
 export const MAX_STDOUT_BYTES = 1024 * 1024;
@@ -41,38 +42,30 @@ export function validateProviderResult(
     result: unknown,
     selected: ReadonlySet<MeaningId | string>,
 ): asserts result is ProviderResult {
-    if (result === null || typeof result !== "object" || Array.isArray(result))
-        throw new ProviderError("provider result must be an object");
-    const object = result as Record<string, unknown>;
-    const fields = Object.keys(object).sort();
-    const requiredFields = ["contractVersion", "reply", "usedMeaningIds"].sort();
-    const allowedFields = [...requiredFields, "operational"].sort();
-    if (
-        JSON.stringify(fields) !== JSON.stringify(requiredFields) &&
-        JSON.stringify(fields) !== JSON.stringify(allowedFields)
-    )
+    if (!isObject(result)) throw new ProviderError("provider result must be an object");
+    const requiredFields = ["contractVersion", "reply", "usedMeaningIds"];
+    const allowedFields = [...requiredFields, "operational"];
+    if (!exactKeys(result, requiredFields) && !exactKeys(result, allowedFields))
         throw new ProviderError("provider result contains missing or unsupported fields");
-    if (!Number.isSafeInteger(object.contractVersion) || object.contractVersion !== 1)
+    if (!Number.isSafeInteger(result.contractVersion) || result.contractVersion !== 1)
         throw new ProviderError("provider result contractVersion is unsupported");
-    if (typeof object.reply !== "string" || !object.reply.trim())
+    if (typeof result.reply !== "string" || !result.reply.trim())
         throw new ProviderError("provider reply must be non-empty");
-    if (!Array.isArray(object.usedMeaningIds) || !object.usedMeaningIds.every((v) => typeof v === "string"))
+    if (!Array.isArray(result.usedMeaningIds) || !result.usedMeaningIds.every((v) => typeof v === "string"))
         throw new ProviderError("usedMeaningIds must be a string list");
-    if (new Set(object.usedMeaningIds).size !== object.usedMeaningIds.length)
+    if (new Set(result.usedMeaningIds).size !== result.usedMeaningIds.length)
         throw new ProviderError("usedMeaningIds must not contain duplicates");
-    if (!object.usedMeaningIds.every((id) => selected.has(id as string)))
+    if (!result.usedMeaningIds.every((id) => selected.has(id as string)))
         throw new ProviderError("provider claimed a meaning outside its projection");
-    if ("operational" in object) {
-        if (object.operational === null || typeof object.operational !== "object" || Array.isArray(object.operational))
-            throw new ProviderError("provider operational evidence must be an object");
-        const operational = object.operational as Record<string, unknown>;
-        if (JSON.stringify(Object.keys(operational).sort()) !== JSON.stringify(["externalThreadId"]))
+    if ("operational" in result) {
+        if (!isObject(result.operational)) throw new ProviderError("provider operational evidence must be an object");
+        if (!exactKeys(result.operational, ["externalThreadId"]))
             throw new ProviderError("provider operational evidence contains missing or unsupported fields");
         if (
-            typeof operational.externalThreadId !== "string" ||
-            !operational.externalThreadId.trim() ||
-            operational.externalThreadId.length > 512 ||
-            ASCII_CONTROL_CHARACTER_PATTERN.test(operational.externalThreadId)
+            typeof result.operational.externalThreadId !== "string" ||
+            !result.operational.externalThreadId.trim() ||
+            result.operational.externalThreadId.length > 512 ||
+            ASCII_CONTROL_CHARACTER_PATTERN.test(result.operational.externalThreadId)
         )
             throw new ProviderError("provider external thread ID is invalid");
     }
