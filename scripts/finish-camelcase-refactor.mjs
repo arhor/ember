@@ -40,7 +40,6 @@ const renames = new Map(
         applicable_from: "applicableFrom",
         applicable_until: "applicableUntil",
         prospective_lifecycle: "prospectiveLifecycle",
-        superseded_by: "supersededBy",
         previous_runtime: "previousRuntime",
         current_runtime: "currentRuntime",
         gap_kind: "gapKind",
