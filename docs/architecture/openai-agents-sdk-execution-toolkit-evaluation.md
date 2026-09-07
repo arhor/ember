@@ -104,40 +104,40 @@ the SDK to the unattended Pi deployment.
 
 ## Classification scale
 
-| Class | Meaning |
-| --- | --- |
-| **1 - direct** | The primitive can sit below an Ember-owned interface with little semantic translation. |
-| **2 - firewall** | The primitive is useful, but an adapter must prevent SDK concepts or state from becoming Ember semantics. |
-| **3 - coupled** | The primitive strongly overlaps an Ember-owned semantic concept or pulls control/state into the SDK worldview. |
-| **4 - irrelevant** | The primitive does not currently solve an earned Ember requirement. |
+| Class              | Meaning                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| **1 - direct**     | The primitive can sit below an Ember-owned interface with little semantic translation.                         |
+| **2 - firewall**   | The primitive is useful, but an adapter must prevent SDK concepts or state from becoming Ember semantics.      |
+| **3 - coupled**    | The primitive strongly overlaps an Ember-owned semantic concept or pulls control/state into the SDK worldview. |
+| **4 - irrelevant** | The primitive does not currently solve an earned Ember requirement.                                            |
 
 ## Primitive inventory
 
-| OpenAI Agents SDK primitive | Current surface | Class | Ember fit | Recommendation |
-| --- | --- | ---: | --- | --- |
-| Agent loop | `Runner.run()`, `run()`, `maxTurns`, run hooks | **2** | Strong bounded cognition/tool mechanics if `Agent` remains ephemeral and operational | **Wrap / revisit when a bounded loop is needed** |
-| Model abstraction | `Model`, `ModelProvider`, `ModelSettings` | **2** | Lightweight model seam with custom providers and provider-specific escape hatches | **Use only inside an execution adapter** |
-| AI SDK model bridge | `@openai/agents-extensions/ai-sdk` | **1/2** | Lets the Agents loop reuse Vercel AI SDK's broader provider ecosystem | **Strong composability signal** |
-| Function tools | `tool()`, `invokeFunctionTool`, Standard Schema/Zod/JSON Schema | **2** | Good schema validation, timeouts, cancellation signal, execution plumbing | **Wrap behind Ember capability/authority checks** |
-| Tool-loop behavior | automatic execute/result/model repetition | **2** | Useful inside one bounded cognition episode | **Use boundedly** |
-| Agents as tools | `agent.asTool()` | **2/3** | Manager retains control, closer to specialist mechanics than handoff | **Spike only behind specialist-report firewall** |
-| Handoffs | `handoff()`, active-agent switch, input filters | **3** for delegation | Transfers active SDK control and conversation context; too easy to collapse Ember responsibility into routing | **Avoid as Ember delegation semantics** |
-| Sessions | `Session`, `MemorySession`, `OpenAIConversationsSession`, custom stores | **2/3** | Useful operational history cache, but stores SDK `AgentInputItem[]` | **Keep disposable and non-canonical** |
-| Server-managed continuation | `conversationId`, `previousResponseId` | **3** as continuity | OpenAI-specific continuation handles, useful only as provider/runtime evidence | **Adapter-local only** |
-| Resumable state | `RunState`, serialization, interruptions | **2/3** | Useful approval checkpoint mechanics, but serialized SDK runtime state creates migration pressure | **Opaque operational checkpoint only** |
-| Human approval | `needsApproval`, `interruptions`, approve/reject, hosted MCP approval | **2** | Good execution pause/resume mechanism | **Wrap behind Ember authority/currentness checks** |
-| Input/output guardrails | agent guardrails | **2/3** | Useful validation, but not a universal authorization boundary | **Use selectively** |
-| Function-tool guardrails | input/output tool guardrails | **2** | Useful local execution checks | **Wrap, never equate with authority** |
-| MCP | local/remote MCP servers, hosted MCP tool, filters, approvals | **2** | Mature tool acquisition/transport mechanics | **Strong candidate behind Ember MCP/capability seam** |
-| Structured output | `outputType` with Zod, Standard Schema, or JSON Schema | **2** | Useful final-output validation inside the agent loop | **Use inside adapter, revalidate semantically** |
-| Streaming | streamed run result, event stream, cancellation/resume | **2** | Useful interaction mechanics with explicit completion/cancellation state | **Wrap when a surface needs streaming** |
-| Model retries | `modelSettings.retry`, retry policies, replay safety | **1/2** | Strong explicit failure/replay mechanics aligned with Ember effect truth | **Strong candidate within an SDK-backed runner** |
-| Tool timeout/cancellation | `timeoutMs`, `details.signal`, run `AbortSignal` | **2** | Useful cancellation mechanics, but cannot prove external effects stopped | **Use with Ember effect-uncertainty tracking** |
-| Results/evidence | `newItems`, `rawResponses`, `providerData`, request/response IDs, raw usage | **2** | Rich evidence surface avoids least-common-denominator normalization | **Translate deliberately into Ember observations** |
-| Tracing | traces/spans, custom processors/exporters | **2** | Good observability if Ember IDs/privacy policy remain primary | **Wrap / optional** |
-| Default OpenAI trace export | server-runtime default exporter | **3** for self-hosting | Creates implicit OpenAI service coupling and data-flow concerns | **Disable or replace for self-hosted default** |
-| Deterministic testing | `ScriptedModel`, model response/error/stream helpers | **1** | Excellent deterministic loop, retry, error, and streaming tests | **Adopt with any Agents SDK adapter** |
-| Sandbox/realtime/hosted multi-agent | separate optional surfaces | **4** now | Powerful but outside #179's earned Ember need; hosted multi-agent adds stronger service ownership | **Ignore / revisit separately** |
+| OpenAI Agents SDK primitive         | Current surface                                                             |                  Class | Ember fit                                                                                                     | Recommendation                                        |
+| ----------------------------------- | --------------------------------------------------------------------------- | ---------------------: | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Agent loop                          | `Runner.run()`, `run()`, `maxTurns`, run hooks                              |                  **2** | Strong bounded cognition/tool mechanics if `Agent` remains ephemeral and operational                          | **Wrap / revisit when a bounded loop is needed**      |
+| Model abstraction                   | `Model`, `ModelProvider`, `ModelSettings`                                   |                  **2** | Lightweight model seam with custom providers and provider-specific escape hatches                             | **Use only inside an execution adapter**              |
+| AI SDK model bridge                 | `@openai/agents-extensions/ai-sdk`                                          |                **1/2** | Lets the Agents loop reuse Vercel AI SDK's broader provider ecosystem                                         | **Strong composability signal**                       |
+| Function tools                      | `tool()`, `invokeFunctionTool`, Standard Schema/Zod/JSON Schema             |                  **2** | Good schema validation, timeouts, cancellation signal, execution plumbing                                     | **Wrap behind Ember capability/authority checks**     |
+| Tool-loop behavior                  | automatic execute/result/model repetition                                   |                  **2** | Useful inside one bounded cognition episode                                                                   | **Use boundedly**                                     |
+| Agents as tools                     | `agent.asTool()`                                                            |                **2/3** | Manager retains control, closer to specialist mechanics than handoff                                          | **Spike only behind specialist-report firewall**      |
+| Handoffs                            | `handoff()`, active-agent switch, input filters                             |   **3** for delegation | Transfers active SDK control and conversation context; too easy to collapse Ember responsibility into routing | **Avoid as Ember delegation semantics**               |
+| Sessions                            | `Session`, `MemorySession`, `OpenAIConversationsSession`, custom stores     |                **2/3** | Useful operational history cache, but stores SDK `AgentInputItem[]`                                           | **Keep disposable and non-canonical**                 |
+| Server-managed continuation         | `conversationId`, `previousResponseId`                                      |    **3** as continuity | OpenAI-specific continuation handles, useful only as provider/runtime evidence                                | **Adapter-local only**                                |
+| Resumable state                     | `RunState`, serialization, interruptions                                    |                **2/3** | Useful approval checkpoint mechanics, but serialized SDK runtime state creates migration pressure             | **Opaque operational checkpoint only**                |
+| Human approval                      | `needsApproval`, `interruptions`, approve/reject, hosted MCP approval       |                  **2** | Good execution pause/resume mechanism                                                                         | **Wrap behind Ember authority/currentness checks**    |
+| Input/output guardrails             | agent guardrails                                                            |                **2/3** | Useful validation, but not a universal authorization boundary                                                 | **Use selectively**                                   |
+| Function-tool guardrails            | input/output tool guardrails                                                |                  **2** | Useful local execution checks                                                                                 | **Wrap, never equate with authority**                 |
+| MCP                                 | local/remote MCP servers, hosted MCP tool, filters, approvals               |                  **2** | Mature tool acquisition/transport mechanics                                                                   | **Strong candidate behind Ember MCP/capability seam** |
+| Structured output                   | `outputType` with Zod, Standard Schema, or JSON Schema                      |                  **2** | Useful final-output validation inside the agent loop                                                          | **Use inside adapter, revalidate semantically**       |
+| Streaming                           | streamed run result, event stream, cancellation/resume                      |                  **2** | Useful interaction mechanics with explicit completion/cancellation state                                      | **Wrap when a surface needs streaming**               |
+| Model retries                       | `modelSettings.retry`, retry policies, replay safety                        |                **1/2** | Strong explicit failure/replay mechanics aligned with Ember effect truth                                      | **Strong candidate within an SDK-backed runner**      |
+| Tool timeout/cancellation           | `timeoutMs`, `details.signal`, run `AbortSignal`                            |                  **2** | Useful cancellation mechanics, but cannot prove external effects stopped                                      | **Use with Ember effect-uncertainty tracking**        |
+| Results/evidence                    | `newItems`, `rawResponses`, `providerData`, request/response IDs, raw usage |                  **2** | Rich evidence surface avoids least-common-denominator normalization                                           | **Translate deliberately into Ember observations**    |
+| Tracing                             | traces/spans, custom processors/exporters                                   |                  **2** | Good observability if Ember IDs/privacy policy remain primary                                                 | **Wrap / optional**                                   |
+| Default OpenAI trace export         | server-runtime default exporter                                             | **3** for self-hosting | Creates implicit OpenAI service coupling and data-flow concerns                                               | **Disable or replace for self-hosted default**        |
+| Deterministic testing               | `ScriptedModel`, model response/error/stream helpers                        |                  **1** | Excellent deterministic loop, retry, error, and streaming tests                                               | **Adopt with any Agents SDK adapter**                 |
+| Sandbox/realtime/hosted multi-agent | separate optional surfaces                                                  |              **4** now | Powerful but outside #179's earned Ember need; hosted multi-agent adds stronger service ownership             | **Ignore / revisit separately**                       |
 
 ## The runner can be an execution mechanism without becoming Ember
 
@@ -401,12 +401,12 @@ API and its remote conversation identifier.
 
 Migration cost therefore differs by implementation:
 
-| Session strategy | Migration/lock-in cost |
-| --- | --- |
-| `MemorySession` | **Low**: process-local and disposable by design |
-| custom local store of `AgentInputItem[]` | **Medium**: provider-independent storage, but SDK protocol/type migration remains |
-| OpenAI Conversations API | **High**: SDK item semantics plus service-owned remote state/identifier |
-| Ember reconstruction of per-run input without Session | **Lowest semantic lock-in**: more caller plumbing, maximum canonical control |
+| Session strategy                                      | Migration/lock-in cost                                                            |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `MemorySession`                                       | **Low**: process-local and disposable by design                                   |
+| custom local store of `AgentInputItem[]`              | **Medium**: provider-independent storage, but SDK protocol/type migration remains |
+| OpenAI Conversations API                              | **High**: SDK item semantics plus service-owned remote state/identifier           |
+| Ember reconstruction of per-run input without Session | **Lowest semantic lock-in**: more caller plumbing, maximum canonical control      |
 
 For Ember, a future production session store should be reconstructable or safely
 discardable. Do not require a one-to-one migration of old SDK sessions to preserve
@@ -752,17 +752,17 @@ evidence; the Ember specialist report remains the contract.
 
 ## Mapping to current Ember code
 
-| Current Ember area | Potential SDK role | What must remain Ember-owned |
-| --- | --- | --- |
-| `src/providers/contract.ts` | An SDK-backed direct-provider implementation could run beneath the request/result seam | request/result semantics, selected projection, `usedMeaningIds` validation, operational continuation meaning |
-| Codex/Cursor provider adapters | Little immediate benefit; they already own subscription-backed CLI lifecycle | CLI auth/session/process evidence and uncertainty |
-| `src/runtime/process-lifecycle.ts` | No replacement for existing CLI process lifecycle | child termination evidence, output bounds, process cleanup |
-| future generic local tool layer | FunctionTool schema/timeout/execution plumbing | capability identity, authority, effects, provenance |
-| MCP integration | transport, discovery, schema conversion, approval pause mechanics | server trust, principal policy, resource authorization, returned evidence |
-| `src/delegation/codex-specialist.ts` | Possible throwaway agents-as-tools execution spike | episode spec, disclosure, authority, currentness, effects, report provenance, reintegration |
-| episodic runtime | Serialized `RunState` could be one opaque work checkpoint | work ownership, recovery, liveness, writer leases, canonical state |
-| observability | trace/span generation and processors | Ember correlation IDs, retention/privacy policy, interpretation |
-| tests | `ScriptedModel` and helpers | Ember acceptance assertions and semantic oracles |
+| Current Ember area                   | Potential SDK role                                                                     | What must remain Ember-owned                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/providers/contract.ts`          | An SDK-backed direct-provider implementation could run beneath the request/result seam | request/result semantics, selected projection, `usedMeaningIds` validation, operational continuation meaning |
+| Codex/Cursor provider adapters       | Little immediate benefit; they already own subscription-backed CLI lifecycle           | CLI auth/session/process evidence and uncertainty                                                            |
+| `src/runtime/process-lifecycle.ts`   | No replacement for existing CLI process lifecycle                                      | child termination evidence, output bounds, process cleanup                                                   |
+| future generic local tool layer      | FunctionTool schema/timeout/execution plumbing                                         | capability identity, authority, effects, provenance                                                          |
+| MCP integration                      | transport, discovery, schema conversion, approval pause mechanics                      | server trust, principal policy, resource authorization, returned evidence                                    |
+| `src/delegation/codex-specialist.ts` | Possible throwaway agents-as-tools execution spike                                     | episode spec, disclosure, authority, currentness, effects, report provenance, reintegration                  |
+| episodic runtime                     | Serialized `RunState` could be one opaque work checkpoint                              | work ownership, recovery, liveness, writer leases, canonical state                                           |
+| observability                        | trace/span generation and processors                                                   | Ember correlation IDs, retention/privacy policy, interpretation                                              |
+| tests                                | `ScriptedModel` and helpers                                                            | Ember acceptance assertions and semantic oracles                                                             |
 
 ### What current Ember code should not be replaced
 
@@ -849,18 +849,18 @@ code starts interpreting SDK lifecycle labels as Ember meaning.
 
 ## Replaceability matrix
 
-| SDK feature | Ember seam | Later replacement | Canonical migration required? |
-| --- | --- | --- | --- |
-| `Runner` loop | cognition execution implementation | Vercel AI SDK loop, direct provider calls, custom loop | **No**, if result types stay contained |
-| `Model`/`ModelProvider` | adapter-local model selection | AI SDK provider, direct SDK, custom provider | **No** |
-| FunctionTool execution | Ember capability executor | AI SDK tool, MCP, custom executor | **No** |
-| `Session` | operational conversation store | custom history store, provider state, none | **No**, if history is disposable/reconstructable |
-| serialized `RunState` | opaque execution checkpoint | LangGraph checkpoint, custom state machine, restart | **No canonical migration**, but pending work may require reconciliation |
-| agent-as-tool specialist | specialist executor implementation | Codex CLI, another framework, custom specialist | **No**, if Ember specialist report remains canonical |
-| MCP integration | MCP transport/tool adapter | direct MCP client, AI SDK MCP, custom client | **No** |
-| tracing | trace sink adapter | OpenTelemetry, logs, AI SDK telemetry, custom | **No** |
-| scripted model | test-only model implementation | custom fake, AI SDK mock | **No** |
-| OpenAI Conversations state | provider operational continuation | another provider/session strategy | **Potentially yes** for conversation history; avoid as canonical dependency |
+| SDK feature                | Ember seam                         | Later replacement                                      | Canonical migration required?                                               |
+| -------------------------- | ---------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `Runner` loop              | cognition execution implementation | Vercel AI SDK loop, direct provider calls, custom loop | **No**, if result types stay contained                                      |
+| `Model`/`ModelProvider`    | adapter-local model selection      | AI SDK provider, direct SDK, custom provider           | **No**                                                                      |
+| FunctionTool execution     | Ember capability executor          | AI SDK tool, MCP, custom executor                      | **No**                                                                      |
+| `Session`                  | operational conversation store     | custom history store, provider state, none             | **No**, if history is disposable/reconstructable                            |
+| serialized `RunState`      | opaque execution checkpoint        | LangGraph checkpoint, custom state machine, restart    | **No canonical migration**, but pending work may require reconciliation     |
+| agent-as-tool specialist   | specialist executor implementation | Codex CLI, another framework, custom specialist        | **No**, if Ember specialist report remains canonical                        |
+| MCP integration            | MCP transport/tool adapter         | direct MCP client, AI SDK MCP, custom client           | **No**                                                                      |
+| tracing                    | trace sink adapter                 | OpenTelemetry, logs, AI SDK telemetry, custom          | **No**                                                                      |
+| scripted model             | test-only model implementation     | custom fake, AI SDK mock                               | **No**                                                                      |
+| OpenAI Conversations state | provider operational continuation  | another provider/session strategy                      | **Potentially yes** for conversation history; avoid as canonical dependency |
 
 ## Concrete recommendations
 
