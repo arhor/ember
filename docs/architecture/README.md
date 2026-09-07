@@ -111,6 +111,11 @@ Current architecture material:
   evaluates issue #179's bounded runner, model/provider abstraction, tools, handoffs,
   sessions, approvals, MCP, retries, tracing, streaming, and deterministic testing as
   replaceable execution mechanics beneath Ember-owned semantics.
+- [Composable Agent Infrastructure Adoption Strategy](composable-agent-infrastructure-strategy.md)
+  synthesizes issues #176-#180 into a staged mixed-library strategy: preserve
+  Ember-owned semantics and current custom runtime, prefer Vercel AI SDK for future
+  direct cognition mechanics, LangGraph.js for earned durable execution, and keep all
+  framework state/types behind independently replaceable capability seams.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
