@@ -35,6 +35,9 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
   },
+  "dependencies": {
+    "ai": "7.0.93"
+  },
   "devDependencies": {
     "@types/node": "26.4.1",
     "oxfmt": "0.66.0",
