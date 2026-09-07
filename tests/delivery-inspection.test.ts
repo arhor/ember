@@ -31,7 +31,7 @@ test("CLI inspection redacts retained delivery representation while exposing rec
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "please answer",
-                command: "fixture-provider",
+                providerLabel: "fixture-provider",
                 timeoutSeconds: 1,
                 provider: async () => ({
                     contractVersion: 1,

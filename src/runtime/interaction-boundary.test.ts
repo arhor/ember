@@ -45,7 +45,7 @@ async function fixture(): Promise<Fixture> {
 }
 
 function countingProvider(calls: { value: number }, observe?: (request: ProviderRequest) => void): ProviderInvoker {
-    return async (_command, _args, request) => {
+    return async (request) => {
         calls.value += 1;
         observe?.(request);
         return { contractVersion: 1, reply: "reply", usedMeaningIds: [] };
@@ -62,7 +62,7 @@ function options(
         principal: PRINCIPAL,
         scope: SCOPE,
         text: "same text",
-        command: "fixture-provider",
+        providerLabel: "fixture-provider",
         timeoutSeconds: 1,
         provider,
         deliver,

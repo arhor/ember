@@ -109,7 +109,7 @@ test("replayed Telegram update reuses cognition and does not send a second respo
     const f = await fixture();
     try {
         const calls = { provider: 0, send: 0 };
-        const provider: ProviderInvoker = async (_command, _args, request) => {
+        const provider: ProviderInvoker = async (request) => {
             calls.provider += 1;
             assert.equal(request.projection.surface, TELEGRAM_SURFACE_ID);
             const projection = JSON.stringify(request.projection);

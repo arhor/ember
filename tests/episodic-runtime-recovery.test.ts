@@ -228,7 +228,7 @@ test("process restart should classify in-flight cognition and opportunity as out
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "preserve this in-flight boundary",
-                command: "/unused/provider",
+                providerLabel: "/unused/provider",
                 timeoutSeconds: 1,
                 output: () => {},
                 provider: async () => {
@@ -298,7 +298,7 @@ test("restart should preserve completed cognition with pending delivery instead 
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "render once",
-                command: "/unused/provider",
+                providerLabel: "/unused/provider",
                 timeoutSeconds: 1,
                 provider: async () => ({
                     contractVersion: 1,
