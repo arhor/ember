@@ -23,6 +23,15 @@ export type ProviderProcessSpawn<TOptions> = (
     options: TOptions,
 ) => ProviderProcessChild;
 
+export interface ProviderCliSpawnOptions {
+    cwd: string;
+    env: NodeJS.ProcessEnv;
+    shell: false;
+    stdio: ["pipe", "pipe", "pipe"];
+}
+
+export type ProviderCliSpawn = ProviderProcessSpawn<ProviderCliSpawnOptions>;
+
 export interface RunProviderProcessOptions<TOptions> {
     command: string;
     arguments_: string[];

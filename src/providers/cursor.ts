@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
-import type { ProviderProcessSpawn } from "./process-lifecycle.ts";
+import type { ProviderCliSpawn } from "./process-lifecycle.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
@@ -39,18 +39,10 @@ const ENVIRONMENT_ALLOWLIST = [
 ] as const;
 const TOOL_DENY_CONFIG = `${JSON.stringify({ permissions: { allow: [], deny: ["Shell(*)", "Read(*)", "Read(**)", "Write(*)", "Write(**)", "WebFetch(*)", "Mcp(*:*)"] } }, null, 2)}\n`;
 
-type CursorSpawnOptions = {
-    cwd: string;
-    env: NodeJS.ProcessEnv;
-    shell: false;
-    stdio: ["pipe", "pipe", "pipe"];
-};
-type CursorSpawn = ProviderProcessSpawn<CursorSpawnOptions>;
-
 export interface InvokeCursorOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
-    spawnImpl?: CursorSpawn;
+    spawnImpl?: ProviderCliSpawn;
     session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string };
     terminationGraceMs?: number;
     finalTerminationMs?: number;
@@ -132,7 +124,7 @@ export async function invokeCursorProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = spawn as unknown as CursorSpawn,
+        spawnImpl = spawn as unknown as ProviderCliSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         session = { mode: "fresh" },

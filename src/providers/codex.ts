@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
-import type { ProviderProcessSpawn } from "./process-lifecycle.ts";
+import type { ProviderCliSpawn } from "./process-lifecycle.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
@@ -54,18 +54,10 @@ const RESULT_SCHEMA = `${JSON.stringify(
     2,
 )}\n`;
 
-type CodexSpawnOptions = {
-    cwd: string;
-    env: NodeJS.ProcessEnv;
-    shell: false;
-    stdio: ["pipe", "pipe", "pipe"];
-};
-type CodexSpawn = ProviderProcessSpawn<CodexSpawnOptions>;
-
 export interface InvokeCodexOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
-    spawnImpl?: CodexSpawn;
+    spawnImpl?: ProviderCliSpawn;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
     thread?: { mode: "ephemeral" } | { mode: "fresh_persistent" } | { mode: "resume"; externalThreadId: string };
@@ -147,7 +139,7 @@ export async function invokeCodexProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = spawn as unknown as CodexSpawn,
+        spawnImpl = spawn as unknown as ProviderCliSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         thread = { mode: "ephemeral" },
