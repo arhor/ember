@@ -82,36 +82,36 @@ package metadata, but target-host measurement remains the correct adoption gate.
 
 ## Classification scale
 
-| Class | Meaning |
-| --- | --- |
-| **1 - direct** | The primitive can sit below an Ember-owned interface with little semantic translation. |
-| **2 - firewall** | The primitive is useful, but an adapter must prevent AI SDK concepts, provider state, or control flow from becoming Ember semantics. |
-| **3 - coupled** | The primitive strongly overlaps an Ember-owned semantic concept or would pull Ember toward SDK-owned agent/session/memory meaning. |
-| **4 - irrelevant** | The primitive does not currently solve an earned Ember requirement. |
+| Class              | Meaning                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **1 - direct**     | The primitive can sit below an Ember-owned interface with little semantic translation.                                               |
+| **2 - firewall**   | The primitive is useful, but an adapter must prevent AI SDK concepts, provider state, or control flow from becoming Ember semantics. |
+| **3 - coupled**    | The primitive strongly overlaps an Ember-owned semantic concept or would pull Ember toward SDK-owned agent/session/memory meaning.   |
+| **4 - irrelevant** | The primitive does not currently solve an earned Ember requirement.                                                                  |
 
 ## Primitive inventory
 
-| AI SDK primitive | Current surface | Class | Ember fit | Recommendation |
-| --- | --- | ---: | --- | --- |
-| Model invocation | `generateText` | **2** | Excellent direct-API execution substrate; Ember still owns projection, validation, provenance, and cancellation meaning | **Wrap / strong candidate** |
-| Streaming model invocation | `streamText` | **2** | Mature token/content/tool streaming without dictating application persistence | **Wrap when a surface needs streaming** |
-| Structured generation | `Output.object`, `Output.array`, `Output.choice`, `Output.json`, schemas on `generateText` / `streamText` | **1/2** | Can replace ad-hoc structured-output parsing beneath `ProviderResult` validation | **Strong candidate** |
-| Provider specification | Language Model V4, provider packages, custom providers | **2** | Broad model portability while keeping provider-specific escape hatches | **Strong candidate** |
-| Provider registry/routing | provider objects, `customProvider`, model aliases, optional AI Gateway | **2** | Useful mechanical selection, but routing policy and evidence stay Ember-owned | **Wrap / optional** |
-| Provider-specific options | `providerOptions` | **2** | Necessary escape hatch for provider-native features | **Use only inside provider adapters** |
-| Provider-specific results | `providerMetadata`, raw finish reason, request/response metadata, warnings | **2** | Prevents forced least-common-denominator loss if translated deliberately | **Preserve at adapter boundary** |
-| Model middleware | `wrapLanguageModel`, `LanguageModelV4Middleware` | **2** | Useful for logging, caching, defaults, or mechanical transforms; dangerous if it hides semantic context/authority decisions | **Use selectively** |
-| Tool definitions | `tool`, Zod/JSON schemas, optional local `execute` | **2** | Excellent model-facing schema and local execution plumbing | **Wrap behind Ember capability/tool seams** |
-| Tool loop | `generateText` / `streamText` with `stopWhen`; `ToolLoopAgent` | **2** for a bounded episode; **3** as Ember architecture | Useful temporary cognition loop, not continuity/runtime/delegation | **Use boundedly; avoid as identity owner** |
-| Tool approval | `toolApproval`, approval request/response content | **2** | Good pause/request mechanics for locally executed tools; not authority and not universal | **Wrap behind Ember approval semantics** |
-| Provider-executed tools | provider-defined/hosted tools | **3** if treated as ordinary Ember capabilities | Execution may occur provider-side and bypass local approval/executor evidence | **Use only with explicit provider-specific policy** |
-| MCP client/tool conversion | `@ai-sdk/mcp`, `createMCPClient`, HTTP/SSE/stdio/custom transports | **2** | Strong generic transport and schema conversion; authority and session truth remain outside | **Wrap / strong candidate** |
-| MCP resources/prompts | MCP client support | **2** | Potential capability/context transport, but must not bypass Ember context selection or provenance | **Revisit per concrete need** |
-| Telemetry | stable telemetry API, `registerTelemetry`, optional `@ai-sdk/otel` | **2** | Strong observability mechanics if Ember IDs/privacy policy remain primary | **Candidate** |
-| Deterministic mocks | `ai/test`, `MockLanguageModelV4`, stream helpers | **1** | Excellent contract-test substrate | **Adopt with any AI SDK adapter** |
-| AI SDK memory guidance/providers | provider-defined tools, Letta/Mem0/etc., custom tools | **3** as Ember memory | AI SDK composes memory rather than owning one canonical model, but integrations still carry foreign memory semantics | **Do not adopt as Ember memory** |
-| AI SDK UI/RSC/TUI | UI-specific packages/protocols | **4** now | Ember surfaces already have independent transport semantics | **Ignore for core architecture** |
-| `@ai-sdk/workflow` / workflow agents | separate optional workflow package | **4** for #178; possible future **2** | Durable execution is a separate architectural concern already evaluated under #177 | **Do not conflate with cognition evaluation** |
+| AI SDK primitive                     | Current surface                                                                                           |                                                    Class | Ember fit                                                                                                                   | Recommendation                                      |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Model invocation                     | `generateText`                                                                                            |                                                    **2** | Excellent direct-API execution substrate; Ember still owns projection, validation, provenance, and cancellation meaning     | **Wrap / strong candidate**                         |
+| Streaming model invocation           | `streamText`                                                                                              |                                                    **2** | Mature token/content/tool streaming without dictating application persistence                                               | **Wrap when a surface needs streaming**             |
+| Structured generation                | `Output.object`, `Output.array`, `Output.choice`, `Output.json`, schemas on `generateText` / `streamText` |                                                  **1/2** | Can replace ad-hoc structured-output parsing beneath `ProviderResult` validation                                            | **Strong candidate**                                |
+| Provider specification               | Language Model V4, provider packages, custom providers                                                    |                                                    **2** | Broad model portability while keeping provider-specific escape hatches                                                      | **Strong candidate**                                |
+| Provider registry/routing            | provider objects, `customProvider`, model aliases, optional AI Gateway                                    |                                                    **2** | Useful mechanical selection, but routing policy and evidence stay Ember-owned                                               | **Wrap / optional**                                 |
+| Provider-specific options            | `providerOptions`                                                                                         |                                                    **2** | Necessary escape hatch for provider-native features                                                                         | **Use only inside provider adapters**               |
+| Provider-specific results            | `providerMetadata`, raw finish reason, request/response metadata, warnings                                |                                                    **2** | Prevents forced least-common-denominator loss if translated deliberately                                                    | **Preserve at adapter boundary**                    |
+| Model middleware                     | `wrapLanguageModel`, `LanguageModelV4Middleware`                                                          |                                                    **2** | Useful for logging, caching, defaults, or mechanical transforms; dangerous if it hides semantic context/authority decisions | **Use selectively**                                 |
+| Tool definitions                     | `tool`, Zod/JSON schemas, optional local `execute`                                                        |                                                    **2** | Excellent model-facing schema and local execution plumbing                                                                  | **Wrap behind Ember capability/tool seams**         |
+| Tool loop                            | `generateText` / `streamText` with `stopWhen`; `ToolLoopAgent`                                            | **2** for a bounded episode; **3** as Ember architecture | Useful temporary cognition loop, not continuity/runtime/delegation                                                          | **Use boundedly; avoid as identity owner**          |
+| Tool approval                        | `toolApproval`, approval request/response content                                                         |                                                    **2** | Good pause/request mechanics for locally executed tools; not authority and not universal                                    | **Wrap behind Ember approval semantics**            |
+| Provider-executed tools              | provider-defined/hosted tools                                                                             |          **3** if treated as ordinary Ember capabilities | Execution may occur provider-side and bypass local approval/executor evidence                                               | **Use only with explicit provider-specific policy** |
+| MCP client/tool conversion           | `@ai-sdk/mcp`, `createMCPClient`, HTTP/SSE/stdio/custom transports                                        |                                                    **2** | Strong generic transport and schema conversion; authority and session truth remain outside                                  | **Wrap / strong candidate**                         |
+| MCP resources/prompts                | MCP client support                                                                                        |                                                    **2** | Potential capability/context transport, but must not bypass Ember context selection or provenance                           | **Revisit per concrete need**                       |
+| Telemetry                            | stable telemetry API, `registerTelemetry`, optional `@ai-sdk/otel`                                        |                                                    **2** | Strong observability mechanics if Ember IDs/privacy policy remain primary                                                   | **Candidate**                                       |
+| Deterministic mocks                  | `ai/test`, `MockLanguageModelV4`, stream helpers                                                          |                                                    **1** | Excellent contract-test substrate                                                                                           | **Adopt with any AI SDK adapter**                   |
+| AI SDK memory guidance/providers     | provider-defined tools, Letta/Mem0/etc., custom tools                                                     |                                    **3** as Ember memory | AI SDK composes memory rather than owning one canonical model, but integrations still carry foreign memory semantics        | **Do not adopt as Ember memory**                    |
+| AI SDK UI/RSC/TUI                    | UI-specific packages/protocols                                                                            |                                                **4** now | Ember surfaces already have independent transport semantics                                                                 | **Ignore for core architecture**                    |
+| `@ai-sdk/workflow` / workflow agents | separate optional workflow package                                                                        |                    **4** for #178; possible future **2** | Durable execution is a separate architectural concern already evaluated under #177                                          | **Do not conflate with cognition evaluation**       |
 
 ## Why AI SDK fits Ember unusually well
 
@@ -798,18 +798,18 @@ workflow state becomes canonical application meaning.
 
 ## Lock-in surfaces
 
-| Surface | Risk | Containment |
-| --- | --- | --- |
-| AI SDK result/message types | **medium/high** if propagated | Convert at adapter boundary |
-| Tool definitions/calls/results | **medium** | Generate from Ember capability descriptors; execute through Ember-owned wrapper |
-| `ToolLoopAgent` lifecycle | **medium** | Keep bounded and adapter-local; prefer core functions first |
-| Provider options/metadata | **medium** but necessary | Provider-specific adapter code maps evidence to Ember meaning |
-| Model/provider spec major versions | **medium** | Exact version pinning, adapter contract tests |
-| AI Gateway model strings/service | **medium/high** if made mandatory | Keep gateway optional; support direct providers |
-| MCP client/session IDs | **low/medium** | Treat as operational transport state only |
-| Telemetry event schema | **low** | Optional translation/exporter boundary |
-| AI SDK memory providers | **high** if canonicalized | Do not make them Ember memory |
-| Persisted AI SDK state | **low for Core** | Core does not require canonical SDK persistence |
+| Surface                            | Risk                              | Containment                                                                     |
+| ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------------- |
+| AI SDK result/message types        | **medium/high** if propagated     | Convert at adapter boundary                                                     |
+| Tool definitions/calls/results     | **medium**                        | Generate from Ember capability descriptors; execute through Ember-owned wrapper |
+| `ToolLoopAgent` lifecycle          | **medium**                        | Keep bounded and adapter-local; prefer core functions first                     |
+| Provider options/metadata          | **medium** but necessary          | Provider-specific adapter code maps evidence to Ember meaning                   |
+| Model/provider spec major versions | **medium**                        | Exact version pinning, adapter contract tests                                   |
+| AI Gateway model strings/service   | **medium/high** if made mandatory | Keep gateway optional; support direct providers                                 |
+| MCP client/session IDs             | **low/medium**                    | Treat as operational transport state only                                       |
+| Telemetry event schema             | **low**                           | Optional translation/exporter boundary                                          |
+| AI SDK memory providers            | **high** if canonicalized         | Do not make them Ember memory                                                   |
+| Persisted AI SDK state             | **low for Core**                  | Core does not require canonical SDK persistence                                 |
 
 ## API maturity and versioning
 
