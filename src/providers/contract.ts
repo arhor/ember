@@ -32,8 +32,6 @@ export interface ProviderInvocationOptions {
 }
 
 export type ProviderInvoker = (
-    command: string,
-    arguments_: string[],
     request: ProviderRequest,
     options: ProviderInvocationOptions,
 ) => Promise<ProviderResult>;
