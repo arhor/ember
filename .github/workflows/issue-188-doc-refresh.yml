@@ -1,0 +1,63 @@
+name: Issue 188 documentation refresh
+
+on:
+  push:
+    branches:
+      - issue-188-generalize-provider-invocation
+    paths:
+      - ".github/workflows/issue-188-doc-refresh.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - name: Install locked development toolchain
+        run: npm ci
+      - name: Refresh current Agents SDK evaluation wording
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFile, writeFile } from "node:fs/promises";
+          const path = "docs/architecture/openai-agents-sdk-execution-toolkit-evaluation.md";
+          let source = await readFile(path, "utf8");
+          const replacements = [
+            [
+              `The same direct-provider pressure identified in the Vercel AI SDK evaluation still\napplies: the current \`ProviderInvoker\` function includes CLI \`command\` and\n\`arguments_\` because all proven production providers are external runtimes. An\nAgents SDK-backed direct API implementation would be another concrete reason to\nrevisit that process-shaped invocation parameter, while preserving request/result\nsemantics.`,
+              `The direct-provider pressure identified in the Vercel AI SDK evaluation was\nresolved by #186/#188: \`ProviderInvoker\` is now semantic-only, while Codex, Cursor,\nand deterministic process launch configuration is closed over by concrete adapters.\nAn Agents SDK-backed direct API implementation should therefore implement the same\n\`(request, options) -> result\` shape without changing request/result semantics.`,
+            ],
+            [
+              `An Agents SDK runner may live entirely inside one implementation. A later direct API\nbackend may justify removing CLI process configuration from the invocation call, but\nnot changing the semantic request/result meaning.`,
+              `An Agents SDK runner may live entirely inside one implementation. Issue #188 already\nremoved CLI process configuration from the shared invocation call; any Agents SDK\nadapter should implement that semantic request/result seam without reintroducing\ntransport-shaped parameters.`,
+            ],
+          ];
+          for (const [before, after] of replacements) {
+            if (!source.includes(before)) throw new Error(`expected documentation text not found: ${before.slice(0, 60)}`);
+            source = source.replace(before, after);
+          }
+          await writeFile(path, source);
+          EOF
+      - name: Apply repository formatting
+        run: npx oxfmt
+      - name: Remove temporary workflow
+        run: rm .github/workflows/issue-188-doc-refresh.yml
+      - name: Commit documentation refresh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refresh provider invocation documentation"
+          git push origin HEAD:issue-188-generalize-provider-invocation
+      - name: Verify documentation contract
+        run: |
+          npm run test:docs
+          node scripts/docs-discovery.mjs check
