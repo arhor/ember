@@ -31,6 +31,7 @@ export interface ProviderInvocationOptions {
     signal?: AbortSignal;
 }
 
+// Transport and process launch configuration belongs inside the concrete provider adapter, not this semantic seam.
 export type ProviderInvoker = (request: ProviderRequest, options: ProviderInvocationOptions) => Promise<ProviderResult>;
 
 export function validateProviderResult(
