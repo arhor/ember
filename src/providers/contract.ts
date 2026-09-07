@@ -31,10 +31,7 @@ export interface ProviderInvocationOptions {
     signal?: AbortSignal;
 }
 
-export type ProviderInvoker = (
-    request: ProviderRequest,
-    options: ProviderInvocationOptions,
-) => Promise<ProviderResult>;
+export type ProviderInvoker = (request: ProviderRequest, options: ProviderInvocationOptions) => Promise<ProviderResult>;
 
 export function validateProviderResult(
     result: unknown,

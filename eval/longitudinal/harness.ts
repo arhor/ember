@@ -757,3 +757,152 @@ async function withFixedTime<T>(timestamp: string, action: () => T | Promise<T>)
         else process.env.EMBER_TEST_NOW = previous;
     }
 }
+
+function validateScenario(value: unknown): asserts value is LongitudinalScenario {
+    if (value === null || typeof value !== "object" || Array.isArray(value))
+        throw new Error("longitudinal scenario must be an object");
+    const scenario = value as Partial<LongitudinalScenario>;
+    if (
+        scenario.scenario_version !== 1 ||
+        typeof scenario.id !== "string" ||
+        !scenario.id.trim() ||
+        typeof scenario.description !== "string"
+    )
+        throw new Error("longitudinal scenario header is invalid");
+    if (
+        !scenario.ember ||
+        typeof scenario.ember.name !== "string" ||
+        typeof scenario.ember.principal !== "string" ||
+        typeof scenario.ember.initial_at !== "string"
+    )
+        throw new Error("longitudinal scenario Ember identity is invalid");
+    if (!Array.isArray(scenario.setup) || !Array.isArray(scenario.episodes) || scenario.episodes.length < 2)
+        throw new Error("longitudinal scenario requires setup and at least two episodes");
+    if (scenario.history !== undefined && !Array.isArray(scenario.history))
+        throw new Error("longitudinal scenario history must be an array");
+    const aliases = new Set<string>();
+    const historyGroups = new Set<string>();
+    for (const generator of scenario.history ?? []) {
+        validateHistoryGenerator(generator, aliases, historyGroups);
+    }
+    const episodeIds = new Set<string>();
+    for (const action of [...scenario.setup, ...scenario.episodes.flatMap((episode) => episode.changes ?? [])]) {
+        if (
+            !action ||
+            typeof action !== "object" ||
+            typeof action.action !== "string" ||
+            typeof action.as !== "string" ||
+            typeof action.at !== "string"
+        )
+            throw new Error("longitudinal scenario action is invalid");
+        if (aliases.has(action.as)) throw new Error(`duplicate scenario alias: ${action.as}`);
+        aliases.add(action.as);
+    }
+    for (const episode of scenario.episodes) {
+        if (
+            !episode ||
+            typeof episode.id !== "string" ||
+            episodeIds.has(episode.id) ||
+            typeof episode.at !== "string" ||
+            typeof episode.scope !== "string" ||
+            typeof episode.cognition_backend !== "string" ||
+            !episode.cognition_backend.trim() ||
+            typeof episode.restart_ember !== "boolean" ||
+            typeof episode.input !== "string"
+        )
+            throw new Error("longitudinal episode is invalid");
+        episodeIds.add(episode.id);
+        if (!episode.external_thread || !["fresh", "reuse"].includes(episode.external_thread.mode))
+            throw new Error(`episode ${episode.id} thread control is invalid`);
+        if (episode.external_thread.mode === "reuse" && !episodeIds.has(episode.external_thread.episode))
+            throw new Error(`episode ${episode.id} must reuse an earlier episode`);
+        if (
+            !episode.expect ||
+            !Array.isArray(episode.expect.selected_meanings) ||
+            !Array.isArray(episode.expect.forbidden_meanings)
+        )
+            throw new Error(`episode ${episode.id} expectations are invalid`);
+        for (const field of ["selected_meanings", "forbidden_meanings"] as const) {
+            if (episode.expect[field].some((alias) => typeof alias !== "string" || !alias.trim()))
+                throw new Error(`episode ${episode.id} ${field} must contain non-empty aliases`);
+        }
+        for (const field of ["selected_meaning_groups", "forbidden_meaning_groups"] as const) {
+            const groupNames = episode.expect[field];
+            if (groupNames === undefined) continue;
+            if (
+                !Array.isArray(groupNames) ||
+                groupNames.some((group) => typeof group !== "string" || !group.trim() || !historyGroups.has(group))
+            )
+                throw new Error(`episode ${episode.id} ${field} contains an invalid history group`);
+        }
+        for (const field of [
+            "relevant_meanings",
+            "irrelevant_meanings",
+            "superseded_meanings",
+            "unavailable_meanings",
+        ] as const) {
+            const references = episode.expect[field];
+            if (references === undefined) continue;
+            if (!Array.isArray(references)) throw new Error(`episode ${episode.id} ${field} must be an array`);
+            for (const reference of references) validateMeaningReference(reference, historyGroups, episode.id, field);
+        }
+    }
+    if (scenario.backend_replacement) {
+        const comparison = scenario.backend_replacement;
+        if (!["same_backend_control", "cross_provider"].includes(comparison.status))
+            throw new Error("backend replacement comparison is invalid");
+        const controlIndex = scenario.episodes.findIndex((item) => item.id === comparison.control_episode);
+        const replacementIndex = scenario.episodes.findIndex((item) => item.id === comparison.replacement_episode);
+        if (controlIndex < 0 || replacementIndex <= controlIndex)
+            throw new Error("backend replacement must compare an earlier control with a later replacement episode");
+        const control = scenario.episodes[controlIndex]!;
+        const replacement = scenario.episodes[replacementIndex]!;
+        if (control.external_thread.mode !== "fresh" || replacement.external_thread.mode !== "fresh")
+            throw new Error("backend replacement comparison requires fresh external threads");
+        if (replacement.changes?.length)
+            throw new Error("backend replacement episode must not change canonical meaning before comparison");
+        if (comparison.status === "same_backend_control" && control.cognition_backend !== replacement.cognition_backend)
+            throw new Error("same-backend control must use one cognition backend");
+        if (comparison.status === "cross_provider" && control.cognition_backend === replacement.cognition_backend)
+            throw new Error("cross-provider comparison must use different cognition backends");
+    }
+}
+
+function validateHistoryGenerator(value: unknown, aliases: Set<string>, groups: Set<string>) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+        throw new Error("longitudinal history generator is invalid");
+    const generator = value as Partial<HistoryGenerator>;
+    if (generator.generate !== "remember_fact_series" || typeof generator.as !== "string" || !generator.as.trim())
+        throw new Error("longitudinal history generator header is invalid");
+    if (groups.has(generator.as)) throw new Error(`duplicate longitudinal history group: ${generator.as}`);
+    if (!Number.isInteger(generator.count) || generator.count! < 1 || generator.count! > 5_000)
+        throw new Error("longitudinal history generator count must be an integer from 1 to 5000");
+    if (
+        ![generator.slot_prefix, generator.scope, generator.text_prefix, generator.start_at].every(
+            (item) => typeof item === "string" && item.trim(),
+        )
+    )
+        throw new Error("longitudinal history generator text fields must be non-empty");
+    if (!Number.isInteger(generator.interval_seconds) || generator.interval_seconds! < 1)
+        throw new Error("longitudinal history generator interval_seconds must be a positive integer");
+    const start = Date.parse(generator.start_at!);
+    const last = start + (generator.count! - 1) * generator.interval_seconds! * 1000;
+    if (!Number.isFinite(start) || !Number.isFinite(last) || Number.isNaN(new Date(last).getTime()))
+        throw new Error("longitudinal history generator timestamps must stay within the supported date range");
+    groups.add(generator.as);
+    for (let index = 0; index < generator.count!; index += 1) {
+        const alias = `${generator.as}.${String(index + 1).padStart(4, "0")}`;
+        if (aliases.has(alias)) throw new Error(`duplicate scenario alias: ${alias}`);
+        aliases.add(alias);
+    }
+}
+
+function validateMeaningReference(reference: unknown, groups: Set<string>, episodeId: string, field: string) {
+    if (typeof reference === "string" && reference.trim()) return;
+    if (reference && typeof reference === "object" && !Array.isArray(reference)) {
+        const keys = Object.keys(reference);
+        const group = (reference as { group?: unknown }).group;
+        if (keys.length === 1 && typeof group === "string" && group.trim() && groups.has(group)) return;
+    }
+    throw new Error(`episode ${episodeId} ${field} contains an invalid meaning reference`);
+}

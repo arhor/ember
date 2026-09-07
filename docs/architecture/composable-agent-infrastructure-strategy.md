@@ -311,10 +311,11 @@ CognitionInvoker
   invoke(request, options) -> ProviderResult
 ```
 
-The current `ProviderInvoker` still includes CLI `command` and argument parameters
-because all proven production backends are external processes. Do not refactor that
-speculatively. A successful direct-AI-SDK spike is the evidence required by issue
-#92's revisit trigger.
+Issue #186 and the merged in-process AI SDK adapter supplied the direct-provider
+evidence anticipated by #92. Issue #188 therefore narrows `ProviderInvoker` to the
+Ember-owned `(request, options) -> result` operation; Codex, Cursor, and deterministic
+process launch configuration is now closed over by adapter construction instead of
+flowing through `runCognition`.
 
 **Ember owns**
 

@@ -521,17 +521,21 @@ export function parseArgs(argv: string[]): CliArgs {
 
 async function withSigintCancellation<T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
     const controller = new AbortController();
-    const onSigint = () => controller.abort();
-    process.once("SIGINT", onSigint);
+    const cancel = () => controller.abort();
+    process.once("SIGINT", cancel);
     try {
         return await operation(controller.signal);
     } finally {
-        process.off("SIGINT", onSigint);
+        process.off("SIGINT", cancel);
     }
 }
 
-function isOperationalSystemError(error: unknown): error is Error {
-    if (!(error instanceof Error)) return false;
-    const code = (error as NodeJS.ErrnoException).code;
-    return typeof code === "string" && ["EACCES", "ENOENT", "ENOSPC", "EROFS"].includes(code);
+function isOperationalSystemError(error: unknown): error is Error & { code: string } {
+    return (
+        error !== null &&
+        typeof error === "object" &&
+        "code" in error &&
+        typeof (error as { code?: unknown }).code === "string" &&
+        /^E[A-Z0-9]+$/.test((error as { code: string }).code)
+    );
 }

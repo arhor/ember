@@ -1,5 +1,5 @@
 ---
-summary: "Issue #92 decision that Ember's existing ProviderRequest/ProviderResult/ProviderInvoker seam is the earned common cognition-backend contract, while Codex and Cursor retain separate runtime adapters and lifecycle mechanics."
+summary: "Issue #92 decision, updated by #188, that Ember's ProviderRequest/ProviderResult and semantic ProviderInvoker seam are the earned common cognition-backend contract while process launch and lifecycle mechanics remain adapter-local."
 read_when:
   - "Changing the shared cognition provider contract or adding another production cognition backend"
   - "Considering deduplication or a common process runner across Codex and Cursor adapters"
@@ -65,14 +65,16 @@ A rename to a more generic term would create repository-wide churn without chang
 
 ### `ProviderInvoker`
 
-At the Ember runtime boundary, the common operation is intentionally small:
+At the Ember runtime boundary, the common operation is intentionally semantic:
 
 ```text
-(command, explicit arguments, bounded request, timeout/cancellation options)
+(bounded request, timeout/cancellation options)
     -> validated ProviderResult or typed ProviderError
 ```
 
-This is enough for CLI, Telegram, longitudinal evaluation, and the runtime cognition path to select Codex, Cursor, or the deterministic process provider without making those consumers understand vendor-specific sessions or output protocols.
+Executable commands, argument prefixes, workspaces, and other launch details are adapter-construction concerns. Codex, Cursor, and the deterministic process backend close over those mechanics before entering `runCognition`; the in-process AI SDK adapter uses the same invoker shape without synthetic process placeholders.
+
+`runCognition` receives a separate explicit `providerLabel` for stable cognition and expression-evidence diagnostics, so provider identity does not have to be inferred from subprocess configuration.
 
 ### Shared failure vocabulary
 
