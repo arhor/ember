@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
 import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
@@ -60,6 +60,25 @@ export interface InvokeCodexOptions extends ProviderInvocationOptions {
     terminationGraceMs?: number;
     finalTerminationMs?: number;
     thread?: { mode: "ephemeral" } | { mode: "fresh_persistent" } | { mode: "resume"; externalThreadId: string };
+}
+
+export interface CodexProviderConfig {
+    command?: string;
+    arguments_?: string[];
+    cwd?: string;
+    environment?: NodeJS.ProcessEnv;
+    spawnImpl?: CliProcessSpawn;
+    terminationGraceMs?: number;
+    finalTerminationMs?: number;
+    thread?: InvokeCodexOptions["thread"];
+}
+
+export function createCodexProvider({
+    command = "codex",
+    arguments_: args = [],
+    ...adapterOptions
+}: CodexProviderConfig = {}): ProviderInvoker {
+    return (request, options) => invokeCodexProvider(command, args, request, { ...adapterOptions, ...options });
 }
 
 export function buildCodexPrompt(request: ProviderRequest): string {
