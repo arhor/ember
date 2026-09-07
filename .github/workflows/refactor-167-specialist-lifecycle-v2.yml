@@ -25,7 +25,7 @@ jobs:
         run: node scripts/refactor-167-specialist-lifecycle.mjs
       - name: Format and validate
         run: |
-          npx oxfmt src/runtime/process-lifecycle.ts src/runtime/process-lifecycle.test.ts src/providers/process.ts src/providers/codex.ts src/providers/cursor.ts src/delegation/codex-specialist.ts
+          npx oxfmt scripts/refactor-167-specialist-lifecycle.mjs src/runtime/process-lifecycle.ts src/runtime/process-lifecycle.test.ts src/providers/process.ts src/providers/codex.ts src/providers/cursor.ts src/delegation/codex-specialist.ts
           npm run check
           npm test
           test ! -e src/providers/process-lifecycle.ts
