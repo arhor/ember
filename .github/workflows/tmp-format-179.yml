@@ -1,0 +1,34 @@
+name: Temporary #179 formatter autofix
+
+on:
+  push:
+    branches:
+      - research/179-openai-agents-sdk
+    paths:
+      - docs/architecture/openai-agents-sdk-execution-toolkit-evaluation.md
+      - .github/workflows/tmp-format-179.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - run: npm ci
+      - run: npx oxfmt docs/architecture/openai-agents-sdk-execution-toolkit-evaluation.md
+      - name: Commit formatter output
+        run: |
+          if git diff --quiet -- docs/architecture/openai-agents-sdk-execution-toolkit-evaluation.md; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/architecture/openai-agents-sdk-execution-toolkit-evaluation.md
+          git commit -m "docs: format OpenAI Agents SDK evaluation"
+          git push origin HEAD:research/179-openai-agents-sdk
