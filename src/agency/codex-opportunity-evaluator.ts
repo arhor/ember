@@ -8,7 +8,7 @@ import type {
 
 import { ValidationError } from "../core/errors.ts";
 import { newId } from "../core/model.ts";
-import { invokeCodexProvider } from "../providers/codex.ts";
+import { createCodexProvider } from "../providers/codex.ts";
 import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
 
 export const CODEX_OPPORTUNITY_INSTRUCTION = [
@@ -33,15 +33,14 @@ export function createCodexOpportunityEvaluator({
     arguments_: args = [],
     timeoutSeconds = 60,
     signal,
-    provider = invokeCodexProvider,
+    provider,
 }: CodexOpportunityEvaluatorOptions = {}): CognitionOpportunityEvaluator {
+    const configuredProvider = provider ?? createCodexProvider({ command, arguments_: args });
     return (request) =>
         evaluateCognitionOpportunityWithCodex(request, {
-            command,
-            arguments_: args,
             timeoutSeconds,
             signal,
-            provider,
+            provider: configuredProvider,
         });
 }
 
@@ -52,7 +51,7 @@ export async function evaluateCognitionOpportunityWithCodex(
         arguments_: args = [],
         timeoutSeconds = 60,
         signal,
-        provider = invokeCodexProvider,
+        provider,
     }: CodexOpportunityEvaluatorOptions = {},
 ): Promise<CognitionOpportunityEvaluation> {
     const projection: Projection = {
@@ -66,7 +65,8 @@ export async function evaluateCognitionOpportunityWithCodex(
         projection,
         input: { text: CODEX_OPPORTUNITY_INSTRUCTION },
     };
-    const result = await provider(command, args, providerRequest, { timeoutSeconds, signal });
+    const configuredProvider = provider ?? createCodexProvider({ command, arguments_: args });
+    const result = await configuredProvider(providerRequest, { timeoutSeconds, signal });
     const decision = result.reply.trim();
     if (decision !== "cognition" && decision !== "defer" && decision !== "no_cognition") {
         throw new ValidationError("Codex opportunity evaluator reply must be cognition, defer, or no_cognition");
