@@ -1,0 +1,26 @@
+name: Issue 186 lockfile bootstrap
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - ".github/workflows/issue-186-lockfile.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - name: Generate package lock
+        run: npm install --package-lock-only --ignore-scripts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: issue-186-package-lock
+          path: package-lock.json
