@@ -3,6 +3,7 @@
 import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 
+// Temporary branch-only migration: reset risky manual stitches, then reapply only the earned semantic boundary change.
 const resetPaths = [
     "src/cli/main.ts",
     "src/surfaces/telegram.ts",
