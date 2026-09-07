@@ -77,7 +77,6 @@ export function createAiSdkProvider(model: LanguageModel): ProviderInvoker {
             if (isTimeoutError(error)) {
                 throw new ProviderError("provider timed out", {
                     outcome: "timed_out",
-                    termination: { reason: "timeout", directChildExitObserved: false },
                     cause: error,
                 });
             }
