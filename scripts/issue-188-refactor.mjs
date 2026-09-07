@@ -71,7 +71,7 @@ await update("src/surfaces/telegram.ts", (source) => {
     );
     source = replaceOnce(
         source,
-        `                command: config.provider_command,\n                arguments_: config.provider_arguments,\n                timeoutSeconds: config.provider_timeout_seconds,\n                signal,\n                provider: selectedProvider,`,
+        `                command: config.provider_command,\n                arguments_: config.provider_arguments,\n                timeoutSeconds: config.provider_timeout_seconds,\n                signal,\n                ...(selectedProvider === undefined ? {} : { provider: selectedProvider }),`,
         `                providerLabel: providerLabel(config.provider_command),\n                provider: selectedProvider,\n                timeoutSeconds: config.provider_timeout_seconds,\n                signal,`,
         "Telegram cognition invocation",
     );
