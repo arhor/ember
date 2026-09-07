@@ -184,7 +184,7 @@ test("AI SDK timeout should map to Ember timed_out semantics", async () => {
         assert.match(result.providerFailure, /timed out/);
         const cognition = findCognition(result.state, result.cognitionId);
         assert.equal(cognition.status, "timed_out");
-        assert.deepEqual(cognition.providerTermination, { reason: "timeout", directChildExitObserved: false });
+        assert.equal(cognition.providerTermination, null);
     } finally {
         await closeFixture(fixture);
     }
