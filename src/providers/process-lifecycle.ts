@@ -1,5 +1,7 @@
 import type { Readable, Writable } from "node:stream";
 
+import { spawn } from "node:child_process";
+
 export type ProviderProcessTerminationReason =
     | "timeout"
     | "explicit_cancellation"
@@ -31,6 +33,9 @@ export interface ProviderCliSpawnOptions {
 }
 
 export type ProviderCliSpawn = ProviderProcessSpawn<ProviderCliSpawnOptions>;
+
+export const nodeProviderCliSpawn: ProviderCliSpawn = (command, arguments_, options) =>
+    spawn(command, arguments_, options);
 
 export interface RunProviderProcessOptions<TOptions> {
     command: string;

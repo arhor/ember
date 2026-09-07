@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,7 +15,7 @@ import {
     MAX_STDOUT_BYTES,
     validateProviderResult,
 } from "./contract.ts";
-import { runProviderProcess } from "./process-lifecycle.ts";
+import { nodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const CURSOR_CONFIG_DIRECTORY = ".cursor";
@@ -124,7 +123,7 @@ export async function invokeCursorProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = spawn as unknown as ProviderCliSpawn,
+        spawnImpl = nodeProviderCliSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         session = { mode: "fresh" },
