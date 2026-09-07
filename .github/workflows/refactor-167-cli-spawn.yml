@@ -1,0 +1,78 @@
+name: Refactor shared CLI spawn type
+
+on:
+  push:
+    branches:
+      - refactor/167-provider-process-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/167-provider-process-lifecycle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+      - name: Consolidate CLI spawn types
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+
+          async function replace(path, before, after) {
+            const source = await readFile(path, 'utf8');
+            if (!source.includes(before)) throw new Error(`Expected block not found in ${path}`);
+            await writeFile(path, source.replace(before, after));
+          }
+
+          await replace(
+            'src/providers/process-lifecycle.ts',
+            `export type ProviderProcessSpawn<TOptions> = (\n    command: string,\n    arguments_: string[],\n    options: TOptions,\n) => ProviderProcessChild;\n`,
+            `export type ProviderProcessSpawn<TOptions> = (\n    command: string,\n    arguments_: string[],\n    options: TOptions,\n) => ProviderProcessChild;\n\nexport interface ProviderCliSpawnOptions {\n    cwd: string;\n    env: NodeJS.ProcessEnv;\n    shell: false;\n    stdio: ["pipe", "pipe", "pipe"];\n}\n\nexport type ProviderCliSpawn = ProviderProcessSpawn<ProviderCliSpawnOptions>;\n`,
+          );
+
+          for (const [path, provider] of [
+            ['src/providers/codex.ts', 'Codex'],
+            ['src/providers/cursor.ts', 'Cursor'],
+          ]) {
+            await replace(
+              path,
+              `import type { ProviderProcessSpawn } from "./process-lifecycle.ts";`,
+              `import type { ProviderCliSpawn } from "./process-lifecycle.ts";`,
+            );
+
+            await replace(
+              path,
+              `type ${provider}SpawnOptions = {\n    cwd: string;\n    env: NodeJS.ProcessEnv;\n    shell: false;\n    stdio: ["pipe", "pipe", "pipe"];\n};\ntype ${provider}Spawn = ProviderProcessSpawn<${provider}SpawnOptions>;\n\n`,
+              '',
+            );
+
+            await replace(path, `spawnImpl?: ${provider}Spawn;`, `spawnImpl?: ProviderCliSpawn;`);
+            await replace(
+              path,
+              `spawnImpl = spawn as unknown as ${provider}Spawn,`,
+              `spawnImpl = spawn as unknown as ProviderCliSpawn,`,
+            );
+          }
+          NODE
+
+          npx oxfmt src/providers/process-lifecycle.ts src/providers/codex.ts src/providers/cursor.ts
+          npm ci
+          npm run check
+          npm test
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/refactor-167-cli-spawn.yml
+          git add src/providers/process-lifecycle.ts src/providers/codex.ts src/providers/cursor.ts
+          git commit -m "refactor: share provider CLI spawn type"
+          git push origin HEAD:refactor/167-provider-process-lifecycle
