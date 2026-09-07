@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
 import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
@@ -45,6 +45,25 @@ export interface InvokeCursorOptions extends ProviderInvocationOptions {
     session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string };
     terminationGraceMs?: number;
     finalTerminationMs?: number;
+}
+
+export interface CursorProviderConfig {
+    command?: string;
+    arguments_?: string[];
+    cwd?: string;
+    environment?: NodeJS.ProcessEnv;
+    spawnImpl?: CliProcessSpawn;
+    session?: InvokeCursorOptions["session"];
+    terminationGraceMs?: number;
+    finalTerminationMs?: number;
+}
+
+export function createCursorProvider({
+    command = "cursor-agent",
+    arguments_: args = [],
+    ...adapterOptions
+}: CursorProviderConfig = {}): ProviderInvoker {
+    return (request, options) => invokeCursorProvider(command, args, request, { ...adapterOptions, ...options });
 }
 
 export function buildCursorPrompt(request: ProviderRequest): string {
