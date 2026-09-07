@@ -182,12 +182,11 @@ An Agents SDK-backed implementation should consume and produce Ember-owned shape
 Callers should not receive `RunResult`, `AgentInputItem`, `ModelResponse`, or
 `RunState`.
 
-The same direct-provider pressure identified in the Vercel AI SDK evaluation still
-applies: the current `ProviderInvoker` function includes CLI `command` and
-`arguments_` because all proven production providers are external runtimes. An
-Agents SDK-backed direct API implementation would be another concrete reason to
-revisit that process-shaped invocation parameter, while preserving request/result
-semantics.
+The direct-provider pressure identified in the Vercel AI SDK evaluation was
+resolved by #186/#188: `ProviderInvoker` is now semantic-only, while Codex, Cursor,
+and deterministic process launch configuration is closed over by concrete adapters.
+An Agents SDK-backed direct API implementation should therefore implement the same
+`(request, options) -> result` shape without changing request/result semantics.
 
 ## Models and provider neutrality
 
@@ -700,9 +699,10 @@ ProviderRequest
   -> ProviderResult
 ```
 
-An Agents SDK runner may live entirely inside one implementation. A later direct API
-backend may justify removing CLI process configuration from the invocation call, but
-not changing the semantic request/result meaning.
+An Agents SDK runner may live entirely inside one implementation. Issue #188 already
+removed CLI process configuration from the shared invocation call; any Agents SDK
+adapter should implement that semantic request/result seam without reintroducing
+transport-shaped parameters.
 
 ### 2. Capability execution boundary
 
