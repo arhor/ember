@@ -18,7 +18,6 @@ import { newId, nowUtc, validateState } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
-import { invokeProvider, providerLabel } from "../providers/process.ts";
 import { cloneState } from "../util.ts";
 
 export function startRuntime(
@@ -131,14 +130,13 @@ export interface RunCognitionOptions {
     scope: string;
     surface?: string;
     text: string;
-    command: string;
-    arguments_?: string[];
+    providerLabel: string;
+    provider: ProviderInvoker;
     timeoutSeconds: number;
     signal?: AbortSignal;
     output?: Writable | ((text: string) => void | Promise<void>);
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
-    provider?: ProviderInvoker;
     cognitionId?: CognitionId;
     hooks?: {
         afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
@@ -155,19 +153,19 @@ export async function runCognition(
         scope,
         surface = "local_cli",
         text,
-        command,
-        arguments_: args = [],
+        providerLabel: label,
+        provider,
         timeoutSeconds,
         signal,
         output = process.stdout,
         purpose = "ordinary",
         explainIds = [],
-        provider = invokeProvider,
         cognitionId: requestedCognitionId,
         hooks = {},
     }: RunCognitionOptions,
 ): Promise<{ state: EmberState; providerFailure: string | null; cognitionId: CognitionId }> {
     requirePrincipal(state, principal);
+    if (typeof label !== "string" || !label.trim()) throw new ValidationError("provider label must be non-empty");
     const cognitionId = requestedCognitionId ?? newId("cognition");
     if (state.operations.cognitionEpisodes.some((episode) => episode.cognitionId === cognitionId)) {
         throw new ValidationError(`cognition already exists: ${cognitionId}`);
@@ -183,7 +181,6 @@ export async function runCognition(
         purpose,
         explainIds,
     });
-    const label = providerLabel(command);
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
     findRuntime(started, runtimeId).lastDurableObservationAt = timestamp;
@@ -216,7 +213,7 @@ export async function runCognition(
     };
     let result;
     try {
-        result = await provider(command, args, request, { timeoutSeconds, signal });
+        result = await provider(request, { timeoutSeconds, signal });
     } catch (error) {
         if (!(error instanceof ProviderError)) {
             throw error;
