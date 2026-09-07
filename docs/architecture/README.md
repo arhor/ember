@@ -103,6 +103,10 @@ Current architecture material:
   evaluates issue #177's Functional and Graph APIs, checkpointing, replay,
   interrupt/resume, persistence, delegation, and runtime mechanics as a replaceable
   durable-execution layer beneath Ember-owned continuity and canonical state.
+- [Vercel AI SDK Modular Cognition Evaluation](vercel-ai-sdk-modular-cognition-evaluation.md)
+  evaluates issue #178's model/provider abstraction, structured output, streaming,
+  tools, approvals, MCP, telemetry, testing, and agent-loop mechanics as replaceable
+  cognition infrastructure beneath Ember-owned semantics.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
