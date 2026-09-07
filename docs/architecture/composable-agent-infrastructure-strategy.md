@@ -1,8 +1,8 @@
 ---
-summary: "Issue #180 synthesis of Mastra, LangGraph.js, Vercel AI SDK, and OpenAI Agents SDK research into a staged capability-level adoption strategy that keeps Ember semantics and canonical state framework-independent."
+summary: "Issue #180 synthesis of Mastra, LangGraph.js, Vercel AI SDK, and OpenAI Agents SDK research into a single-primary-SDK adoption strategy that keeps Ember semantics and canonical state framework-independent."
 read_when:
   - "Choosing reusable JS/TS model, tool, MCP, durable-execution, retrieval, tracing, persistence, or evaluation infrastructure for Ember"
-  - "Deciding whether Ember should adopt Mastra, LangGraph.js, Vercel AI SDK, OpenAI Agents SDK, or a mixed composition"
+  - "Deciding whether Ember should adopt Vercel AI SDK as a primary toolkit or earn an exception for another agent SDK"
   - "Designing framework replacement boundaries, operational persistence, or migration escape hatches"
 role: design
 discovery_status: current
@@ -12,18 +12,17 @@ discovery_status: current
 
 ## Decision
 
-**Do not adopt one agent framework as Ember's architecture. Keep the current custom
-runtime and semantic boundaries, and adopt commodity mechanics only when a concrete
-need earns them. The preferred future composition is capability-level and mixed:
-Vercel AI SDK for direct model/provider, structured-output, streaming, tool-schema,
-MCP-conversion, and test mechanics; LangGraph.js for a future bounded durable
-execution capability; OpenAI Agents SDK only when a ready-made bounded multi-step
-runner materially beats the simpler AI SDK/custom loop; and no baseline Mastra
-dependency unless one of its individual workflow, observability, evaluation, MCP, or
-context-compression primitives wins a later capability-specific comparison.**
+**Do not adopt an agent framework as Ember's architecture, and do not compose several
+overlapping agent SDKs by default. Keep Ember's current runtime and semantic
+boundaries, then choose one primary infrastructure SDK whose mechanics are used as far
+as they remain adequate. The preferred primary candidate is Vercel AI SDK. LangGraph.js,
+OpenAI Agents SDK, and Mastra remain challengers or capability-specific escape hatches
+that require a concrete, material gap before they are added beside it.**
 
-This is intentionally a staged recommendation rather than a dependency shopping
-list.
+This changes the optimization target from "best library for every capability" to
+**coherent stack first, exceptions by evidence**. Replaceability still matters, but it
+is achieved through Ember-owned semantic boundaries rather than by eagerly installing
+multiple interchangeable runtimes.
 
 Today Ember already has working and semantically precise boundaries for:
 
@@ -39,19 +38,27 @@ None of the four candidates justifies replacing those boundaries merely because 
 has an API named `Agent`, `Memory`, `Session`, `Workflow`, `Thread`, `Handoff`, or
 `ToolApproval`.
 
-The synthesis therefore selects two different answers for two different time
-horizons:
+The synthesis therefore selects two answers for two time horizons:
 
-1. **Immediate posture: strategy 4, defer production adoption while preserving and
-   refining stable capability seams.** Research alone adds no production dependency.
-2. **Likely future posture: strategy 2, compose lower-level libraries behind those
-   seams.** AI SDK is the leading direct-cognition substrate; LangGraph is the
-   leading durable-execution substrate. Other pieces remain optional and independently
-   replaceable.
+1. **Immediate posture: defer production adoption until an earned feature needs the
+   mechanics.** Research alone adds no production dependency.
+2. **Likely first adoption: use Vercel AI SDK as Ember's primary reusable agent
+   infrastructure toolkit.** Prefer its provider, structured-output, streaming, tool,
+   bounded-loop, MCP, testing, and telemetry mechanics before considering a second
+   overlapping agent SDK.
 
-The governing rule from issue #175 survives the comparison intact:
+A second agent SDK is justified only after a concrete spike demonstrates that the
+primary stack plus Ember's existing custom runtime would otherwise require substantial,
+fragile, or semantically risky machinery. LangGraph is the strongest researched
+challenger for durable checkpointed execution; OpenAI Agents SDK is the strongest
+challenger for a richer bounded runner; Mastra remains a broad toolbox whose individual
+primitives may win a later focused comparison.
+
+The governing rules are:
 
 > **Ember owns meaning; dependencies may own mechanics.**
+>
+> **One primary SDK by default; additional agent runtimes only by demonstrated need.**
 
 ## Basis
 
@@ -131,29 +138,29 @@ meaningful first-class reason to select that candidate.
 The ratings describe use of that capability in Ember, not a general quality score for
 the project.
 
-| Capability                            | Mastra                  | LangGraph.js          | Vercel AI SDK         | OpenAI Agents SDK     | Ember decision                                                                                                                                                                              |
-| ------------------------------------- | ----------------------- | --------------------- | --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| model/provider invocation and routing | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for a future direct-provider backend.** Keep CLI adapters for current subscription-backed runtimes.                                                                         |
-| structured output                     | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK `Output` mechanics inside a cognition adapter.** Ember still validates provenance/currentness.                                                                              |
-| tool definitions and local execution  | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for simple model-facing tool plumbing.** Agents SDK becomes interesting when the runner itself is needed.                                                                   |
-| bounded agent/tool loop               | H / H / H / M / M       | H / H / H / M / M     | H / M / L / L / H     | **H / M / M / M / H** | **Do not adopt yet.** AI SDK is sufficient for a simple bounded loop; Agents SDK is the stronger optional runner when approvals/retries/loop lifecycle become substantial.                  |
-| MCP integration                       | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer a narrow MCP seam.** AI SDK is the best in-scope low-pressure conversion/client candidate; direct MCP SDK remains an escape hatch.                                                 |
-| streaming                             | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for cognition streaming.** LangGraph streams durable-operation progress; translate both into Ember events.                                                                  |
-| model retries/error normalization     | H / M / M / M / H       | M / M / M / M / H     | H / L / L / L / H     | **H / M / M / M / H** | AI SDK is enough for ordinary provider retry; Agents SDK has unusually useful replay-safety signals for runner retries. Effect retry safety remains Ember-owned.                            |
-| durable execution/checkpointing       | H / M / M / M-H / H     | **H / M / M / M / H** | —                     | M / H / H / M / M     | **Prefer LangGraph Functional API if a concrete durable operation is earned.** Do not replace ADR 0007 globally.                                                                            |
-| suspend/resume and approvals          | H / M / M / M / H       | **H / M / M / M / H** | M / M / L / L / H     | H / M / M / M / M-H   | LangGraph is strongest for process-restart durability; AI SDK approval is good call-level plumbing; Agents SDK `RunState` is acceptable only as opaque bounded-run state.                   |
-| memory/retrieval infrastructure       | H / **H** / H / M-H / M | H / **H** / H / M / M | L / M / L / L / H     | M / **H** / H / M / M | **Adopt none as Ember memory.** Revisit only rebuildable retrieval/context-compression mechanics after evaluation evidence.                                                                 |
-| delegation/sub-agent mechanics        | H / H / H / M / L-M     | H / H / H / M / L-M   | L / M / M / L / H     | H / **H** / H / M / M | **Keep Ember delegation custom.** Agents-as-tools may be spiked as executor mechanics; handoffs/supervisors/subgraphs do not define responsibility.                                         |
-| tracing/observability                 | H / L / M / M / H       | H / L / M / M / H     | H / L / L / L / H     | H / M / M / M / H     | **Do not adopt a framework only for tracing.** Prefer an Ember trace sink and direct OpenTelemetry where practical; use framework hooks when that framework is already present.             |
-| storage/persistence                   | H / H / H / M-H / M     | H / H / M / M / M     | —                     | M / H / H / M / M     | **No framework store may replace canonical `StateStore`.** Operational persistence belongs to the primitive that owns it and stays disposable/versioned.                                    |
-| eval/testing support                  | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | **H / L / M / M / H** | Keep Ember acceptance oracles. Prefer AI SDK mocks for AI SDK adapters and Agents SDK `ScriptedModel` for runner adapters; Mastra scorers are optional if they beat existing eval plumbing. |
+| Capability                            | Mastra                  | LangGraph.js          | Vercel AI SDK         | OpenAI Agents SDK     | Ember decision                                                                                                                                                                                               |
+| ------------------------------------- | ----------------------- | --------------------- | --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| model/provider invocation and routing | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for a future direct-provider backend.** Keep CLI adapters for current subscription-backed runtimes.                                                                                          |
+| structured output                     | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK `Output` mechanics inside a cognition adapter.** Ember still validates provenance/currentness.                                                                                               |
+| tool definitions and local execution  | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for simple model-facing tool plumbing.** Agents SDK becomes interesting when the runner itself is needed.                                                                                    |
+| bounded agent/tool loop               | H / H / H / M / M       | H / H / H / M / M     | **H / M / L / L / H** | H / M / M / M / H     | **Prefer AI SDK as part of the primary stack.** Compare Agents SDK only if a concrete bounded-loop requirement proves materially awkward or fragile on AI SDK plus Ember semantics.                          |
+| MCP integration                       | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer a narrow MCP seam.** AI SDK is the best in-scope low-pressure conversion/client candidate; direct MCP SDK remains an escape hatch.                                                                  |
+| streaming                             | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK.** Add another streaming/event vocabulary only if the second runtime itself is independently justified.                                                                                      |
+| model retries/error normalization     | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Use AI SDK provider retry/error mechanics by default.** Agents SDK replay-safety signals are a challenger advantage, not a reason to stack runtimes preemptively. Effect retry safety remains Ember-owned. |
+| durable execution/checkpointing       | H / M / M / M-H / H     | **H / M / M / M / H** | —                     | M / H / H / M / M     | **Keep Ember/systemd custom today.** If a concrete checkpointed operation exposes a real gap, LangGraph Functional API is the leading second-SDK challenger, not a planned companion.                        |
+| suspend/resume and approvals          | H / M / M / M / H       | **H / M / M / M / H** | M / M / L / L / H     | H / M / M / M / M-H   | **Use AI SDK approval plumbing for ordinary bounded work.** Escalate to LangGraph only for earned restart-durable waits; treat Agents SDK `RunState` only as a challenger implementation.                    |
+| memory/retrieval infrastructure       | H / **H** / H / M-H / M | H / **H** / H / M / M | L / M / L / L / H     | M / **H** / H / M / M | **Adopt none as Ember memory.** Revisit only rebuildable retrieval/context-compression mechanics after evaluation evidence.                                                                                  |
+| delegation/sub-agent mechanics        | H / H / H / M / L-M     | H / H / H / M / L-M   | L / M / M / L / H     | H / **H** / H / M / M | **Keep Ember delegation custom.** Agents-as-tools may be spiked as executor mechanics; handoffs/supervisors/subgraphs do not define responsibility.                                                          |
+| tracing/observability                 | H / L / M / M / H       | H / L / M / M / H     | H / L / L / L / H     | H / M / M / M / H     | **Do not adopt a framework only for tracing.** Prefer an Ember trace sink and direct OpenTelemetry where practical; use framework hooks when that framework is already present.                              |
+| storage/persistence                   | H / H / H / M-H / M     | H / H / M / M / M     | —                     | M / H / H / M / M     | **No framework store may replace canonical `StateStore`.** Operational persistence belongs to the primitive that owns it and stays disposable/versioned.                                                     |
+| eval/testing support                  | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | H / L / M / M / H     | Keep Ember acceptance oracles. **Prefer AI SDK mocks with the primary stack.** Use challenger-specific test helpers only after that challenger is independently adopted.                                     |
 
 ## What the comparison actually says
 
-### Vercel AI SDK wins the generic cognition layer
+### Vercel AI SDK is the preferred primary toolkit
 
-AI SDK has the strongest fit for the mechanics Ember is most likely to want without
-transferring architecture ownership:
+AI SDK has the strongest overall fit for the mechanics Ember is most likely to want
+without transferring architecture ownership:
 
 - ordinary function-level model invocation;
 - broad provider packages and custom-provider support;
@@ -168,15 +175,23 @@ transferring architecture ownership:
 
 Its most important architectural feature is an absence: Core does not insist on
 owning a durable agent object, session store, long-term memory, workflow database, or
-server topology.
+server topology. It also has the broadest established TypeScript usage among the
+researched candidates, which lowers ecosystem and maintenance risk without deciding
+architecture by popularity alone.
 
-The adoption trigger is equally important. AI SDK should first be used when Ember
-actually adds a **direct model API backend** or an in-process tool loop. Wrapping the
-existing Codex/Cursor CLI adapters in AI SDK would add an interface without removing
-their process, authentication, workspace, session, output-bound, cancellation, and
+The integration advantage is cumulative. Once AI SDK is present for direct cognition,
+using the same model/tool/streaming/MCP vocabulary for adjacent mechanics is cheaper
+than selecting a locally stronger SDK for every cell in the capability matrix. Ember
+should therefore first ask whether AI SDK plus existing Ember mechanics is sufficient,
+not which alternative SDK wins an isolated feature comparison.
+
+The adoption trigger remains concrete. AI SDK should first be used when Ember actually
+adds a **direct model API backend** or an in-process tool loop. Wrapping the existing
+Codex/Cursor CLI adapters in AI SDK would add an interface without removing their
+process, authentication, workspace, session, output-bound, cancellation, and
 uncertainty mechanics.
 
-### LangGraph wins durable execution, but only when Ember earns durable execution
+### LangGraph is the durable-execution challenger, not a planned companion
 
 LangGraph's Functional API is the strongest evaluated implementation for:
 
@@ -190,22 +205,28 @@ LangGraph's Functional API is the strongest evaluated implementation for:
 - cooperative drain under systemd;
 - versioned bounded operational workflows.
 
-That solves a different problem from model invocation. It should therefore be a
-different dependency behind a different port.
+Those capabilities are real advantages, but they overlap enough with the rest of an
+agent runtime that adding LangGraph is not free merely because Ember isolates it behind
+`DurableExecutionPort`. A second lifecycle vocabulary, event model, package surface,
+operational store, test matrix, and upgrade path are still integration cost.
 
 The current systemd-supervised episodic runtime remains simpler and already meets the
-requirements Ember has earned. Adding LangGraph globally today would create a second
-persistence lifecycle and replay/versioning burden before there is a failing use case.
-The first legitimate trigger is a naturally long-lived operation that needs to wait
-for approval or survive process restart across multiple steps.
+requirements Ember has earned. If a future operation genuinely needs checkpointed
+multi-step restart/resume, first establish the concrete gap in the primary AI SDK plus
+Ember runtime. Only if custom filling of that gap would be substantial or fragile
+should LangGraph be introduced as a second SDK.
 
-### OpenAI Agents SDK is the optional bounded-runner layer
+The first legitimate exception case is a naturally long-lived operation that needs to
+wait for approval or survive process restart across multiple durable steps.
 
-OpenAI Agents SDK is not the preferred generic provider abstraction. AI SDK applies
-less pressure there.
+### OpenAI Agents SDK is an alternative runner, not an extra default layer
 
-It becomes interesting when one bounded cognition episode needs enough loop machinery
-that hand-rolling on `generateText` becomes unattractive:
+OpenAI Agents SDK overlaps directly with the primary AI SDK choice across model
+invocation, tools, bounded loops, streaming, approvals, MCP, testing, and tracing.
+That makes it more useful as a challenger than as a routine companion dependency.
+
+Its `Runner` becomes worth a focused comparison when one bounded cognition episode
+needs enough loop machinery that the AI SDK implementation becomes materially awkward:
 
 - repeated model/tool turns;
 - resumable approval interruptions;
@@ -215,16 +236,13 @@ that hand-rolling on `generateText` becomes unattractive:
 - rich run evidence;
 - deterministic `ScriptedModel` lifecycle tests.
 
-Its official bridge to Vercel AI SDK is a useful composition signal: Ember could use
-AI SDK provider breadth underneath an Agents SDK runner without making either SDK the
-canonical architecture.
+The existence of an official bridge to Vercel AI SDK proves interoperability, not that
+Ember benefits from stacking both. The bar is higher: a spike must show that Agents SDK
+removes enough complex mechanical code to pay for a second overlapping runtime,
+additional types, lifecycle concepts, tests, upgrades, and operational state.
 
-That is still an optional extra layer. Do not stack AI SDK + Agents SDK merely because
-the bridge exists. First prove that the bounded runner removes enough Ember-owned
-mechanical code to pay for another 0.x dependency and another operational state model.
-
-`Agent`, `Session`, `RunState`, handoffs, and trace types remain adapter-local.
-Handoffs are specifically **not** Ember delegation.
+If that bar is met, `Agent`, `Session`, `RunState`, handoffs, and trace types remain
+adapter-local. Handoffs are specifically **not** Ember delegation.
 
 ### Mastra is a useful toolbox, but not the baseline composition
 
@@ -260,14 +278,14 @@ The useful result is not just what Ember could add. It is what current code shou
 
 | Current Ember area                                       | Generic mechanics in that area                                                                          | Candidate reuse                                                              | Decision                                                                                                                                            |
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/providers/contract.ts`                              | cognition invocation seam, request/result shapes, abort option                                          | AI SDK or Agents SDK may implement a future direct backend                   | **Preserve request/result semantics.** A direct API backend may later justify removing process-shaped `command`/arguments from the invocation call. |
+| `src/providers/contract.ts`                              | cognition invocation seam, request/result shapes, abort option                                          | AI SDK is the preferred future direct backend; alternatives are challengers  | **Preserve request/result semantics.** A direct API backend may later justify removing process-shaped `command`/arguments from the invocation call. |
 | `src/providers/codex.ts` and `src/providers/cursor.ts`   | subscription-backed CLI invocation, provider/session parsing and evidence                               | none of the four removes the hard parts                                      | **Keep.** Do not wrap working CLI adapters for aesthetic uniformity.                                                                                |
 | `src/runtime/process-lifecycle.ts`                       | spawn, bounded streams, timeout/abort, termination escalation and observation                           | generic agent SDKs do not replace it                                         | **Keep custom.** It is already the correct commodity seam for external runtimes.                                                                    |
 | `src/core/projection.ts` plus provider-result validation | least-sufficient selected context and provenance claims                                                 | structured output can reduce parsing only                                    | **Keep semantics custom.** AI SDK `Output` may implement syntax inside one adapter.                                                                 |
 | `src/persistence/state-store.ts`                         | canonical revision, writer lease, atomic replacement, durability uncertainty                            | framework stores/checkpointers                                               | **Never replace with framework operational storage.** Coexist only below a narrow adapter.                                                          |
 | `src/runtime/episodic-runtime.ts` and ADR 0007           | work ownership, systemd supervision, recovery, specialist episodes                                      | LangGraph/Mastra durable execution                                           | **Keep today.** Insert a durable executor inside a worker only after a specific operation earns it.                                                 |
 | `src/delegation/codex-specialist.ts` and reintegration   | specialist purpose, disclosure, authority, lifecycle/effect evidence, currentness, report/reintegration | Agents SDK agents-as-tools, LangGraph subgraphs, Mastra subagents            | **Keep semantics custom.** Alternative runtimes may implement the inside of the specialist executor only.                                           |
-| future local tool layer                                  | model-facing schemas, loop execution, timeout, approval plumbing                                        | AI SDK first; Agents SDK when a richer runner is earned                      | **Do not invent provider/tool protocol plumbing from scratch.** Add Ember capability/effect wrappers first.                                         |
+| future local tool layer                                  | model-facing schemas, loop execution, timeout, approval plumbing                                        | AI SDK first; another agent SDK only after a demonstrated gap                | **Do not invent provider/tool protocol plumbing from scratch.** Add Ember capability/effect wrappers first.                                         |
 | future MCP capabilities                                  | protocol transport, discovery, schema conversion                                                        | AI SDK MCP is leading in-scope candidate; direct MCP SDK is replacement path | **Add a transport seam, not framework-owned authority.**                                                                                            |
 | context retrieval/compression                            | indexing, candidate retrieval, derived compression                                                      | Mastra semantic recall/Observational Memory; LangGraph Store                 | **No adoption without longitudinal evidence.** Derived artifacts must be rebuildable and provenance-linked.                                         |
 | tracing/diagnostics                                      | spans, export, provider/tool timing                                                                     | framework telemetry or direct OTel                                           | **Additive only.** Keep Ember IDs/privacy/retention policy outside the framework.                                                                   |
@@ -512,53 +530,75 @@ Some attractive-looking interfaces would be premature abstraction.
 
 ## Composition strategies
 
-### Strategy 1: one batteries-included framework with strict adapters
+### Strategy 1: one primary infrastructure SDK behind strict Ember seams
 
-**Best candidate if forced:** Mastra.
+**Preferred candidate:** Vercel AI SDK.
 
-It spans the largest set of needs under one ecosystem and can be compartmentalized
-better than its top-level `Agent` surface suggests.
-
-**Why it is not recommended:** Ember would pay for broader package/API/state surface
-while still needing strict wrappers around cognition, tools, memory, workflows,
-delegation, storage, and observability. The supposedly simpler one-framework choice
-therefore does not eliminate Ember seams; it merely puts one vendor behind more of
-them. AI SDK and LangGraph are stronger focused choices for the two clearest
-mechanical domains.
-
-**Disposition:** reject as the default architecture. Revisit individual Mastra
-primitives only.
-
-### Strategy 2: compose lower-level libraries by capability
-
-Example:
+Use one toolkit for the overlapping commodity mechanics it handles adequately, while
+keeping Ember-owned DTOs and semantic rules at the boundary:
 
 ```text
 Ember semantic core
   |
   +-- cognition ---------- Vercel AI SDK
   +-- capability/tools --- Vercel AI SDK wrappers
-  +-- MCP ---------------- AI SDK MCP or direct MCP client
-  +-- durable execution -- LangGraph Functional API
-  +-- bounded rich loop -- optional OpenAI Agents SDK
-  +-- retrieval ---------- custom/derived backend selected by eval evidence
-  +-- telemetry ---------- direct OTel / adapter-native hooks
+  +-- MCP ---------------- AI SDK MCP or direct protocol escape hatch
+  +-- bounded loops ------ Vercel AI SDK
+  +-- streaming ---------- Vercel AI SDK
+  +-- testing ------------ Vercel AI SDK mocks
+  +-- telemetry ---------- AI SDK hooks / direct OTel
+  |
+  +-- current systemd runtime, canonical persistence, delegation semantics
+      remain Ember-owned
 ```
 
 **Benefits**
 
-- each dependency solves the problem it is strongest at;
-- low-pressure cognition and high-state durable execution do not share one migration
-  lifecycle;
-- a library can be replaced without moving unrelated pieces;
-- Pi deployments can omit unused capabilities entirely;
-- Ember semantics remain the integration surface.
+- one dominant model/tool/stream/event vocabulary instead of several overlapping ones;
+- one main dependency upgrade and compatibility surface;
+- fewer adapters whose only purpose is translating between agent SDK concepts;
+- lower package and operational complexity on Raspberry Pi-class deployments;
+- easier debugging because a bounded episode does not cross multiple agent runtimes;
+- replaceability remains possible because SDK types stop at Ember boundaries.
 
-**Cost:** more adapters and more explicit dependency ownership. That cost is desirable
-here because it makes semantic boundaries visible rather than collapsing them into a
-framework worldview.
+**Cost:** AI SDK will not be the strongest implementation of every specialized
+capability. Ember may retain some custom mechanics that another framework could remove.
+That is acceptable until the custom cost becomes concrete and material.
 
-**Disposition:** **preferred strategic destination**, adopted incrementally.
+**Disposition:** **preferred strategic destination.** Optimize for stack coherence,
+not a collection of per-capability winners.
+
+### Strategy 2: compose lower-level agent libraries by capability
+
+Example of an exception path:
+
+```text
+Ember semantic core
+  |
+  +-- primary mechanics -- Vercel AI SDK
+  +-- earned gap --------- LangGraph OR OpenAI Agents SDK OR focused Mastra primitive
+```
+
+The previous synthesis treated this as the preferred destination because each library
+could independently win one capability. That underestimated integration tax. Even
+behind narrow adapters, each additional agent SDK brings its own runtime vocabulary,
+state model, events, retries, approvals, tracing, tests, dependency graph, and upgrade
+cadence.
+
+**Benefits**
+
+- a genuinely specialized capability can use a mature implementation instead of
+  accumulating fragile custom infrastructure;
+- a second engine can still be contained below Ember semantic boundaries;
+- unrelated canonical state does not migrate when the implementation changes.
+
+**Cost:** duplicate concepts and lifecycle machinery across SDKs, more translation and
+failure boundaries, larger dependency/runtime footprint, and a wider compatibility
+matrix.
+
+**Disposition:** **exception strategy only.** Add a second overlapping agent SDK after
+a focused spike demonstrates a material capability gap in the primary stack and shows
+that filling the gap locally would cost more than the extra integration surface.
 
 ### Strategy 3: mostly custom runtime with selective commodity libraries
 
@@ -574,16 +614,13 @@ Keep:
 - projection/provenance/currentness;
 - evaluation oracles.
 
-Add only low-level helpers when they remove generic code, for example AI SDK for a
-direct provider or direct MCP/OpenTelemetry libraries for protocol/telemetry plumbing.
+Add low-level helpers when they remove generic code. The first substantial reusable
+agent dependency should preferentially be AI SDK rather than several parallel SDKs.
 
 **Disposition:** **preferred current production posture.** It has the smallest runtime
 and migration surface while current needs remain narrow.
 
-### Strategy 4: defer adoption but reshape current code around stable seams
-
-This is not procrastination if it removes accidental coupling before a library is
-selected.
+### Strategy 4: defer adoption but preserve semantic firewalls
 
 The current code is already close to the right shape. The main future pressure is the
 process-shaped `ProviderInvoker` signature. Do not change it until a direct provider
@@ -591,57 +628,63 @@ spike proves the need. Tool, MCP, durable execution, retrieval, and telemetry se
 should likewise be introduced together with their first real implementation, not as
 empty architecture scaffolding.
 
+The purpose of those seams is **replacement freedom**, not permission to compose many
+SDKs immediately.
+
 **Disposition:** **recommended immediately.** No new dependency is justified solely by
-this research. Let the next earned feature choose the first adapter.
+this research. Let the next earned feature trigger the first AI SDK adapter.
 
 ## Recommended staged adoption
 
 ### Stage 0: now
 
-- add no framework production dependency from #176-#180;
+- add no framework production dependency merely because #176-#180 completed;
 - keep the current runtime, provider, persistence, delegation, and semantic contracts;
-- use this document as the adoption gate for future feature work;
-- require framework types and IDs to remain below capability adapters.
+- record Vercel AI SDK as the preferred primary infrastructure SDK when the first
+  suitable feature arrives;
+- require third-party types and IDs to remain below Ember semantic boundaries.
 
-### Stage 1: first direct model/API backend
+### Stage 1: first direct model/API backend or substantial in-process cognition need
 
-**Preferred implementation:** Vercel AI SDK.
+**Preferred implementation:** Vercel AI SDK as the primary reusable toolkit.
 
-Adopt only the packages for one direct provider plus deterministic mocks. Prove the
-current `ProviderRequest`/`ProviderResult` semantics first. If that succeeds, simplify
-the process-shaped invocation signature so process configuration moves inside the
-Codex/Cursor adapter closures rather than remaining part of the generic call.
+Adopt only the packages required by the first real use case plus deterministic mocks.
+Prove the current `ProviderRequest`/`ProviderResult` semantics first. If that succeeds,
+simplify the process-shaped invocation signature so process configuration moves inside
+the Codex/Cursor adapter closures rather than remaining part of the generic call.
 
 This is the highest-value likely adoption because it can remove genuine provider HTTP,
-structured-output, streaming, retry, metadata, and testing plumbing that Ember should
-not reinvent.
+structured-output, streaming, retry, metadata, tool-loop, and testing plumbing that
+Ember should not reinvent.
 
-### Stage 2: first in-process capability/tool loop or MCP-backed capability
+### Stage 2: expand within the primary SDK before adding another agent runtime
 
-Start from Ember-owned capability visibility, authority, effect, and evidence
-contracts. Use AI SDK tool/MCP mechanics underneath them.
-
-If a simple `generateText`/`streamText` loop becomes awkward because Ember needs
-resumable approvals, richer turn lifecycle, replay-aware retries, or deterministic
-runner behavior, compare the same contract with OpenAI Agents SDK `Runner`.
+When Ember adds model-facing local tools, bounded multi-step cognition, streaming, MCP,
+or adjacent telemetry, first implement them with AI SDK mechanics underneath
+Ember-owned capability, authority, effect, evidence, and telemetry rules.
 
 Do not use an SDK handoff to introduce specialist delegation. The existing specialist
 boundary remains the contract.
 
-### Stage 3: first genuinely durable multi-step operation
+A locally imperfect AI SDK implementation is not by itself a reason to add another
+framework. The question is whether the missing capability creates enough substantial,
+fragile, or duplicated custom machinery to justify a second runtime.
 
-Introduce `DurableExecutionPort` and spike LangGraph Functional API with persistent
-SQLite under actual systemd supervision.
+### Stage 3: first demonstrated primary-SDK gap
 
-The candidate operation should naturally require:
+Only after a focused requirement demonstrates such a gap, compare one challenger
+against the primary-stack implementation:
 
-- process restart during incomplete work;
-- an approval/suspend wait or comparable long gap;
-- multiple durable steps;
-- resume-time currentness/authority validation;
-- explicit handling of unfinished effectful tasks.
+- **restart-durable checkpointed multi-step execution:** LangGraph Functional API is
+  the leading researched challenger;
+- **richer bounded runner lifecycle:** OpenAI Agents SDK `Runner` is the leading
+  researched challenger;
+- **a specific workflow, observability, eval, MCP, or context-compression primitive:**
+  Mastra may be compared on that primitive alone.
 
-Ordinary one-shot cognition and wake cycles are not sufficient justification.
+The spike must measure not just code removed by the challenger but also integration
+cost: duplicate concepts, package footprint, operational state, event translation,
+tests, upgrades, and Pi behavior.
 
 ### Stage 4: evidence-driven retrieval/compression and broader tooling
 
@@ -650,7 +693,7 @@ compare rebuildable backends such as Mastra Observational Memory/semantic recall
 custom index.
 
 Observability/eval helpers may be adopted earlier if they independently save enough
-code, but they should not pull in a broader framework by gravity.
+code, but they should not pull in a second agent runtime by gravity.
 
 ## Persisted-state and migration escape hatches
 
@@ -832,9 +875,9 @@ crossing into core.
 Include a negative test showing that provider-executed tools cannot be treated as
 covered by local AI SDK approval.
 
-### P2 when a bounded loop becomes complex: AI SDK loop versus Agents SDK runner spike
+### P2 only if the AI SDK bounded loop proves insufficient: Agents SDK challenger spike
 
-**Candidate issue:** `Compare bounded cognition loop implementations behind one Ember contract`
+**Candidate issue:** `Validate an Agents SDK runner only after an AI SDK capability gap`
 
 Use the same capability/result contract with:
 
@@ -842,17 +885,22 @@ Use the same capability/result contract with:
 - OpenAI Agents SDK `Runner`, preferably lower-level packages and AI SDK model bridge
   where useful.
 
-Compare code removed, approval/resume behavior, replay-safety evidence, deterministic
-tests, provider coupling, package footprint, and type/state leakage.
+First document the concrete AI SDK deficiency. Then compare code removed,
+approval/resume behavior, replay-safety evidence, deterministic tests, provider
+coupling, package footprint, type/state leakage, and the cost of running two overlapping
+SDKs.
 
 **Do not** evaluate SDK handoffs as Ember delegation. Agents-as-tools may be included
 only as nested execution mechanics returning an Ember-owned specialist report.
 
-### P2 when a durable workflow is actually needed: LangGraph restart/replacement spike
+### P2 only if restart-durable execution exposes a primary-stack gap: LangGraph challenger spike
 
-**Candidate issue:** `Validate LangGraph durable execution behind Ember-owned port`
+**Candidate issue:** `Validate LangGraph only after an earned durable-execution gap`
 
-Use Functional API plus persistent SQLite and actual systemd supervision to prove:
+First prove that the operation cannot be served cleanly by the current systemd runtime
+plus the primary AI SDK without substantial custom checkpoint machinery. If that gate
+passes, use Functional API plus persistent SQLite and actual systemd supervision to
+prove:
 
 - suspend -> process exit -> restart -> resume;
 - completed tasks are not repeated unnecessarily;
@@ -902,41 +950,47 @@ Unless a new evidence-backed issue revisits them, this synthesis rejects:
 
 ## Final architecture shape
 
-The synthesis converges on a deliberately uneven architecture:
+The synthesis converges on a **single-primary-SDK architecture with explicit challenger
+escape hatches**:
 
 ```text
-                        Ember semantic core
-  identity / continuity / memory / provenance / authority / currentness
-          delegation responsibility / effect truth / non-action
-                                |
-          +---------------------+----------------------+
-          |                     |                      |
-          v                     v                      v
-  CognitionInvoker       Capability/Tool        DurableExecutionPort
-          |                  + MCP                     |
-          |                     |                      |
-   +------+------+       +------+------+          +----+----+
-   |             |       |             |          |         |
-Codex/Cursor  AI SDK   AI SDK/direct  custom   LangGraph  custom/
-   CLI       direct       MCP/tools                FA      other
- providers   provider
-          |
-          +---- optional bounded loop: AI SDK or Agents SDK Runner
+                         Ember semantic core
+   identity / continuity / memory / provenance / authority / currentness
+           delegation responsibility / effect truth / non-action
+                                 |
+                    Ember semantic firewalls
+                                 |
+                  +--------------+--------------+
+                  |                             |
+                  v                             v
+        current custom mechanics       Vercel AI SDK (primary)
+        systemd / StateStore /          models / structured output
+        CLI process lifecycle /         tools / bounded loops / MCP
+        specialist contracts            streaming / tests / telemetry
+                  |                             |
+                  +--------------+--------------+
+                                 |
+                  only after demonstrated gaps
+                                 |
+                    +------------+------------+
+                    |            |            |
+                 LangGraph   OpenAI Agents   Mastra
+                 durable       richer        focused
+                 execution     runner        primitive
+                    |            |            |
+                    +------ adapter-local ----+
 
-  RetrievalPort ---------------- custom / evaluated rebuildable backend
-  ExecutionTelemetry ----------- direct OTel / adapter-native instrumentation
-
-  Canonical StateStore, systemd runtime ownership, specialist contracts,
-  acceptance scenarios, and semantic validation remain Ember-owned throughout.
+  Framework IDs, sessions, checkpoints, run state, handoffs, and storage never
+  become Ember identity, memory, authority, delegation, or canonical truth.
 ```
 
-There is no winner because there should not be one owner.
+There **is** a preferred toolkit, but there should still be no third-party semantic
+owner.
 
 The strongest conclusion from #176-#180 is that Ember can become **less custom without
-becoming less Ember**. The path is to stop implementing generic model/protocol/durable
-execution mechanics when mature libraries demonstrably remove them, while refusing to
-outsource the distinctions that make continuity, memory, authority, delegation, and
-truth meaningful.
+becoming less Ember**. Prefer one coherent commodity toolkit where it is adequate,
+keep the distinctive semantics and proven runtime machinery custom, and add another
+agent SDK only when evidence shows that the primary stack has reached a real boundary.
 
 ## Issue #180 acceptance mapping
 
@@ -948,6 +1002,6 @@ truth meaningful.
 | small set of capability-level Ember-owned seams           | cognition, capability/tool, MCP, durable execution, retrieval, and telemetry seams |
 | credible replacement/custom path per dependency           | per-seam replacement paths plus persisted-state migration table                    |
 | framework type/state leakage addressed                    | type-crossing rules, migration escape hatches, and versioning rules                |
-| mixed-library strategy evaluated                          | strategy 2 and staged AI SDK + LangGraph composition                               |
+| single-SDK versus mixed-library strategy evaluated        | strategy 1 primary AI SDK plus strategy 2 evidence-gated exception path            |
 | local/self-hosted/Pi constraints influence recommendation | operational recommendation and target-host gates                                   |
 | follow-up work prioritized without production adoption    | P0-P3 triggered spike list                                                         |
