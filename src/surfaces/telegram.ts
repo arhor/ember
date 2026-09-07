@@ -7,9 +7,10 @@ import type { ProviderInvoker } from "../providers/contract.ts";
 import { ValidationError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { invokeCodexProvider } from "../providers/codex.ts";
+import { createCodexProvider } from "../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
-import { invokeCursorProvider } from "../providers/cursor.ts";
+import { createCursorProvider } from "../providers/cursor.ts";
+import { createProcessProvider, providerLabel } from "../providers/process.ts";
 import {
     InteractionLedgerStore,
     SurfaceDeliveryFailure,
@@ -358,18 +359,17 @@ export async function processTelegramUpdate(
         const started = startRuntime(state, config.principal, config.activeScope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
-        const selectedProvider = provider ?? providerForConfig(config.provider_kind);
+        const selectedProvider = provider ?? providerForConfig(config);
         try {
             const result = await runSurfaceInteraction(store, state, {
                 runtimeId,
                 principal: config.principal,
                 scope: config.activeScope,
                 text: inbound.text,
-                command: config.provider_command,
-                arguments_: config.provider_arguments,
+                providerLabel: providerLabel(config.provider_command),
+                provider: selectedProvider,
                 timeoutSeconds: config.provider_timeout_seconds,
                 signal,
-                ...(selectedProvider === undefined ? {} : { provider: selectedProvider }),
                 surfaceId: TELEGRAM_SURFACE_ID,
                 principalProvenance: "configured_surface_mapping",
                 externalOccurrence: inbound.externalOccurrence,
@@ -579,10 +579,11 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         throw new ValidationError("Telegram stop timeout must be an integer between 1 and 3600 seconds");
 }
 
-function providerForConfig(kind: TelegramSurfaceConfig["provider_kind"]): ProviderInvoker | undefined {
-    if (kind === "codex") return invokeCodexProvider;
-    if (kind === "cursor") return invokeCursorProvider;
-    return undefined;
+function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
+    const adapter = { command: config.provider_command, arguments_: config.provider_arguments };
+    if (config.provider_kind === "codex") return createCodexProvider(adapter);
+    if (config.provider_kind === "cursor") return createCursorProvider(adapter);
+    return createProcessProvider(adapter);
 }
 
 function validateTelegramUpdate(value: unknown): TelegramUpdate {
