@@ -93,21 +93,21 @@ target-host spike.
 These are not adapter conveniences. They are architectural constraints that every
 candidate loses against if it tries to own them.
 
-| Framework-shaped temptation | Ember meaning that remains authoritative |
-| --- | --- |
-| framework `Agent` object | Ember identity, lineage, and constitutive continuity |
-| framework thread/session/conversation | operational continuation only, never Ember continuity |
-| message history | history evidence, not automatically memory or current context |
-| memory/vector/working-memory store | retrieval or derived context only, never canonical retained meaning by default |
-| framework workflow/graph/checkpoint state | operational execution position, never canonical Ember truth |
-| framework tool availability/approval | execution mechanics, never capability-plus-authority policy |
-| handoff/supervisor/subgraph | execution routing, never delegation responsibility or reintegration semantics |
-| cancellation/abort flag | evidence of a request/local stop, never proof that external effects did not occur |
-| retry policy | mechanical retry decision, never proof that repeating an uncertain effect is semantically safe |
-| provider/model response IDs | opaque continuation evidence, never identity or continuity |
-| trace/span IDs | diagnostics correlation, never canonical evidence identity |
-| framework storage schema | operational implementation state, never the only copy of meaning, authority, or effect truth |
-| framework structured-output validation | syntactic/schema validity, never semantic validity/currentness/provenance |
+| Framework-shaped temptation               | Ember meaning that remains authoritative                                                       |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| framework `Agent` object                  | Ember identity, lineage, and constitutive continuity                                           |
+| framework thread/session/conversation     | operational continuation only, never Ember continuity                                          |
+| message history                           | history evidence, not automatically memory or current context                                  |
+| memory/vector/working-memory store        | retrieval or derived context only, never canonical retained meaning by default                 |
+| framework workflow/graph/checkpoint state | operational execution position, never canonical Ember truth                                    |
+| framework tool availability/approval      | execution mechanics, never capability-plus-authority policy                                    |
+| handoff/supervisor/subgraph               | execution routing, never delegation responsibility or reintegration semantics                  |
+| cancellation/abort flag                   | evidence of a request/local stop, never proof that external effects did not occur              |
+| retry policy                              | mechanical retry decision, never proof that repeating an uncertain effect is semantically safe |
+| provider/model response IDs               | opaque continuation evidence, never identity or continuity                                     |
+| trace/span IDs                            | diagnostics correlation, never canonical evidence identity                                     |
+| framework storage schema                  | operational implementation state, never the only copy of meaning, authority, or effect truth   |
+| framework structured-output validation    | syntactic/schema validity, never semantic validity/currentness/provenance                      |
 
 The practical replacement test is severe on purpose:
 
@@ -131,22 +131,22 @@ meaningful first-class reason to select that candidate.
 The ratings describe use of that capability in Ember, not a general quality score for
 the project.
 
-| Capability | Mastra | LangGraph.js | Vercel AI SDK | OpenAI Agents SDK | Ember decision |
-| --- | --- | --- | --- | --- | --- |
-| model/provider invocation and routing | H / M / M / M / H | L / M / M / M / H | **H / L / L / L / H** | H / M / M / M / H | **Prefer AI SDK for a future direct-provider backend.** Keep CLI adapters for current subscription-backed runtimes. |
-| structured output | H / M / M / M / H | M / M / M / M / H | **H / L / L / L / H** | H / M / M / M / H | **Prefer AI SDK `Output` mechanics inside a cognition adapter.** Ember still validates provenance/currentness. |
-| tool definitions and local execution | H / M / M / M / H | H / M / M / M / H | **H / L / L / L / H** | H / M / M / M / H | **Prefer AI SDK for simple model-facing tool plumbing.** Agents SDK becomes interesting when the runner itself is needed. |
-| bounded agent/tool loop | H / H / H / M / M | H / H / H / M / M | H / M / L / L / H | **H / M / M / M / H** | **Do not adopt yet.** AI SDK is sufficient for a simple bounded loop; Agents SDK is the stronger optional runner when approvals/retries/loop lifecycle become substantial. |
-| MCP integration | H / M / M / M / H | L / M / M / M / H | **H / L / L / L / H** | H / M / M / M / H | **Prefer a narrow MCP seam.** AI SDK is the best in-scope low-pressure conversion/client candidate; direct MCP SDK remains an escape hatch. |
-| streaming | H / M / M / M / H | H / M / M / M / H | **H / L / L / L / H** | H / M / M / M / H | **Prefer AI SDK for cognition streaming.** LangGraph streams durable-operation progress; translate both into Ember events. |
-| model retries/error normalization | H / M / M / M / H | M / M / M / M / H | H / L / L / L / H | **H / M / M / M / H** | AI SDK is enough for ordinary provider retry; Agents SDK has unusually useful replay-safety signals for runner retries. Effect retry safety remains Ember-owned. |
-| durable execution/checkpointing | H / M / M / M-H / H | **H / M / M / M / H** | — | M / H / H / M / M | **Prefer LangGraph Functional API if a concrete durable operation is earned.** Do not replace ADR 0007 globally. |
-| suspend/resume and approvals | H / M / M / M / H | **H / M / M / M / H** | M / M / L / L / H | H / M / M / M / M-H | LangGraph is strongest for process-restart durability; AI SDK approval is good call-level plumbing; Agents SDK `RunState` is acceptable only as opaque bounded-run state. |
-| memory/retrieval infrastructure | H / **H** / H / M-H / M | H / **H** / H / M / M | L / M / L / L / H | M / **H** / H / M / M | **Adopt none as Ember memory.** Revisit only rebuildable retrieval/context-compression mechanics after evaluation evidence. |
-| delegation/sub-agent mechanics | H / H / H / M / L-M | H / H / H / M / L-M | L / M / M / L / H | H / **H** / H / M / M | **Keep Ember delegation custom.** Agents-as-tools may be spiked as executor mechanics; handoffs/supervisors/subgraphs do not define responsibility. |
-| tracing/observability | H / L / M / M / H | H / L / M / M / H | H / L / L / L / H | H / M / M / M / H | **Do not adopt a framework only for tracing.** Prefer an Ember trace sink and direct OpenTelemetry where practical; use framework hooks when that framework is already present. |
-| storage/persistence | H / H / H / M-H / M | H / H / M / M / M | — | M / H / H / M / M | **No framework store may replace canonical `StateStore`.** Operational persistence belongs to the primitive that owns it and stays disposable/versioned. |
-| eval/testing support | H / M / M / M / H | M / M / M / M / H | **H / L / L / L / H** | **H / L / M / M / H** | Keep Ember acceptance oracles. Prefer AI SDK mocks for AI SDK adapters and Agents SDK `ScriptedModel` for runner adapters; Mastra scorers are optional if they beat existing eval plumbing. |
+| Capability                            | Mastra                  | LangGraph.js          | Vercel AI SDK         | OpenAI Agents SDK     | Ember decision                                                                                                                                                                              |
+| ------------------------------------- | ----------------------- | --------------------- | --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| model/provider invocation and routing | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for a future direct-provider backend.** Keep CLI adapters for current subscription-backed runtimes.                                                                         |
+| structured output                     | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK `Output` mechanics inside a cognition adapter.** Ember still validates provenance/currentness.                                                                              |
+| tool definitions and local execution  | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for simple model-facing tool plumbing.** Agents SDK becomes interesting when the runner itself is needed.                                                                   |
+| bounded agent/tool loop               | H / H / H / M / M       | H / H / H / M / M     | H / M / L / L / H     | **H / M / M / M / H** | **Do not adopt yet.** AI SDK is sufficient for a simple bounded loop; Agents SDK is the stronger optional runner when approvals/retries/loop lifecycle become substantial.                  |
+| MCP integration                       | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer a narrow MCP seam.** AI SDK is the best in-scope low-pressure conversion/client candidate; direct MCP SDK remains an escape hatch.                                                 |
+| streaming                             | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for cognition streaming.** LangGraph streams durable-operation progress; translate both into Ember events.                                                                  |
+| model retries/error normalization     | H / M / M / M / H       | M / M / M / M / H     | H / L / L / L / H     | **H / M / M / M / H** | AI SDK is enough for ordinary provider retry; Agents SDK has unusually useful replay-safety signals for runner retries. Effect retry safety remains Ember-owned.                            |
+| durable execution/checkpointing       | H / M / M / M-H / H     | **H / M / M / M / H** | —                     | M / H / H / M / M     | **Prefer LangGraph Functional API if a concrete durable operation is earned.** Do not replace ADR 0007 globally.                                                                            |
+| suspend/resume and approvals          | H / M / M / M / H       | **H / M / M / M / H** | M / M / L / L / H     | H / M / M / M / M-H   | LangGraph is strongest for process-restart durability; AI SDK approval is good call-level plumbing; Agents SDK `RunState` is acceptable only as opaque bounded-run state.                   |
+| memory/retrieval infrastructure       | H / **H** / H / M-H / M | H / **H** / H / M / M | L / M / L / L / H     | M / **H** / H / M / M | **Adopt none as Ember memory.** Revisit only rebuildable retrieval/context-compression mechanics after evaluation evidence.                                                                 |
+| delegation/sub-agent mechanics        | H / H / H / M / L-M     | H / H / H / M / L-M   | L / M / M / L / H     | H / **H** / H / M / M | **Keep Ember delegation custom.** Agents-as-tools may be spiked as executor mechanics; handoffs/supervisors/subgraphs do not define responsibility.                                         |
+| tracing/observability                 | H / L / M / M / H       | H / L / M / M / H     | H / L / L / L / H     | H / M / M / M / H     | **Do not adopt a framework only for tracing.** Prefer an Ember trace sink and direct OpenTelemetry where practical; use framework hooks when that framework is already present.             |
+| storage/persistence                   | H / H / H / M-H / M     | H / H / M / M / M     | —                     | M / H / H / M / M     | **No framework store may replace canonical `StateStore`.** Operational persistence belongs to the primitive that owns it and stays disposable/versioned.                                    |
+| eval/testing support                  | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | **H / L / M / M / H** | Keep Ember acceptance oracles. Prefer AI SDK mocks for AI SDK adapters and Agents SDK `ScriptedModel` for runner adapters; Mastra scorers are optional if they beat existing eval plumbing. |
 
 ## What the comparison actually says
 
@@ -258,20 +258,20 @@ elsewhere.
 The useful result is not just what Ember could add. It is what current code should
 **not** be rewritten.
 
-| Current Ember area | Generic mechanics in that area | Candidate reuse | Decision |
-| --- | --- | --- | --- |
-| `src/providers/contract.ts` | cognition invocation seam, request/result shapes, abort option | AI SDK or Agents SDK may implement a future direct backend | **Preserve request/result semantics.** A direct API backend may later justify removing process-shaped `command`/arguments from the invocation call. |
-| `src/providers/codex.ts` and `src/providers/cursor.ts` | subscription-backed CLI invocation, provider/session parsing and evidence | none of the four removes the hard parts | **Keep.** Do not wrap working CLI adapters for aesthetic uniformity. |
-| `src/runtime/process-lifecycle.ts` | spawn, bounded streams, timeout/abort, termination escalation and observation | generic agent SDKs do not replace it | **Keep custom.** It is already the correct commodity seam for external runtimes. |
-| `src/core/projection.ts` plus provider-result validation | least-sufficient selected context and provenance claims | structured output can reduce parsing only | **Keep semantics custom.** AI SDK `Output` may implement syntax inside one adapter. |
-| `src/persistence/state-store.ts` | canonical revision, writer lease, atomic replacement, durability uncertainty | framework stores/checkpointers | **Never replace with framework operational storage.** Coexist only below a narrow adapter. |
-| `src/runtime/episodic-runtime.ts` and ADR 0007 | work ownership, systemd supervision, recovery, specialist episodes | LangGraph/Mastra durable execution | **Keep today.** Insert a durable executor inside a worker only after a specific operation earns it. |
-| `src/delegation/codex-specialist.ts` and reintegration | specialist purpose, disclosure, authority, lifecycle/effect evidence, currentness, report/reintegration | Agents SDK agents-as-tools, LangGraph subgraphs, Mastra subagents | **Keep semantics custom.** Alternative runtimes may implement the inside of the specialist executor only. |
-| future local tool layer | model-facing schemas, loop execution, timeout, approval plumbing | AI SDK first; Agents SDK when a richer runner is earned | **Do not invent provider/tool protocol plumbing from scratch.** Add Ember capability/effect wrappers first. |
-| future MCP capabilities | protocol transport, discovery, schema conversion | AI SDK MCP is leading in-scope candidate; direct MCP SDK is replacement path | **Add a transport seam, not framework-owned authority.** |
-| context retrieval/compression | indexing, candidate retrieval, derived compression | Mastra semantic recall/Observational Memory; LangGraph Store | **No adoption without longitudinal evidence.** Derived artifacts must be rebuildable and provenance-linked. |
-| tracing/diagnostics | spans, export, provider/tool timing | framework telemetry or direct OTel | **Additive only.** Keep Ember IDs/privacy/retention policy outside the framework. |
-| tests/evals | model fakes, scorer runners, deterministic lifecycle scripts | AI SDK mocks, Agents SDK `ScriptedModel`, optional Mastra scorers | **Reuse adapter test mechanics; keep semantic scenarios and expected outcomes repository-owned.** |
+| Current Ember area                                       | Generic mechanics in that area                                                                          | Candidate reuse                                                              | Decision                                                                                                                                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/providers/contract.ts`                              | cognition invocation seam, request/result shapes, abort option                                          | AI SDK or Agents SDK may implement a future direct backend                   | **Preserve request/result semantics.** A direct API backend may later justify removing process-shaped `command`/arguments from the invocation call. |
+| `src/providers/codex.ts` and `src/providers/cursor.ts`   | subscription-backed CLI invocation, provider/session parsing and evidence                               | none of the four removes the hard parts                                      | **Keep.** Do not wrap working CLI adapters for aesthetic uniformity.                                                                                |
+| `src/runtime/process-lifecycle.ts`                       | spawn, bounded streams, timeout/abort, termination escalation and observation                           | generic agent SDKs do not replace it                                         | **Keep custom.** It is already the correct commodity seam for external runtimes.                                                                    |
+| `src/core/projection.ts` plus provider-result validation | least-sufficient selected context and provenance claims                                                 | structured output can reduce parsing only                                    | **Keep semantics custom.** AI SDK `Output` may implement syntax inside one adapter.                                                                 |
+| `src/persistence/state-store.ts`                         | canonical revision, writer lease, atomic replacement, durability uncertainty                            | framework stores/checkpointers                                               | **Never replace with framework operational storage.** Coexist only below a narrow adapter.                                                          |
+| `src/runtime/episodic-runtime.ts` and ADR 0007           | work ownership, systemd supervision, recovery, specialist episodes                                      | LangGraph/Mastra durable execution                                           | **Keep today.** Insert a durable executor inside a worker only after a specific operation earns it.                                                 |
+| `src/delegation/codex-specialist.ts` and reintegration   | specialist purpose, disclosure, authority, lifecycle/effect evidence, currentness, report/reintegration | Agents SDK agents-as-tools, LangGraph subgraphs, Mastra subagents            | **Keep semantics custom.** Alternative runtimes may implement the inside of the specialist executor only.                                           |
+| future local tool layer                                  | model-facing schemas, loop execution, timeout, approval plumbing                                        | AI SDK first; Agents SDK when a richer runner is earned                      | **Do not invent provider/tool protocol plumbing from scratch.** Add Ember capability/effect wrappers first.                                         |
+| future MCP capabilities                                  | protocol transport, discovery, schema conversion                                                        | AI SDK MCP is leading in-scope candidate; direct MCP SDK is replacement path | **Add a transport seam, not framework-owned authority.**                                                                                            |
+| context retrieval/compression                            | indexing, candidate retrieval, derived compression                                                      | Mastra semantic recall/Observational Memory; LangGraph Store                 | **No adoption without longitudinal evidence.** Derived artifacts must be rebuildable and provenance-linked.                                         |
+| tracing/diagnostics                                      | spans, export, provider/tool timing                                                                     | framework telemetry or direct OTel                                           | **Additive only.** Keep Ember IDs/privacy/retention policy outside the framework.                                                                   |
+| tests/evals                                              | model fakes, scorer runners, deterministic lifecycle scripts                                            | AI SDK mocks, Agents SDK `ScriptedModel`, optional Mastra scorers            | **Reuse adapter test mechanics; keep semantic scenarios and expected outcomes repository-owned.**                                                   |
 
 ## Ember-owned capability seams
 
@@ -654,19 +654,19 @@ code, but they should not pull in a broader framework by gravity.
 
 ## Persisted-state and migration escape hatches
 
-| Foreign state | Risk if adopted | Required containment | Replacement behavior |
-| --- | --- | --- | --- |
-| AI SDK model/result/tool types | medium if leaked through public contracts | translate immediately to Ember DTOs | replace adapter; no canonical migration |
-| provider response/conversation IDs | medium if treated as continuity | opaque optional operational evidence only | lose/resume provider context as an operational choice; Ember continuity unchanged |
-| LangGraph thread/checkpoint IDs | low if opaque | `OperationalRunRef` only | new runs use new executor; old runs finish/reconcile/abandon |
-| LangGraph checkpoint/task state | medium-high for in-flight runs | small versioned execution definitions; canonical truth by reference | drain compatible runs or restart from Ember-owned safe point |
-| Mastra workflow snapshots/run IDs | medium-high for suspended runs | same durable-execution containment rules | finish on old engine or reconcile/restart |
-| Agents SDK serialized `RunState` | medium-high for interrupted runs | versioned opaque checkpoint plus Ember currentness fence | resume with old adapter or abandon/replan; never decode to recover canonical meaning |
-| framework sessions/messages | **high** if sole history/memory copy | disposable/reconstructable operational cache only | discard/rebuild; canonical evidence remains Ember-owned |
-| memory/vector/observation indexes | **high** if sole retained meaning | store source evidence refs; derived artifact must rebuild | rebuild with replacement retrieval/compressor |
-| framework tool schemas/IDs | medium | generate from Ember capability descriptors | regenerate wrappers for replacement SDK |
-| framework trace/scorer rows | low | diagnostics/evaluation evidence only | drop/export/migrate without canonical impact |
-| hosted service configuration | medium-high if made mandatory | local/direct implementation remains possible | switch backend without changing core semantics |
+| Foreign state                      | Risk if adopted                           | Required containment                                                | Replacement behavior                                                                 |
+| ---------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| AI SDK model/result/tool types     | medium if leaked through public contracts | translate immediately to Ember DTOs                                 | replace adapter; no canonical migration                                              |
+| provider response/conversation IDs | medium if treated as continuity           | opaque optional operational evidence only                           | lose/resume provider context as an operational choice; Ember continuity unchanged    |
+| LangGraph thread/checkpoint IDs    | low if opaque                             | `OperationalRunRef` only                                            | new runs use new executor; old runs finish/reconcile/abandon                         |
+| LangGraph checkpoint/task state    | medium-high for in-flight runs            | small versioned execution definitions; canonical truth by reference | drain compatible runs or restart from Ember-owned safe point                         |
+| Mastra workflow snapshots/run IDs  | medium-high for suspended runs            | same durable-execution containment rules                            | finish on old engine or reconcile/restart                                            |
+| Agents SDK serialized `RunState`   | medium-high for interrupted runs          | versioned opaque checkpoint plus Ember currentness fence            | resume with old adapter or abandon/replan; never decode to recover canonical meaning |
+| framework sessions/messages        | **high** if sole history/memory copy      | disposable/reconstructable operational cache only                   | discard/rebuild; canonical evidence remains Ember-owned                              |
+| memory/vector/observation indexes  | **high** if sole retained meaning         | store source evidence refs; derived artifact must rebuild           | rebuild with replacement retrieval/compressor                                        |
+| framework tool schemas/IDs         | medium                                    | generate from Ember capability descriptors                          | regenerate wrappers for replacement SDK                                              |
+| framework trace/scorer rows        | low                                       | diagnostics/evaluation evidence only                                | drop/export/migrate without canonical impact                                         |
+| hosted service configuration       | medium-high if made mandatory             | local/direct implementation remains possible                        | switch backend without changing core semantics                                       |
 
 ### Versioning rules
 
@@ -940,14 +940,14 @@ truth meaningful.
 
 ## Issue #180 acceptance mapping
 
-| Requirement | Result |
-| --- | --- |
-| common primitive-level comparison of #176-#179 | capability matrix and per-candidate synthesis above |
-| framework mechanics separated from Ember semantics | semantic red lines and explicit non-adoptions |
-| concrete current-code overlap | current Ember overlap map |
-| small set of capability-level Ember-owned seams | cognition, capability/tool, MCP, durable execution, retrieval, and telemetry seams |
-| credible replacement/custom path per dependency | per-seam replacement paths plus persisted-state migration table |
-| framework type/state leakage addressed | type-crossing rules, migration escape hatches, and versioning rules |
-| mixed-library strategy evaluated | strategy 2 and staged AI SDK + LangGraph composition |
-| local/self-hosted/Pi constraints influence recommendation | operational recommendation and target-host gates |
-| follow-up work prioritized without production adoption | P0-P3 triggered spike list |
+| Requirement                                               | Result                                                                             |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| common primitive-level comparison of #176-#179            | capability matrix and per-candidate synthesis above                                |
+| framework mechanics separated from Ember semantics        | semantic red lines and explicit non-adoptions                                      |
+| concrete current-code overlap                             | current Ember overlap map                                                          |
+| small set of capability-level Ember-owned seams           | cognition, capability/tool, MCP, durable execution, retrieval, and telemetry seams |
+| credible replacement/custom path per dependency           | per-seam replacement paths plus persisted-state migration table                    |
+| framework type/state leakage addressed                    | type-crossing rules, migration escape hatches, and versioning rules                |
+| mixed-library strategy evaluated                          | strategy 2 and staged AI SDK + LangGraph composition                               |
+| local/self-hosted/Pi constraints influence recommendation | operational recommendation and target-host gates                                   |
+| follow-up work prioritized without production adoption    | P0-P3 triggered spike list                                                         |
