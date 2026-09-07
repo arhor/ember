@@ -1,0 +1,37 @@
+name: Fix child process lifecycle refactor workflow
+
+on:
+  push:
+    branches:
+      - refactor/167-provider-process-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/167-provider-process-lifecycle
+      - name: Preserve synchronous setup when no spawn hook exists
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+          const path = '.github/workflows/refactor-167-specialist-lifecycle.yml';
+          const source = await readFile(path, 'utf8');
+          const before = '                  await this.options.onSpawned?.();';
+          const after = '                  if (this.options.onSpawned) await this.options.onSpawned();';
+          if (!source.includes(before)) throw new Error('target lifecycle line not found');
+          await writeFile(path, source.replace(before, after));
+          NODE
+      - name: Commit workflow fix and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/refactor-167-specialist-lifecycle-fix.yml
+          git add .github/workflows/refactor-167-specialist-lifecycle.yml
+          git commit -m "fix: preserve synchronous process listener setup"
+          git push origin HEAD:refactor/167-provider-process-lifecycle
