@@ -88,13 +88,17 @@ Current architecture material:
   issue #65's final Ember-owned decision path for currentness, partial and
   ambiguous-effect results, correlated evidence, durable inspection, and the gate
   before any canonical mutation may rely on specialist output.
-- [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
+- [Codex Specialist Integration Evaluation](codex-specialialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
   Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
 - [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md)
   records issue #92's evidence-based decision to retain the existing shared
   `ProviderInvoker` cognition seam while keeping Codex and Cursor runtime lifecycle
   mechanics in separate thin adapters.
+- [Mastra Composable Infrastructure Evaluation](mastra-composable-infrastructure-evaluation.md)
+  evaluates issue #176's candidate model routing, tools, MCP, workflows, memory,
+  storage, delegation, observability, and eval primitives as independently
+  replaceable mechanics beneath Ember-owned semantic boundaries.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
