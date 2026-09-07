@@ -88,7 +88,7 @@ Current architecture material:
   issue #65's final Ember-owned decision path for currentness, partial and
   ambiguous-effect results, correlated evidence, durable inspection, and the gate
   before any canonical mutation may rely on specialist output.
-- [Codex Specialist Integration Evaluation](codex-specialialist-integration-evaluation.md)
+- [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
   Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
 - [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md)
