@@ -67,7 +67,7 @@ export function createAiSdkProvider(model: LanguageModel): ProviderInvoker {
             if (error instanceof ProviderError) {
                 throw error;
             }
-            if (signal?.aborted) {
+            if (signal?.aborted && error === signal.reason) {
                 throw new ProviderError("provider cancellation requested during invocation", {
                     outcome: "cancellation_requested",
                     termination: { reason: "explicit_cancellation", directChildExitObserved: false },
@@ -77,6 +77,13 @@ export function createAiSdkProvider(model: LanguageModel): ProviderInvoker {
             if (isTimeoutError(error)) {
                 throw new ProviderError("provider timed out", {
                     outcome: "timed_out",
+                    cause: error,
+                });
+            }
+            if (signal?.aborted) {
+                throw new ProviderError("provider cancellation requested during invocation", {
+                    outcome: "cancellation_requested",
+                    termination: { reason: "explicit_cancellation", directChildExitObserved: false },
                     cause: error,
                 });
             }
