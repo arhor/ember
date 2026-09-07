@@ -1,0 +1,42 @@
+name: Apply shared child process lifecycle refactor
+
+on:
+  push:
+    branches:
+      - refactor/167-provider-process-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/167-provider-process-lifecycle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+      - name: Install toolchain
+        run: npm ci
+      - name: Apply refactor
+        run: node scripts/refactor-167-specialist-lifecycle.mjs
+      - name: Format and validate
+        run: |
+          npx oxfmt src/runtime/process-lifecycle.ts src/runtime/process-lifecycle.test.ts src/providers/process.ts src/providers/codex.ts src/providers/cursor.ts src/delegation/codex-specialist.ts
+          npm run check
+          npm test
+          test ! -e src/providers/process-lifecycle.ts
+          test ! -e src/providers/process-lifecycle.test.ts
+          ! grep -R 'as unknown as .*Spawn' src/providers src/delegation
+          ! grep -R 'SpecialistChild\|SpecialistSpawn' src/delegation/codex-specialist.ts
+      - name: Commit refactor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/runtime/process-lifecycle.ts src/runtime/process-lifecycle.test.ts src/providers/process.ts src/providers/codex.ts src/providers/cursor.ts src/delegation/codex-specialist.ts
+          git add -u src/providers/process-lifecycle.ts src/providers/process-lifecycle.test.ts
+          git commit -m "refactor: share child process lifecycle with specialist"
+          git push origin HEAD:refactor/167-provider-process-lifecycle
