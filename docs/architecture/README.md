@@ -95,6 +95,10 @@ Current architecture material:
   records issue #92's evidence-based decision to retain the existing shared
   `ProviderInvoker` cognition seam while keeping Codex and Cursor runtime lifecycle
   mechanics in separate thin adapters.
+- [Mastra Composable Infrastructure Evaluation](mastra-composable-infrastructure-evaluation.md)
+  evaluates issue #176's candidate model routing, tools, MCP, workflows, memory,
+  storage, delegation, observability, and eval primitives as independently
+  replaceable mechanics beneath Ember-owned semantic boundaries.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
