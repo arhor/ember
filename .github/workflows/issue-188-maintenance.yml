@@ -1,0 +1,50 @@
+name: Issue 188 branch maintenance
+
+on:
+  push:
+    branches:
+      - issue-188-generalize-provider-invocation
+    paths:
+      - "scripts/issue-188-refactor.mjs"
+      - ".github/workflows/issue-188-maintenance.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: npm
+      - name: Install locked development toolchain
+        run: npm ci
+      - name: Discover architecture guidance
+        run: node scripts/docs-discovery.mjs list
+      - name: Apply narrow issue 188 transformations
+        run: node scripts/issue-188-refactor.mjs
+      - name: Apply repository lint fixes
+        run: npx oxlint --fix
+      - name: Apply repository formatting
+        run: npx oxfmt
+      - name: Remove temporary maintenance files
+        run: rm scripts/issue-188-refactor.mjs .github/workflows/issue-188-maintenance.yml
+      - name: Commit normalized branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Normalize issue 188 provider refactor"
+          git push origin HEAD:issue-188-generalize-provider-invocation
+      - name: Verify repository checks
+        run: npm run check
+      - name: Verify acceptance suite
+        run: npm test
+      - name: Verify endogenous evaluation
+        run: npm run eval:endogenous
