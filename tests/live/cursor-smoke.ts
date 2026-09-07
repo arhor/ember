@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { initialState } from "../../src/core/model.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { invokeCursorProvider } from "../../src/providers/cursor.ts";
+import { createCursorProvider } from "../../src/providers/cursor.ts";
 import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 
 const principal = "user-1";
@@ -40,9 +40,9 @@ try {
         principal,
         scope,
         text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
-        command: "cursor-agent",
+        providerLabel: "cursor-agent",
+        provider: createCursorProvider(),
         timeoutSeconds: 120,
-        provider: invokeCursorProvider,
         output: (text) => {
             reply += text;
         },
