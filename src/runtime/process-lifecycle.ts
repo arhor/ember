@@ -15,7 +15,11 @@ export interface ProcessChild {
     off(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
 }
 
-export type ProcessSpawn<TOptions> = (command: string, arguments_: string[], options: TOptions) => ProcessChild;
+export type ProcessSpawn<TOptions> = (
+    command: string,
+    arguments_: readonly string[],
+    options: TOptions,
+) => ProcessChild;
 
 export interface CliProcessSpawnOptions {
     cwd: string;
@@ -119,7 +123,7 @@ class ProcessExecutionImpl<TOptions> implements ProcessExecution {
         try {
             this.child = this.options.spawnImpl(
                 this.options.command,
-                [...this.options.arguments_],
+                this.options.arguments_,
                 this.options.spawnOptions,
             );
         } catch (error) {
@@ -130,11 +134,16 @@ class ProcessExecutionImpl<TOptions> implements ProcessExecution {
             this.resolveDone = resolve;
         });
 
-        if (this.options.onSpawned) await this.options.onSpawned();
+        if (!this.options.onSpawned) {
+        } else {
+            await this.options.onSpawned();
+        }
         this.attachListeners();
         this.timeoutTimer = setTimeout(() => this.terminate("timeout"), this.options.timeoutSeconds * 1000);
         this.options.signal?.addEventListener("abort", this.onAbort, { once: true });
-        if (this.options.signal?.aborted) this.onAbort();
+        if (this.options.signal?.aborted) {
+            this.onAbort();
+        }
         if (this.terminationReason === null) {
             try {
                 this.child.stdin.end(this.options.stdin);
@@ -164,7 +173,9 @@ class ProcessExecutionImpl<TOptions> implements ProcessExecution {
 
     private attachListeners(): void {
         const child = this.child;
-        if (child === null) return;
+        if (child === null) {
+            return;
+        }
         child.stdout.on("data", this.onStdout);
         child.stderr.on("data", this.onStderr);
         child.on("error", this.onSpawnError);
