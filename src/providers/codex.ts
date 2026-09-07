@@ -15,7 +15,7 @@ import {
     MAX_STDOUT_BYTES,
     validateProviderResult,
 } from "./contract.ts";
-import { nodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
+import { NodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const RESULT_SCHEMA_NAME = "provider-result.schema.json";
@@ -138,7 +138,7 @@ export async function invokeCodexProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = nodeProviderCliSpawn,
+        spawnImpl = NodeProviderCliSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         thread = { mode: "ephemeral" },
@@ -183,8 +183,6 @@ export async function invokeCodexProvider(
             spawnOptions: {
                 cwd: runtimeCwd,
                 env: codexEnvironment(environment),
-                shell: false,
-                stdio: ["pipe", "pipe", "pipe"],
             },
             stdin: prompt,
             timeoutSeconds,

@@ -15,7 +15,7 @@ import {
     MAX_STDOUT_BYTES,
     validateProviderResult,
 } from "./contract.ts";
-import { nodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
+import { NodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const CURSOR_CONFIG_DIRECTORY = ".cursor";
@@ -123,7 +123,7 @@ export async function invokeCursorProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = nodeProviderCliSpawn,
+        spawnImpl = NodeProviderCliSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         session = { mode: "fresh" },
@@ -159,8 +159,6 @@ export async function invokeCursorProvider(
             spawnOptions: {
                 cwd: runtimeCwd,
                 env: cursorEnvironment(environment),
-                shell: false,
-                stdio: ["pipe", "pipe", "pipe"],
             },
             stdin: prompt,
             timeoutSeconds,

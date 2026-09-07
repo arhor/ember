@@ -28,14 +28,16 @@ export type ProviderProcessSpawn<TOptions> = (
 export interface ProviderCliSpawnOptions {
     cwd: string;
     env: NodeJS.ProcessEnv;
-    shell: false;
-    stdio: ["pipe", "pipe", "pipe"];
 }
 
 export type ProviderCliSpawn = ProviderProcessSpawn<ProviderCliSpawnOptions>;
 
-export const nodeProviderCliSpawn: ProviderCliSpawn = (command, arguments_, options) =>
-    spawn(command, arguments_, options);
+export const NodeProviderCliSpawn: ProviderCliSpawn = (command, arguments_, options) =>
+    spawn(command, arguments_, {
+        ...options,
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe"],
+    });
 
 export interface RunProviderProcessOptions<TOptions> {
     command: string;
