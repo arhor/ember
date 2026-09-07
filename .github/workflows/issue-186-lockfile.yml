@@ -7,20 +7,24 @@ on:
       - ".github/workflows/issue-186-lockfile.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: issue-186-ai-sdk-cognition-adapter
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
           cache: npm
-      - name: Generate package lock
-        run: npm install --package-lock-only --ignore-scripts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: issue-186-package-lock
-          path: package-lock.json
+      - name: Generate and commit package lock
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package-lock.json
+          git diff --cached --quiet || git commit -m "Update package lock for AI SDK"
+          git push
