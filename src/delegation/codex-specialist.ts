@@ -1,11 +1,11 @@
-import type { Readable, Writable } from "node:stream";
-
-import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
+import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
+
+import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { exactKeys, isObject } from "../util.ts";
 import { codexEnvironment } from "./codex.ts";
 
@@ -182,27 +182,12 @@ export interface SpecialistEpisodeRecord {
     observations: SpecialistObservation[];
 }
 
-interface SpecialistChild {
-    stdin: Writable;
-    stdout: Readable;
-    stderr: Readable;
-    kill(signal?: NodeJS.Signals | number): boolean;
-    on(event: "error", listener: (error: Error) => void): this;
-    on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-}
-
-type SpecialistSpawn = (
-    command: string,
-    args: string[],
-    options: { cwd: string; env: NodeJS.ProcessEnv; shell: false; stdio: ["pipe", "pipe", "pipe"] },
-) => SpecialistChild;
-
 export interface RunCodexSpecialistOptions {
     recordPath: string;
     environment?: NodeJS.ProcessEnv;
     signal?: AbortSignal;
     now?: () => string;
-    spawnImpl?: SpecialistSpawn;
+    spawnImpl?: CliProcessSpawn;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
 }
@@ -368,132 +353,83 @@ export async function runCodexSpecialist(
         "-",
     ];
 
-    let child: SpecialistChild;
-    try {
-        child = (options.spawnImpl ?? (spawn as unknown as SpecialistSpawn))(spec.runtime_policy.command, args, {
-            cwd: workspace,
-            env: codexEnvironment(options.environment),
-            shell: false,
-            stdio: ["pipe", "pipe", "pipe"],
-        });
-    } catch (error) {
-        record.runtime_state = "lost";
-        record.report_state = "ambiguous";
-        record.observations.push({ observedAt: now(), kind: "boundary_failure", detail: errorMessage(error) });
-        await persistRecord(options.recordPath, record);
-        await rm(runtimeDir, { recursive: true, force: true });
-        return record;
-    }
-
-    record.runtime_state = "running";
-    record.observations.push({ observedAt: now(), kind: "child_started" });
-    await persistRecord(options.recordPath, record);
-
-    const stdout: Buffer[] = [];
-    const stderr: Buffer[] = [];
-    let outputBytes = 0;
-    let closed = false;
-    let exitCode: number | null = null;
-    let exitSignal: NodeJS.Signals | null = null;
-    let spawnErrorMessage: string | null = null;
     let stdinErrorMessage: string | null = null;
-    let termination: "timeout" | "cancel" | "output_limit" | "stdin_error" | null = null;
-    let resolveDone!: (confirmed: boolean) => void;
-    const done = new Promise<boolean>((resolve_) => {
-        resolveDone = resolve_;
-    });
-    let finalTimer: NodeJS.Timeout | undefined;
-    let terminationPersistence: Promise<void> | null = null;
     let terminationPersistenceError: string | null = null;
 
-    const terminate = (reason: NonNullable<typeof termination>) => {
-        if (termination || closed) return;
-        termination = reason;
-        record.termination = {
-            reason:
-                reason === "cancel"
-                    ? "explicit_cancellation"
-                    : reason === "timeout"
-                      ? "timeout"
-                      : reason === "output_limit"
-                        ? "output_limit"
-                        : "boundary_failure",
-            directChildExitObserved: false,
-            all_specialist_work_stopped: "unknown",
-        };
-        if (reason === "cancel") {
-            record.runtime_state = "cancellation_requested";
-            record.observations.push({ observedAt: now(), kind: "cancellation_requested", detail: reason });
-        } else if (reason === "timeout") {
-            record.runtime_state = "timed_out";
-            record.observations.push({ observedAt: now(), kind: "timeout_observed", detail: reason });
-        } else if (reason === "output_limit") {
-            record.observations.push({ observedAt: now(), kind: "output_limit_observed", detail: reason });
-        }
-        terminationPersistence = persistRecord(options.recordPath, record)
-            .catch((error) => {
+    const processResult = await runProcess({
+        command: spec.runtime_policy.command,
+        arguments_: args,
+        spawnImpl: options.spawnImpl ?? NodeCliProcessSpawn,
+        spawnOptions: {
+            cwd: workspace,
+            env: codexEnvironment(options.environment),
+        },
+        stdin: prompt,
+        timeoutSeconds,
+        signal: options.signal,
+        maxStdoutBytes: MAX_OUTPUT_BYTES,
+        maxStderrBytes: 64 * 1024,
+        terminationGraceMs: options.terminationGraceMs ?? 500,
+        finalTerminationMs: options.finalTerminationMs ?? 1000,
+        terminateOnStdinError: true,
+        onStdinError: (error) => {
+            stdinErrorMessage = error.message;
+        },
+        onSpawned: async () => {
+            record.runtime_state = "running";
+            record.observations.push({ observedAt: now(), kind: "child_started" });
+            await persistRecord(options.recordPath, record);
+        },
+        beforeTerminate: async (reason) => {
+            record.termination = {
+                reason: reason === "process_failure" ? "boundary_failure" : reason,
+                directChildExitObserved: false,
+                all_specialist_work_stopped: "unknown",
+            };
+            if (reason === "explicit_cancellation") {
+                record.runtime_state = "cancellation_requested";
+                record.observations.push({ observedAt: now(), kind: "cancellation_requested", detail: "cancel" });
+            } else if (reason === "timeout") {
+                record.runtime_state = "timed_out";
+                record.observations.push({ observedAt: now(), kind: "timeout_observed", detail: "timeout" });
+            } else if (reason === "output_limit") {
+                record.observations.push({ observedAt: now(), kind: "output_limit_observed", detail: "output_limit" });
+            }
+            try {
+                await persistRecord(options.recordPath, record);
+            } catch (error) {
                 terminationPersistenceError = errorMessage(error);
                 record.observations.push({
                     observedAt: now(),
                     kind: "boundary_failure",
                     detail: `Cancellation intent could not be persisted before signalling: ${terminationPersistenceError}`,
                 });
-            })
-            .then(() => {
-                if (closed) return;
-                child.stdin.destroy();
-                try {
-                    child.kill("SIGTERM");
-                } catch {}
-                setTimeout(() => {
-                    if (!closed) {
-                        try {
-                            child.kill("SIGKILL");
-                        } catch {}
-                    }
-                }, options.terminationGraceMs ?? 500);
-                finalTimer = setTimeout(() => {
-                    if (!closed) resolveDone(false);
-                }, options.finalTerminationMs ?? 1000);
-            });
-    };
-
-    child.stdout.on("data", (chunk: Buffer) => {
-        outputBytes += chunk.length;
-        if (outputBytes <= MAX_OUTPUT_BYTES) stdout.push(chunk);
-        else terminate("output_limit");
-    });
-    child.stderr.on("data", (chunk: Buffer) => {
-        const retained = Buffer.concat(stderr).length;
-        if (retained < 64 * 1024) stderr.push(chunk.subarray(0, 64 * 1024 - retained));
-    });
-    child.stdin.on("error", (error) => {
-        stdinErrorMessage = error.message;
-        terminate("stdin_error");
-    });
-    child.on("error", (error) => {
-        spawnErrorMessage = error.message;
-    });
-    child.on("close", (code, signal) => {
-        closed = true;
-        exitCode = code;
-        exitSignal = signal;
-        if (finalTimer) clearTimeout(finalTimer);
-        resolveDone(true);
+            }
+        },
     });
 
-    const timeout = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
-    const abort = () => terminate("cancel");
-    options.signal?.addEventListener("abort", abort, { once: true });
-    if (options.signal?.aborted) abort();
-    else child.stdin.end(prompt);
+    if (!processResult.spawned) {
+        record.runtime_state = "lost";
+        record.report_state = "ambiguous";
+        record.observations.push({
+            observedAt: now(),
+            kind: "boundary_failure",
+            detail: processResult.spawnError.message,
+        });
+        await persistRecord(options.recordPath, record);
+        await rm(runtimeDir, { recursive: true, force: true });
+        return record;
+    }
 
-    const exitObserved = await done;
-    await terminationPersistence;
-    clearTimeout(timeout);
-    options.signal?.removeEventListener("abort", abort);
-    if (finalTimer) clearTimeout(finalTimer);
-
+    const {
+        stdout,
+        stderr,
+        spawnError,
+        exitCode,
+        exitSignal,
+        terminationReason,
+        terminationConfirmed: exitObserved,
+    } = processResult;
     record.runtime_state = exitObserved ? "exited" : "lost";
     if (record.termination) record.termination.directChildExitObserved = exitObserved;
     if (exitObserved) {
@@ -504,7 +440,7 @@ export async function runCodexSpecialist(
         });
     }
 
-    if (termination || !exitObserved || spawnErrorMessage || stdinErrorMessage || exitCode !== 0) {
+    if (terminationReason || !exitObserved || spawnError || stdinErrorMessage || exitCode !== 0) {
         record.report_state = "ambiguous";
         record.possible_effects.push(
             "Workspace or external effects may have occurred before the specialist boundary ended.",
@@ -516,19 +452,25 @@ export async function runCodexSpecialist(
             reconciliation_required:
                 "Observe the current workspace and any reachable remote or descendant effects, then establish that repetition is safe before consequential retry.",
         };
-        const diagnostic =
-            diagnosticDecoder.decode(Buffer.concat(stderr)).slice(0, 4096) ||
-            codexErrorDiagnostic(Buffer.concat(stdout));
+        const diagnostic = diagnosticDecoder.decode(stderr).slice(0, 4096) || codexErrorDiagnostic(stdout);
         if (!terminationPersistenceError) {
             record.observations.push({
                 observedAt: now(),
                 kind: "boundary_failure",
-                detail: stdinErrorMessage ?? termination ?? spawnErrorMessage ?? (diagnostic || `exit ${exitCode}`),
+                detail:
+                    stdinErrorMessage ??
+                    (terminationReason === "explicit_cancellation"
+                        ? "cancel"
+                        : terminationReason === "process_failure"
+                          ? "stdin_error"
+                          : terminationReason) ??
+                    spawnError?.message ??
+                    (diagnostic || `exit ${exitCode}`),
             });
         }
     } else {
         try {
-            const parsed = parseJsonl(contractDecoder.decode(Buffer.concat(stdout)));
+            const parsed = parseJsonl(contractDecoder.decode(stdout));
             validateReport(parsed.report);
             record.externalThreadId = parsed.threadId;
             if (parsed.threadId) {

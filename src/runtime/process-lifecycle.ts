@@ -2,13 +2,9 @@ import type { Readable, Writable } from "node:stream";
 
 import { spawn } from "node:child_process";
 
-export type ProviderProcessTerminationReason =
-    | "timeout"
-    | "explicit_cancellation"
-    | "output_limit"
-    | "provider_failure";
+export type ProcessTerminationReason = "timeout" | "explicit_cancellation" | "output_limit" | "process_failure";
 
-export interface ProviderProcessChild {
+export interface ProcessChild {
     stdin: Writable;
     stdout: Readable;
     stderr: Readable;
@@ -19,30 +15,33 @@ export interface ProviderProcessChild {
     off(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
 }
 
-export type ProviderProcessSpawn<TOptions> = (
-    command: string,
-    arguments_: string[],
-    options: TOptions,
-) => ProviderProcessChild;
+export type ProcessSpawn<TOptions> = (command: string, arguments_: string[], options: TOptions) => ProcessChild;
 
-export interface ProviderCliSpawnOptions {
+export interface CliProcessSpawnOptions {
     cwd: string;
     env: NodeJS.ProcessEnv;
 }
 
-export type ProviderCliSpawn = ProviderProcessSpawn<ProviderCliSpawnOptions>;
+export type CliProcessSpawn = ProcessSpawn<CliProcessSpawnOptions>;
+export type PipedProcessSpawn = ProcessSpawn<Record<string, never>>;
 
-export const NodeProviderCliSpawn: ProviderCliSpawn = (command, arguments_, options) =>
+export const NodeCliProcessSpawn: CliProcessSpawn = (command, arguments_, options) =>
     spawn(command, arguments_, {
         ...options,
         shell: false,
         stdio: ["pipe", "pipe", "pipe"],
     });
 
-export interface RunProviderProcessOptions<TOptions> {
+export const NodePipedProcessSpawn: PipedProcessSpawn = (command, arguments_) =>
+    spawn(command, arguments_, {
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe"],
+    });
+
+export interface RunProcessOptions<TOptions> {
     command: string;
     arguments_: string[];
-    spawnImpl: ProviderProcessSpawn<TOptions>;
+    spawnImpl: ProcessSpawn<TOptions>;
     spawnOptions: TOptions;
     stdin: string | Buffer;
     timeoutSeconds: number;
@@ -52,14 +51,15 @@ export interface RunProviderProcessOptions<TOptions> {
     terminationGraceMs: number;
     finalTerminationMs: number;
     destroyOutputOnTerminate?: boolean;
+    terminateOnStdinError?: boolean;
     onStdoutChunk?: (chunk: Buffer) => void;
+    onStdinError?: (error: Error) => void;
+    onSpawned?: () => void | Promise<void>;
+    beforeTerminate?: (reason: ProcessTerminationReason) => void | Promise<void>;
 }
 
-export type ProviderProcessResult =
-    | {
-          spawned: false;
-          spawnError: Error;
-      }
+export type ProcessResult =
+    | { spawned: false; spawnError: Error }
     | {
           spawned: true;
           stdout: Buffer;
@@ -69,59 +69,53 @@ export type ProviderProcessResult =
           spawnError: Error | null;
           exitCode: number | null;
           exitSignal: NodeJS.Signals | null;
-          terminationReason: ProviderProcessTerminationReason | null;
+          terminationReason: ProcessTerminationReason | null;
           terminationConfirmed: boolean;
       };
 
-export interface ProviderProcessExecution {
-    run(): Promise<ProviderProcessResult>;
+export interface ProcessExecution {
+    run(): Promise<ProcessResult>;
 }
 
-export function createProviderProcessExecution<TOptions>(
-    options: RunProviderProcessOptions<TOptions>,
-): ProviderProcessExecution {
-    return new ProviderProcessExecutionImpl(options);
+export function createProcessExecution<TOptions>(options: RunProcessOptions<TOptions>): ProcessExecution {
+    return new ProcessExecutionImpl(options);
 }
 
-export function runProviderProcess<TOptions>(
-    options: RunProviderProcessOptions<TOptions>,
-): Promise<ProviderProcessResult> {
-    return createProviderProcessExecution(options).run();
+export function runProcess<TOptions>(options: RunProcessOptions<TOptions>): Promise<ProcessResult> {
+    return createProcessExecution(options).run();
 }
 
-class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution {
-    private readonly options: RunProviderProcessOptions<TOptions>;
-    private child: ProviderProcessChild | null = null;
+class ProcessExecutionImpl<TOptions> implements ProcessExecution {
+    private readonly options: RunProcessOptions<TOptions>;
+    private child: ProcessChild | null = null;
     private readonly stdout: Buffer[] = [];
     private readonly stderr: Buffer[] = [];
-
     private stdoutBytes = 0;
     private stderrBytes = 0;
     private outputLimited = false;
-    private terminationReason: ProviderProcessTerminationReason | null = null;
+    private terminationReason: ProcessTerminationReason | null = null;
     private spawnError: Error | null = null;
     private closed = false;
     private exitCode: number | null = null;
     private exitSignal: NodeJS.Signals | null = null;
     private settled = false;
-
     private timeoutTimer: NodeJS.Timeout | null = null;
     private killTimer: NodeJS.Timeout | null = null;
     private finalTimer: NodeJS.Timeout | null = null;
-
+    private terminationPreparation: Promise<void> | null = null;
     private resolveDone: ((terminationConfirmed: boolean) => void) | null = null;
-    private execution: Promise<ProviderProcessResult> | null = null;
+    private execution: Promise<ProcessResult> | null = null;
 
-    constructor(options: RunProviderProcessOptions<TOptions>) {
+    constructor(options: RunProcessOptions<TOptions>) {
         this.options = options;
     }
 
-    run(): Promise<ProviderProcessResult> {
+    run(): Promise<ProcessResult> {
         this.execution ??= this.execute();
         return this.execution;
     }
 
-    private async execute(): Promise<ProviderProcessResult> {
+    private async execute(): Promise<ProcessResult> {
         try {
             this.child = this.options.spawnImpl(
                 this.options.command,
@@ -136,22 +130,22 @@ class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution
             this.resolveDone = resolve;
         });
 
+        if (this.options.onSpawned) await this.options.onSpawned();
         this.attachListeners();
         this.timeoutTimer = setTimeout(() => this.terminate("timeout"), this.options.timeoutSeconds * 1000);
         this.options.signal?.addEventListener("abort", this.onAbort, { once: true });
-        if (this.options.signal?.aborted) {
-            this.onAbort();
-        }
+        if (this.options.signal?.aborted) this.onAbort();
         if (this.terminationReason === null) {
             try {
                 this.child.stdin.end(this.options.stdin);
             } catch (error) {
                 this.spawnError = asError(error);
-                this.terminate("provider_failure");
+                this.terminate("process_failure");
             }
         }
 
         const terminationConfirmed = await done;
+        await this.terminationPreparation;
         this.cleanup(terminationConfirmed);
 
         return {
@@ -170,9 +164,7 @@ class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution
 
     private attachListeners(): void {
         const child = this.child;
-        if (child === null) {
-            return;
-        }
+        if (child === null) return;
         child.stdout.on("data", this.onStdout);
         child.stderr.on("data", this.onStderr);
         child.on("error", this.onSpawnError);
@@ -193,27 +185,35 @@ class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution
             child.off("error", this.onSpawnError);
             child.off("close", this.onClose);
         }
-        if (!terminationConfirmed) {
-            this.closePipes();
-        }
+        if (!terminationConfirmed) this.closePipes();
     }
 
     private closePipes(): void {
         const child = this.child;
-        if (child === null) {
-            return;
-        }
+        if (child === null) return;
         child.stdin.destroy();
         child.stdout.destroy();
         child.stderr.destroy();
     }
 
-    private terminate(reason: ProviderProcessTerminationReason): void {
-        const child = this.child;
-        if (child === null || this.settled || this.terminationReason !== null) {
-            return;
-        }
+    private terminate(reason: ProcessTerminationReason): void {
+        if (this.child === null || this.settled || this.terminationReason !== null) return;
         this.terminationReason = reason;
+        this.terminationPreparation = this.prepareTermination(reason);
+    }
+
+    private async prepareTermination(reason: ProcessTerminationReason): Promise<void> {
+        try {
+            if (this.options.beforeTerminate) await this.options.beforeTerminate(reason);
+        } catch (error) {
+            this.spawnError ??= asError(error);
+        }
+        this.signalTermination();
+    }
+
+    private signalTermination(): void {
+        const child = this.child;
+        if (child === null || this.closed || this.settled) return;
         child.stdin.destroy();
         if (this.options.destroyOutputOnTerminate) {
             child.stdout.destroy();
@@ -250,9 +250,7 @@ class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution
     };
 
     private readonly onStderr = (chunk: Buffer): void => {
-        if (this.stderrBytes >= this.options.maxStderrBytes) {
-            return;
-        }
+        if (this.stderrBytes >= this.options.maxStderrBytes) return;
         const keep = chunk.subarray(0, this.options.maxStderrBytes - this.stderrBytes);
         this.stderr.push(keep);
         this.stderrBytes += keep.length;
@@ -274,7 +272,13 @@ class ProviderProcessExecutionImpl<TOptions> implements ProviderProcessExecution
         }
     };
 
-    private readonly onStdinError = (): void => {};
+    private readonly onStdinError = (error: Error): void => {
+        this.options.onStdinError?.(error);
+        if (this.options.terminateOnStdinError) {
+            this.spawnError ??= error;
+            this.terminate("process_failure");
+        }
+    };
 
     private readonly onAbort = (): void => {
         this.terminate("explicit_cancellation");

@@ -1,22 +1,20 @@
-import { spawn } from "node:child_process";
 import { basename } from "node:path";
 
+import type { PipedProcessSpawn } from "../runtime/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
-import type { ProviderProcessSpawn } from "./process-lifecycle.ts";
 
 import { ProviderError } from "../core/errors.ts";
+import { NodePipedProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
     MAX_STDOUT_BYTES,
     validateProviderResult,
 } from "./contract.ts";
-import { runProviderProcess } from "./process-lifecycle.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
-type GenericSpawnOptions = { shell: false; stdio: ["pipe", "pipe", "pipe"] };
-type SpawnImpl = ProviderProcessSpawn<GenericSpawnOptions>;
+type SpawnImpl = PipedProcessSpawn;
 
 export interface InvokeProviderOptions extends ProviderInvocationOptions {
     spawnImpl?: SpawnImpl;
@@ -31,7 +29,7 @@ export async function invokeProvider(
     {
         timeoutSeconds,
         signal,
-        spawnImpl = spawn as unknown as SpawnImpl,
+        spawnImpl = NodePipedProcessSpawn,
         terminationGraceMs = 100,
         finalTerminationMs = 500,
     }: InvokeProviderOptions,
@@ -46,11 +44,11 @@ export async function invokeProvider(
             termination: { reason: "explicit_cancellation", directChildExitObserved: false },
         });
 
-    const processResult = await runProviderProcess({
+    const processResult = await runProcess({
         command,
         arguments_,
         spawnImpl,
-        spawnOptions: { shell: false, stdio: ["pipe", "pipe", "pipe"] },
+        spawnOptions: {},
         stdin: Buffer.from(JSON.stringify(request), "utf8"),
         timeoutSeconds,
         signal,
@@ -80,7 +78,7 @@ export async function invokeProvider(
     const diagnostic = decodeDiagnostic(stderr);
 
     if (!terminationConfirmed) {
-        if (terminationReason === "provider_failure")
+        if (terminationReason === "process_failure")
             throw new ProviderError("provider I/O failed; direct-child termination unconfirmed", {
                 outcome: "outcome_unknown",
                 terminationConfirmed: false,

@@ -3,11 +3,11 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import type { ProviderProcessChild, ProviderProcessExecution } from "./process-lifecycle.ts";
+import type { ProcessChild, ProcessExecution } from "./process-lifecycle.ts";
 
-import { createProviderProcessExecution, runProviderProcess } from "./process-lifecycle.ts";
+import { createProcessExecution, runProcess } from "./process-lifecycle.ts";
 
-class TestChild extends EventEmitter implements ProviderProcessChild {
+class TestChild extends EventEmitter implements ProcessChild {
     readonly stdin = new PassThrough();
     readonly stdout = new PassThrough();
     readonly stderr = new PassThrough();
@@ -23,9 +23,9 @@ class TestChild extends EventEmitter implements ProviderProcessChild {
     }
 }
 
-test("public execution interface represents one provider process run", async () => {
+test("public execution interface represents one process run", async () => {
     const child = new TestChild();
-    const execution: ProviderProcessExecution = createProviderProcessExecution({
+    const execution: ProcessExecution = createProcessExecution({
         command: "provider",
         arguments_: [],
         spawnImpl: () => child,
@@ -53,7 +53,7 @@ test("public execution interface represents one provider process run", async () 
 
 test("shared lifecycle captures bounded output and normal exit", async () => {
     const child = new TestChild();
-    const completed = runProviderProcess({
+    const completed = runProcess({
         command: "provider",
         arguments_: [],
         spawnImpl: () => child,
@@ -81,7 +81,7 @@ test("shared lifecycle captures bounded output and normal exit", async () => {
 
 test("shared lifecycle escalates termination and reports an unconfirmed timeout", async () => {
     const child = new TestChild();
-    const result = await runProviderProcess({
+    const result = await runProcess({
         command: "provider",
         arguments_: [],
         spawnImpl: () => child,
@@ -103,7 +103,7 @@ test("shared lifecycle escalates termination and reports an unconfirmed timeout"
 
 test("shared lifecycle terminates when stdout crosses its byte limit", async () => {
     const child = new TestChild();
-    const completed = runProviderProcess({
+    const completed = runProcess({
         command: "provider",
         arguments_: [],
         spawnImpl: () => child,
@@ -126,4 +126,36 @@ test("shared lifecycle terminates when stdout crosses its byte limit", async () 
     assert.equal(result.terminationReason, "output_limit");
     assert.equal(result.terminationConfirmed, true);
     assert.deepEqual(child.signals, ["SIGTERM"]);
+});
+
+test("shared lifecycle waits for pre-termination work before signalling", async () => {
+    const child = new TestChild();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const completed = runProcess({
+        command: "provider",
+        arguments_: [],
+        spawnImpl: () => child,
+        spawnOptions: {},
+        stdin: "request",
+        timeoutSeconds: 0.001,
+        maxStdoutBytes: 1024,
+        maxStderrBytes: 1024,
+        terminationGraceMs: 50,
+        finalTerminationMs: 100,
+        beforeTerminate: async () => gate,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.deepEqual(child.signals, []);
+    release();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(child.signals[0], "SIGTERM");
+    child.close(0, "SIGTERM");
+    const result = await completed;
+    assert.equal(result.spawned, true);
+    if (!result.spawned) return;
+    assert.equal(result.terminationReason, "timeout");
+    assert.equal(result.terminationConfirmed, true);
 });

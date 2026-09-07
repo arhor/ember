@@ -3,11 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
+import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
-import type { ProviderCliSpawn } from "./process-lifecycle.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
+import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
@@ -15,7 +16,6 @@ import {
     MAX_STDOUT_BYTES,
     validateProviderResult,
 } from "./contract.ts";
-import { NodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const CURSOR_CONFIG_DIRECTORY = ".cursor";
@@ -41,7 +41,7 @@ const TOOL_DENY_CONFIG = `${JSON.stringify({ permissions: { allow: [], deny: ["S
 export interface InvokeCursorOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
-    spawnImpl?: ProviderCliSpawn;
+    spawnImpl?: CliProcessSpawn;
     session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string };
     terminationGraceMs?: number;
     finalTerminationMs?: number;
@@ -123,7 +123,7 @@ export async function invokeCursorProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = NodeProviderCliSpawn,
+        spawnImpl = NodeCliProcessSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         session = { mode: "fresh" },
@@ -152,7 +152,7 @@ export async function invokeCursorProvider(
             mode: 0o600,
             flag: "wx",
         });
-        const processResult = await runProviderProcess({
+        const processResult = await runProcess({
             command,
             arguments_: buildCursorArguments(argumentPrefix, runtimeCwd, session),
             spawnImpl,
@@ -186,7 +186,7 @@ export async function invokeCursorProvider(
         } = processResult;
         const unconfirmed = !directChildExitObserved;
         const termination =
-            terminationReason === null || terminationReason === "provider_failure"
+            terminationReason === null || terminationReason === "process_failure"
                 ? undefined
                 : { reason: terminationReason, directChildExitObserved };
         const errorOptions = (

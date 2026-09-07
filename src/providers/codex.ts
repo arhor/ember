@@ -3,11 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
+import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
-import type { ProviderCliSpawn } from "./process-lifecycle.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
+import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
@@ -15,7 +16,6 @@ import {
     MAX_STDOUT_BYTES,
     validateProviderResult,
 } from "./contract.ts";
-import { NodeProviderCliSpawn, runProviderProcess } from "./process-lifecycle.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const RESULT_SCHEMA_NAME = "provider-result.schema.json";
@@ -56,7 +56,7 @@ const RESULT_SCHEMA = `${JSON.stringify(
 export interface InvokeCodexOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
-    spawnImpl?: ProviderCliSpawn;
+    spawnImpl?: CliProcessSpawn;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
     thread?: { mode: "ephemeral" } | { mode: "fresh_persistent" } | { mode: "resume"; externalThreadId: string };
@@ -138,7 +138,7 @@ export async function invokeCodexProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = NodeProviderCliSpawn,
+        spawnImpl = NodeCliProcessSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         thread = { mode: "ephemeral" },
@@ -176,7 +176,7 @@ export async function invokeCodexProvider(
                 } catch {}
             }
         };
-        const processResult = await runProviderProcess({
+        const processResult = await runProcess({
             command,
             arguments_: buildCodexArguments(argumentPrefix, runtimeCwd, schemaPath, thread),
             spawnImpl,
@@ -211,7 +211,7 @@ export async function invokeCodexProvider(
         } = processResult;
         const unconfirmed = !directChildExitObserved;
         const termination =
-            terminationReason === null || terminationReason === "provider_failure"
+            terminationReason === null || terminationReason === "process_failure"
                 ? undefined
                 : { reason: terminationReason, directChildExitObserved };
         const errorOptions = (outcome: ProviderOutcome, terminationConfirmed = true): ProviderErrorOptions => ({
