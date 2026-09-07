@@ -99,6 +99,10 @@ Current architecture material:
   evaluates issue #176's candidate model routing, tools, MCP, workflows, memory,
   storage, delegation, observability, and eval primitives as independently
   replaceable mechanics beneath Ember-owned semantic boundaries.
+- [LangGraph.js Durable Execution Evaluation](langgraph-durable-execution-evaluation.md)
+  evaluates issue #177's Functional and Graph APIs, checkpointing, replay,
+  interrupt/resume, persistence, delegation, and runtime mechanics as a replaceable
+  durable-execution layer beneath Ember-owned continuity and canonical state.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
