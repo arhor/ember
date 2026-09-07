@@ -1,15 +1,14 @@
-import type { Readable, Writable } from "node:stream";
-
-import { spawn } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
+import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
+import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
@@ -54,27 +53,10 @@ const RESULT_SCHEMA = `${JSON.stringify(
     2,
 )}\n`;
 
-interface CodexChild {
-    stdin: Writable;
-    stdout: Readable;
-    stderr: Readable;
-    kill(signal?: NodeJS.Signals | number): boolean;
-    on(event: "error", listener: (error: Error) => void): this;
-    on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-    off(event: "error", listener: (error: Error) => void): this;
-    off(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-}
-
-type CodexSpawn = (
-    command: string,
-    arguments_: string[],
-    options: { cwd: string; env: NodeJS.ProcessEnv; shell: false; stdio: ["pipe", "pipe", "pipe"] },
-) => CodexChild;
-
 export interface InvokeCodexOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
-    spawnImpl?: CodexSpawn;
+    spawnImpl?: CliProcessSpawn;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
     thread?: { mode: "ephemeral" } | { mode: "fresh_persistent" } | { mode: "resume"; externalThreadId: string };
@@ -156,7 +138,7 @@ export async function invokeCodexProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = spawn as unknown as CodexSpawn,
+        spawnImpl = NodeCliProcessSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         thread = { mode: "ephemeral" },
@@ -180,66 +162,8 @@ export async function invokeCodexProvider(
     let terminationUnconfirmed = false;
     try {
         await writeFile(schemaPath, RESULT_SCHEMA, { encoding: "utf8", mode: 0o600, flag: "wx" });
-        let child: CodexChild;
-        try {
-            child = spawnImpl(command, buildCodexArguments(argumentPrefix, runtimeCwd, schemaPath, thread), {
-                cwd: runtimeCwd,
-                env: codexEnvironment(environment),
-                shell: false,
-                stdio: ["pipe", "pipe", "pipe"],
-            });
-        } catch (error) {
-            throw new ProviderError(`Codex is unavailable: ${errorMessage(error)}`, { cause: error });
-        }
-
-        const stdout: Buffer[] = [];
-        const stderr: Buffer[] = [];
-        let stdoutBytes = 0;
-        let stderrBytes = 0;
-        let oversized = false;
-        let terminationReason: "timeout" | "explicit_cancellation" | "oversized_stdout" | "provider_failure" | null =
-            null;
-        let spawnError: Error | null = null;
-        let closed = false;
-        let exitCode: number | null = null;
-        let exitSignal: NodeJS.Signals | null = null;
-        let settled = false;
-        let killTimer: NodeJS.Timeout | null = null;
-        let finalTimer: NodeJS.Timeout | null = null;
         let observedThreadId: string | undefined;
         let lineRemainder = "";
-
-        let resolveDone!: (unconfirmed: boolean) => void;
-        const done = new Promise<boolean>((resolve) => {
-            resolveDone = resolve;
-        });
-        const closePipes = () => {
-            child.stdin.destroy();
-            child.stdout.destroy();
-            child.stderr.destroy();
-        };
-        const terminate = (reason: Exclude<typeof terminationReason, null>) => {
-            if (settled || terminationReason !== null) return;
-            terminationReason = reason;
-            child.stdin.destroy();
-            try {
-                child.kill("SIGTERM");
-            } catch {}
-            killTimer = setTimeout(() => {
-                if (!closed) {
-                    try {
-                        child.kill("SIGKILL");
-                    } catch {}
-                }
-            }, terminationGraceMs);
-            finalTimer = setTimeout(() => {
-                if (!closed && !settled) {
-                    settled = true;
-                    closePipes();
-                    resolveDone(true);
-                }
-            }, finalTerminationMs);
-        };
         const inspectLines = (chunk: Buffer) => {
             lineRemainder += chunk.toString("utf8");
             const lines = lineRemainder.split("\n");
@@ -252,88 +176,52 @@ export async function invokeCodexProvider(
                 } catch {}
             }
         };
-        const onStdout = (chunk: Buffer) => {
-            stdoutBytes += chunk.length;
-            if (stdoutBytes <= MAX_STDOUT_BYTES) {
-                stdout.push(chunk);
-                inspectLines(chunk);
-            } else if (!oversized) {
-                oversized = true;
-                terminate("oversized_stdout");
-            }
-        };
-        const onStderr = (chunk: Buffer) => {
-            if (stderrBytes >= MAX_STDERR_BYTES) return;
-            const keep = chunk.subarray(0, MAX_STDERR_BYTES - stderrBytes);
-            stderr.push(keep);
-            stderrBytes += keep.length;
-        };
-        const onSpawnError = (error: Error) => {
-            spawnError = error;
-        };
-        const onClose = (code: number | null, signal_: NodeJS.Signals | null) => {
-            closed = true;
-            exitCode = code;
-            exitSignal = signal_;
-            if (killTimer) clearTimeout(killTimer);
-            if (finalTimer) clearTimeout(finalTimer);
-            if (!settled) {
-                settled = true;
-                resolveDone(false);
-            }
-        };
-        const onStdinError = () => {};
-        const onAbort = () => terminate("explicit_cancellation");
+        const processResult = await runProcess({
+            command,
+            arguments_: buildCodexArguments(argumentPrefix, runtimeCwd, schemaPath, thread),
+            spawnImpl,
+            spawnOptions: {
+                cwd: runtimeCwd,
+                env: codexEnvironment(environment),
+            },
+            stdin: prompt,
+            timeoutSeconds,
+            signal,
+            maxStdoutBytes: MAX_STDOUT_BYTES,
+            maxStderrBytes: MAX_STDERR_BYTES,
+            terminationGraceMs,
+            finalTerminationMs,
+            onStdoutChunk: inspectLines,
+        });
+        if (!processResult.spawned)
+            throw new ProviderError(`Codex is unavailable: ${processResult.spawnError.message}`, {
+                cause: processResult.spawnError,
+            });
 
-        child.stdout.on("data", onStdout);
-        child.stderr.on("data", onStderr);
-        child.on("error", onSpawnError);
-        child.on("close", onClose);
-        child.stdin.on("error", onStdinError);
-        const timeoutTimer = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
-        signal?.addEventListener("abort", onAbort, { once: true });
-        if (signal?.aborted) onAbort();
-        if (terminationReason === null) {
-            try {
-                child.stdin.end(prompt);
-            } catch (error) {
-                spawnError = error instanceof Error ? error : new Error(String(error));
-                terminate("provider_failure");
-            }
-        }
-
-        const unconfirmed = await done;
-        clearTimeout(timeoutTimer);
-        signal?.removeEventListener("abort", onAbort);
-        if (killTimer) clearTimeout(killTimer);
-        if (finalTimer) clearTimeout(finalTimer);
-        child.stdin.off("error", onStdinError);
-        child.stdout.off("data", onStdout);
-        child.stderr.off("data", onStderr);
-        child.off("error", onSpawnError);
-        child.off("close", onClose);
-        if (unconfirmed) closePipes();
-
+        const {
+            stdout,
+            stderr,
+            stdoutBytes,
+            outputLimited,
+            spawnError,
+            exitCode,
+            exitSignal,
+            terminationReason,
+            terminationConfirmed: directChildExitObserved,
+        } = processResult;
+        const unconfirmed = !directChildExitObserved;
         const termination =
-            terminationReason === null || terminationReason === "provider_failure"
+            terminationReason === null || terminationReason === "process_failure"
                 ? undefined
-                : {
-                      reason:
-                          terminationReason === "explicit_cancellation"
-                              ? ("explicit_cancellation" as const)
-                              : terminationReason === "timeout"
-                                ? ("timeout" as const)
-                                : ("output_limit" as const),
-                      directChildExitObserved: !unconfirmed,
-                  };
+                : { reason: terminationReason, directChildExitObserved };
         const errorOptions = (outcome: ProviderOutcome, terminationConfirmed = true): ProviderErrorOptions => ({
             outcome,
             terminationConfirmed,
             externalThreadId: observedThreadId,
             termination,
         });
-        const diagnostic = decodeDiagnostic(Buffer.concat(stderr));
-        const structuredDiagnostic = codexErrorDiagnostic(Buffer.concat(stdout));
+        const diagnostic = decodeDiagnostic(stderr);
+        const structuredDiagnostic = codexErrorDiagnostic(stdout);
         if (unconfirmed) {
             terminationUnconfirmed = true;
             const event =
@@ -341,7 +229,7 @@ export async function invokeCodexProvider(
                     ? "Codex cancellation requested"
                     : terminationReason === "timeout"
                       ? "Codex timed out"
-                      : terminationReason === "oversized_stdout"
+                      : terminationReason === "output_limit"
                         ? "Codex output limit exceeded"
                         : "Codex provider I/O failed";
             throw new ProviderError(
@@ -364,7 +252,7 @@ export async function invokeCodexProvider(
                 `Codex timed out; direct child exit observed but remote work or effects remain unconfirmed${diagnostic ? `: ${diagnostic}` : ""}`,
                 errorOptions("timed_out"),
             );
-        if (terminationReason === "oversized_stdout" || oversized || stdoutBytes > MAX_STDOUT_BYTES)
+        if (terminationReason === "output_limit" || outputLimited || stdoutBytes > MAX_STDOUT_BYTES)
             throw new ProviderError("Codex JSONL output exceeds 1 MiB", errorOptions("failed"));
         if (exitCode !== 0) {
             const detail = diagnostic || structuredDiagnostic;
@@ -376,7 +264,7 @@ export async function invokeCodexProvider(
 
         let stdoutText: string;
         try {
-            stdoutText = decoder.decode(Buffer.concat(stdout));
+            stdoutText = decoder.decode(stdout);
         } catch (error) {
             throw new ProviderError("Codex JSONL output is not UTF-8", { ...errorOptions("failed"), cause: error });
         }

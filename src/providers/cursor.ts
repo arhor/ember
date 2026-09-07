@@ -1,15 +1,14 @@
-import type { Readable, Writable } from "node:stream";
-
-import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
+import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
+import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
@@ -39,32 +38,10 @@ const ENVIRONMENT_ALLOWLIST = [
 ] as const;
 const TOOL_DENY_CONFIG = `${JSON.stringify({ permissions: { allow: [], deny: ["Shell(*)", "Read(*)", "Read(**)", "Write(*)", "Write(**)", "WebFetch(*)", "Mcp(*:*)"] } }, null, 2)}\n`;
 
-interface CursorChild {
-    stdin: Writable;
-    stdout: Readable;
-    stderr: Readable;
-    kill(signal?: NodeJS.Signals | number): boolean;
-    on(event: "error", listener: (error: Error) => void): this;
-    on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-    off(event: "error", listener: (error: Error) => void): this;
-    off(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-}
-
-type CursorSpawn = (
-    command: string,
-    arguments_: string[],
-    options: {
-        cwd: string;
-        env: NodeJS.ProcessEnv;
-        shell: false;
-        stdio: ["pipe", "pipe", "pipe"];
-    },
-) => CursorChild;
-
 export interface InvokeCursorOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
-    spawnImpl?: CursorSpawn;
+    spawnImpl?: CliProcessSpawn;
     session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string };
     terminationGraceMs?: number;
     finalTerminationMs?: number;
@@ -146,7 +123,7 @@ export async function invokeCursorProvider(
         signal,
         cwd,
         environment = process.env,
-        spawnImpl = spawn as unknown as CursorSpawn,
+        spawnImpl = NodeCliProcessSpawn,
         terminationGraceMs = 500,
         finalTerminationMs = 1_000,
         session = { mode: "fresh" },
@@ -175,141 +152,49 @@ export async function invokeCursorProvider(
             mode: 0o600,
             flag: "wx",
         });
-        let child: CursorChild;
-        try {
-            child = spawnImpl(command, buildCursorArguments(argumentPrefix, runtimeCwd, session), {
+        const processResult = await runProcess({
+            command,
+            arguments_: buildCursorArguments(argumentPrefix, runtimeCwd, session),
+            spawnImpl,
+            spawnOptions: {
                 cwd: runtimeCwd,
                 env: cursorEnvironment(environment),
-                shell: false,
-                stdio: ["pipe", "pipe", "pipe"],
-            });
-        } catch (error) {
-            throw new ProviderError(`Cursor is unavailable: ${errorMessage(error)}`, { cause: error });
-        }
-
-        const stdout: Buffer[] = [];
-        const stderr: Buffer[] = [];
-        let stdoutBytes = 0;
-        let stderrBytes = 0;
-        let oversized = false;
-        let terminationReason: "timeout" | "explicit_cancellation" | "oversized_stdout" | "provider_failure" | null =
-            null;
-        let spawnError: Error | null = null;
-        let closed = false;
-        let exitCode: number | null = null;
-        let exitSignal: NodeJS.Signals | null = null;
-        let settled = false;
-        let killTimer: NodeJS.Timeout | null = null;
-        let finalTimer: NodeJS.Timeout | null = null;
-
-        let resolveDone!: (unconfirmed: boolean) => void;
-        const done = new Promise<boolean>((resolve) => {
-            resolveDone = resolve;
+            },
+            stdin: prompt,
+            timeoutSeconds,
+            signal,
+            maxStdoutBytes: MAX_STDOUT_BYTES,
+            maxStderrBytes: MAX_STDERR_BYTES,
+            terminationGraceMs,
+            finalTerminationMs,
         });
-        const closePipes = () => {
-            child.stdin.destroy();
-            child.stdout.destroy();
-            child.stderr.destroy();
-        };
-        const terminate = (reason: Exclude<typeof terminationReason, null>) => {
-            if (settled || terminationReason !== null) return;
-            terminationReason = reason;
-            child.stdin.destroy();
-            try {
-                child.kill("SIGTERM");
-            } catch {}
-            killTimer = setTimeout(() => {
-                if (!closed) {
-                    try {
-                        child.kill("SIGKILL");
-                    } catch {}
-                }
-            }, terminationGraceMs);
-            finalTimer = setTimeout(() => {
-                if (!closed && !settled) {
-                    settled = true;
-                    closePipes();
-                    resolveDone(true);
-                }
-            }, finalTerminationMs);
-        };
-        const onStdout = (chunk: Buffer) => {
-            stdoutBytes += chunk.length;
-            if (stdoutBytes <= MAX_STDOUT_BYTES) stdout.push(chunk);
-            else if (!oversized) {
-                oversized = true;
-                terminate("oversized_stdout");
-            }
-        };
-        const onStderr = (chunk: Buffer) => {
-            if (stderrBytes >= MAX_STDERR_BYTES) return;
-            const keep = chunk.subarray(0, MAX_STDERR_BYTES - stderrBytes);
-            stderr.push(keep);
-            stderrBytes += keep.length;
-        };
-        const onSpawnError = (error: Error) => {
-            spawnError = error;
-        };
-        const onClose = (code: number | null, signal_: NodeJS.Signals | null) => {
-            closed = true;
-            exitCode = code;
-            exitSignal = signal_;
-            if (killTimer) clearTimeout(killTimer);
-            if (finalTimer) clearTimeout(finalTimer);
-            if (!settled) {
-                settled = true;
-                resolveDone(false);
-            }
-        };
-        const onStdinError = () => {};
-        const onAbort = () => terminate("explicit_cancellation");
-        child.stdout.on("data", onStdout);
-        child.stderr.on("data", onStderr);
-        child.on("error", onSpawnError);
-        child.on("close", onClose);
-        child.stdin.on("error", onStdinError);
-        const timeoutTimer = setTimeout(() => terminate("timeout"), timeoutSeconds * 1000);
-        signal?.addEventListener("abort", onAbort, { once: true });
-        if (signal?.aborted) onAbort();
-        if (terminationReason === null) {
-            try {
-                child.stdin.end(prompt);
-            } catch (error) {
-                spawnError = error instanceof Error ? error : new Error(String(error));
-                terminate("provider_failure");
-            }
-        }
+        if (!processResult.spawned)
+            throw new ProviderError(`Cursor is unavailable: ${processResult.spawnError.message}`, {
+                cause: processResult.spawnError,
+            });
 
-        const unconfirmed = await done;
-        clearTimeout(timeoutTimer);
-        signal?.removeEventListener("abort", onAbort);
-        if (killTimer) clearTimeout(killTimer);
-        if (finalTimer) clearTimeout(finalTimer);
-        child.stdin.off("error", onStdinError);
-        child.stdout.off("data", onStdout);
-        child.stderr.off("data", onStderr);
-        child.off("error", onSpawnError);
-        child.off("close", onClose);
-        if (unconfirmed) closePipes();
-
+        const {
+            stdout,
+            stderr,
+            stdoutBytes,
+            outputLimited,
+            spawnError,
+            exitCode,
+            exitSignal,
+            terminationReason,
+            terminationConfirmed: directChildExitObserved,
+        } = processResult;
+        const unconfirmed = !directChildExitObserved;
         const termination =
-            terminationReason === null || terminationReason === "provider_failure"
+            terminationReason === null || terminationReason === "process_failure"
                 ? undefined
-                : {
-                      reason:
-                          terminationReason === "explicit_cancellation"
-                              ? ("explicit_cancellation" as const)
-                              : terminationReason === "timeout"
-                                ? ("timeout" as const)
-                                : ("output_limit" as const),
-                      directChildExitObserved: !unconfirmed,
-                  };
+                : { reason: terminationReason, directChildExitObserved };
         const errorOptions = (
             outcome: ProviderOutcome,
             terminationConfirmed = true,
             externalThreadId?: string,
         ): ProviderErrorOptions => ({ outcome, terminationConfirmed, externalThreadId, termination });
-        const diagnostic = decodeDiagnostic(Buffer.concat(stderr));
+        const diagnostic = decodeDiagnostic(stderr);
         if (unconfirmed) {
             terminationUnconfirmed = true;
             const event =
@@ -317,7 +202,7 @@ export async function invokeCursorProvider(
                     ? "Cursor cancellation requested"
                     : terminationReason === "timeout"
                       ? "Cursor timed out"
-                      : terminationReason === "oversized_stdout"
+                      : terminationReason === "output_limit"
                         ? "Cursor output limit exceeded"
                         : "Cursor provider I/O failed";
             throw new ProviderError(
@@ -340,7 +225,7 @@ export async function invokeCursorProvider(
                 `Cursor timed out; direct child exit observed but remote work or effects remain unconfirmed${diagnostic ? `: ${diagnostic}` : ""}`,
                 errorOptions("timed_out"),
             );
-        if (terminationReason === "oversized_stdout" || oversized || stdoutBytes > MAX_STDOUT_BYTES)
+        if (terminationReason === "output_limit" || outputLimited || stdoutBytes > MAX_STDOUT_BYTES)
             throw new ProviderError("Cursor JSON output exceeds 1 MiB", errorOptions("failed"));
         if (exitCode !== 0)
             throw new ProviderError(
@@ -350,7 +235,7 @@ export async function invokeCursorProvider(
 
         let text: string;
         try {
-            text = decoder.decode(Buffer.concat(stdout));
+            text = decoder.decode(stdout);
         } catch (error) {
             throw new ProviderError("Cursor JSON output is not UTF-8", { ...errorOptions("failed"), cause: error });
         }
