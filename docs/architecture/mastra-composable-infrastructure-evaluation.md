@@ -45,34 +45,34 @@ This evaluation does **not** claim a measured install size, idle RSS, or Raspber
 
 ## Classification scale
 
-| Class | Meaning |
-| --- | --- |
-| **1 - direct** | The primitive can sit below an Ember-owned interface with little semantic translation. |
-| **2 - firewall** | The primitive is useful, but an adapter must prevent Mastra concepts or state from becoming Ember semantics. |
-| **3 - coupled** | The primitive pulls strongly toward Mastra's application model or would duplicate/distort an Ember-owned concept. |
-| **4 - irrelevant** | The primitive does not currently solve an Ember requirement. |
+| Class              | Meaning                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **1 - direct**     | The primitive can sit below an Ember-owned interface with little semantic translation.                            |
+| **2 - firewall**   | The primitive is useful, but an adapter must prevent Mastra concepts or state from becoming Ember semantics.      |
+| **3 - coupled**    | The primitive pulls strongly toward Mastra's application model or would duplicate/distort an Ember-owned concept. |
+| **4 - irrelevant** | The primitive does not currently solve an Ember requirement.                                                      |
 
 ## Primitive inventory
 
-| Mastra primitive | Current surface | Class | Ember fit | Recommendation |
-| --- | --- | ---: | --- | --- |
-| Model Router / language-model abstraction | `ModelRouterLanguageModel`, provider/model routing, fallback selection | **2** | Useful implementation beneath cognition, but Ember must still own projection, result validation, provenance, cancellation outcome, and provider selection policy | **Wrap / candidate** |
-| Tool definitions | standalone `createTool`, schemas, execution hooks, suspension/approval plumbing | **2** | Good schema/execution mechanics; tool availability is not authority and tool success is not effect certainty | **Wrap / candidate** |
-| Agent/tool loop | `Agent`, processors, tool loop, streaming lifecycle | **3** for current Ember | Convenient but wants to own message loop, tool lifecycle, memory, and run semantics together | **Avoid as core; revisit for bounded executor** |
-| MCP | client/server packages and tool conversion | **2** | Strong fit with Ember's preference for MCP as a capability transport; authority must remain outside MCP/Mastra | **Wrap / strong candidate** |
-| Core workflows | `createWorkflow`, `createStep`, branching, parallelism, retries, suspend/resume, snapshots | **2** | Useful operational execution state if canonical meaning remains in Ember | **Revisit behind durable-execution port** |
-| Temporal workflow engine | `@mastra/temporal`, same workflow definitions on Temporal | **2** | Strong durability, but operationally far heavier than current Pi/systemd topology | **Revisit only when earned** |
-| Message history | Mastra Memory thread messages | **3** as Ember memory | Useful chat storage, but Ember history is evidence and continuity is not a Mastra thread | **Avoid as canonical memory** |
-| Working memory | thread/resource document injected into model context | **3** | Collides with curated durable memory, provenance/currentness, and least-sufficient context selection | **Avoid as canonical state** |
-| Semantic recall | vector retrieval over stored messages | **2** only as candidate retrieval | Could propose evidence candidates, but must not bypass Ember selection/currentness rules | **Possible retrieval backend, not memory** |
-| Observational Memory | observer/reflector compression and standalone memory processing | **2** | Interesting derived context-compression mechanism if outputs remain rebuildable and provenance-linked | **Spike later as context compressor** |
-| Storage domains/adapters | memory, workflow, observability, scores, schedules, MCP and other domains across LibSQL/Postgres/etc. | **3** for canonical Ember; **2** for Mastra operational state | Good persistence machinery for Mastra-owned artifacts; schema and lifecycle remain Mastra-specific | **Use only behind owning primitive** |
-| Supervisor / subagents / `agent.network()` | routing and delegation among Mastra agents | **3** | Conflicts with Ember-owned responsibility, authority, currentness, cancellation uncertainty, and reintegration | **Avoid for Ember delegation** |
-| ACP/A2A/coding-agent transports | protocol and harness integrations | **2** | Potential transport beneath `src/delegation/`; does not supply Ember delegation meaning | **Revisit when current adapter lacks capability** |
-| Observability | tracing, exporters, OpenTelemetry-compatible integrations | **2** | Execution telemetry is non-canonical and naturally replaceable if Ember IDs remain attributes | **Strong candidate** |
-| Scorers/evals | rule/model/statistical scorers, datasets/experiments, Vitest integration | **2** | Useful evaluation mechanics; acceptance scenarios and semantic oracles remain repository-owned | **Candidate** |
-| Mastra Server / Studio / hosted platform | HTTP runtime, Studio, hosted deploy/storage/observability | **4** now | Ember already has explicit CLI/surface/runtime ownership; hosted control plane is not needed for the first topology | **Do not adopt now** |
-| Channels, sandbox/workspace, goals, schedules, inbox/signals | broader application framework | **4** or **3** depending future need | Significant overlap with existing or future Ember concerns, but no current failure requires moving ownership | **Evaluate separately only when earned** |
+| Mastra primitive                                             | Current surface                                                                                       |                                                         Class | Ember fit                                                                                                                                                        | Recommendation                                    |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Model Router / language-model abstraction                    | `ModelRouterLanguageModel`, provider/model routing, fallback selection                                |                                                         **2** | Useful implementation beneath cognition, but Ember must still own projection, result validation, provenance, cancellation outcome, and provider selection policy | **Wrap / candidate**                              |
+| Tool definitions                                             | standalone `createTool`, schemas, execution hooks, suspension/approval plumbing                       |                                                         **2** | Good schema/execution mechanics; tool availability is not authority and tool success is not effect certainty                                                     | **Wrap / candidate**                              |
+| Agent/tool loop                                              | `Agent`, processors, tool loop, streaming lifecycle                                                   |                                       **3** for current Ember | Convenient but wants to own message loop, tool lifecycle, memory, and run semantics together                                                                     | **Avoid as core; revisit for bounded executor**   |
+| MCP                                                          | client/server packages and tool conversion                                                            |                                                         **2** | Strong fit with Ember's preference for MCP as a capability transport; authority must remain outside MCP/Mastra                                                   | **Wrap / strong candidate**                       |
+| Core workflows                                               | `createWorkflow`, `createStep`, branching, parallelism, retries, suspend/resume, snapshots            |                                                         **2** | Useful operational execution state if canonical meaning remains in Ember                                                                                         | **Revisit behind durable-execution port**         |
+| Temporal workflow engine                                     | `@mastra/temporal`, same workflow definitions on Temporal                                             |                                                         **2** | Strong durability, but operationally far heavier than current Pi/systemd topology                                                                                | **Revisit only when earned**                      |
+| Message history                                              | Mastra Memory thread messages                                                                         |                                         **3** as Ember memory | Useful chat storage, but Ember history is evidence and continuity is not a Mastra thread                                                                         | **Avoid as canonical memory**                     |
+| Working memory                                               | thread/resource document injected into model context                                                  |                                                         **3** | Collides with curated durable memory, provenance/currentness, and least-sufficient context selection                                                             | **Avoid as canonical state**                      |
+| Semantic recall                                              | vector retrieval over stored messages                                                                 |                             **2** only as candidate retrieval | Could propose evidence candidates, but must not bypass Ember selection/currentness rules                                                                         | **Possible retrieval backend, not memory**        |
+| Observational Memory                                         | observer/reflector compression and standalone memory processing                                       |                                                         **2** | Interesting derived context-compression mechanism if outputs remain rebuildable and provenance-linked                                                            | **Spike later as context compressor**             |
+| Storage domains/adapters                                     | memory, workflow, observability, scores, schedules, MCP and other domains across LibSQL/Postgres/etc. | **3** for canonical Ember; **2** for Mastra operational state | Good persistence machinery for Mastra-owned artifacts; schema and lifecycle remain Mastra-specific                                                               | **Use only behind owning primitive**              |
+| Supervisor / subagents / `agent.network()`                   | routing and delegation among Mastra agents                                                            |                                                         **3** | Conflicts with Ember-owned responsibility, authority, currentness, cancellation uncertainty, and reintegration                                                   | **Avoid for Ember delegation**                    |
+| ACP/A2A/coding-agent transports                              | protocol and harness integrations                                                                     |                                                         **2** | Potential transport beneath `src/delegation/`; does not supply Ember delegation meaning                                                                          | **Revisit when current adapter lacks capability** |
+| Observability                                                | tracing, exporters, OpenTelemetry-compatible integrations                                             |                                                         **2** | Execution telemetry is non-canonical and naturally replaceable if Ember IDs remain attributes                                                                    | **Strong candidate**                              |
+| Scorers/evals                                                | rule/model/statistical scorers, datasets/experiments, Vitest integration                              |                                                         **2** | Useful evaluation mechanics; acceptance scenarios and semantic oracles remain repository-owned                                                                   | **Candidate**                                     |
+| Mastra Server / Studio / hosted platform                     | HTTP runtime, Studio, hosted deploy/storage/observability                                             |                                                     **4** now | Ember already has explicit CLI/surface/runtime ownership; hosted control plane is not needed for the first topology                                              | **Do not adopt now**                              |
+| Channels, sandbox/workspace, goals, schedules, inbox/signals | broader application framework                                                                         |                          **4** or **3** depending future need | Significant overlap with existing or future Ember concerns, but no current failure requires moving ownership                                                     | **Evaluate separately only when earned**          |
 
 ## Model and provider mechanics
 
@@ -220,7 +220,7 @@ resume run
   -> only then continue effectful work
 ```
 
-This is especially important because workflow retry semantics solve *execution retry*, not Ember's stronger question of whether retrying an operation is semantically safe after an ambiguous external effect.
+This is especially important because workflow retry semantics solve _execution retry_, not Ember's stronger question of whether retrying an operation is semantically safe after an ambiguous external effect.
 
 Likewise, `cancel()` records and propagates cancellation mechanics. It does not turn "cancellation requested" into "all work definitely stopped with no effects". Ember's existing cancellation/effect-uncertainty vocabulary must remain outside the workflow engine.
 
@@ -368,17 +368,17 @@ It is **not** appropriate as the authoritative store for:
 
 ### Lock-in inventory
 
-| Persisted Mastra state | Removal cost if used | Mitigation |
-| --- | --- | --- |
-| Model route names/config | Low | Map logical Ember model/provider policy to Mastra config at adapter boundary |
-| Tool schemas | Low to medium | Define canonical capability metadata in Ember; generate Mastra tool wrappers |
-| Workflow snapshots and run IDs | Medium to high for suspended runs | Keep snapshots operational; resume through canonical checkpoints; allow abandon/restart migration |
-| Thread/resource messages | High if treated as Ember history source of truth | Do not make them canonical; retain canonical evidence in Ember |
-| Working-memory documents | High if relied on for durable truth | Do not use as canonical memory |
-| Observations/vector indexes | Low if rebuildable, high if only copy | Store source evidence references; treat indexes/compressions as derived artifacts |
-| Trace rows | Low | Keep Ember IDs as trace attributes; permit retention loss/rebuild where appropriate |
-| Scorer/experiment rows | Low to medium | Keep acceptance fixtures and expected semantics in repo; scores are evidence, not authority |
-| MCP/schedule/dynamic-runtime configuration | Medium | Keep policy and desired configuration in Ember-owned config; Mastra copy is operational |
+| Persisted Mastra state                     | Removal cost if used                             | Mitigation                                                                                        |
+| ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Model route names/config                   | Low                                              | Map logical Ember model/provider policy to Mastra config at adapter boundary                      |
+| Tool schemas                               | Low to medium                                    | Define canonical capability metadata in Ember; generate Mastra tool wrappers                      |
+| Workflow snapshots and run IDs             | Medium to high for suspended runs                | Keep snapshots operational; resume through canonical checkpoints; allow abandon/restart migration |
+| Thread/resource messages                   | High if treated as Ember history source of truth | Do not make them canonical; retain canonical evidence in Ember                                    |
+| Working-memory documents                   | High if relied on for durable truth              | Do not use as canonical memory                                                                    |
+| Observations/vector indexes                | Low if rebuildable, high if only copy            | Store source evidence references; treat indexes/compressions as derived artifacts                 |
+| Trace rows                                 | Low                                              | Keep Ember IDs as trace attributes; permit retention loss/rebuild where appropriate               |
+| Scorer/experiment rows                     | Low to medium                                    | Keep acceptance fixtures and expected semantics in repo; scores are evidence, not authority       |
+| MCP/schedule/dynamic-runtime configuration | Medium                                           | Keep policy and desired configuration in Ember-owned config; Mastra copy is operational           |
 
 A useful test is simple: **if deleting the Mastra database would force Ember to invent what she remembers, what she was authorized to do, or whether an external effect happened, the boundary is wrong.**
 
@@ -401,7 +401,7 @@ Ember already distinguishes:
 
 A Mastra supervisor's successful handoff or child completion does not answer those questions. Adopting it as the delegation owner would turn a convenient orchestration pattern into Ember's semantic hierarchy.
 
-Protocol/client mechanics are different. If Ember later needs richer live specialist control than current `codex exec` provides, a Mastra ACP/A2A client could sit *inside* a specialist adapter, just as a future Codex App Server client could. The existing [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md) still applies: richer protocol capability should be adopted only when a concrete unmet requirement such as live approval mediation, steering, or richer progress is present.
+Protocol/client mechanics are different. If Ember later needs richer live specialist control than current `codex exec` provides, a Mastra ACP/A2A client could sit _inside_ a specialist adapter, just as a future Codex App Server client could. The existing [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md) still applies: richer protocol capability should be adopted only when a concrete unmet requirement such as live approval mediation, steering, or richer progress is present.
 
 **Recommendation: avoid Mastra supervisor/network semantics; revisit protocol transport adapters separately.**
 
@@ -615,23 +615,23 @@ Do not benchmark "Mastra" as one monolith if Ember only plans to use one package
 
 ## Final recommendation matrix
 
-| Area | Recommendation now | Why |
-| --- | --- | --- |
-| Mastra as the Ember framework | **Avoid** | Too much semantic ownership transfers to `Agent`/thread/memory/workflow concepts |
-| Model Router | **Wrap / compare** | Useful provider mechanics; current `ProviderInvoker` already gives the correct firewall; direct AI SDK may be thinner |
-| Tool definitions | **Wrap later** | Good mechanics, but authority/effect semantics must remain Ember-owned |
-| MCP | **Adopt candidate** | Standard-compatible transport mechanics line up with Ember principles |
-| Workflow engine | **Revisit** | Strong suspend/resume/retry mechanics, but current systemd episodic runtime is simpler and already accepted |
-| Temporal integration | **Revisit much later** | Excellent durability at substantially higher operational cost |
-| Mastra Memory wholesale | **Avoid** | Thread/resource/working-memory semantics conflict with Ember history/memory/context/provenance model |
-| Semantic recall | **Revisit as retrieval** | Plausible candidate source only if context-selection evaluations earn it |
-| Observational Memory | **Spike as context compression** | Strong derived-context mechanism if rebuildable and provenance-linked |
-| Mastra storage for canonical state | **Avoid** | Framework schemas must not own Ember truth/revision/authority/reconciliation |
-| Supervisor / agent network | **Avoid** | Delegation meaning belongs to Ember; transport can be reused separately |
-| ACP/A2A integration | **Revisit as transport** | Useful mechanics when a richer specialist protocol is actually needed |
-| Observability | **Adopt candidate / compare with OTel** | Downstream, non-canonical, replaceable |
-| Scorers/evals | **Adopt candidate** | Can reduce generic evaluation plumbing without replacing semantic acceptance oracles |
-| Server/Studio/Platform | **Avoid now** | No current requirement; unnecessary resident/control-plane weight for current topology |
+| Area                               | Recommendation now                      | Why                                                                                                                   |
+| ---------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Mastra as the Ember framework      | **Avoid**                               | Too much semantic ownership transfers to `Agent`/thread/memory/workflow concepts                                      |
+| Model Router                       | **Wrap / compare**                      | Useful provider mechanics; current `ProviderInvoker` already gives the correct firewall; direct AI SDK may be thinner |
+| Tool definitions                   | **Wrap later**                          | Good mechanics, but authority/effect semantics must remain Ember-owned                                                |
+| MCP                                | **Adopt candidate**                     | Standard-compatible transport mechanics line up with Ember principles                                                 |
+| Workflow engine                    | **Revisit**                             | Strong suspend/resume/retry mechanics, but current systemd episodic runtime is simpler and already accepted           |
+| Temporal integration               | **Revisit much later**                  | Excellent durability at substantially higher operational cost                                                         |
+| Mastra Memory wholesale            | **Avoid**                               | Thread/resource/working-memory semantics conflict with Ember history/memory/context/provenance model                  |
+| Semantic recall                    | **Revisit as retrieval**                | Plausible candidate source only if context-selection evaluations earn it                                              |
+| Observational Memory               | **Spike as context compression**        | Strong derived-context mechanism if rebuildable and provenance-linked                                                 |
+| Mastra storage for canonical state | **Avoid**                               | Framework schemas must not own Ember truth/revision/authority/reconciliation                                          |
+| Supervisor / agent network         | **Avoid**                               | Delegation meaning belongs to Ember; transport can be reused separately                                               |
+| ACP/A2A integration                | **Revisit as transport**                | Useful mechanics when a richer specialist protocol is actually needed                                                 |
+| Observability                      | **Adopt candidate / compare with OTel** | Downstream, non-canonical, replaceable                                                                                |
+| Scorers/evals                      | **Adopt candidate**                     | Can reduce generic evaluation plumbing without replacing semantic acceptance oracles                                  |
+| Server/Studio/Platform             | **Avoid now**                           | No current requirement; unnecessary resident/control-plane weight for current topology                                |
 
 ## Answer to the key question
 
@@ -678,12 +678,12 @@ Source-level links intentionally pin the repository commit observed during this 
 
 ## Issue #176 definition-of-done mapping
 
-| Requirement | Result |
-| --- | --- |
-| Relevant primitives inventoried and mapped | Primitive inventory plus per-area analysis above |
-| Mastra concepts separated from Ember semantics | Decision, memory/delegation/workflow firewalls, replaceability rules |
-| Attractive primitives have Ember-owned seams | `ProviderInvoker`, capability/MCP ports, `DurableExecutionPort`, `ContextCompressor`, telemetry and scorer seams |
-| Replaceability and lock-in evaluated | Persisted-state lock-in inventory and migration rules |
-| Runtime/dependency/self-hosting costs recorded | Node/self-hosting compatibility plus explicit unmeasured Pi/dependency gate |
-| Candidate Ember code areas identified | Concrete Ember mapping section |
-| Suitable for #175 comparison | Final recommendation matrix uses the common adopt/wrap/avoid/revisit framing |
+| Requirement                                    | Result                                                                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Relevant primitives inventoried and mapped     | Primitive inventory plus per-area analysis above                                                                 |
+| Mastra concepts separated from Ember semantics | Decision, memory/delegation/workflow firewalls, replaceability rules                                             |
+| Attractive primitives have Ember-owned seams   | `ProviderInvoker`, capability/MCP ports, `DurableExecutionPort`, `ContextCompressor`, telemetry and scorer seams |
+| Replaceability and lock-in evaluated           | Persisted-state lock-in inventory and migration rules                                                            |
+| Runtime/dependency/self-hosting costs recorded | Node/self-hosting compatibility plus explicit unmeasured Pi/dependency gate                                      |
+| Candidate Ember code areas identified          | Concrete Ember mapping section                                                                                   |
+| Suitable for #175 comparison                   | Final recommendation matrix uses the common adopt/wrap/avoid/revisit framing                                     |
