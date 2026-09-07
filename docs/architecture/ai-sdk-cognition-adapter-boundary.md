@@ -95,10 +95,14 @@ vocabulary:
 - structured-output or model-call failure is `failed`;
 - `ProviderError` raised by Ember result validation remains authoritative.
 
-There is no direct child process for this adapter, so timeout/cancellation termination
-evidence records `directChildExitObserved: false`. That field remains useful evidence
-about what was actually observed; it must not be read as a claim that remote provider
-work or effects are impossible.
+There is no direct child process for this adapter. Explicit cancellation may therefore
+record `directChildExitObserved: false`, preserving the existing meaning that a
+cancellation request was observed without inventing child-exit evidence. A direct AI
+SDK timeout records the `timed_out` outcome but leaves `providerTermination` null:
+Ember's current termination evidence is process-shaped, and a timed-out cognition may
+claim timeout termination evidence only when a direct child exit was actually
+observed. This keeps the direct-provider result truthful instead of weakening that
+existing invariant merely to make the new adapter look process-like.
 
 `maxRetries` is explicitly set to `0`. AI SDK retry plumbing remains available for a
 future earned use case, but the first adapter does not silently repeat an invocation
@@ -120,15 +124,21 @@ The implementation confirms the main #178/#180 assumptions:
   Ember state;
 - Codex and Cursor process adapters can remain behaviorally unchanged.
 
-It also turns one research prediction into concrete evidence: the current
-`ProviderInvoker` function still carries `command` and `arguments_` because all
-previous production backends were external processes. The in-process AI SDK adapter
-has no truthful use for those parameters and ignores them.
+It also turns two research predictions into concrete evidence.
 
-That is now an earned pressure to revisit the invocation function shape, but not a
-reason to combine the change with #186. Request/result semantics remain sound, and
-leaving the small mechanical awkwardness visible keeps this task focused and avoids a
-provider hierarchy invented merely to hide two unused parameters.
+First, the current `ProviderInvoker` function still carries `command` and `arguments_`
+because all previous production backends were external processes. The in-process AI
+SDK adapter has no truthful use for those parameters and ignores them.
+
+Second, `providerTermination` is intentionally process-shaped. The direct adapter can
+reuse the existing high-level `timed_out` and `cancellation_requested` cognition
+outcomes, but it must not manufacture direct-child exit evidence for a call that never
+owned a child process.
+
+These are earned pressures to revisit mechanical invocation/termination shapes, but
+not reasons to combine those changes with #186. Request/result semantics remain sound,
+and leaving the small awkwardness visible keeps this task focused instead of inventing
+a provider hierarchy merely to hide it.
 
 A later cleanup may move command/argument configuration into process-adapter closures
 and reduce the invocation operation conceptually to:
@@ -137,7 +147,8 @@ and reduce the invocation operation conceptually to:
 (ProviderRequest, ProviderInvocationOptions) -> ProviderResult
 ```
 
-Such a change should preserve the same Ember-owned DTOs and failure tests.
+Any later generalization of termination evidence should likewise preserve the current
+truthfulness rules instead of weakening process-specific evidence globally.
 
 ## Replacement path
 
@@ -163,7 +174,7 @@ with AI SDK's deterministic mock language model. The tests establish that:
 - a schema-valid out-of-projection meaning claim is rejected by Ember validation;
 - malformed structured model output becomes an Ember provider failure;
 - timeout, explicit cancellation, and model failure map to the existing cognition
-  failure vocabulary;
+  failure vocabulary without inventing process evidence;
 - the failed call is not retried implicitly; and
 - mock provider/model/response identifiers do not enter canonical Ember state.
 
