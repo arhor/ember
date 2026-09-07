@@ -107,6 +107,10 @@ Current architecture material:
   evaluates issue #178's model/provider abstraction, structured output, streaming,
   tools, approvals, MCP, telemetry, testing, and agent-loop mechanics as replaceable
   cognition infrastructure beneath Ember-owned semantics.
+- [OpenAI Agents SDK JS/TS Execution Toolkit Evaluation](openai-agents-sdk-execution-toolkit-evaluation.md)
+  evaluates issue #179's bounded runner, model/provider abstraction, tools, handoffs,
+  sessions, approvals, MCP, retries, tracing, streaming, and deterministic testing as
+  replaceable execution mechanics beneath Ember-owned semantics.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
