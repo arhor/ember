@@ -26,7 +26,9 @@ jobs:
       - name: Install locked development toolchain
         run: npm ci
       - name: Apply semantic provider test migration
-        run: node scripts/issue-188-test-migration.mjs
+        run: |
+          sed -i 's/import \* as ts from "typescript";/import ts from "typescript";/' scripts/issue-188-test-migration.mjs
+          node scripts/issue-188-test-migration.mjs
       - name: Apply repository lint fixes
         run: npx oxlint --fix
       - name: Apply repository formatting
