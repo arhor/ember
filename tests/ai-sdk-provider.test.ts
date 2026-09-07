@@ -190,6 +190,37 @@ test("AI SDK timeout should map to Ember timed_out semantics", async () => {
     }
 });
 
+test("AI SDK timeout should remain timed_out when caller cancellation follows it", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const controller = new AbortController();
+    const model = new MockLanguageModelV3({
+        doGenerate: async ({ abortSignal }) => {
+            try {
+                return await waitForAbort(abortSignal);
+            } catch (error) {
+                controller.abort();
+                throw error;
+            }
+        },
+    });
+    try {
+        // When
+        const result = await runWithModel(fixture, model, {
+            timeoutSeconds: 0.01,
+            signal: controller.signal,
+        });
+        // Then
+        assert.equal(controller.signal.aborted, true);
+        assert.match(result.providerFailure, /timed out/);
+        const cognition = findCognition(result.state, result.cognitionId);
+        assert.equal(cognition.status, "timed_out");
+        assert.equal(cognition.providerTermination, null);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
 test("AI SDK abort should map to Ember cancellation_requested semantics", async () => {
     // Given
     const fixture = await startedFixture();
