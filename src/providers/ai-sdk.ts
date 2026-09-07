@@ -1,14 +1,11 @@
 import type { LanguageModel } from "ai";
-import type { ProviderInvoker } from "./contract.ts";
 
 import { generateText, jsonSchema, Output } from "ai";
 
+import type { ProviderInvoker } from "./contract.ts";
+
 import { ProviderError } from "../core/errors.ts";
-import {
-    CONTRACT_VERSION,
-    MAX_PROVIDER_TIMEOUT_SECONDS,
-    validateProviderResult,
-} from "./contract.ts";
+import { CONTRACT_VERSION, MAX_PROVIDER_TIMEOUT_SECONDS, validateProviderResult } from "./contract.ts";
 
 interface AiSdkProviderOutput {
     contractVersion: 1;
