@@ -1,17 +1,17 @@
 import type { Writable } from "node:stream";
 
 import { randomUUID } from "node:crypto";
-import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
-import { dirname } from "node:path";
+import { readFile } from "node:fs/promises";
 
 import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { RunCognitionOptions } from "./runtime.ts";
 
-import { DurabilityUncertain, StoreUnavailable, ValidationError } from "../core/errors.ts";
+import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
+import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
 import { findCognition, runCognition } from "./runtime.ts";
 
@@ -413,35 +413,10 @@ export class InteractionLedgerStore {
     }
 
     private async replace(ledger: InteractionLedgerDocument) {
-        await mkdir(dirname(this.path), { recursive: true });
-        const temporary = `${this.path}.${process.pid}.${randomUUID()}.tmp`;
-        let handle = null as Awaited<ReturnType<typeof open>> | null;
-        let replaced = false;
-        try {
-            handle = await open(temporary, "wx", 0o600);
-            await handle.writeFile(`${JSON.stringify(ledger, null, 2)}\n`, "utf8");
-            await handle.sync();
-            await handle.close();
-            handle = null;
-            await rename(temporary, this.path);
-            replaced = true;
-            try {
-                const directory = await open(dirname(this.path), "r");
-                try {
-                    await directory.sync();
-                } finally {
-                    await directory.close();
-                }
-            } catch (error) {
-                throw new DurabilityUncertain(
-                    "interaction ledger replacement may be visible, but directory synchronization failed",
-                    { cause: error },
-                );
-            }
-        } finally {
-            if (handle) await handle.close().catch(() => {});
-            if (!replaced) await unlink(temporary).catch(() => {});
-        }
+        await replaceFileDurably(this.path, `${JSON.stringify(ledger, null, 2)}\n`, {
+            durabilityUncertainMessage:
+                "interaction ledger replacement may be visible, but directory synchronization failed",
+        });
     }
 }
 
