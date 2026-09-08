@@ -9,10 +9,7 @@ import { ProviderError, ValidationError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
 import { undertake } from "../core/semantics.ts";
 import { startRuntime } from "../runtime/runtime.ts";
-import {
-    AI_SDK_OPPORTUNITY_INSTRUCTION,
-    createAiSdkOpportunityEvaluator,
-} from "./ai-sdk-opportunity-evaluator.ts";
+import { AI_SDK_OPPORTUNITY_INSTRUCTION, createAiSdkOpportunityEvaluator } from "./ai-sdk-opportunity-evaluator.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";
