@@ -116,53 +116,52 @@ export interface DeliveryRepresentation {
     contentDigest: `sha256:${string}`;
 }
 
-export interface DeliveryAttemptRecord {
+interface DeliveryAttemptIdentity {
     attempt_id: string;
     attempted_at: string;
+    external_message_id: string | null;
+}
+
+export interface DeliveryAttemptRecord extends DeliveryAttemptIdentity {
     observedAt: string | null;
     outcome: DeliveryAttemptOutcome;
     retryable: boolean;
     retry_after_seconds: number | null;
-    external_message_id: string | null;
 }
 
-export interface DeliveryRecord {
+interface DeliveryRecordIdentity {
     delivery_id: string;
     cognitionId: CognitionId;
     expressionEvidenceId: EvidenceId;
     surface_id: string;
     destination_id: string | null;
     intended_at: string;
+}
+
+export interface DeliveryRecord extends DeliveryRecordIdentity {
     representation: DeliveryRepresentation | null;
     attempts: DeliveryAttemptRecord[];
 }
 
-export interface InteractionLedgerDocument {
-    ledger_version: 2;
+interface InteractionLedgerSharedFields {
     inbound_occurrences: InboundOccurrenceRecord[];
+}
+
+export interface InteractionLedgerDocument extends InteractionLedgerSharedFields {
+    ledger_version: 2;
     deliveries: DeliveryRecord[];
 }
 
-interface LegacyDeliveryAttemptRecord {
-    attempt_id: string;
-    attempted_at: string;
-    outcome: Exclude<TerminalDeliveryAttemptOutcome, "started">;
-    external_message_id: string | null;
+interface LegacyDeliveryAttemptRecord extends DeliveryAttemptIdentity {
+    outcome: TerminalDeliveryAttemptOutcome;
 }
 
-interface LegacyDeliveryRecord {
-    delivery_id: string;
-    cognitionId: CognitionId;
-    expressionEvidenceId: EvidenceId;
-    surface_id: string;
-    destination_id: string | null;
-    intended_at: string;
+interface LegacyDeliveryRecord extends DeliveryRecordIdentity {
     attempts: LegacyDeliveryAttemptRecord[];
 }
 
-interface LegacyInteractionLedgerDocument {
+interface LegacyInteractionLedgerDocument extends InteractionLedgerSharedFields {
     ledger_version: 1;
-    inbound_occurrences: InboundOccurrenceRecord[];
     deliveries: LegacyDeliveryRecord[];
 }
 
@@ -893,18 +892,18 @@ function validateInboundRecord(value: unknown) {
     validateNullableOpaque(value.delivery_destination_id, "interaction delivery_destination_id");
 }
 
+const DELIVERY_IDENTITY_FIELDS = [
+    "delivery_id",
+    "cognitionId",
+    "expressionEvidenceId",
+    "surface_id",
+    "destination_id",
+    "intended_at",
+] as const;
+
 function validateDeliveryRecord(value: unknown) {
     if (!isObject(value)) throw new ValidationError("delivery record must be an object");
-    const fields = [
-        "delivery_id",
-        "cognitionId",
-        "expressionEvidenceId",
-        "surface_id",
-        "destination_id",
-        "intended_at",
-        "representation",
-        "attempts",
-    ];
+    const fields = [...DELIVERY_IDENTITY_FIELDS, "representation", "attempts"];
     if (!exactKeys(value, fields)) throw new ValidationError("delivery record contains unsupported fields");
     validateDeliveryIdentityFields(value);
     if (value.representation !== null) validateDeliveryRepresentation(value.representation);
@@ -914,15 +913,7 @@ function validateDeliveryRecord(value: unknown) {
 
 function validateLegacyDeliveryRecord(value: unknown) {
     if (!isObject(value)) throw new ValidationError("delivery record must be an object");
-    const fields = [
-        "delivery_id",
-        "cognitionId",
-        "expressionEvidenceId",
-        "surface_id",
-        "destination_id",
-        "intended_at",
-        "attempts",
-    ];
+    const fields = [...DELIVERY_IDENTITY_FIELDS, "attempts"];
     if (!exactKeys(value, fields)) throw new ValidationError("delivery record contains unsupported fields");
     validateDeliveryIdentityFields(value);
     if (!Array.isArray(value.attempts)) throw new ValidationError("delivery attempts must be a list");
@@ -950,24 +941,15 @@ function validateDeliveryRepresentation(value: unknown) {
         throw new ValidationError("delivery representation contentDigest does not match text");
 }
 
+const DELIVERY_ATTEMPT_IDENTITY_FIELDS = ["attempt_id", "attempted_at", "external_message_id"] as const;
+
 function validateDeliveryAttempt(value: unknown) {
     if (!isObject(value)) throw new ValidationError("delivery attempt must be an object");
-    const fields = [
-        "attempt_id",
-        "attempted_at",
-        "observedAt",
-        "outcome",
-        "retryable",
-        "retry_after_seconds",
-        "external_message_id",
-    ];
+    const fields = [...DELIVERY_ATTEMPT_IDENTITY_FIELDS, "observedAt", "outcome", "retryable", "retry_after_seconds"];
     if (!exactKeys(value, fields)) throw new ValidationError("delivery attempt contains unsupported fields");
-    if (typeof value.attempt_id !== "string" || !value.attempt_id.startsWith("attempt-"))
-        throw new ValidationError("delivery attempt_id is invalid");
-    if (!isRfc3339Utc(value.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
+    validateDeliveryAttemptIdentityFields(value);
     if (!["started", "confirmed", "failed", "uncertain"].includes(value.outcome as string))
         throw new ValidationError("delivery attempt outcome is invalid");
-    validateNullableOpaque(value.external_message_id, "delivery external_message_id");
     if (value.outcome === "started") {
         if (value.observedAt !== null || value.retryable !== false || value.retry_after_seconds !== null)
             throw new ValidationError("started delivery attempt contains terminal metadata");
@@ -987,14 +969,18 @@ function validateDeliveryAttempt(value: unknown) {
 
 function validateLegacyDeliveryAttempt(value: unknown) {
     if (!isObject(value)) throw new ValidationError("delivery attempt must be an object");
-    if (!exactKeys(value, ["attempt_id", "attempted_at", "external_message_id", "outcome"]))
-        throw new ValidationError("delivery attempt contains unsupported fields");
-    if (typeof value.attempt_id !== "string" || !value.attempt_id.startsWith("attempt-"))
-        throw new ValidationError("delivery attempt_id is invalid");
-    if (!isRfc3339Utc(value.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
+    const fields = [...DELIVERY_ATTEMPT_IDENTITY_FIELDS, "outcome"];
+    if (!exactKeys(value, fields)) throw new ValidationError("delivery attempt contains unsupported fields");
+    validateDeliveryAttemptIdentityFields(value);
     if (!["confirmed", "failed", "uncertain"].includes(value.outcome as string))
         throw new ValidationError("delivery attempt outcome is invalid");
-    validateNullableOpaque(value.external_message_id, "delivery external_message_id");
+}
+
+function validateDeliveryAttemptIdentityFields(attempt: Record<string, unknown>) {
+    if (typeof attempt.attempt_id !== "string" || !attempt.attempt_id.startsWith("attempt-"))
+        throw new ValidationError("delivery attempt_id is invalid");
+    if (!isRfc3339Utc(attempt.attempted_at)) throw new ValidationError("delivery attempted_at is invalid");
+    validateNullableOpaque(attempt.external_message_id, "delivery external_message_id");
 }
 
 function validateRetryMetadata(
