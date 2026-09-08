@@ -1,0 +1,43 @@
+name: Issue 207 fix
+
+on:
+  push:
+    branches:
+      - issue-207-telegram-api-v2
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-207-telegram-api-v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Narrow generated Telegram Update union
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from "node:fs/promises";
+          const path = "src/surfaces/telegram.ts";
+          let text = await readFile(path, "utf8");
+          const from = "    const message = update.message;";
+          const to = '    const message = "message" in update ? update.message : undefined;';
+          if (!text.includes(from)) throw new Error("Telegram Update narrowing source not found");
+          text = text.replace(from, to);
+          await writeFile(path, text);
+          NODE
+      - run: npm run fmt
+      - name: Commit fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/surfaces/telegram.ts
+          git commit -m "fix: narrow generated Telegram update union"
+          git push
