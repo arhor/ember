@@ -19,54 +19,48 @@ discovery_status: current
 **Installed Claude Code:** `2.1.263`
 
 **Result:** **viable for bounded one-shot subscription-backed cognition**, with a
-runtime-specific adapter required before production use.
+runtime-specific production adapter still required.
 
 Issue #44 reached Claude Code's supported headless surface but the then-installed OAuth
-session expired before a model turn. The September 8 re-probe removed that blocker: an
+session expired before a model turn. The September 8 re-probe removed that blocker. An
 operator-confirmed Claude subscription login completed a real no-tool model turn through
-`claude -p`, returned structured lifecycle/result events, and exited 0 while API-key and
-cloud-provider fallback variables were explicitly removed from the child environment.
-The init event reported `apiKeySource: "none"`.
+`claude -p`, returned structured lifecycle/result events, and exited 0 while API-key,
+auth-token, and cloud-provider fallback variables were explicitly removed from the child
+environment. The init event reported `apiKeySource: "none"`.
 
-This evidence is deliberately narrower than "Claude is another interchangeable model
-endpoint." Claude Code remains an external agent runtime with its own system prompt,
-model routing, session identifiers, lifecycle envelope, and context behavior. Ember can
-place it behind the existing `ProviderInvoker` seam, but those mechanics must remain
-Claude-adapter-local.
+This proves the integration class Ember cares about: Claude Code can own subscription
+authentication while Ember sends a bounded cognition episode through its documented CLI.
+It does not make Claude Code an interchangeable direct model endpoint. Claude Code keeps
+its own system framing, model routing, session identifiers, lifecycle envelope, and
+context behavior.
 
 ## Current official surface
 
-The probe was checked against Anthropic's current Claude Code documentation on
+The result was checked against Anthropic's current Claude Code documentation on
 2026-09-08 rather than treating #44 observations as timeless.
 
-The supported surfaces relevant to Ember are:
+Relevant documented surfaces are:
 
 - `claude -p` / `--print` for non-interactive execution;
 - `--output-format json|stream-json` for machine-readable results/events;
 - `--json-schema` for schema-validated structured output in print mode;
 - `--safe-mode` to disable user/project customizations while retaining authentication,
   model selection, built-in tools, and permissions;
-- `--tools` to restrict which built-in tools are available;
-- `--disallowedTools` to remove matching tools, including MCP tools;
+- `--tools` and `--disallowedTools` for tool availability control;
 - `--permission-mode` for explicit initial permission policy;
-- `--no-session-persistence` to keep an invocation non-resumable and avoid writing a
-  resumable session to disk; and
+- `--no-session-persistence` for non-resumable print-mode sessions; and
 - `--resume` when runtime-owned continuation is intentionally requested.
 
-A material current caveat is that `--bare`, although recommended by Anthropic for many
-scripted calls, deliberately does **not** read subscription OAuth credentials. It is
-therefore not a drop-in isolation mode for Ember's subscription-reuse path. The current
-`--restricted` mode is potentially relevant to a production adapter because it constrains
-machine/project access while remaining distinct from `--bare`, but it was not part of
-this #91 live probe and should be evaluated separately before relying on it.
+A material caveat is that `--bare`, although recommended by Anthropic for many scripted
+calls, deliberately does not read subscription OAuth credentials. It is therefore not a
+drop-in isolation mode for Ember's subscription-reuse path. Current Claude Code also
+exposes `--restricted`; its suitability with the subscription path was not tested in
+#91 and belongs in the production adapter task.
 
 ## Sanitized live probe
 
-The probe ran from a newly-created temporary directory outside the Ember repository.
-No repository state was placed in that directory.
-
-The child environment explicitly removed API-key, explicit OAuth-token, and supported
-cloud-provider selector variables before invocation:
+The probe ran from a newly-created temporary directory outside the Ember repository. No
+repository state was placed in that directory.
 
 ```bash
 probe_cwd="$(mktemp -d)"
@@ -91,8 +85,7 @@ env \
 ```
 
 The raw local transcript contained host paths and transient runtime/request identifiers.
-Those values are intentionally not committed. The durable evidence below preserves only
-what matters to Ember's design.
+Those values are intentionally not committed.
 
 ### Init evidence
 
@@ -113,14 +106,13 @@ The first structured event established:
 
 The init envelope also carried a runtime-owned session UUID and enumerated installed
 skills/plugins/slash commands even though safe mode was active. That enumeration is not
-treated as proof that those customizations were active. The direct runtime evidence for
-the tested capability boundary is `tools: []`, `mcp_servers: []`, plan mode, and the
-successful model turn.
+treated as proof that those customizations were active. The direct capability evidence
+is the empty tool/MCP sets, plan mode, successful model turn, and successful terminal
+result.
 
-### Model/result evidence
+### Result evidence
 
-Claude Code emitted an `assistant` event followed by a terminal `result` event. The
-assistant event identified `claude-sonnet-5` and the terminal envelope reported:
+Claude Code emitted an `assistant` event followed by a terminal `result` event:
 
 ```json
 {
@@ -134,62 +126,59 @@ assistant event identified `claude-sonnet-5` and the terminal envelope reported:
 
 The process exited with status `0`.
 
-The response contained the requested JSON object, but not *only* that object. Claude
-Code first explained that the request did not require a coding plan, then returned the
-JSON literal. That is useful negative evidence: an isolated no-tool Claude Code call
-still has Claude Code's own runtime/system framing, so prompt-enforced exact JSON is not
-a production parsing contract.
+The response contained the requested JSON object, but not only that object. Claude Code
+first explained that the request did not require a coding plan, then returned the JSON
+literal. This is useful negative evidence: an isolated no-tool Claude Code call still
+has Claude Code's own runtime/system framing, so prompt-enforced exact JSON is not a
+production parsing contract.
 
-A production adapter should therefore use Claude Code's supported schema-constrained
-structured-output surface and independently run Ember's existing
-`validateProviderResult`, rather than scraping assistant prose or assuming prompt-only
-format obedience.
+A production adapter must therefore use Claude Code's documented schema-constrained
+structured-output surface and then run Ember's existing `validateProviderResult`, rather
+than scraping assistant prose or assuming prompt-only format obedience.
 
 ### Model-routing evidence
 
-The terminal usage envelope attributed the primary assistant turn to
-`claude-sonnet-5`, while its aggregate `modelUsage` also mentioned
-`claude-haiku-4-5-20251001`. No subagent was spawned and the probe exposed no tools.
+The primary assistant event identified `claude-sonnet-5`, while aggregate `modelUsage`
+also mentioned `claude-haiku-4-5-20251001`. No subagent was spawned and the probe exposed
+no tools.
+
 This is evidence that Claude Code may own internal model routing even for a bounded
 invocation. Ember must not interpret the external runtime as exactly one direct model
-API call merely because the assistant message names one model.
+API call merely because the assistant event names one model.
 
-The terminal envelope also exposed a client-side `total_cost_usd` estimate. That field
-is operational metadata, not evidence that the run used API-key billing; current Claude
-Code documentation explicitly describes the reported cost as an estimate that can
-differ from the actual bill.
+The terminal envelope also exposed a client-side `total_cost_usd` estimate. Current
+Claude Code documentation describes that value as an estimate that may differ from the
+actual bill, so it is operational metadata rather than evidence of API-key billing.
 
 ## Authentication classification
 
-The evidence supports the following classification:
-
 **Observed subscription-login reuse through the supported Claude Code CLI.**
 
-The operator confirmed an active Claude subscription login before the probe. The probe
-explicitly removed API-key/auth-token and cloud-provider fallback variables, the init
+The operator confirmed an active Claude subscription login before the probe. The child
+environment removed API-key/auth-token and cloud-provider fallback variables, the init
 event reported `apiKeySource: "none"`, a real model turn completed, and the process
-exited successfully. No credential store, token, keychain record, or raw OAuth material
-was opened, copied, or committed.
+exited successfully.
 
-This is sufficient for Ember's intended external-runtime integration class: Claude Code
-owns authentication; Ember invokes the documented CLI and does not become a credential
-broker.
+No credential store, token, keychain record, or raw OAuth material was opened, copied,
+or committed. Authentication remains owned by Claude Code; Ember does not need a
+credential broker for this integration class.
 
 ## Mapping onto Ember's cognition contract
 
-The existing common contract from #92 remains sufficient.
+The existing contract from #92 remains sufficient.
 
 ### `ProviderRequest`
 
 A Claude adapter can serialize the already-selected `ProviderRequest` into a bounded
 prompt exactly as Codex and Cursor do. Canonical Ember state does not need to enter the
-Claude runtime. An isolated cwd plus explicit customization/tool controls remain part of
+Claude runtime. An isolated cwd and explicit customization/tool controls remain part of
 the disclosure boundary.
 
 ### `ProviderResult`
 
 Claude Code's native result envelope is provider-local transport evidence. The adapter
-should extract one schema-constrained candidate with Ember's fields:
+should extract one schema-constrained candidate containing only Ember's semantic result
+fields:
 
 ```text
 contractVersion
@@ -197,98 +186,91 @@ reply
 usedMeaningIds
 ```
 
-and then call `validateProviderResult` against the request projection. Claude Code's
-session ID, model metadata, usage, request IDs, rate-limit events, and lifecycle fields
-do not belong in that semantic result object except where Ember has already earned an
+The candidate must then pass `validateProviderResult` against the supplied projection.
+Claude session IDs, model metadata, usage, request IDs, rate-limit events, and lifecycle
+fields do not enter the semantic result except where Ember has already earned an
 explicit operational-evidence field.
 
 ### `ProviderInvoker`
 
-The current semantic seam remains the right shape:
+The shared semantic operation remains:
 
 ```text
 (bounded ProviderRequest, timeout/cancellation options)
     -> validated ProviderResult or typed ProviderError
 ```
 
-Claude-specific command construction, environment policy, cwd preparation, JSON/JSONL
-parsing, model metadata, diagnostics, and termination evidence belong inside a concrete
-adapter. #91 therefore adds no reason to reopen the #92 abstraction decision.
+Claude-specific command construction, environment policy, cwd preparation, structured
+output parsing, model metadata, diagnostics, and termination evidence belong inside the
+concrete adapter. #91 adds no reason to reopen the #92 abstraction decision.
 
 ## Session and continuity semantics
 
 The live stream exposed a Claude `session_id`, but the probe deliberately used
-`--no-session-persistence`. Current Claude Code documentation states that sessions
-created this way are not saved and cannot be resumed.
+`--no-session-persistence`. Current Claude Code documentation states that such sessions
+are not saved and cannot be resumed.
 
-Therefore:
+Therefore the observed session UUID is runtime-local operational correlation only. It is
+not Ember lineage, identity, memory, or canonical state, and the one-shot adapter does
+not need to return it as `operational.externalThreadId` when persistence is disabled.
 
-- the observed session UUID is runtime-local operational correlation only;
-- it is not Ember lineage, identity, memory, or canonical state;
-- a one-shot adapter does not need to return it as `operational.externalThreadId` when
-  session persistence is disabled; and
-- if a future Claude resume mode is added, it must be tested as a separate runtime
-  capability and still remain operational continuation only.
-
-This matches the current Codex/Cursor contract decision: the shared field can hold an
-opaque external continuation handle when one is useful, but Ember continuity never
-moves into that handle.
+If a future Claude resume mode is added, it must be tested separately and its handle must
+remain operational continuation only.
 
 ## Lifecycle and cancellation evidence
 
-The live #91 probe established successful lifecycle evidence only: init, rate-limit,
+The live #91 probe established successful lifecycle evidence: init, rate-limit,
 assistant, and terminal result events followed by direct-child exit 0. It did not send a
 cancellation signal.
 
-Current Claude Code documentation separately specifies that a non-interactive run sent
+Current Claude Code documentation separately states that a non-interactive run sent
 `SIGTERM` exits 143, leaves the turn unfinished, records no result for that turn, and
-terminates the process tree of running Bash commands before exit. That is useful
-Claude-specific lifecycle evidence, but Ember should preserve its stronger uncertainty
-semantics: direct-child/process-tree behavior does not prove remote rollback, absence of
-already-issued inference work, or absence of every external effect in richer tool-enabled
-modes.
+terminates the process tree of running Bash commands before exit.
 
-A production adapter should therefore reuse Ember's neutral child-process lifecycle
-mechanics while translating Claude's observed output/exit semantics into the existing
-`failed`, `timed_out`, `cancellation_requested`, and `outcome_unknown` vocabulary without
-claiming more than the evidence establishes.
+A production adapter should reuse Ember's neutral child-process lifecycle mechanics while
+preserving Ember's stronger uncertainty semantics. Direct-child/process-tree behavior
+does not prove remote rollback, absence of already-issued inference work, or absence of
+every external effect in richer tool-enabled modes.
 
 ## Comparison with current Codex and Cursor evidence
 
-| Concern | Codex | Cursor | Claude Code #91 |
-| --- | --- | --- | --- |
-| Subscription-backed headless turn | Proven | Proven | **Proven** |
-| Runtime auth ownership | ChatGPT login | Cursor browser login | Claude subscription login |
-| API-key fallback excluded in proof | Yes | Yes | **Yes; child vars removed and init reported `apiKeySource: "none"`** |
-| Context isolation | isolated cwd plus explicit config/rule/plugin suppression | isolated trusted workspace plus deny policy | isolated cwd, safe mode, empty tool/MCP sets; default Claude Code system framing remains |
-| Structured transport | JSONL events plus output schema | terminal JSON envelope containing result text | stream-JSON lifecycle/result envelope; official `--json-schema` available but not exercised in #91 |
-| Prompt-only exact JSON | not relied on in production | prompt plus terminal parsing | **shown insufficient by probe preamble; schema path required for production** |
-| Runtime continuation | Codex thread modes proven | Cursor session resume proven | session ID observed; persistence deliberately disabled; resume not tested in #91 |
-| Model ownership | Codex-owned selection/runtime behavior | Cursor-owned selection/runtime behavior | Claude-owned; primary Sonnet event plus additional model usage metadata observed |
-| Cancellation evidence | live child-exit evidence plus Ember uncertainty semantics | live child-exit evidence plus Ember uncertainty semantics | successful live lifecycle only; current vendor SIGTERM semantics documented, production behavior still needs adapter tests |
+The new evidence puts Claude Code in the same useful integration class as Codex and
+Cursor without flattening their runtime semantics:
 
-The three runtimes therefore converge exactly where #92 says they should: at Ember's
-bounded request/result semantics. They do not converge enough to justify a richer shared
-external-agent runtime abstraction.
+- all three have now proven subscription-backed headless cognition;
+- all three keep authentication outside Ember;
+- all three converge on the existing `ProviderRequest` / `ProviderResult` boundary;
+- Codex uses JSONL plus an output schema;
+- Cursor uses a terminal JSON envelope containing result text;
+- Claude exposes structured lifecycle/result envelopes and a documented schema surface,
+  while #91 proves prompt-only exact JSON is insufficient;
+- Codex thread and Cursor session continuation have live resume evidence;
+- Claude emitted a session ID, but #91 intentionally disabled persistence and did not
+  test resume;
+- Claude's primary model event plus additional aggregate model usage reinforces that
+  runtime/model routing remains provider-owned; and
+- cancellation evidence remains provider-specific even though Ember's external failure
+  vocabulary is shared.
+
+The three runtimes therefore converge where #92 says they should: at Ember's bounded
+request/result semantics, not at a richer external-agent runtime abstraction.
 
 ## Production follow-up
 
-The evidence warrants a separate issue to implement a **Claude Code one-shot cognition
-adapter** behind `ProviderInvoker`.
+The evidence warrants [#204](https://github.com/arhor/ember/issues/204), a separate task
+to implement the **Claude Code one-shot cognition adapter** behind `ProviderInvoker`.
 
-That task should prove, not assume:
+That task should prove rather than assume:
 
-- schema-constrained `ProviderResult` extraction with `--json-schema`;
+- schema-constrained `ProviderResult` extraction with the supported Claude surface;
 - the narrowest environment allowlist compatible with subscription login;
-- isolated cwd behavior and whether `--safe-mode`, `--restricted`, or a tested
-  combination provides the best truthful disclosure boundary without disabling OAuth;
-- complete tool/MCP suppression, including unattended permission behavior;
+- the best truthful isolation policy using the then-current safe/restricted surfaces;
+- complete tool/MCP suppression and unattended permission behavior;
 - bounded stdout/stderr and lifecycle parsing;
 - timeout, explicit cancellation, kill escalation, and unconfirmed termination mapping;
-- whether ephemeral no-session operation should omit continuation evidence entirely;
-- deterministic tests for malformed envelopes, schema/result validation, output bounds,
-  process failures, and lifecycle uncertainty; and
-- one opt-in authenticated smoke proving a real Ember `ProviderRequest` round-trip.
+- whether no-session one-shot operation should omit continuation evidence entirely;
+- deterministic malformed-output, provenance, output-bound, and lifecycle tests; and
+- an opt-in authenticated smoke using a real Ember `ProviderRequest`.
 
 The adapter remains optional external-runtime infrastructure. It does not replace the
 Vercel AI SDK direction selected in #180 for Ember's preferred future in-process model
@@ -299,12 +281,12 @@ and tool infrastructure.
 - It is not a quality, latency, or cost benchmark.
 - It does not prove Claude Code session resume semantics.
 - It does not prove `--restricted` behavior under the operator's subscription login.
-- It does not prove production `--json-schema` parsing; that belongs in the adapter task.
+- It does not prove production `--json-schema` parsing; that belongs in #204.
 - It does not prove cancellation behavior live on this host.
-- It does not imply that Claude Code's runtime-owned system prompt, skills/plugins
-  inventory, model routing, or session state should enter Ember's semantic contract.
-- It does not justify replacing the Vercel AI SDK strategy with Claude Code or the
-  Claude Agent SDK.
+- It does not move Claude runtime-owned system framing, model routing, or session state
+  into Ember's shared semantic contract.
+- It does not justify replacing the Vercel AI SDK strategy with Claude Code or the Claude
+  Agent SDK.
 
 ## Official references checked on 2026-09-08
 
