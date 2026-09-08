@@ -48,13 +48,13 @@ const opportunityOutputSchema = jsonSchema<AiSdkOpportunityOutput>(
         additionalProperties: false,
         properties: {
             contractVersion: { type: "integer", const: COGNITION_OPPORTUNITY_CONTRACT_VERSION },
-            decision: { type: "string", enum: OPPORTUNITY_DECISIONS },
+            decision: { type: "string", enum: [...OPPORTUNITY_DECISIONS] },
             selectedMeaningIds: {
                 type: "array",
                 items: { type: "string" },
             },
         },
-        required: OPPORTUNITY_OUTPUT_KEYS,
+        required: [...OPPORTUNITY_OUTPUT_KEYS],
     },
     {
         validate(value) {
