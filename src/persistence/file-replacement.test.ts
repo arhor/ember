@@ -35,18 +35,21 @@ test("durable file replacement should report post-rename directory sync failure 
     const directory = await mkdtemp(join(tmpdir(), "ember-file-replacement-")),
         path = join(directory, "record.json");
     await writeFile(path, "old\n");
-    // When
-    const error = await assert.rejects(() =>
-        replaceFileDurably(path, "new\n", {
-            durabilityUncertainMessage: "replacement durability is uncertain",
-            directorySync: async () => {
-                throw new Error("directory sync failed");
-            },
-        }),
+    // When / Then
+    await assert.rejects(
+        () =>
+            replaceFileDurably(path, "new\n", {
+                durabilityUncertainMessage: "replacement durability is uncertain",
+                directorySync: async () => {
+                    throw new Error("directory sync failed");
+                },
+            }),
+        (error: unknown) => {
+            assert.ok(error instanceof DurabilityUncertain);
+            assert.equal(error.replacementMayBeVisible, true);
+            return true;
+        },
     );
-    // Then
-    assert.ok(error instanceof DurabilityUncertain);
-    assert.equal(error.replacementMayBeVisible, true);
     assert.equal(await readFile(path, "utf8"), "new\n");
     assert.deepEqual(await readdir(directory), ["record.json"]);
 });
