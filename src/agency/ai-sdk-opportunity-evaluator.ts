@@ -1,14 +1,6 @@
 import type { LanguageModel } from "ai";
 
-import {
-    AISDKError,
-    APICallError,
-    generateText,
-    jsonSchema,
-    NoObjectGeneratedError,
-    Output,
-    RetryError,
-} from "ai";
+import { AISDKError, APICallError, generateText, jsonSchema, NoObjectGeneratedError, Output, RetryError } from "ai";
 
 import type { CognitionOpportunityDecision, MeaningId } from "../core/model.ts";
 import type {
@@ -111,7 +103,9 @@ function validateTimeout(timeoutSeconds: number) {
         throw new ProviderError("opportunity evaluator timeout must be a positive finite number");
     }
     if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS) {
-        throw new ProviderError(`opportunity evaluator timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
+        throw new ProviderError(
+            `opportunity evaluator timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`,
+        );
     }
 }
 
