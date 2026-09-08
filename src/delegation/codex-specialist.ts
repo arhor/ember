@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
 
+import { replaceFileAtomically } from "../persistence/file-replacement.ts";
 import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { exactKeys, isObject } from "../util.ts";
 import { codexEnvironment } from "./codex.ts";
@@ -740,9 +741,7 @@ async function persistRecord(path: string, record: SpecialistEpisodeRecord, excl
         await writeFile(path, `${JSON.stringify(record, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
         return;
     }
-    const temporary = `${path}.${process.pid}.tmp`;
-    await writeFile(temporary, `${JSON.stringify(record, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-    await rename(temporary, path);
+    await replaceFileAtomically(path, `${JSON.stringify(record, null, 2)}\n`);
 }
 
 function parseJsonl(text: string): { report: SpecialistReport; threadId?: string } {

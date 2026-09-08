@@ -3,13 +3,14 @@ import type { FileHandle } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { access, mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { hostname } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { dirname } from "node:path";
 
 import type { EmberState } from "../core/model.ts";
 
-import { ConcurrentWriter, DurabilityUncertain, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
+import { ConcurrentWriter, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
 import { isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
 import { cloneState, exactKeys } from "../util.ts";
+import { replaceFileDurably, syncDirectory } from "./file-replacement.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
@@ -186,30 +187,12 @@ export class StateStore {
 
     async replaceDocument(state: EmberState) {
         validateState(state);
-        const directory = dirname(this.path);
-        const temporary = join(directory, `.${basename(this.path)}.${process.pid}.${this.uuid()}.tmp`);
-        let handle: FileHandle | null = null;
-        let replaced = false;
-        try {
-            handle = await open(temporary, "wx", 0o600);
-            await handle.writeFile(`${JSON.stringify(state, null, 2)}\n`, { encoding: "utf8" });
-            await handle.sync();
-            await handle.close();
-            handle = null;
-            await rename(temporary, this.path);
-            replaced = true;
-            try {
-                await this.directorySync(directory);
-            } catch (error) {
-                throw new DurabilityUncertain(
-                    "canonical replacement may be visible, but directory synchronization failed; reload and validate the path before making a durability claim",
-                    { cause: error },
-                );
-            }
-        } finally {
-            if (handle) await handle.close().catch(() => {});
-            if (!replaced) await unlink(temporary).catch(() => {});
-        }
+        await replaceFileDurably(this.path, `${JSON.stringify(state, null, 2)}\n`, {
+            temporaryId: this.uuid,
+            directorySync: this.directorySync,
+            durabilityUncertainMessage:
+                "canonical replacement may be visible, but directory synchronization failed; reload and validate the path before making a durability claim",
+        });
     }
 
     async lockStatus(): Promise<LockStatus> {
@@ -255,15 +238,6 @@ export class StateStore {
         const destination = `${this.lockPath}.quarantine.${Date.now()}.${this.uuid()}`;
         await rename(this.lockPath, destination);
         return destination;
-    }
-}
-
-async function syncDirectory(directory: string) {
-    const handle = await open(directory, "r");
-    try {
-        await handle.sync();
-    } finally {
-        await handle.close();
     }
 }
 

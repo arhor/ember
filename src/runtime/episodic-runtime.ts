@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 
 import type { CognitionOpportunityEvaluator } from "../agency/cognition-opportunity.ts";
@@ -16,6 +16,7 @@ import {
     recordSpecialistProcessLoss,
     runCodexSpecialist,
 } from "../delegation/codex-specialist.ts";
+import { replaceFileAtomically } from "../persistence/file-replacement.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "./runtime.ts";
 
@@ -265,7 +266,7 @@ export class SystemdUserSupervisor {
         await mkdir(unitDirectory, { recursive: true });
         const unitPath = join(unitDirectory, "ember-reconcile.service");
         const content = renderReconciliationUnit(this.config, this.configPath);
-        await writeAtomic(unitPath, content, 0o600);
+        await replaceFileAtomically(unitPath, content, { mode: 0o600 });
         await this.run(this.config.systemctl_command, ["--user", "daemon-reload"]);
         await this.run(this.config.systemctl_command, ["--user", "enable", "--now", "ember-reconcile.service"]);
         return unitPath;
@@ -732,12 +733,6 @@ function systemdQuote(value: string) {
 async function writeExclusiveJson(path: string, value: unknown) {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
-}
-
-async function writeAtomic(path: string, content: string, mode: number) {
-    const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
-    await writeFile(temporary, content, { encoding: "utf8", mode });
-    await rename(temporary, path);
 }
 
 async function readJson(path: string) {
