@@ -31,7 +31,7 @@
     "eval:endogenous:live": "EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 node eval/endogenous/run.ts --provider codex",
     "eval:endogenous:restart:live": "EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 node eval/endogenous-restart/run.ts",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt && for f in src/capabilities/execution.test.ts src/capabilities/execution.ts src/capabilities/local-lookup.ts src/providers/ai-sdk.ts tests/ai-sdk-capabilities.test.ts; do echo BEGIN:$f; base64 -w0 $f; echo; echo END:$f; done; exit 1",
+    "fmt:check": "oxfmt",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
   },
