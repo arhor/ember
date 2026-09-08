@@ -1,35 +1,17 @@
-name: Continuity vertical slice
+name: CI
 
 on:
   pull_request:
-    paths:
-      - "bin/**"
-      - "src/**"
-      - "eval/**"
-      - "tests/**"
-      - "scripts/**"
-      - "docs/**"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.json"
-      - ".github/workflows/continuity-vertical-slice.yml"
   push:
     branches:
       - master
-    paths:
-      - "bin/**"
-      - "src/**"
-      - "eval/**"
-      - "tests/**"
-      - "scripts/**"
-      - "docs/**"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.json"
-      - ".github/workflows/continuity-vertical-slice.yml"
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
@@ -58,3 +40,10 @@ jobs:
 
       - name: Run deterministic endogenous selectivity evaluation
         run: npm run eval:endogenous
+
+      - name: Exercise documentation discovery projections
+        run: |
+          node scripts/docs-discovery.mjs list > /tmp/docs-default.txt
+          node scripts/docs-discovery.mjs list --deep > /tmp/docs-deep.txt
+          node scripts/docs-discovery.mjs list --all > /tmp/docs-all.txt
+          node scripts/docs-discovery.mjs list --headings docs/architecture/design-directions.md docs/research/memory-and-remembering.md > /tmp/docs-headings.txt
