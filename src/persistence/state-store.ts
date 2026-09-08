@@ -188,6 +188,7 @@ export class StateStore {
     async replaceDocument(state: EmberState) {
         validateState(state);
         await replaceFileDurably(this.path, `${JSON.stringify(state, null, 2)}\n`, {
+            temporaryId: this.uuid,
             directorySync: this.directorySync,
             durabilityUncertainMessage:
                 "canonical replacement may be visible, but directory synchronization failed; reload and validate the path before making a durability claim",
