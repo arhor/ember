@@ -64,6 +64,18 @@ export type CapabilityExecutionOutcome =
 
 export type CapabilityRetryDisposition = "safe" | "unsafe" | "requires_new_authority_or_context";
 
+export type CapabilityFailureEffectState = "not_started" | "unknown";
+
+export class CapabilityExecutionFailure extends Error {
+    readonly effectState: CapabilityFailureEffectState;
+
+    constructor(message: string, options: { effectState: CapabilityFailureEffectState; cause?: unknown }) {
+        super(message, options.cause === undefined ? undefined : { cause: options.cause });
+        this.name = "CapabilityExecutionFailure";
+        this.effectState = options.effectState;
+    }
+}
+
 export interface CapabilityExecutionEvidence {
     kind: "capability_execution_evidence";
     cognitionId: CognitionId;
@@ -194,6 +206,27 @@ export function createCapabilityExecutionFirewall(
                     }),
                 );
             } catch (error) {
+                if (error instanceof CapabilityExecutionFailure) {
+                    const interruptionEvidence = signal?.aborted ? { interruption: interruption(signal) } : {};
+                    if (error.effectState === "not_started") {
+                        return record(
+                            ledger,
+                            evidence(context, capability.name, "failed", true, "safe", {
+                                authority: authorityEvidence(authority),
+                                ...interruptionEvidence,
+                                reason: error.message,
+                            }),
+                        );
+                    }
+                    return record(
+                        ledger,
+                        evidence(context, capability.name, "outcome_unknown", true, "unsafe", {
+                            authority: authorityEvidence(authority),
+                            ...interruptionEvidence,
+                            reason: error.message,
+                        }),
+                    );
+                }
                 if (signal?.aborted) {
                     return record(
                         ledger,

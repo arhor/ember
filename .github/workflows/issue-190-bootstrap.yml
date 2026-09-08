@@ -1,0 +1,38 @@
+name: Issue 190 bootstrap validation
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "docs/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/issue-190-bootstrap.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lock-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+      - name: Generate the lockfile for the pinned MCP dependency
+        run: npm install --package-lock-only
+      - name: Preserve generated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-190-package-lock
+          path: package-lock.json
+      - name: Install generated locked dependency set
+        run: npm ci
+      - name: Run repository checks
+        run: npm run check
+      - name: Run complete acceptance suite
+        run: npm test
+      - name: Run deterministic endogenous selectivity evaluation
+        run: npm run eval:endogenous
