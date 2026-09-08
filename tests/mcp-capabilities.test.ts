@@ -165,7 +165,10 @@ function toolCalls(logged: readonly unknown[]) {
 async function assertSourceClosed(source: McpCapabilitySource) {
     await assert.rejects(
         source.discover(),
-        (error) => error instanceof McpCapabilitySourceError && error.phase === "discovery" && /already closed/.test(error.message),
+        (error) =>
+            error instanceof McpCapabilitySourceError &&
+            error.phase === "discovery" &&
+            /already closed/.test(error.message),
     );
 }
 
