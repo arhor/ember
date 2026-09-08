@@ -27,27 +27,15 @@ jobs:
           import { readFile, writeFile } from "node:fs/promises";
           const path = "src/surfaces/telegram.test.ts";
           let text = await readFile(path, "utf8");
-          const from = `    try {
-        await rm(f.statePath);
-        let polls = 0;
-        const api = readyApi({`;
-          const to = `    try {
-        const config = { ...f.config, principal: "intruder" };
-        let polls = 0;
-        const api = readyApi({`;
-          if (!text.includes(from)) throw new Error("pre-handoff test setup not found");
-          text = text.replace(from, to);
-          const oldAssertion = `        await assert.rejects(runTelegramPolling(f.config, api), /continuity store is unavailable/);`;
-          const newAssertion = `        await assert.rejects(runTelegramPolling(config, api), /principal/);`;
-          if (!text.includes(oldAssertion)) throw new Error("pre-handoff test assertion not found");
-          text = text.replace(oldAssertion, newAssertion);
+          text = text.replace("        await rm(f.statePath);", '        const config = { ...f.config, principal: "intruder" };');
+          text = text.replace("        await assert.rejects(runTelegramPolling(f.config, api), /continuity store is unavailable/);", "        await assert.rejects(runTelegramPolling(config, api), /principal/);");
           await writeFile(path, text);
           NODE
       - run: npm run fmt
       - name: Commit fix
         run: |
           git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git config user.email 41898282+arhor@users.noreply.github.com
           git add src/surfaces/telegram.test.ts
           git commit -m "test: fail Telegram update after polling before durable handoff"
           git push
