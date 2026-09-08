@@ -36,6 +36,7 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "2.0.45",
     "ai": "7.0.93"
   },
   "devDependencies": {
