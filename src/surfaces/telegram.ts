@@ -197,7 +197,7 @@ export function selectTelegramInbound(
 ): TelegramInboundMessage | null {
     validateTelegramSurfaceConfig(config);
     validateTelegramUpdateEvidence(update);
-    const message = update.message;
+    const message = "message" in update ? update.message : undefined;
     if (message === undefined) return null;
     if (message.chat.type !== "private" || message.chat.id !== config.chat_id) return null;
     if (message.from === undefined || message.from.is_bot || message.from.id !== config.chat_id) return null;
