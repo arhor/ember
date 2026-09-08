@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import type { CapabilityBinding, CapabilityContext } from "../src/capabilities/execution.ts";
+import type { CapabilityContext } from "../src/capabilities/execution.ts";
 import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/capabilities/mcp-ai-sdk.ts";
 
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
@@ -162,6 +162,13 @@ function toolCalls(logged: readonly unknown[]) {
     return logged.filter((event) => isObject(event) && event.method === "tools/call");
 }
 
+async function assertSourceClosed(source: McpCapabilitySource) {
+    await assert.rejects(
+        source.discover(),
+        (error) => error instanceof McpCapabilitySourceError && error.phase === "discovery" && /already closed/.test(error.message),
+    );
+}
+
 test("MCP discovery should remain mechanical while only Ember-mapped selected capabilities enter the real AI SDK cognition loop", async () => {
     const sourceFixture = await openSource();
     const runtimeFixture = await startedRuntimeFixture();
@@ -227,8 +234,7 @@ test("MCP discovery should remain mechanical while only Ember-mapped selected ca
 
         await sourceFixture.source.close();
         sourceClosed = true;
-        const afterClose = await events(sourceFixture.logPath);
-        assert.ok(afterClose.some((event) => isObject(event) && event.event === "shutdown"));
+        await assertSourceClosed(sourceFixture.source);
     } finally {
         if (!sourceClosed) await sourceFixture.source.close().catch(() => {});
         await rm(sourceFixture.directory, { recursive: true, force: true });
@@ -295,6 +301,7 @@ test("MCP source closure before request submission should produce safely retryab
         const capability = await discoverLookup(fixture.source);
         await fixture.source.close();
         closed = true;
+        await assertSourceClosed(fixture.source);
         const result = await createCapabilityExecutionFirewall([capability], context()).execute("mcpLookup", {
             key: "timezone",
         });
@@ -303,9 +310,7 @@ test("MCP source closure before request submission should produce safely retryab
         assert.equal(result.executionAttempted, true);
         assert.equal(result.retry, "safe");
         assert.match(result.reason ?? "", /no remote effect began/);
-        const logged = await events(fixture.logPath);
-        assert.equal(toolCalls(logged).length, 0);
-        assert.ok(logged.some((event) => isObject(event) && event.event === "shutdown"));
+        assert.equal(toolCalls(await events(fixture.logPath)).length, 0);
     } finally {
         if (!closed) await fixture.source.close().catch(() => {});
         await rm(fixture.directory, { recursive: true, force: true });
