@@ -1,14 +1,11 @@
 ---
 name: ember-documentation
 description: Discover, read, create, update, and validate Ember repository documentation. Use for coding, design, review, research, or documentation work that may depend on or change Ember's durable semantics, architecture, decisions, acceptance scenarios, research conclusions, repository guidance, or other documented contracts. Also use when searching Ember repository knowledge, deciding whether documentation needs to change, or adding a new document under docs/.
-compatibility: Requires an Ember repository checkout with Node.js and npm. Run repository commands and resolve repository paths from the Ember repository root, not from the installed skill directory.
 ---
 
 # Ember Documentation
 
 Use Ember's repository documentation as durable project knowledge. The generated catalogue is only a routing projection over source documents; it is never a source of truth.
-
-All commands and repository paths below are relative to the Ember repository root. The skill may be installed or linked under an agent-specific skill directory; do not resolve `docs/` or `scripts/` relative to that installed skill directory.
 
 ## Discover before deciding
 
@@ -43,7 +40,7 @@ If no `read_when` hint obviously matches, inspect nearby summaries, selected hea
 
 When authority or lifecycle matters, read the source document and follow Ember's documentation and research governance. If relevant documents conflict, do not resolve the conflict by catalogue order, path, modification time, number of matching hints, or apparent confidence. Identify the governing source and its lifecycle. A conflict among sources that should agree is a repository inconsistency to surface or resolve explicitly.
 
-For the governing semantics and metadata rules, read the repository file `docs/documentation-discovery.md`. For command and authoring guidance, read `docs/documentation-discovery-guide.md`.
+For the governing semantics and metadata rules, read `docs/documentation-discovery.md`. For command and authoring guidance, read `docs/documentation-discovery-guide.md`.
 
 ## Maintain documentation as part of the task
 
