@@ -118,12 +118,13 @@ canonical state.
 `tests/fixtures/mcp-server.ts` is a tiny repository-owned stdio JSON-RPC fixture. It is
 not another MCP framework dependency. It supports only the protocol messages needed
 to exercise initialization, tool discovery, invocation, explicit tool failure,
-timeout, disconnect, and shutdown.
+timeout, disconnect, and process termination.
 
 The stdio transport is wrapped only to observe process closure. `close()` does not
 claim cleanup merely because an abort signal was sent; it waits for the transport's
-close event within a finite bound. Tests assert the fixture's shutdown marker is
-written before the source close promise resolves.
+close event within a finite bound. Tests assert that `close()` completes, that the
+source subsequently refuses discovery, and that a capability already bound from the
+closed source cannot submit another remote tool request.
 
 ## Replacement path
 
