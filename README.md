@@ -27,13 +27,13 @@ See the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-
 
 ## Agent skills
 
-Ember keeps reusable Agent Skills under [`skills/`](skills/). To install the repository documentation workflow into local Codex and Claude Code project environments, run from the repository root:
+Ember keeps reusable Agent Skills under [`skills/`](skills/). To make the repository documentation workflow available to local Codex and Claude Code, install it globally from the Ember repository:
 
 ```sh
-npx skills add . --skill ember-documentation --agent codex claude-code
+npx skills add arhor/ember --skill ember-documentation --global --agent codex claude-code
 ```
 
-See [`skills/README.md`](skills/README.md) for details.
+See [`skills/README.md`](skills/README.md) for lifecycle commands and details.
 
 ## Repository layout
 
