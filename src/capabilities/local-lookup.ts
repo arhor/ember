@@ -1,8 +1,4 @@
-import type {
-    CapabilityAuthorityDecision,
-    CapabilityBinding,
-    CapabilityContext,
-} from "./execution.ts";
+import type { CapabilityAuthorityDecision, CapabilityBinding, CapabilityContext } from "./execution.ts";
 
 import { exactKeys, isObject } from "../util.ts";
 
@@ -11,7 +7,10 @@ export interface LocalLookupCapabilityOptions {
     allowedKeys?: readonly string[];
     authority:
         | CapabilityAuthorityDecision
-        | ((context: CapabilityContext, input: unknown) => CapabilityAuthorityDecision | Promise<CapabilityAuthorityDecision>);
+        | ((
+              context: CapabilityContext,
+              input: unknown,
+          ) => CapabilityAuthorityDecision | Promise<CapabilityAuthorityDecision>);
 }
 
 export function createLocalLookupCapability({
@@ -39,7 +38,10 @@ export function createLocalLookupCapability({
                 return { status: "rejected", reason: "local lookup input must contain one non-empty key" };
             }
             if (!allowed.has(input.key) || !(input.key in entries)) {
-                return { status: "rejected", reason: "requested local lookup key is outside the selected capability scope" };
+                return {
+                    status: "rejected",
+                    reason: "requested local lookup key is outside the selected capability scope",
+                };
             }
             return { status: "allowed" };
         },

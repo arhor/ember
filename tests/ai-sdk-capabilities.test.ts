@@ -1,10 +1,10 @@
-import type { CapabilityBinding } from "../src/capabilities/execution.ts";
-
 import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
+
+import type { CapabilityBinding } from "../src/capabilities/execution.ts";
 
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";

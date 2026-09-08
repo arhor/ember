@@ -1,8 +1,9 @@
 import type { LanguageModel } from "ai";
-import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
-import type { ProviderInvoker, ProviderRequest } from "./contract.ts";
 
 import { generateText, isStepCount, jsonSchema, Output, tool } from "ai";
+
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
+import type { ProviderInvoker, ProviderRequest } from "./contract.ts";
 
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
@@ -79,7 +80,8 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
                     tool({
                         description: capability.description,
                         inputSchema: jsonSchema(capability.inputSchema as Parameters<typeof jsonSchema>[0]),
-                        execute: (input, { abortSignal }) => firewall.execute(capability.name, input, { signal: abortSignal }),
+                        execute: (input, { abortSignal }) =>
+                            firewall.execute(capability.name, input, { signal: abortSignal }),
                     }),
                 ]),
             );

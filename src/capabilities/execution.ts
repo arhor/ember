@@ -137,9 +137,16 @@ export function createCapabilityExecutionFirewall(
             if (authority.status === "approval_required") {
                 return record(
                     ledger,
-                    evidence(context, capability.name, "approval_required", false, "requires_new_authority_or_context", {
-                        reason: authority.reason,
-                    }),
+                    evidence(
+                        context,
+                        capability.name,
+                        "approval_required",
+                        false,
+                        "requires_new_authority_or_context",
+                        {
+                            reason: authority.reason,
+                        },
+                    ),
                 );
             }
 
@@ -215,7 +222,10 @@ function evidence(
     outcome: CapabilityExecutionOutcome,
     executionAttempted: boolean,
     retry: CapabilityRetryDisposition,
-    extra: Omit<CapabilityExecutionEvidence, "kind" | "cognitionId" | "capability" | "outcome" | "executionAttempted" | "retry"> = {},
+    extra: Omit<
+        CapabilityExecutionEvidence,
+        "kind" | "cognitionId" | "capability" | "outcome" | "executionAttempted" | "retry"
+    > = {},
 ): CapabilityExecutionEvidence {
     return {
         kind: "capability_execution_evidence",
