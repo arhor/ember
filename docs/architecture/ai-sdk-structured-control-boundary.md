@@ -49,10 +49,14 @@ The adapter-local output schema constrains only the mechanical representation:
 ```
 
 The schema requires the object shape, the decision enum, a string list, and no
-unsupported fields. Those are syntax/shape mechanics.
+unsupported fields. Because AI SDK's `jsonSchema` accepts JSON Schema as provider
+metadata unless local validation is supplied, the adapter also provides its supported
+`validate` callback. This means provider-native structured generation and adapter-local
+runtime validation enforce the same representation shape even when a provider does not
+enforce the schema itself.
 
-The schema deliberately does **not** decide whether the result is semantically valid.
-The ordinary Ember cognition-opportunity boundary remains authoritative for:
+That local validator deliberately stops at representation. The ordinary Ember
+cognition-opportunity boundary remains authoritative for:
 
 - whether every selected meaning belongs to the permitted projection;
 - whether selected IDs are unique;
@@ -120,7 +124,8 @@ contract was generalized as part of this task.
 
 - `cognition`, `defer`, and `no_cognition` through AI SDK structured output;
 - exclusion of mechanism/current-input control data from the model request;
-- schema-invalid decisions rejected as structured-output failure;
+- schema-invalid decisions rejected by AI SDK local structured validation before
+  Ember semantic validation;
 - schema-valid but projection-invalid selected meaning IDs rejected by the Ember
   opportunity boundary; and
 - retryable provider failure remaining a single invocation because retries are
