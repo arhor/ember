@@ -60,7 +60,7 @@ const update: TelegramUpdate = {
         message_id: updateId + 1000,
         date: 1_788_608_000,
         chat: { id: chatId, type: "private" },
-        from: { id: chatId, is_bot: false, username: "fixture-user" },
+        from: { id: chatId, is_bot: false, first_name: "Fixture", username: "fixture-user" },
         text,
     },
 };
@@ -70,15 +70,20 @@ let sentText: string | null = null;
 const outcome = await processTelegramUpdate(
     config,
     {
-        sendMessage: async (actualChatId: number, output: string) => {
+        sendMessage: async (params: unknown) => {
             sends += 1;
-            sentText = output;
-            if (actualChatId !== chatId) throw new Error(`unexpected Telegram chat: ${actualChatId}`);
+            const request = params as { chat_id: number; text: string };
+            sentText = request.text;
+            if (request.chat_id !== chatId) throw new Error(`unexpected Telegram chat: ${request.chat_id}`);
             if (delivery === "uncertain")
                 throw new SurfaceDeliveryFailure("fixture transport lost delivery acknowledgement", {
                     outcome: "uncertain",
                 });
-            return { message_id: updateId + 5000, chat: { id: chatId, type: "private" } };
+            return {
+                message_id: updateId + 5000,
+                date: 1_788_608_000,
+                chat: { id: chatId, type: "private" },
+            };
         },
     } as Parameters<typeof processTelegramUpdate>[1],
     update,

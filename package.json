@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "2.0.45",
-    "ai": "7.0.93"
+    "ai": "7.0.93",
+    "node-telegram-bot-api": "2.1.0"
   },
   "devDependencies": {
     "@types/node": "26.4.1",

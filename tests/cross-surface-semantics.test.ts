@@ -49,7 +49,7 @@ function telegramUpdate(updateId: number, text = "hello from Telegram"): Telegra
             message_id: updateId + 1000,
             date: 1_788_608_000,
             chat: { id: CHAT_ID, type: "private" },
-            from: { id: CHAT_ID, is_bot: false, username: "max" },
+            from: { id: CHAT_ID, is_bot: false, first_name: "Max", username: "max" },
             text,
         },
     };
@@ -152,11 +152,14 @@ test("CLI and Telegram preserve one principal and least-sufficient scope even wh
         const outcome = await processTelegramUpdate(
             f.config,
             {
-                sendMessage: async (chatId: number, text: string) => {
+                sendMessage: async (params: unknown) => {
                     sends += 1;
-                    assert.equal(chatId, CHAT_ID);
-                    assert.equal(text, "accepted\n");
-                    return { message_id: 9001, chat: { id: CHAT_ID, type: "private" } };
+                    assert.deepEqual(params, { chat_id: CHAT_ID, text: "accepted\n" });
+                    return {
+                        message_id: 9001,
+                        date: 1_788_608_000,
+                        chat: { id: CHAT_ID, type: "private" },
+                    };
                 },
             } as Parameters<typeof processTelegramUpdate>[1],
             telegramUpdate(42, disclosureAttempt),

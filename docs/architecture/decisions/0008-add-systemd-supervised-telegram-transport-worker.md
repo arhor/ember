@@ -126,23 +126,33 @@ pending updates implicitly.
 Webhook support may be reconsidered when Ember has an independently justified public
 HTTP ingress or when deployment evidence shows the resident poller's cost is material.
 
-## Direct Bot API integration
+## Telegram protocol client amendment
 
-No Telegram npm runtime dependency is introduced. Node.js 26's built-in `fetch` and
-AbortSignal are sufficient for the small method set required by #86:
+Issue #207, informed by the framework evaluation in issue #200, supersedes only the
+original implementation detail that this worker should hand-maintain Telegram HTTP
+serialization and response-envelope parsing. The topology and semantic ownership in
+this ADR are unchanged.
 
-- `getMe`;
-- `getWebhookInfo`;
-- `deleteWebhook`;
-- `getUpdates`; and
-- `sendMessage`.
+The worker now uses exactly `node-telegram-bot-api@2.1.0` as a narrow protocol client:
 
-This follows ADR 0006's dependency policy: a framework abstraction is not justified
-for five concrete HTTP methods and one surface.
+- generated `Api` methods and Telegram types replace local broad transport DTOs and
+  method-specific HTTP wrappers;
+- one Ember factory constructs the production client with `maxRetries: 0`, so a single
+  Ember delivery attempt still means exactly one underlying `sendMessage` HTTP attempt;
+- Ember, not the library `Bot`/long-poll runtime, remains responsible for the polling
+  loop, acknowledgement offset, durable replay boundary, reconciliation cadence, and
+  shutdown admission policy;
+- network data that can establish durable operational evidence remains runtime
+  validated at the protocol-to-Ember boundary; and
+- structured library transport/API errors are mapped into Ember's existing
+  `confirmed` / `failed` / `uncertain` delivery truth instead of becoming a new retry
+  or persistence authority.
 
-The implementation records the Bot API version it was reviewed against in the
-Telegram runbook and keeps response data runtime-validated because network JSON
-remains untrusted regardless of TypeScript declarations.
+This follows ADR 0006's dependency policy differently from the initial #86 judgment:
+issue #200 established concrete maintenance reduction at the protocol boundary without
+requiring Ember to surrender semantic control to a Telegram framework runtime.
+
+The Bot API version reviewed by Ember remains recorded in the Telegram runbook.
 
 ## Principal and privacy boundary
 
@@ -161,22 +171,31 @@ The adapter preserves the issue #85 delivery lifecycle:
 
 - successful `sendMessage` response -> `confirmed`, plus returned Telegram
   `message_id` as operational evidence;
-- explicit Bot API rejection -> `failed`;
-- network/protocol ambiguity after send may have begun -> `uncertain`.
+- explicit non-5xx Bot API rejection -> `failed`;
+- Telegram `429` -> definite retryable `failed`, retaining `retry_after` for the shared
+  reconciliation policy; and
+- network/timeout/parse failures, 5xx ambiguity, malformed successful evidence, or a
+  caller abort after a send may have entered the transport -> `uncertain`.
+
+The API client is configured with `maxRetries: 0`; transport retry decisions therefore
+remain visible to and owned by Ember's durable reconciliation boundary.
 
 The Telegram service never treats systemd process success, HTTP connectivity, or
 message-id allocation as evidence that a human read the response.
 
 ## Shutdown
 
-`SIGTERM`/`SIGINT` aborts the current long poll. The same AbortSignal is passed through
-an active cognition/provider invocation. The unit uses `KillMode=mixed` and an
-explicit stop timeout so the main worker gets an opportunity to close its short
-runtime episode before systemd applies final cgroup termination.
+`SIGTERM`/`SIGINT` aborts an idle `getUpdates` request promptly and stops admission of
+new Telegram updates. Once an update has been admitted into `processTelegramUpdate`,
+the worker lets that already-bounded provider/delivery handoff finish and records its
+truth before returning. It does not issue a later acknowledgement-bearing poll after
+shutdown has been requested.
 
-Abrupt loss may leave a canonical runtime episode unclean. Existing `startRuntime`
-recovery semantics preserve that gap on the next accepted update rather than
-inventing a clean stop.
+The unit uses `KillMode=mixed` and an explicit stop timeout so this bounded drain can
+finish before systemd applies final cgroup termination. If the timeout expires, forced
+termination remains truthful process loss rather than a fabricated clean completion.
+Existing runtime recovery and durable occurrence/delivery evidence describe whatever
+was actually committed before that loss.
 
 ## Rejected alternatives
 
@@ -197,11 +216,12 @@ Rejected as broader than #86. One continuous Telegram wait does not yet justify
 moving wake scheduling, specialist ownership, canonical writes, or all cognition into
 one resident coordinator.
 
-### Telegram framework dependency
+### Telegram framework-owned polling runtime
 
-Rejected because the required method set is small and Node core already provides the
-HTTP runtime capability. A framework may be reconsidered if future Telegram features
-make local protocol maintenance materially larger than the dependency cost.
+Still rejected. Issue #207 adopts a maintained Bot API protocol client, not its
+higher-level `Bot` runtime. Ember keeps polling cadence, acknowledgement timing,
+replay, reconciliation, provider handoff, and delivery evidence under its own narrow
+surface boundary.
 
 ## Consequences
 
@@ -209,8 +229,8 @@ make local protocol maintenance materially larger than the dependency cost.
   canonical work is not replayed merely because a process restarts.
 - The literal "no resident Ember Node process" property from ADR 0007 is narrowed:
   #86 earns one resident **transport** process, not a resident canonical runtime owner.
-- Idle Telegram availability now has attributable Node RSS/network cost; future
-  resource measurement should include it.
+- The Telegram transport has one exact runtime dependency whose installed footprint
+  and resident-process cost are measured as operational evidence by issue #207.
 - CLI and the Telegram surface continue to contend through the same writer lease only
   while real Telegram work is being committed, not during idle polling.
 - A second continuous surface or broader shared coordination need may make one
@@ -229,5 +249,5 @@ Revisit this decision when:
 - live specialist steering or approvals require a shared continuous control plane;
 - #87/#88 require identity, privacy, or delivery reconciliation that cannot remain at
   the current narrow surface boundary; or
-- Telegram features expand enough that a maintained Bot API library is demonstrably
-  smaller/safer than the local HTTP adapter.
+- the selected protocol client starts imposing polling/retry/runtime ownership that
+  cannot be disabled without recreating a larger local adapter.
