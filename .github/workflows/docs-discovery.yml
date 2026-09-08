@@ -25,16 +25,23 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 26.8.1
+          node-version-file: .nvmrc
+
       - name: Show Node.js version
         run: node --version
+
       - name: Run documentation discovery tests
         run: npm run test:docs
+
       - name: Validate documentation discovery metadata
         run: node scripts/docs-discovery.mjs check
+
       - name: Exercise deterministic projections
         run: |
           node scripts/docs-discovery.mjs list > /tmp/docs-default.txt
