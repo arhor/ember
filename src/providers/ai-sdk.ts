@@ -16,6 +16,7 @@ import {
     NoSuchToolError,
     Output,
     RetryError,
+    streamText,
     tool,
     ToolCallRepairError,
     ToolChoiceViolationError,
@@ -24,7 +25,7 @@ import {
 
 import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { CognitionId } from "../core/model.ts";
-import type { ProviderInvoker, ProviderRequest } from "./contract.ts";
+import type { ProviderInvoker, ProviderRequest, ProviderStreamObserver } from "./contract.ts";
 
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
@@ -158,7 +159,7 @@ const MAX_TOOL_LOOP_STEPS = 4;
 const MAX_AI_SDK_RETRIES = 0;
 
 export function createAiSdkProvider(model: LanguageModel, options: AiSdkProviderOptions = {}): ProviderInvoker {
-    return async (request, { timeoutSeconds, signal }) => {
+    return async (request, { timeoutSeconds, signal, stream }) => {
         validateTimeout(timeoutSeconds);
         if (signal?.aborted) {
             await recordInferenceEvidence(options.inferenceEvidence, {
@@ -195,7 +196,7 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
                 ]),
             );
 
-            const result = await generateText({
+            const invocation: Parameters<typeof generateText>[0] = {
                 model,
                 instructions: INSTRUCTIONS,
                 prompt: JSON.stringify({ projection: request.projection, input: request.input }),
@@ -252,8 +253,15 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
                         usage: usageEvidence(event.usage),
                         warnings: warningEvidence(event.warnings),
                     }),
-            });
-            const candidate: unknown = result.output;
+            };
+
+            let candidate: unknown;
+            if (stream === undefined) {
+                const result = await generateText(invocation);
+                candidate = result.output;
+            } else {
+                candidate = await invokeStreaming(invocation, stream, signal);
+            }
             validateProviderResult(candidate, new Set(request.projection.selection.meaning_ids));
             return candidate;
         } catch (error) {
@@ -272,6 +280,40 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
             throw translated.error;
         }
     };
+}
+
+async function invokeStreaming(
+    invocation: Parameters<typeof generateText>[0],
+    observer: ProviderStreamObserver,
+    signal?: AbortSignal,
+): Promise<unknown> {
+    let streamFailure: unknown;
+    let streamAborted = false;
+    const result = streamText({
+        ...invocation,
+        onAbort: () => {
+            streamAborted = true;
+        },
+        onError: ({ error }) => {
+            streamFailure ??= error;
+        },
+    });
+    let previousText: string | undefined;
+    for await (const partialOutput of result.partialOutputStream) {
+        const text = (partialOutput as Partial<AiSdkProviderOutput>).reply;
+        if (typeof text !== "string" || text.length === 0 || text === previousText) {
+            continue;
+        }
+        previousText = text;
+        await recordProviderStreamObservation(observer, text);
+    }
+    if (streamAborted && signal?.aborted) {
+        throw signal.reason ?? new DOMException("provider invocation aborted", "AbortError");
+    }
+    if (streamFailure !== undefined) {
+        throw streamFailure;
+    }
+    return result.output;
 }
 
 function validateTimeout(timeoutSeconds: number) {
@@ -455,6 +497,14 @@ async function recordInferenceEvidence(sink: InferenceEvidenceSink | undefined, 
         await sink?.record(evidence);
     } catch {
         // Diagnostics must not change cognition semantics or provider outcomes.
+    }
+}
+
+async function recordProviderStreamObservation(observer: ProviderStreamObserver, text: string) {
+    try {
+        await observer.observe({ kind: "provisional_text_snapshot", text });
+    } catch {
+        // Provisional presentation failures must not change final cognition semantics.
     }
 }
 

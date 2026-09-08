@@ -26,9 +26,19 @@ export interface ProviderResult {
     };
 }
 
+export interface ProviderStreamObservation {
+    kind: "provisional_text_snapshot";
+    text: string;
+}
+
+export interface ProviderStreamObserver {
+    observe(observation: ProviderStreamObservation): void | PromiseLike<void>;
+}
+
 export interface ProviderInvocationOptions {
     timeoutSeconds: number;
     signal?: AbortSignal;
+    stream?: ProviderStreamObserver;
 }
 
 // Transport and process launch configuration belongs inside the concrete provider adapter, not this semantic seam.
