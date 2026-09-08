@@ -1,9 +1,9 @@
 ---
-summary: "Issue #186 implementation boundary for Vercel AI SDK model invocation and structured output beneath Ember-owned cognition, projection, validation, and failure semantics."
+summary: "Issues #186, #188, and #189 implementation boundary for Vercel AI SDK model invocation, structured output, and bounded tool mechanics beneath Ember-owned cognition and capability semantics."
 read_when:
   - "Changing the Vercel AI SDK cognition adapter or adding a direct in-process model provider"
-  - "Deciding which AI SDK metadata, retries, timeout behavior, or types may cross into Ember cognition contracts"
-  - "Replacing Vercel AI SDK with another model toolkit while preserving Ember cognition semantics"
+  - "Changing AI SDK tool-loop mechanics, capability selection, retries, timeout behavior, or types allowed across the adapter boundary"
+  - "Replacing Vercel AI SDK with another model toolkit while preserving Ember cognition and capability semantics"
 role: design
 discovery_status: current
 ---
@@ -12,8 +12,14 @@ discovery_status: current
 
 ## Proven implementation
 
-Issue [#186](https://github.com/arhor/ember/issues/186) is Ember's first production-code
-adoption of Vercel AI SDK. The integration is intentionally one brick wide:
+Issue [#186](https://github.com/arhor/ember/issues/186) introduced Ember's first
+production-code adoption of Vercel AI SDK. Issue
+[#188](https://github.com/arhor/ember/issues/188) then removed process-shaped
+arguments from the shared provider invocation seam. Issue
+[#189](https://github.com/arhor/ember/issues/189) extends the same direct adapter with
+one bounded AI SDK tool loop while keeping capability semantics outside the SDK.
+
+The current path is:
 
 ```text
 Ember builds least-sufficient Projection
@@ -24,8 +30,11 @@ ProviderRequest
         v
 createAiSdkProvider(LanguageModel)
         |
-        +-> generateText
-        +-> Output.object + JSON Schema
+        +-> Ember selects capability bindings for this cognition
+        +-> adapter maps selected bindings to AI SDK tools
+        +-> generateText runs a bounded tool loop
+        +-> Ember capability firewall decides whether each call may execute
+        +-> Output.object + JSON Schema shapes the final model result
         |
         v
 Ember validateProviderResult
@@ -38,119 +47,116 @@ canonical cognition episode / expression evidence
 ```
 
 The adapter lives in `src/providers/ai-sdk.ts`. It accepts an injected AI SDK
-`LanguageModel`, so this task does not choose a paid API provider, authentication
-scheme, gateway, or vendor. The only direct production dependency added by Ember is
-pinned `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from the same
-package's `ai/test` export and require no network access.
+`LanguageModel`, so Ember still does not choose a paid API provider, authentication
+scheme, gateway, or vendor at this boundary. The production dependency remains pinned
+to `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from `ai/test` and
+require no network access.
 
-The implementation uses `generateText` for one non-streaming model call and
-`Output.object` with `jsonSchema` for structured generation. No AI SDK `Agent`, tool
-loop, MCP client, session, memory, workflow, or persistence surface is introduced.
+The model call uses `generateText`, structured `Output.object`, and `jsonSchema`.
+Issue #189 additionally uses AI SDK `tool` definitions plus a bounded step stop
+condition. No AI SDK `Agent`, persistent session, SDK memory, workflow runtime, MCP
+client, or SDK-owned identity is adopted.
 
-## Ember still owns the meaning on both sides
+For capability semantics, see
+[Capability Execution Boundary](capability-execution-boundary.md).
 
-The SDK call is deliberately enclosed by two Ember-owned boundaries.
+## Ember still owns meaning on both sides
+
+The SDK call remains enclosed by Ember-owned boundaries.
 
 Before invocation, `runCognition` builds the projection. The adapter receives only the
 already-bounded `ProviderRequest` and sends the model only:
 
-- that selected `Projection`; and
-- the current input object.
+- that selected `Projection`;
+- the current input object; and
+- capability definitions explicitly selected by Ember for that cognition.
 
-It does not receive or disclose canonical `EmberState` wholesale. AI SDK therefore
-cannot become the context selector merely because it owns prompt/model plumbing.
+It does not receive or disclose canonical `EmberState` wholesale. Capability
+selection likewise happens before tool definitions are created; SDK tool availability
+cannot broaden the current capability set by discovery or ambient reachability.
 
-After generation, AI SDK schema validation is only structural validation. The adapter
-immediately calls Ember's existing `validateProviderResult` against the meaning IDs in
-the supplied projection. A schema-valid model result that claims a `usedMeaningId`
-outside the projection is still rejected by Ember.
+After the tool loop, AI SDK structured-output validation is still only structural
+validation. The adapter immediately calls Ember's existing `validateProviderResult`
+against the meaning IDs in the supplied projection. A schema-valid model result that
+claims a `usedMeaningId` outside the projection remains rejected even if every tool
+call succeeded.
 
-This proves the rule from #178 and #180 in executable code:
+The same principle applies inside the tool loop. AI SDK validates tool input schemas
+and owns message/step plumbing, but an Ember capability firewall independently checks
+authority, semantic argument constraints, occurrence policy, and execution outcome.
+A tool result is bounded operational evidence supplied to cognition, not automatically
+canonical Ember meaning.
 
-> **Ember owns meaning; dependencies may own mechanics.**
+This is the executable form of the rule from #178 and #180:
 
-## Metadata and continuation evidence
+> **Ember owns meaning and authority; dependencies may own mechanics.**
 
-AI SDK can expose provider/model identity, response IDs, finish reasons, warnings,
-usage, and provider-specific metadata. None of those values is currently copied into
-`ProviderResult` or canonical state.
+## Provider invocation seam
 
-That omission is deliberate. The only current shared operational result field is
-`operational.externalThreadId`, whose meaning is an opaque provider-owned continuation
-handle. A one-shot AI SDK response ID or model ID is not evidence of a resumable
-thread, so storing either value there would strengthen its meaning incorrectly.
-
-If Ember later earns a need for model-call telemetry, finish evidence, or a direct API
-continuation handle, add the narrow Ember-owned evidence shape required by that use
-case. Do not widen the contract merely to mirror `GenerateTextResult`.
-
-## Failure, cancellation, timeout, and retries
-
-The adapter maps AI SDK execution back into the existing Ember-facing provider failure
-vocabulary:
-
-- an already-aborted signal is `cancellation_requested` before invocation;
-- an abort during generation is `cancellation_requested`;
-- an AI SDK timeout is `timed_out`;
-- structured-output or model-call failure is `failed`;
-- `ProviderError` raised by Ember result validation remains authoritative.
-
-There is no direct child process for this adapter. Explicit cancellation may therefore
-record `directChildExitObserved: false`, preserving the existing meaning that a
-cancellation request was observed without inventing child-exit evidence. A direct AI
-SDK timeout records the `timed_out` outcome but leaves `providerTermination` null:
-Ember's current termination evidence is process-shaped, and a timed-out cognition may
-claim timeout termination evidence only when a direct child exit was actually
-observed. This keeps the direct-provider result truthful instead of weakening that
-existing invariant merely to make the new adapter look process-like.
-
-`maxRetries` is explicitly set to `0`. AI SDK retry plumbing remains available for a
-future earned use case, but the first adapter does not silently repeat an invocation
-beneath Ember's failure semantics. Retry safety, especially around any future external
-effects, remains an Ember decision rather than an SDK default.
-
-The adapter applies the same positive finite timeout and maximum timeout bound as the
-existing provider contract.
-
-## What #186 confirms and what it pressures
-
-The implementation confirms the main #178/#180 assumptions:
-
-- AI SDK model invocation and structured-output mechanics fit below the existing
-  request/result semantics;
-- an injected model keeps vendor selection outside the cognition contract;
-- deterministic SDK mocks are sufficient for offline end-to-end cognition tests;
-- no SDK session, message, result, provider, or agent type needs to enter canonical
-  Ember state;
-- Codex and Cursor process adapters can remain behaviorally unchanged.
-
-It also turns two research predictions into concrete evidence.
-
-First, the in-process adapter proved that `command` and `arguments_` were transport
-artifacts rather than shared cognition semantics. Issue #188 follows that evidence by
-narrowing `ProviderInvoker` to `(request, options) => Promise<ProviderResult>`; AI SDK
-invocation no longer accepts or ignores synthetic process placeholders, while Codex
-and Cursor close over launch configuration in adapter factories.
-
-Second, `providerTermination` is intentionally process-shaped. The direct adapter can
-reuse the existing high-level `timed_out` and `cancellation_requested` cognition
-outcomes, but it must not manufacture direct-child exit evidence for a call that never
-owned a child process.
-
-These are earned pressures to revisit mechanical invocation/termination shapes, but
-not reasons to combine those changes with #186. Request/result semantics remain sound,
-and leaving the small awkwardness visible keeps this task focused instead of inventing
-a provider hierarchy merely to hide it.
-
-A later cleanup may move command/argument configuration into process-adapter closures
-and reduce the invocation operation conceptually to:
+Issue #188 established the shared cognition operation as:
 
 ```text
 (ProviderRequest, ProviderInvocationOptions) -> ProviderResult
 ```
 
-Any later generalization of termination evidence should likewise preserve the current
-truthfulness rules instead of weakening process-specific evidence globally.
+Executable commands, argument prefixes, workspaces, environments, and provider-specific
+continuation mechanics stay inside concrete provider adapters. The AI SDK adapter uses
+the same semantic seam without fake command placeholders.
+
+Capability bindings are deliberately not added to `ProviderRequest` or
+`ProviderInvoker`. `createAiSdkProvider` accepts an adapter-local capability selector
+that receives the already-bounded request. This preserves the provider contract for
+Codex, Cursor, deterministic process providers, and any later model toolkit while
+keeping tool mechanics optional.
+
+## Metadata and continuation evidence
+
+AI SDK can expose provider/model identity, response IDs, finish reasons, warnings,
+usage, tool-call IDs, messages, steps, and provider-specific metadata. None of those
+values is copied into `ProviderResult` or canonical state.
+
+The only current shared provider operational result field remains
+`operational.externalThreadId`, whose meaning is an opaque provider-owned continuation
+handle. A one-shot AI SDK response ID, model ID, or tool-call ID is not evidence of a
+resumable thread and is not stored as one.
+
+Capability execution results have the same restraint. Episode-local
+`CapabilityExecutionEvidence` can be inspected by the caller and returns to the model
+as a bounded tool result, but the SDK representation and tool transcript do not become
+canonical state. A future consequential capability that needs durable attempt evidence
+must add the narrow Ember-owned persistence its semantics require rather than storing
+foreign SDK step objects.
+
+## Failure, cancellation, timeout, and retries
+
+Provider-level behavior remains:
+
+- an already-aborted signal is `cancellation_requested` before invocation;
+- an abort during generation is `cancellation_requested`;
+- an AI SDK timeout is `timed_out`;
+- structured-output or model-call failure is `failed`;
+- `ProviderError` raised by Ember final-result validation remains authoritative.
+
+There is no direct child process for this adapter. Explicit cancellation may therefore
+record `directChildExitObserved: false`, preserving the existing meaning that a
+cancellation request was observed without inventing process-exit evidence. A direct AI
+SDK timeout records `timed_out` while leaving process-shaped termination evidence
+absent.
+
+Tool execution adds a more specific boundary. Before an executor is entered,
+cancellation is evidence that execution did not start. After an executor is entered,
+an abort cannot prove that an external effect did not occur. The Ember firewall
+therefore classifies an aborted in-flight capability as `outcome_unknown` and marks
+retry unsafe unless later reconciliation earns a stronger conclusion.
+
+AI SDK `maxRetries` remains explicitly `0`. The capability firewall also enforces
+`at_most_once_per_cognition`; a repeated model request for a capability whose execution
+was already attempted is returned as `occurrence_blocked` rather than silently
+executed again. The four-step tool-loop bound is operational only and never establishes
+semantic completion or currentness.
+
+The adapter applies the same positive finite timeout and maximum timeout bound as the
+existing provider contract.
 
 ## Replacement path
 
@@ -159,26 +165,31 @@ provider implementation can replace `createAiSdkProvider` if it can:
 
 1. accept the already-selected `ProviderRequest` without reaching into canonical
    state;
-2. honor Ember timeout/cancellation options and map failures to `ProviderError`;
-3. return an Ember `ProviderResult` rather than foreign SDK result/session types; and
-4. pass `validateProviderResult` before the result reaches canonical cognition state.
+2. map explicitly selected Ember capabilities to its tool-call mechanics without
+   becoming the authority oracle;
+3. honor Ember timeout/cancellation semantics and avoid unsafe implicit retries;
+4. return an Ember `ProviderResult` rather than foreign SDK result/session types; and
+5. pass `validateProviderResult` before the result reaches canonical cognition state.
+
+Capability transports are independently replaceable. A future MCP source can sit
+behind the Ember capability execution firewall without transferring authority,
+currentness, retry, or canonical-state ownership to MCP or AI SDK.
 
 No migration of Ember memory, identity, lineage, projection, delegation, authority, or
-persistence would be required because AI SDK owns none of those concepts here.
+persistence is required because AI SDK owns none of those concepts here.
 
 ## Deterministic evidence
 
-`tests/ai-sdk-provider.test.ts` exercises the adapter through production `runCognition`
-with AI SDK's deterministic mock language model. The tests establish that:
+`tests/ai-sdk-provider.test.ts` continues to exercise direct structured cognition
+through production `runCognition`: projection disclosure, final semantic validation,
+malformed output, timeout, cancellation, no implicit model retry, and SDK metadata
+isolation.
 
-- only the selected projection plus current input reaches the model call;
-- a structured result becomes an ordinary completed Ember cognition;
-- a schema-valid out-of-projection meaning claim is rejected by Ember validation;
-- malformed structured model output becomes an Ember provider failure;
-- timeout, explicit cancellation, and model failure map to the existing cognition
-  failure vocabulary without inventing process evidence;
-- the failed call is not retried implicitly; and
-- mock provider/model/response identifiers do not enter canonical Ember state.
+`tests/ai-sdk-capabilities.test.ts` extends that oracle through the real AI SDK tool
+loop. It covers selected versus unselected capability visibility, permitted execution,
+authority denial, schema-invalid input, Ember semantic input rejection, executor
+failure, repeated-call occurrence blocking, bounded result reintegration, final
+`usedMeaningIds` validation, and canonical-state isolation.
 
-Those tests are the replacement oracle for this integration boundary. Future AI SDK
-features should extend them only when a concrete new mechanic is adopted.
+`src/capabilities/execution.test.ts` separately pins cancellation truthfulness before
+and after an execution attempt begins.
