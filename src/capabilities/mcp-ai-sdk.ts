@@ -98,15 +98,19 @@ export async function openAiSdkMcpStdioCapabilitySource(
 }
 
 class AiSdkMcpCapabilitySource implements McpCapabilitySource {
+    private readonly serverLabel: string;
+    private readonly client: MCPClient;
+    private readonly transport: CloseObservedTransport;
+    private readonly requestTimeoutMs: number;
     private readonly discovered = new Map<string, McpDiscoveredTool>();
     private closed = false;
 
-    constructor(
-        private readonly serverLabel: string,
-        private readonly client: MCPClient,
-        private readonly transport: CloseObservedTransport,
-        private readonly requestTimeoutMs: number,
-    ) {}
+    constructor(serverLabel: string, client: MCPClient, transport: CloseObservedTransport, requestTimeoutMs: number) {
+        this.serverLabel = serverLabel;
+        this.client = client;
+        this.transport = transport;
+        this.requestTimeoutMs = requestTimeoutMs;
+    }
 
     async discover({ signal }: { signal?: AbortSignal } = {}): Promise<readonly McpDiscoveredTool[]> {
         this.ensureOpenForDiscovery();
@@ -244,16 +248,17 @@ class CloseObservedTransport implements MCPTransport {
     onerror?: (error: Error) => void;
     onmessage?: MCPTransport["onmessage"];
 
+    private readonly delegate: MCPTransport;
+    private readonly closeTimeoutMs: number;
     private closeObservedResolve!: () => void;
     private readonly closeObserved = new Promise<void>((resolve) => {
         this.closeObservedResolve = resolve;
     });
     private closeWasObserved = false;
 
-    constructor(
-        private readonly delegate: MCPTransport,
-        private readonly closeTimeoutMs: number,
-    ) {
+    constructor(delegate: MCPTransport, closeTimeoutMs: number) {
+        this.delegate = delegate;
+        this.closeTimeoutMs = closeTimeoutMs;
         this.supportsProtocolVersionDiscovery = delegate.supportsProtocolVersionDiscovery;
         this.supportsMcpToolParameterHeaders = delegate.supportsMcpToolParameterHeaders;
         delegate.onclose = () => this.observeClose();
