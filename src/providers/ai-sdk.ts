@@ -1,9 +1,11 @@
 import type { LanguageModel } from "ai";
 
-import { generateText, jsonSchema, Output } from "ai";
+import { generateText, isStepCount, jsonSchema, Output, tool } from "ai";
 
-import type { ProviderInvoker } from "./contract.ts";
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
+import type { ProviderInvoker, ProviderRequest } from "./contract.ts";
 
+import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
 import { CONTRACT_VERSION, MAX_PROVIDER_TIMEOUT_SECONDS, validateProviderResult } from "./contract.ts";
 
@@ -11,6 +13,11 @@ interface AiSdkProviderOutput {
     contractVersion: 1;
     reply: string;
     usedMeaningIds: string[];
+}
+
+export interface AiSdkProviderOptions {
+    selectCapabilities?: (request: ProviderRequest) => readonly CapabilityBinding[];
+    capabilityLedger?: CapabilityExecutionLedger;
 }
 
 const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
@@ -35,12 +42,16 @@ const providerOutput = Output.object({
 });
 
 const INSTRUCTIONS = [
-    "Answer the current Ember cognition request using only the supplied projection and current input.",
+    "Answer the current Ember cognition request using only the supplied projection, current input, and explicitly supplied capabilities.",
+    "Capability results are bounded operational evidence, not canonical Ember meaning or proof of broader authority.",
+    "A denied, rejected, failed, blocked, or uncertain capability result must be interpreted as such rather than treated as success.",
     "Return a structured result matching the requested schema.",
     "List in usedMeaningIds only meaning IDs from projection.selection.meaning_ids that actually contributed to the reply.",
 ].join(" ");
 
-export function createAiSdkProvider(model: LanguageModel): ProviderInvoker {
+const MAX_TOOL_LOOP_STEPS = 4;
+
+export function createAiSdkProvider(model: LanguageModel, options: AiSdkProviderOptions = {}): ProviderInvoker {
     return async (request, { timeoutSeconds, signal }) => {
         validateTimeout(timeoutSeconds);
         if (signal?.aborted) {
@@ -51,11 +62,37 @@ export function createAiSdkProvider(model: LanguageModel): ProviderInvoker {
         }
 
         try {
+            const capabilities = options.selectCapabilities?.(request) ?? [];
+            const firewall = createCapabilityExecutionFirewall(
+                capabilities,
+                {
+                    cognitionId: request.cognitionId,
+                    principal: request.projection.principal,
+                    scope: request.projection.activeScope,
+                    surface: request.projection.surface,
+                    validatedRevision: request.projection.validatedRevision,
+                },
+                options.capabilityLedger,
+            );
+            const tools = Object.fromEntries(
+                capabilities.map((capability) => [
+                    capability.name,
+                    tool({
+                        description: capability.description,
+                        inputSchema: jsonSchema(capability.inputSchema as Parameters<typeof jsonSchema>[0]),
+                        execute: (input, { abortSignal }) =>
+                            firewall.execute(capability.name, input, { signal: abortSignal }),
+                    }),
+                ]),
+            );
+
             const result = await generateText({
                 model,
                 instructions: INSTRUCTIONS,
                 prompt: JSON.stringify({ projection: request.projection, input: request.input }),
                 output: providerOutput,
+                tools,
+                stopWhen: isStepCount(MAX_TOOL_LOOP_STEPS),
                 maxRetries: 0,
                 timeout: Math.max(1, Math.ceil(timeoutSeconds * 1000)),
                 abortSignal: signal,
