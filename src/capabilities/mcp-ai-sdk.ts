@@ -160,7 +160,9 @@ class AiSdkMcpCapabilitySource implements McpCapabilitySource {
     bind(sourceToolName: string, policy: McpCapabilityPolicy): CapabilityBinding {
         const tool = this.discovered.get(sourceToolName);
         if (!tool) {
-            throw new Error(`MCP tool must be discovered before it can be mapped into an Ember capability: ${sourceToolName}`);
+            throw new Error(
+                `MCP tool must be discovered before it can be mapped into an Ember capability: ${sourceToolName}`,
+            );
         }
 
         return {
@@ -305,7 +307,10 @@ async function waitForClose(closeObserved: Promise<void>, timeoutMs: number) {
         await Promise.race([
             closeObserved,
             new Promise<never>((_, reject) => {
-                timer = setTimeout(() => reject(new Error(`MCP stdio transport close was not observed within ${timeoutMs}ms`)), timeoutMs);
+                timer = setTimeout(
+                    () => reject(new Error(`MCP stdio transport close was not observed within ${timeoutMs}ms`)),
+                    timeoutMs,
+                );
             }),
         ]);
     } finally {

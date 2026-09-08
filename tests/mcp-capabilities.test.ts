@@ -1,9 +1,9 @@
 import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { readFile, rm } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import type { CapabilityBinding, CapabilityContext } from "../src/capabilities/execution.ts";
 import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/capabilities/mcp-ai-sdk.ts";
@@ -152,10 +152,7 @@ async function closeRuntimeFixture(fixture) {
 
 async function discoverLookup(source: McpCapabilitySource, overrides: Partial<McpCapabilityPolicy> = {}) {
     const discovered = await source.discover();
-    assert.deepEqual(
-        discovered.map((tool) => tool.sourceToolName).sort(),
-        ["remote_hidden", "remote_lookup"],
-    );
+    assert.deepEqual(discovered.map((tool) => tool.sourceToolName).sort(), ["remote_hidden", "remote_lookup"]);
     const lookup = discovered.find((tool) => tool.sourceToolName === "remote_lookup");
     assert.equal(lookup?.sourceDescription, "Mechanically discovered deterministic lookup");
     return source.bind("remote_lookup", policy(overrides));
@@ -213,7 +210,7 @@ test("MCP discovery should remain mechanical while only Ember-mapped selected ca
         assert.deepEqual(ledger.entries[0].output, { text: ["UTC"] });
         const logged = await events(sourceFixture.logPath);
         assert.equal(toolCalls(logged).length, 1);
-        assert.equal(JSON.stringify(logged).includes("remote_hidden\",\"arguments"), false);
+        assert.equal(JSON.stringify(logged).includes('remote_hidden","arguments'), false);
 
         const serializedState = JSON.stringify(result.state);
         for (const operationalIdentifier of [

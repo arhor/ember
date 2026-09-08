@@ -74,16 +74,16 @@ what that reachable mechanism means in the current context.
 
 The adapter keeps protocol/lifecycle failure distinct from effect evidence:
 
-| Observation | Ember-facing interpretation |
-| --- | --- |
-| connection or initialization failure | `McpCapabilitySourceError` before a capability exists |
-| `tools/list` discovery failure | `McpCapabilitySourceError` with `phase = discovery`; no tool attempt |
-| authority denial / approval requirement | firewall evidence; MCP `tools/call` is never invoked |
-| semantic input rejection | firewall evidence; MCP `tools/call` is never invoked |
-| source already closed before submission | attempted executor entry, `failed`, retry `safe`, no remote effect began |
-| MCP result with `isError = true` | observed `failed` capability attempt, retry `unsafe` |
-| timeout or disconnect after `callTool` submission begins | `outcome_unknown`, retry `unsafe` |
-| valid successful MCP result | normalized JSON/text and then the existing 8 KiB capability-output bound |
+| Observation                                              | Ember-facing interpretation                                              |
+| -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| connection or initialization failure                     | `McpCapabilitySourceError` before a capability exists                    |
+| `tools/list` discovery failure                           | `McpCapabilitySourceError` with `phase = discovery`; no tool attempt     |
+| authority denial / approval requirement                  | firewall evidence; MCP `tools/call` is never invoked                     |
+| semantic input rejection                                 | firewall evidence; MCP `tools/call` is never invoked                     |
+| source already closed before submission                  | attempted executor entry, `failed`, retry `safe`, no remote effect began |
+| MCP result with `isError = true`                         | observed `failed` capability attempt, retry `unsafe`                     |
+| timeout or disconnect after `callTool` submission begins | `outcome_unknown`, retry `unsafe`                                        |
+| valid successful MCP result                              | normalized JSON/text and then the existing 8 KiB capability-output bound |
 
 The conservative post-submission rule is intentional. A transport timeout or closed
 stdio pipe proves that Ember lacks a trustworthy terminal result; it does not prove
