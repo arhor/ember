@@ -46,6 +46,17 @@ jobs:
         run: npm ci
       - name: Run static and repository checks
         run: npm run check
+      - name: Capture formatted capability files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-189-formatted
+          path: |
+            src/capabilities/execution.test.ts
+            src/capabilities/execution.ts
+            src/capabilities/local-lookup.ts
+            src/providers/ai-sdk.ts
+            tests/ai-sdk-capabilities.test.ts
       - name: Run complete acceptance suite
         run: npm test
       - name: Run deterministic endogenous selectivity evaluation
