@@ -234,7 +234,7 @@ class AiSdkMcpCapabilitySource implements McpCapabilitySource {
             );
         }
 
-        if (result.isError) {
+        if (hasContentResult(result) && result.isError) {
             throw new Error(`MCP tool reported an explicit failure: ${boundedMcpFailure(result.content)}`);
         }
 
@@ -318,7 +318,23 @@ async function waitForClose(closeObserved: Promise<void>, timeoutMs: number) {
     }
 }
 
-function normalizeMcpResult(result: { content: readonly unknown[]; structuredContent?: unknown }): CapabilityJsonValue {
+function normalizeMcpResult(result: unknown): CapabilityJsonValue {
+    if (!isObject(result)) {
+        throw new Error("MCP tool returned an invalid result envelope");
+    }
+
+    if ("toolResult" in result) {
+        const toolResult = toCapabilityJson(result.toolResult);
+        if (toolResult === undefined) {
+            throw new Error("MCP toolResult is not JSON-compatible with Ember capability evidence");
+        }
+        return { toolResult };
+    }
+
+    if (!hasContentResult(result)) {
+        throw new Error("MCP tool returned neither toolResult nor content");
+    }
+
     const text = result.content.flatMap((part) => {
         if (isObject(part) && part.type === "text" && typeof part.text === "string") return [part.text];
         return [];
@@ -328,6 +344,12 @@ function normalizeMcpResult(result: { content: readonly unknown[]; structuredCon
     if (structured !== undefined) return { structured };
     if (text.length > 0) return { text };
     return { status: "completed" };
+}
+
+function hasContentResult(
+    result: unknown,
+): result is { content: readonly unknown[]; structuredContent?: unknown; isError?: boolean } {
+    return isObject(result) && Array.isArray(result.content);
 }
 
 function toCapabilityJson(value: unknown): CapabilityJsonValue | undefined {
