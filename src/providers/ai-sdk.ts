@@ -1,7 +1,4 @@
 import type { CallWarning, LanguageModel, LanguageModelUsage } from "ai";
-import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
-import type { CognitionId } from "../core/model.ts";
-import type { ProviderInvoker, ProviderRequest } from "./contract.ts";
 
 import {
     AISDKError,
@@ -24,6 +21,11 @@ import {
     ToolChoiceViolationError,
     TypeValidationError,
 } from "ai";
+
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
+import type { CognitionId } from "../core/model.ts";
+import type { ProviderInvoker, ProviderRequest } from "./contract.ts";
+
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
 import { CONTRACT_VERSION, MAX_PROVIDER_TIMEOUT_SECONDS, validateProviderResult } from "./contract.ts";
@@ -279,7 +281,10 @@ function validateTimeout(timeoutSeconds: number) {
         throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
 }
 
-function translateAiSdkFailure(error: unknown, signal?: AbortSignal): {
+function translateAiSdkFailure(
+    error: unknown,
+    signal?: AbortSignal,
+): {
     error: ProviderError;
     category: InferenceFailureCategory;
     statusCode?: number;
@@ -303,7 +308,9 @@ function translateAiSdkFailure(error: unknown, signal?: AbortSignal): {
         const status = error.statusCode;
         return {
             error: new ProviderError(
-                status === undefined ? "AI SDK provider API call failed" : `AI SDK provider API call failed (HTTP ${status})`,
+                status === undefined
+                    ? "AI SDK provider API call failed"
+                    : `AI SDK provider API call failed (HTTP ${status})`,
             ),
             category: "provider_api",
             ...(status === undefined ? {} : { statusCode: status }),
