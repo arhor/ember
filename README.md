@@ -25,6 +25,16 @@ node bin/ember.ts init \
 
 See the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md) for complete `run`, inspection, recovery, and provider examples.
 
+## Agent skills
+
+Ember keeps reusable Agent Skills under [`skills/`](skills/). To install the repository documentation workflow into local Codex and Claude Code project environments, run from the repository root:
+
+```sh
+npx skills add . --skill ember-documentation --agent codex claude-code
+```
+
+See [`skills/README.md`](skills/README.md) for details.
+
 ## Repository layout
 
 The adopted runtime is organized around explicit module boundaries rather than one flat source directory:
