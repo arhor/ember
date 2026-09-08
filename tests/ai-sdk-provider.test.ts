@@ -229,10 +229,7 @@ test("AI SDK lifecycle evidence should retain normalized diagnostics without raw
                 outputReasoningTokens: 2,
                 totalTokens: 12,
             },
-            warnings: [
-                { type: "unsupported", feature: "diagnostic-feature" },
-                { type: "other" },
-            ],
+            warnings: [{ type: "unsupported", feature: "diagnostic-feature" }, { type: "other" }],
         });
         const completed = evidence.entries[2];
         assert.equal(completed.kind, "inference_completed");
@@ -401,7 +398,12 @@ test("AI SDK already-aborted requests should be classified before model work beg
     });
     try {
         // When
-        const result = await runWithModel(fixture, model, { signal: controller.signal }, { inferenceEvidence: evidence });
+        const result = await runWithModel(
+            fixture,
+            model,
+            { signal: controller.signal },
+            { inferenceEvidence: evidence },
+        );
         // Then
         assert.equal(model.doGenerateCalls.length, 0);
         assert.match(result.providerFailure, /before invocation/);
