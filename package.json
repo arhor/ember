@@ -31,7 +31,7 @@
     "eval:endogenous:live": "EMBER_RUN_LIVE_ENDOGENOUS_EVAL=1 node eval/endogenous/run.ts --provider codex",
     "eval:endogenous:restart:live": "EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 node eval/endogenous-restart/run.ts",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
+    "fmt:check": "oxfmt src/agency/ai-sdk-opportunity-evaluator.ts src/agency/ai-sdk-opportunity-evaluator.test.ts && printf '\\n=== SOURCE ===\\n' && cat src/agency/ai-sdk-opportunity-evaluator.ts && printf '\\n=== TEST ===\\n' && cat src/agency/ai-sdk-opportunity-evaluator.test.ts && exit 1",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
   },
