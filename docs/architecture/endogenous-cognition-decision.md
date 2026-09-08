@@ -3,7 +3,7 @@ summary: "Current implementation and evaluation boundary for deciding whether to
 read_when:
   - "Implementing or reviewing issue #74's endogenous cognition decision path"
   - "Evaluating cognition, defer, or no-cognition outcomes from a topic-free opportunity"
-  - "Changing the Codex-backed endogenous decision evaluator or its deterministic scenario controls"
+  - "Changing a model-backed endogenous decision evaluator or its deterministic scenario controls"
 role: design
 discovery_status: current
 ---
@@ -134,6 +134,25 @@ rejected.
 Issue #75 adds repeated durable-silence, timeout, restart, legacy-state, and forged
 silence scenarios without changing this evaluator contract.
 
+## AI SDK structured evaluator
+
+Issue #198 adds `src/agency/ai-sdk-opportunity-evaluator.ts` as an in-process
+implementation of the same `CognitionOpportunityEvaluator` seam. It uses AI SDK
+`generateText` with `Output.object` and `jsonSchema`, including local schema validation,
+so the model returns the typed decision object directly instead of encoding control
+state in a prose/exact-token reply.
+
+Only representation mechanics move into AI SDK: contract version, decision enum,
+selected-ID string-list shape, and unsupported-field rejection. Projection membership,
+selected-ID uniqueness, grounding requirements, `no_cognition` emptiness,
+provenance/currentness, and durable adoption remain validated by
+`evaluateCognitionOpportunity`.
+
+The AI SDK evaluator receives only the already-bounded opportunity projection and uses
+`maxRetries: 0`. It does not receive the opportunity mechanism or a synthetic
+`current_input`. See [AI SDK Structured Control Boundary](ai-sdk-structured-control-boundary.md)
+for the adapter/error boundary and repository sweep.
+
 ## Codex-backed live evaluator
 
 `src/agency/codex-opportunity-evaluator.ts` provides an opt-in real-model evaluator
@@ -148,6 +167,11 @@ topic, concern name, or scenario-specific answer.
 The actual opportunity mechanism remains absent from the provider request. Existing
 `usedMeaningIds` becomes the evaluator's selected grounding IDs, and the core
 opportunity boundary applies its stricter outcome validation.
+
+The exact-token reply protocol here is an external-runtime compatibility mechanism,
+not the shared opportunity contract. Issue #198 deliberately leaves this Codex path
+available alongside the AI SDK structured implementation rather than making
+`ProviderResult` generic or leaking AI SDK schema types into it.
 
 ### Reproduction
 
