@@ -151,6 +151,31 @@ test("AI SDK evaluator should leave projected meaning validity to the Ember oppo
     );
 });
 
+test("AI SDK evaluator should leave duplicate grounding policy to the Ember opportunity boundary", async () => {
+    // Given
+    const state = fixture();
+    const model = new MockLanguageModelV3({
+        doGenerate: async () =>
+            generated({
+                contractVersion: 1,
+                decision: "cognition",
+                selectedMeaningIds: [state.commitment, state.commitment],
+            }),
+    });
+
+    // When / Then
+    await assert.rejects(
+        evaluateCognitionOpportunity(state.state, {
+            runtimeId: state.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            mechanism: "idle_opportunity",
+            evaluator: createAiSdkOpportunityEvaluator(model),
+        }),
+        (error) => error instanceof ValidationError && /must not contain duplicates/.test(error.message),
+    );
+});
+
 test("AI SDK evaluator should not retry a retryable provider failure implicitly", async () => {
     // Given
     const state = fixture();
@@ -178,7 +203,14 @@ test("AI SDK evaluator should not retry a retryable provider failure implicitly"
             mechanism: "external_timing",
             evaluator: createAiSdkOpportunityEvaluator(model),
         }),
-        (error) => error instanceof ProviderError && /API call failed \(HTTP 503\)/.test(error.message),
+        (error) => {
+            assert.ok(error instanceof ProviderError);
+            assert.match(error.message, /API call failed \(HTTP 503\)/);
+            assert.equal(error.message.includes("provider detail"), false);
+            assert.equal(error.message.includes("provider.invalid"), false);
+            assert.equal(error.message.includes("secret response"), false);
+            return true;
+        },
     );
     assert.equal(calls, 1);
 });
