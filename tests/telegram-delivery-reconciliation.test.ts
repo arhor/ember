@@ -11,7 +11,8 @@ import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
 import {
-    TelegramBotApi,
+    createTelegramApi,
+    deliverTelegramMessage,
     processTelegramUpdate,
     reconcileTelegramDeliveries,
     runTelegramPolling,
@@ -48,9 +49,17 @@ function update(updateId: number): TelegramUpdate {
             message_id: updateId + 1000,
             date: 1_788_608_000,
             chat: { id: CHAT_ID, type: "private" },
-            from: { id: CHAT_ID, is_bot: false, username: "max" },
+            from: { id: CHAT_ID, is_bot: false, first_name: "Max", username: "max" },
             text: "hello",
         },
+    };
+}
+
+function sentMessage(messageId: number) {
+    return {
+        message_id: messageId,
+        date: 1_788_608_000,
+        chat: { id: CHAT_ID, type: "private" },
     };
 }
 
@@ -75,11 +84,23 @@ function provider(calls: { value: number }): ProviderInvoker {
     };
 }
 
+function readyApi(overrides: Record<string, unknown> = {}) {
+    return {
+        getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+        getWebhookInfo: async () => ({ url: "", pending_update_count: 0 }),
+        getUpdates: async () => [],
+        sendMessage: async () => sentMessage(9999),
+        ...overrides,
+    } as Parameters<typeof runTelegramPolling>[1];
+}
+
 test("Telegram flood control exposes retry_after as a definite retryable delivery failure", async () => {
-    const api = new TelegramBotApi(TOKEN, {
-        baseUrl: "https://telegram.example",
-        fetch_: async () =>
-            new Response(
+    let requests = 0;
+    const api = createTelegramApi(TOKEN, {
+        apiRoot: "https://telegram.example",
+        fetch: async () => {
+            requests += 1;
+            return new Response(
                 JSON.stringify({
                     ok: false,
                     error_code: 429,
@@ -87,16 +108,18 @@ test("Telegram flood control exposes retry_after as a definite retryable deliver
                     parameters: { retry_after: 7 },
                 }),
                 { status: 429, headers: { "content-type": "application/json" } },
-            ),
+            );
+        },
     });
 
-    await assert.rejects(api.sendMessage(CHAT_ID, "hello"), (error: unknown) => {
+    await assert.rejects(deliverTelegramMessage(api, CHAT_ID, "hello"), (error: unknown) => {
         assert.ok(error instanceof SurfaceDeliveryFailure);
         assert.equal(error.outcome, "failed");
         assert.equal(error.retryable, true);
         assert.equal(error.retryAfterSeconds, 7);
         return true;
     });
+    assert.equal(requests, 1);
 });
 
 test("durable Telegram cognition survives definite outbound failure and can acknowledge the inbound update", async () => {
@@ -115,7 +138,7 @@ test("durable Telegram cognition survives definite outbound failure and can ackn
                         retryAfterSeconds: 30,
                     });
                 },
-            } as Pick<TelegramBotApi, "sendMessage">,
+            } as Parameters<typeof processTelegramUpdate>[1],
             update(70),
             { provider: provider(providerCalls) },
         );
@@ -145,11 +168,7 @@ test("long polling advances update offset after durable cognition even when repl
         let polls = 0;
         let sends = 0;
         const providerCalls = { value: 0 };
-        const api = {
-            verifyLongPollingReady: async () => ({
-                bot: { id: 1, is_bot: true },
-                webhook: { url: "", pending_update_count: 0 },
-            }),
+        const api = readyApi({
             getUpdates: async ({ offset }: { offset?: number }) => {
                 polls += 1;
                 if (polls === 1) {
@@ -167,7 +186,7 @@ test("long polling advances update offset after durable cognition even when repl
                     retryAfterSeconds: 300,
                 });
             },
-        } as Pick<TelegramBotApi, "getUpdates" | "sendMessage" | "verifyLongPollingReady">;
+        });
 
         await assert.rejects(
             runTelegramPolling(f.config, api, { provider: provider(providerCalls) }),
@@ -179,6 +198,54 @@ test("long polling advances update offset after durable cognition even when repl
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         assert.equal(ledger.inbound_occurrences[0]?.receive_count, 1);
         assert.equal(ledger.deliveries[0]?.attempts.length, 1);
+    } finally {
+        await f.close();
+    }
+});
+
+test("reconciliation runs before every idle poll", async () => {
+    const f = await fixture();
+    try {
+        const providerCalls = { value: 0 };
+        await processTelegramUpdate(
+            f.config,
+            {
+                sendMessage: async () => {
+                    throw new SurfaceDeliveryFailure("flood control", {
+                        outcome: "failed",
+                        retryable: true,
+                        retryAfterSeconds: 0,
+                    });
+                },
+            } as Parameters<typeof processTelegramUpdate>[1],
+            update(85),
+            { provider: provider(providerCalls) },
+        );
+
+        let polls = 0;
+        let reconciliationSends = 0;
+        const api = readyApi({
+            getUpdates: async () => {
+                polls += 1;
+                if (polls === 1) return [];
+                throw new Error("second-idle-poll-observed");
+            },
+            sendMessage: async () => {
+                reconciliationSends += 1;
+                if (reconciliationSends === 1)
+                    throw new SurfaceDeliveryFailure("still rate limited", {
+                        outcome: "failed",
+                        retryable: true,
+                        retryAfterSeconds: 0,
+                    });
+                return sentMessage(8500);
+            },
+        });
+
+        await assert.rejects(runTelegramPolling(f.config, api), /second-idle-poll-observed/);
+        assert.equal(polls, 2);
+        assert.equal(reconciliationSends, 2);
+        assert.equal(providerCalls.value, 1);
     } finally {
         await f.close();
     }
@@ -198,7 +265,7 @@ test("uncertain Telegram send remains blocked across reconciliation instead of b
                         outcome: "uncertain",
                     });
                 },
-            } as Pick<TelegramBotApi, "sendMessage">,
+            } as Parameters<typeof processTelegramUpdate>[1],
             update(90),
             { provider: provider(providerCalls) },
         );
@@ -210,9 +277,9 @@ test("uncertain Telegram send remains blocked across reconciliation instead of b
         const results = await reconcileTelegramDeliveries(f.config, {
             sendMessage: async () => {
                 reconciliationSends += 1;
-                return { message_id: 9999, chat: { id: CHAT_ID, type: "private" } };
+                return sentMessage(9999);
             },
-        });
+        } as Parameters<typeof reconcileTelegramDeliveries>[1]);
 
         assert.equal(initialSends, 1);
         assert.equal(reconciliationSends, 0);
@@ -241,7 +308,7 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
                         retryAfterSeconds: 10,
                     });
                 },
-            } as Pick<TelegramBotApi, "sendMessage">,
+            } as Parameters<typeof processTelegramUpdate>[1],
             update(100),
             { provider: provider(providerCalls) },
         );
@@ -253,12 +320,12 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
 
         let retrySends = 0;
         const api = {
-            sendMessage: async (_chatId: number, text: string) => {
+            sendMessage: async (params: unknown) => {
                 retrySends += 1;
-                assert.equal(text, "telegram reply\n");
-                return { message_id: 10001, chat: { id: CHAT_ID, type: "private" } };
+                assert.deepEqual(params, { chat_id: CHAT_ID, text: "telegram reply\n" });
+                return sentMessage(10001);
             },
-        };
+        } as Parameters<typeof reconcileTelegramDeliveries>[1];
         const early = await reconcileTelegramDeliveries(f.config, api, { observedAt: beforeDue });
         assert.equal(early[0]?.status, "retry_later");
         assert.equal(retrySends, 0);
