@@ -14,6 +14,7 @@ import {
     jsonSchema,
     MissingToolResultsError,
     NoContentGeneratedError,
+    NoObjectGeneratedError,
     NoOutputGeneratedError,
     NoSuchToolError,
     Output,
@@ -301,7 +302,9 @@ function translateAiSdkFailure(error: unknown, signal?: AbortSignal): {
     if (APICallError.isInstance(error)) {
         const status = error.statusCode;
         return {
-            error: new ProviderError(status === undefined ? "AI SDK provider API call failed" : `AI SDK provider API call failed (HTTP ${status})`),
+            error: new ProviderError(
+                status === undefined ? "AI SDK provider API call failed" : `AI SDK provider API call failed (HTTP ${status})`,
+            ),
             category: "provider_api",
             ...(status === undefined ? {} : { statusCode: status }),
         };
@@ -319,6 +322,7 @@ function translateAiSdkFailure(error: unknown, signal?: AbortSignal): {
 
     if (
         NoOutputGeneratedError.isInstance(error) ||
+        NoObjectGeneratedError.isInstance(error) ||
         NoContentGeneratedError.isInstance(error) ||
         TypeValidationError.isInstance(error) ||
         JSONParseError.isInstance(error) ||
