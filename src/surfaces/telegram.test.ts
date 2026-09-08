@@ -251,7 +251,7 @@ test("polling advances acknowledgement offset only after durable processing", as
 test("processing failure before durable handoff leaves an update unacknowledged", async () => {
     const f = await fixture();
     try {
-        await rm(f.statePath);
+        const config = { ...f.config, principal: "intruder" };
         let polls = 0;
         const api = readyApi({
             getUpdates: async (params: { offset?: number }) => {
@@ -261,7 +261,7 @@ test("processing failure before durable handoff leaves an update unacknowledged"
             },
         });
 
-        await assert.rejects(runTelegramPolling(f.config, api), /continuity store is unavailable/);
+        await assert.rejects(runTelegramPolling(config, api), /principal/);
         assert.equal(polls, 1);
     } finally {
         await f.close();
