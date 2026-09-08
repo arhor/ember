@@ -78,7 +78,7 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
                     capability.name,
                     tool({
                         description: capability.description,
-                        inputSchema: jsonSchema(capability.inputSchema),
+                        inputSchema: jsonSchema(capability.inputSchema as Parameters<typeof jsonSchema>[0]),
                         execute: (input, { abortSignal }) => firewall.execute(capability.name, input, { signal: abortSignal }),
                     }),
                 ]),
