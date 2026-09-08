@@ -1,6 +1,16 @@
 import type { LanguageModel } from "ai";
 
-import { AISDKError, APICallError, generateText, jsonSchema, NoObjectGeneratedError, Output, RetryError } from "ai";
+import {
+    AISDKError,
+    APICallError,
+    generateText,
+    JSONParseError,
+    jsonSchema,
+    NoObjectGeneratedError,
+    Output,
+    RetryError,
+    TypeValidationError,
+} from "ai";
 
 import type { CognitionOpportunityDecision, MeaningId } from "../core/model.ts";
 import type {
@@ -11,6 +21,7 @@ import type {
 
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
+import { exactKeys, isObject } from "../util.ts";
 import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
 
 interface AiSdkOpportunityOutput {
@@ -28,19 +39,48 @@ export const AI_SDK_OPPORTUNITY_INSTRUCTION = [
     "For no_cognition, select no meaning IDs.",
 ].join(" ");
 
-const opportunityOutputSchema = jsonSchema<AiSdkOpportunityOutput>({
-    type: "object",
-    additionalProperties: false,
-    properties: {
-        contractVersion: { type: "integer", const: COGNITION_OPPORTUNITY_CONTRACT_VERSION },
-        decision: { type: "string", enum: ["cognition", "defer", "no_cognition"] },
-        selectedMeaningIds: {
-            type: "array",
-            items: { type: "string" },
+const OPPORTUNITY_DECISIONS = ["cognition", "defer", "no_cognition"] as const;
+const OPPORTUNITY_OUTPUT_KEYS = ["contractVersion", "decision", "selectedMeaningIds"] as const;
+
+const opportunityOutputSchema = jsonSchema<AiSdkOpportunityOutput>(
+    {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+            contractVersion: { type: "integer", const: COGNITION_OPPORTUNITY_CONTRACT_VERSION },
+            decision: { type: "string", enum: OPPORTUNITY_DECISIONS },
+            selectedMeaningIds: {
+                type: "array",
+                items: { type: "string" },
+            },
+        },
+        required: OPPORTUNITY_OUTPUT_KEYS,
+    },
+    {
+        validate(value) {
+            if (
+                !isObject(value) ||
+                !exactKeys(value, OPPORTUNITY_OUTPUT_KEYS) ||
+                value.contractVersion !== COGNITION_OPPORTUNITY_CONTRACT_VERSION ||
+                !isOpportunityDecision(value.decision) ||
+                !isStringList(value.selectedMeaningIds)
+            ) {
+                return {
+                    success: false,
+                    error: new Error("AI SDK opportunity output does not match its structured schema"),
+                };
+            }
+            return {
+                success: true,
+                value: {
+                    contractVersion: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
+                    decision: value.decision,
+                    selectedMeaningIds: [...value.selectedMeaningIds],
+                },
+            };
         },
     },
-    required: ["contractVersion", "decision", "selectedMeaningIds"],
-});
+);
 
 const opportunityOutput = Output.object({
     schema: opportunityOutputSchema,
@@ -86,8 +126,8 @@ export async function evaluateCognitionOpportunityWithAiSdk(
         return {
             contractVersion: result.output.contractVersion,
             decision: result.output.decision,
-            // JSON Schema can prove string shape only. The Ember opportunity boundary
-            // re-validates projection membership before these IDs acquire semantic force.
+            // Structured validation proves only representation shape. The Ember
+            // opportunity boundary re-validates semantic projection membership.
             selectedMeaningIds: [...result.output.selectedMeaningIds] as MeaningId[],
         };
     } catch (error) {
@@ -118,7 +158,11 @@ function translateAiSdkOpportunityFailure(error: unknown, signal?: AbortSignal):
         return cancellationError("AI SDK opportunity evaluation cancellation requested during invocation");
     }
 
-    if (NoObjectGeneratedError.isInstance(error)) {
+    if (
+        NoObjectGeneratedError.isInstance(error) ||
+        TypeValidationError.isInstance(error) ||
+        JSONParseError.isInstance(error)
+    ) {
         return new ValidationError("AI SDK opportunity evaluator produced invalid structured output");
     }
 
@@ -184,6 +228,14 @@ function isCancellationFailure(error: unknown, signal?: AbortSignal): boolean {
         return isCancellationFailure(error.cause, signal);
     }
     return false;
+}
+
+function isOpportunityDecision(value: unknown): value is CognitionOpportunityDecision {
+    return typeof value === "string" && OPPORTUNITY_DECISIONS.some((decision) => decision === value);
+}
+
+function isStringList(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
 function errorMessage(error: unknown) {
