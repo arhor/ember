@@ -29,13 +29,15 @@ on:
       - ".github/workflows/continuity-vertical-slice.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
@@ -46,17 +48,15 @@ jobs:
         run: npm ci
       - name: Run static and repository checks
         run: npm run check
-      - name: Capture formatted capability files
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: issue-189-formatted
-          path: |
-            src/capabilities/execution.test.ts
-            src/capabilities/execution.ts
-            src/capabilities/local-lookup.ts
-            src/providers/ai-sdk.ts
-            tests/ai-sdk-capabilities.test.ts
+      - name: Commit pinned formatter output
+        run: |
+          if ! git diff --quiet -- src/capabilities/execution.test.ts src/capabilities/execution.ts src/capabilities/local-lookup.ts src/providers/ai-sdk.ts tests/ai-sdk-capabilities.test.ts; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/capabilities/execution.test.ts src/capabilities/execution.ts src/capabilities/local-lookup.ts src/providers/ai-sdk.ts tests/ai-sdk-capabilities.test.ts
+            git commit -m "Format capability execution seam"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
       - name: Run complete acceptance suite
         run: npm test
       - name: Run deterministic endogenous selectivity evaluation
