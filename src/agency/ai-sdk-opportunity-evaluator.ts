@@ -45,7 +45,6 @@ const opportunityOutputSchema = jsonSchema<AiSdkOpportunityOutput>({
         selectedMeaningIds: {
             type: "array",
             items: { type: "string" },
-            uniqueItems: true,
         },
     },
     required: ["contractVersion", "decision", "selectedMeaningIds"],
