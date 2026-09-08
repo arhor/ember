@@ -32,7 +32,7 @@ test("restart sends a retained delivery intent that never crossed the external s
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "prepare one durable reply",
-                command: "fixture-provider",
+                providerLabel: "fixture-provider",
                 timeoutSeconds: 1,
                 provider: async () => {
                     providerCalls += 1;

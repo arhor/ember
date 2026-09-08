@@ -266,11 +266,11 @@ export async function runLongitudinalScenario(
                     principal: scenario.ember.principal,
                     scope: episode.scope,
                     text: episode.input,
-                    command: "longitudinal-provider",
+                    providerLabel: "longitudinal-provider",
                     timeoutSeconds: 300,
                     purpose: episode.purpose ?? "ordinary",
                     explainIds: (episode.explain ?? []).map((alias) => requireAlias(aliases, alias)),
-                    provider: async (_command, _arguments, request) => {
+                    provider: async (request) => {
                         observedRequest = request;
                         const output = await provider({
                             scenarioId: scenario.id,

@@ -56,7 +56,7 @@ function telegramUpdate(updateId: number, text = "hello from Telegram"): Telegra
 }
 
 function captureProvider(requests: ProviderRequest[]): ProviderInvoker {
-    return async (_command, _args, request) => {
+    return async (request) => {
         requests.push(request);
         return { contractVersion: 1, reply: "accepted", usedMeaningIds: [] };
     };
@@ -108,7 +108,7 @@ async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
             principal: PRINCIPAL,
             scope: SHARED_SCOPE,
             text: "hello from CLI",
-            command: "fixture-provider",
+            providerLabel: "fixture-provider",
             timeoutSeconds: 1,
             provider,
             surfaceId: "local_cli",

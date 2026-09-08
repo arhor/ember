@@ -81,7 +81,7 @@ async function createRetryableFailure(
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "send this once",
-            command: "fixture-provider",
+            providerLabel: "fixture-provider",
             timeoutSeconds: 1,
             provider: provider(providerCalls),
             surfaceId: "messaging:test",

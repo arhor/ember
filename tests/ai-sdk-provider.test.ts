@@ -57,7 +57,7 @@ async function runWithModel(fixture, model, options = {}) {
         principal: PRINCIPAL,
         scope: SCOPE,
         text: "current request",
-        command: "ai-sdk",
+        providerLabel: "ai-sdk",
         timeoutSeconds: 1,
         output: () => {},
         provider: createAiSdkProvider(model),

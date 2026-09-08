@@ -1,7 +1,7 @@
 import { basename } from "node:path";
 
 import type { PipedProcessSpawn } from "../runtime/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { NodePipedProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
@@ -20,6 +20,30 @@ export interface InvokeProviderOptions extends ProviderInvocationOptions {
     spawnImpl?: SpawnImpl;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
+}
+
+export interface ProcessProviderConfig {
+    command: string;
+    arguments_?: string[];
+    spawnImpl?: SpawnImpl;
+    terminationGraceMs?: number;
+    finalTerminationMs?: number;
+}
+
+export function createProcessProvider({
+    command,
+    arguments_: args = [],
+    spawnImpl,
+    terminationGraceMs,
+    finalTerminationMs,
+}: ProcessProviderConfig): ProviderInvoker {
+    return (request, options) =>
+        invokeProvider(command, args, request, {
+            ...options,
+            ...(spawnImpl === undefined ? {} : { spawnImpl }),
+            ...(terminationGraceMs === undefined ? {} : { terminationGraceMs }),
+            ...(finalTerminationMs === undefined ? {} : { finalTerminationMs }),
+        });
 }
 
 export async function invokeProvider(

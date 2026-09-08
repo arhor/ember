@@ -110,8 +110,8 @@ if (phase === "prepare") {
                       command: codexCommand,
                       arguments_: codexArguments,
                       timeoutSeconds: Number(timeoutRaw),
-                      provider: async (command, arguments_, request, options) => {
-                          const providerResult = await invokeCodexProvider(command, arguments_, request, {
+                      provider: async (request, options) => {
+                          const providerResult = await invokeCodexProvider(codexCommand, codexArguments, request, {
                               ...options,
                               thread: { mode: "ephemeral" },
                           });

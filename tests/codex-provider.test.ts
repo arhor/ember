@@ -442,7 +442,7 @@ describe("runCognition", () => {
         await store.create(state);
         const lease = await store.acquireWriteLease();
         const loaded = await store.load();
-        const provider = async (_command, _arguments, request) => ({
+        const provider = async (request) => ({
             contractVersion: 1,
             reply: "transient reply",
             usedMeaningIds: request.projection.selection.meaning_ids,
@@ -455,7 +455,7 @@ describe("runCognition", () => {
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "hello",
-            command: "codex",
+            providerLabel: "codex",
             timeoutSeconds: 1,
             provider,
             output: () => {},
@@ -497,7 +497,7 @@ describe("runCognition", () => {
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "cancel this turn",
-            command: "codex",
+            providerLabel: "codex",
             timeoutSeconds: 1,
             provider,
             output: () => {},

@@ -10,7 +10,7 @@ import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { validateProviderResult } from "../src/providers/contract.ts";
-import { invokeProvider } from "../src/providers/process.ts";
+import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/providers/process.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { cloneState } from "../src/util.ts";
 import {
@@ -266,8 +266,11 @@ test("runtime should preserve semantic state and inspection when provider fails"
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "fail safely",
-            command: process.execPath,
-            arguments_: [PROVIDER, "--mode", "nonzero"],
+            providerLabel: process.execPath,
+            provider: createTestProcessProvider({
+                command: process.execPath,
+                arguments_: [PROVIDER, "--mode", "nonzero"],
+            }),
             timeoutSeconds: 1,
             output: () => {},
         }),
@@ -294,8 +297,8 @@ test("runtime should preserve pending delivery when output fails after expressio
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "render",
-                command: process.execPath,
-                arguments_: [PROVIDER],
+                providerLabel: process.execPath,
+                provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
                 timeoutSeconds: 1,
                 output: () => {
                     throw new Error("display failed");
@@ -325,8 +328,8 @@ test("runtime should preserve pending delivery when stdout fails asynchronously 
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "render",
-                command: process.execPath,
-                arguments_: [PROVIDER],
+                providerLabel: process.execPath,
+                provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
                 timeoutSeconds: 1,
                 output,
             }),
@@ -355,8 +358,8 @@ test("runtime should commit displayed only when stdout write callback completes"
         principal: PRINCIPAL,
         scope: SCOPE,
         text: "render",
-        command: process.execPath,
-        arguments_: [PROVIDER],
+        providerLabel: process.execPath,
+        provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
         timeoutSeconds: 1,
         output,
         hooks: {
@@ -380,8 +383,8 @@ test("runtime should keep delivery unknown when crash follows display before sta
                 principal: PRINCIPAL,
                 scope: SCOPE,
                 text: "display",
-                command: process.execPath,
-                arguments_: [PROVIDER],
+                providerLabel: process.execPath,
+                provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
                 timeoutSeconds: 1,
                 output: (text) => {
                     output += text;
@@ -409,8 +412,8 @@ test("state validator should reject orphan expression when second descriptor tar
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "one",
-            command: process.execPath,
-            arguments_: [PROVIDER],
+            providerLabel: process.execPath,
+            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         }),
@@ -431,8 +434,8 @@ test("state validator should reject cognition when scope differs from owning run
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "scope",
-            command: process.execPath,
-            arguments_: [PROVIDER],
+            providerLabel: process.execPath,
+            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         });
@@ -451,8 +454,8 @@ test("state validator should reject provider termination when status contradicts
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "one",
-            command: process.execPath,
-            arguments_: [PROVIDER],
+            providerLabel: process.execPath,
+            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         });
@@ -488,8 +491,8 @@ test("state validator should accept cancellation when invocation ends before chi
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "one",
-            command: process.execPath,
-            arguments_: [PROVIDER],
+            providerLabel: process.execPath,
+            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         }),

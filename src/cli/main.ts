@@ -18,9 +18,10 @@ import {
     withholdDetail,
 } from "../core/semantics.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { invokeCodexProvider } from "../providers/codex.ts";
+import { createCodexProvider } from "../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
-import { invokeCursorProvider } from "../providers/cursor.ts";
+import { createCursorProvider } from "../providers/cursor.ts";
+import { createProcessProvider, providerLabel } from "../providers/process.ts";
 import {
     InteractionLedgerStore,
     interactionLedgerInspectionView,
@@ -170,16 +171,9 @@ async function runInteractive(args: Extract<CliArgs, { command: "run" }>, io: Cl
                             principal: args.principal,
                             scope: args.scope,
                             text: line,
-                            command: args.providerCommand,
-                            arguments_: args.providerArgs,
+                            ...configuredCognitionProvider(args),
                             timeoutSeconds: args.providerTimeoutSeconds,
                             signal,
-                            provider:
-                                args.providerKind === "codex"
-                                    ? invokeCodexProvider
-                                    : args.providerKind === "cursor"
-                                      ? invokeCursorProvider
-                                      : undefined,
                             surfaceId: "local_cli",
                             principalProvenance: "explicit_local_argument",
                             deliver: io.output,
@@ -256,22 +250,28 @@ async function ask(
         principal: args.principal,
         scope: args.scope,
         text: parts.slice(3).join(" "),
-        command: args.providerCommand,
-        arguments_: args.providerArgs,
+        ...configuredCognitionProvider(args),
         timeoutSeconds: args.providerTimeoutSeconds,
         signal,
-        provider:
-            args.providerKind === "codex"
-                ? invokeCodexProvider
-                : args.providerKind === "cursor"
-                  ? invokeCursorProvider
-                  : undefined,
         purpose: "explain",
         explainIds: ids,
         surfaceId: "local_cli",
         principalProvenance: "explicit_local_argument",
         deliver: output,
     });
+}
+
+function configuredCognitionProvider(args: Extract<CliArgs, { command: "run" }>) {
+    const config = { command: args.providerCommand, arguments_: args.providerArgs };
+    return {
+        providerLabel: providerLabel(args.providerCommand),
+        provider:
+            args.providerKind === "codex"
+                ? createCodexProvider(config)
+                : args.providerKind === "cursor"
+                  ? createCursorProvider(config)
+                  : createProcessProvider(config),
+    };
 }
 
 async function loadForPrincipal(store: StateStore, principal: string) {

@@ -30,7 +30,7 @@ test("Codex evaluator should use fixed decision framing rather than wake-up topi
     // Given
     const state = fixture();
     let captured: ProviderRequest | null = null;
-    const provider: ProviderInvoker = async (_command, _args, request) => {
+    const provider: ProviderInvoker = async (request) => {
         captured = request;
         return { contractVersion: 1, reply: "cognition", usedMeaningIds: [state.commitment] };
     };

@@ -41,7 +41,7 @@ const INSTRUCTIONS = [
 ].join(" ");
 
 export function createAiSdkProvider(model: LanguageModel): ProviderInvoker {
-    return async (_command, _arguments, request, { timeoutSeconds, signal }) => {
+    return async (request, { timeoutSeconds, signal }) => {
         validateTimeout(timeoutSeconds);
         if (signal?.aborted) {
             throw new ProviderError("provider cancellation requested before invocation", {

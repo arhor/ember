@@ -126,9 +126,11 @@ The implementation confirms the main #178/#180 assumptions:
 
 It also turns two research predictions into concrete evidence.
 
-First, the current `ProviderInvoker` function still carries `command` and `arguments_`
-because all previous production backends were external processes. The in-process AI
-SDK adapter has no truthful use for those parameters and ignores them.
+First, the in-process adapter proved that `command` and `arguments_` were transport
+artifacts rather than shared cognition semantics. Issue #188 follows that evidence by
+narrowing `ProviderInvoker` to `(request, options) => Promise<ProviderResult>`; AI SDK
+invocation no longer accepts or ignores synthetic process placeholders, while Codex
+and Cursor close over launch configuration in adapter factories.
 
 Second, `providerTermination` is intentionally process-shaped. The direct adapter can
 reuse the existing high-level `timed_out` and `cancellation_requested` cognition
