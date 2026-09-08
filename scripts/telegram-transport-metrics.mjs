@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { mkdtemp, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { spawnSync } from "node:child_process";
 
 const command = process.argv[2];
 
@@ -15,7 +15,8 @@ if (command === "probe") {
     const baseline = resolve(requiredOption("--baseline"));
     const candidate = resolve(requiredOption("--candidate"));
     const samples = Number(option("--samples") ?? "5");
-    if (!Number.isSafeInteger(samples) || samples < 1 || samples > 20) throw new Error("--samples must be an integer in [1, 20]");
+    if (!Number.isSafeInteger(samples) || samples < 1 || samples > 20)
+        throw new Error("--samples must be an integer in [1, 20]");
     const result = compareSamples(runSamples(baseline, samples), runSamples(candidate, samples));
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 } else {
@@ -140,8 +141,12 @@ function runSamples(repo, count) {
 
 function compareSamples(baselineSamples, candidateSamples) {
     const fields = Object.keys(baselineSamples[0]);
-    const baseline = Object.fromEntries(fields.map((field) => [field, median(baselineSamples.map((sample) => sample[field]))]));
-    const candidate = Object.fromEntries(fields.map((field) => [field, median(candidateSamples.map((sample) => sample[field]))]));
+    const baseline = Object.fromEntries(
+        fields.map((field) => [field, median(baselineSamples.map((sample) => sample[field]))]),
+    );
+    const candidate = Object.fromEntries(
+        fields.map((field) => [field, median(candidateSamples.map((sample) => sample[field]))]),
+    );
     const delta = Object.fromEntries(
         fields.map((field) => {
             const absolute = candidate[field] - baseline[field];

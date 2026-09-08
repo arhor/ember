@@ -28,14 +28,14 @@ replay, delivery reconciliation, writer-lease ownership, and shutdown admission.
 
 ## Results
 
-| Metric | Baseline | Candidate | Delta |
-| --- | ---: | ---: | ---: |
-| Total installed `node_modules` | 128,701,115 B (122.74 MiB) | 129,982,837 B (123.96 MiB) | +1,281,722 B (+1.00%) |
-| `node-telegram-bot-api` installed footprint | 0 B | 1,281,349 B (1.22 MiB) | +1,281,349 B |
-| Idle worker RSS | 106,090,496 B (101.18 MiB) | 106,729,472 B (101.79 MiB) | +638,976 B (+0.60%) |
-| Long-poll wait RSS | 106,020,864 B (101.11 MiB) | 106,729,472 B (101.79 MiB) | +708,608 B (+0.67%) |
-| Idle shutdown latency | 0.273 ms | 0.272 ms | -0.001 ms (-0.50%) |
-| Admitted-handler shutdown latency | 2.889 ms | 324.825 ms | +321.936 ms |
+| Metric                                      |                   Baseline |                  Candidate |                 Delta |
+| ------------------------------------------- | -------------------------: | -------------------------: | --------------------: |
+| Total installed `node_modules`              | 128,701,115 B (122.74 MiB) | 129,982,837 B (123.96 MiB) | +1,281,722 B (+1.00%) |
+| `node-telegram-bot-api` installed footprint |                        0 B |     1,281,349 B (1.22 MiB) |          +1,281,349 B |
+| Idle worker RSS                             | 106,090,496 B (101.18 MiB) | 106,729,472 B (101.79 MiB) |   +638,976 B (+0.60%) |
+| Long-poll wait RSS                          | 106,020,864 B (101.11 MiB) | 106,729,472 B (101.79 MiB) |   +708,608 B (+0.67%) |
+| Idle shutdown latency                       |                   0.273 ms |                   0.272 ms |    -0.001 ms (-0.50%) |
+| Admitted-handler shutdown latency           |                   2.889 ms |                 324.825 ms |           +321.936 ms |
 
 The dependency and install-footprint delta is deterministic for these lockfiles. RSS
 and latency are micro-benchmark evidence and naturally contain host/runtime noise; use
