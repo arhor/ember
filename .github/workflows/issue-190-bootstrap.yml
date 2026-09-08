@@ -11,25 +11,33 @@ on:
       - ".github/workflows/issue-190-bootstrap.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate-lock-and-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 26.8.1
       - name: Generate the lockfile for the pinned MCP dependency
         run: npm install --package-lock-only
-      - name: Preserve generated lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: issue-190-package-lock
-          path: package-lock.json
       - name: Install generated locked dependency set
         run: npm ci
+      - name: Format issue changes
+        run: npm run fmt -- docs/architecture/mcp-capability-source.md src/capabilities/mcp-ai-sdk.ts tests/mcp-capabilities.test.ts
+      - name: Commit generated lockfile and formatting
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package-lock.json docs/architecture/mcp-capability-source.md src/capabilities/mcp-ai-sdk.ts tests/mcp-capabilities.test.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Lock and format MCP capability source"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
       - name: Run repository checks
         run: npm run check
       - name: Run complete acceptance suite
