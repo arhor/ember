@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { ValidationError } from "../src/core/errors.ts";
 import {
-    TelegramBotApi,
+    createTelegramApi,
+    deleteTelegramWebhook,
     loadTelegramSurfaceConfig,
     readTelegramBotToken,
     renderTelegramSurfaceUnit,
     runTelegramPolling,
+    verifyTelegramLongPollingReady,
 } from "../src/surfaces/telegram.ts";
 
 interface TelegramCliArgs {
@@ -23,16 +25,16 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
         }
 
         const token = await readTelegramBotToken(config.token_file);
-        const api = new TelegramBotApi(token);
+        const api = createTelegramApi(token);
         if (args.command === "check") {
-            const { bot, webhook } = await api.verifyLongPollingReady();
+            const { bot, webhook } = await verifyTelegramLongPollingReady(api);
             process.stdout.write(
                 `Telegram bot ${bot.username ? `@${bot.username}` : bot.id} is ready for long polling; pending updates ${webhook.pending_update_count}\n`,
             );
             return 0;
         }
         if (args.command === "delete-webhook") {
-            await api.deleteWebhook();
+            await deleteTelegramWebhook(api);
             process.stdout.write("Telegram webhook removed without dropping pending updates\n");
             return 0;
         }
