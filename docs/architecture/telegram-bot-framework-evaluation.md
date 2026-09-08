@@ -45,12 +45,12 @@ The practical replacement test is simple: replacing the Telegram library later m
 
 Telegram Bot API **10.3** was released on 2026-08-24. The comparison used stable package releases available on 2026-09-08.
 
-| Candidate | Stable version evaluated | Bot API freshness | Runtime/package shape | Adoption snapshot | Result |
-| --- | --- | --- | --- | --- | --- |
-| `node-telegram-bot-api` | 2.1.0, 2026-08-24 | Bot API 10.3 | Native ESM plus CJS exports, Node >=18, **0 runtime dependencies** | Established project, about 9.2k GitHub stars and 160k+ weekly package downloads; the from-scratch v2 line itself is only weeks old | **Winner** |
-| `grammy` | 1.46.0 | Current generated `@grammyjs/types` 5.0.0 | Node/Deno package, 4 runtime dependencies | About 3.7k GitHub stars, 5M+ weekly downloads, 800+ dependents | **Runner-up** |
-| `puregram` | 3.10.0 | Pins `@puregram/api` 10.3.3 | Native ESM, Node >=22, 3 runtime dependencies | About 200 GitHub stars, under 1k weekly downloads | Viable API client, weaker overall fit |
-| `telegraf` | 4.16.3 | Released package advertises Bot API 7.1 | CommonJS-oriented package, 8 runtime dependencies | About 9.2k GitHub stars and about 500k weekly downloads | **Reject** |
+| Candidate               | Stable version evaluated | Bot API freshness                         | Runtime/package shape                                              | Adoption snapshot                                                                                                                  | Result                                |
+| ----------------------- | ------------------------ | ----------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `node-telegram-bot-api` | 2.1.0, 2026-08-24        | Bot API 10.3                              | Native ESM plus CJS exports, Node >=18, **0 runtime dependencies** | Established project, about 9.2k GitHub stars and 160k+ weekly package downloads; the from-scratch v2 line itself is only weeks old | **Winner**                            |
+| `grammy`                | 1.46.0                   | Current generated `@grammyjs/types` 5.0.0 | Node/Deno package, 4 runtime dependencies                          | About 3.7k GitHub stars, 5M+ weekly downloads, 800+ dependents                                                                     | **Runner-up**                         |
+| `puregram`              | 3.10.0                   | Pins `@puregram/api` 10.3.3               | Native ESM, Node >=22, 3 runtime dependencies                      | About 200 GitHub stars, under 1k weekly downloads                                                                                  | Viable API client, weaker overall fit |
+| `telegraf`              | 4.16.3                   | Released package advertises Bot API 7.1   | CommonJS-oriented package, 8 runtime dependencies                  | About 9.2k GitHub stars and about 500k weekly downloads                                                                            | **Reject**                            |
 
 Popularity is only a maintenance-risk signal here. It does not override acknowledgement or effect-uncertainty semantics. In particular, the winning `node-telegram-bot-api` v2 API is materially younger than grammY's current API line, and that is recorded as an explicit risk below.
 
@@ -134,23 +134,23 @@ The GitHub project has a large historical ecosystem, but popularity cannot compe
 
 ## Comparison against Ember's criteria
 
-| Criterion | node-telegram-bot-api 2.1 | grammY 1.46 | Puregram 3.10 | Telegraf 4.16 |
-| --- | --- | --- | --- | --- |
-| Current Bot API 10.3 | **Yes** | **Yes** | **Yes** | **No, released package says 7.1** |
-| Generated/current TS method and update types | **Yes** | **Yes** | **Yes** | Stale with released package |
-| Native ESM fit | **Yes** | Usable from ESM, Node package has compatibility/history layers | **Yes** | Weaker, CommonJS-oriented |
-| Node 26 fit by declared engine/runtime design | **Yes** | **Yes** | **Yes** | Likely, but not a reason to select it |
-| Low-level API without adopting middleware/session state | **Excellent** | **Excellent if using API only** | Good | Good |
-| Built-in polling preserves Ember acknowledgement boundary | Compatible philosophy, but do not use directly in first migration | **No** | **No** | **No** |
-| Abortable `getUpdates` | **Yes** | Yes | HTTP layer capable, polling stop is weaker | Yes |
-| Structured 400/429 metadata | **Yes** | **Yes** | **Yes** | Yes |
-| Distinguishes network/timeout/parse ambiguity cleanly | **Excellent** | Good, mainly `HttpError` plus cause | Good | Weaker/older error surface |
-| Outbound retries disabled by safe configuration | **Yes, requires `maxRetries: 0`** | **Yes by default** | Yes by default | No automatic send retry in core path evaluated |
-| Injectable networking for deterministic tests | **Yes, `fetch`** | Yes | **Yes, `HttpClient`** | Less direct |
-| Runtime dependency pressure | **0 deps** | 4 deps | 3 deps | 8 deps |
-| Mature current API line | **Medium, v2 is new** | **High** | Medium | Stable release is stale |
-| Ecosystem/adoption | High project lineage, medium v2-specific evidence | **Very high** | Low | High historical adoption |
-| Ember replacement seam | **Excellent** | Excellent if API-only | Good if API-only | Poor reason to accept stale package |
+| Criterion                                                 | node-telegram-bot-api 2.1                                         | grammY 1.46                                                    | Puregram 3.10                              | Telegraf 4.16                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| Current Bot API 10.3                                      | **Yes**                                                           | **Yes**                                                        | **Yes**                                    | **No, released package says 7.1**              |
+| Generated/current TS method and update types              | **Yes**                                                           | **Yes**                                                        | **Yes**                                    | Stale with released package                    |
+| Native ESM fit                                            | **Yes**                                                           | Usable from ESM, Node package has compatibility/history layers | **Yes**                                    | Weaker, CommonJS-oriented                      |
+| Node 26 fit by declared engine/runtime design             | **Yes**                                                           | **Yes**                                                        | **Yes**                                    | Likely, but not a reason to select it          |
+| Low-level API without adopting middleware/session state   | **Excellent**                                                     | **Excellent if using API only**                                | Good                                       | Good                                           |
+| Built-in polling preserves Ember acknowledgement boundary | Compatible philosophy, but do not use directly in first migration | **No**                                                         | **No**                                     | **No**                                         |
+| Abortable `getUpdates`                                    | **Yes**                                                           | Yes                                                            | HTTP layer capable, polling stop is weaker | Yes                                            |
+| Structured 400/429 metadata                               | **Yes**                                                           | **Yes**                                                        | **Yes**                                    | Yes                                            |
+| Distinguishes network/timeout/parse ambiguity cleanly     | **Excellent**                                                     | Good, mainly `HttpError` plus cause                            | Good                                       | Weaker/older error surface                     |
+| Outbound retries disabled by safe configuration           | **Yes, requires `maxRetries: 0`**                                 | **Yes by default**                                             | Yes by default                             | No automatic send retry in core path evaluated |
+| Injectable networking for deterministic tests             | **Yes, `fetch`**                                                  | Yes                                                            | **Yes, `HttpClient`**                      | Less direct                                    |
+| Runtime dependency pressure                               | **0 deps**                                                        | 4 deps                                                         | 3 deps                                     | 8 deps                                         |
+| Mature current API line                                   | **Medium, v2 is new**                                             | **High**                                                       | Medium                                     | Stable release is stale                        |
+| Ecosystem/adoption                                        | High project lineage, medium v2-specific evidence                 | **Very high**                                                  | Low                                        | High historical adoption                       |
+| Ember replacement seam                                    | **Excellent**                                                     | Excellent if API-only                                          | Good if API-only                           | Poor reason to accept stale package            |
 
 ## Exact migration boundary
 
@@ -235,17 +235,17 @@ No framework `stop()` call should synchronize an offset behind Ember's back.
 
 Constructing `Api` with `maxRetries: 0` is mandatory. The adapter then maps one library call to one Ember delivery attempt.
 
-| Observed result | Ember delivery evidence | Retry metadata |
-| --- | --- | --- |
-| `sendMessage` returns a runtime-valid positive `message_id` | confirmed | none |
-| `TelegramApiError` 400 or another non-5xx rejection | failed | normally none |
-| `TelegramApiError` 429 | failed | expose `retryAfter`; Ember reconciliation decides whether/when a new attempt is safe |
-| `TelegramApiError` >=500 | uncertain | none automatically |
-| `NetworkError` | uncertain | none automatically |
-| `TimeoutError` | uncertain | none automatically |
-| `ParseError` | uncertain | none automatically |
-| caller abort once the send boundary may have been entered | uncertain | none automatically |
-| syntactically valid response with malformed evidence-bearing result, such as missing/invalid `message_id` | uncertain | none automatically |
+| Observed result                                                                                           | Ember delivery evidence | Retry metadata                                                                       |
+| --------------------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| `sendMessage` returns a runtime-valid positive `message_id`                                               | confirmed               | none                                                                                 |
+| `TelegramApiError` 400 or another non-5xx rejection                                                       | failed                  | normally none                                                                        |
+| `TelegramApiError` 429                                                                                    | failed                  | expose `retryAfter`; Ember reconciliation decides whether/when a new attempt is safe |
+| `TelegramApiError` >=500                                                                                  | uncertain               | none automatically                                                                   |
+| `NetworkError`                                                                                            | uncertain               | none automatically                                                                   |
+| `TimeoutError`                                                                                            | uncertain               | none automatically                                                                   |
+| `ParseError`                                                                                              | uncertain               | none automatically                                                                   |
+| caller abort once the send boundary may have been entered                                                 | uncertain               | none automatically                                                                   |
+| syntactically valid response with malformed evidence-bearing result, such as missing/invalid `message_id` | uncertain               | none automatically                                                                   |
 
 A 429 tells Ember that Telegram rejected that request. It does not authorize the transport library to issue another request. A network or timeout error may occur after Telegram accepted the effect, so automatic retry below reconciliation is forbidden.
 
