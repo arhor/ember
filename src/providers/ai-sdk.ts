@@ -297,7 +297,7 @@ function translateAiSdkFailure(
         };
     }
 
-    if (signal?.aborted) {
+    if (isCancellationFailure(error, signal)) {
         return {
             error: cancellationError("provider cancellation requested during invocation"),
             category: "cancellation",
@@ -385,6 +385,30 @@ function isTimeoutFailure(error: unknown): boolean {
     }
     if (AISDKError.isInstance(error) && error.cause !== error) {
         return isTimeoutFailure(error.cause);
+    }
+    return false;
+}
+
+function isCancellationFailure(error: unknown, signal?: AbortSignal): boolean {
+    if (!signal?.aborted) {
+        return false;
+    }
+    if (error === signal.reason) {
+        return true;
+    }
+    if (error instanceof DOMException && error.code === DOMException.ABORT_ERR) {
+        return true;
+    }
+    if (RetryError.isInstance(error)) {
+        if (error.reason === "abort") {
+            return true;
+        }
+        if (error.lastError !== error) {
+            return isCancellationFailure(error.lastError, signal);
+        }
+    }
+    if (AISDKError.isInstance(error) && error.cause !== error) {
+        return isCancellationFailure(error.cause, signal);
     }
     return false;
 }
