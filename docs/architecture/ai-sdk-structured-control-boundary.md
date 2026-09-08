@@ -48,13 +48,14 @@ The adapter-local output schema constrains only the mechanical representation:
 }
 ```
 
-The schema can require the object shape, the decision enum, a unique string list, and
-no unsupported fields. Those are syntax/shape mechanics.
+The schema requires the object shape, the decision enum, a string list, and no
+unsupported fields. Those are syntax/shape mechanics.
 
 The schema deliberately does **not** decide whether the result is semantically valid.
 The ordinary Ember cognition-opportunity boundary remains authoritative for:
 
 - whether every selected meaning belongs to the permitted projection;
+- whether selected IDs are unique;
 - whether `cognition` or `defer` is grounded by at least one projected meaning;
 - whether `no_cognition` selects no meaning;
 - provenance/currentness rules represented by the validated projection; and
