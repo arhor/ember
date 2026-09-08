@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFile, rename, rm, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 
 import type { StateStore } from "../persistence/state-store.ts";
 import type {
@@ -10,6 +10,7 @@ import type {
 } from "./codex-specialist.ts";
 
 import { StaleRevision } from "../core/errors.ts";
+import { replaceFileAtomically } from "../persistence/file-replacement.ts";
 import { inspectSpecialistEpisode, reconcileSpecialistResult } from "./codex-specialist.ts";
 
 export type SpecialistReintegrationOutcome = "integrated" | "withheld" | "rejected";
@@ -304,9 +305,7 @@ async function persistReintegration(
     if (JSON.stringify(current) !== JSON.stringify(expectedBefore)) {
         throw new Error("specialist episode changed before reintegration could be committed");
     }
-    const temporary = `${recordPath}.${process.pid}.reintegration.tmp`;
-    await writeFile(temporary, `${JSON.stringify(next, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-    await rename(temporary, recordPath);
+    await replaceFileAtomically(recordPath, `${JSON.stringify(next, null, 2)}\n`);
 }
 
 function requireFinalAttributedReport(record: SpecialistEpisodeRecord) {
