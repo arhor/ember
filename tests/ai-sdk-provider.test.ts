@@ -1,15 +1,18 @@
+import { APICallError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { InferenceEvidence } from "../src/providers/ai-sdk.ts";
+
 import { StateStore } from "../src/persistence/state-store.ts";
 import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
-function generated(value, response = undefined) {
+function generated(value, response = undefined, overrides = {}) {
     return {
         content: [{ type: "text", text: typeof value === "string" ? value : JSON.stringify(value) }],
         finishReason: { raw: undefined, unified: "stop" },
@@ -28,6 +31,17 @@ function generated(value, response = undefined) {
         },
         warnings: [],
         ...(response ? { response } : {}),
+        ...overrides,
+    };
+}
+
+function inferenceEvidenceSink() {
+    const entries: InferenceEvidence[] = [];
+    return {
+        entries,
+        record(evidence: InferenceEvidence) {
+            entries.push(evidence);
+        },
     };
 }
 
@@ -51,7 +65,7 @@ async function closeFixture(fixture) {
     }
 }
 
-async function runWithModel(fixture, model, options = {}) {
+async function runWithModel(fixture, model, options = {}, providerOptions = {}) {
     return runCognition(fixture.store, fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
@@ -60,7 +74,7 @@ async function runWithModel(fixture, model, options = {}) {
         providerLabel: "ai-sdk",
         timeoutSeconds: 1,
         output: () => {},
-        provider: createAiSdkProvider(model),
+        provider: createAiSdkProvider(model, providerOptions),
         ...options,
     });
 }
@@ -136,6 +150,106 @@ test("AI SDK adapter should disclose only the selected projection and current in
     }
 });
 
+test("AI SDK lifecycle evidence should retain normalized diagnostics without raw request or provider payload leakage", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const evidence = inferenceEvidenceSink();
+    const model = new MockLanguageModelV3({
+        provider: "diagnostic-provider",
+        modelId: "diagnostic-model",
+        doGenerate: async () =>
+            generated(
+                { contractVersion: 1, reply: "diagnostic reply", usedMeaningIds: [] },
+                {
+                    id: "secret-response-id",
+                    modelId: "provider-response-model",
+                    timestamp: new Date("2026-09-07T12:00:01Z"),
+                },
+                {
+                    finishReason: { raw: "provider-stop", unified: "stop" },
+                    usage: {
+                        inputTokens: {
+                            total: 7,
+                            noCache: 5,
+                            cacheRead: 2,
+                            cacheWrite: 1,
+                        },
+                        outputTokens: {
+                            total: 5,
+                            text: 3,
+                            reasoning: 2,
+                        },
+                    },
+                    warnings: [
+                        {
+                            type: "unsupported",
+                            feature: "diagnostic-feature",
+                            details: "secret-warning-details",
+                        },
+                        { type: "other", message: "secret-other-warning" },
+                    ],
+                    providerMetadata: {
+                        secretProvider: { trace: "secret-provider-trace" },
+                    },
+                },
+            ),
+    });
+    try {
+        // When
+        const result = await runWithModel(fixture, model, {}, { inferenceEvidence: evidence });
+        // Then
+        assert.equal(result.providerFailure, null);
+        assert.deepEqual(
+            evidence.entries.map((entry) => entry.kind),
+            ["inference_started", "model_step_completed", "inference_completed"],
+        );
+        assert.deepEqual(evidence.entries[0], {
+            kind: "inference_started",
+            cognitionId: result.cognitionId,
+            provider: "diagnostic-provider",
+            modelId: "diagnostic-model",
+            retryLimit: 0,
+        });
+        assert.deepEqual(evidence.entries[1], {
+            kind: "model_step_completed",
+            cognitionId: result.cognitionId,
+            stepNumber: 0,
+            provider: "diagnostic-provider",
+            modelId: "diagnostic-model",
+            responseModelId: "provider-response-model",
+            finishReason: "stop",
+            rawFinishReason: "provider-stop",
+            usage: {
+                inputTokens: 7,
+                inputNoCacheTokens: 5,
+                inputCacheReadTokens: 2,
+                inputCacheWriteTokens: 1,
+                outputTokens: 5,
+                outputTextTokens: 3,
+                outputReasoningTokens: 2,
+                totalTokens: 12,
+            },
+            warnings: [{ type: "unsupported", feature: "diagnostic-feature" }, { type: "other" }],
+        });
+        const completed = evidence.entries[2];
+        assert.equal(completed.kind, "inference_completed");
+        if (completed.kind === "inference_completed") {
+            assert.equal(completed.stepCount, 1);
+            assert.equal(completed.finishReason, "stop");
+            assert.equal(completed.usage.totalTokens, 12);
+        }
+        const serializedEvidence = JSON.stringify(evidence.entries);
+        assert.equal(serializedEvidence.includes("current request"), false);
+        assert.equal(serializedEvidence.includes("secret-response-id"), false);
+        assert.equal(serializedEvidence.includes("secret-warning-details"), false);
+        assert.equal(serializedEvidence.includes("secret-other-warning"), false);
+        assert.equal(serializedEvidence.includes("secret-provider-trace"), false);
+        assert.equal(JSON.stringify(result.state).includes("diagnostic-provider"), false);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
 test("AI SDK structured output should still be rejected when it claims a meaning outside the supplied projection", async () => {
     // Given
     const fixture = await startedFixture();
@@ -158,16 +272,24 @@ test("AI SDK structured output should still be rejected when it claims a meaning
     }
 });
 
-test("AI SDK malformed structured output should become an ordinary Ember provider failure", async () => {
+test("AI SDK malformed structured output should map through supported SDK output errors", async () => {
     // Given
     const fixture = await startedFixture();
+    const evidence = inferenceEvidenceSink();
     const model = new MockLanguageModelV3({ doGenerate: async () => generated('{"contractVersion":1') });
     try {
         // When
-        const result = await runWithModel(fixture, model);
+        const result = await runWithModel(fixture, model, {}, { inferenceEvidence: evidence });
         // Then
-        assert.ok(result.providerFailure);
+        assert.match(result.providerFailure ?? "", /invalid structured output/);
         assert.equal(findCognition(result.state, result.cognitionId).status, "failed");
+        assert.equal(evidence.entries.at(-1)?.kind, "inference_failed");
+        assert.deepEqual(evidence.entries.at(-1), {
+            kind: "inference_failed",
+            cognitionId: result.cognitionId,
+            category: "invalid_output",
+            phase: "during_invocation",
+        });
     } finally {
         await closeFixture(fixture);
     }
@@ -185,6 +307,27 @@ test("AI SDK timeout should map to Ember timed_out semantics", async () => {
         const cognition = findCognition(result.state, result.cognitionId);
         assert.equal(cognition.status, "timed_out");
         assert.equal(cognition.providerTermination, null);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("AI SDK timeout classification should use the standard timeout code rather than a stringly error name", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const timeout = new DOMException("deterministic timeout", "TimeoutError");
+    Object.defineProperty(timeout, "name", { value: "renamed-timeout" });
+    const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+            throw timeout;
+        },
+    });
+    try {
+        // When
+        const result = await runWithModel(fixture, model);
+        // Then
+        assert.match(result.providerFailure, /timed out/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "timed_out");
     } finally {
         await closeFixture(fixture);
     }
@@ -240,6 +383,82 @@ test("AI SDK abort should map to Ember cancellation_requested semantics", async 
         });
     } finally {
         clearTimeout(cancellation);
+        await closeFixture(fixture);
+    }
+});
+
+test("AI SDK already-aborted requests should be classified before model work begins", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const evidence = inferenceEvidenceSink();
+    const controller = new AbortController();
+    controller.abort();
+    const model = new MockLanguageModelV3({
+        doGenerate: async () => generated({ contractVersion: 1, reply: "should not run", usedMeaningIds: [] }),
+    });
+    try {
+        // When
+        const result = await runWithModel(
+            fixture,
+            model,
+            { signal: controller.signal },
+            { inferenceEvidence: evidence },
+        );
+        // Then
+        assert.equal(model.doGenerateCalls.length, 0);
+        assert.match(result.providerFailure, /before invocation/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "cancellation_requested");
+        assert.deepEqual(evidence.entries, [
+            {
+                kind: "inference_failed",
+                cognitionId: result.cognitionId,
+                category: "cancellation",
+                phase: "before_invocation",
+            },
+        ]);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("AI SDK API failures should be classified without leaking SDK request or response payloads", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const evidence = inferenceEvidenceSink();
+    let calls = 0;
+    const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+            calls += 1;
+            throw new APICallError({
+                message: "secret provider explanation",
+                url: "https://secret-provider.invalid/generate",
+                requestBodyValues: { prompt: "secret-request-body" },
+                statusCode: 503,
+                responseBody: "secret-response-body",
+                isRetryable: true,
+            });
+        },
+    });
+    try {
+        // When
+        const result = await runWithModel(fixture, model, {}, { inferenceEvidence: evidence });
+        // Then
+        assert.equal(calls, 1);
+        assert.match(result.providerFailure ?? "", /API call failed \(HTTP 503\)/);
+        assert.equal(result.providerFailure?.includes("secret"), false);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "failed");
+        assert.deepEqual(evidence.entries.at(-1), {
+            kind: "inference_failed",
+            cognitionId: result.cognitionId,
+            category: "provider_api",
+            phase: "during_invocation",
+            statusCode: 503,
+        });
+        const serializedEvidence = JSON.stringify(evidence.entries);
+        assert.equal(serializedEvidence.includes("secret-request-body"), false);
+        assert.equal(serializedEvidence.includes("secret-response-body"), false);
+        assert.equal(serializedEvidence.includes("secret-provider.invalid"), false);
+    } finally {
         await closeFixture(fixture);
     }
 });

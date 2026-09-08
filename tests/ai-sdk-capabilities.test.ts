@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import type { CapabilityBinding } from "../src/capabilities/execution.ts";
+import type { InferenceEvidence } from "../src/providers/ai-sdk.ts";
 
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
@@ -60,6 +61,16 @@ function toolCall(toolName: string, input: unknown, toolCallId = "call-1") {
     };
 }
 
+function inferenceEvidenceSink() {
+    const entries: InferenceEvidence[] = [];
+    return {
+        entries,
+        record(evidence: InferenceEvidence) {
+            entries.push(evidence);
+        },
+    };
+}
+
 async function startedFixture() {
     const directory = await tempDir();
     const store = new StateStore(join(directory, "ember.json"));
@@ -80,7 +91,13 @@ async function closeFixture(fixture) {
     }
 }
 
-async function runWithCapabilities(fixture, model, capabilities: readonly CapabilityBinding[], ledger = undefined) {
+async function runWithCapabilities(
+    fixture,
+    model,
+    capabilities: readonly CapabilityBinding[],
+    ledger = undefined,
+    inferenceEvidence = undefined,
+) {
     return runCognition(fixture.store, fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
@@ -92,6 +109,7 @@ async function runWithCapabilities(fixture, model, capabilities: readonly Capabi
         provider: createAiSdkProvider(model, {
             selectCapabilities: () => capabilities,
             capabilityLedger: ledger,
+            inferenceEvidence,
         }),
     });
 }
@@ -135,6 +153,7 @@ function countingCapability(base: CapabilityBinding, onExecution: () => void): C
 test("AI SDK should expose only Ember-selected capabilities and return bounded capability evidence to the model loop", async () => {
     const fixture = await startedFixture();
     const ledger = createCapabilityExecutionLedger();
+    const inference = inferenceEvidenceSink();
     let executions = 0;
     let step = 0;
     let usedMeaningId: string | undefined;
@@ -164,7 +183,7 @@ test("AI SDK should expose only Ember-selected capabilities and return bounded c
     });
 
     try {
-        const result = await runWithCapabilities(fixture, model, [capability], ledger);
+        const result = await runWithCapabilities(fixture, model, [capability], ledger, inference);
 
         assert.equal(result.providerFailure, null);
         assert.equal(findCognition(result.state, result.cognitionId).status, "completed");
@@ -181,6 +200,25 @@ test("AI SDK should expose only Ember-selected capabilities and return bounded c
             authority: { basis: "current_instruction", sourceId: "test-current-instruction" },
             output: { key: "timezone", value: "UTC" },
         });
+        const toolObservations = inference.entries.filter(
+            (entry) => entry.kind === "tool_dispatch_started" || entry.kind === "tool_dispatch_completed",
+        );
+        assert.equal(toolObservations.length, 2);
+        assert.deepEqual(toolObservations[0], {
+            kind: "tool_dispatch_started",
+            cognitionId: result.cognitionId,
+            capability: "localLookup",
+        });
+        assert.equal(toolObservations[1]?.kind, "tool_dispatch_completed");
+        if (toolObservations[1]?.kind === "tool_dispatch_completed") {
+            assert.equal(toolObservations[1].capability, "localLookup");
+            assert.equal(toolObservations[1].sdkOutcome, "result");
+            assert.ok(toolObservations[1].durationMs >= 0);
+        }
+        const serializedInference = JSON.stringify(inference.entries);
+        assert.equal(serializedInference.includes("timezone"), false);
+        assert.equal(serializedInference.includes("UTC"), false);
+        assert.equal(serializedInference.includes("call-1"), false);
         const serializedState = JSON.stringify(result.state);
         assert.equal(serializedState.includes("secret-tool-provider"), false);
         assert.equal(serializedState.includes("secret-tool-model"), false);
