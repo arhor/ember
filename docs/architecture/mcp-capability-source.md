@@ -126,6 +126,10 @@ close event within a finite bound. Tests assert that `close()` completes, that t
 source subsequently refuses discovery, and that a capability already bound from the
 closed source cannot submit another remote tool request.
 
+The ordinary repository continuity workflow validates this slice with the locked Node
+26 toolchain, `npm run check`, the complete `npm test` suite, and the deterministic
+endogenous selectivity evaluation. No MCP-specific bootstrap workflow is retained.
+
 ## Replacement path
 
 `@ai-sdk/mcp` remains replaceable because no public Ember capability contract depends
