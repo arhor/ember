@@ -8,6 +8,7 @@ import { DurabilityUncertain } from "../core/errors.ts";
 
 export interface AtomicFileReplacementOptions {
     mode?: number;
+    temporaryId?: () => string;
 }
 
 export interface DurableFileReplacementOptions extends AtomicFileReplacementOptions {
@@ -18,11 +19,11 @@ export interface DurableFileReplacementOptions extends AtomicFileReplacementOpti
 export async function replaceFileAtomically(
     path: string,
     content: string,
-    { mode = 0o600 }: AtomicFileReplacementOptions = {},
+    { mode = 0o600, temporaryId = randomUUID }: AtomicFileReplacementOptions = {},
 ) {
     const directory = dirname(path);
     await mkdir(directory, { recursive: true });
-    const temporary = temporaryPath(path);
+    const temporary = temporaryPath(path, temporaryId());
     let replaced = false;
     try {
         await writeFile(temporary, content, { encoding: "utf8", mode, flag: "wx" });
@@ -38,13 +39,14 @@ export async function replaceFileDurably(
     content: string,
     {
         mode = 0o600,
+        temporaryId = randomUUID,
         directorySync = syncDirectory,
         durabilityUncertainMessage,
     }: DurableFileReplacementOptions,
 ) {
     const directory = dirname(path);
     await mkdir(directory, { recursive: true });
-    const temporary = temporaryPath(path);
+    const temporary = temporaryPath(path, temporaryId());
     let handle: FileHandle | null = null;
     let replaced = false;
     try {
@@ -75,7 +77,7 @@ export async function syncDirectory(directory: string) {
     }
 }
 
-function temporaryPath(path: string) {
+function temporaryPath(path: string, id: string) {
     const directory = dirname(path);
-    return join(directory, `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`);
+    return join(directory, `.${basename(path)}.${process.pid}.${id}.tmp`);
 }
