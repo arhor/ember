@@ -1,5 +1,5 @@
 ---
-summary: "Current Telegram surface runbook: Bot API 10.3 long polling, principal/scope privacy mapping, issue #88 restart-safe delivery reconciliation, systemd user supervision, and secret-safe configuration."
+summary: "Current Telegram surface runbook: Bot API 10.3 long polling via node-telegram-bot-api 2.1.0, principal/scope privacy mapping, restart-safe delivery reconciliation, systemd supervision, and secret-safe configuration."
 read_when:
   - "Setting up, running, debugging, or reviewing Ember's Telegram interaction surface"
   - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior, or Telegram systemd startup"
@@ -10,15 +10,19 @@ discovery_status: current
 # Telegram Surface Runbook
 
 > Status: current implementation/runbook from issue #86, with principal/privacy policy
-> hardened by issue #87 and restart-safe delivery reconciliation added by issue #88.
+> hardened by issue #87, restart-safe delivery reconciliation added by issue #88, and
+> protocol plumbing migrated to `node-telegram-bot-api@2.1.0` by issue #207.
 > The semantic boundary remains
 > [Interaction Surface Boundary](interaction-surface-boundary.md); this document owns
 > Telegram-specific transport and deployment details only.
 
 ## Supported integration
 
-Ember's first messaging surface uses the official HTTP-based Telegram Bot API directly
-from Node.js 26. No Telegram npm runtime dependency is added.
+Ember's first messaging surface uses the official HTTP-based Telegram Bot API through
+exactly `node-telegram-bot-api@2.1.0` on Node.js 26. Ember uses the package as a
+narrow protocol client, not as the owner of polling, retries, replay, delivery truth,
+or runtime lifecycle. Production construction is centralized with `maxRetries: 0`,
+so one Ember delivery attempt maps to one underlying Telegram send attempt.
 
 Implementation assumptions verified against the official Telegram documentation on
 2026-09-05:
@@ -227,9 +231,12 @@ npm run surface:telegram -- serve \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
-`SIGINT`/`SIGTERM` aborts the current long poll. If cognition is active, the same
-AbortSignal is passed into the provider boundary so shutdown remains explicit rather
-than abandoning a hidden model process.
+`SIGINT`/`SIGTERM` aborts an idle `getUpdates` request promptly and stops admission of
+new updates. An update already admitted into Ember is allowed to finish its bounded
+provider/delivery handoff before the worker exits; shutdown does not issue a later
+acknowledgement-bearing poll for that update. The systemd stop timeout remains the
+outer bound, so forced termination is recorded as real process loss rather than a
+fabricated clean completion.
 
 The worker does **not** hold the canonical writer lease while waiting for Telegram.
 For each accepted update it:
@@ -255,13 +262,18 @@ chat paired with a wrong Ember principal fails before accepted interaction/cogni
 
 The Telegram adapter maps transport evidence onto the shared delivery lifecycle:
 
-- a successful `sendMessage` response records `confirmed` and the returned Telegram
-  message id;
-- an explicit non-retryable Bot API rejection records definite `failed`;
-- flood control with a valid `parameters.retry_after` records definite retryable
-  `failed` plus the transport-neutral retry delay; and
-- network loss, malformed/unreadable acknowledgement, server-side ambiguity, or process
-  loss after the send boundary records or reconciles to `uncertain`.
+- a successful `sendMessage` response with a runtime-valid positive `message_id`
+  records `confirmed` and that returned Telegram message id;
+- `TelegramApiError` for a non-5xx rejection records definite `failed`;
+- Telegram 429 with `retryAfter` records definite retryable `failed` plus the
+  transport-neutral retry delay; and
+- `NetworkError`, `TimeoutError`, `ParseError`, 5xx ambiguity, malformed successful
+  evidence, caller abort after the send may have entered transport, or process loss
+  after that boundary records or reconciles to `uncertain`.
+
+The generated API client is always constructed with `maxRetries: 0`. The library may
+classify protocol failures, but only Ember reconciliation decides whether a later
+transport attempt is safe.
 
 `confirmed` means Telegram accepted the send operation. It does not mean the user read
 or understood the message. Before each long-poll cycle the worker reconciles pending
@@ -331,8 +343,8 @@ views.
 
 ## Manual end-to-end smoke
 
-This smoke is deliberately opt-in and requires a real bot/account/network. Normal
-repository tests use deterministic fake HTTP/provider boundaries and require no token.
+This smoke is deliberately opt-in and requires a real bot/account/network. Normal repository tests use the generated API client with injected `fetch` plus
+deterministic API/provider boundaries and require no token.
 
 1. Run the preflight `check` command.
 2. Start `serve` in the foreground or start `ember-telegram.service`.
@@ -372,7 +384,9 @@ Focused tests cover:
 - stable `update_id` replay producing one cognition and one send;
 - exclusion of Telegram ids from the cognition projection;
 - explicit `getUpdates` acknowledgement offset and message-only filter;
-- Bot API rejection versus uncertain network/server delivery;
+- one underlying send attempt for success, 400, 429, 5xx, malformed JSON/result,
+  body-read loss, network loss, timeout, and caller-abort cases;
+- Bot API rejection versus uncertain network/server/protocol delivery;
 - refusal to long-poll while a webhook is active;
 - generated systemd unit secrecy and restart policy;
 - CLI and Telegram selecting the same ordinary meanings when given the same active

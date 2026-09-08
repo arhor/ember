@@ -284,10 +284,13 @@ test("Telegram 400 is a definite failed delivery with exactly one HTTP attempt",
     let calls = 0;
     const api = apiWithFetch(async () => {
         calls += 1;
-        return new Response(JSON.stringify({ ok: false, error_code: 400, description: "Bad Request: chat not found" }), {
-            status: 400,
-            headers: { "content-type": "application/json" },
-        });
+        return new Response(
+            JSON.stringify({ ok: false, error_code: 400, description: "Bad Request: chat not found" }),
+            {
+                status: 400,
+                headers: { "content-type": "application/json" },
+            },
+        );
     });
 
     await assert.rejects(deliverTelegramMessage(api, CHAT_ID, "hello"), (error: unknown) => {

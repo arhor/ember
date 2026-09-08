@@ -1,9 +1,8 @@
-import { readFile } from "node:fs/promises";
-import { isAbsolute } from "node:path";
-
 import type { TransportOptions, Update } from "node-telegram-bot-api";
 
 import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "node-telegram-bot-api";
+import { readFile } from "node:fs/promises";
+import { isAbsolute } from "node:path";
 
 import type { CognitionId } from "../core/model.ts";
 import type { ProviderInvoker } from "../providers/contract.ts";
@@ -155,7 +154,12 @@ export async function deliverTelegramMessage(
                 },
             );
         }
-        if (error instanceof NetworkError || error instanceof TimeoutError || error instanceof ParseError || signal?.aborted)
+        if (
+            error instanceof NetworkError ||
+            error instanceof TimeoutError ||
+            error instanceof ParseError ||
+            signal?.aborted
+        )
             throw new SurfaceDeliveryFailure("Telegram sendMessage delivery outcome is uncertain", {
                 outcome: "uncertain",
                 cause: error,
