@@ -5,13 +5,13 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough, Writable } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { validateProviderResult } from "../src/providers/contract.ts";
 import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/providers/process.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { cloneState } from "../src/util.ts";
 import {
     captureError,
