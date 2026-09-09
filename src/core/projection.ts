@@ -1,3 +1,4 @@
+import type { ProjectedConversationContext } from "./conversation-context.ts";
 import type {
     CognitionId,
     CognitionPurpose,
@@ -12,6 +13,7 @@ import type {
 } from "./model.ts";
 
 import { cloneState } from "../util.ts";
+import { emptyConversationContext } from "./conversation-context.ts";
 import { ValidationError } from "./errors.ts";
 import { validateState } from "./model.ts";
 import { findMeaning } from "./semantics.ts";
@@ -45,6 +47,7 @@ export interface Projection {
     current_time: string;
     current_input: string;
     recoveryAccount: RecoveryAccount;
+    conversation_context?: ProjectedConversationContext;
     meanings: ProjectedMeaning[];
     gaps: ProjectionGap[];
     selection: {
@@ -64,6 +67,7 @@ export interface BuildProjectionOptions {
     runtimeId: RuntimeId | string;
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
+    conversationContext?: ProjectedConversationContext;
 }
 
 export function buildProjection(
@@ -77,6 +81,7 @@ export function buildProjection(
         runtimeId,
         purpose = "ordinary",
         explainIds = [],
+        conversationContext = emptyConversationContext(),
     }: BuildProjectionOptions,
 ): Projection {
     validateState(state);
@@ -169,6 +174,7 @@ export function buildProjection(
         current_time: currentTime,
         current_input: currentInput,
         recoveryAccount: cloneState(runtime.recoveryAccount),
+        conversation_context: cloneState(conversationContext),
         meanings: projected,
         gaps,
         selection: {
