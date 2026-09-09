@@ -13,10 +13,12 @@ import type {
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
+import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { newId, nowUtc, validateState } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
+import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { cloneState } from "../util.ts";
 
@@ -171,6 +173,12 @@ export async function runCognition(
         throw new ValidationError(`cognition already exists: ${cognitionId}`);
     }
     const timestamp = nowUtc();
+    const conversationStore = new ConversationContextStore(store.path);
+    const conversationContext = selectRecentConversationContext(state, await conversationStore.load(), {
+        principal,
+        scope,
+        surface,
+    });
     const projection = buildProjection(state, {
         principal,
         scope,
@@ -180,6 +188,7 @@ export async function runCognition(
         runtimeId,
         purpose,
         explainIds,
+        conversationContext,
     });
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
@@ -272,6 +281,17 @@ export async function runCognition(
     });
     findRuntime(completed, runtimeId).lastDurableObservationAt = at;
     state = await store.commit(current.revision, completed);
+    await conversationStore.recordCompletedExchange({
+        cognition_id: cognitionId,
+        principal,
+        scope,
+        surface,
+        input_evidence_id: cognition.inputEvidenceId,
+        expression_evidence_id: expressionId,
+        started_at: cognition.startedAt,
+        expression_occurred_at: expression.occurredAt,
+        expression_content: result.reply,
+    });
     const outputText = `${result.reply}\n`;
     await hooks.afterExpressionCommit?.(state, outputText);
     await writeOutput(output, outputText);
