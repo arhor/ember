@@ -14,27 +14,15 @@ type Corpus = { documents: Document[]; errors: string[] };
 type CorpusValidation = { errors: string[]; warnings: string[] };
 type SelectionOptions = { deep?: boolean; allDocuments?: boolean };
 type HeadingRendering = { output: string; errors: string[] };
-type CliArguments = {
-    command: "list" | "check";
-    deep: boolean;
-    all: boolean;
-    headings: string[] | null;
-};
+type CliArguments = { command: "list" | "check"; deep: boolean; all: boolean; headings: string[] | null };
 
-export const DEFAULT_ROLES: Set<string> = new Set([
-    "foundation",
-    "decision",
-    "design",
-    "scenario",
-    "research",
-    "guide",
-]);
-export const DEEP_ROLES: Set<string> = new Set(["reference", "evidence", "source"]);
-export const ALLOWED_ROLES: Set<string> = new Set([...DEFAULT_ROLES, ...DEEP_ROLES]);
-export const ALLOWED_DISCOVERY_STATUSES: Set<string> = new Set(["current", "superseded", "historical"]);
+export const DEFAULT_ROLES = new Set<string>(["foundation", "decision", "design", "scenario", "research", "guide"]);
+export const DEEP_ROLES = new Set<string>(["reference", "evidence", "source"]);
+export const ALLOWED_ROLES = new Set<string>([...DEFAULT_ROLES, ...DEEP_ROLES]);
+export const ALLOWED_DISCOVERY_STATUSES = new Set<string>(["current", "superseded", "historical"]);
 
 // V1 has no generated Markdown exclusions. Keep exclusions explicit here if that changes.
-export const EXCLUDED_PATHS: Set<string> = new Set();
+export const EXCLUDED_PATHS = new Set<string>();
 
 const FRONTMATTER_DELIMITER = "---";
 const TOP_LEVEL_RE = /^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$/;
