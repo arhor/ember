@@ -32,6 +32,11 @@ export type CapabilityAuthorityDecision =
 
 export type CapabilityInputDecision = { status: "allowed" } | { status: "rejected"; reason: string };
 
+export type CapabilityInputValidator = (
+    context: CapabilityContext,
+    input: unknown,
+) => CapabilityInputDecision | Promise<CapabilityInputDecision>;
+
 export interface CapabilityBinding {
     name: string;
     description: string;
@@ -41,12 +46,7 @@ export interface CapabilityBinding {
         context: CapabilityContext,
         input: unknown,
     ) => CapabilityAuthorityDecision | Promise<CapabilityAuthorityDecision>;
-    validateInput?:
-        | ((
-              context: CapabilityContext,
-              input: unknown,
-          ) => CapabilityInputDecision | Promise<CapabilityInputDecision>)
-        | undefined;
+    validateInput?: CapabilityInputValidator | undefined;
     execute: (
         context: CapabilityContext,
         input: unknown,
