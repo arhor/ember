@@ -81,7 +81,6 @@ export class ConversationContextStore {
         }
 
         document.exchanges.push(record);
-        document.exchanges.sort(compareExchanges);
         if (document.exchanges.length > RECENT_DIALOGUE_MAX_STORED_EXCHANGES) {
             document.exchanges.splice(0, document.exchanges.length - RECENT_DIALOGUE_MAX_STORED_EXCHANGES);
         }
@@ -131,10 +130,6 @@ export class ConversationContextStore {
 
 function emptyDocument(): ConversationContextDocument {
     return { conversation_context_version: 1, exchanges: [] };
-}
-
-function compareExchanges(left: ConversationExchangeRecord, right: ConversationExchangeRecord): number {
-    return left.started_at.localeCompare(right.started_at) || left.cognition_id.localeCompare(right.cognition_id);
 }
 
 function errorCode(error: unknown): string | undefined {
