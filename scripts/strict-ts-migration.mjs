@@ -103,31 +103,11 @@ replace(
     '    const ids = parts[2].split(",").filter(Boolean);',
     '    const ids = parts[2]!.split(",").filter(Boolean);',
 );
-replace(
-    "src/cli/main.ts",
-    "    const command = argv[0];",
-    "    const command = argv[0]!;",
-);
-replace(
-    "src/cli/main.ts",
-    "        const item = argv[i];",
-    "        const item = argv[i]!;",
-);
-replace(
-    "src/cli/main.ts",
-    "            list.push(argv[++i]);",
-    "            list.push(argv[++i]!);",
-);
-replace(
-    "src/cli/main.ts",
-    "        } else values[item] = argv[++i];",
-    "        } else values[item] = argv[++i]!;",
-);
-replaceAll(
-    "src/cli/main.ts",
-    "meaningId: positionals[0]",
-    "meaningId: positionals[0]!",
-);
+replace("src/cli/main.ts", "    const command = argv[0];", "    const command = argv[0]!;");
+replace("src/cli/main.ts", "        const item = argv[i];", "        const item = argv[i]!;");
+replace("src/cli/main.ts", "            list.push(argv[++i]);", "            list.push(argv[++i]!);");
+replace("src/cli/main.ts", "        } else values[item] = argv[++i];", "        } else values[item] = argv[++i]!;");
+replaceAll("src/cli/main.ts", "meaningId: positionals[0]", "meaningId: positionals[0]!");
 
 replace(
     "src/core/model.ts",
@@ -250,16 +230,8 @@ replace(
     '    session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string } | undefined;',
 );
 
-replace(
-    "src/runtime/runtime.ts",
-    "    signal?: AbortSignal;",
-    "    signal?: AbortSignal | undefined;",
-);
-replace(
-    "src/runtime/runtime.ts",
-    "    return tails[0];",
-    "    return tails[0]!;",
-);
+replace("src/runtime/runtime.ts", "    signal?: AbortSignal;", "    signal?: AbortSignal | undefined;");
+replace("src/runtime/runtime.ts", "    return tails[0];", "    return tails[0]!;");
 
 replace(
     "src/surfaces/telegram.ts",

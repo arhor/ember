@@ -207,23 +207,23 @@ async function semanticCommand(
     const candidate = cloneState(state);
     let id: MeaningId | string;
     if (parts[0] === ":remember" && parts[1] === "relationship" && parts.length >= 5)
-        id = rememberRelationship(candidate, principal, parts[2], parts[3], parts.slice(4).join(" "));
+        id = rememberRelationship(candidate, principal, parts[2]!, parts[3]!, parts.slice(4).join(" "));
     else if (parts[0] === ":remember" && parts[1] === "fact" && parts.length >= 6)
-        id = rememberFact(candidate, principal, parts[2], parts[3], parts[4], parts.slice(5).join(" "));
+        id = rememberFact(candidate, principal, parts[2]!, parts[3]!, parts[4]!, parts.slice(5).join(" "));
     else if (parts[0] === ":prefer" && parts.length >= 5)
-        id = rememberPreference(candidate, principal, parts[1], parts[2], parts[3], parts.slice(4).join(" "));
+        id = rememberPreference(candidate, principal, parts[1]!, parts[2]!, parts[3]!, parts.slice(4).join(" "));
     else if (parts[0] === ":supersede" && parts.length >= 3)
-        id = supersede(candidate, principal, parts[1], parts.slice(2).join(" "));
+        id = supersede(candidate, principal, parts[1]!, parts.slice(2).join(" "));
     else if (parts[0] === ":undertake" && parts.length >= 4)
-        id = undertake(candidate, principal, parts[1], parts[2], parts.slice(3).join(" "));
+        id = undertake(candidate, principal, parts[1]!, parts[2]!, parts.slice(3).join(" "));
     else if (parts[0] === ":remember" && parts[1] === "episode" && parts.length >= 6)
-        id = rememberEpisode(candidate, principal, parts[2], parts[3], parts[4], parts.slice(5).join(" "));
+        id = rememberEpisode(candidate, principal, parts[2]!, parts[3]!, parts[4]!, parts.slice(5).join(" "));
     else if (parts[0] === ":attach-detail" && parts.length >= 3)
-        id = attachDetail(candidate, principal, parts[1], parts.slice(2).join(" "));
+        id = attachDetail(candidate, principal, parts[1]!, parts.slice(2).join(" "));
     else if (parts[0] === ":fixture-withhold" && parts.length === 2) {
         if (process.env.EMBER_ENABLE_FIXTURE_FAULTS !== "1")
             throw new ValidationError("fixture fault command is available only to deterministic test harness");
-        id = withholdDetail(candidate, principal, parts[1]);
+        id = withholdDetail(candidate, principal, parts[1]!);
     } else throw new ValidationError("unsupported or malformed semantic command");
     const runtime = candidate.operations.runtimeEpisodes.find((r) => r.runtimeId === runtimeId);
     if (!runtime) throw new ValidationError(`runtime does not exist: ${runtimeId}`);
@@ -243,7 +243,7 @@ async function ask(
     const parts = splitCommand(line);
     if (parts.length < 4 || parts[0] !== ":ask" || parts[1] !== "--explain")
         throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
-    const ids = parts[2].split(",").filter(Boolean);
+    const ids = parts[2]!.split(",").filter(Boolean);
     if (!ids.length) throw new ValidationError("at least one explanation ID is required");
     return runSurfaceInteraction(store, state, {
         runtimeId,
@@ -360,7 +360,7 @@ interface CommandSpec {
 
 export function parseArgs(argv: string[]): CliArgs {
     if (!argv.length) throw new ValidationError("a command is required");
-    const command = argv[0];
+    const command = argv[0]!;
     const specs: Record<string, CommandSpec> = {
         init: { flags: ["--state", "--name", "--principal"], positionals: 0 },
         run: {
@@ -399,7 +399,7 @@ export function parseArgs(argv: string[]): CliArgs {
     const values: Record<string, RawValue> = {};
     const positionals: string[] = [];
     for (let i = 1; i < argv.length; i++) {
-        const item = argv[i];
+        const item = argv[i]!;
         if (!item.startsWith("--")) {
             positionals.push(item);
             continue;
@@ -414,9 +414,9 @@ export function parseArgs(argv: string[]): CliArgs {
         if (repeatable.has(item)) {
             const current = values[item];
             const list = Array.isArray(current) ? current : [];
-            list.push(argv[++i]);
+            list.push(argv[++i]!);
             values[item] = list;
-        } else values[item] = argv[++i];
+        } else values[item] = argv[++i]!;
     }
     if (positionals.length !== spec.positionals)
         throw new ValidationError(
@@ -500,13 +500,13 @@ export function parseArgs(argv: string[]): CliArgs {
             json: values["--json"] === true,
         };
     if (command === "explain")
-        return { command, state: required("--state"), principal: required("--principal"), meaningId: positionals[0] };
+        return { command, state: required("--state"), principal: required("--principal"), meaningId: positionals[0]! };
     if (command === "correct")
         return {
             command,
             state: required("--state"),
             principal: required("--principal"),
-            meaningId: positionals[0],
+            meaningId: positionals[0]!,
             text: required("--text"),
             reason: required("--reason"),
         };

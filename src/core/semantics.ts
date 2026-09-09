@@ -446,15 +446,15 @@ export function withholdDetail(
     state: EmberState,
     principal: string,
     evidenceId: EvidenceId | string,
-    { reason = "fixture detail payload unavailable" }: { reason?: string } = {},
+    { reason = "fixture detail payload unavailable" }: { reason?: string | undefined } = {},
 ): EvidenceId {
     requirePrincipal(state, principal);
     const index = state.evidence.findIndex((e) => e.evidenceId === evidenceId);
     if (index < 0) throw new ValidationError(`evidence does not exist: ${evidenceId}`);
-    const ev = state.evidence[index];
+    const ev = state.evidence[index]!;
     if (ev.relatedMeaningId === undefined)
         throw new ValidationError("fixture fault can withhold only attached episode detail");
-    if (ev.payloadMode !== "retained_optional" || ev.availability !== "available")
+    if (ev.sourceRole !== "user_command" || ev.payloadMode !== "retained_optional" || ev.availability !== "available")
         throw new ValidationError("detail evidence is not currently available");
     if (reason.toLowerCase().includes("delet"))
         throw new ValidationError("privacy deletion semantics are unsupported by fixture fault");

@@ -205,7 +205,7 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
                 stopWhen: isStepCount(MAX_TOOL_LOOP_STEPS),
                 maxRetries: MAX_AI_SDK_RETRIES,
                 timeout: Math.max(1, Math.ceil(timeoutSeconds * 1000)),
-                abortSignal: signal,
+                ...(signal === undefined ? {} : { abortSignal: signal }),
                 onStart: (event) =>
                     recordInferenceEvidence(options.inferenceEvidence, {
                         kind: "inference_started",

@@ -424,21 +424,26 @@ export function isRfc3339Utc(value: unknown): value is string {
     if (!match) {
         return false;
     }
-    const [, year, month, day, hour, minute, second, fraction = ""] = match;
-    const parts = [year, month, day, hour, minute, second].map(Number);
+    const year = Number(match[1]!);
+    const month = Number(match[2]!);
+    const day = Number(match[3]!);
+    const hour = Number(match[4]!);
+    const minute = Number(match[5]!);
+    const second = Number(match[6]!);
+    const fraction = match[7] ?? "";
     const millisecond = Number(fraction.slice(0, 3).padEnd(3, "0"));
     const instant = new Date(0);
 
-    instant.setUTCFullYear(parts[0], parts[1] - 1, parts[2]);
-    instant.setUTCHours(parts[3], parts[4], parts[5], millisecond);
+    instant.setUTCFullYear(year, month - 1, day);
+    instant.setUTCHours(hour, minute, second, millisecond);
 
     return (
-        instant.getUTCFullYear() === parts[0] &&
-        instant.getUTCMonth() === parts[1] - 1 &&
-        instant.getUTCDate() === parts[2] &&
-        instant.getUTCHours() === parts[3] &&
-        instant.getUTCMinutes() === parts[4] &&
-        instant.getUTCSeconds() === parts[5] &&
+        instant.getUTCFullYear() === year &&
+        instant.getUTCMonth() === month - 1 &&
+        instant.getUTCDate() === day &&
+        instant.getUTCHours() === hour &&
+        instant.getUTCMinutes() === minute &&
+        instant.getUTCSeconds() === second &&
         instant.getUTCMilliseconds() === millisecond
     );
 }

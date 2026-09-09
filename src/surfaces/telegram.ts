@@ -115,7 +115,7 @@ export async function deliverTelegramMessage(
     api: TelegramDeliveryApi,
     chatId: number,
     text: string,
-    { messageThreadId = null, signal }: { messageThreadId?: number | null; signal?: AbortSignal } = {},
+    { messageThreadId = null, signal }: { messageThreadId?: number | null; signal?: AbortSignal | undefined } = {},
 ) {
     validateChatId(chatId);
     if (typeof text !== "string" || !text.length) throw new ValidationError("Telegram delivery text must be non-empty");
@@ -226,7 +226,7 @@ export async function processTelegramUpdate(
     config: TelegramSurfaceConfig,
     api: TelegramDeliveryApi,
     update: TelegramUpdate,
-    { provider, signal }: { provider?: ProviderInvoker; signal?: AbortSignal } = {},
+    { provider, signal }: { provider?: ProviderInvoker | undefined; signal?: AbortSignal | undefined } = {},
 ): Promise<TelegramUpdateOutcome> {
     validateTelegramSurfaceConfig(config);
     const inbound = selectTelegramInbound(update, config);
@@ -310,7 +310,7 @@ export async function processTelegramUpdate(
 export async function reconcileTelegramDeliveries(
     config: TelegramSurfaceConfig,
     api: TelegramDeliveryApi,
-    { signal, observedAt }: { signal?: AbortSignal; observedAt?: string } = {},
+    { signal, observedAt }: { signal?: AbortSignal | undefined; observedAt?: string } = {},
 ) {
     validateTelegramSurfaceConfig(config);
     const store = new StateStore(config.state_path);

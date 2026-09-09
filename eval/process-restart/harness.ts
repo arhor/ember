@@ -73,7 +73,7 @@ export async function runProcessRestartScenario(
         throw new Error("process-restart provider timeout must be a positive finite number");
     }
 
-    const [baselineEpisode, restartedEpisode] = scenario.episodes;
+    const [baselineEpisode, restartedEpisode] = scenario.episodes as [ScenarioEpisode, ScenarioEpisode];
     const baseEnvironment = options.environment ?? process.env;
     const runArguments = (episode: ScenarioEpisode) => [
         "run",
@@ -263,7 +263,7 @@ export async function runProcessRestartScenario(
 
 function validateProcessRestartScenario(scenario: LongitudinalScenario) {
     if (scenario.episodes.length !== 2) throw new Error("process-restart scenario requires exactly two episodes");
-    const [baseline, restarted] = scenario.episodes;
+    const [baseline, restarted] = scenario.episodes as [ScenarioEpisode, ScenarioEpisode];
     if (baseline.restart_ember || !restarted.restart_ember)
         throw new Error("process-restart scenario must mark only the second episode as restart_ember");
     if (baseline.external_thread.mode !== "fresh" || restarted.external_thread.mode !== "fresh")
@@ -333,10 +333,11 @@ function parseSetupAliases(stdout: string, setup: ScenarioAction[]) {
     if (!lines[0]?.startsWith("runtime ")) throw new Error("baseline process did not report a runtime start");
     const aliases = new Map<string, string>();
     for (let index = 0; index < setup.length; index += 1) {
+        const action = setup[index]!;
         const id = lines[index + 1];
         if (typeof id !== "string" || !id.startsWith("meaning-"))
-            throw new Error(`setup action ${setup[index].as} did not return a meaning id`);
-        aliases.set(setup[index].as, id);
+            throw new Error(`setup action ${action.as} did not return a meaning id`);
+        aliases.set(action.as, id);
     }
     return aliases;
 }

@@ -520,10 +520,10 @@ function buildScenario(workload: SelectivityWorkload, testCase: SelectivityWorkl
 function summarizeLatency(values: number[]) {
     if (values.length === 0) return { sample_count: 0, min: 0, median: 0, p95: 0, max: 0, mean: 0 };
     const sorted = [...values].sort((a, b) => a - b);
-    const quantile = (q: number) => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * q) - 1)];
+    const quantile = (q: number) => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * q) - 1)]!;
     return {
         sample_count: values.length,
-        min: round(sorted[0]),
+        min: round(sorted[0]!),
         median: round(quantile(0.5)),
         p95: round(quantile(0.95)),
         max: round(sorted.at(-1) ?? 0),
