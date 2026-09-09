@@ -7,7 +7,7 @@ on:
       - master
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -33,21 +31,6 @@ jobs:
 
       - name: Install locked development toolchain
         run: npm ci
-
-      - name: Apply final strict TypeScript fix
-        run: |
-          node scripts/fix-longitudinal-strict.mjs
-          npx oxfmt eval/longitudinal/harness.ts
-
-      - name: Commit final strict TypeScript fix
-        run: |
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add eval/longitudinal/harness.ts
-            git commit -m "fix: preserve optional supersede reason semantics"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
 
       - name: Run static and repository checks
         run: npm run check
