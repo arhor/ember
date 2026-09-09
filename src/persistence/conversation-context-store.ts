@@ -10,12 +10,17 @@ import {
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
-export type CompletedConversationExchange = Omit<
+export type AcceptedConversationExchange = Pick<
     ConversationExchangeRecord,
-    "expression_content" | "expression_content_truncated"
-> & {
+    "cognition_id" | "principal" | "scope" | "surface" | "input_evidence_id" | "started_at"
+>;
+
+export interface CommittedConversationExpression {
+    cognition_id: ConversationExchangeRecord["cognition_id"];
+    expression_evidence_id: NonNullable<ConversationExchangeRecord["expression_evidence_id"]>;
+    expression_occurred_at: string;
     expression_content: string;
-};
+}
 
 export class ConversationContextStore {
     readonly path: string;
@@ -56,12 +61,13 @@ export class ConversationContextStore {
         return value;
     }
 
-    async recordCompletedExchange(input: CompletedConversationExchange): Promise<ConversationExchangeRecord> {
-        const projection = truncateConversationText(input.expression_content);
+    async recordAcceptedInput(input: AcceptedConversationExchange): Promise<ConversationExchangeRecord> {
         const record: ConversationExchangeRecord = {
             ...input,
-            expression_content: projection.content,
-            expression_content_truncated: projection.truncated,
+            expression_evidence_id: null,
+            expression_occurred_at: null,
+            expression_content: null,
+            expression_content_truncated: null,
         };
         validateConversationContextDocument({ conversation_context_version: 1, exchanges: [record] });
 
@@ -75,25 +81,58 @@ export class ConversationContextStore {
         }
 
         document.exchanges.push(record);
-        document.exchanges.sort(
-            (left, right) =>
-                left.expression_occurred_at.localeCompare(right.expression_occurred_at) ||
-                left.cognition_id.localeCompare(right.cognition_id),
-        );
+        document.exchanges.sort(compareExchanges);
         if (document.exchanges.length > RECENT_DIALOGUE_MAX_STORED_EXCHANGES) {
             document.exchanges.splice(0, document.exchanges.length - RECENT_DIALOGUE_MAX_STORED_EXCHANGES);
         }
+        await this.writeDocument(document);
+        return structuredClone(record);
+    }
+
+    async recordCommittedExpression(input: CommittedConversationExpression): Promise<ConversationExchangeRecord> {
+        const projection = truncateConversationText(input.expression_content);
+        const document = await this.load();
+        const index = document.exchanges.findIndex((exchange) => exchange.cognition_id === input.cognition_id);
+        if (index < 0) {
+            throw new ValidationError(`conversation context is missing accepted cognition ${input.cognition_id}`);
+        }
+        const existing = document.exchanges[index]!;
+        const updated: ConversationExchangeRecord = {
+            ...existing,
+            expression_evidence_id: input.expression_evidence_id,
+            expression_occurred_at: input.expression_occurred_at,
+            expression_content: projection.content,
+            expression_content_truncated: projection.truncated,
+        };
+        validateConversationContextDocument({ conversation_context_version: 1, exchanges: [updated] });
+
+        if (existing.expression_evidence_id !== null) {
+            if (JSON.stringify(existing) !== JSON.stringify(updated)) {
+                throw new ValidationError(`conversation context expression conflicts with cognition ${input.cognition_id}`);
+            }
+            return structuredClone(existing);
+        }
+
+        document.exchanges[index] = updated;
+        await this.writeDocument(document);
+        return structuredClone(updated);
+    }
+
+    private async writeDocument(document: ConversationContextDocument): Promise<void> {
         validateConversationContextDocument(document);
         await replaceFileDurably(this.path, `${JSON.stringify(document, null, 2)}\n`, {
             durabilityUncertainMessage:
                 "conversation context replacement may be visible, but directory synchronization failed",
         });
-        return structuredClone(record);
     }
 }
 
 function emptyDocument(): ConversationContextDocument {
     return { conversation_context_version: 1, exchanges: [] };
+}
+
+function compareExchanges(left: ConversationExchangeRecord, right: ConversationExchangeRecord): number {
+    return left.started_at.localeCompare(right.started_at) || left.cognition_id.localeCompare(right.cognition_id);
 }
 
 function errorCode(error: unknown): string | undefined {
