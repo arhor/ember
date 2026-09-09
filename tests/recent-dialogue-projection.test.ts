@@ -6,10 +6,7 @@ import test from "node:test";
 import type { EmberState } from "../src/core/model.ts";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 
-import {
-    RECENT_DIALOGUE_MAX_EXCHANGES,
-    RECENT_DIALOGUE_MAX_TURN_BYTES,
-} from "../src/core/conversation-context.ts";
+import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -43,10 +40,7 @@ async function closeFixture(fixture: Fixture) {
     }
 }
 
-function capturingProvider(
-    requests: ProviderRequest[],
-    reply: (request: ProviderRequest) => string,
-): ProviderInvoker {
+function capturingProvider(requests: ProviderRequest[], reply: (request: ProviderRequest) => string): ProviderInvoker {
     return async (request) => {
         requests.push(structuredClone(request));
         return {
@@ -156,8 +150,14 @@ test("recent dialogue selection is deterministic and excludes exchanges beyond t
         assert.equal(context.selection.selected_cognition_ids.length, RECENT_DIALOGUE_MAX_EXCHANGES);
         assert.equal(context.turns.length, RECENT_DIALOGUE_MAX_EXCHANGES * 2);
         assert.equal(context.selection.excluded_older_exchange_count, 2);
-        assert.equal(context.turns.some((turn) => turn.content.includes("turn-0")), false);
-        assert.equal(context.turns.some((turn) => turn.content.includes("turn-1")), false);
+        assert.equal(
+            context.turns.some((turn) => turn.content.includes("turn-0")),
+            false,
+        );
+        assert.equal(
+            context.turns.some((turn) => turn.content.includes("turn-1")),
+            false,
+        );
         assert.deepEqual(
             context.turns.filter((turn) => turn.role === "user").map((turn) => turn.content),
             ["turn-2", "turn-3", "turn-4", "turn-5"],
@@ -171,16 +171,12 @@ test("conversation turn payloads are deterministically truncated to the byte bou
     const fixture = await startedFixture();
     const requests: ProviderRequest[] = [];
     const longReply = "🦊".repeat(RECENT_DIALOGUE_MAX_TURN_BYTES);
-    const provider = capturingProvider(requests, (request) =>
-        request.input.text === "long" ? longReply : "done",
-    );
+    const provider = capturingProvider(requests, (request) => (request.input.text === "long" ? longReply : "done"));
     try {
         await runTurn(fixture, provider, "long");
         await runTurn(fixture, provider, "inspect");
 
-        const emberTurn = requests[1]?.projection.conversation_context?.turns.find(
-            (turn) => turn.role === "ember",
-        );
+        const emberTurn = requests[1]?.projection.conversation_context?.turns.find((turn) => turn.role === "ember");
         assert.ok(emberTurn);
         assert.equal(emberTurn.content_truncated, true);
         assert.ok(Buffer.byteLength(emberTurn.content, "utf8") <= RECENT_DIALOGUE_MAX_TURN_BYTES);
