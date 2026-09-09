@@ -353,6 +353,7 @@ function translateAiSdkFailure(
                 status === undefined
                     ? "AI SDK provider API call failed"
                     : `AI SDK provider API call failed (HTTP ${status})`,
+                { cause: error },
             ),
             category: "provider_api",
             ...(status === undefined ? {} : { statusCode: status }),
@@ -362,7 +363,9 @@ function translateAiSdkFailure(
     if (RetryError.isInstance(error)) {
         const status = APICallError.isInstance(error.lastError) ? error.lastError.statusCode : undefined;
         return {
-            error: new ProviderError("AI SDK provider request exhausted its retry policy"),
+            error: new ProviderError("AI SDK provider request exhausted its retry policy", {
+                cause: error.lastError,
+            }),
             category: "retry_exhausted",
             retryReason: error.reason,
             ...(status === undefined ? {} : { statusCode: status }),
@@ -398,7 +401,7 @@ function translateAiSdkFailure(
 
     if (AISDKError.isInstance(error)) {
         return {
-            error: new ProviderError("AI SDK provider failed"),
+            error: new ProviderError("AI SDK provider failed", { cause: error }),
             category: "unknown",
         };
     }

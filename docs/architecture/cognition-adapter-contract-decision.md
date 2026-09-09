@@ -16,7 +16,7 @@ discovery_status: current
 
 The production Codex and Cursor integrations now provide enough evidence to revisit the abstraction question that issue #44 deliberately deferred. They converge at the Ember-owned cognition boundary, but their runtime preparation, context isolation, invocation grammar, structured output, continuation handles, diagnostics, and observable termination evidence remain materially different.
 
-The existing seam is therefore the smallest common contract currently justified by evidence. The duplicated-looking process mechanics inside `src/providers/codex.ts` and `src/providers/cursor.ts` remain adapter-local because extracting them today would require a hook-heavy lifecycle framework that obscures the differences Ember must preserve.
+The existing seam is therefore the smallest common contract currently justified by evidence. The duplicated-looking process mechanics inside `src/providers/codex.ts` and `src/providers/cursor.ts` remain adapter-local because extracting them today would require a hook-heavy lifecycle framework that obscures the differences Ember must preserve. Issue #204 adds a third production backend through Vercel AI SDK and `ai-sdk-provider-claude-code`; because that backend delegates process/protocol mechanics to the provider rather than repeating Codex/Cursor lifecycle code, it strengthens rather than triggers the case for a shared Ember process framework.
 
 This is a valid negative abstraction decision, not a statement that the implementations can never share lower-level mechanics. A future third production backend or a concrete maintenance failure may provide enough evidence to revisit the boundary.
 

@@ -40,12 +40,12 @@ has an API named `Agent`, `Memory`, `Session`, `Workflow`, `Thread`, `Handoff`, 
 
 The synthesis therefore selects two answers for two time horizons:
 
-1. **Immediate posture: defer production adoption until an earned feature needs the
-   mechanics.** Research alone adds no production dependency.
-2. **Likely first adoption: use Vercel AI SDK as Ember's primary reusable agent
-   infrastructure toolkit.** Prefer its provider, structured-output, streaming, tool,
-   bounded-loop, MCP, testing, and telemetry mechanics before considering a second
-   overlapping agent SDK.
+1. **Immediate posture: Vercel AI SDK is now the production primary toolkit where an
+   earned feature needs its mechanics.** #188 adopted shared AI SDK cognition mechanics,
+   and #204 demonstrates a subscription-backed Claude runtime provider on the same seam.
+2. **Continue using Vercel AI SDK as Ember's primary reusable agent infrastructure
+   toolkit.** Prefer its provider, structured-output, streaming, tool, bounded-loop, MCP,
+   testing, and telemetry mechanics before considering a second overlapping agent SDK.
 
 A second agent SDK is justified only after a concrete spike demonstrates that the
 primary stack plus Ember's existing custom runtime would otherwise require substantial,
@@ -140,7 +140,7 @@ the project.
 
 | Capability                            | Mastra                  | LangGraph.js          | Vercel AI SDK         | OpenAI Agents SDK     | Ember decision                                                                                                                                                                                               |
 | ------------------------------------- | ----------------------- | --------------------- | --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| model/provider invocation and routing | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for a future direct-provider backend.** Keep CLI adapters for current subscription-backed runtimes.                                                                                          |
+| model/provider invocation and routing | H / M / M / M / H       | L / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK when a provider removes real integration plumbing, including subscription-backed agent runtimes.** Keep custom CLI adapters where no suitable provider has earned replacement.               |
 | structured output                     | H / M / M / M / H       | M / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK `Output` mechanics inside a cognition adapter.** Ember still validates provenance/currentness.                                                                                               |
 | tool definitions and local execution  | H / M / M / M / H       | H / M / M / M / H     | **H / L / L / L / H** | H / M / M / M / H     | **Prefer AI SDK for simple model-facing tool plumbing.** Agents SDK becomes interesting when the runner itself is needed.                                                                                    |
 | bounded agent/tool loop               | H / H / H / M / M       | H / H / H / M / M     | **H / M / L / L / H** | H / M / M / M / H     | **Prefer AI SDK as part of the primary stack.** Compare Agents SDK only if a concrete bounded-loop requirement proves materially awkward or fragile on AI SDK plus Ember semantics.                          |
@@ -185,11 +185,12 @@ than selecting a locally stronger SDK for every cell in the capability matrix. E
 should therefore first ask whether AI SDK plus existing Ember mechanics is sufficient,
 not which alternative SDK wins an isolated feature comparison.
 
-The adoption trigger remains concrete. AI SDK should first be used when Ember actually
-adds a **direct model API backend** or an in-process tool loop. Wrapping the existing
-Codex/Cursor CLI adapters in AI SDK would add an interface without removing their
-process, authentication, workspace, session, output-bound, cancellation, and
-uncertainty mechanics.
+The adoption trigger remains concrete and is now demonstrated by production code.
+AI SDK is appropriate when a provider or primitive removes material integration
+mechanics without taking Ember semantics. #204 does exactly that for Claude Code through
+`ai-sdk-provider-claude-code`; the existing Codex/Cursor adapters remain custom because
+wrapping them in AI SDK would still leave Ember owning their process, authentication,
+workspace, session, output-bound, cancellation, and uncertainty mechanics.
 
 ### LangGraph is the durable-execution challenger, not a planned companion
 

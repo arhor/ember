@@ -1,16 +1,12 @@
+import type { ClaudeCodeSettings } from "ai-sdk-provider-claude-code";
+
+import { createAuthenticationError } from "ai-sdk-provider-claude-code";
+import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import type { ClaudeCodeSettings } from "ai-sdk-provider-claude-code";
-
-import { MockLanguageModelV3 } from "ai/test";
-import { createAuthenticationError } from "ai-sdk-provider-claude-code";
-
 import { ProviderError } from "../src/core/errors.ts";
-import {
-    createClaudeCodeProvider,
-    createClaudeCodeProviderWithDependencies,
-} from "../src/providers/claude-code.ts";
+import { createClaudeCodeProvider, createClaudeCodeProviderWithDependencies } from "../src/providers/claude-code.ts";
 import { captureError, emptyRequest } from "./support.ts";
 
 function generated(value: unknown) {

@@ -1,13 +1,13 @@
 import type { LanguageModel } from "ai";
 import type { ClaudeCodeSettings } from "ai-sdk-provider-claude-code";
-import type { InferenceEvidenceSink } from "./ai-sdk.ts";
-import type { ProviderInvoker } from "./contract.ts";
 
+import { claudeCode, isAuthenticationError } from "ai-sdk-provider-claude-code";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { claudeCode, isAuthenticationError } from "ai-sdk-provider-claude-code";
+import type { InferenceEvidenceSink } from "./ai-sdk.ts";
+import type { ProviderInvoker } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { createAiSdkProvider } from "./ai-sdk.ts";
@@ -49,23 +49,14 @@ export function createClaudeCodeProviderWithDependencies(
     return async (request, invocationOptions) => {
         const directory = await dependencies.createTemporaryDirectory();
         try {
-            const model = dependencies.createModel(
-                modelId,
-                claudeCodeSettings(directory, dependencies.environment),
-            );
+            const model = dependencies.createModel(modelId, claudeCodeSettings(directory, dependencies.environment));
             const provider = createAiSdkProvider(model, {
-                ...(options.inferenceEvidence === undefined
-                    ? {}
-                    : { inferenceEvidence: options.inferenceEvidence }),
+                ...(options.inferenceEvidence === undefined ? {} : { inferenceEvidence: options.inferenceEvidence }),
             });
             try {
                 return await provider(request, invocationOptions);
             } catch (error) {
-                if (
-                    error instanceof ProviderError &&
-                    error.cause !== undefined &&
-                    isAuthenticationError(error.cause)
-                ) {
+                if (error instanceof ProviderError && error.cause !== undefined && isAuthenticationError(error.cause)) {
                     throw new ProviderError(
                         "Claude Code subscription authentication is unavailable; authenticate with `claude auth login`.",
                         { cause: error.cause },

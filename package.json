@@ -15,6 +15,7 @@
     "surface:telegram": "node bin/ember-telegram.ts",
     "smoke:codex": "node tests/live/codex-smoke.ts",
     "smoke:cursor": "node tests/live/cursor-smoke.ts",
+    "smoke:claude": "node tests/live/claude-code-smoke.ts",
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node tests/live/codex-specialist.ts",
     "smoke:runtime:live": "EMBER_RUN_LIVE_EPISODIC=1 node tests/live/episodic-runtime-smoke.ts",
     "eval:runtime-resource": "node eval/runtime-resource/run.ts",
@@ -38,6 +39,7 @@
   "dependencies": {
     "@ai-sdk/mcp": "2.0.45",
     "ai": "7.0.93",
+    "ai-sdk-provider-claude-code": "4.3.1",
     "node-telegram-bot-api": "2.1.0"
   },
   "devDependencies": {

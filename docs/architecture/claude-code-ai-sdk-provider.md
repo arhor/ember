@@ -82,18 +82,18 @@ evidence.
 Every cognition gets a fresh temporary working directory created by Ember. The Claude
 provider is constructed with this fixed policy:
 
-| Surface | Policy |
-| --- | --- |
-| filesystem settings / `CLAUDE.md` | `settingSources: []` |
-| Claude built-in tools | `tools: []` and `allowedTools: []` |
-| unattended permission prompts | `permissionPrompts: "none"` |
-| MCP | `mcpServers: {}` and `strictMcpConfig: true` |
-| skills | `skills: []` |
-| plugins | `plugins: []` |
-| programmatic subagents | `agents: {}` |
-| turns | `maxTurns: 1` |
-| session persistence | `persistSession: false` |
-| streaming input / interactive continuation | `streamingInput: "off"` |
+| Surface                                    | Policy                                       |
+| ------------------------------------------ | -------------------------------------------- |
+| filesystem settings / `CLAUDE.md`          | `settingSources: []`                         |
+| Claude built-in tools                      | `tools: []` and `allowedTools: []`           |
+| unattended permission prompts              | `permissionPrompts: "none"`                  |
+| MCP                                        | `mcpServers: {}` and `strictMcpConfig: true` |
+| skills                                     | `skills: []`                                 |
+| plugins                                    | `plugins: []`                                |
+| programmatic subagents                     | `agents: {}`                                 |
+| turns                                      | `maxTurns: 1`                                |
+| session persistence                        | `persistSession: false`                      |
+| streaming input / interactive continuation | `streamingInput: "off"`                      |
 
 The adapter does not opt into a Claude Code preset system prompt, filesystem settings,
 provider hooks, extra directories, or SDK escape hatches. Ember's bounded projection
