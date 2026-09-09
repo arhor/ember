@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseArgs } from "../src/cli/index.ts";
+import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { ProviderError, ValidationError } from "../src/core/errors.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../src/providers/contract.ts";
 import { invokeProvider } from "../src/providers/process.ts";

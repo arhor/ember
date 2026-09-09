@@ -8,7 +8,7 @@ import test from "node:test";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
-import { main as cliMain } from "../src/cli/index.ts";
+import { main as cliMain } from "../src/surfaces/cli/index.ts";
 import { initialState } from "../src/core/model.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";

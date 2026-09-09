@@ -5,7 +5,7 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough, Writable } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/cli/index.ts";
+import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { StateStore } from "../src/persistence/state-store.ts";

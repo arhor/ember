@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/cli/index.ts";
+import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";

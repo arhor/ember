@@ -34,8 +34,7 @@ The adopted runtime is organized around explicit module boundaries rather than o
 - `src/providers/` owns the one-shot cognition provider contract, generic process transport, concrete provider adapters, and provider evidence helpers;
 - `src/delegation/` owns bounded specialist-delegation boundaries, kept conceptually separate from one-shot cognition providers;
 - `src/persistence/` owns durable state storage;
-- `src/surfaces/` owns concrete interaction adapters, with each surface grouped under `src/surfaces/<surface>/`; the local conversational CLI and Telegram are sibling surfaces over the shared interaction boundary;
-- `src/cli/` owns command parsing and operator/application dispatch such as initialization, inspection, correction, and lock administration; its conversational `run` command delegates to the CLI surface;
+- `src/surfaces/` owns concrete interaction modules, with each surface grouped under `src/surfaces/<surface>/`; the local CLI and Telegram are sibling modules over the shared interaction boundary. CLI-specific command parsing and operator/application dispatch remain local to `src/surfaces/cli/`, while conversational mechanics are isolated in its `surface.ts`;
 - `eval/` contains longitudinal and process-restart evaluation harnesses rather than production runtime code;
 - narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under `tests/`.
 
