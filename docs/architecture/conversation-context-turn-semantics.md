@@ -142,6 +142,32 @@ by ADR 0003. Canonical meanings, current observations, live commitments, and oth
 admissible evidence may participate beside it. The conversational slice does not own
 or replace the full projection.
 
+### Shared conversational ground
+
+Not every turn in Ember's interaction history is safe to treat as mutually established
+dialogue.
+
+For an Ember expression, `expression committed` establishes what Ember produced.
+Delivery evidence establishes what the transport can justify about delivery. Neither
+fact by itself proves that the user became aware of the expression.
+
+When user awareness is unknown, the expression may remain selectable as Ember-owned
+interaction evidence when needed for truthful recovery, inspection, or interpretation,
+but its content must not silently become shared conversational ground. In particular,
+it must not become an antecedent, governing local assumption, accepted choice, or an
+"as I said above" premise merely because Ember knows she produced it.
+
+User awareness may become established through stronger later evidence, for example a
+user response that specifically references or presupposes the expression, or other
+surface evidence sufficient to justify awareness. This document does not choose the
+representation or inference mechanism. Until stronger evidence resolves the gap,
+awareness uncertainty must survive projection.
+
+Conversation context can therefore contain material with different epistemic roles:
+shared dialogue, participant-local prior expression evidence, and unresolved
+interaction status. Selection must preserve those roles rather than flattening every
+selected turn into one apparently shared transcript.
+
 ## Conversation identity is Ember-owned
 
 No provider, surface, process, or transport identifier may be the canonical answer to
@@ -153,7 +179,11 @@ recoverable relation among turns, or another mechanism. The representation is no
 settled here. The semantic requirement is that the relation can survive replacement
 of any one operational locus.
 
-### Same principal and scope are necessary evidence, not sufficient identity
+### Principal and scope are supporting evidence, not conversation identity
+
+Compatible principal/participant and scope provenance matter for authorization,
+disclosure, and conversation membership, but literal equality does not define or
+guarantee conversation identity.
 
 Two interactions with the same principal and `activeScope` do not automatically
 belong to the same conversation.
@@ -264,7 +294,9 @@ must be able to recover the equivalent of:
   references that remain live;
 - whether the contribution was user input or an Ember expression;
 - whether an Ember expression is established, absent, or unknown after interruption;
-- the distinction between expression occurrence and delivery state; and
+- the distinction between expression occurrence and delivery state;
+- whether user awareness of an Ember expression is established or remains unknown;
+  and
 - enough recovery/interruption evidence to avoid pretending cognition or observation
   happened during a gap.
 
@@ -383,10 +415,12 @@ Only an established Ember expression can participate as an Ember conversational 
 An uncommitted provider candidate or unknown cognition result cannot be reconstructed
 as though Ember definitely said it.
 
-Likewise, a committed expression with uncertain delivery remains part of Ember's own
-interaction history, but Ember must not infer that the user saw it. A later user
-response can itself become new evidence that the expression was received or otherwise
-known to them.
+Likewise, a committed expression remains part of Ember's own interaction history even
+when delivery or user awareness is uncertain. Ember must not infer that the user saw
+it, and must not use its content as shared conversational ground while awareness
+remains unknown. Delivery confirmation can strengthen transport evidence but does not
+by itself prove user awareness. A later user response can itself become new evidence
+that the expression was received or otherwise known to them.
 
 ### Replay after interruption
 
@@ -428,30 +462,33 @@ The child tasks under epic #215 must preserve all of the following invariants.
 4. **Exchange correlation:** an inbound turn can be related to its expression outcome
    without pretending that acceptance, cognition, expression, delivery, and awareness
    are the same event.
-5. **Conversation membership:** same principal/scope/session is insufficient by
+5. **Shared-ground discipline:** an Ember expression whose user awareness is unknown
+   may remain selectable as Ember-owned evidence, but its content does not become
+   shared dialogue/common ground until stronger evidence justifies user awareness.
+6. **Conversation membership:** same principal/scope/session is insufficient by
    itself; discourse continuity is established or remains explicitly uncertain.
-6. **Cross-surface privacy:** a conversation may continue across surfaces only under
+7. **Cross-surface privacy:** a conversation may continue across surfaces only under
    a newly valid recipient/disclosure boundary.
-7. **No transcript-as-memory:** conversation material does not become canonical
+8. **No transcript-as-memory:** conversation material does not become canonical
    meaning merely because it is retained, repeated, summarized, or selected.
-8. **Expression availability:** locally relevant Ember expressions remain recoverable
+9. **Expression availability:** locally relevant Ember expressions remain recoverable
    across clean restart/provider replacement with enough fidelity to resolve valid
    follow-up references.
-9. **Bounded selection:** default conversational participation is finite and
-   inspectable; stale or unrelated dialogue can leave the projection without being
-   rewritten as forgotten canonical state.
-10. **Currentness:** a historically accurate prior turn does not remain a governing
+10. **Bounded selection:** default conversational participation is finite and
+    inspectable; stale or unrelated dialogue can leave the projection without being
+    rewritten as forgotten canonical state.
+11. **Currentness:** a historically accurate prior turn does not remain a governing
     local assumption after correction, topic change, closure, or supersession.
-11. **Provider independence:** provider-native thread/session state is operational
+12. **Provider independence:** provider-native thread/session state is operational
     evidence or optimization only; hidden provider history cannot bypass Ember's own
     selection boundary.
-12. **Truthful interruption:** unknown cognition/expression/delivery boundaries remain
+13. **Truthful interruption:** unknown cognition/expression/delivery boundaries remain
     unknown until stronger evidence resolves them; recovery does not synthesize a
     clean transcript.
-13. **Truthful degradation:** when required conversational detail is unavailable,
+14. **Truthful degradation:** when required conversational detail is unavailable,
     Ember exposes or behaves consistently with that gap rather than inventing exact
     recall.
-14. **Inspectability:** implementation/evaluation can explain which dialogue material
+15. **Inspectability:** implementation/evaluation can explain which dialogue material
     participated, why it was considered part of the current trajectory, and which
     operational identifiers were merely supporting evidence.
 
