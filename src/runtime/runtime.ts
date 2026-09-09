@@ -213,6 +213,14 @@ export async function runCognition(
         providerTermination: null,
     });
     state = await store.commit(state.revision, started);
+    await conversationStore.recordAcceptedInput({
+        cognition_id: cognitionId,
+        principal,
+        scope,
+        surface,
+        input_evidence_id: input.evidenceId,
+        started_at: timestamp,
+    });
 
     const request: ProviderRequest = {
         contractVersion: CONTRACT_VERSION,
@@ -281,14 +289,9 @@ export async function runCognition(
     });
     findRuntime(completed, runtimeId).lastDurableObservationAt = at;
     state = await store.commit(current.revision, completed);
-    await conversationStore.recordCompletedExchange({
+    await conversationStore.recordCommittedExpression({
         cognition_id: cognitionId,
-        principal,
-        scope,
-        surface,
-        input_evidence_id: cognition.inputEvidenceId,
         expression_evidence_id: expressionId,
-        started_at: cognition.startedAt,
         expression_occurred_at: expression.occurredAt,
         expression_content: result.reply,
     });
