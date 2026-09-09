@@ -8,7 +8,7 @@ import {
     renderTelegramSurfaceUnit,
     runTelegramPolling,
     verifyTelegramLongPollingReady,
-} from "../src/surfaces/telegram.ts";
+} from "../src/surfaces/telegram/surface.ts";
 
 interface TelegramCliArgs {
     command: "serve" | "check" | "delete-webhook" | "render-unit";

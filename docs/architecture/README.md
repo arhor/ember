@@ -47,6 +47,10 @@ Current architecture material:
 - [Interaction Surface Boundary](interaction-surface-boundary.md) defines issue #85's
   transport-independent principal provenance, stable occurrence correlation, and
   delivery intent/attempt lifecycle without making surface metadata canonical memory.
+- [Source Layout and Surface Placement](source-layout.md) records the current
+  `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
+  mechanics and operator/application commands, and the intended inward dependency
+  direction for concrete surfaces.
 - [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete
   Bot API 10.3 long-polling adapter, private-chat mapping, secret-safe configuration,
   systemd user service, delivery evidence mapping, and manual end-to-end smoke path.
@@ -99,7 +103,7 @@ Current architecture material:
   evaluates issue #176's candidate model routing, tools, MCP, workflows, memory,
   storage, delegation, observability, and eval primitives as independently
   replaceable mechanics beneath Ember-owned semantic boundaries.
-- [LangGraph.js Durable Execution Evaluation](langgraph-durable-execution-evaluation.md)
+- [LangGraph.js Durable Execution Evaluation](langgraph-js-durable-execution-evaluation.md)
   evaluates issue #177's Functional and Graph APIs, checkpointing, replay,
   interrupt/resume, persistence, delegation, and runtime mechanics as a replaceable
   durable-execution layer beneath Ember-owned continuity and canonical state.
