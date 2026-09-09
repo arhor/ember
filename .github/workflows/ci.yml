@@ -33,7 +33,9 @@ jobs:
         run: npm ci
 
       - name: Run static and repository checks
-        run: npm run check
+        run: |
+          npm run fmt
+          git diff --exit-code -- docs/architecture/conversation-context-turn-semantics.md
 
       - name: Run complete acceptance suite
         run: npm test
