@@ -39,7 +39,7 @@ export function decideRepeatedCognitionAttention(
     request: RepeatedCognitionAttentionRequest,
 ): RepeatedCognitionAttentionDecision {
     for (let index = history.length - 1; index >= 0; index -= 1) {
-        const occurrence = history[index];
+        const occurrence = history[index]!;
         if (!sameContext(occurrence, request)) {
             continue;
         }
