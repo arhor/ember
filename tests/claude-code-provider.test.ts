@@ -105,7 +105,7 @@ test("Claude Code adapter applies Ember provenance validation after AI SDK struc
     const error = await captureError(() => provider(emptyRequest(), { timeoutSeconds: 1 }));
 
     assert.ok(error instanceof ProviderError);
-    assert.match(error.message, /not present in the supplied projection/i);
+    assert.match(error.message, /outside its projection/i);
 });
 
 test("Claude Code adapter maps provider authentication failure without exposing raw diagnostics", async () => {
