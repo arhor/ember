@@ -49,7 +49,7 @@ export interface RunProcessOptions<TOptions> {
     spawnOptions: TOptions;
     stdin: string | Buffer;
     timeoutSeconds: number;
-    signal?: AbortSignal;
+    signal?: AbortSignal | undefined;
     maxStdoutBytes: number;
     maxStderrBytes: number;
     terminationGraceMs: number;
