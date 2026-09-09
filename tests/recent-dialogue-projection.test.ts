@@ -42,7 +42,10 @@ async function closeFixture(fixture: Fixture) {
     }
 }
 
-function capturingProvider(requests: ProviderRequest[], reply: (request: ProviderRequest) => string): ProviderInvoker {
+function capturingProvider(
+    requests: ProviderRequest[],
+    reply: (request: ProviderRequest) => string,
+): ProviderInvoker {
     return async (request) => {
         requests.push(structuredClone(request));
         return {
@@ -93,7 +96,10 @@ test("second turn receives prior user and Ember turns separately from canonical 
                 ["ember", "Red is first; blue is second."],
             ],
         );
-        assert.equal(projection.conversation_context.turns[1]?.in_reply_to_evidence_id, projection.conversation_context.turns[0]?.evidence_id);
+        assert.equal(
+            projection.conversation_context.turns[1]?.in_reply_to_evidence_id,
+            projection.conversation_context.turns[0]?.evidence_id,
+        );
         assert.equal(projection.conversation_context.turns[1]?.delivery_status, "displayed");
         assert.equal(projection.conversation_context.turns[1]?.user_awareness, "unknown");
         assert.deepEqual(projection.selection.evidence_ids, []);
@@ -134,12 +140,16 @@ test("conversation turn payloads are deterministically truncated to the byte bou
     const fixture = await startedFixture();
     const requests: ProviderRequest[] = [];
     const longReply = "🦊".repeat(RECENT_DIALOGUE_MAX_TURN_BYTES);
-    const provider = capturingProvider(requests, (request) => (request.input.text === "long" ? longReply : "done"));
+    const provider = capturingProvider(requests, (request) =>
+        request.input.text === "long" ? longReply : "done",
+    );
     try {
         await runTurn(fixture, provider, "long");
         await runTurn(fixture, provider, "inspect");
 
-        const emberTurn = requests[1]?.projection.conversation_context?.turns.find((turn) => turn.role === "ember");
+        const emberTurn = requests[1]?.projection.conversation_context?.turns.find(
+            (turn) => turn.role === "ember",
+        );
         assert.ok(emberTurn);
         assert.equal(emberTurn.content_truncated, true);
         assert.ok(Buffer.byteLength(emberTurn.content, "utf8") <= RECENT_DIALOGUE_MAX_TURN_BYTES);
