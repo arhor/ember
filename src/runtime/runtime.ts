@@ -133,7 +133,7 @@ export interface RunCognitionOptions {
     providerLabel: string;
     provider: ProviderInvoker;
     timeoutSeconds: number;
-    signal?: AbortSignal;
+    signal?: AbortSignal | undefined;
     output?: Writable | ((text: string) => void | Promise<void>);
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
@@ -306,7 +306,7 @@ function latestRuntime(state: EmberState): RuntimeEpisode | null {
     if (tails.length !== 1) {
         throw new ValidationError("runtime recovery chain has no unique current tail");
     }
-    return tails[0];
+    return tails[0]!;
 }
 
 async function writeOutput(output: Writable | ((text: string) => void | Promise<void>), text: string) {

@@ -32,6 +32,11 @@ export type CapabilityAuthorityDecision =
 
 export type CapabilityInputDecision = { status: "allowed" } | { status: "rejected"; reason: string };
 
+export type CapabilityInputValidator = (
+    context: CapabilityContext,
+    input: unknown,
+) => CapabilityInputDecision | Promise<CapabilityInputDecision>;
+
 export interface CapabilityBinding {
     name: string;
     description: string;
@@ -41,14 +46,11 @@ export interface CapabilityBinding {
         context: CapabilityContext,
         input: unknown,
     ) => CapabilityAuthorityDecision | Promise<CapabilityAuthorityDecision>;
-    validateInput?: (
-        context: CapabilityContext,
-        input: unknown,
-    ) => CapabilityInputDecision | Promise<CapabilityInputDecision>;
+    validateInput?: CapabilityInputValidator | undefined;
     execute: (
         context: CapabilityContext,
         input: unknown,
-        options: { signal?: AbortSignal },
+        options: { signal?: AbortSignal | undefined },
     ) => CapabilityJsonValue | Promise<CapabilityJsonValue>;
 }
 
@@ -121,7 +123,7 @@ export function createCapabilityExecutionFirewall(
     const attempted = new Set<string>();
 
     return {
-        async execute(name: string, input: unknown, { signal }: { signal?: AbortSignal } = {}) {
+        async execute(name: string, input: unknown, { signal }: { signal?: AbortSignal | undefined } = {}) {
             const capability = selected.get(name);
             if (!capability) {
                 throw new Error(`capability is not selected for this cognition: ${name}`);

@@ -64,7 +64,7 @@ function parseArguments(args: string[]): {
     let provider = "scripted";
     let attentionControl = "repeated_projection";
     for (let index = 0; index < args.length; index++) {
-        const argument = args[index];
+        const argument = args[index]!;
         if (argument === "--provider") provider = args[++index] ?? "";
         else if (argument.startsWith("--provider=")) provider = argument.slice("--provider=".length);
         else if (argument === "--attention-control") attentionControl = args[++index] ?? "";

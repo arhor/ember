@@ -49,7 +49,11 @@ export function createLocalLookupCapability({
             if (!isObject(input) || typeof input.key !== "string") {
                 throw new Error("validated local lookup input became invalid before execution");
             }
-            return { key: input.key, value: entries[input.key] };
+            const value = entries[input.key];
+            if (value === undefined) {
+                throw new Error("validated local lookup key disappeared before execution");
+            }
+            return { key: input.key, value };
         },
     };
 }

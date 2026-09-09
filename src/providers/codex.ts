@@ -59,7 +59,11 @@ export interface InvokeCodexOptions extends ProviderInvocationOptions {
     spawnImpl?: CliProcessSpawn;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
-    thread?: { mode: "ephemeral" } | { mode: "fresh_persistent" } | { mode: "resume"; externalThreadId: string };
+    thread?:
+        | { mode: "ephemeral" }
+        | { mode: "fresh_persistent" }
+        | { mode: "resume"; externalThreadId: string }
+        | undefined;
 }
 
 export interface CodexProviderConfig {
@@ -341,7 +345,9 @@ function parseCodexJsonl(output: string): { result: ProviderResult; externalThre
         }
     }
     if (agentMessages !== 1) throw new ProviderError("Codex JSONL must contain exactly one completed agent message");
-    return { result: candidate as ProviderResult, externalThreadId };
+    return externalThreadId === undefined
+        ? { result: candidate as ProviderResult }
+        : { result: candidate as ProviderResult, externalThreadId };
 }
 
 function validExternalId(value: unknown): value is string {

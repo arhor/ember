@@ -24,7 +24,7 @@ process.stdout.write(`${JSON.stringify({ type: "turn.completed" })}\n`);
 function providerResult(promptText: string) {
     const match = /<ember_provider_request>\n([^\n]+)\n<\/ember_provider_request>/.exec(promptText);
     if (!match) throw new Error("bounded Ember provider request is missing");
-    const request = JSON.parse(match[1]) as {
+    const request = JSON.parse(match[1]!) as {
         input?: { text?: string };
         projection?: { selection?: { meaning_ids?: string[] } };
     };

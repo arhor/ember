@@ -129,7 +129,7 @@ async function reintegrateAtCurrentRevision(
     try {
         let reconciled = (await reconcileSpecialistResult(candidatePath, currentness, {
             now,
-            disposition: explicitRejection ? "rejected" : undefined,
+            ...(explicitRejection ? { disposition: "rejected" as const } : {}),
         })) as PersistedSpecialistRecord;
         const applicability = reconciled.currentness_evaluation?.applicability;
         if (!applicability) throw new Error("specialist currentness evaluation was not recorded");

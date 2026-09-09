@@ -24,8 +24,8 @@ export interface CodexOpportunityEvaluatorOptions {
     command?: string;
     arguments_?: string[];
     timeoutSeconds?: number;
-    signal?: AbortSignal;
-    provider?: ProviderInvoker;
+    signal?: AbortSignal | undefined;
+    provider?: ProviderInvoker | undefined;
 }
 
 export function createCodexOpportunityEvaluator({

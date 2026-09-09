@@ -37,8 +37,8 @@ export interface ProviderStreamObserver {
 
 export interface ProviderInvocationOptions {
     timeoutSeconds: number;
-    signal?: AbortSignal;
-    stream?: ProviderStreamObserver;
+    signal?: AbortSignal | undefined;
+    stream?: ProviderStreamObserver | undefined;
 }
 
 // Transport and process launch configuration belongs inside the concrete provider adapter, not this semantic seam.

@@ -42,7 +42,7 @@ export interface InvokeCursorOptions extends ProviderInvocationOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
     spawnImpl?: CliProcessSpawn;
-    session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string };
+    session?: { mode: "fresh" } | { mode: "resume"; externalSessionId: string } | undefined;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
 }

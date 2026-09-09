@@ -186,7 +186,7 @@ export interface SpecialistEpisodeRecord {
 export interface RunCodexSpecialistOptions {
     recordPath: string;
     environment?: NodeJS.ProcessEnv;
-    signal?: AbortSignal;
+    signal?: AbortSignal | undefined;
     now?: () => string;
     spawnImpl?: CliProcessSpawn;
     terminationGraceMs?: number;
@@ -473,7 +473,7 @@ export async function runCodexSpecialist(
         try {
             const parsed = parseJsonl(contractDecoder.decode(stdout));
             validateReport(parsed.report);
-            record.externalThreadId = parsed.threadId;
+            if (parsed.threadId !== undefined) record.externalThreadId = parsed.threadId;
             if (parsed.threadId) {
                 record.observations.push({ observedAt: now(), kind: "thread_observed", detail: parsed.threadId });
             }
@@ -786,7 +786,7 @@ function parseJsonl(text: string): { report: SpecialistReport; threadId?: string
             `Codex JSONL must contain a final specialist report; observed ${JSON.stringify(observedTypes.slice(0, 100))}`,
         );
     }
-    return { report, threadId };
+    return threadId === undefined ? { report } : { report, threadId };
 }
 
 function validateSpec(spec: SpecialistEpisodeSpec) {
