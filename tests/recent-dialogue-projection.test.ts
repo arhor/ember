@@ -9,6 +9,7 @@ import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
+import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
@@ -130,6 +131,38 @@ test("accepted user turns survive provider failure without inventing an Ember tu
         assert.equal(context.selection.selected_cognition_ids.length, 1);
         assert.equal(context.selection.selected_evidence_ids.length, 1);
         assert.equal(context.selection.unavailable_expression_count, 0);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("conversation sidecar preserves durable acceptance order when timestamps tie", async () => {
+    const fixture = await startedFixture();
+    const conversationStore = new ConversationContextStore(fixture.store.path);
+    try {
+        const startedAt = "2026-09-09T12:02:00Z";
+        await conversationStore.recordAcceptedInput({
+            cognition_id: "cognition-z",
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            surface: "local_cli",
+            input_evidence_id: "evidence-z",
+            started_at: startedAt,
+        });
+        await conversationStore.recordAcceptedInput({
+            cognition_id: "cognition-a",
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            surface: "local_cli",
+            input_evidence_id: "evidence-a",
+            started_at: startedAt,
+        });
+
+        const document = await conversationStore.load();
+        assert.deepEqual(
+            document.exchanges.map((exchange) => exchange.cognition_id),
+            ["cognition-z", "cognition-a"],
+        );
     } finally {
         await closeFixture(fixture);
     }
