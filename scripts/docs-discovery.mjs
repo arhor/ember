@@ -5,20 +5,11 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, extname, join, posix, relative, resolve, sep } from "node:path";
 import { cwd, stderr, stdout } from "node:process";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 
-export const ALLOWED_ROLES = new Set([
-    "foundation",
-    "decision",
-    "design",
-    "scenario",
-    "research",
-    "guide",
-    "reference",
-    "evidence",
-    "source",
-]);
 export const DEFAULT_ROLES = new Set(["foundation", "decision", "design", "scenario", "research", "guide"]);
 export const DEEP_ROLES = new Set(["reference", "evidence", "source"]);
+export const ALLOWED_ROLES = new Set([...DEFAULT_ROLES, ...DEEP_ROLES]);
 export const ALLOWED_DISCOVERY_STATUSES = new Set(["current", "superseded", "historical"]);
 
 // V1 has no generated Markdown exclusions. Keep exclusions explicit here if that changes.
@@ -78,6 +69,10 @@ function stripLineEnding(line) {
     return line.replace(/(?:\r\n|\n)$/, "");
 }
 
+function frontmatterError(lineNumber, message) {
+    return new FrontmatterError(`line ${lineNumber}: ${message}`);
+}
+
 function parseQuotedString(value, lineNumber) {
     if (value.startsWith('"')) {
         try {
@@ -87,12 +82,12 @@ function parseQuotedString(value, lineNumber) {
             }
             return parsed;
         } catch {
-            throw new FrontmatterError(`line ${lineNumber}: invalid quoted string`);
+            throw frontmatterError(lineNumber, "invalid quoted string");
         }
     }
 
     if (!value.endsWith("'") || value.length < 2) {
-        throw new FrontmatterError(`line ${lineNumber}: invalid quoted string`);
+        throw frontmatterError(lineNumber, "invalid quoted string");
     }
     const inner = value.slice(1, -1);
     const invalidQuote = inner.replaceAll("''", "").includes("'");
@@ -105,15 +100,13 @@ function parseQuotedString(value, lineNumber) {
 function parseScalar(raw, { lineNumber }) {
     const value = raw.trim();
     if (!value) {
-        throw new FrontmatterError(`line ${lineNumber}: expected a non-empty scalar value`);
+        throw frontmatterError(lineNumber, "expected a non-empty scalar value");
     }
     if (value.startsWith('"') || value.startsWith("'")) {
         return parseQuotedString(value, lineNumber);
     }
     if ("[{&*!>|".includes(value[0]) || value === "---" || value === "...") {
-        throw new FrontmatterError(
-            `line ${lineNumber}: unsupported YAML construct; use plain or quoted strings and block lists`,
-        );
+        throw frontmatterError(lineNumber, "unsupported YAML construct; use plain or quoted strings and block lists");
     }
     return value;
 }
@@ -148,7 +141,7 @@ export function parseFrontmatter(text) {
         const listMatch = line.match(LIST_ITEM_RE);
         if (listMatch) {
             if (activeListKey === null) {
-                throw new FrontmatterError(`line ${lineNumber}: list item has no preceding list key`);
+                throw frontmatterError(lineNumber, "list item has no preceding list key");
             }
             const item = parseScalar(listMatch[1] ?? "", { lineNumber });
             metadata[activeListKey].push(item);
@@ -156,21 +149,17 @@ export function parseFrontmatter(text) {
         }
 
         if (line.startsWith(" ") || line.startsWith("\t")) {
-            throw new FrontmatterError(
-                `line ${lineNumber}: unsupported indentation; lists must use exactly two spaces before '-'`,
-            );
+            throw frontmatterError(lineNumber, "unsupported indentation; lists must use exactly two spaces before '-'");
         }
 
         const fieldMatch = line.match(TOP_LEVEL_RE);
         if (!fieldMatch) {
-            throw new FrontmatterError(
-                `line ${lineNumber}: unsupported frontmatter syntax; use 'key: value' or a block list`,
-            );
+            throw frontmatterError(lineNumber, "unsupported frontmatter syntax; use 'key: value' or a block list");
         }
 
         const [, key, rawValue] = fieldMatch;
         if (Object.hasOwn(metadata, key)) {
-            throw new FrontmatterError(`line ${lineNumber}: duplicate frontmatter key '${key}'`);
+            throw frontmatterError(lineNumber, `duplicate frontmatter key '${key}'`);
         }
 
         if (rawValue == null || !rawValue.trim()) {
@@ -567,24 +556,24 @@ function parseCliArgs(argv) {
         throw new Error(`unknown command: ${command}\n${usage()}`);
     }
 
-    let deep = false;
-    let all = false;
-    let headings = null;
-    for (let index = 0; index < rest.length; index += 1) {
-        const argument = rest[index];
-        if (argument === "--deep") {
-            deep = true;
-        } else if (argument === "--all") {
-            all = true;
-        } else if (argument === "--headings") {
-            headings = rest.slice(index + 1);
-            if (headings.length === 0) {
-                throw new Error("--headings requires at least one PATH");
-            }
-            break;
-        } else {
-            throw new Error(`unknown argument: ${argument}\n${usage()}`);
-        }
+    const headingsIndex = rest.indexOf("--headings");
+    const optionArgs = headingsIndex === -1 ? rest : rest.slice(0, headingsIndex);
+    let values;
+    try {
+        ({ values } = parseArgs({
+            args: optionArgs,
+            options: { deep: { type: "boolean" }, all: { type: "boolean" } },
+            strict: true,
+        }));
+    } catch (error) {
+        const unknown = optionArgs.find((argument) => !["--deep", "--all"].includes(argument));
+        throw new Error(`${unknown ? `unknown argument: ${unknown}` : error.message}\n${usage()}`);
+    }
+    const deep = values.deep ?? false;
+    const all = values.all ?? false;
+    const headings = headingsIndex === -1 ? null : rest.slice(headingsIndex + 1);
+    if (headings?.length === 0) {
+        throw new Error("--headings requires at least one PATH");
     }
     if (deep && all) {
         throw new Error("--deep and --all are mutually exclusive");

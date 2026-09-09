@@ -21,6 +21,7 @@ import {
 
 const TEST_ROOT = dirname(fileURLToPath(import.meta.url));
 const SCRIPT_PATH = resolve(TEST_ROOT, "../scripts/docs-discovery.mjs");
+const REPOSITORY_ROOT = resolve(TEST_ROOT, "..");
 
 function docText({
     summary = "Useful routing summary.",
@@ -90,9 +91,36 @@ test("supports YAML-style single quoted scalar strings", () => {
     assert.equal(metadata.summary, "Reader's routing summary.");
 });
 
-test("rejects missing, unsupported, or unterminated frontmatter", () => {
+test("preserves CRLF body bytes and treats plain scalars literally", () => {
+    const text =
+        "---\r\nsummary: literal # not a comment\r\nread_when:\r\n  - quoted: text\r\nrole: guide\r\ndiscovery_status: current\r\n---\r\n\r\n# Body\r\nText\r\n";
+    const { metadata, body } = parseFrontmatter(text);
+    assert.equal(metadata.summary, "literal # not a comment");
+    assert.deepEqual(metadata.read_when, ["quoted: text"]);
+    assert.equal(body, "\r\n# Body\r\nText\r\n");
+});
+
+test("rejects unsupported YAML forms and malformed subset syntax", () => {
+    const invalidFrontmatter = [
+        "summary: [inline]",
+        "summary: {nested: mapping}",
+        "summary: &anchor value",
+        "summary: *alias",
+        "summary: |\n  block",
+        "summary: >\n  folded",
+        "summary:\n    - over-indented",
+        "summary: value\n  nested: mapping",
+        "summary: one\nsummary: two",
+        "summary: 'unterminated",
+        'summary: "unterminated',
+    ];
+    for (const frontmatter of invalidFrontmatter) {
+        assert.throws(() => parseFrontmatter(`---\n${frontmatter}\n---\n# Title\n`), FrontmatterError, frontmatter);
+    }
+});
+
+test("rejects missing or unterminated frontmatter", () => {
     assert.throws(() => parseFrontmatter("# No frontmatter\n"), FrontmatterError);
-    assert.throws(() => parseFrontmatter("---\nsummary: [inline]\n---\n# Title\n"), FrontmatterError);
     assert.throws(() => parseFrontmatter("---\nsummary: x\n# no terminator\n"), FrontmatterError);
 });
 
@@ -166,20 +194,48 @@ test("catalogue sorting and rendering are deterministic", () => {
     assert.ok(first.indexOf("docs/a.md") < first.indexOf("docs/z.md"));
 });
 
-test("heading projection uses H1-H4 and ignores fenced code", () => {
+test("heading projection uses one-to-three-space indentation and line-oriented Markdown contexts", () => {
     const body = `
 # Title
-## Visible
+ ## One space
+  ### Two spaces with *inline* [link](target) ###
+   #### Three spaces
+    ## Four spaces ignored
+- ## List context ignored
+<div>
+### HTML context remains visible
+</div>
 \`\`\`md
 ### Hidden
 \`\`\`
-~~~~
+~~~unusual-info
 #### Also hidden
-~~~~
+~~~
 #### Deep visible ####
 ##### H5 ignored
 `;
-    assert.deepEqual(extractHeadings(body), ["# Title", "## Visible", "#### Deep visible"]);
+    assert.deepEqual(extractHeadings(body), [
+        "# Title",
+        "## One space",
+        "### Two spaces with *inline* [link](target)",
+        "#### Three spaces",
+        "### HTML context remains visible",
+        "#### Deep visible",
+    ]);
+});
+
+test("heading fences require matching markers, sufficient length, and bare closing lines", () => {
+    const body = [
+        "````nonstandard info",
+        "### Hidden",
+        "```",
+        "#### Still hidden after short close",
+        "```` trailing text",
+        "## Still hidden after decorated close",
+        "`````   ",
+        "## Visible",
+    ].join("\n");
+    assert.deepEqual(extractHeadings(body), ["## Visible"]);
 });
 
 test("explicit exclusions are applied by exact repository path", () => {
@@ -230,4 +286,46 @@ test("CLI fails actionably when not run from repository root", () => {
     } finally {
         rmSync(temp, { recursive: true, force: true });
     }
+});
+
+function runCli(...args) {
+    return spawnSync(process.execPath, [SCRIPT_PATH, ...args], {
+        cwd: REPOSITORY_ROOT,
+        encoding: "utf8",
+    });
+}
+
+test("CLI supports default, deep, and all catalogue modes", () => {
+    const defaultResult = runCli("list");
+    const deepResult = runCli("list", "--deep");
+    const allResult = runCli("list", "--all");
+    assert.equal(defaultResult.status, 0);
+    assert.equal(deepResult.status, 0);
+    assert.equal(allResult.status, 0);
+    assert.ok(deepResult.stdout.length > defaultResult.stdout.length);
+    assert.ok(allResult.stdout.length > deepResult.stdout.length);
+});
+
+test("CLI reports usage errors with exit code 2", () => {
+    for (const [args, diagnostic] of [
+        [[], /Usage:/],
+        [["unknown"], /unknown command: unknown/],
+        [["check", "--deep"], /check does not accept arguments/],
+        [["list", "--unknown"], /unknown argument: --unknown/],
+        [["list", "--deep", "--all"], /mutually exclusive/],
+        [["list", "--headings"], /requires at least one PATH/],
+        [["list", "--deep", "--headings", "docs/vision.md"], /cannot be combined/],
+    ]) {
+        const completed = runCli(...args);
+        assert.equal(completed.status, 2, args.join(" "));
+        assert.match(completed.stderr, diagnostic);
+    }
+});
+
+test("CLI treats every argument following --headings as a requested path", () => {
+    const completed = runCli("list", "--headings", "docs/vision.md", "docs/missing.md", "--deep");
+    assert.equal(completed.status, 1);
+    assert.match(completed.stdout, /^docs\/vision\.md\n/m);
+    assert.match(completed.stderr, /docs\/missing\.md: participating document does not exist/);
+    assert.match(completed.stderr, /heading paths must be participating docs\/\*\*\/\*\.md files: --deep/);
 });

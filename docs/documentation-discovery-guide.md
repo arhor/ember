@@ -21,7 +21,7 @@ A document's repository role, its `discovery_status`, and any role-specific life
 
 ## Commands
 
-Run discovery from the repository root with Node.js built-ins only. Use Node.js 24.x locally for the same runtime exercised by CI; CI pins Node 24 explicitly. The discovery utility itself requires no `package.json`, npm dependency graph, or package installation step. Its earlier adoption of Node as repository tooling did not choose Ember's application runtime; the minimal continuity experiment makes that separate choice explicitly in its own design.
+Run discovery from the repository root with Node.js built-ins only. Use Node.js 26.8.1 or newer on the Node 26 release line, matching the repository baseline in `package.json`. Ember now has an npm toolchain, but a Markdown/YAML dependency is still a poor fit here: the discovery utility deliberately preserves a narrow, inspectable grammar whose rejection behavior is part of its contract. Keeping discovery dependency-free avoids importing broader parser semantics that the repository does not accept.
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.
@@ -137,7 +137,7 @@ Do not use `discovery_status` as a substitute for role-specific lifecycle. For e
 
 ## Ember frontmatter subset
 
-Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an **Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: Ember has not adopted an implementation runtime or dependency ecosystem, so v1 keeps the parser small, inspectable, and zero-dependency rather than approximating arbitrary YAML. This tooling choice does not establish an Ember application runtime.
+Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an **Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: the repository's established Node.js/npm toolchain does not make a general YAML model a semantic fit. The parser remains small, inspectable, and zero-dependency because its deliberately narrow accepted and rejected forms are part of discovery behavior.
 
 The accepted grammar is limited to what the v1 contract needs:
 
@@ -148,7 +148,7 @@ The accepted grammar is limited to what the v1 contract needs:
 - additional simple scalar fields belonging to another document lifecycle, such as `status: accepted`;
 - plain scalars are treated as literal strings; YAML implicit typing and comment semantics are not part of this grammar.
 
-Features outside that grammar, including inline collections, nested mappings, anchors, folded/literal multiline scalars, and arbitrary indentation, are rejected when encountered. If Ember later adopts a project runtime with a normal YAML parser, replacing this narrow parser can be considered, but the discovery contract and its observable behavior should remain unchanged.
+Features outside that grammar, including inline collections, nested mappings, anchors, folded/literal multiline scalars, and arbitrary indentation, are rejected when encountered. A future parser replacement would need to preserve this grammar and its observable behavior exactly; dependency availability alone is not a reason to broaden it.
 
 ## Default, deep, and history disclosure
 
