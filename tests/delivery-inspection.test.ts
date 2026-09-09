@@ -5,11 +5,11 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import { main as cliMain } from "../src/cli/main.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
 import { startRuntime } from "../src/runtime/runtime.ts";
+import { main as cliMain } from "../src/surfaces/cli/index.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

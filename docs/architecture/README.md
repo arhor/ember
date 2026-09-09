@@ -47,6 +47,10 @@ Current architecture material:
 - [Interaction Surface Boundary](interaction-surface-boundary.md) defines issue #85's
   transport-independent principal provenance, stable occurrence correlation, and
   delivery intent/attempt lifecycle without making surface metadata canonical memory.
+- [Source Layout and Surface Placement](source-layout.md) records the current
+  `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
+  mechanics and operator/application commands, and the intended inward dependency
+  direction for concrete surfaces.
 - [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete
   Bot API 10.3 long-polling adapter, private-chat mapping, secret-safe configuration,
   systemd user service, delivery evidence mapping, and manual end-to-end smoke path.

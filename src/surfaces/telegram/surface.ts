@@ -4,24 +4,24 @@ import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "n
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { CognitionId } from "../core/model.ts";
-import type { ProviderInvoker } from "../providers/contract.ts";
+import type { CognitionId } from "../../core/model.ts";
+import type { ProviderInvoker } from "../../providers/contract.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
-import { StateStore } from "../persistence/state-store.ts";
-import { createCodexProvider } from "../providers/codex.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
-import { createCursorProvider } from "../providers/cursor.ts";
-import { createProcessProvider, providerLabel } from "../providers/process.ts";
+import { ValidationError } from "../../core/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
+import { StateStore } from "../../persistence/state-store.ts";
+import { createCodexProvider } from "../../providers/codex.ts";
+import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
+import { createCursorProvider } from "../../providers/cursor.ts";
+import { createProcessProvider, providerLabel } from "../../providers/process.ts";
 import {
     InteractionLedgerStore,
     SurfaceDeliveryFailure,
     reconcileSurfaceDelivery,
     runSurfaceInteraction,
-} from "../runtime/interaction-boundary.ts";
-import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
-import { exactKeys, isObject } from "../util.ts";
+} from "../../runtime/interaction-boundary.ts";
+import { startRuntime, stopRuntime } from "../../runtime/runtime.ts";
+import { exactKeys, isObject } from "../../util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";

@@ -91,11 +91,11 @@ The currently supported principal-provenance classes are deliberately narrow:
 - `configured_surface_mapping` for a surface whose account/chat identity has already
   been mapped by deployment policy to the supported local principal.
 
-The production CLI now invokes this boundary directly for ordinary cognition and
-`:ask --explain`, so its asserted principal is represented with
-`explicit_local_argument` rather than existing only as an implicit caller convention.
-The Telegram adapter uses `configured_surface_mapping` only after filtering to one
-configured private chat.
+The production CLI conversation in `src/surfaces/cli/surface.ts` invokes this boundary
+directly for ordinary cognition and `:ask --explain`, so its asserted principal is
+represented with `explicit_local_argument` rather than existing only as an implicit
+caller convention. The Telegram adapter uses `configured_surface_mapping` only after
+filtering to one configured private chat.
 
 A surface account, chat ID, transport address, session, or device is evidence about a
 principal. It is not semantic authority by itself. The configured Telegram chat can
@@ -268,11 +268,13 @@ already-established occurrence rather than reaching cognition twice. Telegram
 chat/message/thread identifiers remain operational metadata and cannot replace Ember
 principal, scope, lineage, memory, or authority semantics.
 
-Telegram-specific parsing, Bot API long polling, token-file authentication, private
-chat mapping, concrete `sendMessage` delivery, and systemd supervision live outside
-this shared boundary in `src/surfaces/telegram.ts`, `bin/ember-telegram.ts`, the
-Telegram runbook, and ADR 0008. They do not redefine occurrence identity, cognition
-surface context, ordinary context selection, or the delivery lifecycle.
+Concrete surface mechanics live outside this shared boundary under
+`src/surfaces/cli/surface.ts` and `src/surfaces/telegram/surface.ts`. Telegram-specific
+Bot API long polling, token-file authentication, private chat mapping, concrete
+`sendMessage` delivery, and systemd supervision additionally involve
+`bin/ember-telegram.ts`, the Telegram runbook, and ADR 0008. These modules do not
+redefine occurrence identity, cognition surface context, ordinary context selection,
+or the delivery lifecycle.
 
 ## Privacy and context selection
 
@@ -308,9 +310,10 @@ remain Ember-owned inputs.
 ## Executable acceptance scenarios
 
 The focused tests in `src/runtime/interaction-boundary.test.ts` instantiate the issue
-#85 transport semantics. `src/surfaces/telegram.test.ts` exercises those rules through
-the concrete Telegram adapter. `tests/cross-surface-semantics.test.ts` now validates
-the same principal/privacy/delivery invariants across both real logical surfaces.
+#85 transport semantics. `src/surfaces/telegram/surface.test.ts` exercises those rules
+through the concrete Telegram adapter. `tests/cross-surface-semantics.test.ts` now
+validates the same principal/privacy/delivery invariants across both real logical
+surfaces.
 
 | Scenario                                                                             | Expected result                                                                                                      | Canonical trace      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------- |

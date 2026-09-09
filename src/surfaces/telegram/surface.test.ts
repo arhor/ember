@@ -4,12 +4,12 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { ProviderInvoker } from "../providers/contract.ts";
-import type { TelegramSurfaceConfig, TelegramUpdate } from "./telegram.ts";
+import type { ProviderInvoker } from "../../providers/contract.ts";
+import type { TelegramSurfaceConfig, TelegramUpdate } from "./surface.ts";
 
-import { initialState } from "../core/model.ts";
-import { StateStore } from "../persistence/state-store.ts";
-import { SurfaceDeliveryFailure } from "../runtime/interaction-boundary.ts";
+import { initialState } from "../../core/model.ts";
+import { StateStore } from "../../persistence/state-store.ts";
+import { SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
 import {
     TELEGRAM_SURFACE_ID,
     createTelegramApi,
@@ -19,7 +19,7 @@ import {
     runTelegramPolling,
     selectTelegramInbound,
     verifyTelegramLongPollingReady,
-} from "./telegram.ts";
+} from "./surface.ts";
 
 const PRINCIPAL = "max";
 const CHAT_ID = 424242;

@@ -6,12 +6,12 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/cli/main.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
 import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/providers/cursor.ts";
 import { startRuntime } from "../src/runtime/runtime.ts";
+import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const SCRIPTED_CURSOR = join(ROOT, "tests", "fixtures", "providers", "scripted-cursor.ts");

@@ -34,9 +34,11 @@ The adopted runtime is organized around explicit module boundaries rather than o
 - `src/providers/` owns the one-shot cognition provider contract, generic process transport, concrete provider adapters, and provider evidence helpers;
 - `src/delegation/` owns bounded specialist-delegation boundaries, kept conceptually separate from one-shot cognition providers;
 - `src/persistence/` owns durable state storage;
-- `src/cli/` owns the command-line interface;
+- `src/surfaces/` owns concrete interaction modules, with each surface grouped under `src/surfaces/<surface>/`; the local CLI and Telegram are sibling modules over the shared interaction boundary. CLI-specific command parsing and operator/application dispatch remain local to `src/surfaces/cli/`, while conversational mechanics are isolated in its `surface.ts`;
 - `eval/` contains longitudinal and process-restart evaluation harnesses rather than production runtime code;
 - narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under `tests/`.
+
+See [Source Layout and Surface Placement](docs/architecture/source-layout.md) for the current placement rules and intended dependency direction.
 
 Older research/evaluation records and explicitly historical sections of current design records may preserve source paths that were accurate when those artifacts were produced. Current implementation references should use the layout above.
 
@@ -45,6 +47,7 @@ Older research/evaluation records and explicitly historical sections of current 
 - [Vision](docs/vision.md)
 - [Design principles](docs/principles.md)
 - [Architecture index](docs/architecture/README.md)
+- [Source layout and surface placement](docs/architecture/source-layout.md)
 - [Cross-cutting design directions](docs/architecture/design-directions.md)
 - [Architecture acceptance scenarios](docs/architecture/acceptance-scenarios.md)
 - [Minimal continuity vertical slice](docs/architecture/minimal-continuity-slice.md)
