@@ -513,7 +513,7 @@ function applyActions(state: EmberState, actions: StateAction[], principal: stri
                     return attachDetail(state, principal, requireAlias(aliases, item.episode), item.text);
                 case "supersede":
                     return supersede(state, principal, requireAlias(aliases, item.meaning), item.text, {
-                        reason: item.reason,
+                        reason: item.reason ?? null,
                     });
                 case "withhold_detail":
                     return withholdDetail(state, principal, requireAlias(aliases, item.evidence), {
