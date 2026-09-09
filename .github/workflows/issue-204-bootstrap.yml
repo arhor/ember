@@ -20,6 +20,19 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Adapt bootstrap to current documentation text
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from "node:fs/promises";
+          const path = "scripts/issue-204-bootstrap.mjs";
+          let source = await readFile(path, "utf8");
+          const start = source.indexOf('await replaceOnce(\n    "docs/architecture/vercel-ai-sdk-modular-cognition-evaluation.md",\n    "The adoption trigger remains concrete.');
+          if (start < 0) throw new Error("expected obsolete #178 replacement block");
+          const end = source.indexOf('\n\nawait replaceOnce(\n    "docs/architecture/composable-agent-infrastructure-strategy.md",', start);
+          if (end < 0) throw new Error("expected #180 replacement boundary");
+          source = source.slice(0, start) + source.slice(end + 2);
+          await writeFile(path, source);
+          NODE
       - name: Apply source and documentation edits
         run: node scripts/issue-204-bootstrap.mjs
       - name: Update dependency lock
@@ -29,11 +42,16 @@ jobs:
           npm install --ignore-scripts
           npx oxlint --fix
           npx oxfmt
+      - name: Validate implementation
+        run: |
+          npx oxlint --deny-warnings --format=agent
+          npm run check
+          npm test
       - name: Commit generated changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/providers/ai-sdk.ts package.json package-lock.json docs
+          git add src tests package.json package-lock.json docs
           if git diff --cached --quiet; then
             exit 0
           fi
