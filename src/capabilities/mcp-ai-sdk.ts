@@ -38,7 +38,7 @@ export interface McpCapabilityPolicy {
 }
 
 export interface McpCapabilitySource {
-    discover(options?: { signal?: AbortSignal }): Promise<readonly McpDiscoveredTool[]>;
+    discover(options?: { signal?: AbortSignal | undefined }): Promise<readonly McpDiscoveredTool[]>;
     bind(sourceToolName: string, policy: McpCapabilityPolicy): CapabilityBinding;
     close(): Promise<void>;
 }
@@ -57,7 +57,7 @@ export class McpCapabilitySourceError extends Error {
 
 export async function openAiSdkMcpStdioCapabilitySource(
     config: AiSdkMcpStdioCapabilitySourceConfig,
-    options: { signal?: AbortSignal } = {},
+    options: { signal?: AbortSignal | undefined } = {},
 ): Promise<McpCapabilitySource> {
     validateConfig(config);
     const initializationTimeoutMs = config.initializationTimeoutMs ?? DEFAULT_INITIALIZATION_TIMEOUT_MS;
@@ -66,9 +66,9 @@ export async function openAiSdkMcpStdioCapabilitySource(
     const transport = new CloseObservedTransport(
         new Experimental_StdioMCPTransport({
             command: config.command,
-            args: config.args ? [...config.args] : undefined,
-            cwd: config.cwd,
-            env: config.env ? { ...config.env } : undefined,
+            ...(config.args === undefined ? {} : { args: [...config.args] }),
+            ...(config.cwd === undefined ? {} : { cwd: config.cwd }),
+            ...(config.env === undefined ? {} : { env: { ...config.env } }),
         }),
         closeTimeoutMs,
     );
@@ -81,7 +81,7 @@ export async function openAiSdkMcpStdioCapabilitySource(
             version: "0.0.0",
             maxRetries: 0,
             initializationOptions: {
-                signal: options.signal,
+                ...(options.signal === undefined ? {} : { signal: options.signal }),
                 timeout: initializationTimeoutMs,
                 maxTotalTimeout: initializationTimeoutMs,
             },
@@ -112,7 +112,7 @@ class AiSdkMcpCapabilitySource implements McpCapabilitySource {
         this.requestTimeoutMs = requestTimeoutMs;
     }
 
-    async discover({ signal }: { signal?: AbortSignal } = {}): Promise<readonly McpDiscoveredTool[]> {
+    async discover({ signal }: { signal?: AbortSignal | undefined } = {}): Promise<readonly McpDiscoveredTool[]> {
         this.ensureOpenForDiscovery();
         const discovered = new Map<string, McpDiscoveredTool>();
         let cursor: string | undefined;
@@ -122,7 +122,7 @@ class AiSdkMcpCapabilitySource implements McpCapabilitySource {
                 const result = await this.client.listTools({
                     ...(cursor === undefined ? {} : { params: { cursor } }),
                     options: {
-                        signal,
+                        ...(signal === undefined ? {} : { signal }),
                         timeout: this.requestTimeoutMs,
                         maxTotalTimeout: this.requestTimeoutMs,
                     },
@@ -222,7 +222,7 @@ class AiSdkMcpCapabilitySource implements McpCapabilitySource {
                 name: sourceToolName,
                 arguments: input,
                 options: {
-                    signal,
+                    ...(signal === undefined ? {} : { signal }),
                     timeout: this.requestTimeoutMs,
                     maxTotalTimeout: this.requestTimeoutMs,
                 },
@@ -243,8 +243,8 @@ class AiSdkMcpCapabilitySource implements McpCapabilitySource {
 }
 
 class CloseObservedTransport implements MCPTransport {
-    readonly supportsProtocolVersionDiscovery: boolean | undefined;
-    readonly supportsMcpToolParameterHeaders: boolean | undefined;
+    readonly supportsProtocolVersionDiscovery?: boolean;
+    readonly supportsMcpToolParameterHeaders?: boolean;
     protocolVersion?: string;
     onclose?: () => void;
     onerror?: (error: Error) => void;
@@ -261,8 +261,12 @@ class CloseObservedTransport implements MCPTransport {
     constructor(delegate: MCPTransport, closeTimeoutMs: number) {
         this.delegate = delegate;
         this.closeTimeoutMs = closeTimeoutMs;
-        this.supportsProtocolVersionDiscovery = delegate.supportsProtocolVersionDiscovery;
-        this.supportsMcpToolParameterHeaders = delegate.supportsMcpToolParameterHeaders;
+        if (delegate.supportsProtocolVersionDiscovery !== undefined) {
+            this.supportsProtocolVersionDiscovery = delegate.supportsProtocolVersionDiscovery;
+        }
+        if (delegate.supportsMcpToolParameterHeaders !== undefined) {
+            this.supportsMcpToolParameterHeaders = delegate.supportsMcpToolParameterHeaders;
+        }
         delegate.onclose = () => this.observeClose();
         delegate.onerror = (error) => this.onerror?.(error instanceof Error ? error : new Error(String(error)));
         delegate.onmessage = (message) => this.onmessage?.(message);
