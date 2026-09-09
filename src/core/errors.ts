@@ -36,10 +36,10 @@ export interface ProviderTermination {
 }
 
 export interface ProviderErrorOptions extends ErrorOptions {
-    outcome?: ProviderOutcome;
-    terminationConfirmed?: boolean;
-    externalThreadId?: string;
-    termination?: ProviderTermination;
+    outcome?: ProviderOutcome | undefined;
+    terminationConfirmed?: boolean | undefined;
+    externalThreadId?: string | undefined;
+    termination?: ProviderTermination | undefined;
 }
 
 export class ProviderError extends EmberError {
