@@ -10,6 +10,7 @@ import {
     RECENT_DIALOGUE_MAX_EXCHANGES,
     RECENT_DIALOGUE_MAX_TURN_BYTES,
 } from "../src/core/conversation-context.ts";
+import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
@@ -105,6 +106,36 @@ test("second turn receives prior user and Ember turns separately from canonical 
         assert.deepEqual(projection.selection.evidence_ids, []);
         assert.equal(projection.conversation_context.selection.selected_evidence_ids.length, 2);
         assert.equal(projection.selection.raw_transcript_included, false);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("accepted user turns survive provider failure without inventing an Ember turn", async () => {
+    const fixture = await startedFixture();
+    const requests: ProviderRequest[] = [];
+    let failNext = true;
+    const provider: ProviderInvoker = async (request) => {
+        requests.push(structuredClone(request));
+        if (failNext) {
+            failNext = false;
+            throw new ProviderError("fixture provider failure");
+        }
+        return { contractVersion: 1, reply: "Retried.", usedMeaningIds: [] };
+    };
+    try {
+        await runTurn(fixture, provider, "Try the blue option");
+        await runTurn(fixture, provider, "Retry that");
+
+        const context = requests[1]?.projection.conversation_context;
+        assert.ok(context);
+        assert.deepEqual(
+            context.turns.map((turn) => [turn.role, turn.content]),
+            [["user", "Try the blue option"]],
+        );
+        assert.equal(context.selection.selected_cognition_ids.length, 1);
+        assert.equal(context.selection.selected_evidence_ids.length, 1);
+        assert.equal(context.selection.unavailable_expression_count, 0);
     } finally {
         await closeFixture(fixture);
     }
