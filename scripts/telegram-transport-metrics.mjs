@@ -27,7 +27,7 @@ if (command === "probe") {
 
 async function probe(repo) {
     const [{ runTelegramPolling }, { initialState }, { StateStore }] = await Promise.all([
-        import(pathToFileURL(join(repo, "src/surfaces/telegram/surface.ts")).href),
+        import(pathToFileURL(join(repo, "src/surfaces/telegram/index.ts")).href),
         import(pathToFileURL(join(repo, "src/core/model.ts")).href),
         import(pathToFileURL(join(repo, "src/persistence/state-store.ts")).href),
     ]);

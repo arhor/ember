@@ -7,7 +7,7 @@ import { supersede } from "../core/semantics.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { InteractionLedgerStore, interactionLedgerInspectionView } from "../runtime/interaction-boundary.ts";
-import { runCliSurface } from "../surfaces/cli/surface.ts";
+import { runCliSurface } from "../surfaces/cli/index.ts";
 import { cloneState } from "../util.ts";
 
 interface CliIo {

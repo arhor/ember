@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 import type { ProviderInvoker } from "../src/providers/contract.ts";
-import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/surface.ts";
+import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -16,7 +16,7 @@ import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,
     runTelegramPolling,
-} from "../src/surfaces/telegram/surface.ts";
+} from "../src/surfaces/telegram/index.ts";
 
 const PRINCIPAL = "max";
 const CHAT_ID = 424242;

@@ -1,3 +1,3 @@
 #!/usr/bin/env node
-import { main } from "../src/cli/main.ts";
+import { main } from "../src/cli/index.ts";
 process.exitCode = await main();

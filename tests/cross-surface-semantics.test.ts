@@ -6,15 +6,15 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
-import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/surface.ts";
+import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
-import { main as cliMain } from "../src/cli/main.ts";
+import { main as cliMain } from "../src/cli/index.ts";
 import { initialState } from "../src/core/model.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
-import { TELEGRAM_SURFACE_ID, processTelegramUpdate } from "../src/surfaces/telegram/surface.ts";
+import { TELEGRAM_SURFACE_ID, processTelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
 const PRINCIPAL = "max";
 const SHARED_SCOPE = "surface:shared";

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import { main as cliMain } from "../src/cli/main.ts";
+import { main as cliMain } from "../src/cli/index.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";

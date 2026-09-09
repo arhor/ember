@@ -1,8 +1,8 @@
 import type { Readable, Writable } from "node:stream";
 
-import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
-
 import { createInterface } from "node:readline";
+
+import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
