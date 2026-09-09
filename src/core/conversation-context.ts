@@ -15,11 +15,11 @@ export interface ConversationExchangeRecord {
     scope: string;
     surface: string;
     input_evidence_id: EvidenceId;
-    expression_evidence_id: EvidenceId;
     started_at: string;
-    expression_occurred_at: string;
-    expression_content: string;
-    expression_content_truncated: boolean;
+    expression_evidence_id: EvidenceId | null;
+    expression_occurred_at: string | null;
+    expression_content: string | null;
+    expression_content_truncated: boolean | null;
 }
 
 export interface ConversationContextDocument {
@@ -52,6 +52,7 @@ export interface ProjectedConversationContext {
         selected_evidence_ids: EvidenceId[];
         excluded_older_exchange_count: number;
         excluded_unavailable_exchange_count: number;
+        unavailable_expression_count: number;
         truncated_turn_count: number;
     };
 }
@@ -68,6 +69,7 @@ export function emptyConversationContext(): ProjectedConversationContext {
             selected_evidence_ids: [],
             excluded_older_exchange_count: 0,
             excluded_unavailable_exchange_count: 0,
+            unavailable_expression_count: 0,
             truncated_turn_count: 0,
         },
     };
@@ -90,18 +92,13 @@ export function selectRecentConversationContext(
     validateConversationContextDocument(document);
 
     const matching = document.exchanges
-        .filter(
-            (exchange) =>
-                exchange.principal === principal && exchange.scope === scope && exchange.surface === surface,
-        )
+        .filter((exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface)
         .sort(compareExchanges);
     const selected = matching.slice(-RECENT_DIALOGUE_MAX_EXCHANGES);
     const result = emptyConversationContext();
     result.selection.excluded_older_exchange_count = Math.max(0, matching.length - selected.length);
 
-    const cognitionById = new Map(
-        state.operations.cognitionEpisodes.map((cognition) => [cognition.cognitionId, cognition]),
-    );
+    const cognitionById = new Map(state.operations.cognitionEpisodes.map((cognition) => [cognition.cognitionId, cognition]));
     const evidenceById = new Map(state.evidence.map((evidence) => [evidence.evidenceId, evidence]));
 
     for (const exchange of selected) {
@@ -113,33 +110,40 @@ export function selectRecentConversationContext(
             cognition.principal !== exchange.principal ||
             cognition.activeScope !== exchange.scope ||
             cognition.inputEvidenceId !== exchange.input_evidence_id ||
-            cognition.expressionEvidenceId !== exchange.expression_evidence_id ||
-            cognition.status !== "completed"
+            cognition.startedAt !== exchange.started_at
         ) {
             throw new ValidationError(`conversation exchange conflicts with cognition ${exchange.cognition_id}`);
         }
 
         const input = evidenceById.get(exchange.input_evidence_id);
-        const expression = evidenceById.get(exchange.expression_evidence_id);
         if (!input || input.sourceRole !== "user_command") {
             throw new ValidationError(`conversation exchange input evidence is invalid: ${exchange.input_evidence_id}`);
         }
-        if (!expression || expression.sourceRole !== "ember_expression_via_provider") {
-            throw new ValidationError(
-                `conversation exchange expression evidence is invalid: ${exchange.expression_evidence_id}`,
-            );
+
+        let expression = null;
+        if (exchange.expression_evidence_id !== null) {
+            if (cognition.status !== "completed" || cognition.expressionEvidenceId !== exchange.expression_evidence_id) {
+                throw new ValidationError(`conversation exchange exposes an unestablished expression for ${exchange.cognition_id}`);
+            }
+            expression = evidenceById.get(exchange.expression_evidence_id) ?? null;
+            if (!expression || expression.sourceRole !== "ember_expression_via_provider") {
+                throw new ValidationError(
+                    `conversation exchange expression evidence is invalid: ${exchange.expression_evidence_id}`,
+                );
+            }
+            if (expression.occurredAt !== exchange.expression_occurred_at) {
+                throw new ValidationError(
+                    `conversation exchange occurrence conflicts with ${exchange.expression_evidence_id}`,
+                );
+            }
         }
-        if (expression.occurredAt !== exchange.expression_occurred_at) {
-            throw new ValidationError(`conversation exchange occurrence conflicts with ${exchange.expression_evidence_id}`);
-        }
+
         if (input.availability !== "available") {
             result.selection.excluded_unavailable_exchange_count += 1;
             continue;
         }
 
         const projectedInput = truncateConversationText(input.payload);
-        const projectedExpression = truncateConversationText(exchange.expression_content);
-        const expressionTruncated = exchange.expression_content_truncated || projectedExpression.truncated;
         const userOrder = result.turns.length;
         result.turns.push({
             order: userOrder,
@@ -154,6 +158,19 @@ export function selectRecentConversationContext(
             delivery_status: null,
             user_awareness: null,
         });
+        result.selection.selected_cognition_ids.push(cognition.cognitionId);
+        result.selection.selected_evidence_ids.push(input.evidenceId);
+        result.selection.truncated_turn_count += Number(projectedInput.truncated);
+
+        if (expression === null) {
+            if (cognition.status === "completed" && cognition.expressionEvidenceId !== null) {
+                result.selection.unavailable_expression_count += 1;
+            }
+            continue;
+        }
+
+        const projectedExpression = truncateConversationText(exchange.expression_content!);
+        const expressionTruncated = exchange.expression_content_truncated! || projectedExpression.truncated;
         result.turns.push({
             order: userOrder + 1,
             role: "ember",
@@ -167,9 +184,8 @@ export function selectRecentConversationContext(
             delivery_status: cognition.deliveryStatus,
             user_awareness: "unknown",
         });
-        result.selection.selected_cognition_ids.push(cognition.cognitionId);
-        result.selection.selected_evidence_ids.push(input.evidenceId, expression.evidenceId);
-        result.selection.truncated_turn_count += Number(projectedInput.truncated) + Number(expressionTruncated);
+        result.selection.selected_evidence_ids.push(expression.evidenceId);
+        result.selection.truncated_turn_count += Number(expressionTruncated);
     }
 
     return result;
@@ -202,9 +218,7 @@ export function truncateConversationText(
     return { content: symbols.join(""), truncated: true };
 }
 
-export function validateConversationContextDocument(
-    value: unknown,
-): asserts value is ConversationContextDocument {
+export function validateConversationContextDocument(value: unknown): asserts value is ConversationContextDocument {
     if (!isObject(value) || !exactKeys(value, ["conversation_context_version", "exchanges"])) {
         throw new ValidationError("conversation context document does not match schema v1");
     }
@@ -226,8 +240,8 @@ export function validateConversationContextDocument(
                 "scope",
                 "surface",
                 "input_evidence_id",
-                "expression_evidence_id",
                 "started_at",
+                "expression_evidence_id",
                 "expression_occurred_at",
                 "expression_content",
                 "expression_content_truncated",
@@ -242,33 +256,36 @@ export function validateConversationContextDocument(
             throw new ValidationError(`${path}.cognition_id is duplicated`);
         }
         cognitionIds.add(raw.cognition_id);
-        for (const [field, prefix] of [
-            ["input_evidence_id", "evidence-"],
-            ["expression_evidence_id", "evidence-"],
-        ] as const) {
-            if (typeof raw[field] !== "string" || !raw[field].startsWith(prefix)) {
-                throw new ValidationError(`${path}.${field} is invalid`);
-            }
+        if (typeof raw.input_evidence_id !== "string" || !raw.input_evidence_id.startsWith("evidence-")) {
+            throw new ValidationError(`${path}.input_evidence_id is invalid`);
         }
         for (const field of ["principal", "scope", "surface"] as const) {
             if (typeof raw[field] !== "string" || !raw[field].trim()) {
                 throw new ValidationError(`${path}.${field} must be non-empty`);
             }
         }
-        if (!isRfc3339Utc(raw.started_at) || !isRfc3339Utc(raw.expression_occurred_at)) {
-            throw new ValidationError(`${path} timestamps must be RFC 3339 UTC`);
+        if (!isRfc3339Utc(raw.started_at)) {
+            throw new ValidationError(`${path}.started_at must be RFC 3339 UTC`);
         }
-        if (Date.parse(raw.started_at) > Date.parse(raw.expression_occurred_at)) {
+
+        const expressionAbsent =
+            raw.expression_evidence_id === null &&
+            raw.expression_occurred_at === null &&
+            raw.expression_content === null &&
+            raw.expression_content_truncated === null;
+        const expressionPresent =
+            typeof raw.expression_evidence_id === "string" &&
+            raw.expression_evidence_id.startsWith("evidence-") &&
+            isRfc3339Utc(raw.expression_occurred_at) &&
+            typeof raw.expression_content === "string" &&
+            raw.expression_content.length > 0 &&
+            Buffer.byteLength(raw.expression_content, "utf8") <= RECENT_DIALOGUE_MAX_TURN_BYTES &&
+            typeof raw.expression_content_truncated === "boolean";
+        if (!expressionAbsent && !expressionPresent) {
+            throw new ValidationError(`${path} expression fields must be all absent or all established`);
+        }
+        if (expressionPresent && Date.parse(raw.started_at) > Date.parse(raw.expression_occurred_at)) {
             throw new ValidationError(`${path} expression cannot precede cognition start`);
-        }
-        if (typeof raw.expression_content !== "string" || raw.expression_content.length === 0) {
-            throw new ValidationError(`${path}.expression_content must be non-empty`);
-        }
-        if (Buffer.byteLength(raw.expression_content, "utf8") > RECENT_DIALOGUE_MAX_TURN_BYTES) {
-            throw new ValidationError(`${path}.expression_content exceeds the turn byte bound`);
-        }
-        if (typeof raw.expression_content_truncated !== "boolean") {
-            throw new ValidationError(`${path}.expression_content_truncated must be boolean`);
         }
     }
 }
