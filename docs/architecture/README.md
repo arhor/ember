@@ -47,6 +47,10 @@ Current architecture material:
 - [Interaction Surface Boundary](interaction-surface-boundary.md) defines issue #85's
   transport-independent principal provenance, stable occurrence correlation, and
   delivery intent/attempt lifecycle without making surface metadata canonical memory.
+- [Conversation Context and Turn Semantics](conversation-context-turn-semantics.md)
+  defines issue #216's Ember-owned short-lived dialogue trajectory, turn/exchange
+  correlation, bounded currentness, cross-surface continuation, restart behavior, and
+  provider-independent conversation identity without transcript-as-memory.
 - [Source Layout and Surface Placement](source-layout.md) records the current
   `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
   mechanics and operator/application commands, and the intended inward dependency
