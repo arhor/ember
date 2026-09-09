@@ -1,8 +1,8 @@
 import type { CognitionId, DeliveryStatus, EmberState, EvidenceId } from "./model.ts";
 
+import { exactKeys, isObject } from "../util.ts";
 import { ValidationError } from "./errors.ts";
 import { isRfc3339Utc, validateState } from "./model.ts";
-import { exactKeys, isObject } from "../util.ts";
 
 export const RECENT_DIALOGUE_SELECTION_STRATEGY = "recent_same_principal_scope_surface_v1" as const;
 export const RECENT_DIALOGUE_MAX_EXCHANGES = 4;
@@ -90,13 +90,18 @@ export function selectRecentConversationContext(
     validateConversationContextDocument(document);
 
     const matching = document.exchanges
-        .filter((exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface)
+        .filter(
+            (exchange) =>
+                exchange.principal === principal && exchange.scope === scope && exchange.surface === surface,
+        )
         .sort(compareExchanges);
     const selected = matching.slice(-RECENT_DIALOGUE_MAX_EXCHANGES);
     const result = emptyConversationContext();
     result.selection.excluded_older_exchange_count = Math.max(0, matching.length - selected.length);
 
-    const cognitionById = new Map(state.operations.cognitionEpisodes.map((cognition) => [cognition.cognitionId, cognition]));
+    const cognitionById = new Map(
+        state.operations.cognitionEpisodes.map((cognition) => [cognition.cognitionId, cognition]),
+    );
     const evidenceById = new Map(state.evidence.map((evidence) => [evidence.evidenceId, evidence]));
 
     for (const exchange of selected) {
@@ -197,7 +202,9 @@ export function truncateConversationText(
     return { content: symbols.join(""), truncated: true };
 }
 
-export function validateConversationContextDocument(value: unknown): asserts value is ConversationContextDocument {
+export function validateConversationContextDocument(
+    value: unknown,
+): asserts value is ConversationContextDocument {
     if (!isObject(value) || !exactKeys(value, ["conversation_context_version", "exchanges"])) {
         throw new ValidationError("conversation context document does not match schema v1");
     }
@@ -254,7 +261,7 @@ export function validateConversationContextDocument(value: unknown): asserts val
         if (Date.parse(raw.started_at) > Date.parse(raw.expression_occurred_at)) {
             throw new ValidationError(`${path} expression cannot precede cognition start`);
         }
-        if (typeof raw.expression_content !== "string" || !raw.expression_content.trim()) {
+        if (typeof raw.expression_content !== "string" || raw.expression_content.length === 0) {
             throw new ValidationError(`${path}.expression_content must be non-empty`);
         }
         if (Buffer.byteLength(raw.expression_content, "utf8") > RECENT_DIALOGUE_MAX_TURN_BYTES) {
