@@ -91,11 +91,9 @@ export function selectRecentConversationContext(
     validateState(state);
     validateConversationContextDocument(document);
 
-    const matching = document.exchanges
-        .filter(
-            (exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface,
-        )
-        .sort(compareExchanges);
+    const matching = document.exchanges.filter(
+        (exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface,
+    );
     const selected = matching.slice(-RECENT_DIALOGUE_MAX_EXCHANGES);
     const result = emptyConversationContext();
     result.selection.excluded_older_exchange_count = Math.max(0, matching.length - selected.length);
@@ -297,8 +295,4 @@ export function validateConversationContextDocument(value: unknown): asserts val
             throw new ValidationError(`${path} expression cannot precede cognition start`);
         }
     }
-}
-
-function compareExchanges(left: ConversationExchangeRecord, right: ConversationExchangeRecord): number {
-    return left.started_at.localeCompare(right.started_at) || left.cognition_id.localeCompare(right.cognition_id);
 }
