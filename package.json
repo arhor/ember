@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "check": "npm run fmt:check && npm run lint && tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.mjs check",
+    "check": "npm run fmt:check && npm run lint && tsc -p tsconfig.json && npm run test:types && node scripts/docs-discovery.ts check",
     "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",

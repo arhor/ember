@@ -334,7 +334,7 @@ available.
 npm run check
 npm test
 npm run test:docs
-node scripts/docs-discovery.mjs check
+node scripts/docs-discovery.ts check
 ```
 
 Runtime tests inject a fake supervisor and deterministic evaluator. In addition to the

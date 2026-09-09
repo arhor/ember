@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { EXCLUDED_PATHS, loadCorpus, selectDocuments, validateCorpus } from "../scripts/docs-discovery.mjs";
+import { EXCLUDED_PATHS, loadCorpus, selectDocuments, validateCorpus } from "../scripts/docs-discovery.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const loaded = loadCorpus(ROOT);

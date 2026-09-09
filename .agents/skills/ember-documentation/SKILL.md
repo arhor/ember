@@ -12,7 +12,7 @@ Use Ember's repository documentation as durable project knowledge. The generated
 Before making implementation or review decisions that may depend on Ember's durable semantics or architecture, run:
 
 ```bash
-node scripts/docs-discovery.mjs list
+node scripts/docs-discovery.ts list
 ```
 
 Use each entry's `summary` and `read_when` as natural-language routing hints. Select the smallest plausible set of current documents and read their source before relying on them. Relevance remains your judgment: a literal phrase mismatch does not prove that a document is irrelevant.
@@ -20,14 +20,14 @@ Use each entry's `summary` and `read_when` as natural-language routing hints. Se
 For a long selected document, inspect its structure first when useful:
 
 ```bash
-node scripts/docs-discovery.mjs list --headings docs/path/to/document.md
+node scripts/docs-discovery.ts list --headings docs/path/to/document.md
 ```
 
 Escalate discovery only when the task needs it:
 
 ```bash
-node scripts/docs-discovery.mjs list --deep
-node scripts/docs-discovery.mjs list --all
+node scripts/docs-discovery.ts list --deep
+node scripts/docs-discovery.ts list --all
 ```
 
 Use `--deep` for evidence, provenance, source research, or comparisons with reviewed external systems. Use `--all` for superseded or historical guidance and documentation-governance work.
@@ -62,7 +62,7 @@ After adding or materially changing participating documentation, run:
 
 ```bash
 npm run test:docs
-node scripts/docs-discovery.mjs check
+node scripts/docs-discovery.ts check
 ```
 
 Fix validation failures before finishing. If documentation changed as a consequence of implementation work, also follow the repository's ordinary linting, formatting, and test instructions.

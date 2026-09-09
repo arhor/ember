@@ -7,13 +7,34 @@ import { cwd, stderr, stdout } from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-export const DEFAULT_ROLES = new Set(["foundation", "decision", "design", "scenario", "research", "guide"]);
-export const DEEP_ROLES = new Set(["reference", "evidence", "source"]);
-export const ALLOWED_ROLES = new Set([...DEFAULT_ROLES, ...DEEP_ROLES]);
-export const ALLOWED_DISCOVERY_STATUSES = new Set(["current", "superseded", "historical"]);
+type FrontmatterValue = string | string[];
+type DocumentMetadata = Record<string, FrontmatterValue>;
+type ParsedFrontmatter = { metadata: DocumentMetadata; body: string };
+type Corpus = { documents: Document[]; errors: string[] };
+type CorpusValidation = { errors: string[]; warnings: string[] };
+type SelectionOptions = { deep?: boolean; allDocuments?: boolean };
+type HeadingRendering = { output: string; errors: string[] };
+type CliArguments = {
+    command: "list" | "check";
+    deep: boolean;
+    all: boolean;
+    headings: string[] | null;
+};
+
+export const DEFAULT_ROLES: Set<string> = new Set([
+    "foundation",
+    "decision",
+    "design",
+    "scenario",
+    "research",
+    "guide",
+]);
+export const DEEP_ROLES: Set<string> = new Set(["reference", "evidence", "source"]);
+export const ALLOWED_ROLES: Set<string> = new Set([...DEFAULT_ROLES, ...DEEP_ROLES]);
+export const ALLOWED_DISCOVERY_STATUSES: Set<string> = new Set(["current", "superseded", "historical"]);
 
 // V1 has no generated Markdown exclusions. Keep exclusions explicit here if that changes.
-export const EXCLUDED_PATHS = new Set();
+export const EXCLUDED_PATHS: Set<string> = new Set();
 
 const FRONTMATTER_DELIMITER = "---";
 const TOP_LEVEL_RE = /^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$/;
@@ -22,42 +43,46 @@ const FENCE_OPEN_RE = /^[ ]{0,3}(`{3,}|~{3,})(?:.*)$/;
 const HEADING_RE = /^[ ]{0,3}(#{1,4})\s+(.+?)\s*$/;
 
 export class FrontmatterError extends Error {
-    constructor(message) {
+    constructor(message: string) {
         super(message);
         this.name = "FrontmatterError";
     }
 }
 
 export class Document {
-    constructor(path, metadata, body) {
+    readonly path: string;
+    readonly metadata: DocumentMetadata;
+    readonly body: string;
+
+    constructor(path: string, metadata: DocumentMetadata, body: string) {
         this.path = path;
         this.metadata = metadata;
         this.body = body;
     }
 
-    get summary() {
+    get summary(): string {
         return String(this.metadata.summary);
     }
 
-    get readWhen() {
-        return this.metadata.read_when.map(String);
+    get readWhen(): string[] {
+        return (this.metadata.read_when as string[]).map(String);
     }
 
-    get role() {
+    get role(): string {
         return String(this.metadata.role);
     }
 
-    get discoveryStatus() {
+    get discoveryStatus(): string {
         return String(this.metadata.discovery_status);
     }
 
-    get supersededBy() {
+    get supersededBy(): string | null {
         const value = this.metadata.superseded_by;
         return value == null ? null : String(value);
     }
 }
 
-function splitLinesKeepEnds(text) {
+function splitLinesKeepEnds(text: string): string[] {
     const lines = text.match(/[^\r\n]*(?:\r\n|\n|$)/g) ?? [];
     if (lines.at(-1) === "") {
         lines.pop();
@@ -65,15 +90,15 @@ function splitLinesKeepEnds(text) {
     return lines;
 }
 
-function stripLineEnding(line) {
+function stripLineEnding(line: string): string {
     return line.replace(/(?:\r\n|\n)$/, "");
 }
 
-function frontmatterError(lineNumber, message) {
+function frontmatterError(lineNumber: number, message: string): FrontmatterError {
     return new FrontmatterError(`line ${lineNumber}: ${message}`);
 }
 
-function parseQuotedString(value, lineNumber) {
+function parseQuotedString(value: string, lineNumber: number): string {
     if (value.startsWith('"')) {
         try {
             const parsed = JSON.parse(value);
@@ -97,7 +122,7 @@ function parseQuotedString(value, lineNumber) {
     return inner.replaceAll("''", "'");
 }
 
-function parseScalar(raw, { lineNumber }) {
+function parseScalar(raw: string, { lineNumber }: { lineNumber: number }): string {
     const value = raw.trim();
     if (!value) {
         throw frontmatterError(lineNumber, "expected a non-empty scalar value");
@@ -105,21 +130,21 @@ function parseScalar(raw, { lineNumber }) {
     if (value.startsWith('"') || value.startsWith("'")) {
         return parseQuotedString(value, lineNumber);
     }
-    if ("[{&*!>|".includes(value[0]) || value === "---" || value === "...") {
+    if ("[{&*!>|".includes(value[0] as string) || value === "---" || value === "...") {
         throw frontmatterError(lineNumber, "unsupported YAML construct; use plain or quoted strings and block lists");
     }
     return value;
 }
 
-export function parseFrontmatter(text) {
+export function parseFrontmatter(text: string): ParsedFrontmatter {
     const lines = splitLinesKeepEnds(text);
-    if (lines.length === 0 || stripLineEnding(lines[0]) !== FRONTMATTER_DELIMITER) {
+    if (lines.length === 0 || stripLineEnding(lines[0] as string) !== FRONTMATTER_DELIMITER) {
         throw new FrontmatterError("frontmatter must start on the first line with '---'");
     }
 
     let closingIndex = -1;
     for (let index = 1; index < lines.length; index += 1) {
-        if (stripLineEnding(lines[index]) === FRONTMATTER_DELIMITER) {
+        if (stripLineEnding(lines[index] as string) === FRONTMATTER_DELIMITER) {
             closingIndex = index;
             break;
         }
@@ -128,12 +153,12 @@ export function parseFrontmatter(text) {
         throw new FrontmatterError("frontmatter is missing its closing '---'");
     }
 
-    const metadata = {};
-    let activeListKey = null;
+    const metadata: DocumentMetadata = {};
+    let activeListKey: string | null = null;
 
     for (let index = 1; index < closingIndex; index += 1) {
         const lineNumber = index + 1;
-        const line = stripLineEnding(lines[index]);
+        const line = stripLineEnding(lines[index] as string);
         if (!line.trim()) {
             continue;
         }
@@ -144,7 +169,7 @@ export function parseFrontmatter(text) {
                 throw frontmatterError(lineNumber, "list item has no preceding list key");
             }
             const item = parseScalar(listMatch[1] ?? "", { lineNumber });
-            metadata[activeListKey].push(item);
+            (metadata[activeListKey] as string[]).push(item);
             continue;
         }
 
@@ -157,7 +182,8 @@ export function parseFrontmatter(text) {
             throw frontmatterError(lineNumber, "unsupported frontmatter syntax; use 'key: value' or a block list");
         }
 
-        const [, key, rawValue] = fieldMatch;
+        const key = fieldMatch[1] as string;
+        const rawValue = fieldMatch[2];
         if (Object.hasOwn(metadata, key)) {
             throw frontmatterError(lineNumber, `duplicate frontmatter key '${key}'`);
         }
@@ -174,20 +200,20 @@ export function parseFrontmatter(text) {
     return { metadata, body: lines.slice(closingIndex + 1).join("") };
 }
 
-function compareStrings(a, b) {
+function compareStrings(a: string, b: string): number {
     return a < b ? -1 : a > b ? 1 : 0;
 }
 
-function toRepositoryPath(root, absolutePath) {
+function toRepositoryPath(root: string, absolutePath: string): string {
     return relative(root, absolutePath).split(sep).join("/");
 }
 
-export function parseDocument(path, root) {
+export function parseDocument(path: string, root: string): Document {
     const { metadata, body } = parseFrontmatter(readFileSync(path, "utf8"));
     return new Document(toRepositoryPath(root, path), metadata, body);
 }
 
-function walkMarkdown(directory, paths) {
+function walkMarkdown(directory: string, paths: string[]): void {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
         const entryPath = join(directory, entry.name);
         if (entry.isDirectory()) {
@@ -198,16 +224,19 @@ function walkMarkdown(directory, paths) {
     }
 }
 
-export function discoverPaths(root, excludedPaths = EXCLUDED_PATHS) {
+export function discoverPaths(root: string, excludedPaths: Set<string> = EXCLUDED_PATHS): string[] {
     const docsRoot = join(root, "docs");
-    const paths = [];
+    const paths: string[] = [];
     walkMarkdown(docsRoot, paths);
     return paths
         .filter((path) => !excludedPaths.has(toRepositoryPath(root, path)))
         .sort((a, b) => compareStrings(toRepositoryPath(root, a), toRepositoryPath(root, b)));
 }
 
-function validateRepoRelativePath(value, { field, documentPath }) {
+function validateRepoRelativePath(
+    value: string,
+    { field, documentPath }: { field: string; documentPath: string },
+): string | null {
     if (
         posix.isAbsolute(value) ||
         value.includes("\\") ||
@@ -220,9 +249,9 @@ function validateRepoRelativePath(value, { field, documentPath }) {
     return null;
 }
 
-export function validateDocumentShape(document) {
+export function validateDocumentShape(document: Document): string[] {
     const { metadata } = document;
-    const errors = [];
+    const errors: string[] = [];
 
     const summary = metadata.summary;
     if (typeof summary !== "string" || !summary.trim()) {
@@ -235,7 +264,7 @@ export function validateDocumentShape(document) {
     if (!Array.isArray(readWhen) || readWhen.length === 0) {
         errors.push(`${document.path}: read_when must be a non-empty block list`);
     } else {
-        const normalizedHints = [];
+        const normalizedHints: string[] = [];
         readWhen.forEach((hint, index) => {
             if (typeof hint !== "string" || !hint.trim()) {
                 errors.push(`${document.path}: read_when item ${index + 1} must be a non-empty string`);
@@ -249,12 +278,12 @@ export function validateDocumentShape(document) {
     }
 
     const role = metadata.role;
-    if (!ALLOWED_ROLES.has(role)) {
+    if (!ALLOWED_ROLES.has(role as string)) {
         errors.push(`${document.path}: role must be one of ${[...ALLOWED_ROLES].sort().join(", ")}`);
     }
 
     const status = metadata.discovery_status;
-    if (!ALLOWED_DISCOVERY_STATUSES.has(status)) {
+    if (!ALLOWED_DISCOVERY_STATUSES.has(status as string)) {
         errors.push(
             `${document.path}: discovery_status must be one of ${[...ALLOWED_DISCOVERY_STATUSES].sort().join(", ")}`,
         );
@@ -283,14 +312,18 @@ export function validateDocumentShape(document) {
     return errors;
 }
 
-export function loadCorpus(root, excludedPaths = EXCLUDED_PATHS) {
-    const documents = [];
-    const errors = [];
-    let paths;
+function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+export function loadCorpus(root: string, excludedPaths: Set<string> = EXCLUDED_PATHS): Corpus {
+    const documents: Document[] = [];
+    const errors: string[] = [];
+    let paths: string[];
     try {
         paths = discoverPaths(root, excludedPaths);
     } catch (error) {
-        return { documents, errors: [`docs/: ${error.message}`] };
+        return { documents, errors: [`docs/: ${errorMessage(error)}`] };
     }
 
     for (const path of paths) {
@@ -300,16 +333,16 @@ export function loadCorpus(root, excludedPaths = EXCLUDED_PATHS) {
             documents.push(document);
             errors.push(...validateDocumentShape(document));
         } catch (error) {
-            errors.push(`${repoPath}: ${error.message}`);
+            errors.push(`${repoPath}: ${errorMessage(error)}`);
         }
     }
     return { documents, errors };
 }
 
-export function validateCorpus(documents, errors = []) {
+export function validateCorpus(documents: Document[], errors: string[] = []): CorpusValidation {
     const byPath = new Map(documents.map((document) => [document.path, document]));
     const validationErrors = [...errors];
-    const warnings = [];
+    const warnings: string[] = [];
 
     for (const document of documents) {
         const targetPath = document.supersededBy;
@@ -332,8 +365,8 @@ export function validateCorpus(documents, errors = []) {
         if (document.discoveryStatus !== "superseded" || !document.supersededBy) {
             continue;
         }
-        const visited = [];
-        let current = document;
+        const visited: string[] = [];
+        let current: Document | null = document;
         while (current.discoveryStatus === "superseded" && current.supersededBy) {
             if (visited.includes(current.path)) {
                 validationErrors.push(
@@ -355,7 +388,7 @@ export function validateCorpus(documents, errors = []) {
         }
     }
 
-    const hintOwners = new Map();
+    const hintOwners = new Map<string, string[]>();
     for (const document of documents) {
         if (!Array.isArray(document.metadata.read_when)) {
             continue;
@@ -379,7 +412,10 @@ export function validateCorpus(documents, errors = []) {
     return { errors: [...new Set(validationErrors)].sort(), warnings };
 }
 
-export function selectDocuments(documents, { deep = false, allDocuments = false } = {}) {
+export function selectDocuments(
+    documents: Document[],
+    { deep = false, allDocuments = false }: SelectionOptions = {},
+): Document[] {
     const ordered = [...documents].sort((a, b) => compareStrings(a.path, b.path));
     if (allDocuments) {
         return ordered;
@@ -393,7 +429,7 @@ export function selectDocuments(documents, { deep = false, allDocuments = false 
     return ordered.filter((document) => document.discoveryStatus === "current" && allowedRoles.has(document.role));
 }
 
-export function renderCatalogue(documents) {
+export function renderCatalogue(documents: Document[]): string {
     const blocks = documents.map((document) => {
         const lines = [
             `${document.path} [${document.role}, ${document.discoveryStatus}]`,
@@ -408,9 +444,9 @@ export function renderCatalogue(documents) {
     return blocks.length === 0 ? "" : `${blocks.join("\n\n")}\n`;
 }
 
-export function extractHeadings(body) {
-    const headings = [];
-    let fenceChar = null;
+export function extractHeadings(body: string): string[] {
+    const headings: string[] = [];
+    let fenceChar: string | null = null;
     let fenceLength = 0;
 
     for (const rawLine of body.split(/\r?\n/)) {
@@ -431,8 +467,8 @@ export function extractHeadings(body) {
 
         const fenceMatch = rawLine.match(FENCE_OPEN_RE);
         if (fenceMatch) {
-            const marker = fenceMatch[1];
-            fenceChar = marker[0];
+            const marker = fenceMatch[1] as string;
+            fenceChar = marker[0] as string;
             fenceLength = marker.length;
             continue;
         }
@@ -441,7 +477,8 @@ export function extractHeadings(body) {
         if (!headingMatch) {
             continue;
         }
-        const [, hashes, rawTitle] = headingMatch;
+        const hashes = headingMatch[1] as string;
+        const rawTitle = headingMatch[2] as string;
         const title = rawTitle.replace(/\s+#+\s*$/, "").trim();
         if (title) {
             headings.push(`${hashes} ${title}`);
@@ -451,7 +488,7 @@ export function extractHeadings(body) {
     return headings;
 }
 
-function normalizeRequestedPath(raw) {
+function normalizeRequestedPath(raw: string): string {
     const value = raw.replaceAll("\\", "/");
     if (posix.isAbsolute(value) || value.split("/").includes("..") || posix.normalize(value) !== value) {
         throw new Error(`invalid repository-relative path: ${raw}`);
@@ -465,15 +502,15 @@ function normalizeRequestedPath(raw) {
     return value;
 }
 
-export function renderHeadings(root, requestedPaths) {
-    const blocks = [];
-    const errors = [];
+export function renderHeadings(root: string, requestedPaths: string[]): HeadingRendering {
+    const blocks: string[] = [];
+    const errors: string[] = [];
     for (const raw of requestedPaths) {
-        let repoPath;
+        let repoPath: string;
         try {
             repoPath = normalizeRequestedPath(raw);
         } catch (error) {
-            errors.push(error.message);
+            errors.push(errorMessage(error));
             continue;
         }
         const path = join(root, ...repoPath.split("/"));
@@ -481,11 +518,11 @@ export function renderHeadings(root, requestedPaths) {
             errors.push(`${repoPath}: participating document does not exist`);
             continue;
         }
-        let document;
+        let document: Document;
         try {
             document = parseDocument(path, root);
         } catch (error) {
-            errors.push(`${repoPath}: ${error.message}`);
+            errors.push(`${repoPath}: ${errorMessage(error)}`);
             continue;
         }
         const shapeErrors = validateDocumentShape(document);
@@ -506,7 +543,7 @@ export function renderHeadings(root, requestedPaths) {
     };
 }
 
-function printDiagnostics(errors, warnings) {
+function printDiagnostics(errors: string[], warnings: string[]): void {
     for (const warning of warnings) {
         stderr.write(`warning: ${warning}\n`);
     }
@@ -515,13 +552,13 @@ function printDiagnostics(errors, warnings) {
     }
 }
 
-function ensureRepoRoot(root) {
+function ensureRepoRoot(root: string): string | null {
     const expectedRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-    let actualRoot;
+    let actualRoot: string;
     try {
         actualRoot = resolve(root);
     } catch (error) {
-        return `cannot resolve current directory: ${error.message}`;
+        return `cannot resolve current directory: ${errorMessage(error)}`;
     }
     if (actualRoot !== expectedRoot) {
         return `run from the Ember repository root: ${expectedRoot}`;
@@ -532,16 +569,16 @@ function ensureRepoRoot(root) {
     return null;
 }
 
-function usage() {
+function usage(): string {
     return [
         "Usage:",
-        "  node scripts/docs-discovery.mjs list [--deep | --all]",
-        "  node scripts/docs-discovery.mjs list --headings PATH [PATH ...]",
-        "  node scripts/docs-discovery.mjs check",
+        "  node scripts/docs-discovery.ts list [--deep | --all]",
+        "  node scripts/docs-discovery.ts list --headings PATH [PATH ...]",
+        "  node scripts/docs-discovery.ts check",
     ].join("\n");
 }
 
-function parseCliArgs(argv) {
+function parseCliArgs(argv: string[]): CliArguments {
     if (argv.length === 0) {
         throw new Error(usage());
     }
@@ -558,7 +595,7 @@ function parseCliArgs(argv) {
 
     const headingsIndex = rest.indexOf("--headings");
     const optionArgs = headingsIndex === -1 ? rest : rest.slice(0, headingsIndex);
-    let values;
+    let values: { deep?: boolean; all?: boolean };
     try {
         ({ values } = parseArgs({
             args: optionArgs,
@@ -567,7 +604,7 @@ function parseCliArgs(argv) {
         }));
     } catch (error) {
         const unknown = optionArgs.find((argument) => !["--deep", "--all"].includes(argument));
-        throw new Error(`${unknown ? `unknown argument: ${unknown}` : error.message}\n${usage()}`);
+        throw new Error(`${unknown ? `unknown argument: ${unknown}` : errorMessage(error)}\n${usage()}`);
     }
     const deep = values.deep ?? false;
     const all = values.all ?? false;
@@ -584,7 +621,7 @@ function parseCliArgs(argv) {
     return { command, deep, all, headings };
 }
 
-export function main(argv = process.argv.slice(2)) {
+export function main(argv: string[] = process.argv.slice(2)): number {
     const root = cwd();
     const rootError = ensureRepoRoot(root);
     if (rootError) {
@@ -592,11 +629,11 @@ export function main(argv = process.argv.slice(2)) {
         return 2;
     }
 
-    let args;
+    let args: CliArguments;
     try {
         args = parseCliArgs(argv);
     } catch (error) {
-        stderr.write(`error: ${error.message}\n`);
+        stderr.write(`error: ${errorMessage(error)}\n`);
         return 2;
     }
 

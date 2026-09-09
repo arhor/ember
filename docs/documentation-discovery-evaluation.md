@@ -296,7 +296,7 @@ The repository-local workflow is the deterministic hard gate for this audit. On 
 documentation-discovery change it:
 
 1. runs the focused and repository-level Node.js discovery tests;
-2. runs `node scripts/docs-discovery.mjs check` over the participating corpus;
+2. runs `node scripts/docs-discovery.ts check` over the participating corpus;
 3. exercises default, deep, and all/history projections;
 4. exercises selected-document heading projection.
 

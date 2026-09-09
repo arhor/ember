@@ -17,10 +17,10 @@ import {
     selectDocuments,
     validateCorpus,
     validateDocumentShape,
-} from "../scripts/docs-discovery.mjs";
+} from "../scripts/docs-discovery.ts";
 
 const TEST_ROOT = dirname(fileURLToPath(import.meta.url));
-const SCRIPT_PATH = resolve(TEST_ROOT, "../scripts/docs-discovery.mjs");
+const SCRIPT_PATH = resolve(TEST_ROOT, "../scripts/docs-discovery.ts");
 const REPOSITORY_ROOT = resolve(TEST_ROOT, "..");
 
 function docText({

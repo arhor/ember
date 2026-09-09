@@ -876,7 +876,7 @@ An injected clock and ID source keep deterministic tests independent of wall
 time and randomness.
 
 CI pins Node 24.x, runs `node --test`, then runs the documentation-discovery tests
-and `node scripts/docs-discovery.mjs check`. No `npm install` or build artifact is
+and `node scripts/docs-discovery.ts check`. No `npm install` or build artifact is
 needed. The contributor runbook records direct CLI commands, the supported local
 Linux filesystem assumption, how to inspect or quarantine an apparently stale
 lock under quiescence, the full stop/restart probe, and the fact that a live-model

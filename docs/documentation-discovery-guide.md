@@ -25,19 +25,19 @@ Run discovery from the repository root with Node.js built-ins only. Use Node.js 
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.
-node scripts/docs-discovery.mjs list
+node scripts/docs-discovery.ts list
 
 # Default catalogue plus current supporting references, evidence maps, and source artifacts.
-node scripts/docs-discovery.mjs list --deep
+node scripts/docs-discovery.ts list --deep
 
 # Every participating document, including superseded and historical material.
-node scripts/docs-discovery.mjs list --all
+node scripts/docs-discovery.ts list --all
 
 # H1-H4 structure for documents already selected from the catalogue.
-node scripts/docs-discovery.mjs list --headings docs/research/memory-and-remembering.md
+node scripts/docs-discovery.ts list --headings docs/research/memory-and-remembering.md
 
 # Full-corpus metadata and lifecycle validation.
-node scripts/docs-discovery.mjs check
+node scripts/docs-discovery.ts check
 ```
 
 The catalogue is deterministic and ephemeral. It is written to standard output and is not checked into the repository.
@@ -48,7 +48,7 @@ V1 participation is simple:
 
 - every human-authored `docs/**/*.md` file participates;
 - root bootstrap files such as `README.md` and `AGENTS.md` do not;
-- generated Markdown may be excluded only through the explicit `EXCLUDED_PATHS` set in `scripts/docs-discovery.mjs` and corresponding tests.
+- generated Markdown may be excluded only through the explicit `EXCLUDED_PATHS` set in `scripts/docs-discovery.ts` and corresponding tests.
 
 There are currently no generated Markdown exclusions.
 
@@ -165,7 +165,7 @@ The three catalogue modes answer different questions.
 Heading projection is deliberately a second step after document selection:
 
 ```bash
-node scripts/docs-discovery.mjs list --headings \
+node scripts/docs-discovery.ts list --headings \
   docs/architecture/design-directions.md \
   docs/research/context-selection-and-cognitive-framing.md
 ```
@@ -192,7 +192,7 @@ Run:
 
 ```bash
 npm run test:docs
-node scripts/docs-discovery.mjs check
+node scripts/docs-discovery.ts check
 ```
 
 `check` validates syntax, required fields, role/status values, exact duplicate hints within a document, supersession targets and chains, participation, and explicit exclusions. Exact duplicate hints across documents are reported as maintenance warnings because legitimate overlap is possible.
