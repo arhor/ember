@@ -92,13 +92,17 @@ export function selectRecentConversationContext(
     validateConversationContextDocument(document);
 
     const matching = document.exchanges
-        .filter((exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface)
+        .filter(
+            (exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface,
+        )
         .sort(compareExchanges);
     const selected = matching.slice(-RECENT_DIALOGUE_MAX_EXCHANGES);
     const result = emptyConversationContext();
     result.selection.excluded_older_exchange_count = Math.max(0, matching.length - selected.length);
 
-    const cognitionById = new Map(state.operations.cognitionEpisodes.map((cognition) => [cognition.cognitionId, cognition]));
+    const cognitionById = new Map(
+        state.operations.cognitionEpisodes.map((cognition) => [cognition.cognitionId, cognition]),
+    );
     const evidenceById = new Map(state.evidence.map((evidence) => [evidence.evidenceId, evidence]));
 
     for (const exchange of selected) {
@@ -122,8 +126,13 @@ export function selectRecentConversationContext(
 
         let expression = null;
         if (exchange.expression_evidence_id !== null) {
-            if (cognition.status !== "completed" || cognition.expressionEvidenceId !== exchange.expression_evidence_id) {
-                throw new ValidationError(`conversation exchange exposes an unestablished expression for ${exchange.cognition_id}`);
+            if (
+                cognition.status !== "completed" ||
+                cognition.expressionEvidenceId !== exchange.expression_evidence_id
+            ) {
+                throw new ValidationError(
+                    `conversation exchange exposes an unestablished expression for ${exchange.cognition_id}`,
+                );
             }
             expression = evidenceById.get(exchange.expression_evidence_id) ?? null;
             if (!expression || expression.sourceRole !== "ember_expression_via_provider") {
