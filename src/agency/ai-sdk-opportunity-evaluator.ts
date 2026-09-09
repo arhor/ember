@@ -92,7 +92,7 @@ const MAX_AI_SDK_RETRIES = 0;
 
 export interface AiSdkOpportunityEvaluatorOptions {
     timeoutSeconds?: number;
-    signal?: AbortSignal;
+    signal?: AbortSignal | undefined;
 }
 
 export function createAiSdkOpportunityEvaluator(
@@ -120,7 +120,7 @@ export async function evaluateCognitionOpportunityWithAiSdk(
             output: opportunityOutput,
             maxRetries: MAX_AI_SDK_RETRIES,
             timeout: Math.max(1, Math.ceil(timeoutSeconds * 1000)),
-            abortSignal: signal,
+            ...(signal === undefined ? {} : { abortSignal: signal }),
         });
 
         return {
