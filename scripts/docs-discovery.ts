@@ -38,9 +38,9 @@ export const EXCLUDED_PATHS: Set<string> = new Set();
 
 const FRONTMATTER_DELIMITER = "---";
 const TOP_LEVEL_RE = /^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$/;
-const LIST_ITEM_RE = /^  -(?:\s+(.*))?$/;
-const FENCE_OPEN_RE = /^[ ]{0,3}(`{3,}|~{3,})(?:.*)$/;
-const HEADING_RE = /^[ ]{0,3}(#{1,4})\s+(.+?)\s*$/;
+const LIST_ITEM_RE = /^ {2}-(?:\s+(.*))?$/;
+const FENCE_OPEN_RE = /^ {0,3}(`{3,}|~{3,}).*$/;
+const HEADING_RE = /^ {0,3}(#{1,4})\s+(.+?)\s*$/;
 
 export class FrontmatterError extends Error {
     constructor(message: string) {
@@ -100,15 +100,16 @@ function frontmatterError(lineNumber: number, message: string): FrontmatterError
 
 function parseQuotedString(value: string, lineNumber: number): string {
     if (value.startsWith('"')) {
+        let parsed: unknown;
         try {
-            const parsed = JSON.parse(value);
-            if (typeof parsed !== "string") {
-                throw new Error("not a string");
-            }
-            return parsed;
+            parsed = JSON.parse(value);
         } catch {
             throw frontmatterError(lineNumber, "invalid quoted string");
         }
+        if (typeof parsed !== "string") {
+            throw frontmatterError(lineNumber, "invalid quoted string");
+        }
+        return parsed;
     }
 
     if (!value.endsWith("'") || value.length < 2) {
