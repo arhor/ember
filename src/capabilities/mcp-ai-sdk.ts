@@ -248,7 +248,7 @@ class CloseObservedTransport implements MCPTransport {
     protocolVersion?: string;
     onclose?: () => void;
     onerror?: (error: Error) => void;
-    onmessage?: MCPTransport["onmessage"];
+    onmessage: NonNullable<MCPTransport["onmessage"]> = () => {};
 
     private readonly delegate: MCPTransport;
     private readonly closeTimeoutMs: number;
@@ -269,7 +269,7 @@ class CloseObservedTransport implements MCPTransport {
         }
         delegate.onclose = () => this.observeClose();
         delegate.onerror = (error) => this.onerror?.(error instanceof Error ? error : new Error(String(error)));
-        delegate.onmessage = (message) => this.onmessage?.(message);
+        delegate.onmessage = (message) => this.onmessage(message);
     }
 
     get isClosed() {
