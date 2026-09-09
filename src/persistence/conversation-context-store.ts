@@ -108,7 +108,9 @@ export class ConversationContextStore {
 
         if (existing.expression_evidence_id !== null) {
             if (JSON.stringify(existing) !== JSON.stringify(updated)) {
-                throw new ValidationError(`conversation context expression conflicts with cognition ${input.cognition_id}`);
+                throw new ValidationError(
+                    `conversation context expression conflicts with cognition ${input.cognition_id}`,
+                );
             }
             return structuredClone(existing);
         }
