@@ -18,8 +18,9 @@ discovery_status: current
 
 **Installed Claude Code:** `2.1.263`
 
-**Result:** **viable for bounded one-shot subscription-backed cognition**, with a
-runtime-specific production adapter still required.
+**Result:** **viable for bounded one-shot subscription-backed cognition**. Issue #204
+now implements the production path through Vercel AI SDK and
+`ai-sdk-provider-claude-code`, rather than a hand-written Claude process adapter.
 
 Issue #44 reached Claude Code's supported headless surface but the then-installed OAuth
 session expired before a model turn. The September 8 re-probe removed that blocker. An
@@ -257,24 +258,21 @@ request/result semantics, not at a richer external-agent runtime abstraction.
 
 ## Production follow-up
 
-The evidence warrants [#204](https://github.com/arhor/ember/issues/204), a separate task
-to implement the **Claude Code one-shot cognition adapter** behind `ProviderInvoker`.
+Issue [#204](https://github.com/arhor/ember/issues/204) implements the production
+path through Vercel AI SDK and `ai-sdk-provider-claude-code`. The implementation uses
+the provider's Agent SDK integration for process/protocol ownership, AI SDK structured
+output for the `ProviderResult` candidate, and Ember's existing semantic validation
+afterward.
 
-That task should prove rather than assume:
+The fixed production policy is documented in
+[Claude Code cognition through Vercel AI SDK](claude-code-ai-sdk-provider.md), including
+subscription-only environment handling, filesystem/tool/MCP/skill/plugin isolation,
+no-session one-shot defaults, deterministic tests, and the opt-in authenticated smoke.
 
-- schema-constrained `ProviderResult` extraction with the supported Claude surface;
-- the narrowest environment allowlist compatible with subscription login;
-- the best truthful isolation policy using the then-current safe/restricted surfaces;
-- complete tool/MCP suppression and unattended permission behavior;
-- bounded stdout/stderr and lifecycle parsing;
-- timeout, explicit cancellation, kill escalation, and unconfirmed termination mapping;
-- whether no-session one-shot operation should omit continuation evidence entirely;
-- deterministic malformed-output, provenance, output-bound, and lifecycle tests; and
-- an opt-in authenticated smoke using a real Ember `ProviderRequest`.
-
-The adapter remains optional external-runtime infrastructure. It does not replace the
-Vercel AI SDK direction selected in #180 for Ember's preferred future in-process model
-and tool infrastructure.
+This follow-up changes one architectural conclusion from the original re-probe: a
+subscription-backed external runtime does not necessarily require Ember to own a custom
+process adapter. A maintained AI SDK provider can be the thinner mechanical boundary
+when it removes real lifecycle/protocol plumbing without taking Ember semantics.
 
 ## What #91 does not prove
 

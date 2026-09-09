@@ -31,10 +31,12 @@ The recommended posture is:
 1. **Keep `ProviderRequest` and `ProviderResult` meaning Ember-owned.** Projection,
    provenance, currentness, continuity, cancellation truth, and canonical state stay
    outside AI SDK.
-2. **Use AI SDK below an adapter boundary for direct model APIs.** It can remove
-   provider HTTP/stream parsing, structured-output plumbing, tool-schema conversion,
-   usage/finish normalization, retries, mocks, telemetry hooks, and much
-   provider-specific SDK glue.
+2. **Use AI SDK below an adapter boundary when a provider removes real model/runtime
+   plumbing.** This includes direct model APIs and, as #204 now proves for Claude Code,
+   an agent-runtime provider that maps a subscription-backed Agent SDK into AI SDK. It
+   can remove provider transport/protocol parsing, structured-output plumbing,
+   usage/finish normalization, retries, mocks, telemetry hooks, and provider-specific
+   glue without owning Ember semantics.
 3. **Preserve provider-specific evidence before normalizing.** `providerOptions`,
    per-step `providerMetadata`, raw finish reasons, warnings, model identity, and
    response metadata provide an escape hatch from least-common-denominator loss.
@@ -262,7 +264,13 @@ That is a meaningful amount of generic code Ember should prefer not to reinvent.
 
 ### What it does not remove from current Codex/Cursor adapters
 
-AI SDK does not make the current subscription-backed external runtimes disappear.
+Issue #204 adds an important qualification: subscription-backed execution by itself is
+not evidence that Ember must own a custom process adapter. `ai-sdk-provider-claude-code`
+now removes Claude's process/protocol and structured-output plumbing through the official
+Agent SDK while preserving Ember's `ProviderInvoker` boundary.
+
+That does not make the current Codex/Cursor subscription-backed external runtimes
+disappear.
 The current production adapters still uniquely own:
 
 - reuse of Codex/Cursor local subscription authentication;
