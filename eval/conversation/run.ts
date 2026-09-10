@@ -6,7 +6,6 @@ import { isAbsolute, join, resolve } from "node:path";
 
 import type { ConversationProvider } from "./harness.ts";
 
-import { newId } from "../../src/core/model.ts";
 import { invokeCodexProvider } from "../../src/providers/codex.ts";
 import { loadConversationScenario, runConversationScenario } from "./harness.ts";
 
@@ -19,24 +18,17 @@ try {
     const scenario = await loadConversationScenario(options.scenario);
     const provider: ConversationProvider =
         options.provider === "scripted"
-            ? async ({ episode, projection }) => ({
+            ? async ({ episode, request }) => ({
                   contractVersion: 1,
                   reply: episode.scripted_reply ?? "No scripted reply required.",
-                  usedMeaningIds: projection.selection.meaning_ids,
+                  usedMeaningIds: request.projection.selection.meaning_ids,
                   operational: { externalThreadId: `fresh-${episode.id}` },
               })
-            : async ({ projection }) =>
-                  invokeCodexProvider(
-                      "codex",
-                      options.codexArguments,
-                      {
-                          contractVersion: 1,
-                          cognitionId: newId("cognition"),
-                          projection,
-                          input: { text: projection.current_input },
-                      },
-                      { timeoutSeconds: options.timeoutSeconds, thread: { mode: "fresh_persistent" } },
-                  );
+            : async ({ request }) =>
+                  invokeCodexProvider("codex", options.codexArguments, request, {
+                      timeoutSeconds: options.timeoutSeconds,
+                      thread: { mode: "fresh_persistent" },
+                  });
     const report = await runConversationScenario(scenario, join(directory, "ember.json"), provider, {
         invocation_mode: "fresh",
         external_thread_identity: options.provider === "codex" ? "required" : "optional",

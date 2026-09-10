@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import type { MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
-import type { ProviderResult } from "../../src/providers/contract.ts";
+import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
@@ -42,7 +42,7 @@ export interface ConversationScenario {
 export interface ConversationProviderInvocation {
     scenarioId: string;
     episode: ConversationEpisode;
-    projection: Projection;
+    request: ProviderRequest;
 }
 
 export type ConversationProvider = (invocation: ConversationProviderInvocation) => Promise<ProviderResult>;
@@ -134,7 +134,7 @@ export async function runConversationScenario(
                         const result = await provider({
                             scenarioId: scenario.id,
                             episode,
-                            projection: request.projection,
+                            request,
                         });
                         reply = result.reply;
                         providerThreadId = result.operational?.externalThreadId ?? null;

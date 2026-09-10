@@ -4,6 +4,7 @@ import test from "node:test";
 
 import { loadConversationScenario, runConversationScenario } from "../eval/conversation/harness.ts";
 import { RECENT_DIALOGUE_MAX_EXCHANGES } from "../src/core/conversation-context.ts";
+import { StateStore } from "../src/persistence/state-store.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "conversation", "fixtures", "conversational-coherence.json");
@@ -18,10 +19,10 @@ test("conversation evaluation should expose bounded selection evidence when dial
     const report = await runConversationScenario(
         scenario,
         join(directory, "ember.json"),
-        async ({ episode, projection }) => ({
+        async ({ episode, request }) => ({
             contractVersion: 1,
             reply: episode.scripted_reply ?? "No scripted reply required.",
-            usedMeaningIds: projection.selection.meaning_ids,
+            usedMeaningIds: request.projection.selection.meaning_ids,
             operational: { externalThreadId: `fresh-${episode.id}` },
         }),
         OPTIONAL_FRESH_PROVIDER,
@@ -86,13 +87,13 @@ test("conversation evaluation should separate model observations when provider i
     const report = await runConversationScenario(
         scenario,
         join(directory, "ember.json"),
-        async ({ episode, projection }) => ({
+        async ({ episode, request }) => ({
             contractVersion: 1,
             reply:
                 episode.id === "pronoun-resolution"
                     ? "MODEL_IGNORED_CONTEXT"
                     : (episode.scripted_reply ?? "No scripted reply required."),
-            usedMeaningIds: projection.selection.meaning_ids,
+            usedMeaningIds: request.projection.selection.meaning_ids,
             operational: { externalThreadId: `fresh-${episode.id}` },
         }),
         OPTIONAL_FRESH_PROVIDER,
@@ -114,13 +115,13 @@ test("conversation evaluation should pin canonical setup evidence when scenario 
     await runConversationScenario(
         scenario,
         join(directory, "ember.json"),
-        async ({ episode, projection }) => {
-            learnedAt ??= projection.meanings[0]?.learnedAt;
-            sourceOccurredAt ??= projection.meanings[0]?.source_evidence[0]?.occurredAt;
+        async ({ episode, request }) => {
+            learnedAt ??= request.projection.meanings[0]?.learnedAt;
+            sourceOccurredAt ??= request.projection.meanings[0]?.source_evidence[0]?.occurredAt;
             return {
                 contractVersion: 1,
                 reply: episode.scripted_reply ?? "No scripted reply required.",
-                usedMeaningIds: projection.selection.meaning_ids,
+                usedMeaningIds: request.projection.selection.meaning_ids,
                 operational: { externalThreadId: `fresh-${episode.id}` },
             };
         },
@@ -142,12 +143,12 @@ test("conversation evaluation should propagate unrelated provider errors when de
     const run = runConversationScenario(
         scenario,
         join(directory, "ember.json"),
-        async ({ episode, projection }) => {
+        async ({ episode, request }) => {
             if (episode.id === "uncertain-delivery") throw unexpected;
             return {
                 contractVersion: 1,
                 reply: episode.scripted_reply ?? "No scripted reply required.",
-                usedMeaningIds: projection.selection.meaning_ids,
+                usedMeaningIds: request.projection.selection.meaning_ids,
                 operational: { externalThreadId: `fresh-${episode.id}` },
             };
         },
@@ -187,10 +188,10 @@ test("conversation evaluation should separate required thread evidence from Embe
     const report = await runConversationScenario(
         scenario,
         join(directory, "ember.json"),
-        async ({ episode, projection }) => ({
+        async ({ episode, request }) => ({
             contractVersion: 1,
             reply: episode.scripted_reply ?? "No scripted reply required.",
-            usedMeaningIds: projection.selection.meaning_ids,
+            usedMeaningIds: request.projection.selection.meaning_ids,
             operational: { externalThreadId: "reused-provider-thread" },
         }),
         { invocation_mode: "fresh", external_thread_identity: "required" },
@@ -215,10 +216,10 @@ test("conversation evaluation should accept fresh providers when optional thread
     const report = await runConversationScenario(
         scenario,
         join(directory, "ember.json"),
-        async ({ episode, projection }) => ({
+        async ({ episode, request }) => ({
             contractVersion: 1,
             reply: episode.scripted_reply ?? "No scripted reply required.",
-            usedMeaningIds: projection.selection.meaning_ids,
+            usedMeaningIds: request.projection.selection.meaning_ids,
         }),
         OPTIONAL_FRESH_PROVIDER,
     );
@@ -230,4 +231,32 @@ test("conversation evaluation should accept fresh providers when optional thread
     assert.equal(restart?.provider_invocation_mode, "fresh");
     assert.equal(restart?.provider_thread_id, null);
     assert.equal(restart?.external_thread_identity_observation, "not_exposed");
+});
+
+test("conversation evaluation should preserve runtime cognition identity when provider receives request", async () => {
+    // Given
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const scenario = await loadConversationScenario(SCENARIO);
+    scenario.episodes = [scenario.episodes[0]!];
+    let providerCognitionId: string | undefined;
+
+    // When
+    await runConversationScenario(
+        scenario,
+        statePath,
+        async ({ episode, request }) => {
+            providerCognitionId = request.cognitionId;
+            return {
+                contractVersion: 1,
+                reply: episode.scripted_reply ?? "No scripted reply required.",
+                usedMeaningIds: request.projection.selection.meaning_ids,
+            };
+        },
+        OPTIONAL_FRESH_PROVIDER,
+    );
+    const persisted = await new StateStore(statePath).load();
+
+    // Then
+    assert.equal(providerCognitionId, persisted.operations.cognitionEpisodes[0]?.cognitionId);
 });
