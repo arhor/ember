@@ -10,21 +10,21 @@ permissions:
 
 jobs:
   fix:
-    if: github.event.head_commit.message == 'chore: stage review fixes'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 26.8.1
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - name: Apply review fixes
         run: |
           node <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs';
+          const { readFileSync, writeFileSync } = require('node:fs');
 
           function edit(path, mutate) {
             const before = readFileSync(path, 'utf8');
@@ -133,8 +133,8 @@ jobs:
             text = replaceOnce(
               text,
               'import type { StateStore } from "../persistence/state-store.ts";',
-              'import type { ConversationMembershipResolution } from "../core/conversation-context.ts";\nimport type { StateStore } from "../persistence/state-store.ts";',
-              'membership resolution import',
+              'import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";\nimport type { StateStore } from "../persistence/state-store.ts";',
+              'membership imports',
             );
             text = replaceOnce(
               text,
@@ -161,7 +161,7 @@ jobs:
               'runtime conversation resolution',
             );
             const helperAnchor = '\nexport async function runCognition(\n';
-            const helper = '\nasync function resolveConversationMembership(\n    store: ConversationContextStore,\n    principal: string,\n    scope: string,\n    intent: ConversationMembershipIntent,\n    startedAt: string,\n): Promise<{ conversationId: `conversation-${string}`; membership: ConversationMembershipResolution }> {\n    if (intent.action === "fresh") {\n        return {\n            conversationId: await store.startFreshConversation(principal, scope, startedAt),\n            membership: { action: "started", basis: intent.basis },\n        };\n    }\n\n    const active = await store.activeConversation(principal, scope);\n    if (active) {\n        return {\n            conversationId: active.conversation_id,\n            membership: { action: "continued", basis: intent.basis },\n        };\n    }\n    if (intent.basis === "explicit_resumption") {\n        throw new ValidationError("cannot explicitly resume a conversation without an active Ember-owned trajectory");\n    }\n    return {\n        conversationId: await store.startFreshConversation(principal, scope, startedAt),\n        membership: { action: "started", basis: "initial_interaction" },\n    };\n}\n';
+            const helper = '\nasync function resolveConversationMembership(\n    store: ConversationContextStore,\n    principal: string,\n    scope: string,\n    intent: ConversationMembershipIntent,\n    startedAt: string,\n): Promise<{ conversationId: ConversationId; membership: ConversationMembershipResolution }> {\n    if (intent.action === "fresh") {\n        return {\n            conversationId: await store.startFreshConversation(principal, scope, startedAt),\n            membership: { action: "started", basis: intent.basis },\n        };\n    }\n\n    const active = await store.activeConversation(principal, scope);\n    if (active) {\n        return {\n            conversationId: active.conversation_id,\n            membership: { action: "continued", basis: intent.basis },\n        };\n    }\n    if (intent.basis === "explicit_resumption") {\n        throw new ValidationError("cannot explicitly resume a conversation without an active Ember-owned trajectory");\n    }\n    return {\n        conversationId: await store.startFreshConversation(principal, scope, startedAt),\n        membership: { action: "started", basis: "initial_interaction" },\n    };\n}\n';
             text = replaceOnce(text, helperAnchor, helper + helperAnchor, 'membership resolver helper');
             return text;
           });
@@ -182,12 +182,6 @@ jobs:
             );
             text = replaceOnce(
               text,
-              '        purpose: "ordinary",',
-              '        purpose: "ordinary",',
-              'noop',
-            );
-            text = replaceOnce(
-              text,
               '        timeoutSeconds: 1,\n        output: () => {},',
               '        timeoutSeconds: 1,\n        ...(conversationMembership === undefined ? {} : { conversationMembership }),\n        output: () => {},',
               'runTurn membership forwarding',
@@ -201,9 +195,6 @@ jobs:
             const anchor = 'test("clean process restart continues the same conversation with a fresh provider invocation", async () => {';
             const inserted = `test("membership policy can start a new same-owner trajectory without changing operational identity", async () => {\n    const fixture = await startedFixture();\n    const requests: ProviderRequest[] = [];\n    const provider = capturingProvider(requests, () => "ack");\n    try {\n        await runTurn(fixture, provider, "first topic", { surface: "local_cli" });\n        const firstConversationId = requests[0]?.projection.conversation_context?.conversation_id;\n        assert.ok(firstConversationId);\n\n        await runTurn(fixture, provider, "unrelated topic", {\n            surface: "local_cli",\n            conversationMembership: { action: "fresh", basis: "ambiguous_discourse" },\n        });\n        const freshContext = requests[1]?.projection.conversation_context;\n        assert.ok(freshContext?.conversation_id);\n        assert.notEqual(freshContext.conversation_id, firstConversationId);\n        assert.deepEqual(freshContext.turns, []);\n        assert.deepEqual(freshContext.selection.membership, { action: "started", basis: "ambiguous_discourse" });\n\n        await runTurn(fixture, provider, "continue new topic", { surface: "local_cli" });\n        const continuedContext = requests[2]?.projection.conversation_context;\n        assert.equal(continuedContext?.conversation_id, freshContext.conversation_id);\n        assert.deepEqual(continuedContext?.selection.membership, {\n            action: "continued",\n            basis: "ordinary_adjacency",\n        });\n        assert.deepEqual(\n            continuedContext?.turns.map((turn) => [turn.role, turn.content]),\n            [\n                ["user", "unrelated topic"],\n                ["ember", "ack"],\n            ],\n        );\n    } finally {\n        await closeFixture(fixture);\n    }\n});\n\n`;
             text = replaceOnce(text, anchor, inserted + anchor, 'same-owner fresh trajectory test');
-            const migrationAnchor = 'test("legacy surface-local histories migrate without silently merging unrelated trajectories", async () => {';
-            const validatorTest = `test("conversation sidecar rejects active trajectories whose conversation id belongs to another owner", async () => {\n    const fixture = await startedFixture();\n    const conversationStore = new ConversationContextStore(fixture.store.path);\n    try {\n        await writeFile(\n            conversationStore.path,\n            \`${JSON.stringify(\n                {\n                    conversation_context_version: 2,\n                    active_trajectories: [\n                        {\n                            conversation_id: "conversation-owner-conflict",\n                            principal: PRINCIPAL,\n                            scope: SCOPE,\n                            started_at: "2026-09-09T12:02:00Z",\n                        },\n                    ],\n                    exchanges: [\n                        {\n                            conversation_id: "conversation-owner-conflict",\n                            cognition_id: "cognition-owner-conflict",\n                            principal: PRINCIPAL,\n                            scope: "scope-other",\n                            surface: "local_cli",\n                            input_evidence_id: "evidence-owner-conflict",\n                            started_at: "2026-09-09T12:02:00Z",\n                            expression_evidence_id: null,\n                            expression_occurred_at: null,\n                            expression_content: null,\n                            expression_content_truncated: null,\n                        },\n                    ],\n                },\n                null,\n                2,\n            )}\\n\`,\n        );\n\n        await assert.rejects(\n            conversationStore.load(),\n            /active trajectory conversation-owner-conflict crosses principal or scope boundary/,\n        );\n    } finally {\n        await closeFixture(fixture);\n    }\n});\n\n`;
-            text = replaceOnce(text, migrationAnchor, validatorTest + migrationAnchor, 'cross-owner validation test');
             return text;
           });
 
@@ -224,8 +215,49 @@ jobs:
             return text;
           });
           NODE
+      - name: Add validator regression test
+        run: |
+          cat > tests/conversation-context-validation.test.ts <<'EOF'
+          import assert from "node:assert/strict";
+          import test from "node:test";
+
+          import { validateConversationContextDocument } from "../src/core/conversation-context.ts";
+
+          test("conversation sidecar rejects an active trajectory whose id belongs to another owner", () => {
+              assert.throws(
+                  () =>
+                      validateConversationContextDocument({
+                          conversation_context_version: 2,
+                          active_trajectories: [
+                              {
+                                  conversation_id: "conversation-owner-conflict",
+                                  principal: "max",
+                                  scope: "scope-a",
+                                  started_at: "2026-09-09T12:02:00Z",
+                              },
+                          ],
+                          exchanges: [
+                              {
+                                  conversation_id: "conversation-owner-conflict",
+                                  cognition_id: "cognition-owner-conflict",
+                                  principal: "max",
+                                  scope: "scope-b",
+                                  surface: "local_cli",
+                                  input_evidence_id: "evidence-owner-conflict",
+                                  started_at: "2026-09-09T12:02:00Z",
+                                  expression_evidence_id: null,
+                                  expression_occurred_at: null,
+                                  expression_content: null,
+                                  expression_content_truncated: null,
+                              },
+                          ],
+                      }),
+                  /active trajectory conversation-owner-conflict crosses principal or scope boundary/,
+              );
+          });
+          EOF
       - name: Format
-        run: npx oxfmt src/core/conversation-context.ts src/persistence/conversation-context-store.ts src/runtime/runtime.ts tests/recent-dialogue-projection.test.ts docs/architecture/cross-surface-conversation-continuity.md
+        run: npx oxfmt src/core/conversation-context.ts src/persistence/conversation-context-store.ts src/runtime/runtime.ts tests/recent-dialogue-projection.test.ts tests/conversation-context-validation.test.ts docs/architecture/cross-surface-conversation-continuity.md
       - name: Validate
         run: |
           npm run check
@@ -233,8 +265,8 @@ jobs:
       - name: Commit fixes
         run: |
           rm .github/workflows/chloe-fix-261.yml
-          git config user.name "Chloe"
-          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Address conversation membership review"
-          git push
+          git commit -m "fix: make conversation membership explicit"
+          git push origin HEAD:${{ github.ref_name }}
