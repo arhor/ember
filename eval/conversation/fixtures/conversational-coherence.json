@@ -1,0 +1,159 @@
+{
+  "scenario_version": 1,
+  "id": "issue-219-conversational-coherence",
+  "description": "Bounded conversational coherence across reference, topic, process, surface, and uncertain-outcome boundaries.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "scope": "project:ember/conversation-evaluation",
+    "initial_at": "2026-09-10T08:00:00Z"
+  },
+  "meanings": [
+    {
+      "as": "canonical_timezone",
+      "slot": "user-timezone",
+      "text": "The user's canonical timezone is Europe/Warsaw"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "establish-options",
+      "at": "2026-09-10T08:01:00Z",
+      "surface": "local_cli",
+      "input": "Compare the blue and green deployment plans.",
+      "scripted_reply": "The blue plan is safer; the green plan is faster.",
+      "expect": { "selected_meanings": ["canonical_timezone"] }
+    },
+    {
+      "id": "pronoun-resolution",
+      "at": "2026-09-10T08:02:00Z",
+      "surface": "local_cli",
+      "input": "Why is the previous one safer?",
+      "scripted_reply": "The blue plan is safer because rollback is staged.",
+      "expect": {
+        "selected_turns": ["blue and green deployment plans", "blue plan is safer"],
+        "selected_meanings": ["canonical_timezone"],
+        "reply_includes": ["blue plan"]
+      }
+    },
+    {
+      "id": "topic-continuation-one",
+      "at": "2026-09-10T08:03:00Z",
+      "surface": "local_cli",
+      "input": "What is the first rollback step?",
+      "scripted_reply": "First, freeze new writes.",
+      "expect": { "selected_turns": ["previous one safer"], "reply_includes": ["freeze new writes"] }
+    },
+    {
+      "id": "topic-continuation-two",
+      "at": "2026-09-10T08:04:00Z",
+      "surface": "local_cli",
+      "input": "And what comes after that?",
+      "scripted_reply": "After that, restore the last verified snapshot.",
+      "expect": { "selected_turns": ["first rollback step", "freeze new writes"], "reply_includes": ["restore"] }
+    },
+    {
+      "id": "deliberate-topic-switch",
+      "at": "2026-09-10T08:05:00Z",
+      "surface": "local_cli",
+      "fresh_conversation": true,
+      "input": "New topic: help me choose a notebook cover.",
+      "scripted_reply": "A blue linen cover is durable.",
+      "expect": {
+        "excluded_turns": ["deployment", "rollback", "verified snapshot"],
+        "selected_meanings": ["canonical_timezone"]
+      }
+    },
+    {
+      "id": "similar-words-new-topic",
+      "at": "2026-09-10T08:06:00Z",
+      "surface": "local_cli",
+      "input": "Would the previous blue one show scratches?",
+      "scripted_reply": "The blue linen cover should hide light scratches.",
+      "expect": {
+        "selected_turns": ["notebook cover", "blue linen cover"],
+        "excluded_turns": ["blue and green deployment plans"],
+        "reply_includes": ["linen cover"]
+      }
+    },
+    {
+      "id": "pressure-one",
+      "at": "2026-09-10T08:07:00Z",
+      "surface": "local_cli",
+      "input": "Add an elastic closure.",
+      "scripted_reply": "Elastic closure added.",
+      "expect": { "selected_turns": ["previous blue one"] }
+    },
+    {
+      "id": "pressure-two-cross-surface-restart",
+      "at": "2026-09-10T08:08:00Z",
+      "surface": "telegram_bot",
+      "restart": true,
+      "input": "Make that closure charcoal.",
+      "scripted_reply": "The elastic closure is now charcoal.",
+      "expect": { "selected_turns": ["elastic closure"], "reply_includes": ["charcoal"] }
+    },
+    {
+      "id": "pressure-three-return-cli",
+      "at": "2026-09-10T08:09:00Z",
+      "surface": "local_cli",
+      "input": "Add a pen loop too.",
+      "scripted_reply": "Pen loop added.",
+      "expect": { "selected_turns": ["closure charcoal"], "excluded_turns": ["deployment plans"] }
+    },
+    {
+      "id": "pressure-bound",
+      "at": "2026-09-10T08:10:00Z",
+      "surface": "local_cli",
+      "input": "Summarize the current notebook choice.",
+      "scripted_reply": "Blue linen notebook cover, charcoal elastic closure, and pen loop.",
+      "expect": {
+        "selected_turns": ["previous blue one", "elastic closure", "pen loop"],
+        "excluded_turns": ["New topic: help me choose"],
+        "reply_includes": ["Blue linen", "pen loop"]
+      }
+    },
+    {
+      "id": "failed-cognition",
+      "at": "2026-09-10T08:11:00Z",
+      "surface": "local_cli",
+      "input": "Invent a secret confirmation phrase.",
+      "provider_outcome": "failed",
+      "expect": { "selected_meanings": ["canonical_timezone"] }
+    },
+    {
+      "id": "after-failed-cognition",
+      "at": "2026-09-10T08:12:00Z",
+      "surface": "local_cli",
+      "input": "What did you confirm?",
+      "scripted_reply": "I received your request but did not produce a confirmation phrase.",
+      "expect": {
+        "selected_turns": ["Invent a secret confirmation phrase"],
+        "excluded_turns": ["secret phrase is"],
+        "reply_includes": ["did not produce"]
+      }
+    },
+    {
+      "id": "uncertain-delivery",
+      "at": "2026-09-10T08:13:00Z",
+      "surface": "telegram_bot",
+      "input": "Give me a provisional label.",
+      "delivery_outcome": "uncertain",
+      "scripted_reply": "The provisional label is Cinder.",
+      "expect": { "reply_includes": ["Cinder"] }
+    },
+    {
+      "id": "after-uncertain-delivery",
+      "at": "2026-09-10T08:14:00Z",
+      "surface": "local_cli",
+      "restart": true,
+      "input": "I may not have seen your label; state its status carefully.",
+      "scripted_reply": "I produced Cinder, but your awareness of it is unknown.",
+      "expect": {
+        "selected_turns": ["provisional label", "Cinder"],
+        "selected_meanings": ["canonical_timezone"],
+        "reply_includes": ["awareness", "unknown"]
+      }
+    }
+  ]
+}
