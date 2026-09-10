@@ -11,6 +11,17 @@ export const RECENT_DIALOGUE_MAX_TURN_BYTES = 4 * 1024;
 
 export type ConversationId = `conversation-${string}`;
 
+export type ConversationMembershipBasis =
+    | "ordinary_adjacency"
+    | "explicit_boundary"
+    | "ambiguous_discourse"
+    | "initial_interaction";
+
+export interface ConversationMembershipResolution {
+    action: "continued" | "started";
+    basis: ConversationMembershipBasis;
+}
+
 export interface ActiveConversationTrajectory {
     conversation_id: ConversationId;
     principal: string;
@@ -65,6 +76,7 @@ export interface ProjectedConversationContext {
     turns: ProjectedConversationTurn[];
     selection: {
         strategy: typeof RECENT_DIALOGUE_SELECTION_STRATEGY;
+        membership: ConversationMembershipResolution | null;
         max_exchanges: number;
         max_turn_bytes: number;
         selected_cognition_ids: CognitionId[];
@@ -76,13 +88,17 @@ export interface ProjectedConversationContext {
     };
 }
 
-export function emptyConversationContext(conversationId: ConversationId | null = null): ProjectedConversationContext {
+export function emptyConversationContext(
+    conversationId: ConversationId | null = null,
+    membership: ConversationMembershipResolution | null = null,
+): ProjectedConversationContext {
     return {
         context_version: 2,
         conversation_id: conversationId,
         turns: [],
         selection: {
             strategy: RECENT_DIALOGUE_SELECTION_STRATEGY,
+            membership,
             max_exchanges: RECENT_DIALOGUE_MAX_EXCHANGES,
             max_turn_bytes: RECENT_DIALOGUE_MAX_TURN_BYTES,
             selected_cognition_ids: [],
@@ -102,10 +118,12 @@ export function selectRecentConversationContext(
         principal,
         scope,
         conversationId,
+        membership,
     }: {
         principal: string;
         scope: string;
         conversationId: ConversationId;
+        membership: ConversationMembershipResolution;
     },
 ): ProjectedConversationContext {
     validateState(state);
@@ -120,7 +138,7 @@ export function selectRecentConversationContext(
 
     const matching = document.exchanges.filter((exchange) => exchange.conversation_id === conversationId);
     const selected = matching.slice(-RECENT_DIALOGUE_MAX_EXCHANGES);
-    const result = emptyConversationContext(conversationId);
+    const result = emptyConversationContext(conversationId, membership);
     result.selection.excluded_older_exchange_count = Math.max(0, matching.length - selected.length);
 
     const cognitionById = new Map(
@@ -266,8 +284,16 @@ export function validateConversationContextDocument(value: unknown): asserts val
     ) {
         throw new ValidationError("conversation context document does not match schema v2");
     }
-    validateActiveTrajectories(value.active_trajectories);
-    validateExchangeCollection(value.exchanges, false);
+    const activeOwners = validateActiveTrajectories(value.active_trajectories);
+    const exchangeOwners = validateExchangeCollection(value.exchanges, false);
+    for (const [conversationId, activeOwner] of activeOwners) {
+        const exchangeOwner = exchangeOwners.get(conversationId);
+        if (exchangeOwner !== undefined && exchangeOwner !== activeOwner) {
+            throw new ValidationError(
+                `conversation context active trajectory ${conversationId} crosses principal or scope boundary`,
+            );
+        }
+    }
 }
 
 export function validateLegacyConversationContextDocument(
@@ -282,9 +308,10 @@ export function validateLegacyConversationContextDocument(
     validateExchangeCollection(value.exchanges, true);
 }
 
-function validateActiveTrajectories(value: unknown[]) {
+function validateActiveTrajectories(value: unknown[]): Map<string, string> {
     const activePairs = new Set<string>();
     const activeIds = new Set<string>();
+    const owners = new Map<string, string>();
     for (const [index, raw] of value.entries()) {
         const path = `conversation context active_trajectories[${index}]`;
         if (!isObject(raw) || !exactKeys(raw, ["conversation_id", "principal", "scope", "started_at"])) {
@@ -308,10 +335,12 @@ function validateActiveTrajectories(value: unknown[]) {
         }
         activePairs.add(pair);
         activeIds.add(raw.conversation_id);
+        owners.set(raw.conversation_id, pair);
     }
+    return owners;
 }
 
-function validateExchangeCollection(value: unknown[], legacy: boolean) {
+function validateExchangeCollection(value: unknown[], legacy: boolean): Map<string, string> {
     if (value.length > RECENT_DIALOGUE_MAX_STORED_EXCHANGES) {
         throw new ValidationError("conversation context document exceeds the stored exchange bound");
     }
@@ -386,6 +415,7 @@ function validateExchangeCollection(value: unknown[], legacy: boolean) {
             throw new ValidationError(`${path} expression cannot precede cognition start`);
         }
     }
+    return conversationOwners;
 }
 
 function validateConversationId(value: unknown, path: string): asserts value is ConversationId {

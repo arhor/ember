@@ -59,17 +59,21 @@ survive process/provider replacement, but it is not canonical remembered meaning
 Its lifetime and bounded exchange payload remain governed by the transient-dialogue
 semantics from the #216 design.
 
-The current v2 mechanic keeps one active trajectory per principal/scope pair. Once a
-trajectory is established, a later compatible interaction continues that explicit
-trajectory even when its surface changes. Principal/scope compatibility is therefore
-a safety boundary for an already established trajectory, not the semantic identity of
-the trajectory itself.
+The current v2 persistence mechanic keeps one active trajectory per principal/scope
+pair, but the store does **not** infer conversation membership from that pair.
+`runCognition(...)` resolves an explicit membership intent above the store. Ordinary
+adjacency may continue the active trajectory; an explicit boundary or an
+ambiguous-discourse decision starts a different Ember-owned trajectory even when
+principal, scope, surface, runtime, and provider are unchanged. The first interaction
+creates an initial trajectory.
 
-This is intentionally a minimal executable heuristic. The #216 design remains
-stronger: equal principal/scope values alone do not prove that arbitrary historical
-interactions belong to one discourse trajectory. A future discourse router may split,
-resume, or correlate multiple concurrent trajectories using stronger evidence without
-changing the provider contract or promoting surface IDs into semantic identity.
+Principal/scope compatibility is therefore a safety boundary for candidate
+continuation, not proof that arbitrary interactions belong to one conversation. The
+current default policy uses ordinary adjacency when no stronger boundary signal is
+supplied, matching the minimal heuristic permitted by #216. A future discourse router
+can supply stronger continue/fresh decisions, split or resume multiple trajectories,
+or preserve richer uncertainty without changing the persistence contract or promoting
+surface IDs into semantic identity.
 
 ## Cross-surface continuation
 
@@ -161,9 +165,10 @@ allowing v2 continuity prospectively.
 
 ## Inspection and invariants
 
-The provider-facing `conversation_context` now carries `context_version: 2` and the
-selected `conversation_id`. Selection metadata uses
-`recent_same_conversation_v2`. Individual turns continue to expose their source
+The provider-facing `conversation_context` now carries `context_version: 2`, the
+selected `conversation_id`, and inspectable membership metadata describing whether the
+trajectory was continued or started and on what Ember-owned policy basis. Selection
+metadata uses `recent_same_conversation_v2`. Individual turns continue to expose their source
 surface, role, evidence/cognition correlation, delivery status, awareness uncertainty,
 and truncation state.
 

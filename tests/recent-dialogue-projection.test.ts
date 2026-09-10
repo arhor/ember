@@ -5,6 +5,7 @@ import test from "node:test";
 
 import type { EmberState } from "../src/core/model.ts";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
+import type { ConversationMembershipIntent } from "../src/runtime/runtime.ts";
 
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
@@ -57,7 +58,10 @@ async function runTurn(
     fixture: Fixture,
     provider: ProviderInvoker,
     text: string,
-    { surface = "local_cli" }: { surface?: string } = {},
+    {
+        surface = "local_cli",
+        conversationMembership,
+    }: { surface?: string; conversationMembership?: ConversationMembershipIntent } = {},
 ) {
     const result = await runCognition(fixture.store, fixture.state, {
         runtimeId: fixture.runtimeId,
@@ -68,6 +72,7 @@ async function runTurn(
         providerLabel: "fixture",
         provider,
         timeoutSeconds: 1,
+        ...(conversationMembership === undefined ? {} : { conversationMembership }),
         output: () => {},
     });
     fixture.state = result.state;
@@ -155,7 +160,7 @@ test("conversation sidecar preserves durable acceptance order when timestamps ti
     const conversationStore = new ConversationContextStore(fixture.store.path);
     try {
         const startedAt = "2026-09-09T12:02:00Z";
-        const conversationId = await conversationStore.currentConversation(PRINCIPAL, SCOPE, startedAt);
+        const conversationId = await conversationStore.startFreshConversation(PRINCIPAL, SCOPE, startedAt);
         await conversationStore.recordAcceptedInput({
             conversation_id: conversationId,
             cognition_id: "cognition-z",
@@ -257,6 +262,47 @@ test("surface changes continue the active Ember-owned conversation trajectory", 
             ],
         );
         assert.equal(context.selection.strategy, "recent_same_conversation_v2");
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("membership policy can start a new same-owner trajectory without changing operational identity", async () => {
+    const fixture = await startedFixture();
+    const requests: ProviderRequest[] = [];
+    const provider = capturingProvider(requests, () => "ack");
+    try {
+        await runTurn(fixture, provider, "first topic", { surface: "local_cli" });
+        const firstConversationId = requests[0]?.projection.conversation_context?.conversation_id;
+        assert.ok(firstConversationId);
+
+        await runTurn(fixture, provider, "unrelated topic", {
+            surface: "local_cli",
+            conversationMembership: { action: "fresh", basis: "ambiguous_discourse" },
+        });
+        const freshContext = requests[1]?.projection.conversation_context;
+        assert.ok(freshContext?.conversation_id);
+        assert.notEqual(freshContext.conversation_id, firstConversationId);
+        assert.deepEqual(freshContext.turns, []);
+        assert.deepEqual(freshContext.selection.membership, {
+            action: "started",
+            basis: "ambiguous_discourse",
+        });
+
+        await runTurn(fixture, provider, "continue new topic", { surface: "local_cli" });
+        const continuedContext = requests[2]?.projection.conversation_context;
+        assert.equal(continuedContext?.conversation_id, freshContext.conversation_id);
+        assert.deepEqual(continuedContext?.selection.membership, {
+            action: "continued",
+            basis: "ordinary_adjacency",
+        });
+        assert.deepEqual(
+            continuedContext?.turns.map((turn) => [turn.role, turn.content]),
+            [
+                ["user", "unrelated topic"],
+                ["ember", "ack"],
+            ],
+        );
     } finally {
         await closeFixture(fixture);
     }

@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
 import type {
+    ActiveConversationTrajectory,
     ConversationContextDocument,
     ConversationExchangeRecord,
     ConversationId,
@@ -73,25 +74,13 @@ export class ConversationContextStore {
         return value;
     }
 
-    async currentConversation(principal: string, scope: string, startedAt = nowUtc()): Promise<ConversationId> {
-        validateTrajectoryInput(principal, scope, startedAt);
+    async activeConversation(principal: string, scope: string): Promise<ActiveConversationTrajectory | null> {
+        validateTrajectoryOwner(principal, scope);
         const document = await this.load();
         const active = document.active_trajectories.find(
             (trajectory) => trajectory.principal === principal && trajectory.scope === scope,
         );
-        if (active) {
-            return active.conversation_id;
-        }
-
-        const conversationId = newConversationId();
-        document.active_trajectories.push({
-            conversation_id: conversationId,
-            principal,
-            scope,
-            started_at: startedAt,
-        });
-        await this.writeDocument(document);
-        return conversationId;
+        return active ? structuredClone(active) : null;
     }
 
     async startFreshConversation(principal: string, scope: string, startedAt = nowUtc()): Promise<ConversationId> {
@@ -238,9 +227,13 @@ function newConversationId(): ConversationId {
     return `conversation-${randomUUID()}`;
 }
 
-function validateTrajectoryInput(principal: string, scope: string, startedAt: string) {
+function validateTrajectoryOwner(principal: string, scope: string) {
     if (!principal.trim()) throw new ValidationError("conversation principal must be non-empty");
     if (!scope.trim()) throw new ValidationError("conversation scope must be non-empty");
+}
+
+function validateTrajectoryInput(principal: string, scope: string, startedAt: string) {
+    validateTrajectoryOwner(principal, scope);
     if (!isRfc3339Utc(startedAt)) throw new ValidationError("conversation start must be RFC 3339 UTC");
 }
 
