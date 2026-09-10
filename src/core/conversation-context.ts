@@ -4,12 +4,22 @@ import { exactKeys, isObject } from "../util.ts";
 import { ValidationError } from "./errors.ts";
 import { isRfc3339Utc, validateState } from "./model.ts";
 
-export const RECENT_DIALOGUE_SELECTION_STRATEGY = "recent_same_principal_scope_surface_v1" as const;
+export const RECENT_DIALOGUE_SELECTION_STRATEGY = "recent_same_conversation_v2" as const;
 export const RECENT_DIALOGUE_MAX_EXCHANGES = 4;
 export const RECENT_DIALOGUE_MAX_STORED_EXCHANGES = 16;
 export const RECENT_DIALOGUE_MAX_TURN_BYTES = 4 * 1024;
 
+export type ConversationId = `conversation-${string}`;
+
+export interface ActiveConversationTrajectory {
+    conversation_id: ConversationId;
+    principal: string;
+    scope: string;
+    started_at: string;
+}
+
 export interface ConversationExchangeRecord {
+    conversation_id: ConversationId;
     cognition_id: CognitionId;
     principal: string;
     scope: string;
@@ -23,8 +33,16 @@ export interface ConversationExchangeRecord {
 }
 
 export interface ConversationContextDocument {
-    conversation_context_version: 1;
+    conversation_context_version: 2;
+    active_trajectories: ActiveConversationTrajectory[];
     exchanges: ConversationExchangeRecord[];
+}
+
+export interface LegacyConversationExchangeRecord extends Omit<ConversationExchangeRecord, "conversation_id"> {}
+
+export interface LegacyConversationContextDocument {
+    conversation_context_version: 1;
+    exchanges: LegacyConversationExchangeRecord[];
 }
 
 export interface ProjectedConversationTurn {
@@ -42,7 +60,8 @@ export interface ProjectedConversationTurn {
 }
 
 export interface ProjectedConversationContext {
-    context_version: 1;
+    context_version: 2;
+    conversation_id: ConversationId;
     turns: ProjectedConversationTurn[];
     selection: {
         strategy: typeof RECENT_DIALOGUE_SELECTION_STRATEGY;
@@ -57,9 +76,10 @@ export interface ProjectedConversationContext {
     };
 }
 
-export function emptyConversationContext(): ProjectedConversationContext {
+export function emptyConversationContext(conversationId: ConversationId): ProjectedConversationContext {
     return {
-        context_version: 1,
+        context_version: 2,
+        conversation_id: conversationId,
         turns: [],
         selection: {
             strategy: RECENT_DIALOGUE_SELECTION_STRATEGY,
@@ -81,21 +101,26 @@ export function selectRecentConversationContext(
     {
         principal,
         scope,
-        surface,
+        conversationId,
     }: {
         principal: string;
         scope: string;
-        surface: string;
+        conversationId: ConversationId;
     },
 ): ProjectedConversationContext {
     validateState(state);
     validateConversationContextDocument(document);
 
-    const matching = document.exchanges.filter(
-        (exchange) => exchange.principal === principal && exchange.scope === scope && exchange.surface === surface,
+    const active = document.active_trajectories.find(
+        (trajectory) => trajectory.principal === principal && trajectory.scope === scope,
     );
+    if (!active || active.conversation_id !== conversationId) {
+        throw new ValidationError("conversation trajectory is not current for the requested principal and scope");
+    }
+
+    const matching = document.exchanges.filter((exchange) => exchange.conversation_id === conversationId);
     const selected = matching.slice(-RECENT_DIALOGUE_MAX_EXCHANGES);
-    const result = emptyConversationContext();
+    const result = emptyConversationContext(conversationId);
     result.selection.excluded_older_exchange_count = Math.max(0, matching.length - selected.length);
 
     const cognitionById = new Map(
@@ -104,6 +129,9 @@ export function selectRecentConversationContext(
     const evidenceById = new Map(state.evidence.map((evidence) => [evidence.evidenceId, evidence]));
 
     for (const exchange of selected) {
+        if (exchange.principal !== principal || exchange.scope !== scope) {
+            throw new ValidationError(`conversation exchange crosses principal or scope boundary: ${exchange.cognition_id}`);
+        }
         const cognition = cognitionById.get(exchange.cognition_id);
         if (!cognition) {
             throw new ValidationError(`conversation exchange refers to absent cognition ${exchange.cognition_id}`);
@@ -226,35 +254,88 @@ export function truncateConversationText(
 }
 
 export function validateConversationContextDocument(value: unknown): asserts value is ConversationContextDocument {
+    if (!isObject(value) || !exactKeys(value, ["conversation_context_version", "active_trajectories", "exchanges"])) {
+        throw new ValidationError("conversation context document does not match schema v2");
+    }
+    if (
+        value.conversation_context_version !== 2 ||
+        !Array.isArray(value.active_trajectories) ||
+        !Array.isArray(value.exchanges)
+    ) {
+        throw new ValidationError("conversation context document does not match schema v2");
+    }
+    validateActiveTrajectories(value.active_trajectories);
+    validateExchangeCollection(value.exchanges, false);
+}
+
+export function validateLegacyConversationContextDocument(
+    value: unknown,
+): asserts value is LegacyConversationContextDocument {
     if (!isObject(value) || !exactKeys(value, ["conversation_context_version", "exchanges"])) {
         throw new ValidationError("conversation context document does not match schema v1");
     }
     if (value.conversation_context_version !== 1 || !Array.isArray(value.exchanges)) {
         throw new ValidationError("conversation context document does not match schema v1");
     }
-    if (value.exchanges.length > RECENT_DIALOGUE_MAX_STORED_EXCHANGES) {
+    validateExchangeCollection(value.exchanges, true);
+}
+
+function validateActiveTrajectories(value: unknown[]) {
+    const activePairs = new Set<string>();
+    const activeIds = new Set<string>();
+    for (const [index, raw] of value.entries()) {
+        const path = `conversation context active_trajectories[${index}]`;
+        if (!isObject(raw) || !exactKeys(raw, ["conversation_id", "principal", "scope", "started_at"])) {
+            throw new ValidationError(`${path} contains missing or unsupported fields`);
+        }
+        validateConversationId(raw.conversation_id, `${path}.conversation_id`);
+        for (const field of ["principal", "scope"] as const) {
+            if (typeof raw[field] !== "string" || !raw[field].trim()) {
+                throw new ValidationError(`${path}.${field} must be non-empty`);
+            }
+        }
+        if (!isRfc3339Utc(raw.started_at)) {
+            throw new ValidationError(`${path}.started_at must be RFC 3339 UTC`);
+        }
+        const pair = `${raw.principal}\u0000${raw.scope}`;
+        if (activePairs.has(pair)) {
+            throw new ValidationError(`${path} duplicates an active principal/scope trajectory`);
+        }
+        if (activeIds.has(raw.conversation_id)) {
+            throw new ValidationError(`${path}.conversation_id is duplicated`);
+        }
+        activePairs.add(pair);
+        activeIds.add(raw.conversation_id);
+    }
+}
+
+function validateExchangeCollection(value: unknown[], legacy: boolean) {
+    if (value.length > RECENT_DIALOGUE_MAX_STORED_EXCHANGES) {
         throw new ValidationError("conversation context document exceeds the stored exchange bound");
     }
 
     const cognitionIds = new Set<string>();
-    for (const [index, raw] of value.exchanges.entries()) {
+    const conversationOwners = new Map<string, string>();
+    for (const [index, raw] of value.entries()) {
         const path = `conversation context exchanges[${index}]`;
-        if (
-            !isObject(raw) ||
-            !exactKeys(raw, [
-                "cognition_id",
-                "principal",
-                "scope",
-                "surface",
-                "input_evidence_id",
-                "started_at",
-                "expression_evidence_id",
-                "expression_occurred_at",
-                "expression_content",
-                "expression_content_truncated",
-            ])
-        ) {
+        const keys = [
+            ...(legacy ? [] : ["conversation_id"]),
+            "cognition_id",
+            "principal",
+            "scope",
+            "surface",
+            "input_evidence_id",
+            "started_at",
+            "expression_evidence_id",
+            "expression_occurred_at",
+            "expression_content",
+            "expression_content_truncated",
+        ];
+        if (!isObject(raw) || !exactKeys(raw, keys)) {
             throw new ValidationError(`${path} contains missing or unsupported fields`);
+        }
+        if (!legacy) {
+            validateConversationId(raw.conversation_id, `${path}.conversation_id`);
         }
         if (typeof raw.cognition_id !== "string" || !raw.cognition_id.startsWith("cognition-")) {
             throw new ValidationError(`${path}.cognition_id is invalid`);
@@ -270,6 +351,14 @@ export function validateConversationContextDocument(value: unknown): asserts val
             if (typeof raw[field] !== "string" || !raw[field].trim()) {
                 throw new ValidationError(`${path}.${field} must be non-empty`);
             }
+        }
+        if (!legacy) {
+            const owner = `${raw.principal}\u0000${raw.scope}`;
+            const existingOwner = conversationOwners.get(raw.conversation_id);
+            if (existingOwner !== undefined && existingOwner !== owner) {
+                throw new ValidationError(`${path}.conversation_id crosses principal or scope boundary`);
+            }
+            conversationOwners.set(raw.conversation_id, owner);
         }
         if (!isRfc3339Utc(raw.started_at)) {
             throw new ValidationError(`${path}.started_at must be RFC 3339 UTC`);
@@ -294,5 +383,11 @@ export function validateConversationContextDocument(value: unknown): asserts val
         if (expressionPresent && Date.parse(raw.started_at) > Date.parse(raw.expression_occurred_at)) {
             throw new ValidationError(`${path} expression cannot precede cognition start`);
         }
+    }
+}
+
+function validateConversationId(value: unknown, path: string): asserts value is ConversationId {
+    if (typeof value !== "string" || !value.startsWith("conversation-") || value.length <= "conversation-".length) {
+        throw new ValidationError(`${path} is invalid`);
     }
 }
