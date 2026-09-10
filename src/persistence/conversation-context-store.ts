@@ -73,11 +73,7 @@ export class ConversationContextStore {
         return value;
     }
 
-    async currentConversation(
-        principal: string,
-        scope: string,
-        startedAt = nowUtc(),
-    ): Promise<ConversationId> {
+    async currentConversation(principal: string, scope: string, startedAt = nowUtc()): Promise<ConversationId> {
         validateTrajectoryInput(principal, scope, startedAt);
         const document = await this.load();
         const active = document.active_trajectories.find(
@@ -98,11 +94,7 @@ export class ConversationContextStore {
         return conversationId;
     }
 
-    async startFreshConversation(
-        principal: string,
-        scope: string,
-        startedAt = nowUtc(),
-    ): Promise<ConversationId> {
+    async startFreshConversation(principal: string, scope: string, startedAt = nowUtc()): Promise<ConversationId> {
         validateTrajectoryInput(principal, scope, startedAt);
         const document = await this.load();
         const conversationId = newConversationId();

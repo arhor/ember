@@ -130,7 +130,9 @@ export function selectRecentConversationContext(
 
     for (const exchange of selected) {
         if (exchange.principal !== principal || exchange.scope !== scope) {
-            throw new ValidationError(`conversation exchange crosses principal or scope boundary: ${exchange.cognition_id}`);
+            throw new ValidationError(
+                `conversation exchange crosses principal or scope boundary: ${exchange.cognition_id}`,
+            );
         }
         const cognition = cognitionById.get(exchange.cognition_id);
         if (!cognition) {

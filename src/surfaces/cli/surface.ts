@@ -60,10 +60,9 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
             try {
                 if (line.startsWith(":")) {
                     if (line === ":new-conversation") {
-                        const conversationId = await new ConversationContextStore(config.statePath).startFreshConversation(
-                            config.principal,
-                            config.scope,
-                        );
+                        const conversationId = await new ConversationContextStore(
+                            config.statePath,
+                        ).startFreshConversation(config.principal, config.scope);
                         io.output.write(`${conversationId}\n`);
                     } else if (line.startsWith(":ask ")) {
                         const result = await withSigintCancellation((signal) =>

@@ -320,7 +320,10 @@ test("starting a fresh conversation clears only transient dialogue and preserves
         );
 
         const afterReset = await conversationStore.load();
-        assert.equal(afterReset.exchanges.some((exchange) => exchange.conversation_id === oldConversationId), true);
+        assert.equal(
+            afterReset.exchanges.some((exchange) => exchange.conversation_id === oldConversationId),
+            true,
+        );
         assert.equal(afterReset.active_trajectories[0]?.conversation_id, freshConversationId);
 
         await runTurn(fixture, provider, "fresh trajectory", { surface: "telegram_bot" });
@@ -331,8 +334,14 @@ test("starting a fresh conversation clears only transient dialogue and preserves
         assert.equal(projection.selection.meaning_ids.includes(meaningId), true);
 
         const afterNewTurn = await conversationStore.load();
-        assert.equal(afterNewTurn.exchanges.some((exchange) => exchange.conversation_id === oldConversationId), true);
-        assert.equal(afterNewTurn.exchanges.some((exchange) => exchange.conversation_id === freshConversationId), true);
+        assert.equal(
+            afterNewTurn.exchanges.some((exchange) => exchange.conversation_id === oldConversationId),
+            true,
+        );
+        assert.equal(
+            afterNewTurn.exchanges.some((exchange) => exchange.conversation_id === freshConversationId),
+            true,
+        );
     } finally {
         await closeFixture(fixture);
     }
