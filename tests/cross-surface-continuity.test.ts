@@ -114,7 +114,7 @@ function requireMeaning(
     return meaning;
 }
 
-test("CLI -> Telegram -> CLI preserves one Ember across process restart without transcript-owned continuity", async () => {
+test("CLI -> Telegram -> CLI preserves one Ember-owned conversation across process restart", async () => {
     const directory = await tempDir();
     try {
         const statePath = join(directory, "ember.json");
@@ -302,8 +302,29 @@ test("CLI -> Telegram -> CLI preserves one Ember across process restart without 
         assert.equal(telegramProjectionText.includes(String(CHAT_ID)), false);
         assert.equal(telegramProjectionText.includes("update:890"), false);
         assert.equal(telegramProjectionText.includes("update:891"), false);
-        assert.equal(JSON.stringify(returnRequest.projection).includes(TELEGRAM_CONFIRMED), false);
-        assert.equal(JSON.stringify(returnRequest.projection).includes(TELEGRAM_UNCERTAIN), false);
+        const conversationIds = requests.map((request) => request.projection.conversation_context?.conversation_id);
+        assert.ok(conversationIds[0]);
+        assert.equal(new Set(conversationIds).size, 1);
+        assert.deepEqual(
+            requests.map((request) =>
+                request.projection.conversation_context.turns
+                    .filter((turn: any) => turn.role === "user")
+                    .map((turn: any) => [turn.content, turn.source_surface]),
+            ),
+            [
+                [],
+                [[CLI_OPENING, "local_cli"]],
+                [
+                    [CLI_OPENING, "local_cli"],
+                    [TELEGRAM_CONFIRMED, "telegram_bot"],
+                ],
+                [
+                    [CLI_OPENING, "local_cli"],
+                    [TELEGRAM_CONFIRMED, "telegram_bot"],
+                    [TELEGRAM_UNCERTAIN, "telegram_bot"],
+                ],
+            ],
+        );
 
         const occurrences = finalView.interactions.inbound_occurrences;
         const deliveries = finalView.interactions.deliveries;
