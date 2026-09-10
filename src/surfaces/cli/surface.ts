@@ -16,6 +16,7 @@ import {
     undertake,
     withholdDetail,
 } from "../../core/semantics.ts";
+import { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexProvider } from "../../providers/codex.ts";
 import { createCursorProvider } from "../../providers/cursor.ts";
@@ -58,7 +59,13 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
             }
             try {
                 if (line.startsWith(":")) {
-                    if (line.startsWith(":ask ")) {
+                    if (line === ":new-conversation") {
+                        const conversationId = await new ConversationContextStore(config.statePath).startFreshConversation(
+                            config.principal,
+                            config.scope,
+                        );
+                        io.output.write(`${conversationId}\n`);
+                    } else if (line.startsWith(":ask ")) {
                         const result = await withSigintCancellation((signal) =>
                             ask(config, store, state, started.runtimeId, line, io.output, signal),
                         );
