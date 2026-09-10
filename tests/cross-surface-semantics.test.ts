@@ -140,7 +140,7 @@ function memoryOutput(chunks: string[]) {
     });
 }
 
-test("CLI and Telegram preserve one principal and least-sufficient scope even when Telegram asks for private meaning", async () => {
+test("CLI and Telegram preserve conversation, principal, and least-sufficient scope across runtime restart", async () => {
     const f = await fixture();
     try {
         const cliRequests: ProviderRequest[] = [];
@@ -188,6 +188,21 @@ test("CLI and Telegram preserve one principal and least-sufficient scope even wh
         assert.equal(telegramProjection.selection.meaning_ids.includes(f.sharedMeaningId), true);
         assert.equal(cliProjection.selection.meaning_ids.includes(f.privateMeaningId), false);
         assert.equal(telegramProjection.selection.meaning_ids.includes(f.privateMeaningId), false);
+
+        const cliConversation = cliProjection.conversation_context;
+        const telegramConversation = telegramProjection.conversation_context;
+        assert.ok(cliConversation);
+        assert.ok(telegramConversation);
+        assert.ok(cliConversation.conversation_id);
+        assert.equal(telegramConversation.conversation_id, cliConversation.conversation_id);
+        assert.deepEqual(cliConversation.turns, []);
+        assert.deepEqual(
+            telegramConversation.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
+            [
+                ["user", "hello from CLI", "local_cli"],
+                ["ember", "accepted", "local_cli"],
+            ],
+        );
 
         const telegramProjectionText = JSON.stringify(telegramProjection);
         assert.equal(telegramProjectionText.includes(PRIVATE_TEXT), false);
