@@ -174,10 +174,11 @@ export async function runCognition(
     }
     const timestamp = nowUtc();
     const conversationStore = new ConversationContextStore(store.path);
+    const conversationId = await conversationStore.currentConversation(principal, scope, timestamp);
     const conversationContext = selectRecentConversationContext(state, await conversationStore.load(), {
         principal,
         scope,
-        surface,
+        conversationId,
     });
     const projection = buildProjection(state, {
         principal,
@@ -214,6 +215,7 @@ export async function runCognition(
     });
     state = await store.commit(state.revision, started);
     await conversationStore.recordAcceptedInput({
+        conversation_id: conversationId,
         cognition_id: cognitionId,
         principal,
         scope,
