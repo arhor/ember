@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { rm } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -9,9 +9,10 @@ import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
+import { rememberFact } from "../src/core/semantics.ts";
 import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { runCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 interface Fixture {
@@ -72,6 +73,19 @@ async function runTurn(
     fixture.state = result.state;
 }
 
+async function cleanRestart(fixture: Fixture) {
+    const stopped = stopRuntime(fixture.state, fixture.runtimeId, { reason: "test_restart" });
+    fixture.state = await fixture.store.commit(fixture.state.revision, stopped);
+    await fixture.store.releaseWriteLease(fixture.lease);
+
+    fixture.store = new StateStore(join(fixture.directory, "ember.json"));
+    fixture.lease = await fixture.store.acquireWriteLease();
+    const loaded = await fixture.store.load();
+    const started = startRuntime(loaded, PRINCIPAL, SCOPE);
+    fixture.state = await fixture.store.commit(loaded.revision, started.state);
+    fixture.runtimeId = started.runtimeId;
+}
+
 test("second turn receives prior user and Ember turns separately from canonical meaning selection", async () => {
     const fixture = await startedFixture();
     const requests: ProviderRequest[] = [];
@@ -106,7 +120,7 @@ test("second turn receives prior user and Ember turns separately from canonical 
     }
 });
 
-test("accepted user turns survive provider failure without inventing an Ember turn", async () => {
+test("accepted user turns survive provider failure without inventing an Ember turn across surfaces", async () => {
     const fixture = await startedFixture();
     const requests: ProviderRequest[] = [];
     let failNext = true;
@@ -119,14 +133,14 @@ test("accepted user turns survive provider failure without inventing an Ember tu
         return { contractVersion: 1, reply: "Retried.", usedMeaningIds: [] };
     };
     try {
-        await runTurn(fixture, provider, "Try the blue option");
-        await runTurn(fixture, provider, "Retry that");
+        await runTurn(fixture, provider, "Try the blue option", { surface: "local_cli" });
+        await runTurn(fixture, provider, "Retry that", { surface: "telegram_bot" });
 
         const context = requests[1]?.projection.conversation_context;
         assert.ok(context);
         assert.deepEqual(
-            context.turns.map((turn) => [turn.role, turn.content]),
-            [["user", "Try the blue option"]],
+            context.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
+            [["user", "Try the blue option", "local_cli"]],
         );
         assert.equal(context.selection.selected_cognition_ids.length, 1);
         assert.equal(context.selection.selected_evidence_ids.length, 1);
@@ -141,7 +155,9 @@ test("conversation sidecar preserves durable acceptance order when timestamps ti
     const conversationStore = new ConversationContextStore(fixture.store.path);
     try {
         const startedAt = "2026-09-09T12:02:00Z";
+        const conversationId = await conversationStore.currentConversation(PRINCIPAL, SCOPE, startedAt);
         await conversationStore.recordAcceptedInput({
+            conversation_id: conversationId,
             cognition_id: "cognition-z",
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -150,6 +166,7 @@ test("conversation sidecar preserves durable acceptance order when timestamps ti
             started_at: startedAt,
         });
         await conversationStore.recordAcceptedInput({
+            conversation_id: conversationId,
             cognition_id: "cognition-a",
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -219,19 +236,154 @@ test("conversation turn payloads are deterministically truncated to the byte bou
     }
 });
 
-test("surface changes do not silently inherit dialogue before cross-surface correlation semantics exist", async () => {
+test("surface changes continue the active Ember-owned conversation trajectory", async () => {
     const fixture = await startedFixture();
     const requests: ProviderRequest[] = [];
     const provider = capturingProvider(requests, () => "ack");
     try {
-        await runTurn(fixture, provider, "cli-only context", { surface: "local_cli" });
-        await runTurn(fixture, provider, "telegram turn", { surface: "telegram" });
+        await runTurn(fixture, provider, "cli context", { surface: "local_cli" });
+        const firstConversationId = requests[0]?.projection.conversation_context?.conversation_id;
+        assert.ok(firstConversationId);
 
-        assert.deepEqual(requests[1]?.projection.conversation_context?.turns, []);
-        assert.equal(
-            requests[1]?.projection.conversation_context?.selection.strategy,
-            "recent_same_principal_scope_surface_v1",
+        await runTurn(fixture, provider, "continue that", { surface: "telegram_bot" });
+        const context = requests[1]?.projection.conversation_context;
+        assert.ok(context);
+        assert.equal(context.conversation_id, firstConversationId);
+        assert.deepEqual(
+            context.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
+            [
+                ["user", "cli context", "local_cli"],
+                ["ember", "ack", "local_cli"],
+            ],
         );
+        assert.equal(context.selection.strategy, "recent_same_conversation_v2");
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("clean process restart continues the same conversation with a fresh provider invocation", async () => {
+    const fixture = await startedFixture();
+    const requests: ProviderRequest[] = [];
+    const provider = capturingProvider(requests, () => "ack");
+    try {
+        await runTurn(fixture, provider, "before restart", { surface: "local_cli" });
+        const conversationId = requests[0]?.projection.conversation_context?.conversation_id;
+        assert.ok(conversationId);
+
+        await cleanRestart(fixture);
+        await runTurn(fixture, provider, "after restart", { surface: "telegram_bot" });
+
+        const context = requests[1]?.projection.conversation_context;
+        assert.ok(context);
+        assert.equal(context.conversation_id, conversationId);
+        assert.deepEqual(
+            context.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
+            [
+                ["user", "before restart", "local_cli"],
+                ["ember", "ack", "local_cli"],
+            ],
+        );
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("starting a fresh conversation clears only transient dialogue and preserves canonical meaning and evidence", async () => {
+    const fixture = await startedFixture();
+    const requests: ProviderRequest[] = [];
+    const provider = capturingProvider(requests, () => "ack");
+    const conversationStore = new ConversationContextStore(fixture.store.path);
+    try {
+        const candidate = structuredClone(fixture.state);
+        const meaningId = rememberFact(
+            candidate,
+            PRINCIPAL,
+            `user:${PRINCIPAL}`,
+            "preferred-editor",
+            SCOPE,
+            "The preferred editor is Helix.",
+        );
+        fixture.state = await fixture.store.commit(fixture.state.revision, candidate);
+
+        await runTurn(fixture, provider, "old trajectory", { surface: "local_cli" });
+        const beforeReset = await conversationStore.load();
+        const oldConversationId = beforeReset.active_trajectories[0]?.conversation_id;
+        assert.ok(oldConversationId);
+        const canonicalEvidenceIds = fixture.state.evidence.map((evidence) => evidence.evidenceId);
+
+        const freshConversationId = await conversationStore.startFreshConversation(PRINCIPAL, SCOPE);
+        assert.notEqual(freshConversationId, oldConversationId);
+        assert.deepEqual(
+            fixture.state.evidence.map((evidence) => evidence.evidenceId),
+            canonicalEvidenceIds,
+        );
+
+        const afterReset = await conversationStore.load();
+        assert.equal(afterReset.exchanges.some((exchange) => exchange.conversation_id === oldConversationId), true);
+        assert.equal(afterReset.active_trajectories[0]?.conversation_id, freshConversationId);
+
+        await runTurn(fixture, provider, "fresh trajectory", { surface: "telegram_bot" });
+        const projection = requests[1]?.projection;
+        assert.ok(projection?.conversation_context);
+        assert.equal(projection.conversation_context.conversation_id, freshConversationId);
+        assert.deepEqual(projection.conversation_context.turns, []);
+        assert.equal(projection.selection.meaning_ids.includes(meaningId), true);
+
+        const afterNewTurn = await conversationStore.load();
+        assert.equal(afterNewTurn.exchanges.some((exchange) => exchange.conversation_id === oldConversationId), true);
+        assert.equal(afterNewTurn.exchanges.some((exchange) => exchange.conversation_id === freshConversationId), true);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("legacy surface-local histories migrate without silently merging unrelated trajectories", async () => {
+    const fixture = await startedFixture();
+    const conversationStore = new ConversationContextStore(fixture.store.path);
+    try {
+        await writeFile(
+            conversationStore.path,
+            `${JSON.stringify(
+                {
+                    conversation_context_version: 1,
+                    exchanges: [
+                        {
+                            cognition_id: "cognition-cli",
+                            principal: PRINCIPAL,
+                            scope: SCOPE,
+                            surface: "local_cli",
+                            input_evidence_id: "evidence-cli",
+                            started_at: "2026-09-09T12:02:00Z",
+                            expression_evidence_id: null,
+                            expression_occurred_at: null,
+                            expression_content: null,
+                            expression_content_truncated: null,
+                        },
+                        {
+                            cognition_id: "cognition-telegram",
+                            principal: PRINCIPAL,
+                            scope: SCOPE,
+                            surface: "telegram_bot",
+                            input_evidence_id: "evidence-telegram",
+                            started_at: "2026-09-09T12:03:00Z",
+                            expression_evidence_id: null,
+                            expression_occurred_at: null,
+                            expression_content: null,
+                            expression_content_truncated: null,
+                        },
+                    ],
+                },
+                null,
+                2,
+            )}\n`,
+        );
+
+        const migrated = await conversationStore.load();
+        assert.equal(migrated.conversation_context_version, 2);
+        assert.notEqual(migrated.exchanges[0]?.conversation_id, migrated.exchanges[1]?.conversation_id);
+        assert.equal(migrated.active_trajectories.length, 1);
+        assert.equal(migrated.active_trajectories[0]?.conversation_id, migrated.exchanges[1]?.conversation_id);
     } finally {
         await closeFixture(fixture);
     }
