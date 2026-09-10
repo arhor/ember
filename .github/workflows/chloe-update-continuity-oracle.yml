@@ -1,0 +1,49 @@
+name: Chloe update continuity oracle
+
+on:
+  push:
+    branches:
+      - chloe/218-cross-surface-conversation-continuity
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Update obsolete cross-surface oracle
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'tests/cross-surface-continuity.test.ts';
+          let text = fs.readFileSync(path, 'utf8');
+          text = text.replace(
+            'test("CLI -> Telegram -> CLI preserves one Ember across process restart without transcript-owned continuity", async () => {',
+            'test("CLI -> Telegram -> CLI preserves one Ember-owned conversation across process restart", async () => {',
+          );
+          const oldBlock = `        assert.equal(JSON.stringify(returnRequest.projection).includes(TELEGRAM_CONFIRMED), false);\n        assert.equal(JSON.stringify(returnRequest.projection).includes(TELEGRAM_UNCERTAIN), false);`;
+          const newBlock = `        const conversationIds = requests.map(\n            (request) => request.projection.conversation_context?.conversation_id,\n        );\n        assert.ok(conversationIds[0]);\n        assert.equal(new Set(conversationIds).size, 1);\n        assert.deepEqual(\n            requests.map((request) =>\n                request.projection.conversation_context.turns\n                    .filter((turn: any) => turn.role === "user")\n                    .map((turn: any) => [turn.content, turn.source_surface]),\n            ),\n            [\n                [],\n                [[CLI_OPENING, "local_cli"]],\n                [\n                    [CLI_OPENING, "local_cli"],\n                    [TELEGRAM_CONFIRMED, "telegram_bot"],\n                ],\n                [\n                    [CLI_OPENING, "local_cli"],\n                    [TELEGRAM_CONFIRMED, "telegram_bot"],\n                    [TELEGRAM_UNCERTAIN, "telegram_bot"],\n                ],\n            ],\n        );`;
+          if (!text.includes(oldBlock)) throw new Error('obsolete oracle block not found');
+          text = text.replace(oldBlock, newBlock);
+          fs.writeFileSync(path, text);
+          NODE
+      - run: npx oxfmt tests/cross-surface-continuity.test.ts
+      - name: Commit oracle update
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/cross-surface-continuity.test.ts
+          git commit -m "test: assert Ember-owned cross-surface conversation continuity"
+          git push origin HEAD:${{ github.ref_name }}
