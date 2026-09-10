@@ -33,7 +33,7 @@
       "expect": {
         "selected_turns": ["blue and green deployment plans", "blue plan is safer"],
         "selected_meanings": ["canonical_timezone"],
-        "reply_includes": ["blue plan"]
+        "reference_resolution": { "reply_includes": ["blue plan"] }
       }
     },
     {
@@ -42,7 +42,10 @@
       "surface": "local_cli",
       "input": "What is the first rollback step?",
       "scripted_reply": "First, freeze new writes.",
-      "expect": { "selected_turns": ["previous one safer"], "reply_includes": ["freeze new writes"] }
+      "expect": {
+        "selected_turns": ["previous one safer"],
+        "reply_includes": ["freeze new writes"]
+      }
     },
     {
       "id": "topic-continuation-two",
@@ -50,7 +53,10 @@
       "surface": "local_cli",
       "input": "And what comes after that?",
       "scripted_reply": "After that, restore the last verified snapshot.",
-      "expect": { "selected_turns": ["first rollback step", "freeze new writes"], "reply_includes": ["restore"] }
+      "expect": {
+        "selected_turns": ["first rollback step", "freeze new writes"],
+        "reference_resolution": { "reply_includes": ["restore"] }
+      }
     },
     {
       "id": "deliberate-topic-switch",
@@ -73,8 +79,16 @@
       "expect": {
         "selected_turns": ["notebook cover", "blue linen cover"],
         "excluded_turns": ["blue and green deployment plans"],
-        "reply_includes": ["linen cover"]
+        "reference_resolution": { "reply_includes": ["linen cover"] }
       }
+    },
+    {
+      "id": "same-trajectory-similar-history",
+      "at": "2026-09-10T08:06:30Z",
+      "surface": "local_cli",
+      "input": "Side note: the old blue deployment binder belongs in the archive.",
+      "scripted_reply": "The blue deployment binder is archived.",
+      "expect": { "selected_turns": ["blue linen cover"] }
     },
     {
       "id": "pressure-one",
@@ -82,7 +96,7 @@
       "surface": "local_cli",
       "input": "Add an elastic closure.",
       "scripted_reply": "Elastic closure added.",
-      "expect": { "selected_turns": ["previous blue one"] }
+      "expect": { "selected_turns": ["blue deployment binder"] }
     },
     {
       "id": "pressure-two-cross-surface-restart",
@@ -91,7 +105,10 @@
       "restart": true,
       "input": "Make that closure charcoal.",
       "scripted_reply": "The elastic closure is now charcoal.",
-      "expect": { "selected_turns": ["elastic closure"], "reply_includes": ["charcoal"] }
+      "expect": {
+        "selected_turns": ["elastic closure"],
+        "reference_resolution": { "reply_includes": ["charcoal"] }
+      }
     },
     {
       "id": "pressure-three-return-cli",
@@ -102,14 +119,22 @@
       "expect": { "selected_turns": ["closure charcoal"], "excluded_turns": ["deployment plans"] }
     },
     {
+      "id": "pressure-four",
+      "at": "2026-09-10T08:09:30Z",
+      "surface": "local_cli",
+      "input": "Use recycled dotted paper.",
+      "scripted_reply": "Recycled dotted paper selected.",
+      "expect": { "selected_turns": ["pen loop"] }
+    },
+    {
       "id": "pressure-bound",
       "at": "2026-09-10T08:10:00Z",
       "surface": "local_cli",
       "input": "Summarize the current notebook choice.",
       "scripted_reply": "Blue linen notebook cover, charcoal elastic closure, and pen loop.",
       "expect": {
-        "selected_turns": ["previous blue one", "elastic closure", "pen loop"],
-        "excluded_turns": ["New topic: help me choose"],
+        "selected_turns": ["elastic closure", "pen loop", "dotted paper"],
+        "excluded_turns": ["blue deployment binder", "New topic: help me choose"],
         "reply_includes": ["Blue linen", "pen loop"]
       }
     },

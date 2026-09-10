@@ -21,7 +21,8 @@ The default fixture covers:
 - pronoun and ellipsis resolution against participant-attributed recent turns;
 - topic continuation over several exchanges and an explicit fresh-topic boundary;
 - an older deployment conversation competing with a newer, superficially similar
-  blue-notebook conversation;
+  blue-notebook conversation inside one trajectory before the older dialogue falls
+  beyond the configured recent-exchange window;
 - deterministic trimming at `RECENT_DIALOGUE_MAX_EXCHANGES`;
 - a clean restart with a fresh provider invocation;
 - CLI to Telegram to CLI continuation with source-surface provenance;
@@ -53,10 +54,12 @@ configuration, and `--report NEW_PATH` to create a mode-0600 JSON report. The re
 path must not already exist. Do not commit raw live reports because natural provider
 replies and operational identifiers may contain local information.
 
-The fixture's `scripted_reply` is the deterministic model oracle. Live runs use the
-same `reply_includes` observations to test representative natural reference
-resolution. A live run can therefore fail model observations while Ember-owned
-selection assertions still pass.
+The fixture's `scripted_reply` is the deterministic model oracle. Generic
+`reply_includes` expectations produce reply-quality observations. Only the explicit
+`reference_resolution.reply_includes` expectation contributes to
+`successful_reference_resolution`, so the future scorecard cannot mislabel an
+ordinary content check as reference resolution. A live run can therefore fail model
+observations while Ember-owned selection assertions still pass.
 
 ## Interpret the report
 
@@ -68,12 +71,15 @@ reports whether replies contained the fixture's expected resolution signals.
 Every episode reports:
 
 - `successful_reference_resolution`, a nullable model observation;
+- `reply_observations_passed`, the separate generic reply-content observation;
 - `irrelevant_context_inclusion`, listing forbidden selected turn fragments;
 - `selected_conversation_evidence_ids` and `selected_conversation_turns`, including
   source surface, response linkage, delivery status, and awareness uncertainty;
 - `selected_canonical_meaning_ids` from the independently built canonical
   projection;
 - `restart_outcome` and `cross_surface_outcome` where applicable;
+- `provider_thread_id` and `fresh_provider_invocation`, with restart episodes failing
+  Ember assertions if provider identity is absent or reused;
 - `bounded_projection_size_bytes`; and
 - `context_bound`, including the configured exchange/turn bounds and actual older
   exchange exclusions or turn truncations.
@@ -92,8 +98,15 @@ explicit fresh conversation, simulate a failed/unknown provider outcome, or simu
 uncertain output delivery. Expectations name selected or excluded turn substrings,
 canonical meaning aliases, and reply substrings.
 
+The loader rejects missing or unsupported fields, malformed UTC timestamps, empty or
+duplicate strings, duplicate episode IDs or meaning aliases, unknown meaning aliases,
+and invalid outcome values before it creates evaluation state. Setup meanings are
+created under `ember.initial_at`, so fixture state never acquires wall-clock evidence
+that appears to come from the future relative to its episode projections.
+
 Keep fixtures synthetic and deterministic. Expectations should inspect semantic
 behavior rather than generated IDs or timestamps. A dialogue selection expectation
 belongs under `selected_turns` or `excluded_turns`; provider response quality belongs
-under `reply_includes`. This separation is required for truthful diagnosis and for
+under `reply_includes`, and true local-reference checks belong under
+`reference_resolution`. This separation is required for truthful diagnosis and for
 future scorecard aggregation.

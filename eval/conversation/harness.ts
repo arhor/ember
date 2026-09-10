@@ -5,10 +5,11 @@ import type { Projection } from "../../src/core/projection.ts";
 import type { ProviderResult } from "../../src/providers/contract.ts";
 
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
-import { initialState } from "../../src/core/model.ts";
+import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
+import { exactKeys, isObject } from "../../src/util.ts";
 
 export interface ConversationEpisode {
     id: string;
@@ -25,6 +26,7 @@ export interface ConversationEpisode {
         excluded_turns?: string[];
         selected_meanings?: string[];
         reply_includes?: string[];
+        reference_resolution?: { reply_includes: string[] };
     };
 }
 
@@ -59,19 +61,21 @@ export async function runConversationScenario(
     validateScenario(scenario);
     const state = initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at);
     const meaningIds = new Map<string, MeaningId>();
-    for (const meaning of scenario.meanings) {
-        meaningIds.set(
-            meaning.as,
-            rememberFact(
-                state,
-                scenario.ember.principal,
-                `user:${scenario.ember.principal}`,
-                meaning.slot,
-                scenario.ember.scope,
-                meaning.text,
-            ),
-        );
-    }
+    withFixedTime(scenario.ember.initial_at, () => {
+        for (const meaning of scenario.meanings) {
+            meaningIds.set(
+                meaning.as,
+                rememberFact(
+                    state,
+                    scenario.ember.principal,
+                    `user:${scenario.ember.principal}`,
+                    meaning.slot,
+                    scenario.ember.scope,
+                    meaning.text,
+                ),
+            );
+        }
+    });
     const store = new StateStore(statePath);
     await store.create(state);
     const lease = await store.acquireWriteLease();
@@ -79,6 +83,7 @@ export async function runConversationScenario(
     let currentState = state;
     let runtimeId: RuntimeId | null = null;
     const previousNow = process.env.EMBER_TEST_NOW;
+    const providerThreadIds = new Set<string>();
     try {
         for (const episode of scenario.episodes) {
             process.env.EMBER_TEST_NOW = episode.at;
@@ -96,6 +101,8 @@ export async function runConversationScenario(
             let projection: Projection | null = null;
             let reply: string | null = null;
             let providerFailure: string | null = null;
+            let providerThreadId: string | null = null;
+            const injectedDeliveryUncertainty = new Error(`fixture delivery uncertain: ${episode.id}`);
             try {
                 const result = await runCognition(store, currentState, {
                     runtimeId: runtimeId!,
@@ -122,16 +129,17 @@ export async function runConversationScenario(
                             projection: request.projection,
                         });
                         reply = result.reply;
+                        providerThreadId = result.operational?.externalThreadId ?? null;
                         return result;
                     },
                     output: () => {
-                        if (episode.delivery_outcome === "uncertain") throw new Error("fixture delivery uncertain");
+                        if (episode.delivery_outcome === "uncertain") throw injectedDeliveryUncertainty;
                     },
                 });
                 currentState = result.state;
                 providerFailure = result.providerFailure;
             } catch (error) {
-                if (episode.delivery_outcome !== "uncertain") throw error;
+                if (error !== injectedDeliveryUncertainty) throw error;
                 currentState = await store.load();
                 providerFailure = "delivery uncertain";
             }
@@ -156,6 +164,12 @@ export async function runConversationScenario(
                 text,
                 passed: reply?.includes(text) ?? false,
             }));
+            const referenceMatches = (episode.expect.reference_resolution?.reply_includes ?? []).map((text) => ({
+                text,
+                passed: reply?.includes(text) ?? false,
+            }));
+            const freshProviderInvocation = providerThreadId !== null && !providerThreadIds.has(providerThreadId);
+            if (providerThreadId !== null) providerThreadIds.add(providerThreadId);
             const selectedCanonical = evaluatedProjection.selection.meaning_ids.map(String);
             const assertions = [
                 ...selectedTurnMatches.map((item) => item.passed),
@@ -168,9 +182,12 @@ export async function runConversationScenario(
                 restart: episode.restart ?? false,
                 conversation_id: context.conversation_id,
                 provider_failure: providerFailure,
+                provider_thread_id: providerThreadId,
+                fresh_provider_invocation: freshProviderInvocation,
                 reply,
                 successful_reference_resolution:
-                    replyMatches.length === 0 ? null : replyMatches.every((item) => item.passed),
+                    referenceMatches.length === 0 ? null : referenceMatches.every((item) => item.passed),
+                reply_observations_passed: replyMatches.every((item) => item.passed),
                 irrelevant_context_inclusion: irrelevantTurnMatches,
                 selected_conversation_evidence_ids: context.selection.selected_evidence_ids,
                 selected_conversation_turns: context.turns,
@@ -187,8 +204,9 @@ export async function runConversationScenario(
                     context.turns.length > 0 && context.turns.at(-1)?.source_surface !== episode.surface
                         ? "continued"
                         : null,
-                ember_assertions_passed: assertions.every(Boolean),
-                model_observations_passed: replyMatches.length === 0 || replyMatches.every((item) => item.passed),
+                ember_assertions_passed: assertions.every(Boolean) && (!episode.restart || freshProviderInvocation),
+                model_observations_passed:
+                    replyMatches.every((item) => item.passed) && referenceMatches.every((item) => item.passed),
             });
         }
     } finally {
@@ -208,11 +226,126 @@ export async function runConversationScenario(
 }
 
 function validateScenario(value: unknown): asserts value is ConversationScenario {
-    if (!value || typeof value !== "object") throw new ValidationError("conversation scenario must be an object");
+    if (!isObject(value)) throw new ValidationError("conversation scenario must be an object");
     const scenario = value as Partial<ConversationScenario>;
-    if (scenario.scenario_version !== 1 || typeof scenario.id !== "string" || !scenario.id.trim())
+    if (!exactKeys(value, ["scenario_version", "id", "description", "ember", "meanings", "episodes"]))
+        throw new ValidationError("conversation scenario contains missing or unsupported fields");
+    if (scenario.scenario_version !== 1 || !isNonEmptyString(scenario.id) || !isNonEmptyString(scenario.description))
         throw new ValidationError("conversation scenario header is invalid");
-    if (!scenario.ember || !Array.isArray(scenario.meanings) || !Array.isArray(scenario.episodes))
+    if (
+        !isObject(scenario.ember) ||
+        !exactKeys(scenario.ember, ["name", "principal", "scope", "initial_at"]) ||
+        !isNonEmptyString(scenario.ember.name) ||
+        !isNonEmptyString(scenario.ember.principal) ||
+        !isNonEmptyString(scenario.ember.scope) ||
+        !isRfc3339Utc(scenario.ember.initial_at)
+    )
+        throw new ValidationError("conversation scenario Ember identity is invalid");
+    if (!Array.isArray(scenario.meanings) || !Array.isArray(scenario.episodes))
         throw new ValidationError("conversation scenario sections are invalid");
     if (scenario.episodes.length === 0) throw new ValidationError("conversation scenario must contain episodes");
+    const aliases = new Set<string>();
+    for (const meaning of scenario.meanings) {
+        if (
+            !isObject(meaning) ||
+            !exactKeys(meaning, ["as", "slot", "text"]) ||
+            !isNonEmptyString(meaning.as) ||
+            aliases.has(meaning.as) ||
+            !isNonEmptyString(meaning.slot) ||
+            !isNonEmptyString(meaning.text)
+        )
+            throw new ValidationError("conversation scenario meaning is invalid or duplicated");
+        aliases.add(meaning.as);
+    }
+    const episodeIds = new Set<string>();
+    let previousTimestamp = Date.parse(scenario.ember.initial_at);
+    for (const episode of scenario.episodes) {
+        if (
+            !isObject(episode) ||
+            !hasOnlyKeys(episode, [
+                "id",
+                "at",
+                "surface",
+                "input",
+                "restart",
+                "fresh_conversation",
+                "provider_outcome",
+                "delivery_outcome",
+                "scripted_reply",
+                "expect",
+            ]) ||
+            !isNonEmptyString(episode.id) ||
+            episodeIds.has(episode.id) ||
+            !isRfc3339Utc(episode.at) ||
+            !isNonEmptyString(episode.surface) ||
+            !isNonEmptyString(episode.input) ||
+            (episode.restart !== undefined && typeof episode.restart !== "boolean") ||
+            (episode.fresh_conversation !== undefined && typeof episode.fresh_conversation !== "boolean") ||
+            (episode.provider_outcome !== undefined &&
+                !["failed", "outcome_unknown"].includes(episode.provider_outcome)) ||
+            (episode.delivery_outcome !== undefined &&
+                !["displayed", "uncertain"].includes(episode.delivery_outcome)) ||
+            (episode.scripted_reply !== undefined && !isNonEmptyString(episode.scripted_reply))
+        )
+            throw new ValidationError("conversation episode is invalid or duplicated");
+        const timestamp = Date.parse(episode.at);
+        if (timestamp <= previousTimestamp)
+            throw new ValidationError("conversation episode timestamps must be strictly increasing");
+        previousTimestamp = timestamp;
+        episodeIds.add(episode.id);
+        validateExpectations(episode.id, episode.expect, aliases);
+    }
+}
+
+function validateExpectations(episodeId: string, value: unknown, aliases: Set<string>) {
+    if (
+        !isObject(value) ||
+        !hasOnlyKeys(value, [
+            "selected_turns",
+            "excluded_turns",
+            "selected_meanings",
+            "reply_includes",
+            "reference_resolution",
+        ])
+    )
+        throw new ValidationError(`episode ${episodeId} expectations are invalid`);
+    for (const field of ["selected_turns", "excluded_turns", "reply_includes"] as const) {
+        if (value[field] !== undefined && !isStringList(value[field]))
+            throw new ValidationError(`episode ${episodeId} ${field} must contain non-empty strings`);
+    }
+    if (
+        value.selected_meanings !== undefined &&
+        (!isStringList(value.selected_meanings) || value.selected_meanings.some((alias) => !aliases.has(alias)))
+    )
+        throw new ValidationError(`episode ${episodeId} selected_meanings contains an unknown alias`);
+    if (
+        value.reference_resolution !== undefined &&
+        (!isObject(value.reference_resolution) ||
+            !exactKeys(value.reference_resolution, ["reply_includes"]) ||
+            !isStringList(value.reference_resolution.reply_includes))
+    )
+        throw new ValidationError(`episode ${episodeId} reference_resolution is invalid`);
+}
+
+function hasOnlyKeys(value: object, allowed: string[]) {
+    return Object.keys(value).every((key) => allowed.includes(key));
+}
+
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && Boolean(value.trim());
+}
+
+function isStringList(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every(isNonEmptyString) && new Set(value).size === value.length;
+}
+
+function withFixedTime<T>(timestamp: string, action: () => T): T {
+    const previous = process.env.EMBER_TEST_NOW;
+    process.env.EMBER_TEST_NOW = timestamp;
+    try {
+        return action();
+    } finally {
+        if (previous === undefined) delete process.env.EMBER_TEST_NOW;
+        else process.env.EMBER_TEST_NOW = previous;
+    }
 }
