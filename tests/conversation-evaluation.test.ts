@@ -7,6 +7,7 @@ import { RECENT_DIALOGUE_MAX_EXCHANGES } from "../src/core/conversation-context.
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "conversation", "fixtures", "conversational-coherence.json");
+const OPTIONAL_FRESH_PROVIDER = { invocation_mode: "fresh", external_thread_identity: "optional" } as const;
 
 test("conversation evaluation should expose bounded selection evidence when dialogue crosses semantic boundaries", async () => {
     // Given
@@ -23,6 +24,7 @@ test("conversation evaluation should expose bounded selection evidence when dial
             usedMeaningIds: projection.selection.meaning_ids,
             operational: { externalThreadId: `fresh-${episode.id}` },
         }),
+        OPTIONAL_FRESH_PROVIDER,
     );
 
     // Then
@@ -44,7 +46,8 @@ test("conversation evaluation should expose bounded selection evidence when dial
     const crossSurface = report.episodes.find((episode) => episode.id === "pressure-two-cross-surface-restart");
     assert.equal(crossSurface?.restart_outcome, "continued");
     assert.equal(crossSurface?.cross_surface_outcome, "continued");
-    assert.equal(crossSurface?.fresh_provider_invocation, true);
+    assert.equal(crossSurface?.provider_invocation_mode, "fresh");
+    assert.equal(crossSurface?.external_thread_identity_observation, "fresh");
     assert.ok(crossSurface?.provider_thread_id);
     const failed = report.episodes.find((episode) => episode.id === "after-failed-cognition");
     assert.equal(
@@ -63,6 +66,9 @@ test("conversation evaluation should expose bounded selection evidence when dial
     const uncertainExpression = uncertain?.selected_conversation_turns.find((turn) => turn.content.includes("Cinder"));
     assert.equal(uncertainExpression?.delivery_status, "pending");
     assert.equal(uncertainExpression?.user_awareness, "unknown");
+    const uncertainDelivery = report.episodes.find((episode) => episode.id === "uncertain-delivery");
+    assert.equal(uncertainDelivery?.provider_failure, null);
+    assert.equal(uncertainDelivery?.delivery_outcome, "uncertain");
     assert.equal(new Set(report.episodes.map((episode) => episode.selected_canonical_meaning_ids.join(","))).size, 1);
     assert.equal(report.episodes.filter((episode) => episode.successful_reference_resolution !== null).length, 4);
     assert.equal(
@@ -89,6 +95,7 @@ test("conversation evaluation should separate model observations when provider i
             usedMeaningIds: projection.selection.meaning_ids,
             operational: { externalThreadId: `fresh-${episode.id}` },
         }),
+        OPTIONAL_FRESH_PROVIDER,
     );
 
     // Then
@@ -104,16 +111,21 @@ test("conversation evaluation should pin canonical setup evidence when scenario 
     let sourceOccurredAt: string | undefined;
 
     // When
-    await runConversationScenario(scenario, join(directory, "ember.json"), async ({ episode, projection }) => {
-        learnedAt ??= projection.meanings[0]?.learnedAt;
-        sourceOccurredAt ??= projection.meanings[0]?.source_evidence[0]?.occurredAt;
-        return {
-            contractVersion: 1,
-            reply: episode.scripted_reply ?? "No scripted reply required.",
-            usedMeaningIds: projection.selection.meaning_ids,
-            operational: { externalThreadId: `fresh-${episode.id}` },
-        };
-    });
+    await runConversationScenario(
+        scenario,
+        join(directory, "ember.json"),
+        async ({ episode, projection }) => {
+            learnedAt ??= projection.meanings[0]?.learnedAt;
+            sourceOccurredAt ??= projection.meanings[0]?.source_evidence[0]?.occurredAt;
+            return {
+                contractVersion: 1,
+                reply: episode.scripted_reply ?? "No scripted reply required.",
+                usedMeaningIds: projection.selection.meaning_ids,
+                operational: { externalThreadId: `fresh-${episode.id}` },
+            };
+        },
+        OPTIONAL_FRESH_PROVIDER,
+    );
 
     // Then
     assert.equal(learnedAt, scenario.ember.initial_at);
@@ -127,15 +139,20 @@ test("conversation evaluation should propagate unrelated provider errors when de
     const unexpected = new Error("unexpected provider regression");
 
     // When
-    const run = runConversationScenario(scenario, join(directory, "ember.json"), async ({ episode, projection }) => {
-        if (episode.id === "uncertain-delivery") throw unexpected;
-        return {
-            contractVersion: 1,
-            reply: episode.scripted_reply ?? "No scripted reply required.",
-            usedMeaningIds: projection.selection.meaning_ids,
-            operational: { externalThreadId: `fresh-${episode.id}` },
-        };
-    });
+    const run = runConversationScenario(
+        scenario,
+        join(directory, "ember.json"),
+        async ({ episode, projection }) => {
+            if (episode.id === "uncertain-delivery") throw unexpected;
+            return {
+                contractVersion: 1,
+                reply: episode.scripted_reply ?? "No scripted reply required.",
+                usedMeaningIds: projection.selection.meaning_ids,
+                operational: { externalThreadId: `fresh-${episode.id}` },
+            };
+        },
+        OPTIONAL_FRESH_PROVIDER,
+    );
 
     // Then
     await assert.rejects(run, (error) => error === unexpected);
@@ -148,15 +165,20 @@ test("conversation evaluation should reject duplicate episode ids when scenario 
     scenario.episodes[1]!.id = scenario.episodes[0]!.id;
 
     // When
-    const run = runConversationScenario(scenario, join(directory, "ember.json"), async () => {
-        throw new Error("provider must not run");
-    });
+    const run = runConversationScenario(
+        scenario,
+        join(directory, "ember.json"),
+        async () => {
+            throw new Error("provider must not run");
+        },
+        OPTIONAL_FRESH_PROVIDER,
+    );
 
     // Then
     await assert.rejects(run, /conversation episode is invalid or duplicated/);
 });
 
-test("conversation evaluation should fail restart evidence when provider thread identity is reused", async () => {
+test("conversation evaluation should separate required thread evidence from Ember assertions when identity is reused", async () => {
     // Given
     const directory = await tempDir();
     const scenario = await loadConversationScenario(SCENARIO);
@@ -171,11 +193,41 @@ test("conversation evaluation should fail restart evidence when provider thread 
             usedMeaningIds: projection.selection.meaning_ids,
             operational: { externalThreadId: "reused-provider-thread" },
         }),
+        { invocation_mode: "fresh", external_thread_identity: "required" },
     );
 
     // Then
-    assert.equal(report.ember_assertions_passed, false);
+    assert.equal(report.ember_assertions_passed, true);
+    assert.equal(report.provider_observations_passed, false);
     const restart = report.episodes.find((episode) => episode.id === "pressure-two-cross-surface-restart");
-    assert.equal(restart?.fresh_provider_invocation, false);
-    assert.equal(restart?.ember_assertions_passed, false);
+    assert.equal(restart?.provider_invocation_mode, "fresh");
+    assert.equal(restart?.external_thread_identity_observation, "reused");
+    assert.equal(restart?.ember_assertions_passed, true);
+    assert.equal(restart?.provider_observations_passed, false);
+});
+
+test("conversation evaluation should accept fresh providers when optional thread identity is absent", async () => {
+    // Given
+    const directory = await tempDir();
+    const scenario = await loadConversationScenario(SCENARIO);
+
+    // When
+    const report = await runConversationScenario(
+        scenario,
+        join(directory, "ember.json"),
+        async ({ episode, projection }) => ({
+            contractVersion: 1,
+            reply: episode.scripted_reply ?? "No scripted reply required.",
+            usedMeaningIds: projection.selection.meaning_ids,
+        }),
+        OPTIONAL_FRESH_PROVIDER,
+    );
+
+    // Then
+    assert.equal(report.ember_assertions_passed, true);
+    assert.equal(report.provider_observations_passed, true);
+    const restart = report.episodes.find((episode) => episode.id === "pressure-two-cross-surface-restart");
+    assert.equal(restart?.provider_invocation_mode, "fresh");
+    assert.equal(restart?.provider_thread_id, null);
+    assert.equal(restart?.external_thread_identity_observation, "not_exposed");
 });

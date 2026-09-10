@@ -78,8 +78,13 @@ Every episode reports:
 - `selected_canonical_meaning_ids` from the independently built canonical
   projection;
 - `restart_outcome` and `cross_surface_outcome` where applicable;
-- `provider_thread_id` and `fresh_provider_invocation`, with restart episodes failing
-  Ember assertions if provider identity is absent or reused;
+- `provider_invocation_mode`, the harness-controlled fact that each episode uses a
+  fresh provider invocation;
+- optional `provider_thread_id` and its separate
+  `external_thread_identity_observation`; the generic harness accepts absent thread
+  metadata, while the live Codex runner requires fresh identity as provider evidence;
+- `provider_failure` and `delivery_outcome`, which keep failed cognition distinct
+  from an uncertain delivery after successful cognition and expression commit;
 - `bounded_projection_size_bytes`; and
 - `context_bound`, including the configured exchange/turn bounds and actual older
   exchange exclusions or turn truncations.

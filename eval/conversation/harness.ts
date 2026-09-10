@@ -47,6 +47,11 @@ export interface ConversationProviderInvocation {
 
 export type ConversationProvider = (invocation: ConversationProviderInvocation) => Promise<ProviderResult>;
 
+export interface ConversationProviderControl {
+    invocation_mode: "fresh";
+    external_thread_identity: "optional" | "required";
+}
+
 export async function loadConversationScenario(path: string): Promise<ConversationScenario> {
     const candidate: unknown = JSON.parse(await readFile(path, "utf8"));
     validateScenario(candidate);
@@ -57,8 +62,10 @@ export async function runConversationScenario(
     scenario: ConversationScenario,
     statePath: string,
     provider: ConversationProvider,
+    providerControl: ConversationProviderControl,
 ) {
     validateScenario(scenario);
+    validateProviderControl(providerControl);
     const state = initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at);
     const meaningIds = new Map<string, MeaningId>();
     withFixedTime(scenario.ember.initial_at, () => {
@@ -101,6 +108,7 @@ export async function runConversationScenario(
             let projection: Projection | null = null;
             let reply: string | null = null;
             let providerFailure: string | null = null;
+            let deliveryOutcome: "not_attempted" | "displayed" | "uncertain" = "not_attempted";
             let providerThreadId: string | null = null;
             const injectedDeliveryUncertainty = new Error(`fixture delivery uncertain: ${episode.id}`);
             try {
@@ -138,10 +146,11 @@ export async function runConversationScenario(
                 });
                 currentState = result.state;
                 providerFailure = result.providerFailure;
+                if (result.providerFailure === null) deliveryOutcome = "displayed";
             } catch (error) {
                 if (error !== injectedDeliveryUncertainty) throw error;
                 currentState = await store.load();
-                providerFailure = "delivery uncertain";
+                deliveryOutcome = "uncertain";
             }
             if (projection === null) throw new Error(`episode ${episode.id} did not expose a projection`);
 
@@ -168,8 +177,17 @@ export async function runConversationScenario(
                 text,
                 passed: reply?.includes(text) ?? false,
             }));
-            const freshProviderInvocation = providerThreadId !== null && !providerThreadIds.has(providerThreadId);
+            const externalThreadIdentityObservation =
+                providerThreadId === null
+                    ? "not_exposed"
+                    : providerThreadIds.has(providerThreadId)
+                      ? "reused"
+                      : "fresh";
             if (providerThreadId !== null) providerThreadIds.add(providerThreadId);
+            const providerObservationsPassed =
+                reply === null ||
+                providerControl.external_thread_identity === "optional" ||
+                externalThreadIdentityObservation === "fresh";
             const selectedCanonical = evaluatedProjection.selection.meaning_ids.map(String);
             const assertions = [
                 ...selectedTurnMatches.map((item) => item.passed),
@@ -182,8 +200,10 @@ export async function runConversationScenario(
                 restart: episode.restart ?? false,
                 conversation_id: context.conversation_id,
                 provider_failure: providerFailure,
+                delivery_outcome: deliveryOutcome,
+                provider_invocation_mode: providerControl.invocation_mode,
                 provider_thread_id: providerThreadId,
-                fresh_provider_invocation: freshProviderInvocation,
+                external_thread_identity_observation: externalThreadIdentityObservation,
                 reply,
                 successful_reference_resolution:
                     referenceMatches.length === 0 ? null : referenceMatches.every((item) => item.passed),
@@ -204,7 +224,8 @@ export async function runConversationScenario(
                     context.turns.length > 0 && context.turns.at(-1)?.source_surface !== episode.surface
                         ? "continued"
                         : null,
-                ember_assertions_passed: assertions.every(Boolean) && (!episode.restart || freshProviderInvocation),
+                ember_assertions_passed: assertions.every(Boolean),
+                provider_observations_passed: providerObservationsPassed,
                 model_observations_passed:
                     replyMatches.every((item) => item.passed) && referenceMatches.every((item) => item.passed),
             });
@@ -220,6 +241,7 @@ export async function runConversationScenario(
         description: scenario.description,
         scorecard_input: true,
         ember_assertions_passed: episodes.every((episode) => episode.ember_assertions_passed),
+        provider_observations_passed: episodes.every((episode) => episode.provider_observations_passed),
         model_observations_passed: episodes.every((episode) => episode.model_observations_passed),
         episodes,
     };
@@ -295,6 +317,16 @@ function validateScenario(value: unknown): asserts value is ConversationScenario
         episodeIds.add(episode.id);
         validateExpectations(episode.id, episode.expect, aliases);
     }
+}
+
+function validateProviderControl(value: unknown): asserts value is ConversationProviderControl {
+    if (
+        !isObject(value) ||
+        !exactKeys(value, ["invocation_mode", "external_thread_identity"]) ||
+        value.invocation_mode !== "fresh" ||
+        !["optional", "required"].includes(value.external_thread_identity as string)
+    )
+        throw new ValidationError("conversation provider control is invalid");
 }
 
 function validateExpectations(episodeId: string, value: unknown, aliases: Set<string>) {

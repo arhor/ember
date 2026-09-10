@@ -37,12 +37,15 @@ try {
                       },
                       { timeoutSeconds: options.timeoutSeconds, thread: { mode: "fresh_persistent" } },
                   );
-    const report = await runConversationScenario(scenario, join(directory, "ember.json"), provider);
+    const report = await runConversationScenario(scenario, join(directory, "ember.json"), provider, {
+        invocation_mode: "fresh",
+        external_thread_identity: options.provider === "codex" ? "required" : "optional",
+    });
     const output = `${JSON.stringify(report, null, 2)}\n`;
     if (options.report) await writeFile(options.report, output, { encoding: "utf8", mode: 0o600, flag: "wx" });
     else process.stdout.write(output);
     if (!report.ember_assertions_passed) process.exitCode = 1;
-    else if (!report.model_observations_passed) process.exitCode = 2;
+    else if (!report.provider_observations_passed || !report.model_observations_passed) process.exitCode = 2;
 } finally {
     await rm(directory, { recursive: true, force: true });
 }
