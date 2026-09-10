@@ -1,5 +1,6 @@
 import type { Writable } from "node:stream";
 
+import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
 import type {
     CognitionEpisode,
     CognitionId,
@@ -126,6 +127,10 @@ export function stopRuntime(
     return candidate;
 }
 
+export type ConversationMembershipIntent =
+    | { action: "continue"; basis: "ordinary_adjacency" }
+    | { action: "fresh"; basis: "explicit_boundary" | "ambiguous_discourse" };
+
 export interface RunCognitionOptions {
     runtimeId: RuntimeId;
     principal: string;
@@ -139,10 +144,38 @@ export interface RunCognitionOptions {
     output?: Writable | ((text: string) => void | Promise<void>);
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
+    conversationMembership?: ConversationMembershipIntent;
     cognitionId?: CognitionId;
     hooks?: {
         afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
         afterDisplay?: (state: EmberState) => void | Promise<void>;
+    };
+}
+
+async function resolveConversationMembership(
+    store: ConversationContextStore,
+    principal: string,
+    scope: string,
+    intent: ConversationMembershipIntent,
+    startedAt: string,
+): Promise<{ conversationId: ConversationId; membership: ConversationMembershipResolution }> {
+    if (intent.action === "fresh") {
+        return {
+            conversationId: await store.startFreshConversation(principal, scope, startedAt),
+            membership: { action: "started", basis: intent.basis },
+        };
+    }
+
+    const active = await store.activeConversation(principal, scope);
+    if (active) {
+        return {
+            conversationId: active.conversation_id,
+            membership: { action: "continued", basis: intent.basis },
+        };
+    }
+    return {
+        conversationId: await store.startFreshConversation(principal, scope, startedAt),
+        membership: { action: "started", basis: "initial_interaction" },
     };
 }
 
@@ -162,6 +195,7 @@ export async function runCognition(
         output = process.stdout,
         purpose = "ordinary",
         explainIds = [],
+        conversationMembership = { action: "continue", basis: "ordinary_adjacency" },
         cognitionId: requestedCognitionId,
         hooks = {},
     }: RunCognitionOptions,
@@ -174,10 +208,19 @@ export async function runCognition(
     }
     const timestamp = nowUtc();
     const conversationStore = new ConversationContextStore(store.path);
+    const resolvedConversation = await resolveConversationMembership(
+        conversationStore,
+        principal,
+        scope,
+        conversationMembership,
+        timestamp,
+    );
+    const conversationId = resolvedConversation.conversationId;
     const conversationContext = selectRecentConversationContext(state, await conversationStore.load(), {
         principal,
         scope,
-        surface,
+        conversationId,
+        membership: resolvedConversation.membership,
     });
     const projection = buildProjection(state, {
         principal,
@@ -214,6 +257,7 @@ export async function runCognition(
     });
     state = await store.commit(state.revision, started);
     await conversationStore.recordAcceptedInput({
+        conversation_id: conversationId,
         cognition_id: cognitionId,
         principal,
         scope,

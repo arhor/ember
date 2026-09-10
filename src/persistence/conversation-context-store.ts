@@ -1,18 +1,27 @@
+import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-import type { ConversationContextDocument, ConversationExchangeRecord } from "../core/conversation-context.ts";
+import type {
+    ActiveConversationTrajectory,
+    ConversationContextDocument,
+    ConversationExchangeRecord,
+    ConversationId,
+    LegacyConversationContextDocument,
+} from "../core/conversation-context.ts";
 
 import {
     RECENT_DIALOGUE_MAX_STORED_EXCHANGES,
     truncateConversationText,
     validateConversationContextDocument,
+    validateLegacyConversationContextDocument,
 } from "../core/conversation-context.ts";
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
+import { isRfc3339Utc, nowUtc } from "../core/model.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
 export type AcceptedConversationExchange = Pick<
     ConversationExchangeRecord,
-    "cognition_id" | "principal" | "scope" | "surface" | "input_evidence_id" | "started_at"
+    "conversation_id" | "cognition_id" | "principal" | "scope" | "surface" | "input_evidence_id" | "started_at"
 >;
 
 export interface CommittedConversationExpression {
@@ -54,11 +63,46 @@ export class ConversationContextStore {
             });
         }
         try {
+            if (conversationContextVersion(value) === 1) {
+                validateLegacyConversationContextDocument(value);
+                return migrateLegacyDocument(value);
+            }
             validateConversationContextDocument(value);
         } catch (error) {
             throw new StoreUnavailable(`conversation context is invalid: ${errorMessage(error)}`, { cause: error });
         }
         return value;
+    }
+
+    async activeConversation(principal: string, scope: string): Promise<ActiveConversationTrajectory | null> {
+        validateTrajectoryOwner(principal, scope);
+        const document = await this.load();
+        const active = document.active_trajectories.find(
+            (trajectory) => trajectory.principal === principal && trajectory.scope === scope,
+        );
+        return active ? structuredClone(active) : null;
+    }
+
+    async startFreshConversation(principal: string, scope: string, startedAt = nowUtc()): Promise<ConversationId> {
+        validateTrajectoryInput(principal, scope, startedAt);
+        const document = await this.load();
+        const conversationId = newConversationId();
+        const index = document.active_trajectories.findIndex(
+            (trajectory) => trajectory.principal === principal && trajectory.scope === scope,
+        );
+        const trajectory = {
+            conversation_id: conversationId,
+            principal,
+            scope,
+            started_at: startedAt,
+        };
+        if (index < 0) {
+            document.active_trajectories.push(trajectory);
+        } else {
+            document.active_trajectories[index] = trajectory;
+        }
+        await this.writeDocument(document);
+        return conversationId;
     }
 
     async recordAcceptedInput(input: AcceptedConversationExchange): Promise<ConversationExchangeRecord> {
@@ -69,9 +113,14 @@ export class ConversationContextStore {
             expression_content: null,
             expression_content_truncated: null,
         };
-        validateConversationContextDocument({ conversation_context_version: 1, exchanges: [record] });
-
         const document = await this.load();
+        const active = document.active_trajectories.find(
+            (trajectory) => trajectory.principal === record.principal && trajectory.scope === record.scope,
+        );
+        if (!active || active.conversation_id !== record.conversation_id) {
+            throw new ValidationError(`conversation ${record.conversation_id} is no longer current`);
+        }
+
         const existing = document.exchanges.find((exchange) => exchange.cognition_id === record.cognition_id);
         if (existing) {
             if (JSON.stringify(existing) !== JSON.stringify(record)) {
@@ -103,7 +152,6 @@ export class ConversationContextStore {
             expression_content: projection.content,
             expression_content_truncated: projection.truncated,
         };
-        validateConversationContextDocument({ conversation_context_version: 1, exchanges: [updated] });
 
         if (existing.expression_evidence_id !== null) {
             if (JSON.stringify(existing) !== JSON.stringify(updated)) {
@@ -129,7 +177,78 @@ export class ConversationContextStore {
 }
 
 function emptyDocument(): ConversationContextDocument {
-    return { conversation_context_version: 1, exchanges: [] };
+    return { conversation_context_version: 2, active_trajectories: [], exchanges: [] };
+}
+
+function migrateLegacyDocument(legacy: LegacyConversationContextDocument): ConversationContextDocument {
+    const conversationBySurface = new Map<string, ConversationId>();
+    const firstStartedAtByConversation = new Map<ConversationId, string>();
+    const activeByPrincipalScope = new Map<string, ConversationId>();
+    const exchanges = legacy.exchanges.map((exchange) => {
+        const surfaceKey = legacySurfaceKey(exchange.principal, exchange.scope, exchange.surface);
+        let conversationId = conversationBySurface.get(surfaceKey);
+        if (!conversationId) {
+            conversationId = legacyConversationId(surfaceKey);
+            conversationBySurface.set(surfaceKey, conversationId);
+            firstStartedAtByConversation.set(conversationId, exchange.started_at);
+        }
+        activeByPrincipalScope.set(principalScopeKey(exchange.principal, exchange.scope), conversationId);
+        return { ...exchange, conversation_id: conversationId };
+    });
+
+    const active_trajectories = [...activeByPrincipalScope.entries()].map(([key, conversationId]) => {
+        const exchange = exchanges.find(
+            (candidate) =>
+                candidate.conversation_id === conversationId &&
+                principalScopeKey(candidate.principal, candidate.scope) === key,
+        )!;
+        return {
+            conversation_id: conversationId,
+            principal: exchange.principal,
+            scope: exchange.scope,
+            started_at: firstStartedAtByConversation.get(conversationId)!,
+        };
+    });
+    const document: ConversationContextDocument = {
+        conversation_context_version: 2,
+        active_trajectories,
+        exchanges,
+    };
+    validateConversationContextDocument(document);
+    return document;
+}
+
+function legacyConversationId(key: string): ConversationId {
+    const digest = createHash("sha256").update(key).digest("hex").slice(0, 24);
+    return `conversation-legacy-${digest}`;
+}
+
+function newConversationId(): ConversationId {
+    return `conversation-${randomUUID()}`;
+}
+
+function validateTrajectoryOwner(principal: string, scope: string) {
+    if (!principal.trim()) throw new ValidationError("conversation principal must be non-empty");
+    if (!scope.trim()) throw new ValidationError("conversation scope must be non-empty");
+}
+
+function validateTrajectoryInput(principal: string, scope: string, startedAt: string) {
+    validateTrajectoryOwner(principal, scope);
+    if (!isRfc3339Utc(startedAt)) throw new ValidationError("conversation start must be RFC 3339 UTC");
+}
+
+function legacySurfaceKey(principal: string, scope: string, surface: string) {
+    return `${principal}\u0000${scope}\u0000${surface}`;
+}
+
+function principalScopeKey(principal: string, scope: string) {
+    return `${principal}\u0000${scope}`;
+}
+
+function conversationContextVersion(value: unknown): unknown {
+    return typeof value === "object" && value !== null && "conversation_context_version" in value
+        ? value.conversation_context_version
+        : null;
 }
 
 function errorCode(error: unknown): string | undefined {
