@@ -61,7 +61,7 @@ export interface ProjectedConversationTurn {
 
 export interface ProjectedConversationContext {
     context_version: 2;
-    conversation_id: ConversationId;
+    conversation_id: ConversationId | null;
     turns: ProjectedConversationTurn[];
     selection: {
         strategy: typeof RECENT_DIALOGUE_SELECTION_STRATEGY;
@@ -76,7 +76,7 @@ export interface ProjectedConversationContext {
     };
 }
 
-export function emptyConversationContext(conversationId: ConversationId): ProjectedConversationContext {
+export function emptyConversationContext(conversationId: ConversationId | null = null): ProjectedConversationContext {
     return {
         context_version: 2,
         conversation_id: conversationId,
