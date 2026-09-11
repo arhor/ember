@@ -1,5 +1,7 @@
 ---
-summary: "Accepted decision separating continuing work, semantic occurrence, delivery, external effects, and current applicability across sessions, surfaces, retries, downtime, and recovery."
+summary:
+  "Accepted decision separating continuing work, semantic occurrence, delivery, external effects, and current
+  applicability across sessions, surfaces, retries, downtime, and recovery."
 read_when:
   - "Changing session, surface, delivery, retry, cancellation, long-running work, downtime, or recovery behavior"
   - "Handling duplicate occurrence, ambiguous effect, stale completion, truthful gap, or currentness reconciliation"
@@ -16,74 +18,61 @@ discovery_status: current
 
 ## Context and problem
 
-Sessions, surfaces, connections, processes, cognition episodes, and specialist
-threads have different lifetimes. Distributed delivery and external action also
-produce duplicates, out-of-order observations, ambiguous timeouts, partial effects,
-and results that become obsolete before they arrive.
+Sessions, surfaces, connections, processes, cognition episodes, and specialist threads have different lifetimes.
+Distributed delivery and external action also produce duplicates, out-of-order observations, ambiguous timeouts, partial
+effects, and results that become obsolete before they arrive.
 
-Collapsing these meanings would let a closed window cancel work, a replay create a
-second instruction, a timeout prove nothing happened, cancellation imply rollback,
-or a restored prompt make stale premises current again.
+Collapsing these meanings would let a closed window cancel work, a replay create a second instruction, a timeout prove
+nothing happened, cancellation imply rollback, or a restored prompt make stale premises current again.
 
 ## Decision
 
 Ember's operational continuity preserves the following distinctions:
 
-- work remains live while its purpose remains live, independently of the session,
-  surface, transport, or specialist thread that initiated it;
-- semantic occurrence is distinct from each attempt to deliver a representation
-  of it;
-- duplicate delivery does not create another occurrence, instruction, memory,
-  authority grant, notification, or external effect when provenance establishes
-  one underlying occurrence;
+- work remains live while its purpose remains live, independently of the session, surface, transport, or specialist
+  thread that initiated it;
+- semantic occurrence is distinct from each attempt to deliver a representation of it;
+- duplicate delivery does not create another occurrence, instruction, memory, authority grant, notification, or external
+  effect when provenance establishes one underlying occurrence;
 - representation equality does not prove that two real occurrences are one;
 - occurrence time, Ember's observation time, and applicability time may differ;
-- accepted, started, blocked, failed, timed out, cancellation requested,
-  cancellation acknowledged, stopped, completed, and effects rolled back are
-  different claims;
-- failure, timeout, disconnect, restart, or cancellation does not prove absence or
-  reversal of external effects;
-- completion is distinct from present applicability; work can succeed historically
-  for an objective or world state that is now obsolete;
-- recovery establishes the strongest justified present from continuing Ember
-  state, surviving evidence, current observation, and explicit uncertainty rather
-  than blindly replaying old prompt state;
-- downtime and irrecoverable operational history remain truthful gaps rather than
-  fictional monitoring, thought, or seamless execution.
+- accepted, started, blocked, failed, timed out, cancellation requested, cancellation acknowledged, stopped, completed,
+  and effects rolled back are different claims;
+- failure, timeout, disconnect, restart, or cancellation does not prove absence or reversal of external effects;
+- completion is distinct from present applicability; work can succeed historically for an objective or world state that
+  is now obsolete;
+- recovery establishes the strongest justified present from continuing Ember state, surviving evidence, current
+  observation, and explicit uncertainty rather than blindly replaying old prompt state;
+- downtime and irrecoverable operational history remain truthful gaps rather than fictional monitoring, thought, or
+  seamless execution.
 
 ## Consequences and architectural constraints
 
-- Ending a session does not silently cancel a delegated objective, live
-  commitment, or unresolved responsibility. Their lifecycles need independent
-  semantic reasons to end.
-- Continuing work must preserve enough objective, constraints, authority
-  provenance, assumptions, runtime ownership, known or possible effects,
-  uncertainty, and currentness requirements to be resumed or reconciled truthfully.
-- Before repeating consequential work after an ambiguous failure, Ember establishes
-  current external state to the degree warranted unless repetition is independently
-  known to be safe under the relevant contract.
-- Retries, redelivery, and replay must not amplify occurrence, evidence, authority,
-  or effects. Conversely, content-based deduplication must not erase distinct real
-  occurrences.
-- Concurrent cognition requires currentness checks where another actor can
-  materially change a premise, authority, objective, recipient, shared resource,
-  or consequence. Global serialization is not implied.
-- Late results retain their original objective and provenance and are re-evaluated
-  before reliance, action, notification, or cross-surface delivery.
-- Result availability and delivery are separate decisions. A reachable surface is
-  not automatically a suitable recipient or privacy context.
-- Recovery may end with an explicit information gap. Operational presentation must
-  never claim stronger facts about running, stopping, effects, delivery, or
-  currentness than Ember can justify.
-- Missed scheduled opportunities are reconsidered according to their purpose and
-  temporal meaning rather than mechanically replayed.
+- Ending a session does not silently cancel a delegated objective, live commitment, or unresolved responsibility. Their
+  lifecycles need independent semantic reasons to end.
+- Continuing work must preserve enough objective, constraints, authority provenance, assumptions, runtime ownership,
+  known or possible effects, uncertainty, and currentness requirements to be resumed or reconciled truthfully.
+- Before repeating consequential work after an ambiguous failure, Ember establishes current external state to the degree
+  warranted unless repetition is independently known to be safe under the relevant contract.
+- Retries, redelivery, and replay must not amplify occurrence, evidence, authority, or effects. Conversely,
+  content-based deduplication must not erase distinct real occurrences.
+- Concurrent cognition requires currentness checks where another actor can materially change a premise, authority,
+  objective, recipient, shared resource, or consequence. Global serialization is not implied.
+- Late results retain their original objective and provenance and are re-evaluated before reliance, action,
+  notification, or cross-surface delivery.
+- Result availability and delivery are separate decisions. A reachable surface is not automatically a suitable recipient
+  or privacy context.
+- Recovery may end with an explicit information gap. Operational presentation must never claim stronger facts about
+  running, stopping, effects, delivery, or currentness than Ember can justify.
+- Missed scheduled opportunities are reconsidered according to their purpose and temporal meaning rather than
+  mechanically replayed.
 
 ## Deliberately unresolved representation questions
 
 This decision does not choose:
 
-- queues, event sourcing, brokers, deduplication or idempotency-key formats,
-  transactions, locks, actors, or optimistic-concurrency mechanisms;
+- queues, event sourcing, brokers, deduplication or idempotency-key formats, transactions, locks, actors, or
+  optimistic-concurrency mechanisms;
 - retry algorithms, compensation models, or universal currentness checks;
 - foreground process, daemon, service, supervisor, or other runtime topology;
 - session, conversation, work, occurrence, delivery, or status representations;
@@ -91,28 +80,27 @@ This decision does not choose:
 - the resumption-state bundle, result-expiry threshold, or notification policy;
 - how occurrence identity is handled when a source provides no stable correlation.
 
-Currentness-check thresholds, resumption bundles, cross-surface principal
-confidence, undelivered-result decay, and uncertain occurrence identity remain
-experiments.
+Currentness-check thresholds, resumption bundles, cross-surface principal confidence, undelivered-result decay, and
+uncertain occurrence identity remain experiments.
 
 ## Representative scenarios and failure modes
 
-- **Duplicate delivery:** two transport copies with stable common provenance remain
-  one instruction; two identical intentional requests remain two occurrences.
-- **Ambiguous timeout:** Ember preserves the possibility that the external effect
-  occurred and inspects present state before an unsafe retry.
-- **Session closes during work:** the work remains live if its purpose does; the
-  closed view neither cancels nor owns the result.
-- **Late specialist success:** a result can be correct for objective A after the
-  user changed the objective to B; historical success does not complete B.
-- **Recovery with a genuine gap:** Ember reconstructs what persisted, what can be
-  observed now, and what remains unknown without replaying stale assumptions.
-- **Cancellation during disconnect:** requested, acknowledged, stopped, and
-  rollback status remain separate; known and possible effects remain visible.
-- **Lower-privacy fallback surface:** the result remains durable and undelivered
-  rather than being exposed merely because another surface is reachable.
-- **Blind replay recovery:** an old prompt is resumed despite changed authority,
-  preferences, objective, or external state.
+- **Duplicate delivery:** two transport copies with stable common provenance remain one instruction; two identical
+  intentional requests remain two occurrences.
+- **Ambiguous timeout:** Ember preserves the possibility that the external effect occurred and inspects present state
+  before an unsafe retry.
+- **Session closes during work:** the work remains live if its purpose does; the closed view neither cancels nor owns
+  the result.
+- **Late specialist success:** a result can be correct for objective A after the user changed the objective to B;
+  historical success does not complete B.
+- **Recovery with a genuine gap:** Ember reconstructs what persisted, what can be observed now, and what remains unknown
+  without replaying stale assumptions.
+- **Cancellation during disconnect:** requested, acknowledged, stopped, and rollback status remain separate; known and
+  possible effects remain visible.
+- **Lower-privacy fallback surface:** the result remains durable and undelivered rather than being exposed merely
+  because another surface is reachable.
+- **Blind replay recovery:** an old prompt is resumed despite changed authority, preferences, objective, or external
+  state.
 
 ## Traceability
 

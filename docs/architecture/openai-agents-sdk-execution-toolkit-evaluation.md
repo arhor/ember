@@ -1,9 +1,14 @@
 ---
-summary: "Issue #179 evaluation of OpenAI Agents SDK JS/TS as a replaceable bounded agent-loop, tool, approval, session, MCP, tracing, and testing toolkit beneath Ember-owned semantics."
+summary:
+  "Issue #179 evaluation of OpenAI Agents SDK JS/TS as a replaceable bounded agent-loop, tool, approval, session, MCP,
+  tracing, and testing toolkit beneath Ember-owned semantics."
 read_when:
-  - "Considering OpenAI Agents SDK JS/TS for bounded cognition loops, tools, approvals, sessions, MCP, tracing, retries, or testing in Ember"
-  - "Comparing lightweight agent runtimes beneath Ember-owned identity, continuity, memory, authority, and delegation semantics"
-  - "Reviewing OpenAI Agents SDK type leakage, persisted RunState/session lock-in, provider neutrality, or replaceability"
+  - "Considering OpenAI Agents SDK JS/TS for bounded cognition loops, tools, approvals, sessions, MCP, tracing, retries,
+    or testing in Ember"
+  - "Comparing lightweight agent runtimes beneath Ember-owned identity, continuity, memory, authority, and delegation
+    semantics"
+  - "Reviewing OpenAI Agents SDK type leakage, persisted RunState/session lock-in, provider neutrality, or
+    replaceability"
 role: design
 discovery_status: current
 ---
@@ -12,60 +17,49 @@ discovery_status: current
 
 ## Decision
 
-**OpenAI Agents SDK JS/TS is a credible candidate for a bounded cognition-and-tool
-execution engine beneath Ember-owned semantics, but it should not become Ember's
-identity, continuity, memory, delegation, authority, or durable-runtime model. Prefer
-its `Runner` only as an operational loop, its `Model`/`ModelProvider` boundary as an
-adapter-local execution detail, function-tool execution and retry mechanics as
-implementation machinery, custom tracing processors as observability plumbing, and
-its scripted model as a deterministic test substrate. Treat `Agent`, `Session`,
-`RunState`, handoffs, and approval records as SDK-local operational types.**
+**OpenAI Agents SDK JS/TS is a credible candidate for a bounded cognition-and-tool execution engine beneath Ember-owned
+semantics, but it should not become Ember's identity, continuity, memory, delegation, authority, or durable-runtime
+model. Prefer its `Runner` only as an operational loop, its `Model`/`ModelProvider` boundary as an adapter-local
+execution detail, function-tool execution and retry mechanics as implementation machinery, custom tracing processors as
+observability plumbing, and its scripted model as a deterministic test substrate. Treat `Agent`, `Session`, `RunState`,
+handoffs, and approval records as SDK-local operational types.**
 
-The SDK is more modular than a conventional agent framework. The public package is
-split into `@openai/agents-core`, `@openai/agents-openai`,
-`@openai/agents-realtime`, and optional extensions; the docs explicitly support
-lower-level composition. A custom `ModelProvider` can replace OpenAI model resolution,
-and an official extension adapts Vercel AI SDK models into the Agents runtime.
-Tracing processors can replace the default OpenAI exporter. Session persistence can
+The SDK is more modular than a conventional agent framework. The public package is split into `@openai/agents-core`,
+`@openai/agents-openai`, `@openai/agents-realtime`, and optional extensions; the docs explicitly support lower-level
+composition. A custom `ModelProvider` can replace OpenAI model resolution, and an official extension adapts Vercel AI
+SDK models into the Agents runtime. Tracing processors can replace the default OpenAI exporter. Session persistence can
 be supplied by a custom `Session` implementation.
 
-That modularity is useful, but the semantic center of gravity is still an SDK
-`Agent` executed by a `Runner` over SDK conversation items. Handoffs change the
-active SDK agent. Sessions persist SDK conversation history. Human approval resumes
-serialized `RunState`. Those are valuable mechanics, but they overlap directly with
-concepts for which Ember already has stricter meanings.
+That modularity is useful, but the semantic center of gravity is still an SDK `Agent` executed by a `Runner` over SDK
+conversation items. Handoffs change the active SDK agent. Sessions persist SDK conversation history. Human approval
+resumes serialized `RunState`. Those are valuable mechanics, but they overlap directly with concepts for which Ember
+already has stricter meanings.
 
 The recommended posture is:
 
-1. **Keep Ember's current semantic contracts canonical.** `ProviderRequest`,
-   `ProviderResult`, projection/provenance, currentness, authority, specialist
-   responsibility, effect uncertainty, canonical memory, and continuity remain
+1. **Keep Ember's current semantic contracts canonical.** `ProviderRequest`, `ProviderResult`, projection/provenance,
+   currentness, authority, specialist responsibility, effect uncertainty, canonical memory, and continuity remain
    Ember-owned.
-2. **Use `Runner` only for bounded operational episodes.** An SDK agent may implement
-   one cognition/tool episode without becoming the identity-bearing Ember agent.
-3. **Prefer agents-as-tools over handoffs if testing specialist mechanics.** A manager
-   retains control in that pattern, which maps more naturally to Ember responsibility,
-   but the nested result still requires an Ember-owned specialist report and
-   reintegration gate.
-4. **Keep sessions operational and disposable.** A `Session` stores conversation
-   history. It is not durable Ember memory, identity, or continuity. Any persisted
-   session must be rebuildable from Ember-owned state or safely discarded.
-5. **Treat approval and guardrail features as execution checks, not authority.** They
-   can enforce or pause a local tool call, but they do not define whether Ember is
-   permitted to act.
-6. **Preserve raw provider evidence before normalization.** `providerData`, request and
-   response IDs, raw usage, retry advice, and raw run items are useful evidence and
-   should be translated deliberately into Ember-owned observations where needed.
-7. **Do not adopt the SDK merely for direct model invocation.** Vercel AI SDK is a
-   lower-pressure fit for generic direct-provider calls. OpenAI Agents SDK becomes
-   interesting when Ember actually needs a bounded multi-step loop, resumable
-   approvals, tool orchestration, or its retry/test machinery.
-8. **Do not persist SDK types as canonical records.** Serialized `RunState` and
-   `AgentInputItem[]` may be kept only as versioned opaque operational checkpoints
-   with explicit migration/discard rules.
+2. **Use `Runner` only for bounded operational episodes.** An SDK agent may implement one cognition/tool episode without
+   becoming the identity-bearing Ember agent.
+3. **Prefer agents-as-tools over handoffs if testing specialist mechanics.** A manager retains control in that pattern,
+   which maps more naturally to Ember responsibility, but the nested result still requires an Ember-owned specialist
+   report and reintegration gate.
+4. **Keep sessions operational and disposable.** A `Session` stores conversation history. It is not durable Ember
+   memory, identity, or continuity. Any persisted session must be rebuildable from Ember-owned state or safely
+   discarded.
+5. **Treat approval and guardrail features as execution checks, not authority.** They can enforce or pause a local tool
+   call, but they do not define whether Ember is permitted to act.
+6. **Preserve raw provider evidence before normalization.** `providerData`, request and response IDs, raw usage, retry
+   advice, and raw run items are useful evidence and should be translated deliberately into Ember-owned observations
+   where needed.
+7. **Do not adopt the SDK merely for direct model invocation.** Vercel AI SDK is a lower-pressure fit for generic
+   direct-provider calls. OpenAI Agents SDK becomes interesting when Ember actually needs a bounded multi-step loop,
+   resumable approvals, tool orchestration, or its retry/test machinery.
+8. **Do not persist SDK types as canonical records.** Serialized `RunState` and `AgentInputItem[]` may be kept only as
+   versioned opaque operational checkpoints with explicit migration/discard rules.
 
-In short: **the SDK is a good temporary brainstem for a bounded run, not Ember's
-self-model.**
+In short: **the SDK is a good temporary brainstem for a bounded run, not Ember's self-model.**
 
 ## Evaluation baseline
 
@@ -76,30 +70,25 @@ This evaluation was performed on **2026-09-07** against:
 - the current cognition seam in `src/providers/contract.ts` and the
   [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist contract in `src/delegation/codex-specialist.ts`, the
-  [Minimal Codex Specialist-Delegation Boundary](minimal-codex-specialist-delegation.md),
-  and [Specialist Result Reintegration](specialist-result-reintegration.md);
+  [Minimal Codex Specialist-Delegation Boundary](minimal-codex-specialist-delegation.md), and
+  [Specialist Result Reintegration](specialist-result-reintegration.md);
 - the issue #176 Mastra, #177 LangGraph.js, and #178 Vercel AI SDK evaluations;
-- OpenAI Agents SDK repository `main`, where `@openai/agents`,
-  `@openai/agents-core`, and `@openai/agents-openai` identify as **0.17.0**;
-- the current official JavaScript/TypeScript documentation linked in
-  [Sources](#sources).
+- OpenAI Agents SDK repository `main`, where `@openai/agents`, `@openai/agents-core`, and `@openai/agents-openai`
+  identify as **0.17.0**;
+- the current official JavaScript/TypeScript documentation linked in [Sources](#sources).
 
-The published convenience package currently depends on `@openai/agents-core`,
-`@openai/agents-openai`, `@openai/agents-realtime`, `debug`, and `openai`, with Zod 4
-as a peer dependency. `@openai/agents-core` itself depends on `openai`, `debug`, and
-`@standard-schema/spec`, with MCP client support optional. Therefore lower-level
-composition reduces feature surface, but it does **not** currently make the dependency
-graph completely OpenAI-free.
+The published convenience package currently depends on `@openai/agents-core`, `@openai/agents-openai`,
+`@openai/agents-realtime`, `debug`, and `openai`, with Zod 4 as a peer dependency. `@openai/agents-core` itself depends
+on `openai`, `debug`, and `@standard-schema/spec`, with MCP client support optional. Therefore lower-level composition
+reduces feature surface, but it does **not** currently make the dependency graph completely OpenAI-free.
 
-The repository currently builds with TypeScript 5.9.3 and tests Node 22 and 24.3.x.
-No `engines` field is declared in the reviewed `@openai/agents` package metadata.
-Ember's Node 26 / TypeScript 7 baseline is therefore plausible but not explicitly
-certified by upstream package metadata. A compile-and-smoke spike on Ember's actual
-baseline remains an adoption gate.
+The repository currently builds with TypeScript 5.9.3 and tests Node 22 and 24.3.x. No `engines` field is declared in
+the reviewed `@openai/agents` package metadata. Ember's Node 26 / TypeScript 7 baseline is therefore plausible but not
+explicitly certified by upstream package metadata. A compile-and-smoke spike on Ember's actual baseline remains an
+adoption gate.
 
-No install-size, cold-start, or Raspberry Pi RSS benchmark is claimed here. The
-reviewed core package metadata does not introduce an obvious mandatory native
-runtime dependency. Target-host measurement remains the correct gate before adding
+No install-size, cold-start, or Raspberry Pi RSS benchmark is claimed here. The reviewed core package metadata does not
+introduce an obvious mandatory native runtime dependency. Target-host measurement remains the correct gate before adding
 the SDK to the unattended Pi deployment.
 
 ## Classification scale
@@ -152,10 +141,9 @@ starting SDK Agent + bounded input
   -> maxTurns / failure / approval interruption / cancellation
 ```
 
-Nothing in that loop requires the SDK `Agent` object to represent the durable person
-that Ember is. Ember can construct or configure an SDK agent for one execution
-opportunity, supply only the current projection and capabilities, consume the result,
-and discard the SDK object afterward.
+Nothing in that loop requires the SDK `Agent` object to represent the durable person that Ember is. Ember can construct
+or configure an SDK agent for one execution opportunity, supply only the current projection and capabilities, consume
+the result, and discard the SDK object afterward.
 
 A plausible future shape is:
 
@@ -169,23 +157,19 @@ Ember ProviderRequest / bounded cognition opportunity
   -> Ember validation and canonical decisions
 ```
 
-This is semantically acceptable if the SDK agent is treated like a process-local
-execution plan, comparable to a provider client or workflow instance. It becomes
-unsafe if code starts using `Agent.name`, `lastAgent`, session ownership, or handoff
-state as evidence of Ember identity or responsibility.
+This is semantically acceptable if the SDK agent is treated like a process-local execution plan, comparable to a
+provider client or workflow instance. It becomes unsafe if code starts using `Agent.name`, `lastAgent`, session
+ownership, or handoff state as evidence of Ember identity or responsibility.
 
 ### Do not replace the current cognition contract merely to fit the SDK
 
-`ProviderRequest` and `ProviderResult` already express the important semantic
-boundary: Ember chooses a bounded projection and later validates claimed provenance.
-An Agents SDK-backed implementation should consume and produce Ember-owned shapes.
-Callers should not receive `RunResult`, `AgentInputItem`, `ModelResponse`, or
-`RunState`.
+`ProviderRequest` and `ProviderResult` already express the important semantic boundary: Ember chooses a bounded
+projection and later validates claimed provenance. An Agents SDK-backed implementation should consume and produce
+Ember-owned shapes. Callers should not receive `RunResult`, `AgentInputItem`, `ModelResponse`, or `RunState`.
 
-The direct-provider pressure identified in the Vercel AI SDK evaluation was
-resolved by #186/#188: `ProviderInvoker` is now semantic-only, while Codex, Cursor,
-and deterministic process launch configuration is closed over by concrete adapters.
-An Agents SDK-backed direct API implementation should therefore implement the same
+The direct-provider pressure identified in the Vercel AI SDK evaluation was resolved by #186/#188: `ProviderInvoker` is
+now semantic-only, while Codex, Cursor, and deterministic process launch configuration is closed over by concrete
+adapters. An Agents SDK-backed direct API implementation should therefore implement the same
 `(request, options) -> result` shape without changing request/result semantics.
 
 ## Models and provider neutrality
@@ -194,16 +178,14 @@ An Agents SDK-backed direct API implementation should therefore implement the sa
 
 The SDK exposes two deliberately small interfaces:
 
-- `Model` performs one model request and one streamed model request, with optional
-  retry advice;
+- `Model` performs one model request and one streamed model request, with optional retry advice;
 - `ModelProvider` resolves a model name into a `Model` instance.
 
-A `Runner` accepts a custom `modelProvider`, and applications can also replace the
-global default provider. This means the agent loop itself does not require an OpenAI
-model implementation.
+A `Runner` accepts a custom `modelProvider`, and applications can also replace the global default provider. This means
+the agent loop itself does not require an OpenAI model implementation.
 
-The official AI SDK extension is especially relevant to issue #175. It adapts Vercel
-AI SDK language models into the Agents runtime, so Ember could theoretically compose:
+The official AI SDK extension is especially relevant to issue #175. It adapts Vercel AI SDK language models into the
+Agents runtime, so Ember could theoretically compose:
 
 ```text
 Vercel AI SDK provider ecosystem
@@ -212,8 +194,7 @@ Vercel AI SDK provider ecosystem
   -> Ember-owned cognition/delegation/authority semantics
 ```
 
-This is stronger evidence for composability than merely documenting a custom-provider
-interface.
+This is stronger evidence for composability than merely documenting a custom-provider interface.
 
 ### Provider neutrality is not service neutrality by default
 
@@ -224,11 +205,10 @@ There are still important OpenAI defaults and dependencies:
 - default model resolution is OpenAI-oriented;
 - `conversationId` and `previousResponseId` are OpenAI Responses-specific;
 - hosted OpenAI tools and hosted multi-agent are explicitly service-specific;
-- tracing exports to OpenAI by default in supported server runtimes unless disabled
-  or processors are replaced.
+- tracing exports to OpenAI by default in supported server runtimes unless disabled or processors are replaced.
 
-Therefore Ember should describe the SDK as **provider-extensible with OpenAI-first
-defaults**, not as provider-neutral in the stronger dependency/service sense.
+Therefore Ember should describe the SDK as **provider-extensible with OpenAI-first defaults**, not as provider-neutral
+in the stronger dependency/service sense.
 
 ### Preserve provider-specific evidence
 
@@ -239,18 +219,15 @@ defaults**, not as provider-neutral in the stronger dependency/service sense.
 - `responseId` when supported;
 - optional preserved `rawUsage` when requested.
 
-Model settings also expose provider-specific passthrough data. The protocol includes
-an `unknown` item form specifically so providers can preserve unrecognized payloads
-without breaking the normalized protocol.
+Model settings also expose provider-specific passthrough data. The protocol includes an `unknown` item form specifically
+so providers can preserve unrecognized payloads without breaking the normalized protocol.
 
-This is a positive fit for Ember's provenance and uncertainty requirements. An
-adapter should normalize only facts Ember genuinely needs while retaining enough raw
-evidence to explain provider-specific failures, continuation, or effects.
+This is a positive fit for Ember's provenance and uncertainty requirements. An adapter should normalize only facts Ember
+genuinely needs while retaining enough raw evidence to explain provider-specific failures, continuation, or effects.
 
-**Important caveat:** `rawUsage` is runtime-only and intentionally omitted from
-serialized `RunState`. If Ember needs provider-specific usage or other runtime-only
-fields as durable evidence, copy them into an Ember-owned observation before
-persisting/resuming the SDK state.
+**Important caveat:** `rawUsage` is runtime-only and intentionally omitted from serialized `RunState`. If Ember needs
+provider-specific usage or other runtime-only fields as durable evidence, copy them into an Ember-owned observation
+before persisting/resuming the SDK state.
 
 ## Function tools: useful mechanics, not authority
 
@@ -284,21 +261,18 @@ Ember capability visibility decision
   -> model receives bounded result
 ```
 
-`isEnabled` is not authorization. The SDK documentation explicitly notes that it runs
-before model-generated arguments exist, so argument/resource-level authorization must
-happen inside execution or a guardrail/approval path.
+`isEnabled` is not authorization. The SDK documentation explicitly notes that it runs before model-generated arguments
+exist, so argument/resource-level authorization must happen inside execution or a guardrail/approval path.
 
-Likewise, cancellation of a tool is not proof that its side effects were undone or
-that remote work stopped. Tool execution may observe an abort signal, but Ember must
-continue to represent `effects_possible` when the boundary cannot establish what
-already happened.
+Likewise, cancellation of a tool is not proof that its side effects were undone or that remote work stopped. Tool
+execution may observe an abort signal, but Ember must continue to represent `effects_possible` when the boundary cannot
+establish what already happened.
 
 ### Hosted tools need a stronger firewall
 
-OpenAI-hosted tools execute outside Ember's local tool executor. Their provider-side
-lifecycle and evidence differ from a local function tool. They should not be exposed
-under a generic Ember capability merely because the SDK presents them in one tools
-array.
+OpenAI-hosted tools execute outside Ember's local tool executor. Their provider-side lifecycle and evidence differ from
+a local function tool. They should not be exposed under a generic Ember capability merely because the SDK presents them
+in one tools array.
 
 If a hosted tool is ever adopted, its adapter must state:
 
@@ -312,15 +286,14 @@ If a hosted tool is ever adopted, its adapter must state:
 
 ### Agents as tools are the better experimental fit
 
-`agent.asTool()` lets one SDK agent call another while the manager retains control of
-the overall conversation and final answer. The nested agent executes through its own
-runner and can itself raise approval interruptions that surface on the outer run.
+`agent.asTool()` lets one SDK agent call another while the manager retains control of the overall conversation and final
+answer. The nested agent executes through its own runner and can itself raise approval interruptions that surface on the
+outer run.
 
-That shape resembles Ember delegation more closely than handoff because the caller
-remains responsible for integration.
+That shape resembles Ember delegation more closely than handoff because the caller remains responsible for integration.
 
-It is still **not** sufficient as Ember delegation semantics. A nested agent result
-does not automatically carry Ember's required:
+It is still **not** sufficient as Ember delegation semantics. A nested agent result does not automatically carry Ember's
+required:
 
 - purpose and acceptance contract;
 - least-sufficient context disclosure;
@@ -332,40 +305,36 @@ does not automatically carry Ember's required:
 - specialist report provenance;
 - reintegration disposition.
 
-A safe spike would make the nested agent return an Ember-owned specialist report
-shape and pass it through the existing reintegration boundary rather than interpreting
-`RunResult.finalOutput` as accepted delegated truth.
+A safe spike would make the nested agent return an Ember-owned specialist report shape and pass it through the existing
+reintegration boundary rather than interpreting `RunResult.finalOutput` as accepted delegated truth.
 
 ### Handoffs are semantically more dangerous
 
-A handoff changes the active SDK agent and, by default, passes the accumulated
-conversation history to the new agent. The SDK describes this as delegation of the
-conversation to a specialist.
+A handoff changes the active SDK agent and, by default, passes the accumulated conversation history to the new agent.
+The SDK describes this as delegation of the conversation to a specialist.
 
-That is useful product-level orchestration, but it conflicts with Ember's distinction
-between:
+That is useful product-level orchestration, but it conflicts with Ember's distinction between:
 
 - Ember retaining responsibility for a delegated objective;
 - a specialist receiving only a scoped projection;
 - delegated output returning as evidence rather than becoming canonical truth;
 - currentness and authority being rechecked on reintegration.
 
-An `inputFilter` can reduce handoff context, but it does not create Ember's disclosure,
-authority, or responsibility semantics.
+An `inputFilter` can reduce handoff context, but it does not create Ember's disclosure, authority, or responsibility
+semantics.
 
-**Recommendation: do not use SDK handoffs to implement Ember's canonical specialist
-delegation.** They remain acceptable for purely internal routing inside one bounded,
-non-authoritative cognition episode where no durable specialist semantics are claimed.
+**Recommendation: do not use SDK handoffs to implement Ember's canonical specialist delegation.** They remain acceptable
+for purely internal routing inside one bounded, non-authoritative cognition episode where no durable specialist
+semantics are claimed.
 
 ## Sessions are history, not Ember memory
 
-The `Session` interface is pleasantly small. A basic implementation reads, appends,
-pops, and clears SDK `AgentInputItem[]` history; optional session interfaces add
-history rewrites or idempotent transactions. The runner can use a custom storage
-backend, and `MemorySession` demonstrates an in-process implementation.
+The `Session` interface is pleasantly small. A basic implementation reads, appends, pops, and clears SDK
+`AgentInputItem[]` history; optional session interfaces add history rewrites or idempotent transactions. The runner can
+use a custom storage backend, and `MemorySession` demonstrates an in-process implementation.
 
-This is useful operational infrastructure, but its semantic object is conversation
-history. Ember memory is not equivalent to replaying prior model items.
+This is useful operational infrastructure, but its semantic object is conversation history. Ember memory is not
+equivalent to replaying prior model items.
 
 The boundary should be explicit:
 
@@ -381,8 +350,8 @@ SDK Session or result.history
 Runner
 ```
 
-A session may help resume a bounded user conversation or an interrupted run. It must
-not become the only place where Ember remembers:
+A session may help resume a bounded user conversation or an interrupted run. It must not become the only place where
+Ember remembers:
 
 - durable meanings;
 - corrections;
@@ -394,9 +363,8 @@ not become the only place where Ember remembers:
 
 ### Persisted session lock-in
 
-Persisting a custom `Session` stores SDK `AgentInputItem` protocol shapes. Persisting
-`OpenAIConversationsSession` additionally couples state to the OpenAI Conversations
-API and its remote conversation identifier.
+Persisting a custom `Session` stores SDK `AgentInputItem` protocol shapes. Persisting `OpenAIConversationsSession`
+additionally couples state to the OpenAI Conversations API and its remote conversation identifier.
 
 Migration cost therefore differs by implementation:
 
@@ -407,9 +375,8 @@ Migration cost therefore differs by implementation:
 | OpenAI Conversations API                              | **High**: SDK item semantics plus service-owned remote state/identifier           |
 | Ember reconstruction of per-run input without Session | **Lowest semantic lock-in**: more caller plumbing, maximum canonical control      |
 
-For Ember, a future production session store should be reconstructable or safely
-discardable. Do not require a one-to-one migration of old SDK sessions to preserve
-Ember identity.
+For Ember, a future production session store should be reconstructable or safely discardable. Do not require a
+one-to-one migration of old SDK sessions to preserve Ember identity.
 
 ## Human-in-the-loop and resumable `RunState`
 
@@ -422,11 +389,10 @@ The SDK's approval flow is technically attractive:
 5. the run resumes from `RunState`;
 6. serialized state can survive a long wait without keeping the process alive.
 
-Nested `agent.asTool()` approvals bubble to the outer run, which is useful for a
-single application-level approval surface.
+Nested `agent.asTool()` approvals bubble to the outer run, which is useful for a single application-level approval
+surface.
 
-For Ember this should be treated as **checkpoint mechanics beneath authority**, not
-as the authority model itself.
+For Ember this should be treated as **checkpoint mechanics beneath authority**, not as the authority model itself.
 
 Before approving or resuming an old interruption Ember must still establish:
 
@@ -439,14 +405,12 @@ Before approving or resuming an old interruption Ember must still establish:
 
 ### Serialized `RunState` is operational state with migration cost
 
-`RunState` serializes substantial runner state, generated items, run context, approval
-metadata, agent identities, model responses, turn counts, and continuation details.
-Some runtime-only evidence is intentionally not serialized. The docs also describe
-resume cases that fail closed when serialized state lacks enough provenance for a
-safe output-guardrail continuation.
+`RunState` serializes substantial runner state, generated items, run context, approval metadata, agent identities, model
+responses, turn counts, and continuation details. Some runtime-only evidence is intentionally not serialized. The docs
+also describe resume cases that fail closed when serialized state lacks enough provenance for a safe output-guardrail
+continuation.
 
-That is exactly the profile of a versioned execution checkpoint, not a canonical
-domain record.
+That is exactly the profile of a versioned execution checkpoint, not a canonical domain record.
 
 If Ember ever persists it, store something conceptually like:
 
@@ -460,13 +424,11 @@ OperationalCheckpoint {
 }
 ```
 
-The real schema should remain adapter-local. Ember must be free to discard an
-incompatible checkpoint and restart/reconcile from canonical state rather than
-migrating the SDK state at any semantic cost.
+The real schema should remain adapter-local. Ember must be free to discard an incompatible checkpoint and
+restart/reconcile from canonical state rather than migrating the SDK state at any semantic cost.
 
-Do not store secrets in `RunContext.context` if the run may be serialized. The SDK
-documentation explicitly notes that public run-context runtime data is serialized
-with `RunState`.
+Do not store secrets in `RunContext.context` if the run may be serialized. The SDK documentation explicitly notes that
+public run-context runtime data is serialized with `RunState`.
 
 ## Guardrails are validation, not authority
 
@@ -476,17 +438,14 @@ The SDK has three guardrail families:
 - output guardrails on final agent output;
 - input/output guardrails around custom function tools.
 
-These are useful validation hooks, but several lifecycle facts prevent them from
-serving as Ember's authority layer:
+These are useful validation hooks, but several lifecycle facts prevent them from serving as Ember's authority layer:
 
-1. Input guardrails run **in parallel by default**. The model may already consume
-   tokens or execute tools before a later tripwire fires. Blocking mode exists and
-   must be chosen explicitly when pre-effect gating matters.
-2. Agent-level input guardrails apply only to the first agent in a chain, and output
-   guardrails only to the final-output agent.
+1. Input guardrails run **in parallel by default**. The model may already consume tokens or execute tools before a later
+   tripwire fires. Blocking mode exists and must be chosen explicitly when pre-effect gating matters.
+2. Agent-level input guardrails apply only to the first agent in a chain, and output guardrails only to the final-output
+   agent.
 3. Function-tool guardrails do not automatically wrap handoff calls.
-4. Hosted tools and built-in execution tools do not all use the same function-tool
-   guardrail pipeline.
+4. Hosted tools and built-in execution tools do not all use the same function-tool guardrail pipeline.
 5. A guardrail tripwire cannot undo external side effects already produced.
 
 Therefore:
@@ -502,12 +461,10 @@ Guardrails can strengthen an already-authorized path. They do not define the gra
 
 ## MCP integration
 
-The SDK supports MCP servers alongside function tools, including local/remote server
-integration, filtering, and approval flows. Hosted MCP tools can require approval and
-participate in the same interruption model.
+The SDK supports MCP servers alongside function tools, including local/remote server integration, filtering, and
+approval flows. Hosted MCP tools can require approval and participate in the same interruption model.
 
-The useful reusable part is transport, discovery, schema conversion, and execution
-plumbing. Ember still owns:
+The useful reusable part is transport, discovery, schema conversion, and execution plumbing. Ember still owns:
 
 - which MCP server is reachable for the current principal;
 - which tools are visible;
@@ -515,19 +472,17 @@ plumbing. Ember still owns:
 - what provenance to attach to returned observations;
 - what effect uncertainty remains after failure/cancellation.
 
-The SDK documentation contains one particularly important warning for context-aware
-filtering: caching a filtered tool list can accidentally reuse a list across request
-contexts if the cache key is not context-specific. Ember should therefore keep its
-capability/authority decision outside MCP list caching and treat SDK filtering only as
-an implementation optimization.
+The SDK documentation contains one particularly important warning for context-aware filtering: caching a filtered tool
+list can accidentally reuse a list across request contexts if the cache key is not context-specific. Ember should
+therefore keep its capability/authority decision outside MCP list caching and treat SDK filtering only as an
+implementation optimization.
 
-**Recommendation: MCP is one of the stronger reusable surfaces, but only behind an
-Ember-owned capability adapter and server-side authorization.**
+**Recommendation: MCP is one of the stronger reusable surfaces, but only behind an Ember-owned capability adapter and
+server-side authorization.**
 
 ## Retries and failure behavior
 
-The model retry surface is unusually well aligned with Ember's concern about replay
-and uncertain effects.
+The model retry surface is unusually well aligned with Ember's concern about replay and uncertain effects.
 
 Retries are opt-in. Policies can inspect:
 
@@ -544,35 +499,29 @@ The SDK does not automatically retry:
 - streamed runs after visible/raw model events were emitted;
 - provider failures marked unsafe to replay.
 
-Stateful `previousResponseId` / `conversationId` follow-ups require stronger provider
-replay-safety evidence. Applications may explicitly approve some unsafe non-streaming
-replays, acknowledging duplication risk.
+Stateful `previousResponseId` / `conversationId` follow-ups require stronger provider replay-safety evidence.
+Applications may explicitly approve some unsafe non-streaming replays, acknowledging duplication risk.
 
-This is a good mechanical substrate for Ember because it exposes uncertainty instead
-of erasing it. The adapter must still translate retry outcomes into Ember-owned
-observations and must never infer that a failed or cancelled tool had no effect merely
-because the runner stopped.
+This is a good mechanical substrate for Ember because it exposes uncertainty instead of erasing it. The adapter must
+still translate retry outcomes into Ember-owned observations and must never infer that a failed or cancelled tool had no
+effect merely because the runner stopped.
 
 ### Tool failures
 
-Function tools add per-call timeout and tool-specific error behavior. The SDK can
-return a timeout as model-visible output or raise a `ToolTimeoutError`; the tool's
-execution details receive a signal that is aborted on timeout.
+Function tools add per-call timeout and tool-specific error behavior. The SDK can return a timeout as model-visible
+output or raise a `ToolTimeoutError`; the tool's execution details receive a signal that is aborted on timeout.
 
-That is useful, but the same rule applies as with Ember's current process lifecycle:
-**requesting termination and observing local cancellation are not equivalent to
-establishing that all external work stopped.**
+That is useful, but the same rule applies as with Ember's current process lifecycle: **requesting termination and
+observing local cancellation are not equivalent to establishing that all external work stopped.**
 
 ## Streaming and cancellation
 
-`Runner.run(..., { stream: true })` returns a streamed result with raw events,
-text-only helpers, completion state, active agent, turn count, interruption state,
-error, and cancellation status.
+`Runner.run(..., { stream: true })` returns a streamed result with raw events, text-only helpers, completion state,
+active agent, turn count, interruption state, error, and cancellation status.
 
-A streamed run can be cancelled by aborting the run signal or cancelling the reader.
-The docs require callers to await `completed` before treating the run as settled,
-because input/session persistence and cleanup may continue after event consumption
-stops. An unfinished cancelled turn can later resume from `RunState`.
+A streamed run can be cancelled by aborting the run signal or cancelling the reader. The docs require callers to await
+`completed` before treating the run as settled, because input/session persistence and cleanup may continue after event
+consumption stops. An unfinished cancelled turn can later resume from `RunState`.
 
 This is a good operational model for Ember surfaces because it distinguishes:
 
@@ -582,33 +531,32 @@ consumer stopped reading
 != remote/provider work definitely stopped
 ```
 
-An Ember adapter should translate streamed events into surface-specific progress while
-keeping canonical state mutation outside the stream. Progress must remain explicitly
-non-canonical until the containing cognition/delegation result passes Ember validation.
+An Ember adapter should translate streamed events into surface-specific progress while keeping canonical state mutation
+outside the stream. Progress must remain explicitly non-canonical until the containing cognition/delegation result
+passes Ember validation.
 
 ## Structured output
 
-An SDK `Agent` can define `outputType` using Zod, Standard Schema, or raw JSON Schema.
-The runner parses and validates the final model output before returning it.
+An SDK `Agent` can define `outputType` using Zod, Standard Schema, or raw JSON Schema. The runner parses and validates
+the final model output before returning it.
 
-This is useful for adapter-local protocol enforcement, including a future
-`ProviderResult`-shaped response or a specialist-report-shaped nested result.
+This is useful for adapter-local protocol enforcement, including a future `ProviderResult`-shaped response or a
+specialist-report-shaped nested result.
 
-As in the Vercel AI SDK evaluation, **schema validity is not semantic validity**.
-Ember must still validate:
+As in the Vercel AI SDK evaluation, **schema validity is not semantic validity**. Ember must still validate:
 
 - `usedMeaningIds` are inside the selected projection;
 - authority/currentness are still applicable;
 - specialist claims are reintegrated as evidence;
 - external effects are represented truthfully.
 
-Do not expose the SDK's output schema/result generic types in `src/core/` or canonical
-persistence merely because TypeScript inference is convenient.
+Do not expose the SDK's output schema/result generic types in `src/core/` or canonical persistence merely because
+TypeScript inference is convenient.
 
 ## Tracing and observability
 
-The tracing system captures run, agent, turn, model, tool, guardrail, and handoff
-spans. It also exposes custom spans and custom processors.
+The tracing system captures run, agent, turn, model, tool, guardrail, and handoff spans. It also exposes custom spans
+and custom processors.
 
 This is attractive if Ember can use:
 
@@ -617,20 +565,18 @@ This is attractive if Ember can use:
 - privacy settings that omit sensitive model/tool payloads;
 - trace data as operational diagnostics, not canonical semantic evidence.
 
-The default behavior needs deliberate configuration. In supported server runtimes,
-tracing is enabled and exported to OpenAI by default unless disabled. Ember's local,
-self-hosted posture should therefore explicitly disable the default exporter or
-replace its processors before treating the SDK as local-only infrastructure.
+The default behavior needs deliberate configuration. In supported server runtimes, tracing is enabled and exported to
+OpenAI by default unless disabled. Ember's local, self-hosted posture should therefore explicitly disable the default
+exporter or replace its processors before treating the SDK as local-only infrastructure.
 
-Trace shutdown also matters for Ember's short-lived episodic workers. The exporter is
-batched/asynchronous, so an adapter using tracing should flush on the worker lifecycle
-boundary rather than assuming process exit will preserve every queued span.
+Trace shutdown also matters for Ember's short-lived episodic workers. The exporter is batched/asynchronous, so an
+adapter using tracing should flush on the worker lifecycle boundary rather than assuming process exit will preserve
+every queued span.
 
 ## Deterministic testing and debugging
 
-The SDK's testing surface is one of its strongest low-risk features.
-`@openai/agents/testing` / `@openai/agents-core/testing` provide a scripted model with
-helpers for:
+The SDK's testing surface is one of its strongest low-risk features. `@openai/agents/testing` /
+`@openai/agents-core/testing` provide a scripted model with helpers for:
 
 - fixed normalized model responses;
 - responses derived from the recorded model request;
@@ -640,8 +586,8 @@ helpers for:
 - cancellation checkpoints;
 - recorded calls for assertions.
 
-This lets Ember test the loop without network calls or an OpenAI model. It is
-particularly useful for deterministic acceptance cases such as:
+This lets Ember test the loop without network calls or an OpenAI model. It is particularly useful for deterministic
+acceptance cases such as:
 
 - one model turn then final output;
 - tool call then final output;
@@ -654,13 +600,12 @@ particularly useful for deterministic acceptance cases such as:
 
 The testing helpers are deliberately kept out of the main runtime entry point.
 
-**Recommendation: if Ember adopts any Agents SDK-backed execution adapter, use the
-scripted model immediately and require deterministic tests for every lifecycle edge.**
+**Recommendation: if Ember adopts any Agents SDK-backed execution adapter, use the scripted model immediately and
+require deterministic tests for every lifecycle edge.**
 
 ## Type leakage firewall
 
-The following SDK types should remain inside an adapter or optional integration
-package:
+The following SDK types should remain inside an adapter or optional integration package:
 
 - `Agent` / `AgentConfiguration`;
 - `Runner`, `RunResult`, `StreamedRunResult`;
@@ -672,22 +617,20 @@ package:
 - `Model`, `ModelProvider`, `ModelResponse`, SDK usage types;
 - tracing `Trace`, `Span`, processor/exporter types.
 
-They may be referenced inside implementation tests for that adapter. They should not
-become DTOs consumed by `src/core/`, persisted canonical state, interaction surfaces,
-or the current specialist reintegration layer.
+They may be referenced inside implementation tests for that adapter. They should not become DTOs consumed by
+`src/core/`, persisted canonical state, interaction surfaces, or the current specialist reintegration layer.
 
 A strict replacement test is:
 
-> If `@openai/agents*` disappeared tomorrow, could Ember preserve its canonical state,
-> identity, continuity, memory, authority, provenance, and specialist records while
-> replacing only one bounded implementation layer?
+> If `@openai/agents*` disappeared tomorrow, could Ember preserve its canonical state, identity, continuity, memory,
+> authority, provenance, and specialist records while replacing only one bounded implementation layer?
 
 If the answer becomes no, the SDK has leaked above its proper boundary.
 
 ## Proposed Ember-owned seams
 
-Do **not** introduce one giant `AgentFramework` abstraction. Preserve or add only
-capability-level seams that multiple implementations can truthfully satisfy.
+Do **not** introduce one giant `AgentFramework` abstraction. Preserve or add only capability-level seams that multiple
+implementations can truthfully satisfy.
 
 ### 1. Existing cognition request/result boundary
 
@@ -699,15 +642,13 @@ ProviderRequest
   -> ProviderResult
 ```
 
-An Agents SDK runner may live entirely inside one implementation. Issue #188 already
-removed CLI process configuration from the shared invocation call; any Agents SDK
-adapter should implement that semantic request/result seam without reintroducing
-transport-shaped parameters.
+An Agents SDK runner may live entirely inside one implementation. Issue #188 already removed CLI process configuration
+from the shared invocation call; any Agents SDK adapter should implement that semantic request/result seam without
+reintroducing transport-shaped parameters.
 
 ### 2. Capability execution boundary
 
-If Ember generalizes local tools, expose an Ember-owned tool/capability contract that
-contains:
+If Ember generalizes local tools, expose an Ember-owned tool/capability contract that contains:
 
 - stable capability identity;
 - model-visible schema/description;
@@ -716,39 +657,36 @@ contains:
 - cancellation/timeout contract;
 - provenance/evidence extraction.
 
-The adapter may convert that to a `FunctionTool` internally. Another deployment could
-convert the same Ember capability to Vercel AI SDK `tool()`, MCP, or a custom executor.
+The adapter may convert that to a `FunctionTool` internally. Another deployment could convert the same Ember capability
+to Vercel AI SDK `tool()`, MCP, or a custom executor.
 
 ### 3. Operational conversation boundary
 
-Only if a real use case earns persistent bounded conversation history, define an
-Ember-owned operational-history port whose records are explicitly non-canonical and
-reconstructable. An Agents SDK `Session` can implement the adapter side. Do not expose
-`AgentInputItem[]` from the port.
+Only if a real use case earns persistent bounded conversation history, define an Ember-owned operational-history port
+whose records are explicitly non-canonical and reconstructable. An Agents SDK `Session` can implement the adapter side.
+Do not expose `AgentInputItem[]` from the port.
 
 ### 4. Opaque execution checkpoint boundary
 
-If long approval waits require durable `RunState`, persist a versioned opaque
-checkpoint with Ember-owned purpose/currentness metadata around it. LangGraph or a
-custom implementation should be able to replace the checkpoint engine without
-changing canonical Ember state.
+If long approval waits require durable `RunState`, persist a versioned opaque checkpoint with Ember-owned
+purpose/currentness metadata around it. LangGraph or a custom implementation should be able to replace the checkpoint
+engine without changing canonical Ember state.
 
 ### 5. Trace sink boundary
 
-Map SDK trace/span events to an Ember-owned observability sink with Ember IDs and
-privacy policy. The sink may target local logs, OpenTelemetry, an OpenAI exporter, or
-another backend without affecting cognition semantics.
+Map SDK trace/span events to an Ember-owned observability sink with Ember IDs and privacy policy. The sink may target
+local logs, OpenTelemetry, an OpenAI exporter, or another backend without affecting cognition semantics.
 
 ### 6. MCP capability boundary
 
-Keep server configuration, principal policy, capability visibility, and provenance
-Ember-owned. The SDK may own client transport/tool conversion underneath it.
+Keep server configuration, principal policy, capability visibility, and provenance Ember-owned. The SDK may own client
+transport/tool conversion underneath it.
 
 ### 7. Specialist executor boundary, only if earned
 
-If an agents-as-tools spike proves useful, adapt a nested SDK agent to the existing
-specialist episode/report/reintegration semantics. The SDK nested result is runtime
-evidence; the Ember specialist report remains the contract.
+If an agents-as-tools spike proves useful, adapt a nested SDK agent to the existing specialist
+episode/report/reintegration semantics. The SDK nested result is runtime evidence; the Ember specialist report remains
+the contract.
 
 ## Mapping to current Ember code
 
@@ -778,8 +716,7 @@ The SDK does not replace the reasons Ember currently has custom code for:
 - systemd-supervised work ownership/recovery;
 - Codex/Cursor local subscription authentication and process boundaries.
 
-Using the SDK to erase those distinctions would reduce code while making the system
-less truthful.
+Using the SDK to erase those distinctions would reduce code while making the system less truthful.
 
 ## Operational fit
 
@@ -790,62 +727,56 @@ less truthful.
 - The repository currently builds with TypeScript 5.9.3.
 - Ember uses Node 26 and TypeScript 7.
 
-**Assessment:** likely compatible, not yet proven. Require an Ember-local install,
-compile, deterministic runner test, and cancellation smoke before adoption.
+**Assessment:** likely compatible, not yet proven. Require an Ember-local install, compile, deterministic runner test,
+and cancellation smoke before adoption.
 
 ### Dependency footprint
 
-The convenience `@openai/agents` package intentionally includes more than Ember would
-need for a text-only bounded execution layer, including OpenAI and Realtime packages.
-Lower-level `@openai/agents-core` is available and is the better architectural starting
-point for an experiment, but it still currently depends on the OpenAI Node package.
+The convenience `@openai/agents` package intentionally includes more than Ember would need for a text-only bounded
+execution layer, including OpenAI and Realtime packages. Lower-level `@openai/agents-core` is available and is the
+better architectural starting point for an experiment, but it still currently depends on the OpenAI Node package.
 
-**Assessment:** moderate TypeScript dependency footprint, no obvious mandatory native
-component in the reviewed metadata. Prefer lower-level packages and measure install
-size/RSS/cold start on the Pi rather than reasoning from package names.
+**Assessment:** moderate TypeScript dependency footprint, no obvious mandatory native component in the reviewed
+metadata. Prefer lower-level packages and measure install size/RSS/cold start on the Pi rather than reasoning from
+package names.
 
 ### Local/self-hosted use
 
-The core runner, custom models, custom sessions, function tools, local MCP, scripted
-testing, and custom tracing processors can operate without making OpenAI-hosted agent
-state canonical. However:
+The core runner, custom models, custom sessions, function tools, local MCP, scripted testing, and custom tracing
+processors can operate without making OpenAI-hosted agent state canonical. However:
 
 - default model resolution is OpenAI-oriented;
 - default server tracing exports to OpenAI unless disabled/replaced;
-- hosted tools, Conversations, Responses continuation, and hosted multi-agent are
-  OpenAI services.
+- hosted tools, Conversations, Responses continuation, and hosted multi-agent are OpenAI services.
 
 **Assessment:** self-hostable with deliberate configuration; not local-only by default.
 
 ### Raspberry Pi-class suitability
 
-No reviewed mandatory native dependency suggests an obvious architectural blocker for
-Pi 5. The workload remains network/model dominated for remote inference. The real
-questions are package install size, startup time, idle/peak RSS, and whether optional
-MCP/sandbox dependencies introduce native pressure in the chosen configuration.
+No reviewed mandatory native dependency suggests an obvious architectural blocker for Pi 5. The workload remains
+network/model dominated for remote inference. The real questions are package install size, startup time, idle/peak RSS,
+and whether optional MCP/sandbox dependencies introduce native pressure in the chosen configuration.
 
 **Assessment:** plausible, measure before production adoption.
 
 ### API maturity/stability
 
-The main packages are still **0.x** and the changelog shows frequent additions to
-session transaction semantics, resumable input, testing, retry, and tool/handoff
-behavior across recent minor/patch releases.
+The main packages are still **0.x** and the changelog shows frequent additions to session transaction semantics,
+resumable input, testing, retry, and tool/handoff behavior across recent minor/patch releases.
 
-That activity is positive for capability, but it means persisted `RunState` and broad
-SDK type leakage would magnify upgrade cost.
+That activity is positive for capability, but it means persisted `RunState` and broad SDK type leakage would magnify
+upgrade cost.
 
-**Assessment:** active and increasingly mature, but pin deliberately and keep the
-adapter boundary narrow until a stable 1.x compatibility story exists.
+**Assessment:** active and increasingly mature, but pin deliberately and keep the adapter boundary narrow until a stable
+1.x compatibility story exists.
 
 ### Debuggability
 
-The SDK exposes rich normalized run items, raw model responses, provider data, usage,
-turn counts, active agent, explicit error classes, tracing, and deterministic model
-scripting.
+The SDK exposes rich normalized run items, raw model responses, provider data, usage, turn counts, active agent,
+explicit error classes, tracing, and deterministic model scripting.
 
-**Assessment:** strong. The main debugging risk is semantic ambiguity if application
-code starts interpreting SDK lifecycle labels as Ember meaning.
+**Assessment:** strong. The main debugging risk is semantic ambiguity if application code starts interpreting SDK
+lifecycle labels as Ember meaning.
 
 ## Replaceability matrix
 
@@ -866,22 +797,19 @@ code starts interpreting SDK lifecycle labels as Ember meaning.
 
 ### Adopt now
 
-**Nothing as a production dependency solely because this research exists.** Ember does
-not yet have an earned need to replace the working Codex/Cursor cognition path with a
-multi-step in-process agent loop.
+**Nothing as a production dependency solely because this research exists.** Ember does not yet have an earned need to
+replace the working Codex/Cursor cognition path with a multi-step in-process agent loop.
 
 ### Strong candidates when the matching need appears
 
-1. **`Runner` as a bounded execution loop** behind the existing/future cognition
-   adapter boundary.
-2. **Function-tool execution** for schema validation, timeout, cancellation signal,
-   and model/tool repetition beneath Ember capability semantics.
+1. **`Runner` as a bounded execution loop** behind the existing/future cognition adapter boundary.
+2. **Function-tool execution** for schema validation, timeout, cancellation signal, and model/tool repetition beneath
+   Ember capability semantics.
 3. **Model retry policies** with replay-safety evidence.
 4. **ScriptedModel/testing helpers** for deterministic lifecycle tests.
 5. **MCP transport/tool conversion** behind Ember server/capability policy.
 6. **Custom tracing processors** when an SDK-backed runner exists anyway.
-7. **AI SDK integration** if Ember wants OpenAI Agents loop mechanics plus the broader
-   Vercel provider ecosystem.
+7. **AI SDK integration** if Ember wants OpenAI Agents loop mechanics plus the broader Vercel provider ecosystem.
 
 ### Wrap behind a semantic firewall
 
@@ -910,38 +838,34 @@ multi-step in-process agent loop.
 
 Before production adoption, run small deterministic/optional-live spikes that answer:
 
-1. Can an ephemeral SDK `Agent` consume a `ProviderRequest`, execute one bounded tool
-   loop, and return a valid `ProviderResult` without any SDK type escaping the adapter?
-2. Can the same adapter run against an AI SDK model through the official extension and
-   preserve provider-specific `providerData`, request/response IDs, and retry advice?
-3. Can a local function tool enforce an Ember-owned authority decision, time out, and
-   preserve `effects_possible` when cancellation does not establish side-effect truth?
-4. Can an `agent.asTool()` specialist return the current Ember `SpecialistReport` shape
-   while all currentness/authority/reintegration decisions remain outside the nested
-   runner?
-5. Can a serialized approval `RunState` survive process restart while Ember rechecks
-   currentness and authority before resuming?
-6. What are install size, cold-start latency, and peak/idle RSS on the Pi using only the
-   chosen lower-level packages?
-7. Does the current release compile and pass deterministic tests on Node 26 /
-   TypeScript 7 without shims or type escapes?
+1. Can an ephemeral SDK `Agent` consume a `ProviderRequest`, execute one bounded tool loop, and return a valid
+   `ProviderResult` without any SDK type escaping the adapter?
+2. Can the same adapter run against an AI SDK model through the official extension and preserve provider-specific
+   `providerData`, request/response IDs, and retry advice?
+3. Can a local function tool enforce an Ember-owned authority decision, time out, and preserve `effects_possible` when
+   cancellation does not establish side-effect truth?
+4. Can an `agent.asTool()` specialist return the current Ember `SpecialistReport` shape while all
+   currentness/authority/reintegration decisions remain outside the nested runner?
+5. Can a serialized approval `RunState` survive process restart while Ember rechecks currentness and authority before
+   resuming?
+6. What are install size, cold-start latency, and peak/idle RSS on the Pi using only the chosen lower-level packages?
+7. Does the current release compile and pass deterministic tests on Node 26 / TypeScript 7 without shims or type
+   escapes?
 
 ## Suitability for issue #180 synthesis
 
 Relative to the other issue #175 candidates:
 
-- **Vercel AI SDK remains the cleaner candidate for generic direct model/provider
-  mechanics** because it owns less application lifecycle meaning.
-- **OpenAI Agents SDK is more attractive when Ember needs a ready-made bounded
-  multi-turn agent/tool loop, approval checkpoint, retry policy, or scripted runner
-  tests.**
-- **LangGraph.js remains the stronger candidate for explicit durable execution and
-  restartable workflow orchestration** where checkpoint/replay is the primary need.
-- **Mastra offers a broader integrated toolkit**, but with greater pressure toward its
-  own agent/memory/workflow application model.
-- The official **Agents SDK <-> Vercel AI SDK bridge is evidence that these choices do
-  not need to be exclusive**. Ember can select mechanics per seam instead of selecting
-  one framework as its architecture.
+- **Vercel AI SDK remains the cleaner candidate for generic direct model/provider mechanics** because it owns less
+  application lifecycle meaning.
+- **OpenAI Agents SDK is more attractive when Ember needs a ready-made bounded multi-turn agent/tool loop, approval
+  checkpoint, retry policy, or scripted runner tests.**
+- **LangGraph.js remains the stronger candidate for explicit durable execution and restartable workflow orchestration**
+  where checkpoint/replay is the primary need.
+- **Mastra offers a broader integrated toolkit**, but with greater pressure toward its own agent/memory/workflow
+  application model.
+- The official **Agents SDK <-> Vercel AI SDK bridge is evidence that these choices do not need to be exclusive**. Ember
+  can select mechanics per seam instead of selecting one framework as its architecture.
 
 The likely synthesis direction is therefore compositional:
 
@@ -958,50 +882,32 @@ Ember semantics
         +-> MCP / tracing / testing -> whichever narrow implementation fits best
 ```
 
-This preserves the issue #175 governing principle: **Ember owns meaning; dependencies
-may own mechanics.**
+This preserves the issue #175 governing principle: **Ember owns meaning; dependencies may own mechanics.**
 
 ## Sources
 
 Primary sources reviewed on 2026-09-07:
 
-- OpenAI Agents SDK JS/TS overview and package boundaries:
-  https://openai.github.io/openai-agents-js/
+- OpenAI Agents SDK JS/TS overview and package boundaries: https://openai.github.io/openai-agents-js/
 - Running agents, runner lifecycle, cancellation, state, and errors:
   https://openai.github.io/openai-agents-js/guides/running-agents/
 - Models, custom providers, retries, raw usage, and provider-specific settings:
   https://openai.github.io/openai-agents-js/guides/models/
-- Vercel AI SDK model integration:
-  https://openai.github.io/openai-agents-js/extensions/ai-sdk/
-- Tools and agents-as-tools:
-  https://openai.github.io/openai-agents-js/guides/tools/
-- Handoffs:
-  https://openai.github.io/openai-agents-js/guides/handoffs/
-- Agent orchestration:
-  https://openai.github.io/openai-agents-js/guides/multi-agent/
-- Sessions:
-  https://openai.github.io/openai-agents-js/guides/sessions/
-- Human-in-the-loop approvals and resumable state:
-  https://openai.github.io/openai-agents-js/guides/human-in-the-loop/
-- Guardrails:
-  https://openai.github.io/openai-agents-js/guides/guardrails/
-- MCP:
-  https://openai.github.io/openai-agents-js/guides/mcp/
-- Streaming:
-  https://openai.github.io/openai-agents-js/guides/streaming/
-- Results and provider/run evidence:
-  https://openai.github.io/openai-agents-js/guides/results/
-- Context management:
-  https://openai.github.io/openai-agents-js/guides/context/
-- Tracing and custom processors:
-  https://openai.github.io/openai-agents-js/guides/tracing/
-- Testing and scripted models:
-  https://openai.github.io/openai-agents-js/guides/testing/
-- `@openai/agents` package metadata:
-  https://github.com/openai/openai-agents-js/blob/main/packages/agents/package.json
+- Vercel AI SDK model integration: https://openai.github.io/openai-agents-js/extensions/ai-sdk/
+- Tools and agents-as-tools: https://openai.github.io/openai-agents-js/guides/tools/
+- Handoffs: https://openai.github.io/openai-agents-js/guides/handoffs/
+- Agent orchestration: https://openai.github.io/openai-agents-js/guides/multi-agent/
+- Sessions: https://openai.github.io/openai-agents-js/guides/sessions/
+- Human-in-the-loop approvals and resumable state: https://openai.github.io/openai-agents-js/guides/human-in-the-loop/
+- Guardrails: https://openai.github.io/openai-agents-js/guides/guardrails/
+- MCP: https://openai.github.io/openai-agents-js/guides/mcp/
+- Streaming: https://openai.github.io/openai-agents-js/guides/streaming/
+- Results and provider/run evidence: https://openai.github.io/openai-agents-js/guides/results/
+- Context management: https://openai.github.io/openai-agents-js/guides/context/
+- Tracing and custom processors: https://openai.github.io/openai-agents-js/guides/tracing/
+- Testing and scripted models: https://openai.github.io/openai-agents-js/guides/testing/
+- `@openai/agents` package metadata: https://github.com/openai/openai-agents-js/blob/main/packages/agents/package.json
 - `@openai/agents-core` package metadata:
   https://github.com/openai/openai-agents-js/blob/main/packages/agents-core/package.json
-- upstream changelog:
-  https://github.com/openai/openai-agents-js/blob/main/packages/agents/CHANGELOG.md
-- upstream Node CI matrix:
-  https://github.com/openai/openai-agents-js/blob/main/.github/workflows/test.yml
+- upstream changelog: https://github.com/openai/openai-agents-js/blob/main/packages/agents/CHANGELOG.md
+- upstream Node CI matrix: https://github.com/openai/openai-agents-js/blob/main/.github/workflows/test.yml

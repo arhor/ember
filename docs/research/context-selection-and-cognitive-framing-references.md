@@ -1,21 +1,30 @@
 ---
-summary: "Portable evidence map supporting canonical context-selection semantics with long-context, retrieval, compaction, privacy, security, and cognitive-framing sources."
+summary:
+  "Portable evidence map supporting canonical context-selection semantics with long-context, retrieval, compaction,
+  privacy, security, and cognitive-framing sources."
 read_when:
-  - "Checking evidence behind context selection, omission, compaction, reconstruction, or least-sufficient projection conclusions"
-  - "Challenging privacy, disclosure, authority-preservation, or long-context assumptions in the canonical context research"
+  - "Checking evidence behind context selection, omission, compaction, reconstruction, or least-sufficient projection
+    conclusions"
+  - "Challenging privacy, disclosure, authority-preservation, or long-context assumptions in the canonical context
+    research"
 role: evidence
 discovery_status: current
 ---
 
 # Context Selection and Cognitive Framing Evidence Map
 
-This document is the portable evidence companion to [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md).
+This document is the portable evidence companion to
+[Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md).
 
-The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the originating Deep Research session.
+The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as
+**[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the originating Deep Research session.
 
-The preserved [Deep Research artifact](source-material/context-selection-and-cognitive-framing-deep-research.md) contains the full research narrative and its evidence ledger. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
+The preserved [Deep Research artifact](source-material/context-selection-and-cognitive-framing-deep-research.md)
+contains the full research narrative and its evidence ledger. Research-session citation markers are provenance rather
+than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
 
-This map deliberately does not duplicate the full continuity and memory bibliographies. Their evidence maps remain inherited inputs:
+This map deliberately does not duplicate the full continuity and memory bibliographies. Their evidence maps remain
+inherited inputs:
 
 - [Continuity and Identity Evidence Map](continuity-and-identity-references.md)
 - [Memory and Remembering Evidence Map](memory-and-remembering-references.md)
@@ -51,32 +60,42 @@ This map deliberately does not duplicate the full continuity and memory bibliogr
 
 ### R1 Lost in the Middle
 
-**Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, Percy Liang.** _Lost in the Middle: How Language Models Use Long Contexts._ Transactions of the Association for Computational Linguistics 12, 2024, 157–173.
+**Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, Percy Liang.** _Lost in
+the Middle: How Language Models Use Long Contexts._ Transactions of the Association for Computational Linguistics 12,
+2024, 157–173.
 
 - DOI: https://doi.org/10.1162/tacl_a_00638
 - Paper: https://arxiv.org/abs/2307.03172
 - Proceedings: https://aclanthology.org/2024.tacl-1.9/
 
-Relevant because it establishes strong position sensitivity in the evaluated generation of long-context models. It is foundational evidence, not a claim that all 2026 models have the same positional failure profile.
+Relevant because it establishes strong position sensitivity in the evaluated generation of long-context models. It is
+foundational evidence, not a claim that all 2026 models have the same positional failure profile.
 
 ### R2 Context Length Alone Hurts LLM Performance Despite Perfect Retrieval
 
-**Yufeng Du, Minyang Tian, Srikanth Ronanki, Subendhu Rongali, Sravan Babu Bodapati, Aram Galstyan, Azton Wells, Roy Schwartz, Eliu A. Huerta, Hao Peng.** _Context Length Alone Hurts LLM Performance Despite Perfect Retrieval._ Findings of EMNLP 2025, pp. 23281–23298.
+**Yufeng Du, Minyang Tian, Srikanth Ronanki, Subendhu Rongali, Sravan Babu Bodapati, Aram Galstyan, Azton Wells, Roy
+Schwartz, Eliu A. Huerta, Hao Peng.** _Context Length Alone Hurts LLM Performance Despite Perfect Retrieval._ Findings
+of EMNLP 2025, pp. 23281–23298.
 
 - DOI: https://doi.org/10.18653/v1/2025.findings-emnlp.1264
 - Proceedings: https://aclanthology.org/2025.findings-emnlp.1264/
 - Paper: https://arxiv.org/abs/2510.05381
 
-Relevant because the study reports performance degradation as input length increases even under controlled conditions designed to remove ordinary retrieval failures. The exact percentages are model- and task-specific; the durable conclusion is that unused context is not necessarily harmless.
+Relevant because the study reports performance degradation as input length increases even under controlled conditions
+designed to remove ordinary retrieval failures. The exact percentages are model- and task-specific; the durable
+conclusion is that unused context is not necessarily harmless.
 
 ### R3 The Distracting Effect
 
-**Chen Amiraz, Florin Cuconasu, Simone Filice, Zohar Karnin.** _The Distracting Effect: Understanding Irrelevant Passages in RAG._ ACL 2025.
+**Chen Amiraz, Florin Cuconasu, Simone Filice, Zohar Karnin.** _The Distracting Effect: Understanding Irrelevant
+Passages in RAG._ ACL 2025.
 
 - DOI: https://doi.org/10.18653/v1/2025.acl-long.892
 - Proceedings: https://aclanthology.org/2025.acl-long.892/
 
-Relevant because it shows that irrelevant passages are heterogeneous: some distractors are materially more harmful than generic irrelevant content. This supports deliberate exclusion as a correctness concern rather than only a cost optimization.
+Relevant because it shows that irrelevant passages are heterogeneous: some distractors are materially more harmful than
+generic irrelevant content. This supports deliberate exclusion as a correctness concern rather than only a cost
+optimization.
 
 ### R4 RULER
 
@@ -84,39 +103,49 @@ Relevant because it shows that irrelevant passages are heterogeneous: some distr
 
 - Paper: https://arxiv.org/abs/2404.06654
 
-Relevant because it expands simple needle retrieval into multi-needle, tracing, and aggregation tasks and demonstrates that advertised context length and robust usable context can diverge.
+Relevant because it expands simple needle retrieval into multi-needle, tracing, and aggregation tasks and demonstrates
+that advertised context length and robust usable context can diverge.
 
 ### R5 LongBench v2
 
-**Yushi Bai et al.** _LongBench v2: Towards Deeper Understanding and Reasoning on Realistic Long-context Multitasks._ 2024.
+**Yushi Bai et al.** _LongBench v2: Towards Deeper Understanding and Reasoning on Realistic Long-context
+Multitasks._ 2024.
 
 - Paper: https://arxiv.org/abs/2412.15204
 
-Relevant because it evaluates difficult long-context reasoning across documents, dialogue, code, structured data, and in-context learning over very long inputs. Results should be read as generation-specific rather than timeless rankings.
+Relevant because it evaluates difficult long-context reasoning across documents, dialogue, code, structured data, and
+in-context learning over very long inputs. Results should be read as generation-specific rather than timeless rankings.
 
 ### R6 LooGLE v2
 
-**Ziyuan He, Yuxuan Wang, Jiaqi Li, Kexin Liang, Muhan Zhang.** _LooGLE v2: Are LLMs Ready for Real World Long Dependency Challenges?_ 2025.
+**Ziyuan He, Yuxuan Wang, Jiaqi Li, Kexin Liang, Muhan Zhang.** _LooGLE v2: Are LLMs Ready for Real World Long
+Dependency Challenges?_ 2025.
 
 - Paper: https://arxiv.org/abs/2510.22548
 
-Relevant because it focuses on long-dependency tasks in real-world-like domains and reinforces that large nominal windows do not imply uniformly reliable use of long context.
+Relevant because it focuses on long-dependency tasks in real-world-like domains and reinforces that large nominal
+windows do not imply uniformly reliable use of long context.
 
 ### R7 Positional Failures in Long-Context LLMs
 
-**Chuyifei Zhang, Hongyu Cui, Xiaowen Huang, Jitao Sang.** _Positional Failures in Long-Context LLMs: A Blind Spot in Reasoning Benchmarks._ 2026.
+**Chuyifei Zhang, Hongyu Cui, Xiaowen Huang, Jitao Sang.** _Positional Failures in Long-Context LLMs: A Blind Spot in
+Reasoning Benchmarks._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.23170
 
-Relevant because it re-examines position effects in newer model generations. It reports substantial variation across models and conditions, supporting the separation between durable Ember semantics and provider-specific presentation tactics.
+Relevant because it re-examines position effects in newer model generations. It reports substantial variation across
+models and conditions, supporting the separation between durable Ember semantics and provider-specific presentation
+tactics.
 
 ### R8 STALE
 
-**Hanxiang Chao, Yihan Bai, Rui Sheng, Tianle Li, Yushi Sun.** _STALE: Can LLM Agents Know When Their Memories Are No Longer Valid?_ 2026.
+**Hanxiang Chao, Yihan Bai, Rui Sheng, Tianle Li, Yushi Sun.** _STALE: Can LLM Agents Know When Their Memories Are No
+Longer Valid?_ 2026.
 
 - Paper: https://arxiv.org/abs/2605.06527
 
-Relevant because it isolates implicit invalidation: newer observations can make an old memory obsolete without directly negating it, and systems may continue reasoning from stale state despite updated evidence being available.
+Relevant because it isolates implicit invalidation: newer observations can make an old memory obsolete without directly
+negating it, and systems may continue reasoning from stale state despite updated evidence being available.
 
 ### R9 DynamicMem
 
@@ -124,7 +153,8 @@ Relevant because it isolates implicit invalidation: newer observations can make 
 
 - Paper: https://arxiv.org/abs/2606.22877
 
-Relevant because it evaluates changing and stable user attributes over synthetic long-horizon histories and reports substantial failure attributable to what memory retrieval supplies to cognition.
+Relevant because it evaluates changing and stable user attributes over synthetic long-horizon histories and reports
+substantial failure attributable to what memory retrieval supplies to cognition.
 
 ### R10 TriggerBench
 
@@ -133,47 +163,61 @@ Relevant because it evaluates changing and stable user attributes over synthetic
 - Paper: https://arxiv.org/abs/2606.23459
 - Code: https://github.com/KristenZHANG/TriggerBench-Official
 
-Relevant because it separates retrospective memory from prospective activation. A model may be able to state an intention when asked yet fail to notice that the current situation should activate it.
+Relevant because it separates retrospective memory from prospective activation. A model may be able to state an
+intention when asked yet fail to notice that the current situation should activate it.
 
 ### R11 RHELM
 
-**Han Zhang et al.** _Beyond Static Dialogues: Benchmarking Realistic, Heterogeneous, and Evolving Long-Term Memory._ 2026.
+**Han Zhang et al.** _Beyond Static Dialogues: Benchmarking Realistic, Heterogeneous, and Evolving Long-Term
+Memory._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.31086
 
-Relevant because it evaluates long-term memory under heterogeneous sources and changing state, making it useful evidence for conflict preservation, provenance, and currentness-sensitive reconstruction.
+Relevant because it evaluates long-term memory under heterogeneous sources and changing state, making it useful evidence
+for conflict preservation, provenance, and currentness-sensitive reconstruction.
 
 ### R12 Parallel Context Compaction
 
-**Musa Cim, Burak Topcu, Chita Das, Mahmut Taylan Kandemir.** _Parallel Context Compaction for Long-Horizon LLM Agent Serving._ 2026.
+**Musa Cim, Burak Topcu, Chita Das, Mahmut Taylan Kandemir.** _Parallel Context Compaction for Long-Horizon LLM Agent
+Serving._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.23296
 
-Relevant because it treats summarization and compaction as inherently lossy and evaluates retained information as long histories grow. Its concrete compaction method is not an Ember recommendation.
+Relevant because it treats summarization and compaction as inherently lossy and evaluates retained information as long
+histories grow. Its concrete compaction method is not an Ember recommendation.
 
 ### R13 Governance Decay
 
-**Shiyang Chen.** _Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM Agents._ 2026.
+**Shiyang Chen.** _Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM
+Agents._ 2026.
 
 - Paper: https://arxiv.org/abs/2606.22528
 
-Relevant because the synthetic evaluation reports that compaction can remove policy constraints while leaving enough task context for an agent to continue, producing downstream violations. Numerical results are benchmark-specific; the semantic warning is that topical continuity can survive while governing meaning disappears.
+Relevant because the synthetic evaluation reports that compaction can remove policy constraints while leaving enough
+task context for an agent to continue, producing downstream violations. Numerical results are benchmark-specific; the
+semantic warning is that topical continuity can survive while governing meaning disappears.
 
 ### R14 CIMemories
 
-**Niloofar Mireshghallah, Neal Mangaokar, Narine Kokhlikyan, Arman Zharmagambetov, Manzil Zaheer, Saeed Mahloujifar, Kamalika Chaudhuri.** _CIMemories: A Compositional Benchmark for Contextual Integrity of Persistent Memory in LLMs._ 2025.
+**Niloofar Mireshghallah, Neal Mangaokar, Narine Kokhlikyan, Arman Zharmagambetov, Manzil Zaheer, Saeed Mahloujifar,
+Kamalika Chaudhuri.** _CIMemories: A Compositional Benchmark for Contextual Integrity of Persistent Memory in
+LLMs._ 2025.
 
 - Paper: https://arxiv.org/abs/2511.14937
 
-Relevant because it explicitly varies whether persistent user attributes are appropriate for a given task. It supports the distinction between truth, usefulness, relevance, and legitimate disclosure.
+Relevant because it explicitly varies whether persistent user attributes are appropriate for a given task. It supports
+the distinction between truth, usefulness, relevance, and legitimate disclosure.
 
 ### R15 Got a Secret?
 
-**Aman Priyanshu, Supriti Vijay, Esha Pahwa.** _Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in Multi-Agent Systems._ 2026.
+**Aman Priyanshu, Supriti Vijay, Esha Pahwa.** _Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in
+Multi-Agent Systems._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.27766
 
-Relevant because it evaluates privacy leakage in synthetic multi-agent interaction and reports that privacy instructions reduce but do not eliminate disclosure. It is direct pressure for context isolation between agents, though its environment is not a persistent personal assistant.
+Relevant because it evaluates privacy leakage in synthetic multi-agent interaction and reports that privacy instructions
+reduce but do not eliminate disclosure. It is direct pressure for context isolation between agents, though its
+environment is not a persistent personal assistant.
 
 ### R16 Hidden in Memory
 
@@ -181,42 +225,55 @@ Relevant because it evaluates privacy leakage in synthetic multi-agent interacti
 
 - Paper: https://arxiv.org/abs/2605.15338
 
-Relevant because it demonstrates delayed attacks in which adversarial external content can influence persistent memory and later behavior. It supports preserving provenance and trust status across context and memory boundaries.
+Relevant because it demonstrates delayed attacks in which adversarial external content can influence persistent memory
+and later behavior. It supports preserving provenance and trust status across context and memory boundaries.
 
 ### R17 ReliabilityRAG
 
-**Zeyu Shen, Basileal Imana, Tong Wu, Chong Xiang, Prateek Mittal, Aleksandra Korolova.** _ReliabilityRAG: Effective and Provably Robust Defense for RAG-based Web-Search._ 2025.
+**Zeyu Shen, Basileal Imana, Tong Wu, Chong Xiang, Prateek Mittal, Aleksandra Korolova.** _ReliabilityRAG: Effective and
+Provably Robust Defense for RAG-based Web-Search._ 2025.
 
 - Paper: https://arxiv.org/abs/2509.23519
 
-Relevant as adversarial-retrieval evidence that topical relevance alone is insufficient when retrieved content may be contradictory or malicious. Its defense mechanism is not an Ember architecture proposal.
+Relevant as adversarial-retrieval evidence that topical relevance alone is insufficient when retrieved content may be
+contradictory or malicious. Its defense mechanism is not an Ember architecture proposal.
 
 ### R18 CRUX
 
-**Jia-Huei Ju, Suzan Verberne, Maarten de Rijke, Andrew Yates.** _Controlled Retrieval-augmented Context Evaluation for Long-form RAG._ Findings of EMNLP 2025.
+**Jia-Huei Ju, Suzan Verberne, Maarten de Rijke, Andrew Yates.** _Controlled Retrieval-augmented Context Evaluation for
+Long-form RAG._ Findings of EMNLP 2025.
 
 - DOI: https://doi.org/10.18653/v1/2025.findings-emnlp.1151
 - Proceedings: https://aclanthology.org/2025.findings-emnlp.1151/
 
-Relevant because it argues that conventional retrieval ranking metrics do not fully characterize the context actually useful to downstream long-form generation. Ember needs a broader evaluation including inclusion harm, currentness, scope, provenance, privacy, and continuity.
+Relevant because it argues that conventional retrieval ranking metrics do not fully characterize the context actually
+useful to downstream long-form generation. Ember needs a broader evaluation including inclusion harm, currentness,
+scope, provenance, privacy, and continuity.
 
 ### R19 ECoRAG
 
-**Yeonseok Jeong, Jinsu Kim, Dohyeon Lee, Seung-won Hwang.** _ECoRAG: Evidentiality-guided Compression for Long Context RAG._ Findings of ACL 2025.
+**Yeonseok Jeong, Jinsu Kim, Dohyeon Lee, Seung-won Hwang.** _ECoRAG: Evidentiality-guided Compression for Long Context
+RAG._ Findings of ACL 2025.
 
 - DOI: https://doi.org/10.18653/v1/2025.findings-acl.1365
 - Proceedings: https://aclanthology.org/2025.findings-acl.1365/
 
-Relevant as an implementation-specific example of adapting context depth and compression to evidential need. Ember borrows only the pressure toward evidence-sensitive depth, not the concrete method.
+Relevant as an implementation-specific example of adapting context depth and compression to evidential need. Ember
+borrows only the pressure toward evidence-sensitive depth, not the concrete method.
 
 ### R20 RASTeR
 
-**Dan Schumacher, Fatemeh Haji, Tara Grey, Niharika Bandlamudi, Nupoor Karnik, Gagana Uday Kumar, Cho-Yu Jason Chiang, Peyman Najafirad, Nishant Vishwamitra, Anthony Rios.** _RASTeR: Robust, Agentic, and Structured Temporal Reasoning._ Proceedings of the 14th International Joint Conference on Natural Language Processing and the 4th Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics, 2025, pp. 3098–3123.
+**Dan Schumacher, Fatemeh Haji, Tara Grey, Niharika Bandlamudi, Nupoor Karnik, Gagana Uday Kumar, Cho-Yu Jason Chiang,
+Peyman Najafirad, Nishant Vishwamitra, Anthony Rios.** _RASTeR: Robust, Agentic, and Structured Temporal Reasoning._
+Proceedings of the 14th International Joint Conference on Natural Language Processing and the 4th Conference of the
+Asia-Pacific Chapter of the Association for Computational Linguistics, 2025, pp. 3098–3123.
 
 - DOI: https://doi.org/10.18653/v1/2025.ijcnlp-long.166
 - Proceedings: https://aclanthology.org/2025.ijcnlp-long.166/
 
-Relevant because it evaluates temporal reasoning under retrieved material that can be irrelevant, outdated, or inconsistent. It supports treating context evaluation and currentness as separate concerns rather than assuming that retrieved text is useful merely because it is related.
+Relevant because it evaluates temporal reasoning under retrieved material that can be irrelevant, outdated, or
+inconsistent. It supports treating context evaluation and currentness as separate concerns rather than assuming that
+retrieved text is useful merely because it is related.
 
 ### R21 Privacy as Contextual Integrity
 
@@ -224,33 +281,41 @@ Relevant because it evaluates temporal reasoning under retrieved material that c
 
 - Article: https://digitalcommons.law.uw.edu/wlr/vol79/iss1/10/
 
-Used as a **[L] lens**: privacy depends on whether information flow is appropriate to the context, actors, purpose, and norms, not only on whether information is secret. Ember does not import the framework literally, but it sharply clarifies delegated-context reasoning.
+Used as a **[L] lens**: privacy depends on whether information flow is appropriate to the context, actors, purpose, and
+norms, not only on whether information is secret. Ember does not import the framework literally, but it sharply
+clarifies delegated-context reasoning.
 
 ### R22 The Protection of Information in Computer Systems
 
-**Jerome H. Saltzer, Michael D. Schroeder.** _The Protection of Information in Computer Systems._ Proceedings of the IEEE 63(9), 1975, 1278–1308.
+**Jerome H. Saltzer, Michael D. Schroeder.** _The Protection of Information in Computer Systems._ Proceedings of the
+IEEE 63(9), 1975, 1278–1308.
 
 - DOI: https://doi.org/10.1109/PROC.1975.9939
 
-Used as a **[L] lens** through the principle of least privilege. Context is not privilege, so the principle is not imported directly. The useful analogy is that unnecessary information exposure increases channels for misuse and error.
+Used as a **[L] lens** through the principle of least privilege. Context is not privilege, so the principle is not
+imported directly. The useful analogy is that unnecessary information exposure increases channels for misuse and error.
 
 ### R23 The Magical Number 4 in Short-Term Memory
 
-**Nelson Cowan.** _The Magical Number 4 in Short-Term Memory: A Reconsideration of Mental Storage Capacity._ Behavioral and Brain Sciences 24(1), 2001, 87–114.
+**Nelson Cowan.** _The Magical Number 4 in Short-Term Memory: A Reconsideration of Mental Storage Capacity._ Behavioral
+and Brain Sciences 24(1), 2001, 87–114.
 
 - DOI: https://doi.org/10.1017/S0140525X01003922
 
-Used only as a **[L] lens** for the distinction between broadly available knowledge and a smaller focus actively maintained for a task. Ember should not imitate a biological item-count limit.
+Used only as a **[L] lens** for the distinction between broadly available knowledge and a smaller focus actively
+maintained for a task. Ember should not imitate a biological item-count limit.
 
 ### R24 Provider prompt and context caching
 
-Current provider documentation shows that repeated prompt prefixes or context can be cached for cost and latency benefits:
+Current provider documentation shows that repeated prompt prefixes or context can be cached for cost and latency
+benefits:
 
 - OpenAI Prompt Caching: https://platform.openai.com/docs/guides/prompt-caching
 - Anthropic Prompt Caching: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
 - Google Gemini Context Caching: https://ai.google.dev/gemini-api/docs/caching
 
-Relevant because caching can make stable or large repeated context cheaper, changing implementation economics and feasible lifetimes. It does not make cached material semantically relevant to every cognition.
+Relevant because caching can make stable or large repeated context cheaper, changing implementation economics and
+feasible lifetimes. It does not make cached material semantically relevant to every cognition.
 
 ## Existing-system evidence
 
@@ -258,24 +323,33 @@ The existing Ember reconnaissance should be read by concern rather than as produ
 
 ### Persistent state versus active projection
 
-- [NanoBot](nanobot.md) separates broad interaction history, reflection, agent-level material, and project-level material.
-- [Hermes](hermes.md) distinguishes stable prompt material, current context, searchable history, and narrower delegation context.
-- [OpenClaw](openclaw.md) separates curated, episodic, prospective, and provenance-sensitive material and tolerates degraded memory lookup.
-- [Letta](letta.md) separates always-attached active state from larger archival information with an independent lifecycle.
+- [NanoBot](nanobot.md) separates broad interaction history, reflection, agent-level material, and project-level
+  material.
+- [Hermes](hermes.md) distinguishes stable prompt material, current context, searchable history, and narrower delegation
+  context.
+- [OpenClaw](openclaw.md) separates curated, episodic, prospective, and provenance-sensitive material and tolerates
+  degraded memory lookup.
+- [Letta](letta.md) separates always-attached active state from larger archival information with an independent
+  lifecycle.
 
-**[C]** The convergence supports selective current participation. It does not establish any one storage or prompt representation as canonical for Ember.
+**[C]** The convergence supports selective current participation. It does not establish any one storage or prompt
+representation as canonical for Ember.
 
 ### Delegation and isolation
 
-Hermes demonstrates an implementation in which delegated work receives a narrower fresh context rather than a copy of the entire parent context. Ember's own principles independently require responsibility for what context is passed while respecting specialist-owned state.
+Hermes demonstrates an implementation in which delegated work receives a narrower fresh context rather than a copy of
+the entire parent context. Ember's own principles independently require responsibility for what context is passed while
+respecting specialist-owned state.
 
-**[C + J]** Delegation creates a real contextual boundary. The semantic rules governing ownership, authority, cancellation, and long-running work remain for issue #6.
+**[C + J]** Delegation creates a real contextual boundary. The semantic rules governing ownership, authority,
+cancellation, and long-running work remain for issue #6.
 
 ### Graceful recall degradation
 
 OpenClaw's design allows memory lookup to degrade without making all ordinary cognition impossible.
 
-**[C + J]** This supports the distinction between missing enrichment and canonical memory loss, while leaving Ember's exact degradation policy open.
+**[C + J]** This supports the distinction between missing enrichment and canonical memory loss, while leaving Ember's
+exact degradation policy open.
 
 ## Model- and benchmark-specific cautions
 
@@ -289,11 +363,13 @@ The following findings should not be promoted into timeless Ember rules without 
 - any one prompt order, grouping method, or retrieval implementation;
 - synthetic benchmark scores as direct estimates of persistent-personal-agent behavior.
 
-The durable lessons are the existence of the failure modes and the semantic distinctions needed to avoid confusing them with Ember's identity or truth model.
+The durable lessons are the existence of the failure modes and the semantic distinctions needed to avoid confusing them
+with Ember's identity or truth model.
 
 ## Evidence inherited from issues #3 and #4
 
-The following context conclusions depend materially on already-validated continuity and memory results and should remain linked rather than re-proved here:
+The following context conclusions depend materially on already-validated continuity and memory results and should remain
+linked rather than re-proved here:
 
 - identity does not collapse into one model context;
 - autobiographical, relationship, and commitment continuity can survive partial context loss;
@@ -305,6 +381,8 @@ The following context conclusions depend materially on already-validated continu
 - repeated recall is not new evidence;
 - prospective commitments can become relevant independently of conversational recency;
 - context projection must not rewrite or strengthen its source memory;
-- staged recall should deepen when uncertainty, contradiction, provenance, consequence, or autobiographical significance requires it.
+- staged recall should deepen when uncertainty, contradiction, provenance, consequence, or autobiographical significance
+  requires it.
 
-See the [continuity evidence map](continuity-and-identity-references.md) and [memory evidence map](memory-and-remembering-references.md) for their principal supporting sources and caveats.
+See the [continuity evidence map](continuity-and-identity-references.md) and
+[memory evidence map](memory-and-remembering-references.md) for their principal supporting sources and caveats.

@@ -1,8 +1,11 @@
 ---
-summary: "Project purpose and success criteria for Ember as a persistent personal agent whose continuity outlives models, sessions, processes, and interfaces."
+summary:
+  "Project purpose and success criteria for Ember as a persistent personal agent whose continuity outlives models,
+  sessions, processes, and interfaces."
 read_when:
   - "Evaluating whether a proposed feature belongs in Ember's core purpose"
-  - "Changing assumptions about persistent identity, continuity, interfaces, capabilities, or the long-term product direction"
+  - "Changing assumptions about persistent identity, continuity, interfaces, capabilities, or the long-term product
+    direction"
 role: foundation
 discovery_status: current
 ---
@@ -11,9 +14,12 @@ discovery_status: current
 
 ## Purpose
 
-Ember is an experimental persistent personal agent runtime focused on continuity, memory, agency, and composable capabilities.
+Ember is an experimental persistent personal agent runtime focused on continuity, memory, agency, and composable
+capabilities.
 
-The project is not intended to be another coding agent, chatbot wrapper, or multi-channel automation framework. Its primary goal is to provide a durable home for a personal agent whose identity and accumulated context survive individual model calls, sessions, processes, interfaces, and eventually model replacements.
+The project is not intended to be another coding agent, chatbot wrapper, or multi-channel automation framework. Its
+primary goal is to provide a durable home for a personal agent whose identity and accumulated context survive individual
+model calls, sessions, processes, interfaces, and eventually model replacements.
 
 A model supplies cognition for a turn. Ember owns continuity.
 
@@ -88,7 +94,8 @@ The interface is a window into the same persistent agent, not a separate agent i
 
 A useful personal agent does not need a huge core if it can compose strong external capabilities.
 
-Instead of growing Ember until it contains every specialist workflow, prefer boundaries that let Ember say, conceptually:
+Instead of growing Ember until it contains every specialist workflow, prefer boundaries that let Ember say,
+conceptually:
 
 - "I can answer or reason about this myself."
 - "I should use this tool."
@@ -96,22 +103,27 @@ Instead of growing Ember until it contains every specialist workflow, prefer bou
 - "This event is not important enough to interrupt the user."
 - "This should become durable memory."
 
-This project therefore treats _selection, continuity, and composition_ as more important research areas than feature count.
+This project therefore treats _selection, continuity, and composition_ as more important research areas than feature
+count.
 
 ## Research questions
 
 The following questions are intentionally open at project inception:
 
-1. What minimal state must survive process termination for the next Ember instance to be meaningfully continuous with the previous one?
-2. Which parts of identity should be immutable principles, mutable self-model, relationship state, or learned preferences?
-3. How should episodic history become durable memory without creating an ever-growing prompt or an unreliable pile of summaries?
+1. What minimal state must survive process termination for the next Ember instance to be meaningfully continuous with
+   the previous one?
+2. Which parts of identity should be immutable principles, mutable self-model, relationship state, or learned
+   preferences?
+3. How should episodic history become durable memory without creating an ever-growing prompt or an unreliable pile of
+   summaries?
 4. Can provenance and evidence be retained strongly enough that Ember knows why it believes a memory?
 5. How should memory contradictions, corrections, supersession, and forgetting work?
 6. What should be deterministic code and what should be delegated to model judgment?
 7. How should Ember decide whether an event deserves action or user interruption?
 8. What is the cleanest boundary between Ember's own tools and delegated agent runtimes?
 9. How do we measure whether added architectural complexity actually improves agent usefulness?
-10. Which runtime language and persistence model best support these goals without turning implementation choices into identity-level constraints?
+10. Which runtime language and persistence model best support these goals without turning implementation choices into
+    identity-level constraints?
 
 ## Success criterion
 
@@ -119,6 +131,8 @@ A successful early Ember should not be judged by the number of tools it exposes.
 
 A stronger criterion is this:
 
-> After stopping Ember, changing the interface, and starting it again later, the agent should preserve enough identity, memory, relationships, open context, and capability awareness that the interaction feels like a continuation rather than a new chatbot session.
+> After stopping Ember, changing the interface, and starting it again later, the agent should preserve enough identity,
+> memory, relationships, open context, and capability awareness that the interaction feels like a continuation rather
+> than a new chatbot session.
 
 Everything else can grow around that ember.

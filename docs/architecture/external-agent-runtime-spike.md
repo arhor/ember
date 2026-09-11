@@ -1,5 +1,7 @@
 ---
-summary: "Completed issue #44 spike evaluating subscription-backed Codex, Claude Code, and Cursor runtimes and proving a bounded Ember-to-Codex cognition round-trip."
+summary:
+  "Completed issue #44 spike evaluating subscription-backed Codex, Claude Code, and Cursor runtimes and proving a
+  bounded Ember-to-Codex cognition round-trip."
 read_when:
   - "Investigating or implementing issue #44 external agent runtime integration"
   - "Reviewing the evidence behind issue #46's production Codex cognition backend"
@@ -21,69 +23,59 @@ discovery_status: current
 
 **Result:** complete local spike; production implementation deferred to a focused follow-up.
 
-**Graduation:** issue [#46](https://github.com/arhor/ember/issues/46) promoted the
-recommended Codex one-shot path into production, and issue
-[#90](https://github.com/arhor/ember/issues/90) later added a separate Cursor
-one-shot adapter after that boundary stabilized. The original experiment implementation
-has since been removed from the active repository layout; this document preserves its
-historical design evidence. Supported operation is documented in the
+**Graduation:** issue [#46](https://github.com/arhor/ember/issues/46) promoted the recommended Codex one-shot path into
+production, and issue [#90](https://github.com/arhor/ember/issues/90) later added a separate Cursor one-shot adapter
+after that boundary stabilized. The original experiment implementation has since been removed from the active repository
+layout; this document preserves its historical design evidence. Supported operation is documented in the
 [minimal continuity runbook](minimal-continuity-runbook.md#supported-live-codex-cognition).
 
-Ember can perform real subscription-backed cognition through an already-authorized
-external agent runtime without transferring continuity or canonical-state ownership
-to that runtime. The decisive proof used Ember's real `ProviderRequest`, a real
-bounded `Projection`, an experiment-local Codex `exec` adapter, the existing
-`runCognition` reintegration path, and the existing `ProviderResult` validator.
+Ember can perform real subscription-backed cognition through an already-authorized external agent runtime without
+transferring continuity or canonical-state ownership to that runtime. The decisive proof used Ember's real
+`ProviderRequest`, a real bounded `Projection`, an experiment-local Codex `exec` adapter, the existing `runCognition`
+reintegration path, and the existing `ProviderResult` validator.
 
-Codex and Cursor both completed smaller headless subscription-backed probes. Claude
-Code could initialize headlessly but its local OAuth session was expired and could
-not refresh, so no Claude model turn was claimed and no API-key billing path was
-substituted.
+Codex and Cursor both completed smaller headless subscription-backed probes. Claude Code could initialize headlessly but
+its local OAuth session was expired and could not refresh, so no Claude model turn was claimed and no API-key billing
+path was substituted.
 
-The evidence justifies one narrow **one-shot cognition episode** boundary. It does
-not justify a general provider hierarchy, a shared specialist-runtime protocol, a
-credential broker, or production ACP/App Server integration.
+The evidence justifies one narrow **one-shot cognition episode** boundary. It does not justify a general provider
+hierarchy, a shared specialist-runtime protocol, a credential broker, or production ACP/App Server integration.
 
 ## Question and governing constraints
 
 The spike tested:
 
-> Can Ember send one purpose-bounded projection through an already-authenticated
-> external agent runtime and receive a validated result while Ember retains
-> continuity, canonical state, context selection, authority, and interpretation?
+> Can Ember send one purpose-bounded projection through an already-authenticated external agent runtime and receive a
+> validated result while Ember retains continuity, canonical state, context selection, authority, and interpretation?
 
 The experiment follows the accepted architecture:
 
 - continuity and lineage remain Ember-owned, not thread/session-owned
   ([ADR 0001](decisions/0001-continuity-belongs-to-ember.md));
-- each invocation receives a least-sufficient permitted projection rather than
-  canonical state wholesale ([ADR 0003](decisions/0003-use-least-sufficient-permitted-projections.md));
-- runtime tools, login state, filesystem reach, and model capability do not create
-  Ember authority ([ADR 0004](decisions/0004-separate-capability-from-authority.md));
-- explicit cancellation, timeout, child-process exit, completion, delivery, and
-  unconfirmed termination remain distinct operational facts
-  ([ADR 0005](decisions/0005-distinguish-operational-continuity.md)); and
+- each invocation receives a least-sufficient permitted projection rather than canonical state wholesale
+  ([ADR 0003](decisions/0003-use-least-sufficient-permitted-projections.md));
+- runtime tools, login state, filesystem reach, and model capability do not create Ember authority
+  ([ADR 0004](decisions/0004-separate-capability-from-authority.md));
+- explicit cancellation, timeout, child-process exit, completion, delivery, and unconfirmed termination remain distinct
+  operational facts ([ADR 0005](decisions/0005-distinguish-operational-continuity.md)); and
 - runtime output is candidate expression/evidence, not automatic canonical truth.
 
-The existing subprocess seam in `src/ember/provider.ts` already creates a cognition,
-sends one bounded request, validates one result, and records a descriptor-only
-expression occurrence. The spike reused that seam instead of replacing it with an
-unearned abstraction.
+The existing subprocess seam in `src/ember/provider.ts` already creates a cognition, sends one bounded request,
+validates one result, and records a descriptor-only expression occurrence. The spike reused that seam instead of
+replacing it with an unearned abstraction.
 
 ## Host and installed runtime evidence
 
 - Host: macOS 26.5.2 (`Darwin 25.5.0`), Apple silicon (`arm64`).
 - Node.js: `v26.8.1`; npm: `11.19.0`.
 - Codex: `codex-cli 0.151.0`; `codex login status` reported ChatGPT login.
-- Claude Code: exact resolved binary
-  `/Users/maksimburyshynets/.local/share/claude/versions/2.1.241`; both
-  `claude --version` and the resolved binary reported `2.1.241`. That binary's
-  `--help` listed and accepted `--safe-mode`, `--permission-mode`, `--tools`,
-  `--output-format`, and `--no-session-persistence`.
-- Cursor Agent and `cursor-agent`: `2026.08.11-e8db854`; `agent status` reported
-  an authenticated browser-login account. The account identifier is omitted.
-- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `CURSOR_API_KEY` were absent. Probe
-  children also removed the relevant API-key variables.
+- Claude Code: exact resolved binary `/Users/maksimburyshynets/.local/share/claude/versions/2.1.241`; both
+  `claude --version` and the resolved binary reported `2.1.241`. That binary's `--help` listed and accepted
+  `--safe-mode`, `--permission-mode`, `--tools`, `--output-format`, and `--no-session-persistence`.
+- Cursor Agent and `cursor-agent`: `2026.08.11-e8db854`; `agent status` reported an authenticated browser-login account.
+  The account identifier is omitted.
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `CURSOR_API_KEY` were absent. Probe children also removed the relevant
+  API-key variables.
 
 No credential file, keychain item, token, or account secret was opened or copied.
 
@@ -91,8 +83,7 @@ No credential file, keychain item, token, or account secret was opened or copied
 
 ### Common no-tool connectivity probe
 
-Each CLI received the same trivial request from `/private/tmp`, outside the Ember
-repository:
+Each CLI received the same trivial request from `/private/tmp`, outside the Ember repository:
 
 ```text
 Return exactly this JSON object and nothing else:
@@ -105,67 +96,58 @@ Return exactly this JSON object and nothing else:
 | Cursor `agent -p --output-format stream-json --mode ask --sandbox enabled`                 | Exact result, exit 0, 10.0 s wall clock; runtime reported 3.1 s API duration | init, user, assistant, result; session ID, model, login auth source, request ID, usage                                                          | **Observed subscription reuse:** `apiKeySource: login`, API-key variable absent |
 | Claude Code `-p --output-format stream-json --safe-mode --permission-mode plan --tools ''` | Exit 1 before a model turn                                                   | Structured init showed empty tools and plan mode; terminal result reported `authentication_failed` because OAuth was expired and refresh failed | **Not viable on this host at test time**; no API-key fallback attempted         |
 
-Codex and Cursor used prompt-enforced JSON for this initial connectivity check.
-The later Codex projection proof used `--output-schema` plus Ember's independent
-runtime validator.
+Codex and Cursor used prompt-enforced JSON for this initial connectivity check. The later Codex projection proof used
+`--output-schema` plus Ember's independent runtime validator.
 
 ### Runtime-owned session resume
 
-- `codex exec resume` reused the same Codex thread ID and returned a second exact
-  JSON result.
-- Cursor `--resume <session-id>` reused the same Cursor session ID and returned a
-  second exact JSON result with cache reuse visible in usage metadata.
+- `codex exec resume` reused the same Codex thread ID and returned a second exact JSON result.
+- Cursor `--resume <session-id>` reused the same Cursor session ID and returned a second exact JSON result with cache
+  reuse visible in usage metadata.
 - Claude resume was not tested because authentication failed before a model turn.
 
-These IDs demonstrate external-runtime operational continuity only. They were not
-used as Ember lineage, memory, or canonical identifiers.
+These IDs demonstrate external-runtime operational continuity only. They were not used as Ember lineage, memory, or
+canonical identifiers.
 
 ### Explicit cancellation observations
 
-The experiment sent `SIGTERM` to the direct CLI child 750 ms into harmless no-tool
-requests:
+The experiment sent `SIGTERM` to the direct CLI child 750 ms into harmless no-tool requests:
 
-- Codex had emitted `thread.started` and `turn.started`; its direct child then
-  exited 0 without a completion or cancellation acknowledgement.
+- Codex had emitted `thread.started` and `turn.started`; its direct child then exited 0 without a completion or
+  cancellation acknowledgement.
 - Cursor emitted no event before its direct child exited 143.
 
-These observations establish only direct-child exit. They do not establish remote
-rollback, absence of model work, descendant termination, or acknowledged runtime
-cancellation. Neither result permits an automatic retry.
+These observations establish only direct-child exit. They do not establish remote rollback, absence of model work,
+descendant termination, or acknowledged runtime cancellation. Neither result permits an automatic retry.
 
-The revised experiment harness records `termination_reason` as
-`explicit_cancel`, `timeout`, or `null`. It sends `SIGTERM`, optionally escalates
-to `SIGKILL`, and uses a separate final deadline. If no `close` event arrives by
-that deadline it reports `directChildExitObserved: false` rather than waiting
-forever or inventing confirmation. Deterministic tests cover successful completion,
-explicit cancellation, timeout, forced kill, and unconfirmed termination.
+The revised experiment harness records `termination_reason` as `explicit_cancel`, `timeout`, or `null`. It sends
+`SIGTERM`, optionally escalates to `SIGKILL`, and uses a separate final deadline. If no `close` event arrives by that
+deadline it reports `directChildExitObserved: false` rather than waiting forever or inventing confirmation.
+Deterministic tests cover successful completion, explicit cancellation, timeout, forced kill, and unconfirmed
+termination.
 
 ### Implicit cwd context and permissions
 
-Codex used a read-only sandbox; Cursor used Ask mode with sandboxing enabled; Claude
-initialized with no tools before authentication failed. No candidate was asked to
-mutate files or perform an external effect.
+Codex used a read-only sandbox; Cursor used Ask mode with sandboxing enabled; Claude initialized with no tools before
+authentication failed. No candidate was asked to mutate files or perform an external effect.
 
-A repository-root context probe was not run because automatic project discovery
-could disclose repository contents beyond the explicit projection. Instead, a
-synthetic directory contained only this harmless marker in `AGENTS.md`:
+A repository-root context probe was not run because automatic project discovery could disclose repository contents
+beyond the explicit projection. Instead, a synthetic directory contained only this harmless marker in `AGENTS.md`:
 
 ```text
 EMBER_SPIKE_CONTEXT_44
 ```
 
-Codex and Cursor both knew the marker without invoking a tool. Therefore cwd is
-part of the effective disclosure boundary. A production cognition adapter should
-default to a dedicated minimal directory rather than the Ember repository root.
+Codex and Cursor both knew the marker without invoking a tool. Therefore cwd is part of the effective disclosure
+boundary. A production cognition adapter should default to a dedicated minimal directory rather than the Ember
+repository root.
 
 ## Real Ember-owned projection round-trip
 
-The final proof originally lived in a dedicated `external-agent-runtime` experiment
-directory. That spike contained a Codex provider-process adapter, output schema, live
-round-trip harness, and lifecycle probe. Those experiment-only files were removed after
-the boundary graduated. The supported Codex implementation now lives in
-`src/providers/codex.ts`, with deterministic coverage in
-`tests/codex-provider.test.ts` and the opt-in production smoke in
+The final proof originally lived in a dedicated `external-agent-runtime` experiment directory. That spike contained a
+Codex provider-process adapter, output schema, live round-trip harness, and lifecycle probe. Those experiment-only files
+were removed after the boundary graduated. The supported Codex implementation now lives in `src/providers/codex.ts`,
+with deterministic coverage in `tests/codex-provider.test.ts` and the opt-in production smoke in
 `tests/live/codex-smoke.ts`.
 
 The round-trip used the actual Ember path:
@@ -206,16 +188,14 @@ The live result was:
 }
 ```
 
-The generated IDs are intentionally omitted because they differ on each run. The
-observed selected IDs exactly matched the two expected in-scope meanings; Codex
-claimed use of only the fact ID. The existing validator confirmed that the claimed
-ID was a subset of the projection. The external runtime never received the
-out-of-scope marker, canonical store path, prior transcript, or mutation authority.
+The generated IDs are intentionally omitted because they differ on each run. The observed selected IDs exactly matched
+the two expected in-scope meanings; Codex claimed use of only the fact ID. The existing validator confirmed that the
+claimed ID was a subset of the projection. The external runtime never received the out-of-scope marker, canonical store
+path, prior transcript, or mutation authority.
 
-`runCognition` retained Ember's lineage, committed a completed cognition episode,
-recorded descriptor-only Ember expression evidence, delivered the transient reply,
-and did not persist the reply payload as canonical state. This satisfies #44's
-required Ember-owned bounded projection round-trip.
+`runCognition` retained Ember's lineage, committed a completed cognition episode, recorded descriptor-only Ember
+expression evidence, delivered the transient reply, and did not persist the reply payload as canonical state. This
+satisfies #44's required Ember-owned bounded projection round-trip.
 
 ## Comparison
 
@@ -233,10 +213,9 @@ required Ember-owned bounded projection round-trip.
 | One-shot portability cost | Thin argument/event adapter proven                  | Likely thin adapter after login repair                                                                   | Thin argument/event adapter appears feasible        |
 | Subscription practicality | Proven now                                          | Blocked until OAuth is restored                                                                          | Proven now                                          |
 
-The products remain external agent runtimes: they own model selection, some agent
-loop behavior, session state, working-directory interpretation, and potentially
-tools and approval flows. Calling them interchangeable model endpoints would hide
-material semantics.
+The products remain external agent runtimes: they own model selection, some agent loop behavior, session state,
+working-directory interpretation, and potentially tools and approval flows. Calling them interchangeable model endpoints
+would hide material semantics.
 
 ## Boundary and recommendation
 
@@ -248,12 +227,11 @@ Ember-owned bounded input + dedicated minimal cwd + invocation policy
   -> bounded lifecycle evidence + validated candidate result
 ```
 
-The common boundary may expose optional runtime/session identifiers as operational
-metadata. It must not promise equivalent tools, permissions, models, resume,
-cancellation acknowledgement, or specialist behavior.
+The common boundary may expose optional runtime/session identifiers as operational metadata. It must not promise
+equivalent tools, permissions, models, resume, cancellation acknowledgement, or specialist behavior.
 
-The first production follow-up should implement a **Codex `exec` one-shot cognition
-adapter** behind the existing narrow Ember cognition seam. It should:
+The first production follow-up should implement a **Codex `exec` one-shot cognition adapter** behind the existing narrow
+Ember cognition seam. It should:
 
 - use an isolated minimal cwd;
 - pass only the selected projection and current input;
@@ -263,11 +241,10 @@ adapter** behind the existing narrow Ember cognition seam. It should:
 - distinguish timeout from explicit cancellation; and
 - avoid automatic retry after ambiguous termination.
 
-Cursor can be a separate second adapter against that earned one-shot boundary.
-Codex App Server and Cursor ACP belong in a later specialist-runtime experiment if
-Ember needs protocol-level permission requests, progress, session load, or
-cancellation. Claude should be re-probed after the user restores OAuth; the current
-evidence does not justify a production Claude task or an Agent SDK dependency.
+Cursor can be a separate second adapter against that earned one-shot boundary. Codex App Server and Cursor ACP belong in
+a later specialist-runtime experiment if Ember needs protocol-level permission requests, progress, session load, or
+cancellation. Claude should be re-probed after the user restores OAuth; the current evidence does not justify a
+production Claude task or an Agent SDK dependency.
 
 No production provider/runtime abstraction changed in this spike.
 
@@ -285,30 +262,27 @@ agent --version
 agent status
 ```
 
-The original experiment-only executables are no longer part of the active repository layout.
-Use the graduated production boundary for current regression and smoke coverage:
+The original experiment-only executables are no longer part of the active repository layout. Use the graduated
+production boundary for current regression and smoke coverage:
 
 ```bash
 node --test tests/codex-provider.test.ts tests/provider-timeout.test.ts
 npm run smoke:codex
 ```
 
-The deterministic tests cover the supported adapter and process-lifecycle contract without
-requiring subscription access. `npm run smoke:codex` is the opt-in authenticated live probe.
-Historical commands for the removed spike remain recoverable from issue #44 and repository
-history rather than being presented here as current executable instructions.
+The deterministic tests cover the supported adapter and process-lifecycle contract without requiring subscription
+access. `npm run smoke:codex` is the opt-in authenticated live probe. Historical commands for the removed spike remain
+recoverable from issue #44 and repository history rather than being presented here as current executable instructions.
 
 ## Residual limitations
 
-- Claude subscription-backed execution and Agent SDK authentication reuse remain
-  unproven until OAuth is restored.
+- Claude subscription-backed execution and Agent SDK authentication reuse remain unproven until OAuth is restored.
 - Direct-child exit did not prove remote or descendant cancellation.
-- Complete vendor event schemas and every failure path were not frozen into Ember
-  types; doing so would be premature.
-- The synthetic context probe proves implicit cwd disclosure but does not inventory
-  every vendor-specific project configuration source.
-- Codex SDK/App Server, Cursor ACP, and Claude Agent SDK were not added because the
-  one-shot CLI evidence answered the spike question without new dependencies.
+- Complete vendor event schemas and every failure path were not frozen into Ember types; doing so would be premature.
+- The synthetic context probe proves implicit cwd disclosure but does not inventory every vendor-specific project
+  configuration source.
+- Codex SDK/App Server, Cursor ACP, and Claude Agent SDK were not added because the one-shot CLI evidence answered the
+  spike question without new dependencies.
 - This was not a model-quality, cost, or performance benchmark.
 
 ## Official references
@@ -324,8 +298,8 @@ history rather than being presented here as current executable instructions.
 
 - Getting started: <https://docs.anthropic.com/en/docs/claude-code/getting-started>
 - CLI reference: <https://docs.anthropic.com/en/docs/claude-code/cli-usage>
-- API overview, used only to preserve the distinction from Claude Code subscription
-  execution: <https://platform.claude.com/docs/en/api/overview>
+- API overview, used only to preserve the distinction from Claude Code subscription execution:
+  <https://platform.claude.com/docs/en/api/overview>
 
 ### Cursor
 

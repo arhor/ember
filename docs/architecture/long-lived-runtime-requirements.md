@@ -1,47 +1,44 @@
 ---
-summary: "Issue #80 requirements for Ember's eventual long-lived runtime, derived from implemented endogenous cognition, specialist delegation, continuity, recovery, locking, and resource evidence without selecting a service topology."
+summary:
+  "Issue #80 requirements for Ember's eventual long-lived runtime, derived from implemented endogenous cognition,
+  specialist delegation, continuity, recovery, locking, and resource evidence without selecting a service topology."
 read_when:
   - "Comparing foreground, externally triggered, daemon, or supervised-service runtime topologies for issue #81"
-  - "Implementing or reviewing unattended wake-up, long-running specialist work ownership, restart recovery, shutdown, locking, status, or runtime configuration"
-  - "Checking which long-lived capabilities are actually earned by issues #48, #50, #79, and #95 before adding service machinery"
+  - "Implementing or reviewing unattended wake-up, long-running specialist work ownership, restart recovery, shutdown,
+    locking, status, or runtime configuration"
+  - "Checking which long-lived capabilities are actually earned by issues #48, #50, #79, and #95 before adding service
+    machinery"
 role: design
 discovery_status: current
 ---
 
 # Long-Lived Runtime Requirements
 
-> Status: current requirements artifact for issue #80. This document derives the
-> smallest operational capabilities earned by Ember's implemented specialist and
-> endogenous-cognition slices. It deliberately does **not** select a foreground
-> process, daemon, service manager, scheduler, queue, IPC protocol, or deployment
-> topology. Issue #81 owns that comparison and decision.
+> Status: current requirements artifact for issue #80. This document derives the smallest operational capabilities
+> earned by Ember's implemented specialist and endogenous-cognition slices. It deliberately does **not** select a
+> foreground process, daemon, service manager, scheduler, queue, IPC protocol, or deployment topology. Issue #81 owns
+> that comparison and decision.
 
 ## Purpose
 
-Ember now has two behaviors whose semantic lifetime can exceed one ordinary CLI
-interaction:
+Ember now has two behaviors whose semantic lifetime can exceed one ordinary CLI interaction:
 
-1. a bounded Codex specialist episode whose objective, authority, observations,
-   uncertainty, and reintegration state are durable independently of the Codex
-   thread; and
-2. a topic-free cognition opportunity path that can reactivate durable concerns,
-   choose intentional silence, defer repeated unchanged attention locally, and
-   separately decide whether completed cognition deserves user interruption.
+1. a bounded Codex specialist episode whose objective, authority, observations, uncertainty, and reintegration state are
+   durable independently of the Codex thread; and
+2. a topic-free cognition opportunity path that can reactivate durable concerns, choose intentional silence, defer
+   repeated unchanged attention locally, and separately decide whether completed cognition deserves user interruption.
 
-Those features create real operational pressure, but not every pressure implies a
-resident daemon. This note identifies what the eventual runtime **must make
-possible** and what simpler foreground or externally triggered execution still
+Those features create real operational pressure, but not every pressure implies a resident daemon. This note identifies
+what the eventual runtime **must make possible** and what simpler foreground or externally triggered execution still
 satisfies.
 
-The governing distinction remains ADR 0005: process lifetime, session lifetime,
-work lifetime, occurrence, delivery, external effects, and current applicability are
-separate facts. A runtime topology is acceptable only if it preserves those facts
-rather than hiding them behind process-oriented statuses.
+The governing distinction remains ADR 0005: process lifetime, session lifetime, work lifetime, occurrence, delivery,
+external effects, and current applicability are separate facts. A runtime topology is acceptable only if it preserves
+those facts rather than hiding them behind process-oriented statuses.
 
 ## Evidence base
 
-The requirements below are derived from repository behavior and accepted design,
-not from product convention.
+The requirements below are derived from repository behavior and accepted design, not from product convention.
 
 | Evidence                                                                          | Operational pressure actually demonstrated                                                                                                                                                                                                                                     |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -56,23 +53,19 @@ not from product convention.
 
 ## Requirement vocabulary
 
-The words **must**, **should**, and **may** below describe implementation-neutral
-runtime requirements:
+The words **must**, **should**, and **may** below describe implementation-neutral runtime requirements:
 
 - **must**: required to preserve already accepted or implemented behavior;
-- **should**: strongly indicated by current evidence but may be satisfied in more
-  than one way by #81;
+- **should**: strongly indicated by current evidence but may be satisfied in more than one way by #81;
 - **may**: an allowed implementation choice, not an earned requirement.
 
-A requirement does not imply that one permanently resident Ember process must own
-it. A short-lived process plus an external trigger or supervisor may satisfy a
-requirement if the same semantics and failure behavior are preserved.
+A requirement does not imply that one permanently resident Ember process must own it. A short-lived process plus an
+external trigger or supervisor may satisfy a requirement if the same semantics and failure behavior are preserved.
 
 ## R1. Unattended cognition opportunities must be possible without attaching a CLI
 
-A live concern can remain current while no foreground interactive session exists.
-The eventual operational arrangement must therefore be able to cause a topic-free
-cognition opportunity without requiring the user to first open the CLI.
+A live concern can remain current while no foreground interactive session exists. The eventual operational arrangement
+must therefore be able to cause a topic-free cognition opportunity without requiring the user to first open the CLI.
 
 The wake-up mechanism must supply **opportunity**, not motive:
 
@@ -82,43 +75,39 @@ The wake-up mechanism must supply **opportunity**, not motive:
 - opportunity creation must not imply that cognition actually ran; and
 - missed opportunities during downtime must not be backfilled as fictional thought.
 
-This can be satisfied by a resident loop, an OS/service-manager timer, another local
-trigger, or a future surface/runtime event. #80 does not choose among them.
+This can be satisfied by a resident loop, an OS/service-manager timer, another local trigger, or a future
+surface/runtime event. #80 does not choose among them.
 
 ### Not earned
 
-Issues #79/#95 provide no evidence for a universal period such as "every N minutes",
-a cron-like prompt, or one evaluator call per wall-clock interval. Any topology that
-requires such a cadence merely for architectural convenience would be adding policy,
-not implementing a demonstrated requirement.
+Issues #79/#95 provide no evidence for a universal period such as "every N minutes", a cron-like prompt, or one
+evaluator call per wall-clock interval. Any topology that requires such a cadence merely for architectural convenience
+would be adding policy, not implementing a demonstrated requirement.
 
 ## R2. Elapsed time must be able to reopen attention when time is semantically relevant
 
-Issue #95's repeated-projection control intentionally defers an unchanged bounded
-projection after successful cognition. A fresh runtime currently reopens evaluation,
-but restart cadence must not become an accidental attention policy.
+Issue #95's repeated-projection control intentionally defers an unchanged bounded projection after successful cognition.
+A fresh runtime currently reopens evaluation, but restart cadence must not become an accidental attention policy.
 
-The eventual runtime must therefore provide a topology-independent way for elapsed
-time to matter **when** the meaning of a current concern depends on time. The exact
-representation is unresolved. Valid implementations could include a new currentness
-observation, a reconsideration epoch, or another explicit projection-relevant fact.
+The eventual runtime must therefore provide a topology-independent way for elapsed time to matter **when** the meaning
+of a current concern depends on time. The exact representation is unresolved. Valid implementations could include a new
+currentness observation, a reconsideration epoch, or another explicit projection-relevant fact.
 
 The runtime must not:
 
-- keep a semantically time-sensitive concern deferred forever merely because its
-  non-time projection identifiers are unchanged; or
+- keep a semantically time-sensitive concern deferred forever merely because its non-time projection identifiers are
+  unchanged; or
 - manufacture periodic cognition solely to avoid that failure.
 
 No fixed reconsideration duration is currently earned.
 
 ## R3. Live specialist work must have operational ownership independent of the initiating surface
 
-A specialist objective can remain live after the interaction that created it ends.
-The eventual runtime must make it possible for that work to retain an operational
-owner while no initiating CLI is attached.
+A specialist objective can remain live after the interaction that created it ends. The eventual runtime must make it
+possible for that work to retain an operational owner while no initiating CLI is attached.
 
-For an in-flight specialist episode, the owner must be able to preserve or later
-establish the strongest justified facts about:
+For an in-flight specialist episode, the owner must be able to preserve or later establish the strongest justified facts
+about:
 
 - whether launch was attempted and a direct child was observed;
 - whether the specialist is still believed to be running, blocked, exited, or lost;
@@ -127,12 +116,11 @@ establish the strongest justified facts about:
 - partial/final specialist evidence already observed; and
 - what reconciliation is required before consequential retry or result acceptance.
 
-This does not require preserving a Codex thread. Current specialist design treats
-replacement as a new Ember episode and keeps Codex-local continuity non-canonical.
+This does not require preserving a Codex thread. Current specialist design treats replacement as a new Ember episode and
+keeps Codex-local continuity non-canonical.
 
-If the selected topology cannot keep the original local child/runtime observable
-across an interaction boundary, it must still durably classify the resulting loss
-and uncertainty rather than silently treating the work as stopped or complete.
+If the selected topology cannot keep the original local child/runtime observable across an interaction boundary, it must
+still durably classify the resulting loss and uncertainty rather than silently treating the work as stopped or complete.
 
 ## R4. Operationally significant state must be durable before consequential transitions
 
@@ -143,17 +131,15 @@ Existing slices already persist important evidence before acting:
 - currentness/reintegration decisions are durably recorded; and
 - Ember continuity state survives complete process replacement.
 
-A long-lived topology must preserve that ordering discipline. Process memory may
-cache operational data, but restart correctness cannot depend on memory that was
-never durably represented before a consequential transition.
+A long-lived topology must preserve that ordering discipline. Process memory may cache operational data, but restart
+correctness cannot depend on memory that was never durably represented before a consequential transition.
 
-Durable state remains semantic/operational evidence, not proof that the process that
-wrote it is still alive.
+Durable state remains semantic/operational evidence, not proof that the process that wrote it is still alive.
 
 ## R5. Restart must reconcile incomplete work instead of replaying it
 
-On startup after an unclean stop, runtime loss, or host restart, Ember must inspect
-surviving evidence and reconstruct the strongest justified present.
+On startup after an unclean stop, runtime loss, or host restart, Ember must inspect surviving evidence and reconstruct
+the strongest justified present.
 
 At minimum the recovery path must be able to identify:
 
@@ -172,49 +158,41 @@ Recovery must not automatically:
 - recreate an old cognition prompt as though its assumptions were still current; or
 - replay every missed cognition opportunity accumulated during downtime.
 
-Issue #83 should turn these requirements into deterministic recovery scenarios
-against the topology selected by #81/#94.
+Issue #83 should turn these requirements into deterministic recovery scenarios against the topology selected by #81/#94.
 
 ## R6. Clean shutdown must preserve work truth, not merely terminate processes
 
-The selected runtime needs a defined clean-shutdown boundary. Shutting down the
-runtime may stop its ability to observe or execute work, but it must not silently
-rewrite the lifecycle of Ember-owned objectives or concerns.
+The selected runtime needs a defined clean-shutdown boundary. Shutting down the runtime may stop its ability to observe
+or execute work, but it must not silently rewrite the lifecycle of Ember-owned objectives or concerns.
 
 Before exit the runtime should, as applicable:
 
 - stop accepting new operational work;
 - persist the shutdown observation needed to distinguish a clean gap from a crash;
 - release or transfer any writer ownership safely;
-- either finish, explicitly request cancellation of, transfer ownership of, or
-  truthfully classify each in-flight specialist attempt; and
+- either finish, explicitly request cancellation of, transfer ownership of, or truthfully classify each in-flight
+  specialist attempt; and
 - leave unresolved work/concerns durable for later reconciliation.
 
-Whether shutdown waits for work, requests cancellation, or hands work to another
-supervised locus is a topology choice for #81. "Kill children and call everything
-cancelled" is not semantically sufficient.
+Whether shutdown waits for work, requests cancellation, or hands work to another supervised locus is a topology choice
+for #81. "Kill children and call everything cancelled" is not semantically sufficient.
 
 ## R7. Single-writer and concurrency safety must survive the topology change
 
-The current continuity store uses a cooperative exclusive-create writer lock and
-fails closed when ownership is live, foreign-host, malformed, permission-denied, or
-indeterminate. Stale-lock recovery requires explicit quiescence evidence rather than
-age alone.
+The current continuity store uses a cooperative exclusive-create writer lock and fails closed when ownership is live,
+foreign-host, malformed, permission-denied, or indeterminate. Stale-lock recovery requires explicit quiescence evidence
+rather than age alone.
 
 A long-lived runtime must retain equivalent safety properties:
 
-- two Ember writers must not concurrently mutate the same canonical state without a
-  new reviewed concurrency design;
-- double-start or overlapping trigger execution must fail safely or coordinate
-  through an explicit writer boundary;
+- two Ember writers must not concurrently mutate the same canonical state without a new reviewed concurrency design;
+- double-start or overlapping trigger execution must fail safely or coordinate through an explicit writer boundary;
 - crash recovery must not treat elapsed lock age as proof that no writer exists;
 - PID/process identity must remain operational evidence only, never Ember identity;
-- read-only status/inspection should remain possible without manufacturing write
-  ownership where feasible.
+- read-only status/inspection should remain possible without manufacturing write ownership where feasible.
 
-A daemon/service manager does not by itself solve writer correctness. Likewise an
-external periodic trigger is acceptable only if overlapping invocations cannot
-violate the store boundary.
+A daemon/service manager does not by itself solve writer correctness. Likewise an external periodic trigger is
+acceptable only if overlapping invocations cannot violate the store boundary.
 
 ## R8. Status and inspection must expose semantic-operational truth, not only service liveness
 
@@ -226,20 +204,17 @@ The eventual runtime must provide an operator-visible way to distinguish at leas
 - unresolved recovery/effect reconciliation;
 - current pending concerns/opportunities where the implementation can justify them;
 - last clean/unclean runtime boundary and truthful downtime gaps; and
-- degraded conditions such as state-lock contention or unavailable provider/runtime
-  capability.
+- degraded conditions such as state-lock contention or unavailable provider/runtime capability.
 
-A process-manager status such as `active (running)` may be included but cannot be the
-complete Ember status surface. Conversely, Ember status must not claim a provider,
-child process, external effect, or delivery is healthy merely because the core
-process is alive.
+A process-manager status such as `active (running)` may be included but cannot be the complete Ember status surface.
+Conversely, Ember status must not claim a provider, child process, external effect, or delivery is healthy merely
+because the core process is alive.
 
 ## R9. Runtime configuration must be explicit and secrets must remain runtime-owned where already established
 
-Long-lived execution removes some ambient assumptions that are convenient in an
-interactive shell. The selected topology must therefore have an explicit,
-inspectable configuration boundary for the capabilities it actually needs, including
-as applicable:
+Long-lived execution removes some ambient assumptions that are convenient in an interactive shell. The selected topology
+must therefore have an explicit, inspectable configuration boundary for the capabilities it actually needs, including as
+applicable:
 
 - canonical state path and local principal/configuration identity;
 - provider/specialist executable selection and bounded arguments;
@@ -248,52 +223,42 @@ as applicable:
 - log/status/runtime directories when required by the topology; and
 - host/service-manager integration settings.
 
-Existing subscription-backed provider authentication remains owned by the external
-runtime. Ember must not copy Codex credentials into canonical state or service
-configuration merely to make unattended execution convenient. A service deployment
-may need deliberate access to the runtime-owned credential store, but that is host
-capability/configuration, not new Ember authority.
+Existing subscription-backed provider authentication remains owned by the external runtime. Ember must not copy Codex
+credentials into canonical state or service configuration merely to make unattended execution convenient. A service
+deployment may need deliberate access to the runtime-owned credential store, but that is host capability/configuration,
+not new Ember authority.
 
-Machine-specific paths, tokens, chat identifiers, and credentials must not become
-committed repository defaults.
+Machine-specific paths, tokens, chat identifiers, and credentials must not become committed repository defaults.
 
 ## R10. Resource behavior must be measurable as a resident core and attributed child processes
 
-The current endogenous evaluation measured one scripted orchestration process at
-roughly 94-100 MiB RSS on one CI host and explicitly did **not** observe external
-Codex child-process resources. Earlier runtime evaluation showed only small
-workload-specific Node/Deno resident differences. Neither result is a steady-state
-service budget.
+The current endogenous evaluation measured one scripted orchestration process at roughly 94-100 MiB RSS on one CI host
+and explicitly did **not** observe external Codex child-process resources. Earlier runtime evaluation showed only small
+workload-specific Node/Deno resident differences. Neither result is a steady-state service budget.
 
-Therefore #81/#94 must choose a topology that #82 can measure reproducibly, and the
-implementation must make it practical to distinguish:
+Therefore #81/#94 must choose a topology that #82 can measure reproducibly, and the implementation must make it
+practical to distinguish:
 
 - resident Ember core process(es);
 - transient cognition/specialist runtime children; and
-- any supervisor/service-manager process cost that is materially attributable to
-  the deployment.
+- any supervisor/service-manager process cost that is materially attributable to the deployment.
 
-No numeric RSS/CPU threshold is earned by current evidence. The resource requirement
-is instead: avoid adding permanently resident machinery that has no demonstrated
-semantic/operational purpose, and keep the topology observable enough for #82/#84 to
-measure real idle and active cost.
+No numeric RSS/CPU threshold is earned by current evidence. The resource requirement is instead: avoid adding
+permanently resident machinery that has no demonstrated semantic/operational purpose, and keep the topology observable
+enough for #82/#84 to measure real idle and active cost.
 
 ## R11. Interruption handoff must survive runtime boundaries; transport delivery is not yet required
 
-Issue #78 already separates completed internal cognition from the later interruption
-decision. A current authorized candidate may yield `deliver`, but that outcome only
-permits a later delivery layer to attempt contact; it is not itself delivery evidence.
-`defer` similarly means the candidate may remain useful without being surfaced now.
+Issue #78 already separates completed internal cognition from the later interruption decision. A current authorized
+candidate may yield `deliver`, but that outcome only permits a later delivery layer to attempt contact; it is not itself
+delivery evidence. `defer` similarly means the candidate may remain useful without being surfaced now.
 
-For unattended cognition, the selected runtime must therefore avoid making an
-interruption outcome depend on the continued existence of the process that computed
-it. If a `deliver` or semantically live `defer` handoff needs to survive a runtime
-boundary before any delivery layer can act, #81/#94 must preserve enough operational
-state to resume from that handoff truthfully rather than recomputing or dropping it
-silently.
+For unattended cognition, the selected runtime must therefore avoid making an interruption outcome depend on the
+continued existence of the process that computed it. If a `deliver` or semantically live `defer` handoff needs to
+survive a runtime boundary before any delivery layer can act, #81/#94 must preserve enough operational state to resume
+from that handoff truthfully rather than recomputing or dropping it silently.
 
-That requirement does **not** yet earn transport infrastructure. #51 does not
-currently require:
+That requirement does **not** yet earn transport infrastructure. #51 does not currently require:
 
 - a notification queue or generic delivery scheduler;
 - Telegram delivery;
@@ -302,27 +267,23 @@ currently require:
 - durable transport occurrence/deduplication state owned by #85/#88; or
 - treating a reachable surface as the owner of a result.
 
-The topology should expose a narrow handoff boundary that can later be consumed by
-#52 without implementing future surface semantics early. Actual delivery attempts,
-transport retry/replay, recipient mapping, and delivery uncertainty remain work for
-the secondary-surface epic.
+The topology should expose a narrow handoff boundary that can later be consumed by #52 without implementing future
+surface semantics early. Actual delivery attempts, transport retry/replay, recipient mapping, and delivery uncertainty
+remain work for the secondary-surface epic.
 
 ## R12. Platform and supervision assumptions must remain explicit
 
-Current repository execution is proven on Node.js 26 and a local Linux filesystem.
-The lock runbook and process termination behavior already contain Linux-specific
-observations. #81 must therefore state which hosts it is selecting for the first
-long-lived deployment and which parts remain portable Ember core semantics.
+Current repository execution is proven on Node.js 26 and a local Linux filesystem. The lock runbook and process
+termination behavior already contain Linux-specific observations. #81 must therefore state which hosts it is selecting
+for the first long-lived deployment and which parts remain portable Ember core semantics.
 
-The requirements in this document do not demand systemd, launchd, containers,
-Windows services, or multi-host execution. If one platform-specific supervisor is
-selected, startup/restart/install details may be platform-specific while durable
+The requirements in this document do not demand systemd, launchd, containers, Windows services, or multi-host execution.
+If one platform-specific supervisor is selected, startup/restart/install details may be platform-specific while durable
 Ember semantics remain independent of that supervisor's identity and state model.
 
 ## Negative evidence: what still works without a daemon
 
-The completed slices leave substantial evidence against premature service
-complexity.
+The completed slices leave substantial evidence against premature service complexity.
 
 | Capability                                       | Foreground process or simpler trigger remains sufficient because...                                                                                                                          |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -334,11 +295,10 @@ complexity.
 | Durable specialist history after completion/loss | Episode records and reintegration evidence survive process exit without preserving a Codex thread.                                                                                           |
 | Transport delivery                               | There is no second production surface yet, so unattended outbound transport is not part of #51's demonstrated requirement set. The narrow interruption handoff in R11 is sufficient for #81. |
 
-The strongest pressure **for** a long-lived operational locus is not continuity by
-itself. It is the combination of unattended opportunities and owning/observing
-specialist work while no interactive process is attached. #81 should compare whether
-those pressures are best satisfied by one resident Ember process, supervised
-short-lived executions plus external ownership, or another smaller local arrangement.
+The strongest pressure **for** a long-lived operational locus is not continuity by itself. It is the combination of
+unattended opportunities and owning/observing specialist work while no interactive process is attached. #81 should
+compare whether those pressures are best satisfied by one resident Ember process, supervised short-lived executions plus
+external ownership, or another smaller local arrangement.
 
 ## Requirement-to-topology handoff for #81
 
@@ -376,8 +336,7 @@ No current evidence requires any of the following:
 - service identity as Ember identity; or
 - a new persistence technology merely because the process becomes long-lived.
 
-Any of these may become justified by later evidence. None should be treated as an
-input assumption to #81.
+Any of these may become justified by later evidence. None should be treated as an input assumption to #81.
 
 ## Definition-of-done mapping
 

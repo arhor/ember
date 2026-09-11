@@ -1,26 +1,27 @@
 ---
-summary: "Index for Ember's accepted semantic baseline and subordinate implementation architecture decisions, plus the cross-ADR semantic validation matrix."
+summary:
+  "Index for Ember's accepted semantic baseline and subordinate implementation architecture decisions, plus the
+  cross-ADR semantic validation matrix."
 read_when:
   - "Checking which accepted semantic or implementation decisions constrain an architecture change"
-  - "Validating restart, memory correction, delegation, authority, delivery, recovery, or implementation-stack behavior across ADRs"
+  - "Validating restart, memory correction, delegation, authority, delivery, recovery, or implementation-stack behavior
+    across ADRs"
 role: guide
 discovery_status: current
 ---
 
 # Ember Architecture Decisions
 
-Ember separates representation-neutral semantic decisions from implementation and
-runtime decisions.
+Ember separates representation-neutral semantic decisions from implementation and runtime decisions.
 
-ADRs 0001-0005 form the stable semantic boundary between the completed research
-programme and later implementation architecture. They constrain what every future
-representation must mean without selecting how that meaning is represented.
+ADRs 0001-0005 form the stable semantic boundary between the completed research programme and later implementation
+architecture. They constrain what every future representation must mean without selecting how that meaning is
+represented.
 
-Later implementation ADRs are subordinate to that semantic baseline. They may
-select a runtime, language, storage mechanism, protocol, or other representation
-choice only where the accepted semantic decisions leave that choice open. Replacing
-an implementation ADR does not weaken or supersede the semantic baseline unless a
-new decision explicitly confronts and supersedes the affected semantic ADR.
+Later implementation ADRs are subordinate to that semantic baseline. They may select a runtime, language, storage
+mechanism, protocol, or other representation choice only where the accepted semantic decisions leave that choice open.
+Replacing an implementation ADR does not weaken or supersede the semantic baseline unless a new decision explicitly
+confronts and supersedes the affected semantic ADR.
 
 ## Semantic baseline
 
@@ -42,25 +43,22 @@ new decision explicitly confronts and supersedes the affected semantic ADR.
 
 ## Decision discipline
 
-- ADRs 0001-0005 preserve semantic invariants. They do not select a storage
-  schema, prompt layout, runtime topology, protocol, or implementation language.
-- A later representation may change without replacing a semantic ADR when it
-  preserves the decision's meaning and constraints.
-- Implementation ADRs record selected representations and remain below the
-  semantic baseline. Convenience, tooling, performance, or ecosystem breadth
-  cannot silently redefine semantic meaning.
-- A proposal that cannot preserve a semantic decision must explicitly supersede
-  the affected ADR rather than violating it for implementation convenience.
-- Questions labelled unresolved remain open hypotheses. An accepted ADR must not
-  be read as having resolved them indirectly.
+- ADRs 0001-0005 preserve semantic invariants. They do not select a storage schema, prompt layout, runtime topology,
+  protocol, or implementation language.
+- A later representation may change without replacing a semantic ADR when it preserves the decision's meaning and
+  constraints.
+- Implementation ADRs record selected representations and remain below the semantic baseline. Convenience, tooling,
+  performance, or ecosystem breadth cannot silently redefine semantic meaning.
+- A proposal that cannot preserve a semantic decision must explicitly supersede the affected ADR rather than violating
+  it for implementation convenience.
+- Questions labelled unresolved remain open hypotheses. An accepted ADR must not be read as having resolved them
+  indirectly.
 
 ## Cross-ADR semantic validation matrix
 
-The following cases are the mandatory validation set from
-[issue #20](https://github.com/arhor/ember/issues/20). "Governing ADRs" identifies
-the semantic decisions that jointly constrain each case; it does not prescribe a
-mechanism. Implementation decisions such as ADR 0006, ADR 0007, and ADR 0008 must
-preserve every required result below.
+The following cases are the mandatory validation set from [issue #20](https://github.com/arhor/ember/issues/20).
+"Governing ADRs" identifies the semantic decisions that jointly constrain each case; it does not prescribe a mechanism.
+Implementation decisions such as ADR 0006, ADR 0007, and ADR 0008 must preserve every required result below.
 
 | #   | Case                                                                        | Governing ADRs                                                                                                                                                                                                                                               | Required semantic result                                                                                                                                                                                          |
 | --- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -75,7 +73,6 @@ preserve every required result below.
 | 9   | A session ends while work remains live                                      | [0001](0001-continuity-belongs-to-ember.md), [0002](0002-preserve-persistent-meaning.md), [0003](0003-use-least-sufficient-permitted-projections.md), [0005](0005-distinguish-operational-continuity.md)                                                     | Work continues to exist while its purpose remains live. Its objective, constraints, delegation boundary, authority provenance, effects, and uncertainty remain recoverable independently of the session.          |
 | 10  | Recovery with a genuine information gap                                     | [0001](0001-continuity-belongs-to-ember.md), [0002](0002-preserve-persistent-meaning.md), [0003](0003-use-least-sufficient-permitted-projections.md), [0005](0005-distinguish-operational-continuity.md)                                                     | Recovery constructs the strongest justified present from surviving evidence and observation, explicitly preserves the gap, and never invents a seamless bridge.                                                   |
 
-The semantic set is internally consistent across all ten cases. The decisions
-deliberately leave representation, policy thresholds, and failure-recovery
-mechanisms open. [Issue #21](https://github.com/arhor/ember/issues/21) tracks the
+The semantic set is internally consistent across all ten cases. The decisions deliberately leave representation, policy
+thresholds, and failure-recovery mechanisms open. [Issue #21](https://github.com/arhor/ember/issues/21) tracks the
 broader reusable acceptance catalogue for evaluating those later choices.

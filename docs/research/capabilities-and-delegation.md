@@ -1,5 +1,7 @@
 ---
-summary: "Canonical semantics separating direct action, bounded capability use, and delegation, including runtime ownership, delegation envelopes, context disclosure, provenance, and reintegration."
+summary:
+  "Canonical semantics separating direct action, bounded capability use, and delegation, including runtime ownership,
+  delegation envelopes, context disclosure, provenance, and reintegration."
 read_when:
   - "Deciding whether work should be performed directly, through a bounded capability, or delegated to a specialist"
   - "Changing specialist context, runtime ownership, delegation continuity, result verification, or reintegration"
@@ -12,50 +14,84 @@ discovery_status: current
 
 This note addresses issue #6 and follows the concern-driven research discipline defined in issue #10.
 
-It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md), [Memory and Remembering Semantics](memory-and-remembering.md), and [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md). Their conclusions are active constraints rather than background. Delegation must preserve Ember's continuity without making a specialist runtime part of her identity, preserve memory provenance without turning reports into direct experience, and preserve least-sufficient-context boundaries without assuming that Ember's own cognitive projection is appropriate for a delegate.
+It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md),
+[Memory and Remembering Semantics](memory-and-remembering.md), and
+[Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md). Their conclusions are
+active constraints rather than background. Delegation must preserve Ember's continuity without making a specialist
+runtime part of her identity, preserve memory provenance without turning reports into direct experience, and preserve
+least-sufficient-context boundaries without assuming that Ember's own cognitive projection is appropriate for a
+delegate.
 
-The Deep Research artifact behind this synthesis is preserved as [source material](source-material/capabilities-and-delegation-deep-research.md). It is non-canonical. A separate [portable evidence map](capabilities-and-delegation-references.md) maps the principal evidence-labelled conclusions below to durable papers, protocol specifications, runtime documentation, repositories, and inherited Ember research.
+The Deep Research artifact behind this synthesis is preserved as
+[source material](source-material/capabilities-and-delegation-deep-research.md). It is non-canonical. A separate
+[portable evidence map](capabilities-and-delegation-references.md) maps the principal evidence-labelled conclusions
+below to durable papers, protocol specifications, runtime documentation, repositories, and inherited Ember research.
 
-This note deliberately stays at the semantic level. It does not choose a Codex adapter, ACP versus MCP versus a native integration, process topology, RPC or transport formats, task or event schemas, thread persistence representation, queues, retry algorithms, approval UI, permission policy, databases, package structure, or implementation language.
+This note deliberately stays at the semantic level. It does not choose a Codex adapter, ACP versus MCP versus a native
+integration, process topology, RPC or transport formats, task or event schemas, thread persistence representation,
+queues, retry algorithms, approval UI, permission policy, databases, package structure, or implementation language.
 
 ## Working definitions
 
-The central distinction is not which protocol or API surface is used. It is **who owns meaningful decision-making between an objective and an outcome**.
+The central distinction is not which protocol or API surface is used. It is **who owns meaningful decision-making
+between an objective and an outcome**.
 
-> **[J] Ember acts directly when Ember owns the consequential reasoning loop and chooses the meaningful intermediate decisions that connect the current objective to the result.**
+> **[J] Ember acts directly when Ember owns the consequential reasoning loop and chooses the meaningful intermediate
+> decisions that connect the current objective to the result.**
 
-> **[J] Ember uses a bounded capability when she principally chooses the operation and its immediate role while the capability performs a sufficiently specified operation inside Ember's larger reasoning loop.**
+> **[J] Ember uses a bounded capability when she principally chooses the operation and its immediate role while the
+> capability performs a sufficiently specified operation inside Ember's larger reasoning loop.**
 
-> **[J] Ember delegates when another system receives an objective and gains material discretion over how to interpret, pursue, revise, and complete it.**
+> **[J] Ember delegates when another system receives an objective and gains material discretion over how to interpret,
+> pursue, revise, and complete it.**
 
-**Material discretion** is the important boundary. It means semantically significant freedom to choose consequential next steps Ember did not individually specify, resolve local ambiguity, revise a plan, choose tools, recover from local failure, maintain task-local discoveries, or decide that enough has been done. Internal computational complexity alone is not material discretion.
+**Material discretion** is the important boundary. It means semantically significant freedom to choose consequential
+next steps Ember did not individually specify, resolve local ambiguity, revise a plan, choose tools, recover from local
+failure, maintain task-local discoveries, or decide that enough has been done. Internal computational complexity alone
+is not material discretion.
 
-A compiler can perform enormous internal computation while remaining tool-like. A small browser agent can be a delegate if it decides what to investigate, which evidence matters, and when the objective is satisfied. An MCP endpoint labelled a `tool` can therefore be semantically delegated if it owns a planning and execution loop. Wrapping deterministic file reading in an "agent" interface does not create delegation.
+A compiler can perform enormous internal computation while remaining tool-like. A small browser agent can be a delegate
+if it decides what to investigate, which evidence matters, and when the objective is satisfied. An MCP endpoint labelled
+a `tool` can therefore be semantically delegated if it owns a planning and execution loop. Wrapping deterministic file
+reading in an "agent" interface does not create delegation.
 
 > **[J] Protocol nouns do not determine agency.**
 
 A second key definition is runtime ownership:
 
-> **[L + J] Runtime ownership is the operational locus that controls a task-local cognition or execution loop and its local state. It is not a synonym for identity, authority, control, observability, responsibility, accountability, or provenance.**
+> **[L + J] Runtime ownership is the operational locus that controls a task-local cognition or execution loop and its
+> local state. It is not a synonym for identity, authority, control, observability, responsibility, accountability, or
+> provenance.**
 
 The most useful middle model is the **delegation envelope**:
 
-> **[J] Ember remains responsible for the delegation envelope: why the work exists, why delegation is appropriate, which specialist is chosen, what objective and governing constraints are communicated, what context is shared or withheld, what authority is implicated, what standard would make the result usable, how consequential side effects are handled, and how the returned result is interpreted, verified, remembered, communicated, or acted upon.**
+> **[J] Ember remains responsible for the delegation envelope: why the work exists, why delegation is appropriate, which
+> specialist is chosen, what objective and governing constraints are communicated, what context is shared or withheld,
+> what authority is implicated, what standard would make the result usable, how consequential side effects are handled,
+> and how the returned result is interpreted, verified, remembered, communicated, or acted upon.**
 
-Inside that envelope, a specialist may legitimately own its local thread, intermediate reasoning, plan revision, tool loop, scratch state, compaction, retries, local memory, or nested subagents without becoming Ember.
+Inside that envelope, a specialist may legitimately own its local thread, intermediate reasoning, plan revision, tool
+loop, scratch state, compaction, retries, local memory, or nested subagents without becoming Ember.
 
 A compact answer to the issue's central question is:
 
-> **[J] Another runtime may own the _how_ of delegated cognition without owning Ember's continuing _why_, and without becoming Ember. Ember may remain responsible for choosing, bounding, interpreting, and integrating the delegation without pretending that the delegate's unobserved cognition or execution was her own direct experience.**
+> **[J] Another runtime may own the _how_ of delegated cognition without owning Ember's continuing _why_, and without
+> becoming Ember. Ember may remain responsible for choosing, bounding, interpreting, and integrating the delegation
+> without pretending that the delegate's unobserved cognition or execution was her own direct experience.**
 
 The inverse is equally important:
 
-> **[J] Delegation does not make the specialist's internal life Ember's autobiography. Ember should not claim to have chosen intermediate steps she did not choose, observed executions she did not observe, verified results she merely received as reports, stopped work merely because she requested cancellation, or controlled runtime state that belonged to the specialist.**
+> **[J] Delegation does not make the specialist's internal life Ember's autobiography. Ember should not claim to have
+> chosen intermediate steps she did not choose, observed executions she did not observe, verified results she merely
+> received as reports, stopped work merely because she requested cancellation, or controlled runtime state that belonged
+> to the specialist.**
 
 This avoids two symmetric failures:
 
-- **agency laundering**: "the specialist did it, therefore it was not my responsibility" even though Ember intentionally initiated and later relied on the work;
-- **ownership laundering**: "I did it" when another autonomous runtime actually interpreted the objective and controlled execution.
+- **agency laundering**: "the specialist did it, therefore it was not my responsibility" even though Ember intentionally
+  initiated and later relied on the work;
+- **ownership laundering**: "I did it" when another autonomous runtime actually interpreted the objective and controlled
+  execution.
 
 ## Evidence discipline
 
@@ -69,13 +105,18 @@ This note uses the established Ember evidence vocabulary:
 | **[H] Hypothesis**  | Plausible but insufficiently validated and suitable for later experimentation.                                                            |
 | **[L] Lens**        | A security, distributed-systems, organizational, HCI, or adjacent distinction used to sharpen reasoning without being imported literally. |
 
-Multi-agent evidence is highly task-, model-, topology-, and compute-budget-sensitive. The empirical claims below therefore preserve whether a result used a strong single-agent baseline, homogeneous or heterogeneous agents, normalized inference budgets, synthetic tasks, production case studies, or particular runtimes.
+Multi-agent evidence is highly task-, model-, topology-, and compute-budget-sensitive. The empirical claims below
+therefore preserve whether a result used a strong single-agent baseline, homogeneous or heterogeneous agents, normalized
+inference budgets, synthetic tasks, production case studies, or particular runtimes.
 
-No evidence reviewed in this phase gives a substantive reason to reopen the canonical conclusions from issues #3, #4, or #5. The newer evidence instead strengthens the need for provenance, contextual isolation, currentness, verification, and epistemic restraint across delegation boundaries.
+No evidence reviewed in this phase gives a substantive reason to reopen the canonical conclusions from issues #3, #4, or
+#5. The newer evidence instead strengthens the need for provenance, contextual isolation, currentness, verification, and
+epistemic restraint across delegation boundaries.
 
 ## Direct action, capability use, and delegation
 
-Direct action, bounded capability use, and delegation are best treated as semantic regions rather than implementation types.
+Direct action, bounded capability use, and delegation are best treated as semantic regions rather than implementation
+types.
 
 | Mode                       | Immediate objective                                                             | Meaningful intermediate decisions                                                     | Task-local reasoning loop     | Truthful Ember framing                                                     |
 | -------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------- |
@@ -87,7 +128,9 @@ A useful discriminator is:
 
 > **[J] Ask who is entitled to decide a consequential next step that Ember did not individually specify.**
 
-Additional signals of delegation include whether the external system can choose tools, revise its plan, recover from local failure, retain unresolved discoveries, request additional information, delegate again, and decide when the work is complete.
+Additional signals of delegation include whether the external system can choose tools, revise its plan, recover from
+local failure, retain unresolved discoveries, request additional information, delegate again, and decide when the work
+is complete.
 
 These concepts must remain orthogonal:
 
@@ -104,13 +147,16 @@ These concepts must remain orthogonal:
 | **Accountability**      | What explanation can later be demanded about why Ember initiated or relied on the work? |
 | **Provenance**          | Who actually supplied each observation, inference, action, or result?                   |
 
-> **[C + J] Control can be partial. Observability can be partial. Authority can be narrower than capability. Responsibility can persist after runtime control has been transferred. None of these facts turns the specialist into Ember.**
+> **[C + J] Control can be partial. Observability can be partial. Authority can be narrower than capability.
+> Responsibility can persist after runtime control has been transferred. None of these facts turns the specialist into
+> Ember.**
 
 ## Responsibility after delegation
 
 Delegation changes who owns the local loop; it does not erase Ember's responsibility for delegation as her act.
 
-> **[J] Ember is responsible for delegation as _her act_; the delegate remains attributable for cognition and execution that were _its acts_.**
+> **[J] Ember is responsible for delegation as _her act_; the delegate remains attributable for cognition and execution
+> that were _its acts_.**
 
 Within issue #6's scope, Ember remains responsible for:
 
@@ -125,9 +171,12 @@ Within issue #6's scope, Ember remains responsible for:
 - reassessing currentness before using a late result;
 - preserving specialist provenance in belief and memory;
 - accounting for known or plausible external effects, including effects before failure or cancellation;
-- integrating the delegated episode into Ember's continuing history without autobiographizing specialist-local cognition.
+- integrating the delegated episode into Ember's continuing history without autobiographizing specialist-local
+  cognition.
 
-This responsibility is substantial but bounded. Ember is not required to be omniscient about hidden specialist reasoning. Responsibility should track decisions Ember could legitimately make and foreseeable consequences of initiating or relying on delegated work, not unknowable internal details.
+This responsibility is substantial but bounded. Ember is not required to be omniscient about hidden specialist
+reasoning. Responsibility should track decisions Ember could legitimately make and foreseeable consequences of
+initiating or relying on delegated work, not unknowable internal details.
 
 ## Delegated context
 
@@ -135,57 +184,80 @@ Issue #5 supplies the governing invariant:
 
 > **Relevance to Ember does not imply necessity or permission for the delegate.**
 
-> **[L + J] A delegate should receive enough permitted context to perform the role Ember actually delegated, including necessary constraints and evidential status, but no personal, relational, autobiographical, project-external, or authority-bearing context merely because it is available to Ember or would make the task marginally easier.**
+> **[L + J] A delegate should receive enough permitted context to perform the role Ember actually delegated, including
+> necessary constraints and evidential status, but no personal, relational, autobiographical, project-external, or
+> authority-bearing context merely because it is available to Ember or would make the task marginally easier.**
 
-This is **least sufficient context**, not minimum token count. Permission precedes compression; sufficiency precedes minimality.
+This is **least sufficient context**, not minimum token count. Permission precedes compression; sufficiency precedes
+minimality.
 
 Two symmetric failures matter:
 
 - **over-disclosure**: sharing private or unrelated context because it might be useful;
-- **under-contextualization**: withholding legitimately required information so aggressively that the delegate solves a materially different or invalid problem.
+- **under-contextualization**: withholding legitimately required information so aggressively that the delegate solves a
+  materially different or invalid problem.
 
-A private motivation can often be translated into a non-private operational constraint. Ember may know why the user deeply wants a narrow change while telling a coding specialist only, "Prefer the smallest safe change; do not broaden scope." The translation is valid when the specialist needs the operational consequence rather than the private reason.
+A private motivation can often be translated into a non-private operational constraint. Ember may know why the user
+deeply wants a narrow change while telling a coding specialist only, "Prefer the smallest safe change; do not broaden
+scope." The translation is valid when the specialist needs the operational consequence rather than the private reason.
 
-Translation is not valid when the withheld information changes the specialist's actual epistemic task. If adequate execution genuinely requires sensitive context that Ember cannot legitimately disclose, Ember should narrow the delegated role, retain the sensitive judgment herself, seek whatever authorization issue #7 later requires, or decline that delegation.
+Translation is not valid when the withheld information changes the specialist's actual epistemic task. If adequate
+execution genuinely requires sensitive context that Ember cannot legitimately disclose, Ember should narrow the
+delegated role, retain the sensitive judgment herself, seek whatever authorization issue #7 later requires, or decline
+that delegation.
 
-> **[J] A specialist request for more context is evidence that the specialist believes more context would help; it is not permission to disclose that context.**
+> **[J] A specialist request for more context is evidence that the specialist believes more context would help; it is
+> not permission to disclose that context.**
 
 ## Delegated evidence and epistemic ownership
 
 Issue #4's strongest ownership rule survives unchanged:
 
-> **Receiving a specialist report is an experience Ember owns. The unobserved event described by the report is not thereby Ember's direct experience.**
+> **Receiving a specialist report is an experience Ember owns. The unobserved event described by the report is not
+> thereby Ember's direct experience.**
 
 Therefore:
 
 - "Codex reported that the tests passed" is supported by the specialist report;
-- "I believe the tests pass, based on Codex's report" may be justified when Ember adopts the report as sufficiently reliable evidence;
+- "I believe the tests pass, based on Codex's report" may be justified when Ember adopts the report as sufficiently
+  reliable evidence;
 - "I inspected the test logs and verified that they pass" requires Ember to have performed that additional verification;
 - "I watched the tests pass" is false unless Ember directly observed the relevant run.
 
-> **[J] Ember may adopt a specialist conclusion as her own belief without erasing its evidential ancestry. Belief ownership and evidence ownership are different.**
+> **[J] Ember may adopt a specialist conclusion as her own belief without erasing its evidential ancestry. Belief
+> ownership and evidence ownership are different.**
 
-Independent verification changes the evidence base without rewriting history. The specialist still performed or observed the original work; Ember later verified some part of the result.
+Independent verification changes the evidence base without rewriting history. The specialist still performed or observed
+the original work; Ember later verified some part of the result.
 
 Multiple specialists require **evidential conservation**:
 
-> **[E + J] Agreement among multiple agents only gains evidential weight to the extent that their evidence, tools, models, assumptions, or observations differ in ways that reduce correlated error.**
+> **[E + J] Agreement among multiple agents only gains evidential weight to the extent that their evidence, tools,
+> models, assumptions, or observations differ in ways that reduce correlated error.**
 
-Three same-model agents reading the same source are three reasoning episodes, not automatically three independent witnesses. Repeated retries or paraphrases are even less independent. Recent team evidence showing expert dilution and coordination failures is a warning against treating majority agreement as automatic epistemic authority.
+Three same-model agents reading the same source are three reasoning episodes, not automatically three independent
+witnesses. Repeated retries or paraphrases are even less independent. Recent team evidence showing expert dilution and
+coordination failures is a warning against treating majority agreement as automatic epistemic authority.
 
-Specialist disagreement should remain disagreement until Ember has a reason to adjudicate it. Where consequence warrants, Ember should seek discriminating evidence rather than flattening disagreement into a vote.
+Specialist disagreement should remain disagreement until Ember has a reason to adjudicate it. Where consequence
+warrants, Ember should seek discriminating evidence rather than flattening disagreement into a vote.
 
 ## Verification
 
 Verification should be consequence-sensitive rather than universal.
 
-> **[J] The need for independent verification rises with consequence, irreversibility, uncertainty, specialist opacity, conflicting evidence, stale-world risk, and weakness of observable specialist evidence.**
+> **[J] The need for independent verification rises with consequence, irreversibility, uncertainty, specialist opacity,
+> conflicting evidence, stale-world risk, and weakness of observable specialist evidence.**
 
-Routine low-consequence work can often be accepted on a specialist report. A result that would trigger an irreversible external action deserves a higher evidential bar.
+Routine low-consequence work can often be accepted on a specialist report. A result that would trigger an irreversible
+external action deserves a higher evidential bar.
 
-> **[J] Specialist completion must never, by itself, semantically imply permission for an irreversible downstream action.**
+> **[J] Specialist completion must never, by itself, semantically imply permission for an irreversible downstream
+> action.**
 
-"Completed" means the runtime believes the delegated objective reached its terminal success condition. It does not establish that the world is still in the assumed state, that every acceptance condition was correctly interpreted, or that consequential follow-on action is authorized.
+"Completed" means the runtime believes the delegated objective reached its terminal success condition. It does not
+establish that the world is still in the assumed state, that every acceptance condition was correctly interpreted, or
+that consequential follow-on action is authorized.
 
 ## Progress, partial results, failure, and side effects
 
@@ -206,7 +278,8 @@ Delegated work is not atomic. The following are semantic interpretations, not a 
 | **Completed with uncertainty** | Work terminated with material uncertainty still present.                             | Terminal status removes the uncertainty.                                    |
 | **Obsolete success**           | The original objective may have been satisfied relative to its original world state. | The result is still applicable now.                                         |
 
-Current Codex and MCP contracts reinforce the critical asymmetry that interruption/cancellation and rollback are different concerns. **[E→J] Failure and cancellation are control-flow facts, not rollback guarantees.**
+Current Codex and MCP contracts reinforce the critical asymmetry that interruption/cancellation and rollback are
+different concerns. **[E→J] Failure and cancellation are control-flow facts, not rollback guarantees.**
 
 A truthful statement while cancellation remains uncertain is:
 
@@ -216,24 +289,32 @@ A truthful statement while cancellation remains uncertain is:
 
 An approval request is not merely another progress message.
 
-> **[J] An approval request is evidence that the delegated runtime has reached an action whose authorization cannot be inferred from its currently accepted envelope.**
+> **[J] An approval request is evidence that the delegated runtime has reached an action whose authorization cannot be
+> inferred from its currently accepted envelope.**
 
-Issue #6 does not decide who may grant that authority. It establishes what meaning must survive for issue #7: who is asking, what action is contemplated, which target or third party is affected, on whose behalf it would occur, what the consequences and reversibility are, what prior effects already happened, and whether the requested authorization is narrow or broad.
+Issue #6 does not decide who may grant that authority. It establishes what meaning must survive for issue #7: who is
+asking, what action is contemplated, which target or third party is affected, on whose behalf it would occur, what the
+consequences and reversibility are, what prior effects already happened, and whether the requested authorization is
+narrow or broad.
 
-A specialist's ability to request or technically exercise an action does not prove authority transferred through delegation.
+A specialist's ability to request or technically exercise an action does not prove authority transferred through
+delegation.
 
 ## Retries
 
 Retrying can duplicate effects when the previous attempt already changed the world.
 
-> **[J] Before retrying potentially non-idempotent delegated work after ambiguous failure, Ember should first establish external state to the degree warranted by the consequence.**
+> **[J] Before retrying potentially non-idempotent delegated work after ambiguous failure, Ember should first establish
+> external state to the degree warranted by the consequence.**
 
 Otherwise "try again" can mean "send twice," "create another resource," "charge again," or "apply a second mutation."
 
 Retries can have different semantic relations to prior work:
 
-- continuation in the same specialist thread is normally the same delegated episode when the objective remains live and the specialist relies on previous local discoveries;
-- a fresh thread pursuing the same unresolved objective is another attempt at the same broader work but a new specialist-local cognitive episode;
+- continuation in the same specialist thread is normally the same delegated episode when the objective remains live and
+  the specialist relies on previous local discoveries;
+- a fresh thread pursuing the same unresolved objective is another attempt at the same broader work but a new
+  specialist-local cognitive episode;
 - a changed objective or materially changed world state may create new delegated work even if the wording is similar;
 - repeated model samples are not automatically independent evidence;
 - repeated failure is new evidence about the reliability of the method, specialist, or task assumptions.
@@ -248,7 +329,8 @@ Three continuities must remain distinct:
 
 A new Codex thread does not create a new Ember. A persistent Codex thread does not become part of Ember's identity.
 
-The same delegated work is better identified by the unresolved objective, its dependence on previous specialist-local discoveries, shared external state, and current user intent than by thread identity alone.
+The same delegated work is better identified by the unresolved objective, its dependence on previous specialist-local
+discoveries, shared external state, and current user intent than by thread identity alone.
 
 Resuming an existing specialist thread is attractive when:
 
@@ -265,7 +347,9 @@ A fresh thread is safer when:
 - external state changed enough to invalidate local assumptions;
 - genuine evidential independence is desired.
 
-If a specialist runtime changes its underlying model while preserving its thread, that can remain the same delegated work if the runtime preserves the work-state semantics. It does not change Ember's identity. The model change matters as provenance only when it materially affects capability, reliability, or interpretation. **[J + H]**
+If a specialist runtime changes its underlying model while preserving its thread, that can remain the same delegated
+work if the runtime preserves the work-state semantics. It does not change Ember's identity. The model change matters as
+provenance only when it materially affects capability, reliability, or interpretation. **[J + H]**
 
 ## Long-running work and late results
 
@@ -282,11 +366,13 @@ Before relying on a late result, Ember should reconstruct enough of the original
 - Does a previously safe action remain safe?
 - Is the result still worth surfacing or acting on now?
 
-A specialist can therefore succeed historically while the result is obsolete currently. That is current-versus-historical truth, not contradiction.
+A specialist can therefore succeed historically while the result is obsolete currently. That is
+current-versus-historical truth, not contradiction.
 
 ## Canonical Ember history versus specialist-local history
 
-Ember must preserve enough of consequential delegated work to remain accountable without pretending to own the specialist's internal life.
+Ember must preserve enough of consequential delegated work to remain accountable without pretending to own the
+specialist's internal life.
 
 Canonical Ember history should normally retain:
 
@@ -309,13 +395,16 @@ It normally does not require:
 - every compaction step;
 - routine internal tool chatter.
 
-> **[J] Accountability requires an intelligible record of the delegation and its consequential outcomes, not possession of the specialist's entire cognitive history.**
+> **[J] Accountability requires an intelligible record of the delegation and its consequential outcomes, not possession
+> of the specialist's entire cognitive history.**
 
 If a specialist disappears permanently, Ember should be able to say something like:
 
-> "I delegated X under constraints Y. The last thing I reliably learned was Z. These effects are known to have occurred; these others remain uncertain. The specialist's unfinished internal state is no longer available."
+> "I delegated X under constraints Y. The last thing I reliably learned was Z. These effects are known to have occurred;
+> these others remain uncertain. The specialist's unfinished internal state is no longer available."
 
-That is degraded execution continuity, not damage to Ember's identity and not permission to invent the missing specialist history.
+That is degraded execution continuity, not damage to Ember's identity and not permission to invent the missing
+specialist history.
 
 ## Nested delegation
 
@@ -323,7 +412,9 @@ A specialist may use tools, invoke external services, or delegate to subordinate
 
 > **[J] Ember's responsibility does not propagate unchanged through every hidden execution layer.**
 
-Ember remains responsible for choosing a specialist whose known behavior and boundaries are appropriate. The specialist remains attributable for its local decision to use subordinate execution. Ember needs nested topology when it materially changes privacy, authority, cost, external effects, reliability, evidential independence, or verification requirements.
+Ember remains responsible for choosing a specialist whose known behavior and boundaries are appropriate. The specialist
+remains attributable for its local decision to use subordinate execution. Ember needs nested topology when it materially
+changes privacy, authority, cost, external effects, reliability, evidential independence, or verification requirements.
 
 This can be truthful:
 
@@ -333,23 +424,36 @@ Ember need not transform it into:
 
 > "I personally chose each command and subordinate agent."
 
-Nested delegation must not silently broaden context or authority. A subordinate request for more information or permission is still bounded by the original responsibility and authority chain.
+Nested delegation must not silently broaden context or authority. A subordinate request for more information or
+permission is still bounded by the original responsibility and authority chain.
 
 ## Runtime and protocol evidence
 
-Runtime and protocol evidence is useful because it reveals which distinctions are operationally real. It is not an architecture recommendation.
+Runtime and protocol evidence is useful because it reveals which distinctions are operationally real. It is not an
+architecture recommendation.
 
-The snapshot behind this note was examined on **August 28, 2026**. Rapidly changing runtime claims are versioned in the [portable evidence map](capabilities-and-delegation-references.md).
+The snapshot behind this note was examined on **August 28, 2026**. Rapidly changing runtime claims are versioned in the
+[portable evidence map](capabilities-and-delegation-references.md).
 
-Current Codex App Server behavior provides a strong example of specialist runtime ownership: Codex exposes persistent/resumable work state, streamed progress, approvals, interruption, steering, compaction, and nested execution while retaining ownership of the specialist loop between objective and result. **[C + J]** The Ember conclusion is not to copy Codex's runtime primitives; it is that caller control surfaces do not make the caller owner of the runtime's internal cognition.
+Current Codex App Server behavior provides a strong example of specialist runtime ownership: Codex exposes
+persistent/resumable work state, streamed progress, approvals, interruption, steering, compaction, and nested execution
+while retaining ownership of the specialist loop between objective and result. **[C + J]** The Ember conclusion is not
+to copy Codex's runtime primitives; it is that caller control surfaces do not make the caller owner of the runtime's
+internal cognition.
 
-ACP exposes interoperable sessions, progress, permission requests, cancellation, and resumability. **[J]** Those protocol features do not decide autobiographical ownership, evidential authority, privacy scope, whether inherited context remains current, or who may approve a consequential action.
+ACP exposes interoperable sessions, progress, permission requests, cancellation, and resumability. **[J]** Those
+protocol features do not decide autobiographical ownership, evidential authority, privacy scope, whether inherited
+context remains current, or who may approve a consequential action.
 
-Current MCP provides the most useful counterexample to protocol-shaped thinking. A `tools/call` may front a deterministic operation or a long-running autonomous workflow. Current task facilities support working, input-required, completed, failed, and cancellable work, but that representation does not decide whether Ember is using a capability or delegating material discretion.
+Current MCP provides the most useful counterexample to protocol-shaped thinking. A `tools/call` may front a
+deterministic operation or a long-running autonomous workflow. Current task facilities support working, input-required,
+completed, failed, and cancellable work, but that representation does not decide whether Ember is using a capability or
+delegating material discretion.
 
 > **[E→J] An MCP tool and an autonomous delegate are not mutually exclusive semantic categories.**
 
-Native integration matters only when it exposes semantically useful facts that a simpler interoperability surface loses, such as:
+Native integration matters only when it exposes semantically useful facts that a simpler interoperability surface loses,
+such as:
 
 - stable specialist-work identity;
 - detailed progress and side-effect visibility;
@@ -359,11 +463,16 @@ Native integration matters only when it exposes semantically useful facts that a
 - compaction boundaries;
 - resumability.
 
-> **[J] Richness of integration is semantically valuable only insofar as it preserves distinctions Ember actually needs for responsibility, provenance, currentness, authority boundaries, verification, and truthful reporting.**
+> **[J] Richness of integration is semantically valuable only insofar as it preserves distinctions Ember actually needs
+> for responsibility, provenance, currentness, authority boundaries, verification, and truthful reporting.**
 
-Regardless of protocol, an eventual integration must preserve enough meaning about the delegated objective, specialist attribution, context boundary, authority boundary, progress, known or possible effects, cancellation semantics, result provenance and uncertainty, work continuity, assumption currentness, and materially relevant nested delegation.
+Regardless of protocol, an eventual integration must preserve enough meaning about the delegated objective, specialist
+attribution, context boundary, authority boundary, progress, known or possible effects, cancellation semantics, result
+provenance and uncertainty, work continuity, assumption currentness, and materially relevant nested delegation.
 
-If a boundary cannot expose enough of those properties for the consequence at stake, Ember should not pretend the missing observability exists. The semantic response is to limit what she entrusts through that boundary or increase verification.
+If a boundary cannot expose enough of those properties for the consequence at stake, Ember should not pretend the
+missing observability exists. The semantic response is to limit what she entrusts through that boundary or increase
+verification.
 
 ## Delegation quality and economics
 
@@ -375,16 +484,22 @@ Current empirical work shows both positive and negative cases:
 
 - centralized multi-agent coordination can help naturally parallel tasks;
 - sequential or tightly shared-state reasoning can degrade under decomposition;
-- communication and coordination failures include repetitive work, bad termination judgments, information withholding, wrong assumptions, and reasoning/action mismatch;
+- communication and coordination failures include repetitive work, bad termination judgments, information withholding,
+  wrong assumptions, and reasoning/action mismatch;
 - strengthened single-agent baselines can erase apparent gains from homogeneous workflows;
-- compute-normalized single agents can match or outperform tested multi-agent structures on some multi-hop reasoning tasks;
+- compute-normalized single agents can match or outperform tested multi-agent structures on some multi-hop reasoning
+  tasks;
 - team synthesis can dilute a stronger specialist rather than preserve expert judgment;
 - distributed agents can exchange information yet still fail to synthesize the distributed state effectively;
-- large parallel research or coding teams can be useful when the work is separable and strong external verification exists, but often at much greater inference cost.
+- large parallel research or coding teams can be useful when the work is separable and strong external verification
+  exists, but often at much greater inference cost.
 
 The practical delegation criterion is therefore:
 
-> **[E + J] Delegate when the specialist supplies something materially unavailable to Ember's direct loop — specialized tools, independent observations, distinct model competence, large task-local state, parallelizable branches, or a mature domain-specific execution harness — and when those gains exceed context loss, coordination cost, verification burden, latency, and side-effect risk.**
+> **[E + J] Delegate when the specialist supplies something materially unavailable to Ember's direct loop — specialized
+> tools, independent observations, distinct model competence, large task-local state, parallelizable branches, or a
+> mature domain-specific execution harness — and when those gains exceed context loss, coordination cost, verification
+> burden, latency, and side-effect risk.**
 
 Delegation is especially promising for:
 
@@ -415,7 +530,8 @@ This supports an Ember-specific null hypothesis:
 
 ## Scenario stress tests
 
-The following scenarios probe the semantic model. Unless otherwise marked, the conclusions are **[J] Ember judgments** constrained by issues #3–#5 and the runtime/empirical evidence above.
+The following scenarios probe the semantic model. Unless otherwise marked, the conclusions are **[J] Ember judgments**
+constrained by issues #3–#5 and the runtime/empirical evidence above.
 
 | Scenario                                    | Ownership and boundary                                                                                                                                           | Ember responsibility and truthful interpretation                                                                                                                                      |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -442,47 +558,84 @@ The following scenarios probe the semantic model. Unless otherwise marked, the c
 | **21. High-consequence result**             | Specialist owns result generation; Ember owns downstream reliance decision.                                                                                      | Completion does not authorize irreversible action. Verify evidence/current state proportionally to risk and defer authority to #7.                                                    |
 | **22. Obsolete successful result**          | Specialist can truthfully succeed against an old world state.                                                                                                    | Preserve historical success and current obsolescence simultaneously. Do not apply a stale result merely because status is completed.                                                  |
 
-Sharper counterexamples keep the boundary honest: a deterministic "agent" remains tool-like; a single MCP call that independently books travel can be delegate-like; three agents repeating one bad cached source do not create three evidence sources; a persistent coding thread can be dangerous when today's branch changed; cancelling model generation does not unsend a message already handed to another service.
+Sharper counterexamples keep the boundary honest: a deterministic "agent" remains tool-like; a single MCP call that
+independently books travel can be delegate-like; three agents repeating one bad cached source do not create three
+evidence sources; a persistent coding thread can be dangerous when today's branch changed; cancelling model generation
+does not unsend a message already handed to another service.
 
 ## Open questions and Ember-specific directions
 
 The semantic model is strong enough to constrain later design, but several questions remain explicitly open.
 
-**[H] Delegation should be evaluated as a frontier, not one success score.** Useful Ember experiments should jointly measure task success, latency, inference cost, context disclosure, provenance fidelity, external-effect detection, verification cost, retry safety, stale-result rate, and continuity after specialist loss.
+**[H] Delegation should be evaluated as a frontier, not one success score.** Useful Ember experiments should jointly
+measure task success, latency, inference cost, context disclosure, provenance fidelity, external-effect detection,
+verification cost, retry safety, stale-result rate, and continuity after specialist loss.
 
-**[H] Heterogeneous delegation should be tested separately from homogeneous "more agents."** The strongest reason for Ember to delegate is to compose capabilities or observations she genuinely lacks, not to multiply near-identical reasoning samples.
+**[H] Heterogeneous delegation should be tested separately from homogeneous "more agents."** The strongest reason for
+Ember to delegate is to compose capabilities or observations she genuinely lacks, not to multiply near-identical
+reasoning samples.
 
-**[H] Responsibility preservation across long-running work needs direct testing.** A useful experiment would change requirements, models, external state, and specialist threads over one delegated objective and test whether Ember still distinguishes her decision, specialist observation, old truth, current truth, verification, and unresolved effects.
+**[H] Responsibility preservation across long-running work needs direct testing.** A useful experiment would change
+requirements, models, external state, and specialist threads over one delegated objective and test whether Ember still
+distinguishes her decision, specialist observation, old truth, current truth, verification, and unresolved effects.
 
-The exact boundary of material discretion remains partly graded. Some operations may sit between bounded capability use and full delegation, especially opaque services that make local choices but expose little progress or interaction.
+The exact boundary of material discretion remains partly graded. Some operations may sit between bounded capability use
+and full delegation, especially opaque services that make local choices but expose little progress or interaction.
 
-The correct amount of specialist-local history that should become durable Ember history is consequence-dependent and not yet empirically validated for persistent personal agents.
+The correct amount of specialist-local history that should become durable Ember history is consequence-dependent and not
+yet empirically validated for persistent personal agents.
 
-No reviewed benchmark directly evaluates an Ember-like personal agent over long periods while jointly varying delegation, specialist replacement, privacy scope, provenance, late results, commitments, cancellation, and autobiographical continuity. That remains a major evidence gap. **[H]**
+No reviewed benchmark directly evaluates an Ember-like personal agent over long periods while jointly varying
+delegation, specialist replacement, privacy scope, provenance, late results, commitments, cancellation, and
+autobiographical continuity. That remains a major evidence gap. **[H]**
 
 ## Implications inherited from continuity, memory, and context research
 
-Issue #3 constrains delegation because **Ember's continuity belongs to Ember rather than to the current cognition or execution provider**. A specialist can disappear, change model, lose its thread, or be replaced without becoming the locus of Ember's identity. A long-lived specialist thread does not acquire autobiographical status merely by surviving. Relationships, commitments, corrective integrity, and epistemic restraint remain Ember's even when another runtime owns substantial work.
+Issue #3 constrains delegation because **Ember's continuity belongs to Ember rather than to the current cognition or
+execution provider**. A specialist can disappear, change model, lose its thread, or be replaced without becoming the
+locus of Ember's identity. A long-lived specialist thread does not acquire autobiographical status merely by surviving.
+Relationships, commitments, corrective integrity, and epistemic restraint remain Ember's even when another runtime owns
+substantial work.
 
-That continuity requirement is why the delegation envelope matters more than possession of a specialist transcript. Ember must preserve why she initiated consequential work, what commitment or relationship it served, what happened as far as she can establish, and what remains unresolved. She need not preserve the specialist's entire internal cognition to remain the same continuing agent.
+That continuity requirement is why the delegation envelope matters more than possession of a specialist transcript.
+Ember must preserve why she initiated consequential work, what commitment or relationship it served, what happened as
+far as she can establish, and what remains unresolved. She need not preserve the specialist's entire internal cognition
+to remain the same continuing agent.
 
-Issue #4 constrains delegation through **epistemic ownership and evidential conservation**. Receiving a specialist report is Ember's experience; an event only the specialist observed is not Ember's direct experience. Specialist conclusions may become Ember's beliefs, but origin remains relevant. Repeated retries, paraphrases, summaries, or correlated agents do not become independent evidence merely through multiplication. Corrections can invalidate a specialist conclusion without erasing the autobiographical fact that Ember received or relied on it.
+Issue #4 constrains delegation through **epistemic ownership and evidential conservation**. Receiving a specialist
+report is Ember's experience; an event only the specialist observed is not Ember's direct experience. Specialist
+conclusions may become Ember's beliefs, but origin remains relevant. Repeated retries, paraphrases, summaries, or
+correlated agents do not become independent evidence merely through multiplication. Corrections can invalidate a
+specialist conclusion without erasing the autobiographical fact that Ember received or relied on it.
 
-Memory research also establishes why specialist disappearance is survivable: a truthful gap is preferable to an invented bridge. "I no longer have the specialist's unfinished thread" is degraded work continuity, not permission to reconstruct fictitious intermediate decisions.
+Memory research also establishes why specialist disappearance is survivable: a truthful gap is preferable to an invented
+bridge. "I no longer have the specialist's unfinished thread" is degraded work continuity, not permission to reconstruct
+fictitious intermediate decisions.
 
-Issue #5 constrains delegation most directly by establishing that **delegation creates a new context boundary**. Ember's own current projection is not the specialist's projection. Relevance to Ember does not imply need or permission for the specialist; private motivation may sometimes be translated into a permitted operational consequence; a context request creates no authority of its own; withholding genuinely necessary permitted information can make delegation invalid.
+Issue #5 constrains delegation most directly by establishing that **delegation creates a new context boundary**. Ember's
+own current projection is not the specialist's projection. Relevance to Ember does not imply need or permission for the
+specialist; private motivation may sometimes be translated into a permitted operational consequence; a context request
+creates no authority of its own; withholding genuinely necessary permitted information can make delegation invalid.
 
-Context research also governs reintegration. Specialist results return with scope, provenance, currentness, uncertainty, and privacy boundaries intact. A late report does not automatically become current foreground; a specialist summary does not acquire extra authority; and a result generated against obsolete external state must not outrank newer direct evidence because the runtime says "completed."
+Context research also governs reintegration. Specialist results return with scope, provenance, currentness, uncertainty,
+and privacy boundaries intact. A late report does not automatically become current foreground; a specialist summary does
+not acquire extra authority; and a result generated against obsolete external state must not outrank newer direct
+evidence because the runtime says "completed."
 
 Together, the inherited work yields one strong invariant:
 
-> **[J] Crossing a delegation boundary may change who owns cognition, execution, local state, and direct observation. It must not silently change who owns Ember's identity, which commitments remain hers, what evidence means, who originally observed something, where private information may flow, or what Ember is entitled to claim as her own experience.**
+> **[J] Crossing a delegation boundary may change who owns cognition, execution, local state, and direct observation. It
+> must not silently change who owns Ember's identity, which commitments remain hers, what evidence means, who originally
+> observed something, where private information may flow, or what Ember is entitled to claim as her own experience.**
 
 ## Carry-forward to issue #7: action, authority, and permissions
 
 Issue #6 establishes the ownership boundary but deliberately leaves Ember's final authority model unresolved.
 
-Issue #7 must inherit that **technical capability is not authorization**. A specialist may be able to modify a repository, call a network service, message a third party, spend money, use credentials, or delegate again without thereby possessing legitimate authority to do so. Ember's authorization to pursue an objective also does not prove that every underlying authority transfers through every delegation layer.
+Issue #7 must inherit that **technical capability is not authorization**. A specialist may be able to modify a
+repository, call a network service, message a third party, spend money, use credentials, or delegate again without
+thereby possessing legitimate authority to do so. Ember's authorization to pursue an objective also does not prove that
+every underlying authority transfers through every delegation layer.
 
 Issue #7 therefore needs to answer:
 
@@ -491,19 +644,30 @@ Issue #7 therefore needs to answer:
 - whether authorization is action-, purpose-, scope-, time-, identity-, or recipient-specific;
 - whether and how authority may transfer to nested specialists;
 - how authority changes when a new service, credential, organization, model, or third party enters the chain;
-- how revocation, expiry, changed objective, retry, resume, or changed external state affect previously granted authority;
+- how revocation, expiry, changed objective, retry, resume, or changed external state affect previously granted
+  authority;
 - what happens when a specialist runtime's own policy is stricter than Ember's apparent authority.
 
-Issue #7 must distinguish **consent to an objective** from **consent to every means**. "Fix this bug" does not semantically establish permission for destructive migration, production deployment, purchase, disclosure of personal context, or unrelated third-party messaging.
+Issue #7 must distinguish **consent to an objective** from **consent to every means**. "Fix this bug" does not
+semantically establish permission for destructive migration, production deployment, purchase, disclosure of personal
+context, or unrelated third-party messaging.
 
-Risk and reversibility must become authority inputs. Issue #6 establishes that completion, failure, and cancellation can coexist with irreversible effects. Issue #7 must decide how financial cost, privacy exposure, security impact, external commitments, third-party effects, and reversibility alter the level and source of authorization required.
+Risk and reversibility must become authority inputs. Issue #6 establishes that completion, failure, and cancellation can
+coexist with irreversible effects. Issue #7 must decide how financial cost, privacy exposure, security impact, external
+commitments, third-party effects, and reversibility alter the level and source of authorization required.
 
-Approval routing must preserve the authority chain. A specialist asking Ember, Ember asking the user, Ember acting under standing authority, a system policy deciding, and a nested specialist requesting authority through its parent are not the same event semantically.
+Approval routing must preserve the authority chain. A specialist asking Ember, Ember asking the user, Ember acting under
+standing authority, a system policy deciding, and a nested specialist requesting authority through its parent are not
+the same event semantically.
 
-Context disclosure itself is an action requiring authority reasoning. A delegate's request for personal information is not merely an inference-quality question.
+Context disclosure itself is an action requiring authority reasoning. A delegate's request for personal information is
+not merely an inference-quality question.
 
-Nested delegation is the sharpest unresolved authority case. Issue #7 should use confused-deputy-style reasoning where useful to prevent a capability available for one legitimate purpose from being silently exercised for another principal, scope, recipient, or subordinate request.
+Nested delegation is the sharpest unresolved authority case. Issue #7 should use confused-deputy-style reasoning where
+useful to prevent a capability available for one legitimate purpose from being silently exercised for another principal,
+scope, recipient, or subordinate request.
 
 The non-negotiable boundary carried forward from this phase is:
 
-> **[J] Delegation may transfer discretion over _how_ authorized work is performed. It must never be treated, by itself, as evidence that broader authority was granted.**
+> **[J] Delegation may transfer discretion over _how_ authorized work is performed. It must never be treated, by itself,
+> as evidence that broader authority was granted.**

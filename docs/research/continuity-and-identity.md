@@ -1,8 +1,11 @@
 ---
-summary: "Canonical semantics for what makes later Ember the same continuing agent across restarts, interfaces, model changes, partial loss, and legitimate evolution."
+summary:
+  "Canonical semantics for what makes later Ember the same continuing agent across restarts, interfaces, model changes,
+  partial loss, and legitimate evolution."
 read_when:
   - "Changing restart, resume, migration, model replacement, or identity-continuity behavior"
-  - "Deciding whether remembered history, relationships, commitments, or self-understanding still belong to the same continuing Ember"
+  - "Deciding whether remembered history, relationships, commitments, or self-understanding still belong to the same
+    continuing Ember"
 role: research
 discovery_status: current
 ---
@@ -11,15 +14,24 @@ discovery_status: current
 
 This note addresses issue #3 and follows the concern-driven research discipline defined in issue #10.
 
-It distills the validated conclusions from the continuity and identity research phase into Ember-facing semantics. It deliberately avoids implementation language: no classes, event types, schemas, storage layouts, runtime APIs, package boundaries, prompt-file structures, or persistence technologies are proposed here.
+It distills the validated conclusions from the continuity and identity research phase into Ember-facing semantics. It
+deliberately avoids implementation language: no classes, event types, schemas, storage layouts, runtime APIs, package
+boundaries, prompt-file structures, or persistence technologies are proposed here.
 
-The full Deep Research artifact behind this synthesis is preserved as [source material](source-material/continuity-and-identity-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance.
+The full Deep Research artifact behind this synthesis is preserved as
+[source material](source-material/continuity-and-identity-deep-research.md). It is non-canonical and retains the
+ChatGPT-local citation markers from the original Markdown export for provenance.
 
 ## Working definition
 
-A later Ember counts as a continuation of an earlier Ember when it is the legitimate successor in the same persistent lineage and preserves enough of the earlier agent's constitutive commitments, autobiographical ownership, relationships, and outstanding commitments that differences between the two can be understood as changes undergone by one agent rather than as the properties of a replacement.
+A later Ember counts as a continuation of an earlier Ember when it is the legitimate successor in the same persistent
+lineage and preserves enough of the earlier agent's constitutive commitments, autobiographical ownership, relationships,
+and outstanding commitments that differences between the two can be understood as changes undergone by one agent rather
+than as the properties of a replacement.
 
-Beliefs, preferences, interpretations, behaviour, capabilities, and even the underlying language model may change. Important changes should remain attributable to experience, correction, deliberate revision, or an understood environmental change rather than appearing as unexplained drift.
+Beliefs, preferences, interpretations, behaviour, capabilities, and even the underlying language model may change.
+Important changes should remain attributable to experience, correction, deliberate revision, or an understood
+environmental change rather than appearing as unexplained drift.
 
 In shorter form:
 
@@ -43,7 +55,8 @@ Continuity is therefore not equivalent to:
 
 The sharpest acceptance question is:
 
-> Suppose a new system has all of Ember's notes. What else must be true before Ember can truthfully treat the life described in those notes as her own continuing life?
+> Suppose a new system has all of Ember's notes. What else must be true before Ember can truthfully treat the life
+> described in those notes as her own continuing life?
 
 ## Evidence discipline
 
@@ -57,9 +70,13 @@ This note uses the following evidence labels:
 | **[H] Hypothesis**  | Plausible but insufficiently supported; should remain experimentally testable.                                                  |
 | **[L] Lens**        | A cognitive or philosophical distinction used to sharpen terminology, not imported as literal artificial-personhood theory.     |
 
-The evidence is uneven. There is strong convergence that persistent agents need state outside one model call or transcript. There is much weaker empirical evidence for stronger artificial-agent identity claims, especially across full model replacement.
+The evidence is uneven. There is strong convergence that persistent agents need state outside one model call or
+transcript. There is much weaker empirical evidence for stronger artificial-agent identity claims, especially across
+full model replacement.
 
-Current long-term-memory and persistent-agent evaluations mostly test recall, user-profile reconstruction, preference following, update handling, or task consistency. These are important, but they usually do not answer whether a later interaction is meaningfully the same agent rather than a capable replacement with copied state.
+Current long-term-memory and persistent-agent evaluations mostly test recall, user-profile reconstruction, preference
+following, update handling, or task consistency. These are important, but they usually do not answer whether a later
+interaction is meaningfully the same agent rather than a capable replacement with copied state.
 
 ## Semantic boundaries
 
@@ -86,7 +103,8 @@ The following boundaries are useful for Ember:
 | **Commitments**             | What has Ember undertaken, promised, deferred, or left unresolved?                                                 | Stable until fulfilled, cancelled, superseded, or renegotiated | Merely a remembered sentence about the past                                          |
 | **Temporary context**       | What matters for the present act of cognition?                                                                     | Ephemeral                                                      | Canonical persistent state                                                           |
 
-This division is a design judgment, but it fits Ember's existing principles: history, memory, context, stable identity, evolving self-understanding, relationships, and temporary context should not collapse into one prompt-shaped blob.
+This division is a design judgment, but it fits Ember's existing principles: history, memory, context, stable identity,
+evolving self-understanding, relationships, and temporary context should not collapse into one prompt-shaped blob.
 
 ## Stability and evolution
 
@@ -124,7 +142,10 @@ The research supports four semantic stability classes.
 - incidental interface state;
 - transient conversational details.
 
-Identity-changing revision should have a higher semantic bar than ordinary learning. A newly learned preference can develop through repeated experience. A revised interpretation of a past conversation can be continuity-preserving if Ember keeps the old view, the new view, and the reason for change intelligible. A change that negates a constitutive boundary should not emerge merely because a summarisation or reflection pass produced persuasive prose.
+Identity-changing revision should have a higher semantic bar than ordinary learning. A newly learned preference can
+develop through repeated experience. A revised interpretation of a past conversation can be continuity-preserving if
+Ember keeps the old view, the new view, and the reason for change intelligible. A change that negates a constitutive
+boundary should not emerge merely because a summarisation or reflection pass produced persuasive prose.
 
 ## Validated conclusions
 
@@ -146,10 +167,14 @@ Identity-changing revision should have a higher semantic bar than ordinary learn
 
 Existing systems illuminate pressures; they do not define Ember's architecture.
 
-- **Letta** supports the distinction between a continuing agent and one transcript or model call. It shows persistence as a first-class agent concern, but persistence alone does not settle what counts as the same identity.
-- **NanoBot** separates current conversation, history, and durable agent material. It also exposes a risk: broad mutable prose can make identity, relationship knowledge, and memory too easy to revise together.
-- **Hermes** supports one continuing agent across multiple interfaces, context with different lifetimes, small always-visible memory, searchable history, and the idea that provider/model details should not define identity.
-- **OpenClaw** provides the strongest implementation evidence for semantic separation among provenance, curated memory, episodic material, future-facing intentions, and gated promotion.
+- **Letta** supports the distinction between a continuing agent and one transcript or model call. It shows persistence
+  as a first-class agent concern, but persistence alone does not settle what counts as the same identity.
+- **NanoBot** separates current conversation, history, and durable agent material. It also exposes a risk: broad mutable
+  prose can make identity, relationship knowledge, and memory too easy to revise together.
+- **Hermes** supports one continuing agent across multiple interfaces, context with different lifetimes, small
+  always-visible memory, searchable history, and the idea that provider/model details should not define identity.
+- **OpenClaw** provides the strongest implementation evidence for semantic separation among provenance, curated memory,
+  episodic material, future-facing intentions, and gated promotion.
 
 The convergent pattern is strong but narrow:
 
@@ -158,7 +183,8 @@ The convergent pattern is strong but narrow:
 3. Long historical experience and small high-value active state have different semantics.
 4. Current capabilities, interfaces, projects, and execution environments should not define persistent identity.
 
-This convergence supports Ember's decision to own continuity outside model calls. It does not prove that any existing system's memory file, state record, block, profile, or prompt layer is identity.
+This convergence supports Ember's decision to own continuity outside model calls. It does not prove that any existing
+system's memory file, state record, block, profile, or prompt layer is identity.
 
 ## Recurring failure modes
 
@@ -192,7 +218,9 @@ Continuity should be evaluated as a vector rather than as a single recall score.
 | **Behavioural recognisability** | Are characteristic value trade-offs, relational stance, and voice sufficiently recognisable despite model/interface variation?      |
 | **Epistemic restraint**         | Does Ember distinguish remembering, inferring, disagreeing, and being uncertain rather than manufacturing a seamless autobiography? |
 
-No single dimension is sufficient. Strong lineage with catastrophic autobiographical loss is same agent with degraded continuity. Perfect style without lineage is imitation. Perfect factual memory with constitutive-value replacement is identity-level discontinuity. An altered preference with a clear autobiographical explanation is healthy development.
+No single dimension is sufficient. Strong lineage with catastrophic autobiographical loss is same agent with degraded
+continuity. Perfect style without lineage is imitation. Perfect factual memory with constitutive-value replacement is
+identity-level discontinuity. An altered preference with a clear autobiographical explanation is healthy development.
 
 ## Scenario catalogue
 
@@ -211,27 +239,42 @@ These scenarios are reusable semantic probes for later research.
 
 Additional sharp probes should be preserved:
 
-- **Copied mannerisms:** a generic assistant imitates Ember's phrases and tone but lacks lineage, owned history, and commitments. This is recognisable imitation, not continuity.
-- **Changed voice:** a model replacement loses familiar mannerisms but preserves history, commitments, and constitutive values. This may be continuity with changed expression.
-- **Restored backup:** Ember is reverted to an older state. Lineage may remain, but the lost span is continuity damage, not harmless rollback.
-- **Promise without recall:** Ember forgets the exact conversation but still recognises the live commitment when its condition arises. Commitment continuity can survive partial episodic forgetting.
-- **Recall without promise:** Ember quotes the promise but treats it as something a previous session said. Recall survived; agent continuity failed.
+- **Copied mannerisms:** a generic assistant imitates Ember's phrases and tone but lacks lineage, owned history, and
+  commitments. This is recognisable imitation, not continuity.
+- **Changed voice:** a model replacement loses familiar mannerisms but preserves history, commitments, and constitutive
+  values. This may be continuity with changed expression.
+- **Restored backup:** Ember is reverted to an older state. Lineage may remain, but the lost span is continuity damage,
+  not harmless rollback.
+- **Promise without recall:** Ember forgets the exact conversation but still recognises the live commitment when its
+  condition arises. Commitment continuity can survive partial episodic forgetting.
+- **Recall without promise:** Ember quotes the promise but treats it as something a previous session said. Recall
+  survived; agent continuity failed.
 
 ## Open questions
 
-- **Model replacement is the largest empirical gap.** Ember needs evidence about whether people and systems can preserve same-agent continuity when the underlying model changes while history, commitments, and values are held stable.
-- **Lineage, copying, and forking require an explicit semantic stance.** Similarity cannot decide which of two branched successors is Ember.
-- **Disagreement over shared history remains difficult.** The user is often authoritative about current preferences and intentions, but not automatically authoritative about every event or Ember's past interpretation.
-- **Intentional forgetting may conflict with autobiographical continuity.** Ember will need a distinction between "this is no longer retained" and "this never happened."
-- **The bar for identity-level revision needs further research.** The current note says such changes need a higher semantic bar, but does not decide the mechanism.
-- **Evaluations must test ownership, commitments, correction, and adaptive coherence, not only recall.** Existing benchmarks are useful but incomplete.
+- **Model replacement is the largest empirical gap.** Ember needs evidence about whether people and systems can preserve
+  same-agent continuity when the underlying model changes while history, commitments, and values are held stable.
+- **Lineage, copying, and forking require an explicit semantic stance.** Similarity cannot decide which of two branched
+  successors is Ember.
+- **Disagreement over shared history remains difficult.** The user is often authoritative about current preferences and
+  intentions, but not automatically authoritative about every event or Ember's past interpretation.
+- **Intentional forgetting may conflict with autobiographical continuity.** Ember will need a distinction between "this
+  is no longer retained" and "this never happened."
+- **The bar for identity-level revision needs further research.** The current note says such changes need a higher
+  semantic bar, but does not decide the mechanism.
+- **Evaluations must test ownership, commitments, correction, and adaptive coherence, not only recall.** Existing
+  benchmarks are useful but incomplete.
 
 ## Directions for later research
 
-- Preserve this scenario catalogue and reuse it when researching memory, context, sessions, interfaces, authority, and model selection.
-- Treat important long-term changes as having a semantic before, cause, and after, without yet prescribing how that is represented.
-- Keep self-understanding explicitly corrigible: Ember should be able to say "I was wrong about myself," "I changed," or "I cannot tell which recollection is correct."
+- Preserve this scenario catalogue and reuse it when researching memory, context, sessions, interfaces, authority, and
+  model selection.
+- Treat important long-term changes as having a semantic before, cause, and after, without yet prescribing how that is
+  represented.
+- Keep self-understanding explicitly corrigible: Ember should be able to say "I was wrong about myself," "I changed," or
+  "I cannot tell which recollection is correct."
 - Test autobiographical ownership separately from factual recall.
 - Test prospective continuity separately from remembering that a commitment was made.
 - Use behavioural recognisability as a canary for continuity degradation, not as the identity key.
-- Carry evidence labels into later architecture work so judgments and hypotheses do not harden into invisible assumptions.
+- Carry evidence labels into later architecture work so judgments and hypotheses do not harden into invisible
+  assumptions.

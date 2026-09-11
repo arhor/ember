@@ -1,5 +1,7 @@
 ---
-summary: "Accepted decision that persistent meaning preserves provenance, ownership, scope, temporal applicability, currentness, uncertainty, supersession, and lifecycle."
+summary:
+  "Accepted decision that persistent meaning preserves provenance, ownership, scope, temporal applicability,
+  currentness, uncertainty, supersession, and lifecycle."
 read_when:
   - "Changing how Ember stores, promotes, corrects, supersedes, forgets, or interprets durable meaning"
   - "Separating evidence, memory, current belief, commitment, and temporary context in an implementation"
@@ -16,104 +18,84 @@ discovery_status: current
 
 ## Context and problem
 
-Ember must carry meaning across time without treating every retained statement as
-equally current, true, shareable, or action-guiding. History and evidence, durable
-memory, current belief, prospective commitment, and temporary context answer
-different questions even when a future implementation represents them together.
+Ember must carry meaning across time without treating every retained statement as equally current, true, shareable, or
+action-guiding. History and evidence, durable memory, current belief, prospective commitment, and temporary context
+answer different questions even when a future implementation represents them together.
 
-Without durable semantic distinctions, a user statement can become objective
-fact, an inference can become testimony, an old preference can regain current
-authority, a specialist report can become direct experience, or deleted
-information can survive through summaries and downstream conclusions.
+Without durable semantic distinctions, a user statement can become objective fact, an inference can become testimony, an
+old preference can regain current authority, a specialist report can become direct experience, or deleted information
+can survive through summaries and downstream conclusions.
 
 ## Decision
 
-Persistent state that can materially affect later cognition or action must retain
-enough meaning for Ember to use it truthfully. When relevant, that meaning includes:
+Persistent state that can materially affect later cognition or action must retain enough meaning for Ember to use it
+truthfully. When relevant, that meaning includes:
 
-- origin, evidence lineage, and whether Ember directly observed, was told,
-  inferred, remembered, or received a report;
-- ownership of beliefs, preferences, interpretations, experiences, and
-  commitments;
+- origin, evidence lineage, and whether Ember directly observed, was told, inferred, remembered, or received a report;
+- ownership of beliefs, preferences, interpretations, experiences, and commitments;
 - person, relationship, project, task, purpose, recipient, and temporal scope;
 - when something occurred, when Ember learned or revised it, and when it applies;
-- current, historical, superseded, disputed, uncertain, fulfilled, cancelled,
-  forgotten, or deleted status;
+- current, historical, superseded, disputed, uncertain, fulfilled, cancelled, forgotten, or deleted status;
 - source, proposition, and interpretive uncertainty when those differ;
 - conflict with other surviving evidence or interpretations;
-- correction and supersession without false rewriting of historically important
-  evidence;
+- correction and supersession without false rewriting of historically important evidence;
 - fulfilment, cancellation, renegotiation, or expiry for future-facing state;
 - truthful gaps and weakened claims when source evidence or details are lost;
-- deletion or security repair through reconstructable derivatives when retention
-  is no longer legitimate.
+- deletion or security repair through reconstructable derivatives when retention is no longer legitimate.
 
-History/evidence, durable memory, current belief, prospective commitment, and
-temporary context are therefore not interchangeable. Transformation,
-summarisation, reflection, repeated recall, or delivery replay must not manufacture
-new evidence or strengthen authority merely by multiplying representations.
+History/evidence, durable memory, current belief, prospective commitment, and temporary context are therefore not
+interchangeable. Transformation, summarisation, reflection, repeated recall, or delivery replay must not manufacture new
+evidence or strengthen authority merely by multiplying representations.
 
 ## Consequences and architectural constraints
 
-- A proposition's provenance and scope must travel far enough through remembering,
-  projection, delegation, correction, and recovery to govern its legitimate use.
-- Current truth and historical truth must be able to coexist. A correction usually
-  removes current authority from the old state without claiming the old state
-  never existed.
-- A factually accurate memory can still be wrong to apply because its owner,
-  scope, recipient, purpose, or applicability changed.
-- Derived summaries and reflections remain descendants of their evidence rather
-  than independent sources. Repetition can change salience, not epistemic weight.
-- A live commitment remains capable of governing future behaviour until fulfilled,
-  cancelled, superseded, renegotiated, or otherwise discharged; remembering that
-  it once existed is not enough.
-- Forgetting is a legitimate lifecycle outcome. Privacy deletion and security
-  repair can require removing or weakening derivatives, even when that creates
-  degraded continuity.
-- Failed recall, unavailable evidence, and absent memory must remain distinguishable.
-  The architecture must permit an explicit gap instead of a plausible invention.
-- Meaning may share one physical representation later, but representation must not
-  collapse these lifecycles or make "latest text wins" the semantic rule.
+- A proposition's provenance and scope must travel far enough through remembering, projection, delegation, correction,
+  and recovery to govern its legitimate use.
+- Current truth and historical truth must be able to coexist. A correction usually removes current authority from the
+  old state without claiming the old state never existed.
+- A factually accurate memory can still be wrong to apply because its owner, scope, recipient, purpose, or applicability
+  changed.
+- Derived summaries and reflections remain descendants of their evidence rather than independent sources. Repetition can
+  change salience, not epistemic weight.
+- A live commitment remains capable of governing future behaviour until fulfilled, cancelled, superseded, renegotiated,
+  or otherwise discharged; remembering that it once existed is not enough.
+- Forgetting is a legitimate lifecycle outcome. Privacy deletion and security repair can require removing or weakening
+  derivatives, even when that creates degraded continuity.
+- Failed recall, unavailable evidence, and absent memory must remain distinguishable. The architecture must permit an
+  explicit gap instead of a plausible invention.
+- Meaning may share one physical representation later, but representation must not collapse these lifecycles or make
+  "latest text wins" the semantic rule.
 
 ## Deliberately unresolved representation questions
 
 This decision does not choose:
 
-- storage schemas, record categories, files, databases, event logs, indexes, or
-  graph structures;
+- storage schemas, record categories, files, databases, event logs, indexes, or graph structures;
 - how significance or durable promotion is adjudicated;
 - how much source evidence survives beneath a durable memory;
-- how temporal applicability, evidence lineage, conflict, or uncertainty are
-  encoded;
+- how temporal applicability, evidence lineage, conflict, or uncertainty are encoded;
 - the exact boundary between supersession and forgetting;
-- how deletion propagates through indirect causal influence that no longer
-  reconstructs the deleted content;
-- retrieval, embeddings, compaction, consolidation, or model-replacement
-  mechanisms.
+- how deletion propagates through indirect causal influence that no longer reconstructs the deleted content;
+- retrieval, embeddings, compaction, consolidation, or model-replacement mechanisms.
 
-Retrospective significance, deletion of indirectly shaped state, and semantic
-fidelity across model replacement remain hypotheses to test rather than implied
-decisions.
+Retrospective significance, deletion of indirectly shaped state, and semantic fidelity across model replacement remain
+hypotheses to test rather than implied decisions.
 
 ## Representative scenarios and failure modes
 
-- **Corrected preference:** the earlier preference remains attributable history;
-  the later scoped preference governs where still current.
-- **Changed interpretation:** the occurrence stays stable while Ember preserves
-  that her interpretation changed and why.
-- **Specialist report:** Ember owns receiving the report but does not claim direct
-  observation of specialist-local work.
-- **Live promise:** a future condition can reactivate a still-live commitment even
-  when the original conversation is old or unavailable.
-- **Intentional deletion:** raw evidence and reconstructable derivatives are
-  removed or weakened; a conspicuous meta-memory must not disclose what deletion
-  forbids.
-- **Attribution loss:** retaining the proposition while losing whether it came
-  from the user, Ember, a specialist, or the web is semantic corruption.
-- **Stale-state persistence:** an old but true statement governs the present after
-  explicit supersession.
-- **Derived-evidence inflation:** a summary, later reflection, and repeated recall
-  are incorrectly counted as several independent supports.
+- **Corrected preference:** the earlier preference remains attributable history; the later scoped preference governs
+  where still current.
+- **Changed interpretation:** the occurrence stays stable while Ember preserves that her interpretation changed and why.
+- **Specialist report:** Ember owns receiving the report but does not claim direct observation of specialist-local work.
+- **Live promise:** a future condition can reactivate a still-live commitment even when the original conversation is old
+  or unavailable.
+- **Intentional deletion:** raw evidence and reconstructable derivatives are removed or weakened; a conspicuous
+  meta-memory must not disclose what deletion forbids.
+- **Attribution loss:** retaining the proposition while losing whether it came from the user, Ember, a specialist, or
+  the web is semantic corruption.
+- **Stale-state persistence:** an old but true statement governs the present after explicit supersession.
+- **Derived-evidence inflation:** a summary, later reflection, and repeated recall are incorrectly counted as several
+  independent supports.
 
 ## Traceability
 

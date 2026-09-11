@@ -1,5 +1,7 @@
 ---
-summary: "Issue #92 decision, updated by #188, that Ember's ProviderRequest/ProviderResult and semantic ProviderInvoker seam are the earned common cognition-backend contract while process launch and lifecycle mechanics remain adapter-local."
+summary:
+  "Issue #92 decision, updated by #188, that Ember's ProviderRequest/ProviderResult and semantic ProviderInvoker seam
+  are the earned common cognition-backend contract while process launch and lifecycle mechanics remain adapter-local."
 read_when:
   - "Changing the shared cognition provider contract or adding another production cognition backend"
   - "Considering deduplication or a common process runner across Codex and Cursor adapters"
@@ -12,26 +14,44 @@ discovery_status: current
 
 ## Decision
 
-**Keep the existing `ProviderRequest` / `ProviderResult` / `ProviderInvoker` cognition seam as Ember's shared backend contract. Do not introduce a new adapter hierarchy or shared Codex/Cursor process runner for issue #92.**
+**Keep the existing `ProviderRequest` / `ProviderResult` / `ProviderInvoker` cognition seam as Ember's shared backend
+contract. Do not introduce a new adapter hierarchy or shared Codex/Cursor process runner for issue #92.**
 
-The production Codex and Cursor integrations now provide enough evidence to revisit the abstraction question that issue #44 deliberately deferred. They converge at the Ember-owned cognition boundary, but their runtime preparation, context isolation, invocation grammar, structured output, continuation handles, diagnostics, and observable termination evidence remain materially different.
+The production Codex and Cursor integrations now provide enough evidence to revisit the abstraction question that issue
+#44 deliberately deferred. They converge at the Ember-owned cognition boundary, but their runtime preparation, context
+isolation, invocation grammar, structured output, continuation handles, diagnostics, and observable termination evidence
+remain materially different.
 
-The existing seam is therefore the smallest common contract currently justified by evidence. The duplicated-looking process mechanics inside `src/providers/codex.ts` and `src/providers/cursor.ts` remain adapter-local because extracting them today would require a hook-heavy lifecycle framework that obscures the differences Ember must preserve. Issue #204 adds a third production backend through Vercel AI SDK and `ai-sdk-provider-claude-code`; because that backend delegates process/protocol mechanics to the provider rather than repeating Codex/Cursor lifecycle code, it strengthens rather than triggers the case for a shared Ember process framework.
+The existing seam is therefore the smallest common contract currently justified by evidence. The duplicated-looking
+process mechanics inside `src/providers/codex.ts` and `src/providers/cursor.ts` remain adapter-local because extracting
+them today would require a hook-heavy lifecycle framework that obscures the differences Ember must preserve. Issue #204
+adds a third production backend through Vercel AI SDK and `ai-sdk-provider-claude-code`; because that backend delegates
+process/protocol mechanics to the provider rather than repeating Codex/Cursor lifecycle code, it strengthens rather than
+triggers the case for a shared Ember process framework.
 
-This is a valid negative abstraction decision, not a statement that the implementations can never share lower-level mechanics. A future third production backend or a concrete maintenance failure may provide enough evidence to revisit the boundary.
+This is a valid negative abstraction decision, not a statement that the implementations can never share lower-level
+mechanics. A future third production backend or a concrete maintenance failure may provide enough evidence to revisit
+the boundary.
 
 ## Evidence base
 
-This decision is based on current repository-owned production and evaluation evidence rather than the broader possibilities explored in the original runtime spike:
+This decision is based on current repository-owned production and evaluation evidence rather than the broader
+possibilities explored in the original runtime spike:
 
 - issue #46 and `src/providers/codex.ts`, which established the first production one-shot cognition adapter;
-- issue #90 and `src/providers/cursor.ts`, which deliberately added Cursor as a separate thin adapter without pre-committing #92;
+- issue #90 and `src/providers/cursor.ts`, which deliberately added Cursor as a separate thin adapter without
+  pre-committing #92;
 - `src/providers/contract.ts`, the already-shared Ember-owned request/result/invocation seam;
-- `src/runtime/runtime.ts`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
-- `docs/architecture/cognition-backend-replacement-evaluation.md`, including the September 1, 2026 Codex-to-Cursor live replacement evidence; and
-- ADR 0001, ADR 0003, ADR 0004, and ADR 0005, which constrain continuity, projection, authority, and failure semantics independently of backend implementation.
+- `src/runtime/runtime.ts`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state
+  ownership to the backend;
+- `docs/architecture/cognition-backend-replacement-evaluation.md`, including the September 1, 2026 Codex-to-Cursor live
+  replacement evidence; and
+- ADR 0001, ADR 0003, ADR 0004, and ADR 0005, which constrain continuity, projection, authority, and failure semantics
+  independently of backend implementation.
 
-The issue #57 cross-provider evaluation is especially useful because it proves that the two adapters can replace one another for a bounded cognition episode while preserving Ember lineage, projection, and durable state, without claiming that their runtime semantics are equivalent.
+The issue #57 cross-provider evaluation is especially useful because it proves that the two adapters can replace one
+another for a bounded cognition episode while preserving Ember lineage, projection, and durable state, without claiming
+that their runtime semantics are equivalent.
 
 ## The common contract that has been earned
 
@@ -57,11 +77,17 @@ Every successful backend must return:
 - only meaning IDs that were present in the supplied projection; and
 - optionally one runtime-owned continuation identifier as operational evidence.
 
-`validateProviderResult` enforces that shared semantic result boundary independently of Codex or Cursor's native output envelope.
+`validateProviderResult` enforces that shared semantic result boundary independently of Codex or Cursor's native output
+envelope.
 
-The current field name `operational.externalThreadId` is intentionally interpreted as an opaque runtime-owned continuation handle. Codex currently supplies a thread identifier and Cursor supplies a session identifier. Sharing this storage slot does **not** claim that their lifecycle, resumption, retention, or cancellation semantics are equivalent. No current Ember semantic decision depends on the vendor-specific meaning of that identifier.
+The current field name `operational.externalThreadId` is intentionally interpreted as an opaque runtime-owned
+continuation handle. Codex currently supplies a thread identifier and Cursor supplies a session identifier. Sharing this
+storage slot does **not** claim that their lifecycle, resumption, retention, or cancellation semantics are equivalent.
+No current Ember semantic decision depends on the vendor-specific meaning of that identifier.
 
-A rename to a more generic term would create repository-wide churn without changing current behavior or eliminating a demonstrated semantic ambiguity. Revisit the name only if another backend or consumer needs materially different continuation evidence.
+A rename to a more generic term would create repository-wide churn without changing current behavior or eliminating a
+demonstrated semantic ambiguity. Revisit the name only if another backend or consumer needs materially different
+continuation evidence.
 
 ### `ProviderInvoker`
 
@@ -72,9 +98,12 @@ At the Ember runtime boundary, the common operation is intentionally semantic:
     -> validated ProviderResult or typed ProviderError
 ```
 
-Executable commands, argument prefixes, workspaces, and other launch details are adapter-construction concerns. Codex, Cursor, and the deterministic process backend close over those mechanics before entering `runCognition`; the in-process AI SDK adapter uses the same invoker shape without synthetic process placeholders.
+Executable commands, argument prefixes, workspaces, and other launch details are adapter-construction concerns. Codex,
+Cursor, and the deterministic process backend close over those mechanics before entering `runCognition`; the in-process
+AI SDK adapter uses the same invoker shape without synthetic process placeholders.
 
-`runCognition` receives a separate explicit `providerLabel` for stable cognition and expression-evidence diagnostics, so provider identity does not have to be inferred from subprocess configuration.
+`runCognition` receives a separate explicit `providerLabel` for stable cognition and expression-evidence diagnostics, so
+provider identity does not have to be inferred from subprocess configuration.
 
 ### Shared failure vocabulary
 
@@ -85,7 +114,8 @@ The adapters also converge on Ember-facing failure distinctions:
 - `cancellation_requested`; and
 - `outcome_unknown` when direct-child termination cannot be confirmed.
 
-They share bounded stdout/stderr limits and preserve direct-child termination observation separately from the stronger claim that no remote work or effects remain.
+They share bounded stdout/stderr limits and preserve direct-child termination observation separately from the stronger
+claim that no remote work or effects remain.
 
 Those are Ember semantics. The evidence used to establish them remains adapter-specific.
 
@@ -103,7 +133,10 @@ Those are Ember semantics. The evidence used to establish them remains adapter-s
 | Cancellation/timeout     | Kill escalation plus possible previously observed Codex thread ID                                                       | Kill escalation without a session ID unless a terminal result was obtained                               | Same Ember outcome can rest on different evidence                        |
 | Temporary-state cleanup  | Temporary cwd is retained when direct-child termination is unconfirmed                                                  | Temporary workspace is retained under the same broad uncertainty condition                               | Similar policy, but tied to different runtime-local files                |
 
-The September 1 live cross-provider evaluation adds another important negative fact: Cursor's tested CLI configuration did not prove exclusion of all runtime-owned account/team rules or MCP metadata, while the Codex adapter makes stronger explicit user-config/rule suppression claims. A shared abstraction must not erase that difference merely because both adapters are suitable for the same bounded Ember cognition seam.
+The September 1 live cross-provider evaluation adds another important negative fact: Cursor's tested CLI configuration
+did not prove exclusion of all runtime-owned account/team rules or MCP metadata, while the Codex adapter makes stronger
+explicit user-config/rule suppression claims. A shared abstraction must not erase that difference merely because both
+adapters are suitable for the same bounded Ember cognition seam.
 
 ## Why not extract the shared-looking child-process loop now?
 
@@ -132,37 +165,50 @@ A helper capable of preserving current behavior would need configuration or hook
 - resume-handle verification; and
 - uncertainty-sensitive retention of runtime-local files.
 
-At that point the helper would own most of the lifecycle while receiving most of its meaning back through callbacks. It would reduce line duplication but increase semantic indirection and make review of provider-specific failure behavior harder.
+At that point the helper would own most of the lifecycle while receiving most of its meaning back through callbacks. It
+would reduce line duplication but increase semantic indirection and make review of provider-specific failure behavior
+harder.
 
-The generic `src/providers/process.ts` implementation is also not evidence that it should become a superclass for Codex and Cursor. It implements Ember's simple direct JSON process contract and has different cwd, environment, output, and continuation requirements. Treating it as the base runtime would confuse a transport mechanism with a shared external-agent semantic model.
+The generic `src/providers/process.ts` implementation is also not evidence that it should become a superclass for Codex
+and Cursor. It implements Ember's simple direct JSON process contract and has different cwd, environment, output, and
+continuation requirements. Treating it as the base runtime would confuse a transport mechanism with a shared
+external-agent semantic model.
 
 ## Rejected alternatives
 
 ### Generic `CognitionBackend` class hierarchy
 
-Rejected. The existing structural `ProviderInvoker` function type already supplies backend substitution where Ember needs it. Classes would add lifecycle vocabulary without an unmet requirement.
+Rejected. The existing structural `ProviderInvoker` function type already supplies backend substitution where Ember
+needs it. Classes would add lifecycle vocabulary without an unmet requirement.
 
 ### One shared external-agent process runner with provider hooks
 
-Rejected for now. The required hook surface would be broad enough to hide rather than clarify output, session, context, and failure differences.
+Rejected for now. The required hook surface would be broad enough to hide rather than clarify output, session, context,
+and failure differences.
 
 ### Normalize Codex threads and Cursor sessions into a richer common session API
 
-Rejected. Current ordinary cognition does not require provider-owned conversational continuity. Ember may record an opaque operational continuation handle, but continuity remains Ember-owned and fresh backend loci remain a supported default.
+Rejected. Current ordinary cognition does not require provider-owned conversational continuity. Ember may record an
+opaque operational continuation handle, but continuity remains Ember-owned and fresh backend loci remain a supported
+default.
 
 ### Move authentication into the common contract
 
-Rejected. Subscription authentication remains owned by each external runtime. Ember's common cognition seam has no reason to become a credential broker.
+Rejected. Subscription authentication remains owned by each external runtime. Ember's common cognition seam has no
+reason to become a credential broker.
 
 ### Capability-discovery framework
 
-Rejected. There is no current caller that needs to ask a generic backend whether it supports resume, tool policy, model selection, streaming, or richer runtime control. Those capabilities are configured and tested at the concrete adapter boundary. Introduce discovery only when a consumer has a real decision to make from it.
+Rejected. There is no current caller that needs to ask a generic backend whether it supports resume, tool policy, model
+selection, streaming, or richer runtime control. Those capabilities are configured and tested at the concrete adapter
+boundary. Introduce discovery only when a consumer has a real decision to make from it.
 
 ## Consequences
 
 ### Keep
 
-- `ProviderRequest`, `ProviderResult`, `ProviderInvocationOptions`, and `ProviderInvoker` in `src/providers/contract.ts`;
+- `ProviderRequest`, `ProviderResult`, `ProviderInvocationOptions`, and `ProviderInvoker` in
+  `src/providers/contract.ts`;
 - shared `validateProviderResult` and common output/timeout bounds there;
 - direct provider selection at application boundaries;
 - separate `invokeCodexProvider` and `invokeCursorProvider` implementations; and
@@ -179,20 +225,26 @@ Rejected. There is no current caller that needs to ask a generic backend whether
 
 ### Preserve during later maintenance
 
-When changing one adapter, reviewers should compare the analogous behavior in the other adapter, but similarity alone must not imply that both should change. In particular, termination evidence, continuation-ID availability, context isolation, and output parsing should remain grounded in the runtime that actually provides them.
+When changing one adapter, reviewers should compare the analogous behavior in the other adapter, but similarity alone
+must not imply that both should change. In particular, termination evidence, continuation-ID availability, context
+isolation, and output parsing should remain grounded in the runtime that actually provides them.
 
 ## Revisit triggers
 
 Re-open the abstraction decision when at least one of the following becomes true:
 
-1. a third production cognition backend implements the same lower-level lifecycle behavior and repeats the same mechanics independently;
-2. a demonstrated bug is fixed inconsistently in multiple adapters because the duplicated lifecycle code has become a maintenance hazard;
+1. a third production cognition backend implements the same lower-level lifecycle behavior and repeats the same
+   mechanics independently;
+2. a demonstrated bug is fixed inconsistently in multiple adapters because the duplicated lifecycle code has become a
+   maintenance hazard;
 3. a caller needs generic capability discovery to choose behavior at runtime;
 4. Ember needs a provider-independent continuation/resumption API beyond opaque operational evidence;
 5. multiple adapters can share a small process primitive whose parameters are mechanical rather than semantic; or
-6. a richer protocol integration introduces a genuinely common lifecycle concept that is absent from today's CLI adapters.
+6. a richer protocol integration introduces a genuinely common lifecycle concept that is absent from today's CLI
+   adapters.
 
-Any future extraction should begin from those concrete pressures and preserve regression tests for each adapter's differences before moving code.
+Any future extraction should begin from those concrete pressures and preserve regression tests for each adapter's
+differences before moving code.
 
 ## Definition-of-done mapping
 

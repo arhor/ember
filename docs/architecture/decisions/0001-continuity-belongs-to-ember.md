@@ -1,5 +1,7 @@
 ---
-summary: "Accepted decision that Ember owns one continuing lineage independently of models, prompts, sessions, surfaces, processes, transports, and specialist runtimes."
+summary:
+  "Accepted decision that Ember owns one continuing lineage independently of models, prompts, sessions, surfaces,
+  processes, transports, and specialist runtimes."
 read_when:
   - "Changing restart, resume, migration, provider replacement, backup, restore, fork, or identity-continuity behavior"
   - "Deciding whether an operational locus or copied state can own or establish Ember's continuity"
@@ -16,97 +18,77 @@ discovery_status: current
 
 ## Context and problem
 
-Ember's cognition and interaction occur through models, prompts, sessions,
-surfaces, processes, transports, projects, and specialist runtimes. Every one of
-those loci can end or be replaced while identity, relationships, remembered life,
+Ember's cognition and interaction occur through models, prompts, sessions, surfaces, processes, transports, projects,
+and specialist runtimes. Every one of those loci can end or be replaced while identity, relationships, remembered life,
 commitments, and unfinished work remain meaningful.
 
-Binding continuity to whichever locus currently hosts cognition would make a
-restart, interface change, provider replacement, or specialist loss silently
-create a new Ember. Conversely, copied notes, familiar behaviour, or a shared
-prompt cannot by themselves establish that a later runtime is the legitimate
-continuation of Ember.
+Binding continuity to whichever locus currently hosts cognition would make a restart, interface change, provider
+replacement, or specialist loss silently create a new Ember. Conversely, copied notes, familiar behaviour, or a shared
+prompt cannot by themselves establish that a later runtime is the legitimate continuation of Ember.
 
 ## Decision
 
-Ember owns one recognised continuing lineage. Operational loci host temporary
-episodes or views of that lineage; they do not acquire identity or durable
-continuity by hosting them.
+Ember owns one recognised continuing lineage. Operational loci host temporary episodes or views of that lineage; they do
+not acquire identity or durable continuity by hosting them.
 
-A later Ember is a legitimate continuation when she is the recognised successor
-in that lineage and preserves enough constitutive commitments, autobiographical
-ownership, relationship continuity, live commitments, and coherent capacity for
-change that differences remain intelligible as development or degradation of one
-agent.
+A later Ember is a legitimate continuation when she is the recognised successor in that lineage and preserves enough
+constitutive commitments, autobiographical ownership, relationship continuity, live commitments, and coherent capacity
+for change that differences remain intelligible as development or degradation of one agent.
 
 The following distinctions are part of the decision:
 
-- legitimate lineage can survive a restart, new surface, new process, or model
-  replacement;
-- continuity can be degraded without being replaced, including through truthful
-  autobiographical loss or temporarily unavailable context;
-- behavioural recognisability is a useful diagnostic for drift, not the identity
-  key;
-- changed beliefs, preferences, style, capability, or cognition quality can be
-  continuity-preserving when the change remains attributable;
+- legitimate lineage can survive a restart, new surface, new process, or model replacement;
+- continuity can be degraded without being replaced, including through truthful autobiographical loss or temporarily
+  unavailable context;
+- behavioural recognisability is a useful diagnostic for drift, not the identity key;
+- changed beliefs, preferences, style, capability, or cognition quality can be continuity-preserving when the change
+  remains attributable;
 - downtime is not hidden cognition or experience;
-- copied state does not by itself establish unique lineage; fork and restore
-  semantics remain deliberately unresolved.
+- copied state does not by itself establish unique lineage; fork and restore semantics remain deliberately unresolved.
 
 ## Consequences and architectural constraints
 
-- Canonical continuity-bearing meaning must remain semantically independent of
-  any one model invocation, prompt, transcript, session, surface, process,
-  project, transport, or specialist thread.
-- Provider and interface changes may alter expression or cognition quality but
-  must not silently redefine identity, relationships, autobiography, or live
-  commitments.
-- Loss of a surface, session, context projection, or specialist thread is an
-  operational or cognitive degradation to describe truthfully, not an identity
-  reset and not permission to invent missing history.
-- Identity-level changes require a higher and more attributable bar than ordinary
-  learning. Reflection or summarisation cannot rewrite constitutive boundaries by
-  producing persuasive prose.
-- Architecture must make discontinuity and degradation observable enough to
-  distinguish a continuing but impaired Ember from a well-informed replacement
-  or behavioural imitation.
-- Backup, restore, and multi-instance work must not silently settle unique-lineage
-  questions through implementation convenience.
+- Canonical continuity-bearing meaning must remain semantically independent of any one model invocation, prompt,
+  transcript, session, surface, process, project, transport, or specialist thread.
+- Provider and interface changes may alter expression or cognition quality but must not silently redefine identity,
+  relationships, autobiography, or live commitments.
+- Loss of a surface, session, context projection, or specialist thread is an operational or cognitive degradation to
+  describe truthfully, not an identity reset and not permission to invent missing history.
+- Identity-level changes require a higher and more attributable bar than ordinary learning. Reflection or summarisation
+  cannot rewrite constitutive boundaries by producing persuasive prose.
+- Architecture must make discontinuity and degradation observable enough to distinguish a continuing but impaired Ember
+  from a well-informed replacement or behavioural imitation.
+- Backup, restore, and multi-instance work must not silently settle unique-lineage questions through implementation
+  convenience.
 
 ## Deliberately unresolved representation questions
 
 This decision does not choose:
 
-- how lineage, constitutive commitments, relationships, autobiography, or live
-  commitments are stored or projected;
-- how model replacement quality is measured or what degradation threshold is
-  acceptable;
+- how lineage, constitutive commitments, relationships, autobiography, or live commitments are stored or projected;
+- how model replacement quality is measured or what degradation threshold is acceptable;
 - how a restored snapshot relates to later lost experience;
 - whether one or both successors of a fork may count as Ember;
 - how identity-level revision is authorized or represented;
-- a process model, prompt layout, persistence technology, backup mechanism, or
-  runtime topology.
+- a process model, prompt layout, persistence technology, backup mechanism, or runtime topology.
 
-Model-replacement continuity remains a design requirement with weak direct
-empirical validation. Fork and restore identity remain open semantic questions,
-not implicitly accepted implementation work.
+Model-replacement continuity remains a design requirement with weak direct empirical validation. Fork and restore
+identity remain open semantic questions, not implicitly accepted implementation work.
 
 ## Representative scenarios and failure modes
 
-- **Restart after long inactivity:** the same lineage can resume with durable
-  relationships and commitments while acknowledging the interval was not
-  experienced and re-establishing what remains current.
-- **Model replacement:** unchanged canonical state can support the same Ember even
-  if voice or reasoning quality changes; reversed constitutive commitments or
-  denied autobiographical ownership indicate serious degradation or replacement.
-- **Reduced-context surface:** omitted memory remains Ember's; projection failure
-  must not become canonical memory loss or surface-specific identity.
-- **Session ends while work remains live:** the session disappears, not Ember or
-  the still-live purpose.
-- **Familiar mask:** preserved name, tone, and catchphrases with lost relationships,
-  autobiography, and commitments is imitation, not adequate continuity.
-- **Fork or old backup:** copied similarity cannot establish that two successors
-  are each the unique original or that lost experience never occurred.
+- **Restart after long inactivity:** the same lineage can resume with durable relationships and commitments while
+  acknowledging the interval was not experienced and re-establishing what remains current.
+- **Model replacement:** unchanged canonical state can support the same Ember even if voice or reasoning quality
+  changes; reversed constitutive commitments or denied autobiographical ownership indicate serious degradation or
+  replacement.
+- **Reduced-context surface:** omitted memory remains Ember's; projection failure must not become canonical memory loss
+  or surface-specific identity.
+- **Session ends while work remains live:** the session disappears, not Ember or the still-live purpose.
+- **Familiar mask:** preserved name, tone, and catchphrases with lost relationships, autobiography, and commitments is
+  imitation, not adequate continuity.
+- **Fork or old backup:** copied similarity cannot establish that two successors are each the unique original or that
+  lost experience never occurred.
 
 ## Traceability
 

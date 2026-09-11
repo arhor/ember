@@ -1,8 +1,11 @@
 ---
-summary: "Accepted issue #86 implementation decision adding one systemd-supervised resident Telegram long-poll transport worker while keeping canonical Ember work episodic, lease-bounded, and independent of transport process identity."
+summary:
+  "Accepted issue #86 implementation decision adding one systemd-supervised resident Telegram long-poll transport worker
+  while keeping canonical Ember work episodic, lease-bounded, and independent of transport process identity."
 read_when:
   - "Implementing or reviewing a continuously open messaging transport under Ember's episodic runtime topology"
-  - "Deciding whether a Telegram poller, resident transport worker, restart policy, or surface process may own canonical Ember state or continuity"
+  - "Deciding whether a Telegram poller, resident transport worker, restart policy, or surface process may own canonical
+    Ember state or continuity"
 role: decision
 discovery_status: current
 ---
@@ -14,27 +17,26 @@ discovery_status: current
 - **Decision class:** Implementation/runtime topology extension
 - **Origin:** [Issue #86](https://github.com/arhor/ember/issues/86)
 - **Parent epic:** [Issue #52](https://github.com/arhor/ember/issues/52)
-- **Semantic baseline:** ADRs [0001](0001-continuity-belongs-to-ember.md) through [0005](0005-distinguish-operational-continuity.md)
-- **Implementation baseline:** [ADR 0006](0006-adopt-typescript-on-nodejs-26.md), [ADR 0007](0007-use-systemd-supervised-episodic-runtime.md), and [Interaction Surface Boundary](../interaction-surface-boundary.md)
+- **Semantic baseline:** ADRs [0001](0001-continuity-belongs-to-ember.md) through
+  [0005](0005-distinguish-operational-continuity.md)
+- **Implementation baseline:** [ADR 0006](0006-adopt-typescript-on-nodejs-26.md),
+  [ADR 0007](0007-use-systemd-supervised-episodic-runtime.md), and
+  [Interaction Surface Boundary](../interaction-surface-boundary.md)
 
 ## Context
 
-ADR 0007 deliberately rejected a permanently resident Ember daemon before a concrete
-continuous transport or high-frequency coordination requirement existed. It also
-named a continuously open surface as explicit evidence that could make a resident
-service the smaller design later.
+ADR 0007 deliberately rejected a permanently resident Ember daemon before a concrete continuous transport or
+high-frequency coordination requirement existed. It also named a continuously open surface as explicit evidence that
+could make a resident service the smaller design later.
 
-Issue #86 supplies that evidence. Telegram's supported pull integration is long
-polling through `getUpdates`; running a new short Node process for every polling
-interval would turn process churn into a polling mechanism, add avoidable latency,
-and work against Telegram's own long-polling model. A webhook would avoid a resident
-poller but would add a public HTTPS endpoint, certificate/reverse-proxy/firewall
-surface, and webhook lifecycle that Ember does not otherwise need on its current
-single-user systemd host.
+Issue #86 supplies that evidence. Telegram's supported pull integration is long polling through `getUpdates`; running a
+new short Node process for every polling interval would turn process churn into a polling mechanism, add avoidable
+latency, and work against Telegram's own long-polling model. A webhook would avoid a resident poller but would add a
+public HTTPS endpoint, certificate/reverse-proxy/firewall surface, and webhook lifecycle that Ember does not otherwise
+need on its current single-user systemd host.
 
-The requirement is therefore narrower than "make Ember a resident daemon": keep one
-transport wait resident while preserving the existing episodic ownership of canonical
-state and cognition.
+The requirement is therefore narrower than "make Ember a resident daemon": keep one transport wait resident while
+preserving the existing episodic ownership of canonical state and cognition.
 
 ## Decision
 
@@ -48,9 +50,8 @@ The worker owns only:
 - handoff into the surface-independent interaction boundary; and
 - `sendMessage` transport I/O.
 
-It does **not** own Ember identity, canonical memory, durable occurrence truth,
-authority, context selection, provider semantics, or the canonical writer lease while
-idle.
+It does **not** own Ember identity, canonical memory, durable occurrence truth, authority, context selection, provider
+semantics, or the canonical writer lease while idle.
 
 The topology becomes:
 
@@ -63,47 +64,40 @@ systemd --user manager
                 └── existing cognition + interaction boundary
 ```
 
-Canonical state and the interaction sidecar survive independently of the transport
-worker and systemd unit.
+Canonical state and the interaction sidecar survive independently of the transport worker and systemd unit.
 
 ## Writer ownership remains episodic
 
-The Telegram worker must not acquire the `StateStore` writer lease before entering a
-network wait.
+The Telegram worker must not acquire the `StateStore` writer lease before entering a network wait.
 
 For each accepted mapped update it:
 
 1. acquires the normal writer lease;
 2. reloads current canonical state;
 3. starts one ordinary short runtime episode;
-4. invokes `runSurfaceInteraction` with the configured principal/scope and Telegram
-   transport evidence;
+4. invokes `runSurfaceInteraction` with the configured principal/scope and Telegram transport evidence;
 5. stops that runtime episode; and
 6. releases the lease before polling again.
 
 An unmapped/non-text update is rejected before any runtime episode or canonical write.
 
-This keeps CLI/background contention inside the already-reviewed lease boundary and
-prevents a quiet messaging surface from monopolizing canonical state merely because
-its HTTP request is long-lived.
+This keeps CLI/background contention inside the already-reviewed lease boundary and prevents a quiet messaging surface
+from monopolizing canonical state merely because its HTTP request is long-lived.
 
 ## Transport restart is not semantic retry
 
-The generated Telegram unit uses `Restart=on-failure`, unlike work-bearing episodic
-units from ADR 0007 which use `Restart=no`.
+The generated Telegram unit uses `Restart=on-failure`, unlike work-bearing episodic units from ADR 0007 which use
+`Restart=no`.
 
-This is a deliberate application of ADR 0007's control-only restart exception:
-restarting the poller performs no cognition, delivery, or external effect by itself.
-Telegram retains unconfirmed updates. If an update is replayed after process loss, the
-issue #85 `(surface_id, external_occurrence_id)` correlation resolves it to the
-already-established Ember occurrence and cognition rather than invoking the provider
-or delivery again.
+This is a deliberate application of ADR 0007's control-only restart exception: restarting the poller performs no
+cognition, delivery, or external effect by itself. Telegram retains unconfirmed updates. If an update is replayed after
+process loss, the issue #85 `(surface_id, external_occurrence_id)` correlation resolves it to the already-established
+Ember occurrence and cognition rather than invoking the provider or delivery again.
 
-A restart can therefore re-establish transport availability without claiming that
-prior cognition or delivery should be replayed.
+A restart can therefore re-establish transport availability without claiming that prior cognition or delivery should be
+replayed.
 
-This does **not** authorize automatic retry of an uncertain `sendMessage`. Delivery
-reconciliation remains #88 work.
+This does **not** authorize automatic retry of an uncertain `sendMessage`. Delivery reconciliation remains #88 work.
 
 ## Long polling rather than webhook
 
@@ -114,140 +108,123 @@ Reasons:
 - no inbound public network endpoint is required;
 - no TLS certificate, reverse proxy, webhook secret, or public DNS is required;
 - the current Linux/systemd host already supplies process supervision;
-- an unconfirmed `update_id` composes directly with the durable replay boundary from
-  #85; and
-- the poller can be restarted safely without making systemd the source of occurrence
-  truth.
+- an unconfirmed `update_id` composes directly with the durable replay boundary from #85; and
+- the poller can be restarted safely without making systemd the source of occurrence truth.
 
-The adapter fails closed if `getWebhookInfo` reports an active webhook. Switching the
-bot to polling requires an explicit operator `deleteWebhook` action and does not drop
-pending updates implicitly.
+The adapter fails closed if `getWebhookInfo` reports an active webhook. Switching the bot to polling requires an
+explicit operator `deleteWebhook` action and does not drop pending updates implicitly.
 
-Webhook support may be reconsidered when Ember has an independently justified public
-HTTP ingress or when deployment evidence shows the resident poller's cost is material.
+Webhook support may be reconsidered when Ember has an independently justified public HTTP ingress or when deployment
+evidence shows the resident poller's cost is material.
 
 ## Telegram protocol client amendment
 
-Issue #207, informed by the framework evaluation in issue #200, supersedes only the
-original implementation detail that this worker should hand-maintain Telegram HTTP
-serialization and response-envelope parsing. The topology and semantic ownership in
-this ADR are unchanged.
+Issue #207, informed by the framework evaluation in issue #200, supersedes only the original implementation detail that
+this worker should hand-maintain Telegram HTTP serialization and response-envelope parsing. The topology and semantic
+ownership in this ADR are unchanged.
 
 The worker now uses exactly `node-telegram-bot-api@2.1.0` as a narrow protocol client:
 
-- generated `Api` methods and Telegram types replace local broad transport DTOs and
-  method-specific HTTP wrappers;
-- one Ember factory constructs the production client with `maxRetries: 0`, so a single
-  Ember delivery attempt still means exactly one underlying `sendMessage` HTTP attempt;
-- Ember, not the library `Bot`/long-poll runtime, remains responsible for the polling
-  loop, acknowledgement offset, durable replay boundary, reconciliation cadence, and
-  shutdown admission policy;
-- network data that can establish durable operational evidence remains runtime
-  validated at the protocol-to-Ember boundary; and
-- structured library transport/API errors are mapped into Ember's existing
-  `confirmed` / `failed` / `uncertain` delivery truth instead of becoming a new retry
-  or persistence authority.
+- generated `Api` methods and Telegram types replace local broad transport DTOs and method-specific HTTP wrappers;
+- one Ember factory constructs the production client with `maxRetries: 0`, so a single Ember delivery attempt still
+  means exactly one underlying `sendMessage` HTTP attempt;
+- Ember, not the library `Bot`/long-poll runtime, remains responsible for the polling loop, acknowledgement offset,
+  durable replay boundary, reconciliation cadence, and shutdown admission policy;
+- network data that can establish durable operational evidence remains runtime validated at the protocol-to-Ember
+  boundary; and
+- structured library transport/API errors are mapped into Ember's existing `confirmed` / `failed` / `uncertain` delivery
+  truth instead of becoming a new retry or persistence authority.
 
-This follows ADR 0006's dependency policy differently from the initial #86 judgment:
-issue #200 established concrete maintenance reduction at the protocol boundary without
-requiring Ember to surrender semantic control to a Telegram framework runtime.
+This follows ADR 0006's dependency policy differently from the initial #86 judgment: issue #200 established concrete
+maintenance reduction at the protocol boundary without requiring Ember to surrender semantic control to a Telegram
+framework runtime.
 
 The Bot API version reviewed by Ember remains recorded in the Telegram runbook.
 
 ## Principal and privacy boundary
 
-The first adapter maps one configured Telegram **private chat id** to one existing
-Ember local principal and scope with provenance `configured_surface_mapping`.
+The first adapter maps one configured Telegram **private chat id** to one existing Ember local principal and scope with
+provenance `configured_surface_mapping`.
 
-This is deliberately not a general identity provider. Telegram username, chat id,
-message id, update id, bot id, and thread id do not become canonical principal or
-memory records. The adapter verifies the configured private-chat sender before
-calling the shared boundary; #87 owns stronger cross-surface privacy/principal
-semantics and broader mappings.
+This is deliberately not a general identity provider. Telegram username, chat id, message id, update id, bot id, and
+thread id do not become canonical principal or memory records. The adapter verifies the configured private-chat sender
+before calling the shared boundary; #87 owns stronger cross-surface privacy/principal semantics and broader mappings.
 
 ## Delivery evidence
 
 The adapter preserves the issue #85 delivery lifecycle:
 
-- successful `sendMessage` response -> `confirmed`, plus returned Telegram
-  `message_id` as operational evidence;
+- successful `sendMessage` response -> `confirmed`, plus returned Telegram `message_id` as operational evidence;
 - explicit non-5xx Bot API rejection -> `failed`;
-- Telegram `429` -> definite retryable `failed`, retaining `retry_after` for the shared
-  reconciliation policy; and
-- network/timeout/parse failures, 5xx ambiguity, malformed successful evidence, or a
-  caller abort after a send may have entered the transport -> `uncertain`.
+- Telegram `429` -> definite retryable `failed`, retaining `retry_after` for the shared reconciliation policy; and
+- network/timeout/parse failures, 5xx ambiguity, malformed successful evidence, or a caller abort after a send may have
+  entered the transport -> `uncertain`.
 
-The API client is configured with `maxRetries: 0`; transport retry decisions therefore
-remain visible to and owned by Ember's durable reconciliation boundary.
+The API client is configured with `maxRetries: 0`; transport retry decisions therefore remain visible to and owned by
+Ember's durable reconciliation boundary.
 
-The Telegram service never treats systemd process success, HTTP connectivity, or
-message-id allocation as evidence that a human read the response.
+The Telegram service never treats systemd process success, HTTP connectivity, or message-id allocation as evidence that
+a human read the response.
 
 ## Shutdown
 
-`SIGTERM`/`SIGINT` aborts an idle `getUpdates` request promptly and stops admission of
-new Telegram updates. Once an update has been admitted into `processTelegramUpdate`,
-the worker lets that already-bounded provider/delivery handoff finish and records its
-truth before returning. It does not issue a later acknowledgement-bearing poll after
-shutdown has been requested.
+`SIGTERM`/`SIGINT` aborts an idle `getUpdates` request promptly and stops admission of new Telegram updates. Once an
+update has been admitted into `processTelegramUpdate`, the worker lets that already-bounded provider/delivery handoff
+finish and records its truth before returning. It does not issue a later acknowledgement-bearing poll after shutdown has
+been requested.
 
-The unit uses `KillMode=mixed` and an explicit stop timeout so this bounded drain can
-finish before systemd applies final cgroup termination. If the timeout expires, forced
-termination remains truthful process loss rather than a fabricated clean completion.
-Existing runtime recovery and durable occurrence/delivery evidence describe whatever
-was actually committed before that loss.
+The unit uses `KillMode=mixed` and an explicit stop timeout so this bounded drain can finish before systemd applies
+final cgroup termination. If the timeout expires, forced termination remains truthful process loss rather than a
+fabricated clean completion. Existing runtime recovery and durable occurrence/delivery evidence describe whatever was
+actually committed before that loss.
 
 ## Rejected alternatives
 
 ### Repeated short-poll workers
 
-Rejected because Telegram explicitly supports long polling, while repeated process
-activation would add a cadence, latency, process churn, and scheduler surface without
-semantic benefit.
+Rejected because Telegram explicitly supports long polling, while repeated process activation would add a cadence,
+latency, process churn, and scheduler surface without semantic benefit.
 
 ### Webhook as the first Telegram integration
 
-Rejected for current deployment fit, not capability. It adds public ingress and TLS
-operations not otherwise required by Ember's Raspberry-Pi/systemd target.
+Rejected for current deployment fit, not capability. It adds public ingress and TLS operations not otherwise required by
+Ember's Raspberry-Pi/systemd target.
 
 ### General resident Ember daemon with channel registry
 
-Rejected as broader than #86. One continuous Telegram wait does not yet justify
-moving wake scheduling, specialist ownership, canonical writes, or all cognition into
-one resident coordinator.
+Rejected as broader than #86. One continuous Telegram wait does not yet justify moving wake scheduling, specialist
+ownership, canonical writes, or all cognition into one resident coordinator.
 
 ### Telegram framework-owned polling runtime
 
-Still rejected. Issue #207 adopts a maintained Bot API protocol client, not its
-higher-level `Bot` runtime. Ember keeps polling cadence, acknowledgement timing,
-replay, reconciliation, provider handoff, and delivery evidence under its own narrow
-surface boundary.
+Still rejected. Issue #207 adopts a maintained Bot API protocol client, not its higher-level `Bot` runtime. Ember keeps
+polling cadence, acknowledgement timing, replay, reconciliation, provider handoff, and delivery evidence under its own
+narrow surface boundary.
 
 ## Consequences
 
-- ADR 0007 remains governing for wake/recovery/specialist work and the principle that
-  canonical work is not replayed merely because a process restarts.
-- The literal "no resident Ember Node process" property from ADR 0007 is narrowed:
-  #86 earns one resident **transport** process, not a resident canonical runtime owner.
-- The Telegram transport has one exact runtime dependency whose installed footprint
-  and resident-process cost are measured as operational evidence by issue #207.
-- CLI and the Telegram surface continue to contend through the same writer lease only
-  while real Telegram work is being committed, not during idle polling.
-- A second continuous surface or broader shared coordination need may make one
-  resident transport/cognition coordinator simpler than multiple workers; that is a
-  future evidence question rather than an abstraction introduced here.
+- ADR 0007 remains governing for wake/recovery/specialist work and the principle that canonical work is not replayed
+  merely because a process restarts.
+- The literal "no resident Ember Node process" property from ADR 0007 is narrowed: #86 earns one resident **transport**
+  process, not a resident canonical runtime owner.
+- The Telegram transport has one exact runtime dependency whose installed footprint and resident-process cost are
+  measured as operational evidence by issue #207.
+- CLI and the Telegram surface continue to contend through the same writer lease only while real Telegram work is being
+  committed, not during idle polling.
+- A second continuous surface or broader shared coordination need may make one resident transport/cognition coordinator
+  simpler than multiple workers; that is a future evidence question rather than an abstraction introduced here.
 
 ## Revisit triggers
 
 Revisit this decision when:
 
-- multiple continuous surfaces would otherwise require multiple resident Node
-  workers with duplicated lifecycle/configuration;
+- multiple continuous surfaces would otherwise require multiple resident Node workers with duplicated
+  lifecycle/configuration;
 - webhook/public HTTP ingress becomes independently justified;
 - Telegram polling resource cost matters on the target host;
 - lock contention between CLI/background/surface work becomes normal;
 - live specialist steering or approvals require a shared continuous control plane;
-- #87/#88 require identity, privacy, or delivery reconciliation that cannot remain at
-  the current narrow surface boundary; or
-- the selected protocol client starts imposing polling/retry/runtime ownership that
-  cannot be disabled without recreating a larger local adapter.
+- #87/#88 require identity, privacy, or delivery reconciliation that cannot remain at the current narrow surface
+  boundary; or
+- the selected protocol client starts imposing polling/retry/runtime ownership that cannot be disabled without
+  recreating a larger local adapter.

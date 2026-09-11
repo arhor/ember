@@ -1,31 +1,31 @@
 ---
-summary: "Current Telegram surface runbook: Bot API 10.3 long polling via node-telegram-bot-api 2.1.0, principal/scope privacy mapping, restart-safe delivery reconciliation, systemd supervision, and secret-safe configuration."
+summary:
+  "Current Telegram surface runbook: Bot API 10.3 long polling via node-telegram-bot-api 2.1.0, principal/scope privacy
+  mapping, restart-safe delivery reconciliation, systemd supervision, and secret-safe configuration."
 read_when:
   - "Setting up, running, debugging, or reviewing Ember's Telegram interaction surface"
-  - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior, or Telegram systemd startup"
+  - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior,
+    or Telegram systemd startup"
 role: guide
 discovery_status: current
 ---
 
 # Telegram Surface Runbook
 
-> Status: current implementation/runbook from issue #86, with principal/privacy policy
-> hardened by issue #87, restart-safe delivery reconciliation added by issue #88, and
-> protocol plumbing migrated to `node-telegram-bot-api@2.1.0` by issue #207.
-> The semantic boundary remains
-> [Interaction Surface Boundary](interaction-surface-boundary.md); this document owns
-> Telegram-specific transport and deployment details only.
+> Status: current implementation/runbook from issue #86, with principal/privacy policy hardened by issue #87,
+> restart-safe delivery reconciliation added by issue #88, and protocol plumbing migrated to
+> `node-telegram-bot-api@2.1.0` by issue #207. The semantic boundary remains
+> [Interaction Surface Boundary](interaction-surface-boundary.md); this document owns Telegram-specific transport and
+> deployment details only.
 
 ## Supported integration
 
-Ember's first messaging surface uses the official HTTP-based Telegram Bot API through
-exactly `node-telegram-bot-api@2.1.0` on Node.js 26. Ember uses the package as a
-narrow protocol client, not as the owner of polling, retries, replay, delivery truth,
-or runtime lifecycle. Production construction is centralized with `maxRetries: 0`,
-so one Ember delivery attempt maps to one underlying Telegram send attempt.
+Ember's first messaging surface uses the official HTTP-based Telegram Bot API through exactly
+`node-telegram-bot-api@2.1.0` on Node.js 26. Ember uses the package as a narrow protocol client, not as the owner of
+polling, retries, replay, delivery truth, or runtime lifecycle. Production construction is centralized with
+`maxRetries: 0`, so one Ember delivery attempt maps to one underlying Telegram send attempt.
 
-Implementation assumptions verified against the official Telegram documentation on
-2026-09-05:
+Implementation assumptions verified against the official Telegram documentation on 2026-09-05:
 
 - Telegram Bot API version **10.3** is the current Bot API release (2026-08-24).
 - bots authenticate with the token issued through BotFather;
@@ -35,34 +35,33 @@ Implementation assumptions verified against the official Telegram documentation 
 - `getMe` validates bot authentication;
 - `getWebhookInfo` reports whether a webhook currently owns update delivery;
 - `deleteWebhook` removes that webhook without requiring pending updates to be dropped;
-- `sendMessage` returns the sent Telegram `Message`, whose `message_id` is retained only
-  as operational delivery evidence.
+- `sendMessage` returns the sent Telegram `Message`, whose `message_id` is retained only as operational delivery
+  evidence.
 
 Canonical upstream references:
 
 - <https://core.telegram.org/bots/api>
 - <https://core.telegram.org/bots/faq>
 
-The production worker uses `allowed_updates: ["message"]` and a positive long-poll
-timeout. It does not use short polling as an always-on mechanism.
+The production worker uses `allowed_updates: ["message"]` and a positive long-poll timeout. It does not use short
+polling as an always-on mechanism.
 
 ## Why long polling
 
-The first deployment target is the existing single-user Linux/systemd host from ADR 0007. Long polling needs no public HTTPS endpoint, certificate, reverse proxy, inbound
-firewall rule, or webhook secret. A systemd user service can therefore own the network
-wait while Ember itself still acquires canonical writer ownership only around an
-accepted update.
+The first deployment target is the existing single-user Linux/systemd host from ADR 0007. Long polling needs no public
+HTTPS endpoint, certificate, reverse proxy, inbound firewall rule, or webhook secret. A systemd user service can
+therefore own the network wait while Ember itself still acquires canonical writer ownership only around an accepted
+update.
 
-This is the first concrete evidence that a continuously open transport is useful. It
-does **not** convert the transport worker into Ember identity or canonical continuity.
-The worker may disappear and restart; durable state and the interaction ledger remain
-the truth sources. [ADR 0008](decisions/0008-add-systemd-supervised-telegram-transport-worker.md)
-records that narrow topology extension explicitly.
+This is the first concrete evidence that a continuously open transport is useful. It does **not** convert the transport
+worker into Ember identity or canonical continuity. The worker may disappear and restart; durable state and the
+interaction ledger remain the truth sources.
+[ADR 0008](decisions/0008-add-systemd-supervised-telegram-transport-worker.md) records that narrow topology extension
+explicitly.
 
-`Restart=on-failure` is safe for this transport worker because restarting the poller is
-not itself a cognition retry. Telegram may replay an unacknowledged `update_id`, and
-the issue #85 correlation boundary suppresses duplicate cognition and duplicate
-response delivery for that established occurrence.
+`Restart=on-failure` is safe for this transport worker because restarting the poller is not itself a cognition retry.
+Telegram may replay an unacknowledged `update_id`, and the issue #85 correlation boundary suppresses duplicate cognition
+and duplicate response delivery for that established occurrence.
 
 ## Current principal/privacy envelope
 
@@ -75,49 +74,41 @@ one configured Telegram private chat id
     -> one configured Ember active scope
 ```
 
-Only ordinary text messages are accepted. The message must come from the configured
-**private** chat, the sender must be the same Telegram user as that chat, and the
-sender must not be a bot. Group chats, channels, arbitrary users, username-based
-identity, forwarded identity, media/captions, edits, callbacks, and multiple principal
-mappings are outside the current surface.
+Only ordinary text messages are accepted. The message must come from the configured **private** chat, the sender must be
+the same Telegram user as that chat, and the sender must not be a bot. Group chats, channels, arbitrary users,
+username-based identity, forwarded identity, media/captions, edits, callbacks, and multiple principal mappings are
+outside the current surface.
 
 Issue #87 makes the mapping policy explicit:
 
-- `chat_id` is transport evidence selecting this configured mapping. It is not an
-  Ember principal, identity record, permission grant, or canonical meaning;
-- `principal` names the already-initialized Ember local principal. A matching Telegram
-  chat cannot manufacture a different principal; a configured mismatch is rejected
-  before the message becomes an accepted interaction occurrence;
-- `activeScope` is the ordinary cognition selection scope for this surface. Telegram
-  update/chat/message history does not broaden it;
-- ordinary Telegram text remains ordinary input even when it names a canonical meaning
-  ID or asks for information outside that scope. The request itself is visible, but it
-  does not opt into Ember's explicit local explanation-selection path or silently add
-  the named meaning to the projection;
-- changing the Telegram account/chat mapping does not rewrite Ember relationship or
-  continuity identity. It changes only which transport evidence is accepted for this
-  deployment mapping.
+- `chat_id` is transport evidence selecting this configured mapping. It is not an Ember principal, identity record,
+  permission grant, or canonical meaning;
+- `principal` names the already-initialized Ember local principal. A matching Telegram chat cannot manufacture a
+  different principal; a configured mismatch is rejected before the message becomes an accepted interaction occurrence;
+- `activeScope` is the ordinary cognition selection scope for this surface. Telegram update/chat/message history does
+  not broaden it;
+- ordinary Telegram text remains ordinary input even when it names a canonical meaning ID or asks for information
+  outside that scope. The request itself is visible, but it does not opt into Ember's explicit local
+  explanation-selection path or silently add the named meaning to the projection;
+- changing the Telegram account/chat mapping does not rewrite Ember relationship or continuity identity. It changes only
+  which transport evidence is accepted for this deployment mapping.
 
-The same continuing Ember can therefore have richer canonical relationship/memory
-state than one Telegram interaction is permitted to project. Surface reachability and
-recognized transport identity never imply unrestricted disclosure.
+The same continuing Ember can therefore have richer canonical relationship/memory state than one Telegram interaction is
+permitted to project. Surface reachability and recognized transport identity never imply unrestricted disclosure.
 
-Telegram `update_id`, `message_id`, `message_thread_id`, chat id, and delivery message
-id remain in the operational interaction boundary. They are not canonical meanings
-and are not automatically projected into cognition.
+Telegram `update_id`, `message_id`, `message_thread_id`, chat id, and delivery message id remain in the operational
+interaction boundary. They are not canonical meanings and are not automatically projected into cognition.
 
 ## Bot setup
 
-1. Create a bot with Telegram's official `@BotFather` flow and retain the bot token
-   locally.
-2. Send a message to the bot from the private Telegram account that will map to the
-   Ember principal.
-3. Determine that private chat's numeric id from the official Bot API. Do not paste
-   the bot token into a committed file, issue, shell script, or command-line URL.
+1. Create a bot with Telegram's official `@BotFather` flow and retain the bot token locally.
+2. Send a message to the bot from the private Telegram account that will map to the Ember principal.
+3. Determine that private chat's numeric id from the official Bot API. Do not paste the bot token into a committed file,
+   issue, shell script, or command-line URL.
 4. Create the local token/config files below.
 
-A token-file-safe one-off way to inspect pending updates is to run Node with the token
-read at runtime rather than embedding it in the command line:
+A token-file-safe one-off way to inspect pending updates is to run Node with the token read at runtime rather than
+embedding it in the command line:
 
 ```bash
 EMBER_TELEGRAM_TOKEN_FILE="$HOME/.config/ember/telegram.token" node --input-type=module -e '
@@ -133,8 +124,7 @@ EMBER_TELEGRAM_TOKEN_FILE="$HOME/.config/ember/telegram.token" node --input-type
 '
 ```
 
-The numeric chat id is operational deployment data. Do not commit a real user's chat
-id to this repository.
+The numeric chat id is operational deployment data. Do not commit a real user's chat id to this repository.
 
 ## Token file
 
@@ -147,14 +137,12 @@ read -rsp "Telegram bot token: " TOKEN; printf '\n'; printf '%s\n' "$TOKEN" > "$
 chmod 600 "$HOME/.config/ember/telegram.token"
 ```
 
-The token is read from `token_file` at process startup. It is not placed in the
-systemd unit, command-line arguments, canonical Ember state, interaction ledger, or
-repository configuration.
+The token is read from `token_file` at process startup. It is not placed in the systemd unit, command-line arguments,
+canonical Ember state, interaction ledger, or repository configuration.
 
 ## Surface configuration
 
-Create an uncommitted local JSON file, for example
-`$HOME/.config/ember/telegram.json`:
+Create an uncommitted local JSON file, for example `$HOME/.config/ember/telegram.json`:
 
 ```json
 {
@@ -176,22 +164,18 @@ Create an uncommitted local JSON file, for example
 }
 ```
 
-All filesystem/executable paths are absolute because the systemd user manager must
-not depend on an interactive shell's current directory, aliases, or PATH resolution.
-`principal` must already match the principal in the initialized Ember state.
-`activeScope` is not a Telegram label: it is Ember's existing ordinary projection
-scope used for cognition accepted through this configured surface. Choose it
-deliberately for the information appropriate to this remote private-chat setting
-rather than copying a broader CLI/project scope automatically.
+All filesystem/executable paths are absolute because the systemd user manager must not depend on an interactive shell's
+current directory, aliases, or PATH resolution. `principal` must already match the principal in the initialized Ember
+state. `activeScope` is not a Telegram label: it is Ember's existing ordinary projection scope used for cognition
+accepted through this configured surface. Choose it deliberately for the information appropriate to this remote
+private-chat setting rather than copying a broader CLI/project scope automatically.
 
-`chat_id`, `principal`, and `activeScope` together are local deployment policy. They
-remain in the uncommitted configuration file rather than code, test fixtures tied to a
-real person, or canonical state. A repository checkout can therefore describe the
-mapping mechanism without embedding a personal Telegram identifier.
+`chat_id`, `principal`, and `activeScope` together are local deployment policy. They remain in the uncommitted
+configuration file rather than code, test fixtures tied to a real person, or canonical state. A repository checkout can
+therefore describe the mapping mechanism without embedding a personal Telegram identifier.
 
-Supported `provider_kind` values are `codex`, `cursor`, and `process`; this mirrors the
-existing cognition boundary rather than defining a Telegram-specific cognition
-backend.
+Supported `provider_kind` values are `codex`, `cursor`, and `process`; this mirrors the existing cognition boundary
+rather than defining a Telegram-specific cognition backend.
 
 ## Preflight
 
@@ -202,25 +186,22 @@ npm run surface:telegram -- check \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
-Preflight calls `getMe` and `getWebhookInfo`. It fails closed when a webhook is active,
-because Telegram does not permit `getUpdates` while a webhook owns delivery.
+Preflight calls `getMe` and `getWebhookInfo`. It fails closed when a webhook is active, because Telegram does not permit
+`getUpdates` while a webhook owns delivery.
 
-The Bot API preflight proves bot authentication and long-poll availability. It is not
-a substitute for Ember principal policy: when an accepted update is processed, the
-configured principal is resolved against the initialized continuity state before
-`runSurfaceInteraction`; a mismatch fails before provider invocation, interaction
-acceptance, or delivery.
+The Bot API preflight proves bot authentication and long-poll availability. It is not a substitute for Ember principal
+policy: when an accepted update is processed, the configured principal is resolved against the initialized continuity
+state before `runSurfaceInteraction`; a mismatch fails before provider invocation, interaction acceptance, or delivery.
 
-If this bot was previously configured for webhook delivery and switching it to Ember
-is intentional:
+If this bot was previously configured for webhook delivery and switching it to Ember is intentional:
 
 ```bash
 npm run surface:telegram -- delete-webhook \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
-This command calls `deleteWebhook` with `drop_pending_updates=false`. Ember never
-discards pending Telegram updates implicitly.
+This command calls `deleteWebhook` with `drop_pending_updates=false`. Ember never discards pending Telegram updates
+implicitly.
 
 ## Foreground run
 
@@ -231,61 +212,50 @@ npm run surface:telegram -- serve \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
-`SIGINT`/`SIGTERM` aborts an idle `getUpdates` request promptly and stops admission of
-new updates. An update already admitted into Ember is allowed to finish its bounded
-provider/delivery handoff before the worker exits; shutdown does not issue a later
-acknowledgement-bearing poll for that update. The systemd stop timeout remains the
-outer bound, so forced termination is recorded as real process loss rather than a
-fabricated clean completion.
+`SIGINT`/`SIGTERM` aborts an idle `getUpdates` request promptly and stops admission of new updates. An update already
+admitted into Ember is allowed to finish its bounded provider/delivery handoff before the worker exits; shutdown does
+not issue a later acknowledgement-bearing poll for that update. The systemd stop timeout remains the outer bound, so
+forced termination is recorded as real process loss rather than a fabricated clean completion.
 
-The worker does **not** hold the canonical writer lease while waiting for Telegram.
-For each accepted update it:
+The worker does **not** hold the canonical writer lease while waiting for Telegram. For each accepted update it:
 
 1. filters to the configured private-chat mapping;
 2. acquires the existing `StateStore` writer lease;
-3. resolves the configured principal against the initialized local principal while
-   starting one short Ember runtime episode;
-4. calls `runSurfaceInteraction` with surface `telegram_bot`, principal provenance
-   `configured_surface_mapping`, the configured active scope, and stable `update_id`
-   correlation;
-5. builds cognition context through the ordinary Ember projection boundary, without
-   injecting Telegram IDs/history;
+3. resolves the configured principal against the initialized local principal while starting one short Ember runtime
+   episode;
+4. calls `runSurfaceInteraction` with surface `telegram_bot`, principal provenance `configured_surface_mapping`, the
+   configured active scope, and stable `update_id` correlation;
+5. builds cognition context through the ordinary Ember projection boundary, without injecting Telegram IDs/history;
 6. sends the committed expression through `sendMessage`;
 7. records Telegram's returned outbound `message_id` as operational delivery evidence;
 8. cleanly stops the short runtime episode; and
 9. releases the writer lease before the next network wait.
 
-An ignored or unmapped update creates no Ember runtime/cognition occurrence. A mapped
-chat paired with a wrong Ember principal fails before accepted interaction/cognition.
+An ignored or unmapped update creates no Ember runtime/cognition occurrence. A mapped chat paired with a wrong Ember
+principal fails before accepted interaction/cognition.
 
 ## Delivery truth
 
 The Telegram adapter maps transport evidence onto the shared delivery lifecycle:
 
-- a successful `sendMessage` response with a runtime-valid positive `message_id`
-  records `confirmed` and that returned Telegram message id;
+- a successful `sendMessage` response with a runtime-valid positive `message_id` records `confirmed` and that returned
+  Telegram message id;
 - `TelegramApiError` for a non-5xx rejection records definite `failed`;
-- Telegram 429 with `retryAfter` records definite retryable `failed` plus the
-  transport-neutral retry delay; and
-- `NetworkError`, `TimeoutError`, `ParseError`, 5xx ambiguity, malformed successful
-  evidence, caller abort after the send may have entered transport, or process loss
-  after that boundary records or reconciles to `uncertain`.
+- Telegram 429 with `retryAfter` records definite retryable `failed` plus the transport-neutral retry delay; and
+- `NetworkError`, `TimeoutError`, `ParseError`, 5xx ambiguity, malformed successful evidence, caller abort after the
+  send may have entered transport, or process loss after that boundary records or reconciles to `uncertain`.
 
-The generated API client is always constructed with `maxRetries: 0`. The library may
-classify protocol failures, but only Ember reconciliation decides whether a later
-transport attempt is safe.
+The generated API client is always constructed with `maxRetries: 0`. The library may classify protocol failures, but
+only Ember reconciliation decides whether a later transport attempt is safe.
 
-`confirmed` means Telegram accepted the send operation. It does not mean the user read
-or understood the message. Before each long-poll cycle the worker reconciles pending
-Telegram deliveries: due definite retryable failures may resend the exact retained
-representation without new cognition, while `uncertain` remains blocked. The
-transport-neutral rules live in
-[Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
+`confirmed` means Telegram accepted the send operation. It does not mean the user read or understood the message. Before
+each long-poll cycle the worker reconciles pending Telegram deliveries: due definite retryable failures may resend the
+exact retained representation without new cognition, while `uncertain` remains blocked. The transport-neutral rules live
+in [Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
 
-Telegram currently limits ordinary `sendMessage` text. The current surface does not
-split one Ember expression into multiple Telegram messages because that would require
-multi-message delivery semantics not present in the current boundary. An oversized
-Telegram send therefore fails explicitly instead of being silently chunked.
+Telegram currently limits ordinary `sendMessage` text. The current surface does not split one Ember expression into
+multiple Telegram messages because that would require multi-message delivery semantics not present in the current
+boundary. An oversized Telegram send therefore fails explicitly instead of being silently chunked.
 
 ## systemd user service
 
@@ -300,9 +270,9 @@ systemctl --user daemon-reload
 systemctl --user enable --now ember-telegram.service
 ```
 
-The generated unit uses `Type=exec`, `Restart=on-failure`, `KillMode=mixed`, an
-explicit stop timeout, `UMask=0077`, absolute Node/entrypoint paths, and the configured
-working directory. Neither the token nor chat id appears in `ExecStart`.
+The generated unit uses `Type=exec`, `Restart=on-failure`, `KillMode=mixed`, an explicit stop timeout, `UMask=0077`,
+absolute Node/entrypoint paths, and the configured working directory. Neither the token nor chat id appears in
+`ExecStart`.
 
 For operation after logout/reboot, retain the ADR 0007 user-manager setup:
 
@@ -317,8 +287,7 @@ systemctl --user status ember-telegram.service
 journalctl --user -u ember-telegram.service
 ```
 
-Do not log raw incoming message text or the bot token as part of normal adapter
-operation.
+Do not log raw incoming message text or the bot token as part of normal adapter operation.
 
 ## Inspection
 
@@ -331,43 +300,35 @@ ember inspect \
   --json
 ```
 
-The `interactions` section contains inbound occurrence and delivery records. For a
-Telegram exchange it can show logical surface `telegram_bot`,
-`configured_surface_mapping`, configured destination, stable update/message metadata,
-and confirmed/failed/uncertain delivery attempts including the outbound Telegram
-message ID when observed.
+The `interactions` section contains inbound occurrence and delivery records. For a Telegram exchange it can show logical
+surface `telegram_bot`, `configured_surface_mapping`, configured destination, stable update/message metadata, and
+confirmed/failed/uncertain delivery attempts including the outbound Telegram message ID when observed.
 
-This operator visibility does not move those values into canonical meanings or
-provider context. Inspection and cognition projection are deliberately different
-views.
+This operator visibility does not move those values into canonical meanings or provider context. Inspection and
+cognition projection are deliberately different views.
 
 ## Manual end-to-end smoke
 
-This smoke is deliberately opt-in and requires a real bot/account/network. Normal repository tests use the generated API client with injected `fetch` plus
-deterministic API/provider boundaries and require no token.
+This smoke is deliberately opt-in and requires a real bot/account/network. Normal repository tests use the generated API
+client with injected `fetch` plus deterministic API/provider boundaries and require no token.
 
 1. Run the preflight `check` command.
 2. Start `serve` in the foreground or start `ember-telegram.service`.
 3. Send a fresh ordinary text message from the configured private Telegram chat.
 4. Confirm that exactly one Ember response arrives in that chat.
-5. Run `ember inspect ... --json` and confirm the cognition episode exists while the
-   Telegram update/chat/message identifiers appear only under `interactions`, not as
-   canonical meanings.
-6. Confirm the Telegram interaction record reports `configured_surface_mapping`, the
-   expected configured principal/scope/destination, one delivery intent, and one
-   attempt carrying the returned outbound Telegram message id.
-7. Restart the surface after forcing the same Telegram update to remain unacknowledged
-   (for example by stopping before the next `getUpdates` confirmation call). Confirm
-   replay does not create a second cognition or second response.
+5. Run `ember inspect ... --json` and confirm the cognition episode exists while the Telegram update/chat/message
+   identifiers appear only under `interactions`, not as canonical meanings.
+6. Confirm the Telegram interaction record reports `configured_surface_mapping`, the expected configured
+   principal/scope/destination, one delivery intent, and one attempt carrying the returned outbound Telegram message id.
+7. Restart the surface after forcing the same Telegram update to remain unacknowledged (for example by stopping before
+   the next `getUpdates` confirmation call). Confirm replay does not create a second cognition or second response.
 
-The logical `telegram_bot` surface supplied to cognition is covered by deterministic
-provider-boundary tests; it is not claimed to be a new canonical memory field merely
-for observability.
+The logical `telegram_bot` surface supplied to cognition is covered by deterministic provider-boundary tests; it is not
+claimed to be a new canonical memory field merely for observability.
 
-The restart/replay step exercises #85's duplicate-occurrence guarantee through a real
-transport. Issue #88 additionally keeps outbound recovery separate from inbound replay:
-definite retryable delivery can resume from the durable delivery intent, while an
-ambiguous prior send remains blocked instead of being duplicated.
+The restart/replay step exercises #85's duplicate-occurrence guarantee through a real transport. Issue #88 additionally
+keeps outbound recovery separate from inbound replay: definite retryable delivery can resume from the durable delivery
+intent, while an ambiguous prior send remains blocked instead of being duplicated.
 
 ## Deterministic confidence path
 
@@ -384,33 +345,31 @@ Focused tests cover:
 - stable `update_id` replay producing one cognition and one send;
 - exclusion of Telegram ids from the cognition projection;
 - explicit `getUpdates` acknowledgement offset and message-only filter;
-- one underlying send attempt for success, 400, 429, 5xx, malformed JSON/result,
-  body-read loss, network loss, timeout, and caller-abort cases;
+- one underlying send attempt for success, 400, 429, 5xx, malformed JSON/result, body-read loss, network loss, timeout,
+  and caller-abort cases;
 - Bot API rejection versus uncertain network/server/protocol delivery;
 - refusal to long-poll while a webhook is active;
 - generated systemd unit secrecy and restart policy;
-- CLI and Telegram selecting the same ordinary meanings when given the same active
-  scope despite different transport metadata;
-- a mapped Telegram message naming an out-of-scope meaning ID without causing that
-  meaning or its private content to enter ordinary cognition context;
+- CLI and Telegram selecting the same ordinary meanings when given the same active scope despite different transport
+  metadata;
+- a mapped Telegram message naming an out-of-scope meaning ID without causing that meaning or its private content to
+  enter ordinary cognition context;
 - a matching Telegram chat failing to manufacture a mismatched Ember principal; and
 - operator inspection exposing principal/surface/delivery provenance from the sidecar.
 
 ## Deliberate limits and next issues
 
-The current Telegram surface does not add groups, multiple principals, media,
-commands, callback queries, webhooks, automatic uncertain-send retry, device/user
-attestation, remote explicit-explanation commands, or a generic
+The current Telegram surface does not add groups, multiple principals, media, commands, callback queries, webhooks,
+automatic uncertain-send retry, device/user attestation, remote explicit-explanation commands, or a generic
 surface/plugin/authorization framework.
 
-Issue #87 establishes the current single-user principal/privacy policy described
-above. It does not claim that one private Telegram account is universally sufficient
-identity proof for future multi-user, shared-device, group, or forwarded-message
-surfaces.
+Issue #87 establishes the current single-user principal/privacy policy described above. It does not claim that one
+private Telegram account is universally sufficient identity proof for future multi-user, shared-device, group, or
+forwarded-message surfaces.
 
-- #88 defines the current offline/reconnect/retry and delivery-uncertainty policy in
-  the transport-neutral delivery reconciliation runbook.
+- #88 defines the current offline/reconnect/retry and delivery-uncertainty policy in the transport-neutral delivery
+  reconciliation runbook.
 - #89 owns cross-surface continuity validation between CLI and Telegram.
 
-The Telegram worker is therefore a concrete second window onto the same Ember, not a
-new owner of Ember identity, memory, authority, privacy policy, or truth.
+The Telegram worker is therefore a concrete second window onto the same Ember, not a new owner of Ember identity,
+memory, authority, privacy policy, or truth.

@@ -1,5 +1,7 @@
 ---
-summary: "Issue #176 evaluation of Mastra as a set of replaceable TypeScript infrastructure primitives beneath Ember-owned cognition, capability, memory, delegation, persistence, and runtime semantics."
+summary:
+  "Issue #176 evaluation of Mastra as a set of replaceable TypeScript infrastructure primitives beneath Ember-owned
+  cognition, capability, memory, delegation, persistence, and runtime semantics."
 read_when:
   - "Considering Mastra for model routing, tools, MCP, workflows, memory, observability, evals, or storage in Ember"
   - "Comparing agent frameworks as replaceable infrastructure beneath Ember-owned semantics"
@@ -12,19 +14,35 @@ discovery_status: current
 
 ## Decision
 
-**Do not adopt Mastra as Ember's application architecture or identity-bearing agent runtime. Treat Mastra as a toolbox whose primitives may be adopted independently behind Ember-owned capability seams.**
+**Do not adopt Mastra as Ember's application architecture or identity-bearing agent runtime. Treat Mastra as a toolbox
+whose primitives may be adopted independently behind Ember-owned capability seams.**
 
-The useful question for issue [#176](https://github.com/arhor/ember/issues/176) is not whether Ember can be represented as a Mastra `Agent`. She can, mechanically. Doing so would collapse distinctions that Ember deliberately owns: continuity versus provider sessions, history versus memory versus current context, capability versus authority, operational workflow progress versus canonical meaning, and specialist execution versus responsibility for reintegration.
+The useful question for issue [#176](https://github.com/arhor/ember/issues/176) is not whether Ember can be represented
+as a Mastra `Agent`. She can, mechanically. Doing so would collapse distinctions that Ember deliberately owns:
+continuity versus provider sessions, history versus memory versus current context, capability versus authority,
+operational workflow progress versus canonical meaning, and specialist execution versus responsibility for
+reintegration.
 
-Mastra is nevertheless substantially more modular than its top-level `Agent` API suggests. Current packages expose lower-level model routing, tools, workflows, MCP, observability, storage domains, memory operations, and evaluation machinery separately. Several of those pieces are plausible infrastructure beneath narrow Ember contracts.
+Mastra is nevertheless substantially more modular than its top-level `Agent` API suggests. Current packages expose
+lower-level model routing, tools, workflows, MCP, observability, storage domains, memory operations, and evaluation
+machinery separately. Several of those pieces are plausible infrastructure beneath narrow Ember contracts.
 
 The recommended posture is therefore:
 
-1. **Preserve Ember's current semantic boundaries.** In particular, keep `ProviderRequest` / `ProviderResult` / `ProviderInvoker`, canonical `StateStore` semantics, projection/currentness rules, specialist delegation contracts, and acceptance scenarios independent of Mastra.
-2. **Adopt mechanics only at capability-sized seams.** Model routing, MCP transport, tracing, scoring, or future durable workflow execution can each have a separate adapter. Do not add one generic `AgentFramework` abstraction.
-3. **Treat Mastra-owned persisted state as operational and replaceable.** Workflow snapshots, trace rows, scorer results, MCP client configuration, message stores, observations, and vectors must not silently become canonical Ember state.
-4. **Avoid Mastra `Memory` and supervisor/network abstractions as semantic owners.** They are useful implementations of common agent patterns, but their conceptual models overlap too strongly with meanings Ember already distinguishes more carefully.
-5. **Revisit durable workflows when an earned requirement appears.** Mastra's suspend/resume and retry mechanics are attractive, especially because the same workflow definition can later run on Temporal, but replacing Ember's deliberately narrow systemd episodic topology today would add more runtime machinery than a current failure requires.
+1. **Preserve Ember's current semantic boundaries.** In particular, keep `ProviderRequest` / `ProviderResult` /
+   `ProviderInvoker`, canonical `StateStore` semantics, projection/currentness rules, specialist delegation contracts,
+   and acceptance scenarios independent of Mastra.
+2. **Adopt mechanics only at capability-sized seams.** Model routing, MCP transport, tracing, scoring, or future durable
+   workflow execution can each have a separate adapter. Do not add one generic `AgentFramework` abstraction.
+3. **Treat Mastra-owned persisted state as operational and replaceable.** Workflow snapshots, trace rows, scorer
+   results, MCP client configuration, message stores, observations, and vectors must not silently become canonical Ember
+   state.
+4. **Avoid Mastra `Memory` and supervisor/network abstractions as semantic owners.** They are useful implementations of
+   common agent patterns, but their conceptual models overlap too strongly with meanings Ember already distinguishes
+   more carefully.
+5. **Revisit durable workflows when an earned requirement appears.** Mastra's suspend/resume and retry mechanics are
+   attractive, especially because the same workflow definition can later run on Temporal, but replacing Ember's
+   deliberately narrow systemd episodic topology today would add more runtime machinery than a current failure requires.
 
 In short: **Ember owns meaning; Mastra may own selected mechanics.**
 
@@ -32,16 +50,24 @@ In short: **Ember owns meaning; Mastra may own selected mechanics.**
 
 This evaluation was performed on **2026-09-07** against:
 
-- Ember's current [Design Principles](../principles.md), accepted architecture decisions, and [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- the current one-shot cognition contract in `src/providers/contract.ts` and the [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
+- Ember's current [Design Principles](../principles.md), accepted architecture decisions, and
+  [Architecture Acceptance Scenarios](acceptance-scenarios.md);
+- the current one-shot cognition contract in `src/providers/contract.ts` and the
+  [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist boundary and [Specialist Result Reintegration](specialist-result-reintegration.md);
-- the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `src/runtime/episodic-runtime.ts`;
-- Mastra's stable `@mastra/core@1.64.0` release published on 2026-09-04, while repository `main` already identified itself as `1.65.0-alpha.7` during this review;
+- the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision,
+  and `src/runtime/episodic-runtime.ts`;
+- Mastra's stable `@mastra/core@1.64.0` release published on 2026-09-04, while repository `main` already identified
+  itself as `1.65.0-alpha.7` during this review;
 - Mastra's public Apache-2.0 repository and first-party documentation/blog material linked in [Sources](#sources).
 
-Mastra changes quickly. The release/main mismatch above is useful evidence by itself: APIs should be pinned and isolated even when a primitive is attractive. Findings below describe the observed 2026-09-07 surface, not a promise about future releases.
+Mastra changes quickly. The release/main mismatch above is useful evidence by itself: APIs should be pinned and isolated
+even when a primitive is attractive. Findings below describe the observed 2026-09-07 surface, not a promise about future
+releases.
 
-This evaluation does **not** claim a measured install size, idle RSS, or Raspberry Pi benchmark. Those require an installation/runtime spike on the actual target. Where operational suitability is discussed below, unmeasured properties are kept explicit rather than inferred from package names.
+This evaluation does **not** claim a measured install size, idle RSS, or Raspberry Pi benchmark. Those require an
+installation/runtime spike on the actual target. Where operational suitability is discussed below, unmeasured properties
+are kept explicit rather than inferred from package names.
 
 ## Classification scale
 
@@ -78,9 +104,13 @@ This evaluation does **not** claim a measured install size, idle RSS, or Raspber
 
 ### What Mastra provides
 
-Mastra's model routing is not inseparable from `Agent`. The core package exposes `ModelRouterLanguageModel` from its LLM subpath, and the implementation is a language-model object rather than an identity-bearing agent. Mastra also accepts AI SDK-compatible model objects and has invested heavily in normalizing provider/model differences.
+Mastra's model routing is not inseparable from `Agent`. The core package exposes `ModelRouterLanguageModel` from its LLM
+subpath, and the implementation is a language-model object rather than an identity-bearing agent. Mastra also accepts AI
+SDK-compatible model objects and has invested heavily in normalizing provider/model differences.
 
-The Model Router is operationally appealing because it centralizes provider discovery, credentials, model IDs, fallbacks, and compatible routing. Major providers can be called directly; using the router does not require Mastra Cloud as the semantic or network owner.
+The Model Router is operationally appealing because it centralizes provider discovery, credentials, model IDs,
+fallbacks, and compatible routing. Major providers can be called directly; using the router does not require Mastra
+Cloud as the semantic or network owner.
 
 ### Ember boundary
 
@@ -98,7 +128,8 @@ validated ProviderResult
   { reply, usedMeaningIds, optional operational handle }
 ```
 
-A Mastra-backed cognition adapter should implement this existing contract rather than introduce `Agent` into `src/runtime/runtime.ts`.
+A Mastra-backed cognition adapter should implement this existing contract rather than introduce `Agent` into
+`src/runtime/runtime.ts`.
 
 That preserves several current invariants:
 
@@ -107,30 +138,41 @@ That preserves several current invariants:
 - `usedMeaningIds` remain constrained to selected meanings;
 - an external provider/thread/run identifier remains opaque operational evidence;
 - model/provider replacement does not redefine continuity;
-- timeout and cancellation remain Ember-facing outcomes, with uncertainty preserved where the implementation cannot prove effect absence.
+- timeout and cancellation remain Ember-facing outcomes, with uncertainty preserved where the implementation cannot
+  prove effect absence.
 
 ### What Mastra does not remove
 
-Model routing cannot infer Ember provenance. If a structured model result must still identify `usedMeaningIds`, the Mastra adapter has to request and validate that data exactly as current providers do. Likewise, provider fallback is a mechanical capability, not an automatic semantic policy: changing models mid-attempt may affect evidence, reproducibility, costs, or capability expectations and should be visible to Ember when those distinctions matter.
+Model routing cannot infer Ember provenance. If a structured model result must still identify `usedMeaningIds`, the
+Mastra adapter has to request and validate that data exactly as current providers do. Likewise, provider fallback is a
+mechanical capability, not an automatic semantic policy: changing models mid-attempt may affect evidence,
+reproducibility, costs, or capability expectations and should be visible to Ember when those distinctions matter.
 
 ### Recommendation
 
 **Candidate, behind `ProviderInvoker`; do not replace the contract.**
 
-There is one important comparison question for parent issue #175: Mastra itself builds on AI SDK model interfaces. If Ember only needs model invocation, structured output, streaming, and tools, using the lower-level Vercel AI SDK directly may be thinner than importing Mastra's router layer. Mastra becomes more compelling if its router/fallback registry itself saves meaningful integration work.
+There is one important comparison question for parent issue #175: Mastra itself builds on AI SDK model interfaces. If
+Ember only needs model invocation, structured output, streaming, and tools, using the lower-level Vercel AI SDK directly
+may be thinner than importing Mastra's router layer. Mastra becomes more compelling if its router/fallback registry
+itself saves meaningful integration work.
 
 ## Tools and tool-loop mechanics
 
-Mastra exposes standalone typed tool definitions with input/output schemas and execution hooks. This is a good mechanical building block, but the semantics around a tool call need an Ember-owned shell.
+Mastra exposes standalone typed tool definitions with input/output schemas and execution hooks. This is a good
+mechanical building block, but the semantics around a tool call need an Ember-owned shell.
 
 For Ember, at least four distinct questions exist:
 
 1. **Capability:** can this operation technically be performed?
 2. **Authority:** is this cognition/delegation episode permitted to request it now?
 3. **Execution:** what actually happened at the tool boundary?
-4. **Effect certainty:** after timeout/cancellation/boundary loss, what can Ember truthfully say about resulting effects?
+4. **Effect certainty:** after timeout/cancellation/boundary loss, what can Ember truthfully say about resulting
+   effects?
 
-Mastra approval or authorization features can help implement part of the execution gate, but they must not become the definition of Ember authority. A tool that returned successfully also does not prove that all external effects are exactly what Ember intended, and a cancelled call does not prove absence of effects.
+Mastra approval or authorization features can help implement part of the execution gate, but they must not become the
+definition of Ember authority. A tool that returned successfully also does not prove that all external effects are
+exactly what Ember intended, and a cancelled call does not prove absence of effects.
 
 A useful future seam would therefore be capability-shaped rather than framework-shaped:
 
@@ -143,13 +185,16 @@ EmberToolExecutor
     -> ToolExecutionEvidence
 ```
 
-A Mastra tool can be generated from the first surface and execute through the second. The model sees Mastra-compatible tools; all policy and evidence passes through Ember.
+A Mastra tool can be generated from the first surface and execute through the second. The model sees Mastra-compatible
+tools; all policy and evidence passes through Ember.
 
-**Recommendation: wrap when Ember earns an in-process tool loop.** Do not add a Mastra `Agent` merely to obtain `createTool` today.
+**Recommendation: wrap when Ember earns an in-process tool loop.** Do not add a Mastra `Agent` merely to obtain
+`createTool` today.
 
 ## MCP
 
-Mastra has first-class MCP client and server packages and converts MCP-exposed capabilities into tools usable by its runtime. That aligns with Ember's existing principle that MCP is a preferred transport for external capabilities.
+Mastra has first-class MCP client and server packages and converts MCP-exposed capabilities into tools usable by its
+runtime. That aligns with Ember's existing principle that MCP is a preferred transport for external capabilities.
 
 The semantic firewall should remain simple:
 
@@ -168,7 +213,8 @@ Mastra may implement discovery, connection lifecycle, protocol validation, and t
 - what timeout/cancellation means;
 - whether an observed result may change canonical meaning.
 
-Mastra also supports persistence for MCP client configuration. That persistence should remain operational configuration, not the canonical source of Ember authority or capability policy.
+Mastra also supports persistence for MCP client configuration. That persistence should remain operational configuration,
+not the canonical source of Ember authority or capability policy.
 
 **Recommendation: strong candidate behind an Ember-owned MCP/capability transport seam.**
 
@@ -188,11 +234,13 @@ Mastra workflows provide substantially more than a fluent DAG builder. Current w
 - operational inspection;
 - alternative durable engines, including Temporal, while retaining workflow definitions.
 
-Mastra's own documentation describes ordinary workflow snapshots as pause/resume resilience. The Temporal integration extends this to execution designed to survive worker restarts and offers richer retry/scheduling behavior.
+Mastra's own documentation describes ordinary workflow snapshots as pause/resume resilience. The Temporal integration
+extends this to execution designed to survive worker restarts and offers richer retry/scheduling behavior.
 
 ### The required semantic firewall
 
-A Mastra workflow snapshot must be interpreted as **a resumable execution artifact, not a truth-bearing Ember state snapshot**.
+A Mastra workflow snapshot must be interpreted as **a resumable execution artifact, not a truth-bearing Ember state
+snapshot**.
 
 A safe integration looks like:
 
@@ -209,7 +257,8 @@ Mastra workflow snapshot
   step statuses / retries / suspend payload / transient outputs
 ```
 
-On every resume that can cause an externally visible effect, the workflow must return to an Ember-owned checkpoint that revalidates current canonical state. For example:
+On every resume that can cause an externally visible effect, the workflow must return to an Ember-owned checkpoint that
+revalidates current canonical state. For example:
 
 ```text
 resume run
@@ -220,13 +269,17 @@ resume run
   -> only then continue effectful work
 ```
 
-This is especially important because workflow retry semantics solve _execution retry_, not Ember's stronger question of whether retrying an operation is semantically safe after an ambiguous external effect.
+This is especially important because workflow retry semantics solve _execution retry_, not Ember's stronger question of
+whether retrying an operation is semantically safe after an ambiguous external effect.
 
-Likewise, `cancel()` records and propagates cancellation mechanics. It does not turn "cancellation requested" into "all work definitely stopped with no effects". Ember's existing cancellation/effect-uncertainty vocabulary must remain outside the workflow engine.
+Likewise, `cancel()` records and propagates cancellation mechanics. It does not turn "cancellation requested" into "all
+work definitely stopped with no effects". Ember's existing cancellation/effect-uncertainty vocabulary must remain
+outside the workflow engine.
 
 ### Proposed port
 
-Do not expose Mastra workflow objects through unrelated Ember modules. If a durable executor is eventually earned, use a narrow operational port such as:
+Do not expose Mastra workflow objects through unrelated Ember modules. If a durable executor is eventually earned, use a
+narrow operational port such as:
 
 ```text
 DurableExecutionPort
@@ -236,11 +289,13 @@ DurableExecutionPort
   inspect(runRef) -> RunObservation
 ```
 
-`OperationalRunRef` is disposable. `canonicalRefs` point back into Ember rather than copying canonical meaning into the workflow database.
+`OperationalRunRef` is disposable. `canonicalRefs` point back into Ember rather than copying canonical meaning into the
+workflow database.
 
 ### Migration behavior
 
-If Mastra is later removed, completed workflow snapshots should be disposable. Suspended/in-flight runs are the expensive case. The migration policy should therefore be designed before adoption:
+If Mastra is later removed, completed workflow snapshots should be disposable. Suspended/in-flight runs are the
+expensive case. The migration policy should therefore be designed before adoption:
 
 - either finish/expire existing runs on the old engine;
 - or abandon them and restart from an Ember-owned safe checkpoint;
@@ -248,9 +303,12 @@ If Mastra is later removed, completed workflow snapshots should be disposable. S
 
 ### Current Ember fit
 
-ADR 0007 intentionally chose systemd-supervised episodic workers before a resident Ember daemon. The current runtime has simple recovery ownership and single-writer semantics. Mastra workflows should **not** replace that topology merely because workflows are feature-rich.
+ADR 0007 intentionally chose systemd-supervised episodic workers before a resident Ember daemon. The current runtime has
+simple recovery ownership and single-writer semantics. Mastra workflows should **not** replace that topology merely
+because workflows are feature-rich.
 
-A future long-running approval-mediated or multi-step external operation may earn this machinery. At that point a small restart/suspend spike should test the port above against Ember's currentness and ambiguous-effect acceptance scenarios.
+A future long-running approval-mediated or multi-step external operation may earn this machinery. At that point a small
+restart/suspend spike should test the port above against Ember's currentness and ambiguous-effect acceptance scenarios.
 
 **Recommendation: wrap/revisit, not production adoption today.**
 
@@ -267,7 +325,9 @@ Mastra currently distinguishes multiple useful memory layers:
 - semantic recall over stored messages;
 - Observational Memory, which compresses older history into dense observations while retaining underlying records.
 
-Those distinctions are more thoughtful than a single transcript-as-memory abstraction. The 2026 Mastra memory guidance even recommends keeping permissions and similarly authoritative application data in the application system that owns them.
+Those distinctions are more thoughtful than a single transcript-as-memory abstraction. The 2026 Mastra memory guidance
+even recommends keeping permissions and similarly authoritative application data in the application system that owns
+them.
 
 However, the vocabulary still does not line up with Ember's established model:
 
@@ -281,17 +341,22 @@ Mastra working memory / observations / semantic recall
                   = mechanisms for constructing useful model context
 ```
 
-Mapping `thread == continuity`, `resource == user memory`, or `workingMemory == Ember memory` would erase distinctions Ember needs.
+Mapping `thread == continuity`, `resource == user memory`, or `workingMemory == Ember memory` would erase distinctions
+Ember needs.
 
 ### Message history
 
-Mastra message storage can record conversations efficiently, but Ember raw history is evidence and may include occurrences from multiple surfaces or non-conversational background activity. A Mastra thread cannot become the identity or continuity boundary.
+Mastra message storage can record conversations efficiently, but Ember raw history is evidence and may include
+occurrences from multiple surfaces or non-conversational background activity. A Mastra thread cannot become the identity
+or continuity boundary.
 
 **Classification: 3 as canonical memory.**
 
 ### Working memory
 
-Working memory is intentionally model-facing and frequently injected. That is almost the inverse of Ember's requirement that current context be selected from durable meaning under explicit relevance/currentness rules. A mutable summary document also lacks Ember's native provenance and supersession semantics unless those are reimplemented around it.
+Working memory is intentionally model-facing and frequently injected. That is almost the inverse of Ember's requirement
+that current context be selected from durable meaning under explicit relevance/currentness rules. A mutable summary
+document also lacks Ember's native provenance and supersession semantics unless those are reimplemented around it.
 
 **Classification: 3. Avoid as canonical Ember memory or policy.**
 
@@ -305,15 +370,19 @@ RetrievalCandidateSource
     -> [{ evidenceId, score }]
 ```
 
-The backend may use Mastra/vector machinery, but Ember owns filtering, currentness, trust, participation policy, and final context construction. Returned text should point to Ember evidence rather than become a parallel source of truth.
+The backend may use Mastra/vector machinery, but Ember owns filtering, currentness, trust, participation policy, and
+final context construction. Returned text should point to Ember evidence rather than become a parallel source of truth.
 
-This should only be adopted if the existing context-selection evaluations show that such retrieval improves recall without unacceptable over-inclusion or provenance loss.
+This should only be adopted if the existing context-selection evaluations show that such retrieval improves recall
+without unacceptable over-inclusion or provenance loss.
 
 **Classification: 2 as retrieval mechanics, not memory semantics.**
 
 ### Observational Memory
 
-Observational Memory is the most interesting Mastra memory primitive for Ember because it can be reframed as **derived context compression** rather than durable truth. Mastra's own research reports strong LongMemEval results and a stable context window, while retaining original messages in storage.
+Observational Memory is the most interesting Mastra memory primitive for Ember because it can be reframed as **derived
+context compression** rather than durable truth. Mastra's own research reports strong LongMemEval results and a stable
+context window, while retaining original messages in storage.
 
 A future Ember adapter could look like:
 
@@ -338,17 +407,21 @@ Requirements for that adapter:
 - contradictions/currentness remain Ember-owned;
 - the compressor receives only an allowed projection rather than unrestricted history.
 
-Mastra's standalone memory processing APIs make this more plausible than wrapping a whole agent, but the value should be tested against Ember's own longitudinal/context-selection evaluations before production use.
+Mastra's standalone memory processing APIs make this more plausible than wrapping a whole agent, but the value should be
+tested against Ember's own longitudinal/context-selection evaluations before production use.
 
 **Classification: 2. Revisit as a context-compression backend.**
 
 ## Storage and persistence
 
-Mastra's composite storage architecture is a genuine modularity strength. Its framework data can be split into domains and backed by different stores such as LibSQL, Postgres, MongoDB, and other adapters.
+Mastra's composite storage architecture is a genuine modularity strength. Its framework data can be split into domains
+and backed by different stores such as LibSQL, Postgres, MongoDB, and other adapters.
 
 That does **not** make Mastra storage a good replacement for `src/persistence/state-store.ts`.
 
-Ember's `StateStore` participates in canonical revision, writer-lease, recovery, currentness, and reintegration behavior. A generic Mastra memory/workflow store does not know those semantics and should not be taught them merely to reduce persistence code.
+Ember's `StateStore` participates in canonical revision, writer-lease, recovery, currentness, and reintegration
+behavior. A generic Mastra memory/workflow store does not know those semantics and should not be taught them merely to
+reduce persistence code.
 
 Mastra storage is appropriate for data whose owner is already a Mastra primitive:
 
@@ -380,11 +453,14 @@ It is **not** appropriate as the authoritative store for:
 | Scorer/experiment rows                     | Low to medium                                    | Keep acceptance fixtures and expected semantics in repo; scores are evidence, not authority       |
 | MCP/schedule/dynamic-runtime configuration | Medium                                           | Keep policy and desired configuration in Ember-owned config; Mastra copy is operational           |
 
-A useful test is simple: **if deleting the Mastra database would force Ember to invent what she remembers, what she was authorized to do, or whether an external effect happened, the boundary is wrong.**
+A useful test is simple: **if deleting the Mastra database would force Ember to invent what she remembers, what she was
+authorized to do, or whether an external effect happened, the boundary is wrong.**
 
 ## Delegation, supervisor patterns, ACP, and A2A
 
-Mastra now offers rich multi-agent mechanics: agents can expose subagents, a supervisor can delegate and iterate, `agent.network()` can route among agents/tools/workflows, and protocol integrations exist for ACP/A2A and coding-agent runtimes.
+Mastra now offers rich multi-agent mechanics: agents can expose subagents, a supervisor can delegate and iterate,
+`agent.network()` can route among agents/tools/workflows, and protocol integrations exist for ACP/A2A and coding-agent
+runtimes.
 
 Those features are technically capable but semantically too high-level for Ember's delegation model.
 
@@ -399,15 +475,22 @@ Ember already distinguishes:
 - partial/failed/ambiguous-effect result shapes;
 - reintegration as a separate Ember-owned decision.
 
-A Mastra supervisor's successful handoff or child completion does not answer those questions. Adopting it as the delegation owner would turn a convenient orchestration pattern into Ember's semantic hierarchy.
+A Mastra supervisor's successful handoff or child completion does not answer those questions. Adopting it as the
+delegation owner would turn a convenient orchestration pattern into Ember's semantic hierarchy.
 
-Protocol/client mechanics are different. If Ember later needs richer live specialist control than current `codex exec` provides, a Mastra ACP/A2A client could sit _inside_ a specialist adapter, just as a future Codex App Server client could. The existing [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md) still applies: richer protocol capability should be adopted only when a concrete unmet requirement such as live approval mediation, steering, or richer progress is present.
+Protocol/client mechanics are different. If Ember later needs richer live specialist control than current `codex exec`
+provides, a Mastra ACP/A2A client could sit _inside_ a specialist adapter, just as a future Codex App Server client
+could. The existing [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md) still applies:
+richer protocol capability should be adopted only when a concrete unmet requirement such as live approval mediation,
+steering, or richer progress is present.
 
 **Recommendation: avoid Mastra supervisor/network semantics; revisit protocol transport adapters separately.**
 
 ## Observability
 
-Observability is one of the cleanest reuse candidates because telemetry is naturally downstream from semantics. Mastra instruments agent/tool/workflow/memory operations and supports OpenTelemetry-compatible backends as well as Mastra's own storage/Studio path.
+Observability is one of the cleanest reuse candidates because telemetry is naturally downstream from semantics. Mastra
+instruments agent/tool/workflow/memory operations and supports OpenTelemetry-compatible backends as well as Mastra's own
+storage/Studio path.
 
 A safe seam is deliberately boring:
 
@@ -429,17 +512,22 @@ Important Ember identifiers should be trace attributes, not replaced by trace ID
 
 Traces can then be dropped, exported to another OTel backend, or migrated without affecting canonical state.
 
-One comparison caveat for #175: plain OpenTelemetry may be an even thinner dependency if Ember does not need Mastra's automatic instrumentation. Mastra observability is most valuable if another Mastra primitive is already in the execution path and can emit useful spans automatically.
+One comparison caveat for #175: plain OpenTelemetry may be an even thinner dependency if Ember does not need Mastra's
+automatic instrumentation. Mastra observability is most valuable if another Mastra primitive is already in the execution
+path and can emit useful spans automatically.
 
 **Recommendation: strong candidate, but compare against direct OTel before adoption.**
 
 ## Evals and deterministic testing
 
-Mastra has mature scoring and experiment machinery, including deterministic/rule-based scorers, model-graded scorers, datasets/experiments, and a recent Vitest integration.
+Mastra has mature scoring and experiment machinery, including deterministic/rule-based scorers, model-graded scorers,
+datasets/experiments, and a recent Vitest integration.
 
 This can complement Ember's existing evaluation harnesses, but it should not replace their semantic ownership.
 
-Ember acceptance scenarios answer questions such as "did continuity survive provider replacement?", "was a delegated result still current?", or "did cancellation uncertainty remain truthful?" Those are not generic quality scores. The source fixtures, invariants, and pass/fail oracle must remain in Ember.
+Ember acceptance scenarios answer questions such as "did continuity survive provider replacement?", "was a delegated
+result still current?", or "did cancellation uncertainty remain truthful?" Those are not generic quality scores. The
+source fixtures, invariants, and pass/fail oracle must remain in Ember.
 
 A useful optional seam would be:
 
@@ -448,7 +536,8 @@ EvaluationScorer<Input, Output>
   score(input, output, evidence) -> ScoreObservation
 ```
 
-Mastra scorers may implement particular metrics or runner ergonomics. Model-as-judge scorers should remain optional and separated from deterministic regression gates where a hard invariant exists.
+Mastra scorers may implement particular metrics or runner ergonomics. Model-as-judge scorers should remain optional and
+separated from deterministic regression gates where a hard invariant exists.
 
 **Recommendation: candidate for scorer/runner mechanics; keep acceptance semantics repository-owned.**
 
@@ -456,32 +545,44 @@ Mastra scorers may implement particular metrics or runner ergonomics. Model-as-j
 
 ### Node and TypeScript
 
-Mastra's current scaffolding requires Node.js **22.13.0 or later**, so Ember's Node.js 26.8.1+ baseline is within the supported range. The project is TypeScript-first and packages are published for ordinary Node consumption.
+Mastra's current scaffolding requires Node.js **22.13.0 or later**, so Ember's Node.js 26.8.1+ baseline is within the
+supported range. The project is TypeScript-first and packages are published for ordinary Node consumption.
 
 No runtime-version conflict was identified in this research.
 
 ### Self-hosting and cloud coupling
 
-The open-source core can run in a Node-compatible environment and does not require Mastra's hosted platform. Mastra documents standalone/server-adapter deployments and explicitly supports self-hosting; a 2026 Helm chart is an additional deployment option, not a requirement. Temporal can likewise be self-hosted if that engine is selected.
+The open-source core can run in a Node-compatible environment and does not require Mastra's hosted platform. Mastra
+documents standalone/server-adapter deployments and explicitly supports self-hosting; a 2026 Helm chart is an additional
+deployment option, not a requirement. Temporal can likewise be self-hosted if that engine is selected.
 
-Provider routing does not inherently require Mastra Cloud. Hosted Platform/Studio/managed memory are optional products and should remain optional for Ember.
+Provider routing does not inherently require Mastra Cloud. Hosted Platform/Studio/managed memory are optional products
+and should remain optional for Ember.
 
 ### Dependency and Raspberry Pi cost
 
-`@mastra/core` exposes a very broad feature surface even though imports are organized into subpaths and many integrations live in separate packages. That is qualitatively more dependency/runtime surface than Ember's current deliberately small implementation.
+`@mastra/core` exposes a very broad feature surface even though imports are organized into subpaths and many
+integrations live in separate packages. That is qualitatively more dependency/runtime surface than Ember's current
+deliberately small implementation.
 
 No measured Raspberry Pi 5 install/RSS/startup result is available from this evaluation. Therefore:
 
 - do not claim Pi suitability from Node compatibility alone;
-- avoid server/Studio, Temporal, local embedding models, sandboxes, and broad framework startup on the Pi until measured;
+- avoid server/Studio, Temporal, local embedding models, sandboxes, and broad framework startup on the Pi until
+  measured;
 - prefer importing only the package needed for the chosen primitive;
-- run an actual cold-start, idle RSS, steady-state RSS, disk/install-size, and native-module/ARM compatibility spike before making a Pi-resident Mastra dependency mandatory.
+- run an actual cold-start, idle RSS, steady-state RSS, disk/install-size, and native-module/ARM compatibility spike
+  before making a Pi-resident Mastra dependency mandatory.
 
-For a lightweight model/MCP/telemetry adapter, the threshold may be reasonable. For a resident Mastra server plus workflow engine plus memory/vector stack, the burden is much harder to justify against ADR 0007's resource-conscious topology.
+For a lightweight model/MCP/telemetry adapter, the threshold may be reasonable. For a resident Mastra server plus
+workflow engine plus memory/vector stack, the burden is much harder to justify against ADR 0007's resource-conscious
+topology.
 
 ### API stability and debugging
 
-Mastra reached v1, but development remains fast. The stable core release observed for this evaluation was `1.64.0`, while repository main was already on `1.65.0-alpha.7`. First-party changelogs regularly describe new surfaces, migrations, and breaking changes.
+Mastra reached v1, but development remains fast. The stable core release observed for this evaluation was `1.64.0`,
+while repository main was already on `1.65.0-alpha.7`. First-party changelogs regularly describe new surfaces,
+migrations, and breaking changes.
 
 That is not a reason to reject the project. It is a reason to:
 
@@ -491,7 +592,9 @@ That is not a reason to reject the project. It is a reason to:
 - maintain deterministic contract tests around every adopted seam;
 - avoid persisting opaque framework state unless it is explicitly disposable operational state.
 
-Debugging is strongest where an isolated primitive is used. It becomes harder when `Agent` simultaneously owns prompt construction, memory, processors, routing, tool loops, persistence, and tracing, because failures cross several framework-managed lifecycle layers.
+Debugging is strongest where an isolated primitive is used. It becomes harder when `Agent` simultaneously owns prompt
+construction, memory, processors, routing, tool loops, persistence, and tracing, because failures cross several
+framework-managed lifecycle layers.
 
 ## Concrete Ember mapping
 
@@ -499,41 +602,53 @@ Debugging is strongest where an isolated primitive is used. It becomes harder wh
 
 **`src/core/`**
 
-No Mastra concept belongs in canonical models or semantics. `Agent`, thread/resource IDs, workflow run state, tool approval state, and Mastra storage records must not appear in canonical Ember types merely because an adapter uses them.
+No Mastra concept belongs in canonical models or semantics. `Agent`, thread/resource IDs, workflow run state, tool
+approval state, and Mastra storage records must not appear in canonical Ember types merely because an adapter uses them.
 
 **`src/persistence/state-store.ts`**
 
-Keep canonical persistence and writer semantics Ember-owned. Mastra stores may coexist for Mastra operational artifacts but should not replace this boundary.
+Keep canonical persistence and writer semantics Ember-owned. Mastra stores may coexist for Mastra operational artifacts
+but should not replace this boundary.
 
 **`src/delegation/` semantic contracts**
 
-Keep responsibility, authority, currentness, cancellation uncertainty, specialist evidence, and reintegration unchanged. Protocol implementation may evolve beneath them later.
+Keep responsibility, authority, currentness, cancellation uncertainty, specialist evidence, and reintegration unchanged.
+Protocol implementation may evolve beneath them later.
 
 ### Plausible places to become thinner
 
 **`src/providers/`**
 
-A new direct-model adapter could use Mastra Model Router beneath the existing `ProviderInvoker` seam. This could remove provider-package/routing glue for remote model APIs. It should not rewrite `codex.ts`/`cursor.ts` merely to deduplicate process mechanics: issue #92 already concluded that those external runtimes have meaningfully different lifecycle evidence.
+A new direct-model adapter could use Mastra Model Router beneath the existing `ProviderInvoker` seam. This could remove
+provider-package/routing glue for remote model APIs. It should not rewrite `codex.ts`/`cursor.ts` merely to deduplicate
+process mechanics: issue #92 already concluded that those external runtimes have meaningfully different lifecycle
+evidence.
 
 **Future tool-capability execution**
 
-When Ember introduces an in-process model tool loop, use Mastra/AI SDK tool machinery rather than inventing schema conversion and loop protocol from scratch. Keep capability policy and execution evidence in Ember-owned wrappers.
+When Ember introduces an in-process model tool loop, use Mastra/AI SDK tool machinery rather than inventing schema
+conversion and loop protocol from scratch. Keep capability policy and execution evidence in Ember-owned wrappers.
 
 **Future MCP integration**
 
-Mastra MCP client/server mechanics could reduce transport/discovery boilerplate while `src/core` and capability policy remain independent.
+Mastra MCP client/server mechanics could reduce transport/discovery boilerplate while `src/core` and capability policy
+remain independent.
 
 **Future long-running operational coordination**
 
-A `DurableExecutionPort` could eventually replace custom suspend/retry/checkpoint plumbing for a specific multi-step operation. It should not replace the accepted runtime topology globally. `src/runtime/episodic-runtime.ts` remains simpler for current one-shot wakes and systemd-supervised specialist episodes.
+A `DurableExecutionPort` could eventually replace custom suspend/retry/checkpoint plumbing for a specific multi-step
+operation. It should not replace the accepted runtime topology globally. `src/runtime/episodic-runtime.ts` remains
+simpler for current one-shot wakes and systemd-supervised specialist episodes.
 
 **Evaluation tooling**
 
-Selected Mastra scorers or Vitest helpers could reduce bespoke metric-runner code in `eval/`, while scenario definitions and semantic assertions remain Ember-owned.
+Selected Mastra scorers or Vitest helpers could reduce bespoke metric-runner code in `eval/`, while scenario definitions
+and semantic assertions remain Ember-owned.
 
 **Observability**
 
-Mastra/OTel instrumentation could add traces without growing canonical models. This is additive rather than a reason to restructure runtime ownership.
+Mastra/OTel instrumentation could add traces without growing canonical models. This is additive rather than a reason to
+restructure runtime ownership.
 
 ## Replaceability rules for any adoption
 
@@ -541,30 +656,43 @@ Any future Mastra integration should satisfy these rules before production merge
 
 1. **No Mastra types in canonical core contracts.** Translate at adapters.
 2. **No framework identifier substitutes for an Ember identifier.** Store it as opaque operational evidence only.
-3. **No Mastra persisted row is the sole source of canonical meaning.** If it matters to truth, continuity, authority, or reconciliation, it belongs in Ember-owned durable state/evidence.
-4. **Every adapter has a deterministic fake/contract test.** Core semantics must be runnable without Mastra or a live model.
-5. **Cancellation and retries preserve uncertainty.** Framework lifecycle events are evidence, not stronger claims than they support.
+3. **No Mastra persisted row is the sole source of canonical meaning.** If it matters to truth, continuity, authority,
+   or reconciliation, it belongs in Ember-owned durable state/evidence.
+4. **Every adapter has a deterministic fake/contract test.** Core semantics must be runnable without Mastra or a live
+   model.
+5. **Cancellation and retries preserve uncertainty.** Framework lifecycle events are evidence, not stronger claims than
+   they support.
 6. **Context remains a projection.** Memory/retrieval/compression never gains implicit access to all canonical state.
-7. **Migration behavior is written down before durable framework state is introduced.** Especially for suspended workflow runs.
-8. **Package/runtime cost is measured on the deployment that will actually use it.** A laptop-friendly package is not automatically Pi-friendly.
+7. **Migration behavior is written down before durable framework state is introduced.** Especially for suspended
+   workflow runs.
+8. **Package/runtime cost is measured on the deployment that will actually use it.** A laptop-friendly package is not
+   automatically Pi-friendly.
 
-These rules allow implementations to vary by deployment. For example, a development/server deployment could use Mastra workflows while a constrained Pi deployment keeps a custom/simple executor, provided both implement the same Ember-owned operational port and preserve the same canonical semantics.
+These rules allow implementations to vary by deployment. For example, a development/server deployment could use Mastra
+workflows while a constrained Pi deployment keeps a custom/simple executor, provided both implement the same Ember-owned
+operational port and preserve the same canonical semantics.
 
 ## Recommended adoption order
 
 If parent issue #175 ultimately selects any Mastra pieces, the lowest-risk order is:
 
-1. **Observability or eval helpers** if they provide value over direct OTel/current test machinery. They are downstream and easy to remove.
-2. **MCP transport** when Ember adds its next MCP-backed capability. This is a protocol/mechanics boundary with already-established semantic ownership.
-3. **Model Router behind `ProviderInvoker`** if a direct API model backend/fallback requirement emerges and comparison with direct AI SDK favors Mastra.
+1. **Observability or eval helpers** if they provide value over direct OTel/current test machinery. They are downstream
+   and easy to remove.
+2. **MCP transport** when Ember adds its next MCP-backed capability. This is a protocol/mechanics boundary with
+   already-established semantic ownership.
+3. **Model Router behind `ProviderInvoker`** if a direct API model backend/fallback requirement emerges and comparison
+   with direct AI SDK favors Mastra.
 4. **Observational Memory as a `ContextCompressor` spike**, never as canonical memory.
-5. **Durable workflow execution** only for a concrete operation whose suspend/resume/restart/retry complexity exceeds the current episodic mechanisms.
+5. **Durable workflow execution** only for a concrete operation whose suspend/resume/restart/retry complexity exceeds
+   the current episodic mechanisms.
 
-Do **not** start with Mastra `Agent`, `Memory` as Ember memory, or supervisor/network delegation. Those are the easiest APIs to demo and the most expensive places to surrender semantic ownership.
+Do **not** start with Mastra `Agent`, `Memory` as Ember memory, or supervisor/network delegation. Those are the easiest
+APIs to demo and the most expensive places to surrender semantic ownership.
 
 ## Focused revisit spikes
 
-Documentation/source inspection is sufficient to answer issue #176's architecture question. Before actual adoption, these small spikes would answer the remaining operational questions without committing production architecture:
+Documentation/source inspection is sufficient to answer issue #176's architecture question. Before actual adoption,
+these small spikes would answer the remaining operational questions without committing production architecture:
 
 ### A. Model adapter spike
 
@@ -589,7 +717,8 @@ Create one workflow that:
 - resumes when still current;
 - records cancellation as observation rather than proof of no effects.
 
-Run once with ordinary Mastra snapshot storage. Temporal is unnecessary unless that simpler engine fails an earned durability requirement.
+Run once with ordinary Mastra snapshot storage. Temporal is unnecessary unless that simpler engine fails an earned
+durability requirement.
 
 ### C. Observational-memory compression spike
 
@@ -597,7 +726,8 @@ Feed a bounded set of Ember evidence records into a standalone compression path 
 
 - observations retain source-evidence references externally;
 - canonical state can rebuild the compression from scratch;
-- a contradiction/newer meaning is handled by Ember selection/currentness rather than trusted because it appears in an observation;
+- a contradiction/newer meaning is handled by Ember selection/currentness rather than trusted because it appears in an
+  observation;
 - the longitudinal/context-selection harness shows measurable value.
 
 ### D. Raspberry Pi resource spike
@@ -635,9 +765,13 @@ Do not benchmark "Mastra" as one monolith if Ember only plans to use one package
 
 ## Answer to the key question
 
-**Yes, Mastra can be used as a source of replaceable building blocks without implementing Ember "as a Mastra agent", but only if we resist its most convenient top-level composition model.**
+**Yes, Mastra can be used as a source of replaceable building blocks without implementing Ember "as a Mastra agent", but
+only if we resist its most convenient top-level composition model.**
 
-The framework is modular enough that model routing, tools, MCP, workflow execution, observability, evals, and selected memory processing can be isolated. The sharp boundary is persistence and lifecycle meaning: once Mastra threads, working memory, workflow snapshots, supervisor state, or stored agents become the only durable representation of something Ember cares about, replacement stops being cheap.
+The framework is modular enough that model routing, tools, MCP, workflow execution, observability, evals, and selected
+memory processing can be isolated. The sharp boundary is persistence and lifecycle meaning: once Mastra threads, working
+memory, workflow snapshots, supervisor state, or stored agents become the only durable representation of something Ember
+cares about, replacement stops being cheap.
 
 The most promising strategy for the #175 synthesis is therefore not "choose Mastra". It is:
 
@@ -653,28 +787,42 @@ Ember semantics
     +-- evaluation ------------ Mastra scorers OR current/custom
 ```
 
-Each right-hand choice should be replaceable without migrating canonical Ember state or rewriting unrelated modules. That is the level at which Mastra fits Ember well.
+Each right-hand choice should be replaceable without migrating canonical Ember state or rewriting unrelated modules.
+That is the level at which Mastra fits Ember well.
 
 ## Sources
 
 First-party Mastra material used for this evaluation:
 
-- [Mastra repository](https://github.com/mastra-ai/mastra) and [`@mastra/core@1.64.0` release](https://github.com/mastra-ai/mastra/releases/tag/%40mastra/core%401.64.0).
-- [`ModelRouterLanguageModel` source](https://github.com/mastra-ai/mastra/blob/2de367c9399c5fe51ea1db2d5821107591f7a7b4/packages/core/src/llm/model/router.ts) and [Model Router announcement](https://mastra.ai/blog/model-router).
+- [Mastra repository](https://github.com/mastra-ai/mastra) and
+  [`@mastra/core@1.64.0` release](https://github.com/mastra-ai/mastra/releases/tag/%40mastra/core%401.64.0).
+- [`ModelRouterLanguageModel` source](https://github.com/mastra-ai/mastra/blob/2de367c9399c5fe51ea1db2d5821107591f7a7b4/packages/core/src/llm/model/router.ts)
+  and [Model Router announcement](https://mastra.ai/blog/model-router).
 - [`createTool` source](https://github.com/mastra-ai/mastra/blob/2de367c9399c5fe51ea1db2d5821107591f7a7b4/packages/core/src/tools/tool.ts).
-- [Mastra Workflows, Enhanced](https://mastra.ai/blog/mastra-workflows-enhanced) and [Temporal workflow integration](https://mastra.ai/blog/introducing-temporal-workflows).
+- [Mastra Workflows, Enhanced](https://mastra.ai/blog/mastra-workflows-enhanced) and
+  [Temporal workflow integration](https://mastra.ai/blog/introducing-temporal-workflows).
 - [Suspend/resume workflow overview](https://mastra.ai/blog/resumeworkflows).
-- [Agent Memory: Persistence, Layers, and Tradeoffs](https://mastra.ai/blog/agent-memory-layers), [Observational Memory announcement](https://mastra.ai/blog/observational-memory), and [Observational Memory research](https://mastra.ai/research/observational-memory).
+- [Agent Memory: Persistence, Layers, and Tradeoffs](https://mastra.ai/blog/agent-memory-layers),
+  [Observational Memory announcement](https://mastra.ai/blog/observational-memory), and
+  [Observational Memory research](https://mastra.ai/research/observational-memory).
 - [`MemoryStorage` source](https://github.com/mastra-ai/mastra/blob/2de367c9399c5fe51ea1db2d5821107591f7a7b4/packages/core/src/storage/domains/memory/base.ts).
-- [Mastra 2026-01-20 changelog](https://mastra.ai/blog/changelog-2026-01-20) for composite storage and agent/network lifecycle changes.
+- [Mastra 2026-01-20 changelog](https://mastra.ai/blog/changelog-2026-01-20) for composite storage and agent/network
+  lifecycle changes.
 - [Mastra 2026-02-26 changelog](https://mastra.ai/blog/changelog-2026-02-26) for supervisor-pattern support.
-- [Mastra 2026-03-04 changelog](https://mastra.ai/blog/changelog-2026-03-04) for concurrent-safe workflow snapshot updates.
-- [Mastra MCP overview/first-party product description](https://mastra.ai/) and [2026 feature catalogue](https://mastra.ai/blog/category/features) for current ACP/A2A/MCP-related integration surface.
+- [Mastra 2026-03-04 changelog](https://mastra.ai/blog/changelog-2026-03-04) for concurrent-safe workflow snapshot
+  updates.
+- [Mastra MCP overview/first-party product description](https://mastra.ai/) and
+  [2026 feature catalogue](https://mastra.ai/blog/category/features) for current ACP/A2A/MCP-related integration
+  surface.
 - [Mastra observability](https://mastra.ai/ai-agent-observability).
-- [Mastra experiments](https://mastra.ai/blog/mastra-experiments) and current evaluation guidance in [AI Agent Evaluation](https://mastra.ai/articles/ai-agent-evaluation).
-- [Mastra homepage](https://mastra.ai/) for current deployment/self-hosting statements and Node-compatible deployment model.
+- [Mastra experiments](https://mastra.ai/blog/mastra-experiments) and current evaluation guidance in
+  [AI Agent Evaluation](https://mastra.ai/articles/ai-agent-evaluation).
+- [Mastra homepage](https://mastra.ai/) for current deployment/self-hosting statements and Node-compatible deployment
+  model.
 
-Source-level links intentionally pin the repository commit observed during this evaluation where useful. Product/blog pages are dated observations and should be rechecked before a production integration because Mastra's release cadence is high.
+Source-level links intentionally pin the repository commit observed during this evaluation where useful. Product/blog
+pages are dated observations and should be rechecked before a production integration because Mastra's release cadence is
+high.
 
 ## Issue #176 definition-of-done mapping
 

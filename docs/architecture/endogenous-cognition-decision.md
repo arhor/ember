@@ -1,5 +1,7 @@
 ---
-summary: "Current implementation and evaluation boundary for deciding whether topic-free opportunities deserve cognition, using bounded Ember state and inspectable outcome evidence without persisting model-written motives."
+summary:
+  "Current implementation and evaluation boundary for deciding whether topic-free opportunities deserve cognition, using
+  bounded Ember state and inspectable outcome evidence without persisting model-written motives."
 read_when:
   - "Implementing or reviewing issue #74's endogenous cognition decision path"
   - "Evaluating cognition, defer, or no-cognition outcomes from a topic-free opportunity"
@@ -11,21 +13,18 @@ discovery_status: current
 # Endogenous Cognition Decision Boundary
 
 > Status: current implementation/evaluation design for issue #74, beneath the
-> [bounded cognition-opportunity boundary](cognition-opportunity.md). Durable
-> lifecycle semantics added by issue #75 are defined in
-> [First-Class Endogenous Silence Lifecycle](endogenous-silence-lifecycle.md).
+> [bounded cognition-opportunity boundary](cognition-opportunity.md). Durable lifecycle semantics added by issue #75 are
+> defined in [First-Class Endogenous Silence Lifecycle](endogenous-silence-lifecycle.md).
 
 ## Purpose
 
-Issue #73 established that a wake-up may explain why cognition is possible now but
-must not supply the topic or motive. Issue #74 makes the next boundary executable:
-given a topic-free opportunity and a bounded projection of current Ember-owned
-state, decide whether anything deserves discretionary cognition now.
+Issue #73 established that a wake-up may explain why cognition is possible now but must not supply the topic or motive.
+Issue #74 makes the next boundary executable: given a topic-free opportunity and a bounded projection of current
+Ember-owned state, decide whether anything deserves discretionary cognition now.
 
-The pure `evaluateCognitionOpportunity` seam remains useful for deterministic and
-adapter-level evaluation. Issue #75 layers `runCognitionOpportunity` around that
-same contract to make the attempt and its terminal outcome durable without turning
-model-written reasons into canonical memory.
+The pure `evaluateCognitionOpportunity` seam remains useful for deterministic and adapter-level evaluation. Issue #75
+layers `runCognitionOpportunity` around that same contract to make the attempt and its terminal outcome durable without
+turning model-written reasons into canonical memory.
 
 ## Implemented seam
 
@@ -49,22 +48,19 @@ normal bounded projection selection
  cognition   defer   no_cognition
 ```
 
-The caller supplies only a coarse, enumerated opportunity mechanism such as
-`foreground_probe`, `runtime_start`, `idle_opportunity`, or `external_timing`.
-That mechanism is operational provenance and is **not passed to the evaluator**.
-There is no free-form trigger payload, reminder text, concern identifier, search
-query, or task description in the evaluator request.
+The caller supplies only a coarse, enumerated opportunity mechanism such as `foreground_probe`, `runtime_start`,
+`idle_opportunity`, or `external_timing`. That mechanism is operational provenance and is **not passed to the
+evaluator**. There is no free-form trigger payload, reminder text, concern identifier, search query, or task description
+in the evaluator request.
 
-This is stronger than asking a model to ignore scheduler text: the decision contract
-does not expose such text at all.
+This is stronger than asking a model to ignore scheduler text: the decision contract does not expose such text at all.
 
 ## Projection reuse without fabricated user input
 
-The implementation reuses `buildProjection` selection rather than creating a
-parallel context selector. The internal compatibility call supplies an empty
-`currentInput` because the current v1 selector requires the field but does not use it
-to choose a topic. `buildCognitionOpportunityProjection` then returns an
-`endogenous_decision` projection that omits `current_input` entirely.
+The implementation reuses `buildProjection` selection rather than creating a parallel context selector. The internal
+compatibility call supplies an empty `currentInput` because the current v1 selector requires the field but does not use
+it to choose a topic. `buildCognitionOpportunityProjection` then returns an `endogenous_decision` projection that omits
+`current_input` entirely.
 
 The evaluator receives:
 
@@ -76,12 +72,11 @@ The evaluator receives:
 - no user-input evidence created for the opportunity; and
 - no synthetic user message.
 
-If ordinary projection selection later begins using `current_input` materially, the
-endogenous path must be revisited rather than letting an empty string become hidden
-selection semantics.
+If ordinary projection selection later begins using `current_input` materially, the endogenous path must be revisited
+rather than letting an empty string become hidden selection semantics.
 
-Issue #72's longitudinal result remains negative evidence against adding a richer
-retrieval/indexing subsystem here without observed need.
+Issue #72's longitudinal result remains negative evidence against adding a richer retrieval/indexing subsystem here
+without observed need.
 
 ## Evaluator result contract
 
@@ -95,83 +90,71 @@ An evaluator returns exactly:
 }
 ```
 
-The boundary validates that every selected meaning was projected, selected IDs are
-unique, `cognition`/`defer` identify at least one projected grounding meaning, and
-`no_cognition` selects none.
+The boundary validates that every selected meaning was projected, selected IDs are unique, `cognition`/`defer` identify
+at least one projected grounding meaning, and `no_cognition` selects none.
 
-There is deliberately no free-form `reason` field. Observable evidence is the
-opportunity identity, projection revision/membership, decision, and selected
-grounding IDs. Hidden reasoning or model-written motivational prose is not promoted
-into Ember meaning.
+There is deliberately no free-form `reason` field. Observable evidence is the opportunity identity, projection
+revision/membership, decision, and selected grounding IDs. Hidden reasoning or model-written motivational prose is not
+promoted into Ember meaning.
 
 ## Pure and durable forms
 
-`evaluateCognitionOpportunity` returns a bounded non-mutating record. It is useful
-for deterministic controls and live-provider probes where persistence is not the
-question under test.
+`evaluateCognitionOpportunity` returns a bounded non-mutating record. It is useful for deterministic controls and
+live-provider probes where persistence is not the question under test.
 
-`runCognitionOpportunity`, added by issue #75, uses the same evaluator request but
-persists the attempt before evaluator execution and then persists either a validated
-`decided` outcome or an operational terminal status. See
-[endogenous-silence-lifecycle.md](endogenous-silence-lifecycle.md) for the lifecycle,
-restart behavior, inspection, and metrics.
+`runCognitionOpportunity`, added by issue #75, uses the same evaluator request but persists the attempt before evaluator
+execution and then persists either a validated `decided` outcome or an operational terminal status. See
+[endogenous-silence-lifecycle.md](endogenous-silence-lifecycle.md) for the lifecycle, restart behavior, inspection, and
+metrics.
 
-Neither form creates `user_command` evidence or an ordinary cognition episode merely
-because a wake-up occurred. A `no_cognition` result also implies no user interruption
-at this boundary; issue #78 owns later delivery/interruption decisions.
+Neither form creates `user_command` evidence or an ordinary cognition episode merely because a wake-up occurred. A
+`no_cognition` result also implies no user interruption at this boundary; issue #78 owns later delivery/interruption
+decisions.
 
 ## Deterministic scenario controls
 
-`src/agency/cognition-opportunity.test.ts` exercises the issue-73 CO-01/CO-02
-counterfactual directly. Quiet state and live-concern state receive the same
-`foreground_probe`; only Ember-owned projected state differs.
+`src/agency/cognition-opportunity.test.ts` exercises the issue-73 CO-01/CO-02 counterfactual directly. Quiet state and
+live-concern state receive the same `foreground_probe`; only Ember-owned projected state differs.
 
-The tests also verify that evaluator mutation cannot enlarge the validated projection
-envelope, topic-shaped mechanism values are rejected at runtime, no synthetic
-current input leaks into the evaluator request, and selection outside projection is
-rejected.
+The tests also verify that evaluator mutation cannot enlarge the validated projection envelope, topic-shaped mechanism
+values are rejected at runtime, no synthetic current input leaks into the evaluator request, and selection outside
+projection is rejected.
 
-Issue #75 adds repeated durable-silence, timeout, restart, legacy-state, and forged
-silence scenarios without changing this evaluator contract.
+Issue #75 adds repeated durable-silence, timeout, restart, legacy-state, and forged silence scenarios without changing
+this evaluator contract.
 
 ## AI SDK structured evaluator
 
-Issue #198 adds `src/agency/ai-sdk-opportunity-evaluator.ts` as an in-process
-implementation of the same `CognitionOpportunityEvaluator` seam. It uses AI SDK
-`generateText` with `Output.object` and `jsonSchema`, including local schema validation,
-so the model returns the typed decision object directly instead of encoding control
-state in a prose/exact-token reply.
+Issue #198 adds `src/agency/ai-sdk-opportunity-evaluator.ts` as an in-process implementation of the same
+`CognitionOpportunityEvaluator` seam. It uses AI SDK `generateText` with `Output.object` and `jsonSchema`, including
+local schema validation, so the model returns the typed decision object directly instead of encoding control state in a
+prose/exact-token reply.
 
-Only representation mechanics move into AI SDK: contract version, decision enum,
-selected-ID string-list shape, and unsupported-field rejection. Projection membership,
-selected-ID uniqueness, grounding requirements, `no_cognition` emptiness,
-provenance/currentness, and durable adoption remain validated by
-`evaluateCognitionOpportunity`.
+Only representation mechanics move into AI SDK: contract version, decision enum, selected-ID string-list shape, and
+unsupported-field rejection. Projection membership, selected-ID uniqueness, grounding requirements, `no_cognition`
+emptiness, provenance/currentness, and durable adoption remain validated by `evaluateCognitionOpportunity`.
 
-The AI SDK evaluator receives only the already-bounded opportunity projection and uses
-`maxRetries: 0`. It does not receive the opportunity mechanism or a synthetic
-`current_input`. See [AI SDK Structured Control Boundary](ai-sdk-structured-control-boundary.md)
-for the adapter/error boundary and repository sweep.
+The AI SDK evaluator receives only the already-bounded opportunity projection and uses `maxRetries: 0`. It does not
+receive the opportunity mechanism or a synthetic `current_input`. See
+[AI SDK Structured Control Boundary](ai-sdk-structured-control-boundary.md) for the adapter/error boundary and
+repository sweep.
 
 ## Codex-backed live evaluator
 
-`src/agency/codex-opportunity-evaluator.ts` provides an opt-in real-model evaluator
-using the existing isolated Codex provider boundary.
+`src/agency/codex-opportunity-evaluator.ts` provides an opt-in real-model evaluator using the existing isolated Codex
+provider boundary.
 
-For compatibility with the one-shot provider contract it uses one fixed evaluator
-instruction as `input.text` and `Projection.current_input` _inside the adapter_.
-That text is invariant across opportunities and only asks the provider to choose
-`cognition`, `defer`, or `no_cognition` from projected state. It contains no scheduler
-topic, concern name, or scenario-specific answer.
+For compatibility with the one-shot provider contract it uses one fixed evaluator instruction as `input.text` and
+`Projection.current_input` _inside the adapter_. That text is invariant across opportunities and only asks the provider
+to choose `cognition`, `defer`, or `no_cognition` from projected state. It contains no scheduler topic, concern name, or
+scenario-specific answer.
 
-The actual opportunity mechanism remains absent from the provider request. Existing
-`usedMeaningIds` becomes the evaluator's selected grounding IDs, and the core
-opportunity boundary applies its stricter outcome validation.
+The actual opportunity mechanism remains absent from the provider request. Existing `usedMeaningIds` becomes the
+evaluator's selected grounding IDs, and the core opportunity boundary applies its stricter outcome validation.
 
-The exact-token reply protocol here is an external-runtime compatibility mechanism,
-not the shared opportunity contract. Issue #198 deliberately leaves this Codex path
-available alongside the AI SDK structured implementation rather than making
-`ProviderResult` generic or leaking AI SDK schema types into it.
+The exact-token reply protocol here is an external-runtime compatibility mechanism, not the shared opportunity contract.
+Issue #198 deliberately leaves this Codex path available alongside the AI SDK structured implementation rather than
+making `ProviderResult` generic or leaking AI SDK schema types into it.
 
 ### Reproduction
 
@@ -181,20 +164,18 @@ The optional subscription-backed probe remains:
 EMBER_RUN_LIVE_ENDOGENOUS=1 node tests/live/cognition-opportunity.ts
 ```
 
-Normal tests do not require subscription access. The live probe is empirical model
-validation, not a prerequisite for the deterministic issue #74/#75 semantics.
+Normal tests do not require subscription access. The live probe is empirical model validation, not a prerequisite for
+the deterministic issue #74/#75 semantics.
 
 ## Boundaries retained for later issues
 
 - **#76** owns richer dormant-concern activation/lifecycle behavior.
 - **#78** owns user interruption/delivery decisions.
-- **#79/#95** own measured false-positive/cost pressure and any evidence-earned
-  attention control.
-- **#80/#81** own runtime requirements/topology once observed behavior demonstrates
-  them.
+- **#79/#95** own measured false-positive/cost pressure and any evidence-earned attention control.
+- **#80/#81** own runtime requirements/topology once observed behavior demonstrates them.
 
-No scheduler, daemon, heartbeat frequency, motivational score, generic stimulus bus,
-or new durable concern class is introduced here.
+No scheduler, daemon, heartbeat frequency, motivational score, generic stimulus bus, or new durable concern class is
+introduced here.
 
 ## Definition-of-done mapping
 

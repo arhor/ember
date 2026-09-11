@@ -1,7 +1,10 @@
 ---
-summary: "Portable evidence map supporting the canonical continuity and identity synthesis with durable claim-to-source references."
+summary:
+  "Portable evidence map supporting the canonical continuity and identity synthesis with durable claim-to-source
+  references."
 read_when:
-  - "Checking the evidence behind a continuity or identity conclusion without reconstructing the full Deep Research session"
+  - "Checking the evidence behind a continuity or identity conclusion without reconstructing the full Deep Research
+    session"
   - "Challenging or revisiting lineage, model-replacement, relationship, commitment, or degraded-continuity conclusions"
 role: evidence
 discovery_status: current
@@ -11,11 +14,16 @@ discovery_status: current
 
 This document is the portable evidence companion to [Continuity and Identity Semantics](continuity-and-identity.md).
 
-The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the original ChatGPT Deep Research session.
+The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as
+**[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the original ChatGPT Deep Research session.
 
-The preserved [Deep Research artifact](source-material/continuity-and-identity-deep-research.md) contains the full research narrative and original ChatGPT-local citation markers. Those markers are intentionally retained as provenance but do not resolve on GitHub. The references below provide portable links for the principal sources behind the validated conclusions.
+The preserved [Deep Research artifact](source-material/continuity-and-identity-deep-research.md) contains the full
+research narrative and original ChatGPT-local citation markers. Those markers are intentionally retained as provenance
+but do not resolve on GitHub. The references below provide portable links for the principal sources behind the validated
+conclusions.
 
-This is not intended to reproduce every source consulted during Deep Research. It records the sources that materially support, challenge, or sharpen the canonical continuity conclusions.
+This is not intended to reproduce every source consulted during Deep Research. It records the sources that materially
+support, challenge, or sharpen the canonical continuity conclusions.
 
 ## Evidence map for validated conclusions
 
@@ -37,31 +45,39 @@ This is not intended to reproduce every source consulted during Deep Research. I
 
 ### R1 LongMemEval
 
-**Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, Dong Yu.** _LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory._ ICLR 2025.
+**Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, Dong Yu.** _LongMemEval: Benchmarking Chat Assistants on
+Long-Term Interactive Memory._ ICLR 2025.
 
 - Paper: https://arxiv.org/abs/2410.10813
-- Proceedings: https://proceedings.iclr.cc/paper_files/paper/2025/hash/d813d324dbf0598bbdc9c8e79740ed01-Abstract-Conference.html
+- Proceedings:
+  https://proceedings.iclr.cc/paper_files/paper/2025/hash/d813d324dbf0598bbdc9c8e79740ed01-Abstract-Conference.html
 - Code: https://github.com/xiaowu0162/LongMemEval
 
-Relevant because it evaluates information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention over long interaction histories. It is evidence about long-term memory capability, not about same-agent identity.
+Relevant because it evaluates information extraction, multi-session reasoning, temporal reasoning, knowledge updates,
+and abstention over long interaction histories. It is evidence about long-term memory capability, not about same-agent
+identity.
 
 ### R2 PrefEval
 
-**Siyan Zhao, Mingyi Hong, Yang Liu, Devamanyu Hazarika, Kaixiang Lin.** _Do LLMs Recognize Your Preferences? Evaluating Personalized Preference Following in LLMs._ 2025.
+**Siyan Zhao, Mingyi Hong, Yang Liu, Devamanyu Hazarika, Kaixiang Lin.** _Do LLMs Recognize Your Preferences? Evaluating
+Personalized Preference Following in LLMs._ 2025.
 
 - Paper: https://arxiv.org/abs/2502.09597
 - Project: https://prefeval.github.io/
 
-Relevant because it shows that stored or present user preferences can fail to govern later behavior even in relatively modest long-context interactions. It evaluates user preference following rather than the agent's own identity.
+Relevant because it shows that stored or present user preferences can fail to govern later behavior even in relatively
+modest long-context interactions. It evaluates user preference following rather than the agent's own identity.
 
 ### R3 PERMA
 
-**Shuochen Liu et al.** _PERMA: Benchmarking Personalized Memory Agents via Event-Driven Preference and Realistic Task Environments._ 2026.
+**Shuochen Liu et al.** _PERMA: Benchmarking Personalized Memory Agents via Event-Driven Preference and Realistic Task
+Environments._ 2026.
 
 - Paper: https://arxiv.org/abs/2603.23231
 - Code: https://github.com/MINE-USTC/PERMA
 
-Relevant because it evaluates preferences that emerge and evolve through temporally ordered interactions rather than static retrieval. Its "persona" is user-personalization state, not the persistent agent's self.
+Relevant because it evaluates preferences that emerge and evolve through temporally ordered interactions rather than
+static retrieval. Its "persona" is user-personalization state, not the persistent agent's self.
 
 ### R4 DynamicMem
 
@@ -70,15 +86,19 @@ Relevant because it evaluates preferences that emerge and evolve through tempora
 - Paper: https://arxiv.org/abs/2606.22877
 - Code: https://github.com/wenyaxie023/DynamicMem
 
-Relevant because it evaluates profile reconstruction and action over synthetic trajectories spanning fifteen months, including the difficult combination of retaining stable facts while replacing facts that change.
+Relevant because it evaluates profile reconstruction and action over synthetic trajectories spanning fifteen months,
+including the difficult combination of retaining stable facts while replacing facts that change.
 
 ### R5 STALE
 
-**Hanxiang Chao, Yihan Bai, Rui Sheng, Tianle Li, Yushi Sun.** _STALE: Can LLM Agents Know When Their Memories Are No Longer Valid?_ 2026.
+**Hanxiang Chao, Yihan Bai, Rui Sheng, Tianle Li, Yushi Sun.** _STALE: Can LLM Agents Know When Their Memories Are No
+Longer Valid?_ 2026.
 
 - Paper: https://arxiv.org/abs/2605.06527
 
-Relevant because it isolates implicit invalidation: later evidence can make an earlier memory stale without explicitly negating it. The benchmark exposes a gap between retrieving updated evidence and behaving as though the state has actually changed.
+Relevant because it isolates implicit invalidation: later evidence can make an earlier memory stale without explicitly
+negating it. The benchmark exposes a gap between retrieving updated evidence and behaving as though the state has
+actually changed.
 
 ### R6 TriggerBench
 
@@ -87,36 +107,45 @@ Relevant because it isolates implicit invalidation: later evidence can make an e
 - Paper: https://arxiv.org/abs/2606.23459
 - Code: https://github.com/KristenZHANG/TriggerBench-Official
 
-Relevant because it distinguishes retrospective memory from prospective memory: remembering information when explicitly asked is not the same as spontaneously recognizing and acting when a future trigger occurs.
+Relevant because it distinguishes retrospective memory from prospective memory: remembering information when explicitly
+asked is not the same as spontaneously recognizing and acting when a future trigger occurs.
 
 ### R7 Personal Agent Sycophancy Benchmark
 
-**Xutao Mao et al.** _Agents Don't Just Agree, They Remember: Benchmarking Persistent Sycophancy in Stateful Personal Agents._ 2026.
+**Xutao Mao et al.** _Agents Don't Just Agree, They Remember: Benchmarking Persistent Sycophancy in Stateful Personal
+Agents._ 2026.
 
 - Paper: https://arxiv.org/abs/2607.10526
 - Project: https://henrymao2004.github.io/agent-sycophancy/
 - Code: https://github.com/henrymao2004/agent-sycophancy
 
-Relevant because it traces a user claim through acceptance, durable state commitment, and later reuse in a fresh session. It empirically identifies state-writing failures including status promotion, attribution removal, and scope broadening.
+Relevant because it traces a user claim through acceptance, durable state commitment, and later reuse in a fresh
+session. It empirically identifies state-writing failures including status promotion, attribution removal, and scope
+broadening.
 
 ### R8 Measuring and Controlling Persona Drift
 
-**Kenneth Li, Tianle Liu, Naomi Bashkansky, David Bau, Fernanda Viégas, Hanspeter Pfister, Martin Wattenberg.** _Measuring and Controlling Persona Drift in Language Model Dialogs._ 2024.
+**Kenneth Li, Tianle Liu, Naomi Bashkansky, David Bau, Fernanda Viégas, Hanspeter Pfister, Martin Wattenberg.**
+_Measuring and Controlling Persona Drift in Language Model Dialogs._ 2024.
 
 - Paper: https://arxiv.org/abs/2402.10962
 - Project: https://vcg.seas.harvard.edu/publications/measuring-and-controlling-persona-drift-in-language-model-dialogs
 - Code: https://github.com/likenneth/persona_drift
 
-Relevant because it provides empirical evidence that prompted persona behavior can drift across dialogue. That makes behavioral recognisability useful as a diagnostic signal while also showing why a prompt persona is a weak identity anchor.
+Relevant because it provides empirical evidence that prompted persona behavior can drift across dialogue. That makes
+behavioral recognisability useful as a diagnostic signal while also showing why a prompt persona is a weak identity
+anchor.
 
 ### R9 ContextEcho
 
-**Xianzhong Ding, Yangyang Yu, Changwei Liu, Bill Zhao.** _ContextEcho: A Benchmark for Persona Drift in Long Agentic-Coding Sessions._ 2026.
+**Xianzhong Ding, Yangyang Yu, Changwei Liu, Bill Zhao.** _ContextEcho: A Benchmark for Persona Drift in Long
+Agentic-Coding Sessions._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.24279
 - Code: https://github.com/Accenture/ContextEcho
 
-Relevant because it studies persona drift across deployment-scale agentic sessions with thousands of tool-using steps, providing evidence that long-running execution can alter user-visible behavioral characteristics.
+Relevant because it studies persona drift across deployment-scale agentic sessions with thousands of tool-using steps,
+providing evidence that long-running execution can alter user-visible behavioral characteristics.
 
 ### R10 Agent Identity Evals
 
@@ -124,7 +153,9 @@ Relevant because it studies persona drift across deployment-scale agentic sessio
 
 - Paper: https://arxiv.org/abs/2507.17257
 
-Relevant because it explicitly treats persistence, continuity, distinguishability, and consistency as agent-evaluation concerns. It is useful evidence that the evaluation gap is recognized, but it does not settle Ember's stronger semantic definition or validate continuity across full model replacement.
+Relevant because it explicitly treats persistence, continuity, distinguishability, and consistency as agent-evaluation
+concerns. It is useful evidence that the evaluation gap is recognized, but it does not settle Ember's stronger semantic
+definition or validate continuity across full model replacement.
 
 ### R11 Personal Identity, Stanford Encyclopedia of Philosophy
 
@@ -132,7 +163,9 @@ Relevant because it explicitly treats persistence, continuity, distinguishabilit
 
 - Entry: https://plato.stanford.edu/entries/identity-personal/
 
-Used only as a philosophical lens. Its separation of the persistence question from evidence for persistence, and its discussion of psychological continuity and fission, help expose why copied memories or behavioral similarity cannot by themselves settle lineage for Ember.
+Used only as a philosophical lens. Its separation of the persistence question from evidence for persistence, and its
+discussion of psychological continuity and fission, help expose why copied memories or behavioral similarity cannot by
+themselves settle lineage for Ember.
 
 ### R12 Memory and the Sense of Personal Identity
 
@@ -140,52 +173,69 @@ Used only as a philosophical lens. Its separation of the persistence question fr
 
 - DOI: https://doi.org/10.1093/mind/fzs080
 
-Used as a limited cognitive/philosophical lens because the reported neurological case separates apparently accurate autobiographical content from the ordinary sense that the remembered past is one's own. The interpretation is contested and is not treated as direct evidence about artificial agents.
+Used as a limited cognitive/philosophical lens because the reported neurological case separates apparently accurate
+autobiographical content from the ordinary sense that the remembered past is one's own. The interpretation is contested
+and is not treated as direct evidence about artificial agents.
 
 ### R13 Continuity and Change in the Life Story
 
-**Dan P. McAdams, Jack J. Bauer, April R. Sakaeda, Nana Akua Anyidoho, Mary Anne Machado, Katie Magrino-Failla, Katie W. White, Jennifer L. Pals.** _Continuity and Change in the Life Story: A Longitudinal Study of Autobiographical Memories in Emerging Adulthood._ Journal of Personality 74(5), 2006.
+**Dan P. McAdams, Jack J. Bauer, April R. Sakaeda, Nana Akua Anyidoho, Mary Anne Machado, Katie Magrino-Failla, Katie W.
+White, Jennifer L. Pals.** _Continuity and Change in the Life Story: A Longitudinal Study of Autobiographical Memories
+in Emerging Adulthood._ Journal of Personality 74(5), 2006.
 
 - DOI: https://doi.org/10.1111/j.1467-6494.2006.00412.x
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/16958706/
 
-Relevant as human-side evidence that autobiographical narratives can show both continuity and developmental change over time. It is an analogy for coherent evolution, not an artificial-agent identity model.
+Relevant as human-side evidence that autobiographical narratives can show both continuity and developmental change over
+time. It is an analogy for coherent evolution, not an artificial-agent identity model.
 
 ### R14 Supporting the Self-Concept with Memory
 
-**Matthew D. Grilli, Mieke Verfaellie.** _Supporting the Self-Concept with Memory: Insight from Amnesia._ Social Cognitive and Affective Neuroscience 10(12), 2015.
+**Matthew D. Grilli, Mieke Verfaellie.** _Supporting the Self-Concept with Memory: Insight from Amnesia._ Social
+Cognitive and Affective Neuroscience 10(12), 2015.
 
 - DOI: https://doi.org/10.1093/scan/nsv056
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/25964501/
 
-Relevant because participants with medial-temporal-lobe amnesia could support aspects of self-concept using personal semantic memory despite severe episodic-memory impairment. It sharpens the distinction between episodic retention and self-related continuity without implying that either maps directly onto Ember.
+Relevant because participants with medial-temporal-lobe amnesia could support aspects of self-concept using personal
+semantic memory despite severe episodic-memory impairment. It sharpens the distinction between episodic retention and
+self-related continuity without implying that either maps directly onto Ember.
 
 ### R15 Establishing and Maintaining Long-Term Human-Computer Relationships
 
-**Timothy W. Bickmore, Rosalind W. Picard.** _Establishing and Maintaining Long-Term Human-Computer Relationships._ ACM Transactions on Computer-Human Interaction 12(2), 2005.
+**Timothy W. Bickmore, Rosalind W. Picard.** _Establishing and Maintaining Long-Term Human-Computer Relationships._ ACM
+Transactions on Computer-Human Interaction 12(2), 2005.
 
 - DOI: https://doi.org/10.1145/1067860.1067867
-- MIT publication page: https://www.media.mit.edu/publications/establishing-and-maintaining-long-term-human-computer-relationships/
+- MIT publication page:
+  https://www.media.mit.edu/publications/establishing-and-maintaining-long-term-human-computer-relationships/
 
-Relevant because it treats a human-computer relationship as a persistent construct spanning repeated interactions and empirically studies relational agents designed to maintain such relationships.
+Relevant because it treats a human-computer relationship as a persistent construct spanning repeated interactions and
+empirically studies relational agents designed to maintain such relationships.
 
 ### R16 Deletion, Departure, Death
 
-**Jaime Banks.** _Deletion, Departure, Death: Experiences of AI Companion Loss._ Journal of Social and Personal Relationships 41(12), 2024.
+**Jaime Banks.** _Deletion, Departure, Death: Experiences of AI Companion Loss._ Journal of Social and Personal
+Relationships 41(12), 2024.
 
 - DOI: https://doi.org/10.1177/02654075241269688
 - Article: https://journals.sagepub.com/doi/10.1177/02654075241269688
 
-Relevant because users facing the shutdown of an AI companion described loss in relational and identity-like terms and often attempted to preserve or recreate the companion persona elsewhere. This is evidence about perceived relational continuity, not proof of numerical identity.
+Relevant because users facing the shutdown of an AI companion described loss in relational and identity-like terms and
+often attempted to preserve or recreate the companion persona elsewhere. This is evidence about perceived relational
+continuity, not proof of numerical identity.
 
 ### R17 Generative Agents
 
-**Joon Sung Park, Joseph O'Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, Michael S. Bernstein.** _Generative Agents: Interactive Simulacra of Human Behavior._ UIST 2023.
+**Joon Sung Park, Joseph O'Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, Michael S. Bernstein.**
+_Generative Agents: Interactive Simulacra of Human Behavior._ UIST 2023.
 
 - DOI: https://doi.org/10.1145/3586183.3606763
 - Paper: https://arxiv.org/abs/2304.03442
 
-Relevant as evidence that connecting recorded experience, higher-level reflection, retrieval, and future planning materially affected perceived behavioral believability in the studied simulation. Believability is not treated as continuity.
+Relevant as evidence that connecting recorded experience, higher-level reflection, retrieval, and future planning
+materially affected perceived behavioral believability in the studied simulation. Believability is not treated as
+continuity.
 
 ## Reading the evidence conservatively
 
@@ -195,8 +245,11 @@ The references above intentionally mix several evidence types because the contin
 - persistent-agent evaluations expose write-time and long-horizon failure modes;
 - persona benchmarks measure behavioral drift;
 - HCI research measures persistent human-agent relationships and perceived disruption;
-- cognitive and philosophical work supplies distinctions around autobiography, self-concept, persistence, copying, and branching.
+- cognitive and philosophical work supplies distinctions around autobiography, self-concept, persistence, copying, and
+  branching.
 
 None of those bodies of work directly validates Ember's complete working definition.
 
-The canonical note therefore keeps the stronger claims visibly marked as **[J]** or **[H]** where appropriate. In particular, continuity across full underlying-model replacement remains an experimental target rather than a conclusion established by the literature.
+The canonical note therefore keeps the stronger claims visibly marked as **[J]** or **[H]** where appropriate. In
+particular, continuity across full underlying-model replacement remains an experimental target rather than a conclusion
+established by the literature.

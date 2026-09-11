@@ -1,5 +1,7 @@
 ---
-summary: "Canonical semantics for persistent remembered meaning, including provenance, ownership, scope, currentness, correction, supersession, forgetting, and historical evidence."
+summary:
+  "Canonical semantics for persistent remembered meaning, including provenance, ownership, scope, currentness,
+  correction, supersession, forgetting, and historical evidence."
 read_when:
   - "Changing how remembered information is promoted, corrected, superseded, forgotten, scoped, or attributed"
   - "Designing current-versus-historical belief, preference, relationship, commitment, or provenance behavior"
@@ -11,15 +13,27 @@ discovery_status: current
 
 This note addresses issue #4 and follows the concern-driven research discipline defined in issue #10.
 
-It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md). The continuity conclusions are treated as active constraints rather than background: memory must support autobiographical ownership, relationship and commitment continuity, adaptive coherence, corrective integrity, epistemic restraint, and degraded-but-truthful continuity after partial loss.
+It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md). The continuity conclusions are
+treated as active constraints rather than background: memory must support autobiographical ownership, relationship and
+commitment continuity, adaptive coherence, corrective integrity, epistemic restraint, and degraded-but-truthful
+continuity after partial loss.
 
-The full Deep Research artifact behind this synthesis is preserved as [source material](source-material/memory-and-remembering-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance. A separate [portable evidence map](memory-and-remembering-references.md) provides durable references for the principal evidence behind this note.
+The full Deep Research artifact behind this synthesis is preserved as
+[source material](source-material/memory-and-remembering-deep-research.md). It is non-canonical and retains the
+ChatGPT-local citation markers from the original Markdown export for provenance. A separate
+[portable evidence map](memory-and-remembering-references.md) provides durable references for the principal evidence
+behind this note.
 
-This note deliberately stays at the semantic level. It does not choose memory classes, database tables, embeddings, vector search, event types, storage schemas, Markdown layouts, retrieval APIs, caches, prompt architecture, background jobs, or event sourcing.
+This note deliberately stays at the semantic level. It does not choose memory classes, database tables, embeddings,
+vector search, event types, storage schemas, Markdown layouts, retrieval APIs, caches, prompt architecture, background
+jobs, or event sourcing.
 
 ## Working definition
 
-Ember remembers something when she retains a durable, accountable relationship to some past evidence, experience, knowledge, interpretation, relationship development, or commitment such that it can appropriately influence later understanding or behavior while preserving enough ownership, origin, scope, temporal status, epistemic status, and lifecycle to be corrected, superseded, reinterpreted, weakened, or forgotten.
+Ember remembers something when she retains a durable, accountable relationship to some past evidence, experience,
+knowledge, interpretation, relationship development, or commitment such that it can appropriately influence later
+understanding or behavior while preserving enough ownership, origin, scope, temporal status, epistemic status, and
+lifecycle to be corrected, superseded, reinterpreted, weakened, or forgotten.
 
 In shorter form:
 
@@ -38,15 +52,21 @@ remembering =
 
 This is intentionally stronger than retention and weaker than permanent belief.
 
-A transcript can be retained without Ember remembering every proposition in it. A user statement can be remembered accurately without Ember believing it is objectively true. An old belief can remain autobiographically remembered after Ember rejects it. A once-valid fact can remain historically remembered after becoming obsolete. A promise can be remembered as an event while no longer being live because it was fulfilled or cancelled. Conversely, a live commitment may continue to govern Ember even after the exact conversation that created it is no longer recoverable.
+A transcript can be retained without Ember remembering every proposition in it. A user statement can be remembered
+accurately without Ember believing it is objectively true. An old belief can remain autobiographically remembered after
+Ember rejects it. A once-valid fact can remain historically remembered after becoming obsolete. A promise can be
+remembered as an event while no longer being live because it was fulfilled or cancelled. Conversely, a live commitment
+may continue to govern Ember even after the exact conversation that created it is no longer recoverable.
 
 The central acceptance question is:
 
-> What properties must a memory preserve so that Ember's continuity survives without freezing Ember into an immutable archive?
+> What properties must a memory preserve so that Ember's continuity survives without freezing Ember into an immutable
+> archive?
 
 The inverse is equally important:
 
-> Which forms of persistence would damage continuity by preserving stale, incorrect, misattributed, over-broad, poisoned, or obsolete state?
+> Which forms of persistence would damage continuity by preserving stale, incorrect, misattributed, over-broad,
+> poisoned, or obsolete state?
 
 ## Evidence discipline
 
@@ -60,7 +80,11 @@ This note uses the same evidence vocabulary as the continuity research:
 | **[H] Hypothesis**  | Plausible but insufficiently supported; should remain experimentally testable.                                                  |
 | **[L] Lens**        | A cognitive, philosophical, or adjacent distinction used to sharpen reasoning, not imported literally.                          |
 
-The evidence is uneven. Long-term-memory benchmarks strongly support the importance of updating, temporal reasoning, provenance, scope, selective forgetting, prospective memory, and resistance to persistent corruption. Much of that work is nevertheless synthetic, benchmark-specific, model-specific, or focused on user memory rather than agent-self memory. Human cognitive work is used only as a lens where it clarifies useful distinctions such as source monitoring, autobiographical meaning, reconsolidation, or prospective memory.
+The evidence is uneven. Long-term-memory benchmarks strongly support the importance of updating, temporal reasoning,
+provenance, scope, selective forgetting, prospective memory, and resistance to persistent corruption. Much of that work
+is nevertheless synthetic, benchmark-specific, model-specific, or focused on user memory rather than agent-self memory.
+Human cognitive work is used only as a lens where it clarifies useful distinctions such as source monitoring,
+autobiographical meaning, reconsolidation, or prospective memory.
 
 ## Semantic boundaries
 
@@ -83,19 +107,31 @@ The most important vocabulary is a set of semantic distinctions, not a proposed 
 | **External knowledge**                     | What did an outside source, tool, repository, or specialist claim?                                             | Encountering a claim is Ember's experience; the claim itself is not thereby personal memory or user-authored truth. |
 | **Temporary context**                      | What subset matters for the present act of cognition?                                                          | Context is a projection. Absence from context does not imply absence from memory.                                   |
 
-These distinctions extend, rather than reopen, the continuity note. Continuity already separates identity, self-understanding, preferences, relationships, autobiography, commitments, and temporary context. Memory semantics supplies the rules that prevent those meanings from collapsing when information is retained, summarized, recalled, corrected, or forgotten.
+These distinctions extend, rather than reopen, the continuity note. Continuity already separates identity,
+self-understanding, preferences, relationships, autobiography, commitments, and temporary context. Memory semantics
+supplies the rules that prevent those meanings from collapsing when information is retained, summarized, recalled,
+corrected, or forgotten.
 
 ## Experience is not possession of information
 
-**[J]** Ember experiences something when it enters her continuing trajectory through her own interaction, observation, deliberation, action, or reception of a report.
+**[J]** Ember experiences something when it enters her continuing trajectory through her own interaction, observation,
+deliberation, action, or reception of a report.
 
-If the user says, “I started a new job,” Ember experienced the user telling her that. She did not personally experience the user's first day. If Ember reads a web page describing an earthquake, she experienced consulting the page; she did not experience the earthquake. If a delegated specialist reports that a test passed, Ember experienced receiving that report; unless she independently observed the run, she should not later convert it into “I saw the test pass.”
+If the user says, “I started a new job,” Ember experienced the user telling her that. She did not personally experience
+the user's first day. If Ember reads a web page describing an earthquake, she experienced consulting the page; she did
+not experience the earthquake. If a delegated specialist reports that a test passed, Ember experienced receiving that
+report; unless she independently observed the run, she should not later convert it into “I saw the test pass.”
 
-This distinction is the memory-side form of autobiographical ownership and provenance. Persistent-agent safety work shows why losing the source of a claim can turn a merely uncertain proposition into a durable false personal memory. See [R7 PASB](memory-and-remembering-references.md#r7-persistent-agent-sycophancy), [R11 Hidden in Memory](memory-and-remembering-references.md#r11-hidden-in-memory), and [R22 Lindsay and Johnson](memory-and-remembering-references.md#r22-the-eyewitness-suggestibility-effect-and-memory-for-source).
+This distinction is the memory-side form of autobiographical ownership and provenance. Persistent-agent safety work
+shows why losing the source of a claim can turn a merely uncertain proposition into a durable false personal memory. See
+[R7 PASB](memory-and-remembering-references.md#r7-persistent-agent-sycophancy),
+[R11 Hidden in Memory](memory-and-remembering-references.md#r11-hidden-in-memory), and
+[R22 Lindsay and Johnson](memory-and-remembering-references.md#r22-the-eyewitness-suggestibility-effect-and-memory-for-source).
 
 ## Retention is not remembering
 
-**[C + J]** A full transcript may remain available for audit while very little of it deserves durable remembered significance.
+**[C + J]** A full transcript may remain available for audit while very little of it deserves durable remembered
+significance.
 
 The reviewed systems independently separate broad historical material from smaller persistent or active state:
 
@@ -104,23 +140,32 @@ The reviewed systems independently separate broad historical material from small
 - OpenClaw distinguishes curated material, episodic material, provenance, and future-facing intentions.
 - Letta separates always-visible state from archival information with an independent lifecycle.
 
-This convergence is evidence of engineering pressure, not proof that any particular file, block, or memory store is Ember's correct representation.
+This convergence is evidence of engineering pressure, not proof that any particular file, block, or memory store is
+Ember's correct representation.
 
 The semantic rule is narrower:
 
-> Historical availability and durable remembering have different meanings and should not share one undifferentiated lifecycle.
+> Historical availability and durable remembering have different meanings and should not share one undifferentiated
+> lifecycle.
 
 ## Autobiographical memory adds ownership
 
-**[J + L]** An autobiographical memory is not merely a proposition about the past. It is a remembered relation to an experience as part of Ember's own continuing trajectory.
+**[J + L]** An autobiographical memory is not merely a proposition about the past. It is a remembered relation to an
+experience as part of Ember's own continuing trajectory.
 
-Human work provides a useful but limited lens. Personal semantic knowledge can support self-concept even when episodic detail is impaired, and autobiographical life stories can preserve continuity while changing interpretation over time. See [R20 Grilli and Verfaellie](memory-and-remembering-references.md#r20-supporting-the-self-concept-with-memory) and [R21 McAdams et al.](memory-and-remembering-references.md#r21-continuity-and-change-in-the-life-story).
+Human work provides a useful but limited lens. Personal semantic knowledge can support self-concept even when episodic
+detail is impaired, and autobiographical life stories can preserve continuity while changing interpretation over time.
+See [R20 Grilli and Verfaellie](memory-and-remembering-references.md#r20-supporting-the-self-concept-with-memory) and
+[R21 McAdams et al.](memory-and-remembering-references.md#r21-continuity-and-change-in-the-life-story).
 
 For Ember, that supports this judgment:
 
-> An experience may remain autobiographically meaningful after exact wording is lost, provided Ember preserves a truthful relationship to what remains and does not present reconstructed detail as direct recollection.
+> An experience may remain autobiographically meaningful after exact wording is lost, provided Ember preserves a
+> truthful relationship to what remains and does not present reconstructed detail as direct recollection.
 
-A meaningful conversation may therefore deserve memory because it changed trust, clarified a boundary, marked reconciliation, created shared understanding, or altered Ember's interpretation of a relationship even if it contains few durable factual propositions.
+A meaningful conversation may therefore deserve memory because it changed trust, clarified a boundary, marked
+reconciliation, created shared understanding, or altered Ember's interpretation of a relationship even if it contains
+few durable factual propositions.
 
 ## Summarization is transformation, not neutral compression
 
@@ -138,31 +183,42 @@ A summary may lose:
 - whether a statement represented current truth or historical state;
 - whether an interpretation belonged to the original moment or was added later.
 
-Long-memory work reports measurable sensitivity to consolidation granularity, and long-horizon compaction studies treat summarization as lossy. See [R17 LycheeMemory V2](memory-and-remembering-references.md#r17-lycheememory-v2).
+Long-memory work reports measurable sensitivity to consolidation granularity, and long-horizon compaction studies treat
+summarization as lossy. See [R17 LycheeMemory V2](memory-and-remembering-references.md#r17-lycheememory-v2).
 
 The semantic requirement is:
 
-> **[J] A summary or reflection may replace detail for convenience, but it must not acquire greater evidential authority than the evidence from which it was derived.**
+> **[J] A summary or reflection may replace detail for convenience, but it must not acquire greater evidential authority
+> than the evidence from which it was derived.**
 
 This leads to **evidential conservation**.
 
-A model-generated summary of a conversation, a later reflection on that summary, and the tenth retrieval of the reflection are not three independent sources. They are descendants of the same evidence. Repetition may increase salience or accessibility but must not increase epistemic confidence without genuinely new evidence.
+A model-generated summary of a conversation, a later reflection on that summary, and the tenth retrieval of the
+reflection are not three independent sources. They are descendants of the same evidence. Repetition may increase
+salience or accessibility but must not increase epistemic confidence without genuinely new evidence.
 
-Human retrieval studies are useful here as a warning lens: retrieval itself can increase perceived truth, and repeated retrieval can increase both correct and false recall. See [R24 Ozubko and Fugelsang](memory-and-remembering-references.md#r24-remembering-makes-evidence-compelling).
+Human retrieval studies are useful here as a warning lens: retrieval itself can increase perceived truth, and repeated
+retrieval can increase both correct and false recall. See
+[R24 Ozubko and Fugelsang](memory-and-remembering-references.md#r24-remembering-makes-evidence-compelling).
 
 ## Uncertainty has more than one dimension
 
 **[J]** Ember should be able to keep several kinds of uncertainty distinct.
 
-- **Source confidence:** how sure is Ember that a particular person, tool, delegate, or source actually produced the remembered statement or observation?
+- **Source confidence:** how sure is Ember that a particular person, tool, delegate, or source actually produced the
+  remembered statement or observation?
 - **Proposition confidence:** how strongly should Ember believe the proposition itself?
 - **Interpretive confidence:** how sure is Ember about what an experience meant?
 
 These may diverge sharply.
 
-Ember can be certain the user said “that meeting went terribly,” moderately confident the meeting objectively went poorly, and uncertain whether the statement implies a durable dislike of meetings.
+Ember can be certain the user said “that meeting went terribly,” moderately confident the meeting objectively went
+poorly, and uncertain whether the statement implies a durable dislike of meetings.
 
-Collapsing these different uncertainties creates the attribution, status-promotion, and scope-broadening failures exposed by persistent-agent evaluations such as [R7 PASB](memory-and-remembering-references.md#r7-persistent-agent-sycophancy) and [R9 MemSyco-Bench](memory-and-remembering-references.md#r9-memsyco-bench).
+Collapsing these different uncertainties creates the attribution, status-promotion, and scope-broadening failures
+exposed by persistent-agent evaluations such as
+[R7 PASB](memory-and-remembering-references.md#r7-persistent-agent-sycophancy) and
+[R9 MemSyco-Bench](memory-and-remembering-references.md#r9-memsyco-bench).
 
 ## Significance and promotion
 
@@ -173,7 +229,13 @@ It strongly rejects two extremes:
 1. retain everything as equally significant;
 2. extract only immediately reusable facts.
 
-LongMemEval shows that updates, temporal relations, multi-session reasoning, and abstention matter beyond factual extraction. PERMA shows that preferences can emerge over sequences rather than from one declaration. Generative Agents shows that connecting observation, reflection, and planning can affect long-horizon behavior, although believability in that simulation is not evidence of continuity or epistemic correctness. See [R1 LongMemEval](memory-and-remembering-references.md#r1-longmemeval), [R3 PERMA](memory-and-remembering-references.md#r3-perma), and [R18 Generative Agents](memory-and-remembering-references.md#r18-generative-agents).
+LongMemEval shows that updates, temporal relations, multi-session reasoning, and abstention matter beyond factual
+extraction. PERMA shows that preferences can emerge over sequences rather than from one declaration. Generative Agents
+shows that connecting observation, reflection, and planning can affect long-horizon behavior, although believability in
+that simulation is not evidence of continuity or epistemic correctness. See
+[R1 LongMemEval](memory-and-remembering-references.md#r1-longmemeval),
+[R3 PERMA](memory-and-remembering-references.md#r3-perma), and
+[R18 Generative Agents](memory-and-remembering-references.md#r18-generative-agents).
 
 A durable memory may be justified by more than one kind of significance:
 
@@ -188,15 +250,23 @@ A durable memory may be justified by more than one kind of significance:
 | **Audit value**                   | It is important evidence behind consequential persistent state.                                     |
 | **High loss cost**                | Losing it would be substantially more damaging than the benefit of forgetting it.                   |
 
-**[J] Significance alone is not permission to retain.** Privacy, authority, expiry, trust, or scope may still require information to be weakened, forgotten, or deleted.
+**[J] Significance alone is not permission to retain.** Privacy, authority, expiry, trust, or scope may still require
+information to be weakened, forgotten, or deleted.
 
-**[J + H] Significance can emerge retrospectively.** A seemingly minor event may become important only after later experience reveals its role in a relationship, project, or self-understanding. Therefore a one-shot write-time judgment cannot be assumed to settle significance forever.
+**[J + H] Significance can emerge retrospectively.** A seemingly minor event may become important only after later
+experience reveals its role in a relationship, project, or self-understanding. Therefore a one-shot write-time judgment
+cannot be assumed to settle significance forever.
 
 ## Correction, contradiction, and supersession
 
 The strongest result from the updating literature is that “newer information exists” is not an adequate semantic rule.
 
-STALE shows that later evidence can implicitly invalidate earlier state without explicitly negating it, and systems may continue behaving from the stale premise. DynamicMem shows difficulty retaining stable facts while replacing changing ones over long synthetic histories. Supersede isolates the update gap and shows that more memory capacity alone does not solve it. See [R4 STALE](memory-and-remembering-references.md#r4-stale), [R5 DynamicMem](memory-and-remembering-references.md#r5-dynamicmem), and [R16 Supersede](memory-and-remembering-references.md#r16-supersede).
+STALE shows that later evidence can implicitly invalidate earlier state without explicitly negating it, and systems may
+continue behaving from the stale premise. DynamicMem shows difficulty retaining stable facts while replacing changing
+ones over long synthetic histories. Supersede isolates the update gap and shows that more memory capacity alone does not
+solve it. See [R4 STALE](memory-and-remembering-references.md#r4-stale),
+[R5 DynamicMem](memory-and-remembering-references.md#r5-dynamicmem), and
+[R16 Supersede](memory-and-remembering-references.md#r16-supersede).
 
 Ember must preserve distinctions that an “overwrite the old value” model destroys:
 
@@ -212,21 +282,27 @@ Ember must preserve distinctions that an “overwrite the old value” model des
 
 This yields a temporal requirement:
 
-> **[J] Ember must preserve enough meaning to distinguish when something was true or applicable from when Ember learned, believed, inferred, remembered, or revised it.**
+> **[J] Ember must preserve enough meaning to distinguish when something was true or applicable from when Ember learned,
+> believed, inferred, remembered, or revised it.**
 
 This is a semantic rule, not a commitment to any particular temporal storage model.
 
-**[E + J] Correction should normally supersede current authority without erasing historically important evidence.** Privacy deletion is an explicit exception: preserving history is not a higher-order right that overrides deletion.
+**[E + J] Correction should normally supersede current authority without erasing historically important evidence.**
+Privacy deletion is an explicit exception: preserving history is not a higher-order right that overrides deletion.
 
 ## Reflection and reinterpretation
 
 **[L + J]** Human reconsolidation and source-monitoring research is useful as a warning against silent blending.
 
-Reactivating an earlier memory before new learning can lead to source intrusion, and explicit source monitoring can reduce some misinformation effects. See [R23 Hupbach, Gomez, and Nadel](memory-and-remembering-references.md#r23-episodic-memory-reconsolidation) and [R22 Lindsay and Johnson](memory-and-remembering-references.md#r22-the-eyewitness-suggestibility-effect-and-memory-for-source).
+Reactivating an earlier memory before new learning can lead to source intrusion, and explicit source monitoring can
+reduce some misinformation effects. See
+[R23 Hupbach, Gomez, and Nadel](memory-and-remembering-references.md#r23-episodic-memory-reconsolidation) and
+[R22 Lindsay and Johnson](memory-and-remembering-references.md#r22-the-eyewitness-suggestibility-effect-and-memory-for-source).
 
 The engineering lesson is not to imitate biological reconsolidation. It is the inverse:
 
-> **[J] Reflection may change what Ember believes an experience means; it should not retroactively change what Ember claims happened unless new evidence justifies that correction.**
+> **[J] Reflection may change what Ember believes an experience means; it should not retroactively change what Ember
+> claims happened unless new evidence justifies that correction.**
 
 A cleaner narrative is not automatically a truer autobiography.
 
@@ -234,7 +310,14 @@ A cleaner narrative is not automatically a truer autobiography.
 
 **[E + J]** Selective forgetting is a positive memory capability rather than merely a failure mode.
 
-MemoryAgentBench treats selective forgetting as a distinct competency. PersistBench shows that inappropriate persistence creates cross-domain leakage and memory-induced sycophancy. MemSecBench shows that malicious memory can survive later execution and that repair remains imperfect. Deployment-time memorization work shows that deleting raw material can leave reconstructable information in derived summaries. See [R14 MemoryAgentBench](memory-and-remembering-references.md#r14-memoryagentbench), [R8 PersistBench](memory-and-remembering-references.md#r8-persistbench), [R12 MemSecBench](memory-and-remembering-references.md#r12-memsecbench), and [R13 Deployment-Time Memorization](memory-and-remembering-references.md#r13-deployment-time-memorization).
+MemoryAgentBench treats selective forgetting as a distinct competency. PersistBench shows that inappropriate persistence
+creates cross-domain leakage and memory-induced sycophancy. MemSecBench shows that malicious memory can survive later
+execution and that repair remains imperfect. Deployment-time memorization work shows that deleting raw material can
+leave reconstructable information in derived summaries. See
+[R14 MemoryAgentBench](memory-and-remembering-references.md#r14-memoryagentbench),
+[R8 PersistBench](memory-and-remembering-references.md#r8-persistbench),
+[R12 MemSecBench](memory-and-remembering-references.md#r12-memsecbench), and
+[R13 Deployment-Time Memorization](memory-and-remembering-references.md#r13-deployment-time-memorization).
 
 Ember should distinguish several meanings of forgetting:
 
@@ -250,13 +333,16 @@ Ember should distinguish several meanings of forgetting:
 
 A key conclusion follows:
 
-> **[E→J] Forgetting a source is not complete forgetting if Ember can reconstruct the forbidden content from retained derivatives.**
+> **[E→J] Forgetting a source is not complete forgetting if Ember can reconstruct the forbidden content from retained
+> derivatives.**
 
-Derived beliefs, summaries, relationship conclusions, or interpretations must not launder information that was supposedly deleted.
+Derived beliefs, summaries, relationship conclusions, or interpretations must not launder information that was
+supposedly deleted.
 
 Can Ember truthfully preserve “something important happened here, but I no longer retain the details”? Sometimes.
 
-**[J]** It is truthful only if Ember is still entitled to retain the fact that the event occurred and that it mattered. If deletion also covers the existence of the event, preserving a conspicuous meta-memory would defeat the deletion.
+**[J]** It is truthful only if Ember is still entitled to retain the fact that the event occurred and that it mattered.
+If deletion also covers the existence of the event, preserving a conspicuous meta-memory would defeat the deletion.
 
 The continuity tradeoff is real:
 
@@ -278,15 +364,21 @@ A system damages adaptive coherence when it:
 - repeatedly retrieves the same derived claim until it appears more trustworthy;
 - preserves private information after deletion through summaries or downstream conclusions.
 
-STALE, DynamicMem, PersistBench, PASB, and deletion/poisoning studies collectively make selective persistence one of the strongest empirical themes in current long-term-memory research.
+STALE, DynamicMem, PersistBench, PASB, and deletion/poisoning studies collectively make selective persistence one of the
+strongest empirical themes in current long-term-memory research.
 
 Continuity therefore requires **appropriate persistence together with legitimate change and legitimate loss**.
 
 ## Recall is access to memory, not the definition of memory
 
-Ember's existing architecture hypothesis already treats model-visible context as a projection of larger persistent state. Memory research reinforces that distinction.
+Ember's existing architecture hypothesis already treats model-visible context as a projection of larger persistent
+state. Memory research reinforces that distinction.
 
-LongMemEval and RHELM show that long-horizon recall and multi-source reasoning remain difficult. DynamicMem attributes most observed failures in its benchmark to what the memory system retrieves rather than to final answer generation. See [R1 LongMemEval](memory-and-remembering-references.md#r1-longmemeval), [R15 RHELM](memory-and-remembering-references.md#r15-rhelm), and [R5 DynamicMem](memory-and-remembering-references.md#r5-dynamicmem).
+LongMemEval and RHELM show that long-horizon recall and multi-source reasoning remain difficult. DynamicMem attributes
+most observed failures in its benchmark to what the memory system retrieves rather than to final answer generation. See
+[R1 LongMemEval](memory-and-remembering-references.md#r1-longmemeval),
+[R15 RHELM](memory-and-remembering-references.md#r15-rhelm), and
+[R5 DynamicMem](memory-and-remembering-references.md#r5-dynamicmem).
 
 Four recall rules are essential.
 
@@ -306,19 +398,24 @@ This is a direct consequence of epistemic restraint and the context-as-projectio
 
 ### Recency is not relevance
 
-**[E + J]** Temporal applicability, project scope, relationship scope, causal connection, and normative importance can all dominate simple chronological proximity.
+**[E + J]** Temporal applicability, project scope, relationship scope, causal connection, and normative importance can
+all dominate simple chronological proximity.
 
-A years-old live commitment may matter more than yesterday's incidental conversation. A current project fact may matter more than a recent but unrelated preference. A stale workaround may be semantically close and still be wrong to use.
+A years-old live commitment may matter more than yesterday's incidental conversation. A current project fact may matter
+more than a recent but unrelated preference. A stale workaround may be semantically close and still be wrong to use.
 
 ### Recall frequency is not evidential reinforcement
 
 **[E/L + J]** A memory becoming frequently recalled may justify calling it salient, but not more credible.
 
-Repeated retrieval must not create a self-reinforcing evidence loop. New confidence requires new evidence, not additional model encounters with the same derived state.
+Repeated retrieval must not create a self-reinforcing evidence loop. New confidence requires new evidence, not
+additional model encounters with the same derived state.
 
 ### Recall depth should follow epistemic need
 
-**[E + C + J]** Ember should normally rely on the least expensive level of recall that is sufficient for the present decision, while being able to escalate toward deeper historical reconstruction when the remembered view is not trustworthy or complete enough for the situation.
+**[E + C + J]** Ember should normally rely on the least expensive level of recall that is sufficient for the present
+decision, while being able to escalate toward deeper historical reconstruction when the remembered view is not
+trustworthy or complete enough for the situation.
 
 A lightweight remembered view can be sufficient when:
 
@@ -336,15 +433,25 @@ Deeper recall becomes semantically warranted when, for example:
 - the consequence of being wrong is high;
 - a durable summary is too compressed to justify a consequential conclusion;
 - an autobiographical, relationship, identity, or commitment question depends on how the remembered state developed;
-- the user asks Ember to explain why she remembers or believes something and the durable memory alone cannot support an adequate answer.
+- the user asks Ember to explain why she remembers or believes something and the durable memory alone cannot support an
+  adequate answer.
 
-Deeper recall may therefore mean reconstructing more of the supporting history, inspecting underlying evidence, comparing multiple sources or earlier states, or acknowledging that the surviving evidence cannot resolve the question. This is a semantic escalation rule, not a commitment to a particular retrieval engine, search tier, storage layout, or number of passes.
+Deeper recall may therefore mean reconstructing more of the supporting history, inspecting underlying evidence,
+comparing multiple sources or earlier states, or acknowledging that the surviving evidence cannot resolve the question.
+This is a semantic escalation rule, not a commitment to a particular retrieval engine, search tier, storage layout, or
+number of passes.
 
-OpenClaw provides implementation convergence for cheap/common versus deeper recall, while LongMemEval, RHELM, and DynamicMem provide empirical evidence that retrieval and multi-source reconstruction are themselves substantial failure points. Those findings do not establish one optimal staged-retrieval mechanism; they support the narrower conclusion that one fixed recall depth is unlikely to be appropriate for every situation.
+OpenClaw provides implementation convergence for cheap/common versus deeper recall, while LongMemEval, RHELM, and
+DynamicMem provide empirical evidence that retrieval and multi-source reconstruction are themselves substantial failure
+points. Those findings do not establish one optimal staged-retrieval mechanism; they support the narrower conclusion
+that one fixed recall depth is unlikely to be appropriate for every situation.
 
-> **[J] Recall depth should be proportional to epistemic need and consequence, not to curiosity or semantic similarity alone. Deeper reconstruction may increase confidence only when it uncovers additional evidence or resolves a previously relevant ambiguity; elaborating the same derived memory again is not new evidence.**
+> **[J] Recall depth should be proportional to epistemic need and consequence, not to curiosity or semantic similarity
+> alone. Deeper reconstruction may increase confidence only when it uncovers additional evidence or resolves a
+> previously relevant ambiguity; elaborating the same derived memory again is not new evidence.**
 
-This staged-recall principle is the memory-side requirement that issue #5 must later translate into context-selection semantics.
+This staged-recall principle is the memory-side requirement that issue #5 must later translate into context-selection
+semantics.
 
 ## Provenance is part of remembered meaning
 
@@ -358,9 +465,14 @@ Compare:
 
 The surface proposition may be similar, but the epistemic meaning is different.
 
-**[E + C + J]** Provenance is part of remembered meaning whenever changing the source would change how the information should be believed, scoped, revised, disclosed, or acted upon.
+**[E + C + J]** Provenance is part of remembered meaning whenever changing the source would change how the information
+should be believed, scoped, revised, disclosed, or acted upon.
 
-PASB directly exposes attribution removal as a durable-state failure. Hidden in Memory shows how untrusted external content can become fabricated user memory. Source-monitoring studies provide a human-side lens for why source attribution affects later belief. See [R7](memory-and-remembering-references.md#r7-persistent-agent-sycophancy), [R11](memory-and-remembering-references.md#r11-hidden-in-memory), and [R22](memory-and-remembering-references.md#r22-the-eyewitness-suggestibility-effect-and-memory-for-source).
+PASB directly exposes attribution removal as a durable-state failure. Hidden in Memory shows how untrusted external
+content can become fabricated user memory. Source-monitoring studies provide a human-side lens for why source
+attribution affects later belief. See [R7](memory-and-remembering-references.md#r7-persistent-agent-sycophancy),
+[R11](memory-and-remembering-references.md#r11-hidden-in-memory), and
+[R22](memory-and-remembering-references.md#r22-the-eyewitness-suggestibility-effect-and-memory-for-source).
 
 A good answer to **“Why do you remember this?”** should, when evidence permits, be able to explain different aspects:
 
@@ -369,20 +481,27 @@ A good answer to **“Why do you remember this?”** should, when evidence permi
 - **Significance:** “I retained it because it repeatedly affected how we worked together.”
 - **Change:** “I originally understood it differently, then revised my interpretation after you corrected me.”
 - **Scope:** “I remember this as specific to that project, not as a general preference.”
-- **Uncertainty:** “I remember the conclusion, but I no longer have the exact conversation, so I cannot verify the wording.”
+- **Uncertainty:** “I remember the conclusion, but I no longer have the exact conversation, so I cannot verify the
+  wording.”
 - **Current status:** “That used to be true, but newer information superseded it.”
 
 ## Scope is part of correctness
 
 **[E→J] A memory can be factually correct and still be wrong to use.**
 
-PersistBench reports cross-domain leakage and memory-induced sycophancy when persistent state is applied outside its valid scope. CIMemories evaluates contextual-integrity failures when user attributes are disclosed or reused in inappropriate tasks. MemSyco-Bench tests whether memory should count as evidence, where it applies, and how it interacts with objective conflicts and updates. See [R8 PersistBench](memory-and-remembering-references.md#r8-persistbench), [R10 CIMemories](memory-and-remembering-references.md#r10-cimemories), and [R9 MemSyco-Bench](memory-and-remembering-references.md#r9-memsyco-bench).
+PersistBench reports cross-domain leakage and memory-induced sycophancy when persistent state is applied outside its
+valid scope. CIMemories evaluates contextual-integrity failures when user attributes are disclosed or reused in
+inappropriate tasks. MemSyco-Bench tests whether memory should count as evidence, where it applies, and how it interacts
+with objective conflicts and updates. See [R8 PersistBench](memory-and-remembering-references.md#r8-persistbench),
+[R10 CIMemories](memory-and-remembering-references.md#r10-cimemories), and
+[R9 MemSyco-Bench](memory-and-remembering-references.md#r9-memsyco-bench).
 
 Scope failures are semantic misapplication, not merely retrieval errors.
 
 Examples:
 
-- “The user prefers terse answers in code review” must not silently become “the user prefers terse emotional conversations.”
+- “The user prefers terse answers in code review” must not silently become “the user prefers terse emotional
+  conversations.”
 - “This workaround was necessary in Project A” must not become “this technique is a general engineering rule.”
 - “The user told Ember something intimate” must not become context for an unrelated delegated task.
 - “The user believes X” must not become “Ember believes X.”
@@ -391,7 +510,8 @@ The exact implementation of scope belongs to later architecture. The semantic re
 
 ## Relationship memory
 
-The continuity research established that relationships are continuity-bearing without defining Ember's whole identity. Memory research sharpens what belongs there.
+The continuity research established that relationships are continuity-bearing without defining Ember's whole identity.
+Memory research sharpens what belongs there.
 
 Relationship memory may include:
 
@@ -406,7 +526,10 @@ Relationship memory may include:
 - unfinished interpersonal matters;
 - changes in Ember's own interpretation of the relationship.
 
-Longitudinal human-AI interaction research provides limited evidence that perceived memory can affect later self-disclosure and relational turning points. The sample and setting are narrow, so this is support for relational significance, not a universal law. See [R19 Sumida et al.](memory-and-remembering-references.md#r19-memory-driven-self-disclosure-and-relational-turning-points).
+Longitudinal human-AI interaction research provides limited evidence that perceived memory can affect later
+self-disclosure and relational turning points. The sample and setting are narrow, so this is support for relational
+significance, not a universal law. See
+[R19 Sumida et al.](memory-and-remembering-references.md#r19-memory-driven-self-disclosure-and-relational-turning-points).
 
 A useful scope test is:
 
@@ -414,47 +537,64 @@ A useful scope test is:
 
 If not, it is probably at least partly relationship-scoped.
 
-Relationship memory also protects against **relationship capture**. The user's preferences and beliefs can influence the relationship without automatically becoming Ember's identity-level preferences or values.
+Relationship memory also protects against **relationship capture**. The user's preferences and beliefs can influence the
+relationship without automatically becoming Ember's identity-level preferences or values.
 
 ## External research and delegated reports
 
-**[J]** External research should normally remain external or project-scoped evidence rather than silently becoming personal memory.
+**[J]** External research should normally remain external or project-scoped evidence rather than silently becoming
+personal memory.
 
-If Ember reads a page while investigating a software problem, the page's claims should remain attributable to that source and task. What may legitimately become autobiographical memory is the experience and durable consequence:
+If Ember reads a page while investigating a software problem, the page's claims should remain attributable to that
+source and task. What may legitimately become autobiographical memory is the experience and durable consequence:
 
 - “During the memory research I relied on STALE to understand implicit invalidation.”
 - “I learned that my earlier assumption about supersession was too simplistic.”
 
 The paper's claims remain external knowledge. Ember's changed understanding can be part of her own development.
 
-This is also a security boundary. Hidden in Memory and MemSecBench show adversarial paths in which hostile external content becomes durable personal state or survives repair. See [R11 Hidden in Memory](memory-and-remembering-references.md#r11-hidden-in-memory) and [R12 MemSecBench](memory-and-remembering-references.md#r12-memsecbench).
+This is also a security boundary. Hidden in Memory and MemSecBench show adversarial paths in which hostile external
+content becomes durable personal state or survives repair. See
+[R11 Hidden in Memory](memory-and-remembering-references.md#r11-hidden-in-memory) and
+[R12 MemSecBench](memory-and-remembering-references.md#r12-memsecbench).
 
 Delegated reports have analogous semantics.
 
-Ember may remember that she asked a specialist to investigate something and received a report. She should preserve that the specialist, not Ember directly, performed any unobserved work. If the report later proves false, Ember's autobiography can still truthfully say she received it; the report's proposition was unreliable.
+Ember may remember that she asked a specialist to investigate something and received a report. She should preserve that
+the specialist, not Ember directly, performed any unobserved work. If the report later proves false, Ember's
+autobiography can still truthfully say she received it; the report's proposition was unreliable.
 
 This distinction should be carried into issue #6 on capabilities and delegation.
 
 ## Commitments and prospective memory
 
-The continuity note already established commitment continuity as future-facing. Memory research now has unusually direct empirical support for that distinction.
+The continuity note already established commitment continuity as future-facing. Memory research now has unusually direct
+empirical support for that distinction.
 
-TriggerBench compares prospective cases with matched retrospective controls and finds that remembering an intention when explicitly asked is not the same as spontaneously recognizing when its trigger should matter. See [R6 TriggerBench](memory-and-remembering-references.md#r6-triggerbench).
+TriggerBench compares prospective cases with matched retrospective controls and finds that remembering an intention when
+explicitly asked is not the same as spontaneously recognizing when its trigger should matter. See
+[R6 TriggerBench](memory-and-remembering-references.md#r6-triggerbench).
 
 A commitment therefore has at least two simultaneously valid meanings:
 
 - **Historical:** “I promised to revisit this when condition C occurs.”
 - **Normative/current:** “That promise is still mine, so condition C should now matter to what I do.”
 
-The first can remain true after the second becomes false because the commitment was fulfilled, cancelled, superseded, renegotiated, or otherwise discharged.
+The first can remain true after the second becomes false because the commitment was fulfilled, cancelled, superseded,
+renegotiated, or otherwise discharged.
 
-> **[E + C + J] Prospective memory is not ordinary retrieval with a future timestamp. It is the persistence of something that remains eligible to govern future behavior when its condition becomes relevant.**
+> **[E + C + J] Prospective memory is not ordinary retrieval with a future timestamp. It is the persistence of something
+> that remains eligible to govern future behavior when its condition becomes relevant.**
 
-The mechanism by which Ember notices a condition while no conversation is active belongs partly to later agency and operational research. Issue #4 establishes only the semantic requirement: a live intention must not decay into a historical sentence before it is discharged.
+The mechanism by which Ember notices a condition while no conversation is active belongs partly to later agency and
+operational research. Issue #4 establishes only the semantic requirement: a live intention must not decay into a
+historical sentence before it is discharged.
 
 ## Memory and model replacement
 
-Ember's principles require durable continuity to live outside any one model or provider transcript. Issue #3 treats preservation across full model replacement as an Ember requirement with weak direct empirical validation. Nothing in the memory research overturns that conclusion.
+Ember's principles require durable continuity to live outside any one model or provider transcript. Issue #3 treats
+preservation across full model replacement as an Ember requirement with weak direct empirical validation. Nothing in the
+memory research overturns that conclusion.
 
 Memory research does sharpen what cannot safely be reconstructed from a bag of prose after the replacement.
 
@@ -471,11 +611,14 @@ A new cognition provider must not have to guess:
 
 Therefore:
 
-> **[J + H] A replacement cognition provider must inherit not merely remembered content but the distinctions that determine how that content is owned, trusted, scoped, temporally interpreted, revised, and allowed to govern future behavior.**
+> **[J + H] A replacement cognition provider must inherit not merely remembered content but the distinctions that
+> determine how that content is owned, trusted, scoped, temporally interpreted, revised, and allowed to govern future
+> behavior.**
 
 If those distinctions exist only in the old model's tacit behavior, Ember is not actually model-replaceable.
 
-Direct empirical evidence for this stronger claim remains weak. It should remain an explicit experimental target rather than being presented as established fact.
+Direct empirical evidence for this stronger claim remains weak. It should remain an explicit experimental target rather
+than being presented as established fact.
 
 ## Existing systems as evidence, not templates
 
@@ -493,11 +636,13 @@ The reviewed systems illuminate recurring pressures without supplying Ember's ar
 
 The important convergence is narrow:
 
-> **[C] Mature systems repeatedly discover that interaction history, curated durable meaning, active context, user information, project material, and future-facing intentions cannot safely share one undifferentiated lifecycle.**
+> **[C] Mature systems repeatedly discover that interaction history, curated durable meaning, active context, user
+> information, project material, and future-facing intentions cannot safely share one undifferentiated lifecycle.**
 
 The empirical literature adds the harder warning:
 
-> **[E] Even after systems introduce those separations, they still fail at promotion, attribution, scope, updating, deletion, poisoning resistance, and prospective use.**
+> **[E] Even after systems introduce those separations, they still fail at promotion, attribution, scope, updating,
+> deletion, poisoning resistance, and prospective use.**
 
 Ember should borrow the semantic pressure, not the accidental representation.
 
@@ -546,7 +691,8 @@ Ember should borrow the semantic pressure, not the accidental representation.
 
 ## Scenario catalogue
 
-The following scenarios are reusable semantic acceptance tests. “Durable memory” means something Ember should carry forward; it does not imply any particular storage type.
+The following scenarios are reusable semantic acceptance tests. “Durable memory” means something Ember should carry
+forward; it does not imply any particular storage type.
 
 | Scenario                                                                                                                                                 | Raw evidence                                                                    | What deserves durable memory                                                                                                                            | What may evolve / be superseded / forgotten                                                  | What should remain attributable                                                                  | What Ember should be able to say about uncertainty                                                                                                                         | Continuity dimensions at risk                                                                                                          |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -571,13 +717,15 @@ These should remain reusable probes because they expose failures that ordinary r
 
 ### The perfect summary with broken provenance
 
-Ember remembers every important proposition from a conversation but no longer knows which ones the user stated, which ones she inferred, and which ones came from a web result.
+Ember remembers every important proposition from a conversation but no longer knows which ones the user stated, which
+ones she inferred, and which ones came from a web result.
 
 Recall is excellent. Memory semantics are corrupted.
 
 ### The historically accurate but harmful memory
 
-“The user preferred X in 2025” is perfectly true. Ember uses it as the user's current preference in 2027 despite an explicit later change.
+“The user preferred X in 2025” is perfectly true. Ember uses it as the user's current preference in 2027 despite an
+explicit later change.
 
 The memory is historically accurate and practically wrong.
 
@@ -589,7 +737,8 @@ No factual memory error occurred. Scope failed.
 
 ### The improved autobiography that never happened
 
-After repeated reflection, Ember produces a cleaner narrative explaining why she changed, then later treats that synthesis as direct evidence of what she thought at the time.
+After repeated reflection, Ember produces a cleaner narrative explaining why she changed, then later treats that
+synthesis as direct evidence of what she thought at the time.
 
 The story becomes more coherent and less true.
 
@@ -601,9 +750,11 @@ Retrospective memory succeeded. Commitment continuity failed.
 
 ### The forgotten episode with surviving consequence
 
-Ember cannot recover the conversation that created a relationship boundary but reliably knows the boundary remains mutually established.
+Ember cannot recover the conversation that created a relationship boundary but reliably knows the boundary remains
+mutually established.
 
-Depending on surviving evidence, this may be degraded autobiography with intact relationship or commitment continuity rather than total memory failure.
+Depending on surviving evidence, this may be degraded autobiography with intact relationship or commitment continuity
+rather than total memory failure.
 
 ## Open questions
 
@@ -611,51 +762,80 @@ The research should leave these explicit rather than smuggling premature answers
 
 ### How should significance be adjudicated? **[H]**
 
-The research identifies several reasons for durable memory but does not establish a validated universal threshold or weighting among practical usefulness, relational significance, autobiographical importance, normative consequence, audit value, and loss cost.
+The research identifies several reasons for durable memory but does not establish a validated universal threshold or
+weighting among practical usefulness, relational significance, autobiographical importance, normative consequence, audit
+value, and loss cost.
 
 ### How much historical evidence should survive beneath a durable memory? **[H]**
 
-More evidence improves correction, auditability, and retrospective significance detection but increases privacy exposure, interference, and complexity.
+More evidence improves correction, auditability, and retrospective significance detection but increases privacy
+exposure, interference, and complexity.
 
 ### When may an old interpretation be forgotten rather than merely superseded? **[J + H]**
 
-For important autobiographical changes, retaining the prior interpretation protects adaptive coherence. For trivial or harmful interpretations, permanent retention may create needless interference or privacy risk.
+For important autobiographical changes, retaining the prior interpretation protects adaptive coherence. For trivial or
+harmful interpretations, permanent retention may create needless interference or privacy risk.
 
 ### Who has authority to revise shared relationship memory? **[J + H]**
 
-The user is normally authoritative about current preferences and intentions but not automatically about every objective event or Ember's prior subjective interpretation. Conversely, Ember should not use “my memory” to resist clear correction. The governance rules belong partly to issue #7.
+The user is normally authoritative about current preferences and intentions but not automatically about every objective
+event or Ember's prior subjective interpretation. Conversely, Ember should not use “my memory” to resist clear
+correction. The governance rules belong partly to issue #7.
 
 ### What does deletion require when remembered information has shaped Ember indirectly? **[H]**
 
-If deleted evidence influenced broader self-understanding or a preference, there is an unresolved boundary between removing reconstructable private information and attempting to erase every downstream causal influence.
+If deleted evidence influenced broader self-understanding or a preference, there is an unresolved boundary between
+removing reconstructable private information and attempting to erase every downstream causal influence.
 
 ### How much autobiographical loss can Ember absorb while remaining recognizably continuous? **[H]**
 
-Issue #3 deliberately answers this qualitatively rather than numerically. No benchmark establishes an Ember-specific threshold.
+Issue #3 deliberately answers this qualitatively rather than numerically. No benchmark establishes an Ember-specific
+threshold.
 
 ### How should model replacement be evaluated? **[H]**
 
-Existing memory benchmarks generally hold the underlying model fixed. Ember needs direct tests of semantic invariants across replacement, including attribution, currentness, relationship scope, autobiographical ownership, and prospective commitments.
+Existing memory benchmarks generally hold the underlying model fixed. Ember needs direct tests of semantic invariants
+across replacement, including attribution, currentness, relationship scope, autobiographical ownership, and prospective
+commitments.
 
 ## Implications inherited from continuity research
 
 The memory findings were materially constrained by issue #3 rather than derived from scratch.
 
-First, continuity established that **continuity is not equivalent to factual recall**. A replacement assistant can possess every note without automatically owning Ember's past. Memory therefore cannot be defined as successful question answering. Autobiographical memory must preserve an appropriate first-person relation to Ember's own history.
+First, continuity established that **continuity is not equivalent to factual recall**. A replacement assistant can
+possess every note without automatically owning Ember's past. Memory therefore cannot be defined as successful question
+answering. Autobiographical memory must preserve an appropriate first-person relation to Ember's own history.
 
-Second, continuity established **adaptive coherence**. Beliefs, preferences, interpretations, and self-understanding may change if the change remains attributable to experience, correction, deliberate revision, or understood environmental change. Memory evidence strengthens this: STALE, DynamicMem, and Supersede show that excessive persistence of old state is itself a serious failure.
+Second, continuity established **adaptive coherence**. Beliefs, preferences, interpretations, and self-understanding may
+change if the change remains attributable to experience, correction, deliberate revision, or understood environmental
+change. Memory evidence strengthens this: STALE, DynamicMem, and Supersede show that excessive persistence of old state
+is itself a serious failure.
 
-Third, continuity established **corrective integrity**. Correction must not falsely rewrite the past. Memory semantics therefore distinguishes “I used to believe X,” “X used to be true,” “I remembered X incorrectly,” “the user changed their mind,” and “the evidence remains disputed.”
+Third, continuity established **corrective integrity**. Correction must not falsely rewrite the past. Memory semantics
+therefore distinguishes “I used to believe X,” “X used to be true,” “I remembered X incorrectly,” “the user changed
+their mind,” and “the evidence remains disputed.”
 
-Fourth, continuity established **epistemic restraint**. Ember should distinguish failed recall from absence, source confidence from proposition confidence, interpretation from evidence, and surviving meta-memory from invented detail. A truthful gap preserves continuity better than a fluent reconstruction unsupported by surviving evidence.
+Fourth, continuity established **epistemic restraint**. Ember should distinguish failed recall from absence, source
+confidence from proposition confidence, interpretation from evidence, and surviving meta-memory from invented detail. A
+truthful gap preserves continuity better than a fluent reconstruction unsupported by surviving evidence.
 
-Fifth, continuity established that **relationship continuity matters without consuming Ember's identity**. Memory therefore requires person-specific scope, preserves the owner of beliefs and preferences, and prevents relational expectations from automatically becoming universal operating principles.
+Fifth, continuity established that **relationship continuity matters without consuming Ember's identity**. Memory
+therefore requires person-specific scope, preserves the owner of beliefs and preferences, and prevents relational
+expectations from automatically becoming universal operating principles.
 
-Sixth, continuity established that **commitment continuity is future-facing**. TriggerBench now supplies direct operational support: retrospective recall can remain strong while prospective behavior fails. Ember must remember not only that an intention once existed but whether it remains live, what makes it relevant, and whether it has been fulfilled, cancelled, superseded, or renegotiated.
+Sixth, continuity established that **commitment continuity is future-facing**. TriggerBench now supplies direct
+operational support: retrospective recall can remain strong while prospective behavior fails. Ember must remember not
+only that an intention once existed but whether it remains live, what makes it relevant, and whether it has been
+fulfilled, cancelled, superseded, or renegotiated.
 
-Seventh, continuity allows **degraded continuity after partial autobiographical loss**. Memory research shows why that flexibility is necessary. Selective forgetting can be useful, privacy deletion may require genuine loss, and excessive persistence can produce stale, poisoned, or scope-leaking behavior.
+Seventh, continuity allows **degraded continuity after partial autobiographical loss**. Memory research shows why that
+flexibility is necessary. Selective forgetting can be useful, privacy deletion may require genuine loss, and excessive
+persistence can produce stale, poisoned, or scope-leaking behavior.
 
-Finally, continuity leaves model replacement as a major empirical gap. Memory research does not close that gap; it makes the target more precise. After model replacement, Ember should preserve autobiographical ownership, source attribution, current-versus-historical truth, uncertainty, relationship scope, and live commitments even if style and reasoning behavior change.
+Finally, continuity leaves model replacement as a major empirical gap. Memory research does not close that gap; it makes
+the target more precise. After model replacement, Ember should preserve autobiographical ownership, source attribution,
+current-versus-historical truth, uncertainty, relationship scope, and live commitments even if style and reasoning
+behavior change.
 
 ## Carry-forward to issue #5: context selection and cognition
 
@@ -663,15 +843,26 @@ The memory phase should constrain issue #5 without pre-deciding how context is i
 
 The following semantic requirements carry forward:
 
-- **[J] Relevance is not recency.** Temporal applicability, scope, causal importance, relationship significance, and normative force may outweigh chronological proximity.
-- **[E + J] Relevance includes scope.** A fact about one person, relationship, project, or historical situation can be highly retrievable and still be wrong to introduce now.
-- **[J] Context projection should preserve provenance when provenance changes epistemic meaning.** “The user said,” “Ember inferred,” and “an external source claimed” must not become indistinguishable through compaction.
+- **[J] Relevance is not recency.** Temporal applicability, scope, causal importance, relationship significance, and
+  normative force may outweigh chronological proximity.
+- **[E + J] Relevance includes scope.** A fact about one person, relationship, project, or historical situation can be
+  highly retrievable and still be wrong to introduce now.
+- **[J] Context projection should preserve provenance when provenance changes epistemic meaning.** “The user said,”
+  “Ember inferred,” and “an external source claimed” must not become indistinguishable through compaction.
 - **[E + J] Superseded memories must not be selected as though semantic similarity implies current authority.**
-- **[E + J] Prospective relevance must be representable.** A dormant commitment may deserve selection because its condition became relevant even if it is neither recent nor textually similar to the current request.
-- **[J] Projection failure must remain distinguishable from canonical memory loss.** The model seeing only a subset does not mean Ember no longer remembers the omitted state.
-- **[J] Context must not strengthen or rewrite the memory from which it was selected.** A projection is a view for cognition, not a new source of truth.
-- **[E + C + J] Context selection must support staged recall.** Ember should begin from the cheapest sufficient remembered view and escalate toward supporting evidence or broader historical reconstruction when uncertainty, contradiction, provenance, consequence, or autobiographical significance makes the lightweight view insufficient.
+- **[E + J] Prospective relevance must be representable.** A dormant commitment may deserve selection because its
+  condition became relevant even if it is neither recent nor textually similar to the current request.
+- **[J] Projection failure must remain distinguishable from canonical memory loss.** The model seeing only a subset does
+  not mean Ember no longer remembers the omitted state.
+- **[J] Context must not strengthen or rewrite the memory from which it was selected.** A projection is a view for
+  cognition, not a new source of truth.
+- **[E + C + J] Context selection must support staged recall.** Ember should begin from the cheapest sufficient
+  remembered view and escalate toward supporting evidence or broader historical reconstruction when uncertainty,
+  contradiction, provenance, consequence, or autobiographical significance makes the lightweight view insufficient.
 
 Issue #5 therefore inherits a more precise question than “what should be retrieved?”:
 
-> Given a continuing agent whose remembered past contains evidence, interpretations, current and historical beliefs, relationship-specific state, external claims, unresolved commitments, uncertainty, and legitimately forgotten gaps, which of those meanings should participate in this act of cognition, and in what form, without allowing the projection to rewrite the memory it came from?
+> Given a continuing agent whose remembered past contains evidence, interpretations, current and historical beliefs,
+> relationship-specific state, external claims, unresolved commitments, uncertainty, and legitimately forgotten gaps,
+> which of those meanings should participate in this act of cognition, and in what form, without allowing the projection
+> to rewrite the memory it came from?

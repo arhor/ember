@@ -1,5 +1,7 @@
 ---
-summary: "Issue #84 Raspberry Pi 5 resource evidence for Ember's episodic runtime, comparing fixture-backed ARM measurements with issue #82 and separating real Codex process-tree cost."
+summary:
+  "Issue #84 Raspberry Pi 5 resource evidence for Ember's episodic runtime, comparing fixture-backed ARM measurements
+  with issue #82 and separating real Codex process-tree cost."
 read_when:
   - "Reviewing Ember resource use on Raspberry Pi-class constrained hardware"
   - "Comparing issue #84 ARM measurements with the issue #82 hosted-runner baseline"
@@ -12,13 +14,20 @@ discovery_status: current
 
 ## Purpose and evidence boundary
 
-Issue [#84](https://github.com/arhor/ember/issues/84) validates the runtime-resource methodology from issue #82 on representative constrained always-on hardware. The measurement keeps idle Ember residency separate from bounded active workers and keeps Ember root-process cost separate from external Codex descendants.
+Issue [#84](https://github.com/arhor/ember/issues/84) validates the runtime-resource methodology from issue #82 on
+representative constrained always-on hardware. The measurement keeps idle Ember residency separate from bounded active
+workers and keeps Ember root-process cost separate from external Codex descendants.
 
-The target-host capture was produced from Ember revision `07f0b5e3b464d9915b432e6fc25dc2e573417433`. The supplied capture contained the ordinary two-line `npm run` script banner before the JSON payload; removing only that known npm prefix yields valid JSON. The capture command is corrected in [raspberry-pi-resource-validation.md](raspberry-pi-resource-validation.md) to use `npm run --silent` when redirecting stdout.
+The target-host capture was produced from Ember revision `07f0b5e3b464d9915b432e6fc25dc2e573417433`. The supplied
+capture contained the ordinary two-line `npm run` script banner before the JSON payload; removing only that known npm
+prefix yields valid JSON. The capture command is corrected in
+[raspberry-pi-resource-validation.md](raspberry-pi-resource-validation.md) to use `npm run --silent` when redirecting
+stdout.
 
 SHA-256 of the cleaned JSON payload: `36809208e82b15390215a04e98f21e463d206667544bfcd8af3d8b9b6f65a036`.
 
-No hostname, username, IP address, environment dump, credential path, or other private host identifier appeared in the retained payload.
+No hostname, username, IP address, environment dump, credential path, or other private host identifier appeared in the
+retained payload.
 
 ## Target host
 
@@ -33,7 +42,10 @@ No hostname, username, IP address, environment dump, credential path, or other p
 - systemd user manager available; and
 - deployment mode: systemd-user-supervised episodic one-shot Node workers with no resident Ember daemon.
 
-PR [#138](https://github.com/arhor/ember/pull/138) had already validated the real `systemd --user -> Node -> Codex -> durable Ember evidence -> clean exit` runtime path on this deployment class. The measurements below therefore add constrained-host resource evidence rather than substituting a synthetic process tree for operational validation.
+PR [#138](https://github.com/arhor/ember/pull/138) had already validated the real
+`systemd --user -> Node -> Codex -> durable Ember evidence -> clean exit` runtime path on this deployment class. The
+measurements below therefore add constrained-host resource evidence rather than substituting a synthetic process tree
+for operational validation.
 
 ## Methodology
 
@@ -46,9 +58,12 @@ The fixture-backed half preserves issue #82's canonical comparison shape:
 - 1,200 ms fixture hold window; and
 - foreground cognition, endogenous wake, and specialist delegation through the same production entrypoints.
 
-The real-provider half uses one discarded warm-up plus three retained Codex samples per workload. Three retained provider samples are an explicit constrained-host deviation from the five-sample fixture comparison, chosen to retain median/range evidence without multiplying live model calls. Real-provider wall time includes network/model latency.
+The real-provider half uses one discarded warm-up plus three retained Codex samples per workload. Three retained
+provider samples are an explicit constrained-host deviation from the five-sample fixture comparison, chosen to retain
+median/range evidence without multiplying live model calls. Real-provider wall time includes network/model latency.
 
-RSS remains Linux `VmRSS`. Tree RSS is the sampled sum of root plus descendants and can double-count shared physical pages; it is not PSS or unique physical memory.
+RSS remains Linux `VmRSS`. Tree RSS is the sampled sum of root plus descendants and can double-count shared physical
+pages; it is not PSS or unique physical memory.
 
 ## Idle steady state
 
@@ -58,11 +73,14 @@ Both fixture-backed and real-Codex evaluation phases observed:
 - maximum Ember runtime RSS while idle: **0 KiB**; and
 - attributable Ember runtime CPU while idle: **0 ms**.
 
-This confirms the intended steady-state property on the target hardware: Ember does not keep a resident Node process between episodic activations. The constrained-host result therefore agrees with issue #82's architectural conclusion rather than revealing a hidden always-on Node heap.
+This confirms the intended steady-state property on the target hardware: Ember does not keep a resident Node process
+between episodic activations. The constrained-host result therefore agrees with issue #82's architectural conclusion
+rather than revealing a hidden always-on Node heap.
 
 ## Fixture-backed ARM comparison
 
-Medians below are compared with issue #82's x86_64 GitHub-hosted canonical fixture run. The external fixture is a bounded Node protocol child and is not Codex cost.
+Medians below are compared with issue #82's x86_64 GitHub-hosted canonical fixture run. The external fixture is a
+bounded Node protocol child and is not Codex cost.
 
 | Workload              | Pi Ember root RSS | #82 root RSS | Pi total tree RSS | #82 total tree RSS | Pi wall median | #82 wall median |
 | --------------------- | ----------------: | -----------: | ----------------: | -----------------: | -------------: | --------------: |
@@ -70,9 +88,13 @@ Medians below are compared with issue #82's x86_64 GitHub-hosted canonical fixtu
 | Endogenous wake       |         99.78 MiB |    99.12 MiB |        156.64 MiB |         170.08 MiB |    1,541.48 ms |     1,471.87 ms |
 | Specialist delegation |         96.73 MiB |    99.50 MiB |        161.03 MiB |         169.39 MiB |    1,534.04 ms |     1,461.60 ms |
 
-The Ember root RSS class is effectively unchanged across platforms: the three Pi medians remain roughly **96.7 to 99.8 MiB**, within about -3.1% to +0.7% of the #82 root medians. The Pi fixture tree is lower mainly because the ARM Node fixture child is smaller, at roughly **64.4 to 64.5 MiB** median rather than roughly 70 MiB on the hosted x86_64 runner.
+The Ember root RSS class is effectively unchanged across platforms: the three Pi medians remain roughly **96.7 to 99.8
+MiB**, within about -3.1% to +0.7% of the #82 root medians. The Pi fixture tree is lower mainly because the ARM Node
+fixture child is smaller, at roughly **64.4 to 64.5 MiB** median rather than roughly 70 MiB on the hosted x86_64 runner.
 
-Fixture wall time is only about 1.4% to 5.0% above the hosted-runner medians despite the different CPU/platform. Root CPU time is higher on the Pi, roughly 420 to 480 ms versus 260 to 270 ms on the hosted runner, but this does not create a steady-state CPU concern because the workers remain bounded and non-resident.
+Fixture wall time is only about 1.4% to 5.0% above the hosted-runner medians despite the different CPU/platform. Root
+CPU time is higher on the Pi, roughly 420 to 480 ms versus 260 to 270 ms on the hosted runner, but this does not create
+a steady-state CPU concern because the workers remain bounded and non-resident.
 
 Fixture ranges on the Pi:
 
@@ -97,11 +119,16 @@ Real-provider ranges:
 - endogenous wake total tree RSS: 195.06 to 203.69 MiB; wall time: 5.75 to 8.37 s; and
 - specialist total tree RSS: 234.23 to 246.78 MiB; wall time: 19.95 to 25.64 s.
 
-Every retained real-provider sample observed external descendants. Foreground cognition consistently observed 5 simultaneous processes. Endogenous wake observed 5 to 8, with median 6. Specialist delegation consistently observed 7.
+Every retained real-provider sample observed external descendants. Foreground cognition consistently observed 5
+simultaneous processes. Endogenous wake observed 5 to 8, with median 6. Specialist delegation consistently observed 7.
 
-The heaviest measured case is specialist delegation, where Codex descendants raise summed tree `VmRSS` to about **240.9 MiB median** while the Ember root remains about **96.8 MiB**. This is evidence that the live external runtime, not Ember's own episodic wrapper, is the dominant memory addition in that workload.
+The heaviest measured case is specialist delegation, where Codex descendants raise summed tree `VmRSS` to about **240.9
+MiB median** while the Ember root remains about **96.8 MiB**. This is evidence that the live external runtime, not
+Ember's own episodic wrapper, is the dominant memory addition in that workload.
 
-The long specialist wall window is not CPU saturation: its median sampled process-tree CPU is only 940 ms over about 23.98 s. Network/model latency is intentionally part of this live-provider wall time and must not be interpreted as local CPU demand.
+The long specialist wall window is not CPU saturation: its median sampled process-tree CPU is only 940 ms over about
+23.98 s. Network/model latency is intentionally part of this live-provider wall time and must not be interpreted as
+local CPU demand.
 
 ## Host pressure and thermals
 
@@ -113,22 +140,34 @@ Pressure snapshots were taken before measurement, after the fixture phase, and a
 | After fixture    |     2,891.53 MiB |     0 MiB |          1.00 |        52.90 °C | `0x0`              |
 | After real Codex |     2,941.94 MiB |     0 MiB |          0.86 |        53.45 °C | `0x0`              |
 
-The host retained roughly **2.94 GiB available memory** after the full capture. Swap remained unused throughout. `vcgencmd get_throttled` reported `0x0` at every snapshot, so the run recorded no current or historical under-voltage/frequency/thermal throttling flags. Temperature rose about 4.4 °C from the pre-run snapshot to the final snapshot, remaining modest for this host.
+The host retained roughly **2.94 GiB available memory** after the full capture. Swap remained unused throughout.
+`vcgencmd get_throttled` reported `0x0` at every snapshot, so the run recorded no current or historical
+under-voltage/frequency/thermal throttling flags. Temperature rose about 4.4 °C from the pre-run snapshot to the final
+snapshot, remaining modest for this host.
 
-Background context remained broadly stable: **20 running user services** were reported at every pressure snapshot, while the total host process count moved from **202 before** to **203 after the fixture phase** and **205 after the live-provider phase**. Those services/processes are not attributed to Ember and are retained only as host-noise context.
+Background context remained broadly stable: **20 running user services** were reported at every pressure snapshot, while
+the total host process count moved from **202 before** to **203 after the fixture phase** and **205 after the
+live-provider phase**. Those services/processes are not attributed to Ember and are retained only as host-noise context.
 
-The small difference in available memory before versus after the run is host-level context, not attributable Ember retained memory: no Ember worker remained resident, Linux cache/background activity can change `MemAvailable`, and the process-count snapshot also moved slightly during the run.
+The small difference in available memory before versus after the run is host-level context, not attributable Ember
+retained memory: no Ember worker remained resident, Linux cache/background activity can change `MemAvailable`, and the
+process-count snapshot also moved slightly during the run.
 
 ## Conclusion
 
-Issue #84 finds **no concrete constrained-host resource pressure requiring an optimization follow-up** on this Raspberry Pi 5 deployment class:
+Issue #84 finds **no concrete constrained-host resource pressure requiring an optimization follow-up** on this Raspberry
+Pi 5 deployment class:
 
 - steady-state Ember Node residency is zero;
 - active Ember root RSS remains roughly 95 to 100 MiB, matching the issue #82 memory class;
-- the heaviest observed real Codex tree is about 241 MiB median summed `VmRSS`, small relative to the 4 GiB host and explicitly not unique-physical-memory accounting;
+- the heaviest observed real Codex tree is about 241 MiB median summed `VmRSS`, small relative to the 4 GiB host and
+  explicitly not unique-physical-memory accounting;
 - approximately 2.94 GiB remained available after the full measurement;
 - swap usage stayed at zero;
 - no Raspberry Pi throttling flags were observed; and
 - measured thermal behavior did not reveal pressure.
 
-The live Codex process tree is materially larger and more variable than the deterministic fixture, particularly for specialist delegation, but that cost is episodic and external-runtime dominated. On current evidence there is no reason to reopen ADR 0006, replace Node.js, or optimize the selected episodic topology for memory/CPU before a future workload or deployment change demonstrates actual pressure.
+The live Codex process tree is materially larger and more variable than the deterministic fixture, particularly for
+specialist delegation, but that cost is episodic and external-runtime dominated. On current evidence there is no reason
+to reopen ADR 0006, replace Node.js, or optimize the selected episodic topology for memory/CPU before a future workload
+or deployment change demonstrates actual pressure.

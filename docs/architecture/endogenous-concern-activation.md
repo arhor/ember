@@ -1,5 +1,7 @@
 ---
-summary: "Current issue #76 design for reactivating durable live commitments from topic-free cognition opportunities without storing dormancy as a second lifecycle or injecting scheduler topics."
+summary:
+  "Current issue #76 design for reactivating durable live commitments from topic-free cognition opportunities without
+  storing dormancy as a second lifecycle or injecting scheduler topics."
 read_when:
   - "Implementing or reviewing dormant concern activation from cognition opportunities"
   - "Changing commitment discharge, endogenous relevance scenarios, or concern projection semantics"
@@ -16,13 +18,11 @@ discovery_status: current
 
 ## Decision
 
-Issue #76 does **not** introduce a new `Concern` meaning or a persistent `dormant`
-status. The existing Ember-owned `commitment` is sufficient for the first continuing
-concern scenarios.
+Issue #76 does **not** introduce a new `Concern` meaning or a persistent `dormant` status. The existing Ember-owned
+`commitment` is sufficient for the first continuing concern scenarios.
 
-A live commitment may be cognitively dormant across arbitrarily many opportunities.
-Dormancy means only that the current opportunity did not select it as grounding for
-`cognition` or `defer`; it is not a second canonical lifecycle state.
+A live commitment may be cognitively dormant across arbitrarily many opportunities. Dormancy means only that the current
+opportunity did not select it as grounding for `cognition` or `defer`; it is not a second canonical lifecycle state.
 
 This keeps two questions separate:
 
@@ -31,9 +31,8 @@ This keeps two questions separate:
 
 ## Topic-free activation
 
-The wake-up mechanism remains one of the coarse issue-73 mechanisms and contains no
-concern identifier, reminder text, query, or desired conclusion. The evaluator sees
-the normal bounded projection only.
+The wake-up mechanism remains one of the coarse issue-73 mechanisms and contains no concern identifier, reminder text,
+query, or desired conclusion. The evaluator sees the normal bounded projection only.
 
 Controlled issue-76 scenarios use the same `foreground_probe` and the same evaluator:
 
@@ -44,26 +43,22 @@ Controlled issue-76 scenarios use the same `foreground_probe` and the same evalu
 | same live commitment plus a current durable consequence        | `cognition`; commitment and consequence are selected grounding meanings |
 | same consequence after the commitment is fulfilled             | `no_cognition`; historical commitment is not in ordinary projection     |
 
-The topic therefore comes from the continuing commitment plus present Ember-owned
-state, not from the opportunity mechanism.
+The topic therefore comes from the continuing commitment plus present Ember-owned state, not from the opportunity
+mechanism.
 
 ## Dormancy is non-mutation
 
-An irrelevant live commitment remains `current + live`. Repeated opportunities may
-continue to project it and choose `no_cognition` without changing the commitment,
-creating a fake motive, or accumulating an activation state machine.
+An irrelevant live commitment remains `current + live`. Repeated opportunities may continue to project it and choose
+`no_cognition` without changing the commitment, creating a fake motive, or accumulating an activation state machine.
 
-This follows the research distinction between motivational currentness and current
-participation in cognition: a concern can remain live while being cognitively dormant.
-Later false-positive/resource evaluation may earn stronger attention controls, but
-issue #76 does not introduce a motivational score, priority queue, `revisit_at`, or
-cron hint.
+This follows the research distinction between motivational currentness and current participation in cognition: a concern
+can remain live while being cognitively dormant. Later false-positive/resource evaluation may earn stronger attention
+controls, but issue #76 does not introduce a motivational score, priority queue, `revisit_at`, or cron hint.
 
 ## Minimal commitment discharge
 
-The previous v1 validator intentionally rejected commitment discharge without a named
-transition. Issue #76 implements the smallest transition required to prevent stale
-concerns from reactivating forever:
+The previous v1 validator intentionally rejected commitment discharge without a named transition. Issue #76 implements
+the smallest transition required to prevent stale concerns from reactivating forever:
 
 ```text
 current + live
@@ -72,22 +67,17 @@ current + live
    +----> historical + fulfilled
 ```
 
-`transitionCommitment` requires a non-empty attributable user occurrence in the same
-scope. That occurrence is appended to the commitment's provenance and establishes
-`applicableUntil`; the original Ember adoption evidence remains intact. The
-transition therefore changes current normative force without erasing that Ember once
-undertook the commitment.
+`transitionCommitment` requires a non-empty attributable user occurrence in the same scope. That occurrence is appended
+to the commitment's provenance and establishes `applicableUntil`; the original Ember adoption evidence remains intact.
+The transition therefore changes current normative force without erasing that Ember once undertook the commitment.
 
-This issue supersedes only the earlier statement in
-[minimal-continuity-slice.md](minimal-continuity-slice.md) that named commitment
-discharge was deferred from schema v1. That statement described the narrower slice
-before endogenous concern activation required a concrete transition. The rest of the
-minimal continuity design remains current.
+This issue supersedes only the earlier statement in [minimal-continuity-slice.md](minimal-continuity-slice.md) that
+named commitment discharge was deferred from schema v1. That statement described the narrower slice before endogenous
+concern activation required a concrete transition. The rest of the minimal continuity design remains current.
 
-This initial transition seam is deliberately narrow. It does not claim that future
-commitment discharge must always originate in a user command. Direct observation,
-specialist evidence, renegotiation, expiry, or richer concern types should be added
-only when a concrete scenario requires them.
+This initial transition seam is deliberately narrow. It does not claim that future commitment discharge must always
+originate in a user command. Direct observation, specialist evidence, renegotiation, expiry, or richer concern types
+should be added only when a concrete scenario requires them.
 
 ## Projection and inspection
 
@@ -98,20 +88,16 @@ Ordinary projection includes a commitment only when all are true:
 - `prospectiveLifecycle === live`; and
 - scope matches the active cognition scope.
 
-Explicit explanation may still reconstruct a historical fulfilled/cancelled
-commitment and its provenance. `inspectionView()` exposes live commitments separately
-from closed commitments, while opportunity records retain the projected and selected
-meaning IDs that explain activation or non-activation without raw model reasoning.
+Explicit explanation may still reconstruct a historical fulfilled/cancelled commitment and its provenance.
+`inspectionView()` exposes live commitments separately from closed commitments, while opportunity records retain the
+projected and selected meaning IDs that explain activation or non-activation without raw model reasoning.
 
 ## Boundaries
 
-- #77 must prove that the same live/closed distinction survives a complete process
-  restart and fresh provider thread.
+- #77 must prove that the same live/closed distinction survives a complete process restart and fresh provider thread.
 - #78 decides whether internal cognition should interrupt the user.
-- #79/#95 evaluate false-positive/resource pressure before introducing stronger
-  attention controls.
-- #51/#80/#81 own runtime scheduling/topology only after behavioral evidence earns
-  those choices.
+- #79/#95 evaluate false-positive/resource pressure before introducing stronger attention controls.
+- #51/#80/#81 own runtime scheduling/topology only after behavioral evidence earns those choices.
 
 ## Definition-of-done mapping
 

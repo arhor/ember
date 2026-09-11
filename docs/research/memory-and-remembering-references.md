@@ -1,8 +1,12 @@
 ---
-summary: "Portable evidence map supporting canonical memory and remembering semantics with durable sources for currentness, provenance, updating, forgetting, and memory safety."
+summary:
+  "Portable evidence map supporting canonical memory and remembering semantics with durable sources for currentness,
+  provenance, updating, forgetting, and memory safety."
 read_when:
-  - "Checking the evidence behind a memory, currentness, or provenance conclusion without reconstructing the full research session"
-  - "Challenging claims about corrections, historical evidence, prospective memory, forgetting, or persistent memory corruption"
+  - "Checking the evidence behind a memory, currentness, or provenance conclusion without reconstructing the full
+    research session"
+  - "Challenging claims about corrections, historical evidence, prospective memory, forgetting, or persistent memory
+    corruption"
 role: evidence
 discovery_status: current
 ---
@@ -11,11 +15,16 @@ discovery_status: current
 
 This document is the portable evidence companion to [Memory and Remembering Semantics](memory-and-remembering.md).
 
-The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the original ChatGPT Deep Research session.
+The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as
+**[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the original ChatGPT Deep Research session.
 
-The preserved [Deep Research artifact](source-material/memory-and-remembering-deep-research.md) contains the full research narrative and original ChatGPT-local citation markers. Those markers are intentionally retained as provenance but do not resolve on GitHub. The references below provide portable links for the principal sources behind the validated conclusions.
+The preserved [Deep Research artifact](source-material/memory-and-remembering-deep-research.md) contains the full
+research narrative and original ChatGPT-local citation markers. Those markers are intentionally retained as provenance
+but do not resolve on GitHub. The references below provide portable links for the principal sources behind the validated
+conclusions.
 
-This is not intended to reproduce every source consulted during Deep Research. It records the sources that materially support, challenge, or sharpen the canonical memory conclusions.
+This is not intended to reproduce every source consulted during Deep Research. It records the sources that materially
+support, challenge, or sharpen the canonical memory conclusions.
 
 ## Evidence map for validated conclusions
 
@@ -45,39 +54,51 @@ This is not intended to reproduce every source consulted during Deep Research. I
 
 ### R1 LongMemEval
 
-**Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, Dong Yu.** _LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory._ ICLR 2025.
+**Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, Dong Yu.** _LongMemEval: Benchmarking Chat Assistants on
+Long-Term Interactive Memory._ ICLR 2025.
 
 - Paper: https://arxiv.org/abs/2410.10813
-- Proceedings: https://proceedings.iclr.cc/paper_files/paper/2025/hash/d813d324dbf0598bbdc9c8e79740ed01-Abstract-Conference.html
+- Proceedings:
+  https://proceedings.iclr.cc/paper_files/paper/2025/hash/d813d324dbf0598bbdc9c8e79740ed01-Abstract-Conference.html
 - Code: https://github.com/xiaowu0162/LongMemEval
 
-Relevant because it evaluates information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention over long interaction histories. It demonstrates that long-term memory is broader than nearest-fragment retrieval.
+Relevant because it evaluates information extraction, multi-session reasoning, temporal reasoning, knowledge updates,
+and abstention over long interaction histories. It demonstrates that long-term memory is broader than nearest-fragment
+retrieval.
 
 ### R2 PrefEval
 
-**Siyan Zhao, Mingyi Hong, Yang Liu, Devamanyu Hazarika, Kaixiang Lin.** _Do LLMs Recognize Your Preferences? Evaluating Personalized Preference Following in LLMs._ 2025.
+**Siyan Zhao, Mingyi Hong, Yang Liu, Devamanyu Hazarika, Kaixiang Lin.** _Do LLMs Recognize Your Preferences? Evaluating
+Personalized Preference Following in LLMs._ 2025.
 
 - Paper: https://arxiv.org/abs/2502.09597
 - Project: https://prefeval.github.io/
 
-Relevant because it evaluates explicit and implicit preference following and shows that making preference information available does not guarantee that later behavior will use it appropriately. It focuses on user personalization rather than agent-self memory.
+Relevant because it evaluates explicit and implicit preference following and shows that making preference information
+available does not guarantee that later behavior will use it appropriately. It focuses on user personalization rather
+than agent-self memory.
 
 ### R3 PERMA
 
-**Shuochen Liu et al.** _PERMA: Benchmarking Personalized Memory Agents via Event-Driven Preference and Realistic Task Environments._ 2026.
+**Shuochen Liu et al.** _PERMA: Benchmarking Personalized Memory Agents via Event-Driven Preference and Realistic Task
+Environments._ 2026.
 
 - Paper: https://arxiv.org/abs/2603.23231
 - Code: https://github.com/PolarisLiu1/PERMA
 
-Relevant because it models preferences emerging from temporally linked events rather than only from explicit declarations. It supports the idea that significance or durable understanding can emerge across sequences.
+Relevant because it models preferences emerging from temporally linked events rather than only from explicit
+declarations. It supports the idea that significance or durable understanding can emerge across sequences.
 
 ### R4 STALE
 
-**Hanxiang Chao, Yihan Bai, Rui Sheng, Tianle Li, Yushi Sun.** _STALE: Can LLM Agents Know When Their Memories Are No Longer Valid?_ 2026.
+**Hanxiang Chao, Yihan Bai, Rui Sheng, Tianle Li, Yushi Sun.** _STALE: Can LLM Agents Know When Their Memories Are No
+Longer Valid?_ 2026.
 
 - Paper: https://arxiv.org/abs/2605.06527
 
-Relevant because it isolates implicit invalidation: later evidence can make an earlier memory stale without directly saying the earlier proposition is false. Retrieving newer evidence is not sufficient if the system still reasons from obsolete state.
+Relevant because it isolates implicit invalidation: later evidence can make an earlier memory stale without directly
+saying the earlier proposition is false. Retrieving newer evidence is not sufficient if the system still reasons from
+obsolete state.
 
 ### R5 DynamicMem
 
@@ -85,7 +106,9 @@ Relevant because it isolates implicit invalidation: later evidence can make an e
 
 - Paper: https://arxiv.org/abs/2606.22877
 
-Relevant because it evaluates synthetic user histories spanning fifteen months and tests the difficult combination of retaining stable attributes while replacing changing ones. The paper reports that retrieval is a dominant source of observed failures in its setup.
+Relevant because it evaluates synthetic user histories spanning fifteen months and tests the difficult combination of
+retaining stable attributes while replacing changing ones. The paper reports that retrieval is a dominant source of
+observed failures in its setup.
 
 ### R6 TriggerBench
 
@@ -94,25 +117,30 @@ Relevant because it evaluates synthetic user histories spanning fifteen months a
 - Paper: https://arxiv.org/abs/2606.23459
 - Code: https://github.com/KristenZHANG/TriggerBench-Official
 
-Relevant because it explicitly separates prospective memory from retrospective recall. A system may remember an intention when asked yet fail to notice when the future condition should make that intention behaviorally relevant.
+Relevant because it explicitly separates prospective memory from retrospective recall. A system may remember an
+intention when asked yet fail to notice when the future condition should make that intention behaviorally relevant.
 
 ### R7 Persistent Agent Sycophancy
 
-**Xutao Mao et al.** _Agents Don't Just Agree, They Remember: Benchmarking Persistent Sycophancy in Stateful Personal Agents._ 2026.
+**Xutao Mao et al.** _Agents Don't Just Agree, They Remember: Benchmarking Persistent Sycophancy in Stateful Personal
+Agents._ 2026.
 
 - Paper: https://arxiv.org/abs/2607.10526
 - Project: https://henrymao2004.github.io/agent-sycophancy/
 - Code: https://github.com/henrymao2004/agent-sycophancy
 
-Relevant because it traces questionable user claims through acceptance, durable state writing, and later reuse. It identifies persistent-state failures including status promotion, attribution removal, and scope broadening.
+Relevant because it traces questionable user claims through acceptance, durable state writing, and later reuse. It
+identifies persistent-state failures including status promotion, attribution removal, and scope broadening.
 
 ### R8 PersistBench
 
-**Sidharth Pulipaka, Oliver Chen, Manas Sharma, Taaha S. Bajwa, Vyas Raina, Ivaxi Sheth.** _PersistBench: When Should Long-Term Memories Be Forgotten by LLMs?_ 2026.
+**Sidharth Pulipaka, Oliver Chen, Manas Sharma, Taaha S. Bajwa, Vyas Raina, Ivaxi Sheth.** _PersistBench: When Should
+Long-Term Memories Be Forgotten by LLMs?_ 2026.
 
 - Paper: https://arxiv.org/abs/2602.01146
 
-Relevant because it measures cross-domain leakage and memory-induced sycophancy. It directly supports the conclusion that a remembered fact can be true yet wrong to apply in the current situation.
+Relevant because it measures cross-domain leakage and memory-induced sycophancy. It directly supports the conclusion
+that a remembered fact can be true yet wrong to apply in the current situation.
 
 ### R9 MemSyco-Bench
 
@@ -120,15 +148,19 @@ Relevant because it measures cross-domain leakage and memory-induced sycophancy.
 
 - Paper: https://arxiv.org/abs/2607.01071
 
-Relevant because it asks whether persistent memory should count as factual evidence, where it applies, how it should behave under objective conflict, and whether it can update without losing useful personalization.
+Relevant because it asks whether persistent memory should count as factual evidence, where it applies, how it should
+behave under objective conflict, and whether it can update without losing useful personalization.
 
 ### R10 CIMemories
 
-**Niloofar Mireshghallah, Neal Mangaokar, Narine Kokhlikyan, Arman Zharmagambetov, Manzil Zaheer, Saeed Mahloujifar, Kamalika Chaudhuri.** _CIMemories: A Compositional Benchmark for Contextual Integrity of Persistent Memory in LLMs._ 2025.
+**Niloofar Mireshghallah, Neal Mangaokar, Narine Kokhlikyan, Arman Zharmagambetov, Manzil Zaheer, Saeed Mahloujifar,
+Kamalika Chaudhuri.** _CIMemories: A Compositional Benchmark for Contextual Integrity of Persistent Memory in
+LLMs._ 2025.
 
 - Paper: https://arxiv.org/abs/2511.14937
 
-Relevant because it measures inappropriate disclosure and reuse of persistent user attributes across contexts. It supports treating contextual applicability and disclosure scope as part of memory correctness.
+Relevant because it measures inappropriate disclosure and reuse of persistent user attributes across contexts. It
+supports treating contextual applicability and disclosure scope as part of memory correctness.
 
 ### R11 Hidden in Memory
 
@@ -136,15 +168,18 @@ Relevant because it measures inappropriate disclosure and reuse of persistent us
 
 - Paper: https://arxiv.org/abs/2605.15338
 
-Relevant because it demonstrates an adversarial path in which untrusted external content is transformed into fabricated durable user memory and later affects agent behavior.
+Relevant because it demonstrates an adversarial path in which untrusted external content is transformed into fabricated
+durable user memory and later affects agent behavior.
 
 ### R12 MemSecBench
 
-**Xuanze Chen, Xukang Xie, Wentao Fu, Jiajun Zhou, Shanqing Yu, Qi Xuan.** _MemSecBench: Tracking Agent Memory Poisoning from Persistence to Consequence and Repair._ 2026.
+**Xuanze Chen, Xukang Xie, Wentao Fu, Jiajun Zhou, Shanqing Yu, Qi Xuan.** _MemSecBench: Tracking Agent Memory Poisoning
+from Persistence to Consequence and Repair._ 2026.
 
 - Paper: https://arxiv.org/abs/2607.27080
 
-Relevant because it evaluates memory poisoning across write, downstream execution, and attempted repair. It supports provenance-aware promotion and the need to invalidate dependent durable state during security repair.
+Relevant because it evaluates memory poisoning across write, downstream execution, and attempted repair. It supports
+provenance-aware promotion and the need to invalidate dependent durable state during security repair.
 
 ### R13 Deployment-Time Memorization
 
@@ -152,23 +187,29 @@ Relevant because it evaluates memory poisoning across write, downstream executio
 
 - Paper: https://arxiv.org/abs/2606.10062
 
-Relevant because it studies privacy-utility tradeoffs and shows that deleting raw material can leave information recoverable through derived memory. It directly supports dependency-aware forgetting semantics.
+Relevant because it studies privacy-utility tradeoffs and shows that deleting raw material can leave information
+recoverable through derived memory. It directly supports dependency-aware forgetting semantics.
 
 ### R14 MemoryAgentBench
 
-**Yuanzhe Hu, Yu Wang, Julian McAuley.** _Evaluating Memory in LLM Agents via Incremental Multi-Turn Interactions._ 2025.
+**Yuanzhe Hu, Yu Wang, Julian McAuley.** _Evaluating Memory in LLM Agents via Incremental Multi-Turn
+Interactions._ 2025.
 
 - Paper: https://arxiv.org/abs/2507.05257
 
-Relevant because it treats retrieval, test-time learning, long-range understanding, and selective forgetting as distinct competencies. The taxonomy is a research proposal, not an Ember ontology.
+Relevant because it treats retrieval, test-time learning, long-range understanding, and selective forgetting as distinct
+competencies. The taxonomy is a research proposal, not an Ember ontology.
 
 ### R15 RHELM
 
-**Han Zhang et al.** _Beyond Static Dialogues: Benchmarking Realistic, Heterogeneous, and Evolving Long-Term Memory._ 2026.
+**Han Zhang et al.** _Beyond Static Dialogues: Benchmarking Realistic, Heterogeneous, and Evolving Long-Term
+Memory._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.31086
 
-Relevant because it combines dialogue with temporally synchronized documents and emails, exposing weaknesses in multi-source aggregation and contextual reasoning. It supports preserving source identity rather than collapsing heterogeneous evidence into one recollection.
+Relevant because it combines dialogue with temporally synchronized documents and emails, exposing weaknesses in
+multi-source aggregation and contextual reasoning. It supports preserving source identity rather than collapsing
+heterogeneous evidence into one recollection.
 
 ### R16 Supersede
 
@@ -176,86 +217,107 @@ Relevant because it combines dialogue with temporally synchronized documents and
 
 - Paper: https://arxiv.org/abs/2606.27472
 
-Relevant because it isolates supersession as a distinct state-maintenance problem and reports that simply increasing memory capacity does not remove the update gap.
+Relevant because it isolates supersession as a distinct state-maintenance problem and reports that simply increasing
+memory capacity does not remove the update gap.
 
 ### R17 LycheeMemory V2
 
-**Dongfang Li, Zixuan Liu, Junmai Wang, Jiahe Huang, Fuhao Li, Bonian Jia, Baotian Hu, Min Zhang.** _LycheeMemory V2: Efficient Long-Term Memory for LLM Agents via Semantic Segment-Level Consolidation._ 2026.
+**Dongfang Li, Zixuan Liu, Junmai Wang, Jiahe Huang, Fuhao Li, Bonian Jia, Baotian Hu, Min Zhang.** _LycheeMemory V2:
+Efficient Long-Term Memory for LLM Agents via Semantic Segment-Level Consolidation._ 2026.
 
 - Paper: https://arxiv.org/abs/2608.12990
 
-Relevant because it reports improvements from more coherent consolidation granularity and explicitly warns that coarse summaries can discard contextual evidence. It is a very recent preprint and should be read conservatively.
+Relevant because it reports improvements from more coherent consolidation granularity and explicitly warns that coarse
+summaries can discard contextual evidence. It is a very recent preprint and should be read conservatively.
 
 ### R18 Generative Agents
 
-**Joon Sung Park, Joseph O'Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, Michael S. Bernstein.** _Generative Agents: Interactive Simulacra of Human Behavior._ UIST 2023.
+**Joon Sung Park, Joseph O'Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, Michael S. Bernstein.**
+_Generative Agents: Interactive Simulacra of Human Behavior._ UIST 2023.
 
 - DOI: https://doi.org/10.1145/3586183.3606763
 - Paper: https://arxiv.org/abs/2304.03442
 
-Relevant because ablations in the simulated-agent environment found that observation, planning, and reflection each contributed to perceived behavioral believability. Believability is not treated as truth, continuity, or safe memory.
+Relevant because ablations in the simulated-agent environment found that observation, planning, and reflection each
+contributed to perceived behavioral believability. Believability is not treated as truth, continuity, or safe memory.
 
 ### R19 Memory-Driven Self-Disclosure and Relational Turning Points
 
-**Ryuichi Sumida, Mao Saeki, Masaki Eguchi, Sadahiro Yoshikawa, Koji Inoue, Tatsuya Kawahara, Yoichi Matsuyama.** _Memory-Driven Self-Disclosure and Relational Turning Points: A Longitudinal Multimodal Study of Human-AI Interaction._ ICMI 2026 preprint.
+**Ryuichi Sumida, Mao Saeki, Masaki Eguchi, Sadahiro Yoshikawa, Koji Inoue, Tatsuya Kawahara, Yoichi Matsuyama.**
+_Memory-Driven Self-Disclosure and Relational Turning Points: A Longitudinal Multimodal Study of Human-AI Interaction._
+ICMI 2026 preprint.
 
 - Paper: https://arxiv.org/abs/2607.14593
 
-Relevant because it offers narrow longitudinal evidence connecting perceived memory, later self-disclosure, and relational turning points. The sample and setting are limited, so it should not be generalized into a universal theory of relationship memory.
+Relevant because it offers narrow longitudinal evidence connecting perceived memory, later self-disclosure, and
+relational turning points. The sample and setting are limited, so it should not be generalized into a universal theory
+of relationship memory.
 
 ### R20 Supporting the Self-Concept with Memory
 
-**Matthew D. Grilli, Mieke Verfaellie.** _Supporting the Self-Concept with Memory: Insight from Amnesia._ Social Cognitive and Affective Neuroscience 10(12), 2015.
+**Matthew D. Grilli, Mieke Verfaellie.** _Supporting the Self-Concept with Memory: Insight from Amnesia._ Social
+Cognitive and Affective Neuroscience 10(12), 2015.
 
 - DOI: https://doi.org/10.1093/scan/nsv056
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/25964501/
 
-Used as a limited cognitive lens because personal semantic knowledge can support aspects of self-concept despite impaired episodic access. It does not prescribe an artificial memory mechanism.
+Used as a limited cognitive lens because personal semantic knowledge can support aspects of self-concept despite
+impaired episodic access. It does not prescribe an artificial memory mechanism.
 
 ### R21 Continuity and Change in the Life Story
 
-**Dan P. McAdams et al.** _Continuity and Change in the Life Story: A Longitudinal Study of Autobiographical Memories in Emerging Adulthood._ Journal of Personality 74(5), 2006.
+**Dan P. McAdams et al.** _Continuity and Change in the Life Story: A Longitudinal Study of Autobiographical Memories in
+Emerging Adulthood._ Journal of Personality 74(5), 2006.
 
 - DOI: https://doi.org/10.1111/j.1467-6494.2006.00412.x
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/16958706/
 
-Used as a human-side lens because autobiographical narratives can preserve continuity while changing interpretation over time. It supports adaptive coherence, not literal biological imitation.
+Used as a human-side lens because autobiographical narratives can preserve continuity while changing interpretation over
+time. It supports adaptive coherence, not literal biological imitation.
 
 ### R22 The Eyewitness Suggestibility Effect and Memory for Source
 
-**D. Stephen Lindsay, Marcia K. Johnson.** _The Eyewitness Suggestibility Effect and Memory for Source._ Memory & Cognition 17(3), 1989.
+**D. Stephen Lindsay, Marcia K. Johnson.** _The Eyewitness Suggestibility Effect and Memory for Source._ Memory &
+Cognition 17(3), 1989.
 
 - DOI: https://doi.org/10.3758/BF03198473
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/2725271/
 
-Used as a source-monitoring lens. It supports the general warning that remembering content while losing where it came from can materially distort later judgment.
+Used as a source-monitoring lens. It supports the general warning that remembering content while losing where it came
+from can materially distort later judgment.
 
 ### R23 Episodic Memory Reconsolidation
 
-**Almut Hupbach, Rebecca Gomez, Lynn Nadel.** _Episodic Memory Reconsolidation: Updating or Source Confusion?_ Memory 17(5), 2009.
+**Almut Hupbach, Rebecca Gomez, Lynn Nadel.** _Episodic Memory Reconsolidation: Updating or Source Confusion?_ Memory
+17(5), 2009.
 
 - DOI: https://doi.org/10.1080/09658210902882399
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/19468955/
 
-Used as a limited warning lens because reactivated memories can incorporate newer material through source confusion. Ember's conclusion is deliberately anti-literal: reinterpretation should not silently rewrite original evidence.
+Used as a limited warning lens because reactivated memories can incorporate newer material through source confusion.
+Ember's conclusion is deliberately anti-literal: reinterpretation should not silently rewrite original evidence.
 
 ### R24 Remembering Makes Evidence Compelling
 
-**Jason D. Ozubko, Jonathan Fugelsang.** _Remembering Makes Evidence Compelling: Retrieval From Memory Can Give Rise to the Illusion of Truth._ Journal of Experimental Psychology: Learning, Memory, and Cognition 37(1), 2011.
+**Jason D. Ozubko, Jonathan Fugelsang.** _Remembering Makes Evidence Compelling: Retrieval From Memory Can Give Rise to
+the Illusion of Truth._ Journal of Experimental Psychology: Learning, Memory, and Cognition 37(1), 2011.
 
 - DOI: https://doi.org/10.1037/a0021323
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/21058878/
 
-Used as a cognitive warning lens because retrieval itself can increase perceived truth. It motivates Ember's evidential-conservation rule: repeated recall is not new evidence.
+Used as a cognitive warning lens because retrieval itself can increase perceived truth. It motivates Ember's
+evidential-conservation rule: repeated recall is not new evidence.
 
 ### R25 Cue Familiarity and Cue Distinctiveness in Prospective Memory
 
-**Mark A. McDaniel, Gilles O. Einstein.** _The Importance of Cue Familiarity and Cue Distinctiveness in Prospective Memory._ Memory 1(1), 1993.
+**Mark A. McDaniel, Gilles O. Einstein.** _The Importance of Cue Familiarity and Cue Distinctiveness in Prospective
+Memory._ Memory 1(1), 1993.
 
 - DOI: https://doi.org/10.1080/09658219308258223
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/7584257/
 
-Used as a classical cognitive lens for the retrospective/prospective distinction. TriggerBench supplies the direct LLM-side evidence relevant to Ember.
+Used as a classical cognitive lens for the retrospective/prospective distinction. TriggerBench supplies the direct
+LLM-side evidence relevant to Ember.
 
 ## Reading the evidence conservatively
 
@@ -266,8 +328,10 @@ The references intentionally mix several evidence types because memory semantics
 - persistent-agent evaluations expose write-time corruption, sycophancy, scope leakage, and attribution loss;
 - security work tests poisoning persistence, downstream consequences, repair, and deletion residue;
 - HCI work provides limited evidence about remembered relationship history and relational turning points;
-- cognitive research supplies lenses for autobiographical meaning, source monitoring, reconsolidation, retrieval-induced truth effects, and prospective memory;
-- existing systems show engineering convergence around separating history, curated memory, active context, project/user state, and future-facing intentions.
+- cognitive research supplies lenses for autobiographical meaning, source monitoring, reconsolidation, retrieval-induced
+  truth effects, and prospective memory;
+- existing systems show engineering convergence around separating history, curated memory, active context, project/user
+  state, and future-facing intentions.
 
 None of these bodies of work directly validates Ember's complete working definition.
 
@@ -277,4 +341,5 @@ The canonical note therefore keeps stronger Ember-specific claims visibly marked
 - the exact semantics of authority over shared relationship memory remain unresolved;
 - the boundary of downstream deletion after private evidence shaped Ember indirectly remains unresolved;
 - no benchmark establishes how much autobiographical loss Ember can absorb;
-- continuity across full underlying-model replacement remains an experimental target rather than an empirical conclusion.
+- continuity across full underlying-model replacement remains an experimental target rather than an empirical
+  conclusion.

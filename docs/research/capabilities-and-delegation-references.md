@@ -1,5 +1,7 @@
 ---
-summary: "Portable evidence map supporting canonical delegation semantics with runtime contracts, protocols, multi-agent research, failure analyses, and privacy evidence."
+summary:
+  "Portable evidence map supporting canonical delegation semantics with runtime contracts, protocols, multi-agent
+  research, failure analyses, and privacy evidence."
 read_when:
   - "Checking evidence behind direct-action, capability-use, or delegation boundaries and runtime ownership"
   - "Challenging specialist-context, provenance, verification, privacy, or delegation-continuity conclusions"
@@ -9,19 +11,26 @@ discovery_status: current
 
 # Capabilities and Delegation Evidence Map
 
-This document is the portable evidence companion to [Capabilities and Delegation Semantics](capabilities-and-delegation.md).
+This document is the portable evidence companion to
+[Capabilities and Delegation Semantics](capabilities-and-delegation.md).
 
-The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the originating Deep Research session.
+The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as
+**[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the originating Deep Research session.
 
-The preserved [Deep Research artifact](source-material/capabilities-and-delegation-deep-research.md) contains the broader research narrative and runtime evidence. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
+The preserved [Deep Research artifact](source-material/capabilities-and-delegation-deep-research.md) contains the
+broader research narrative and runtime evidence. Research-session citation markers are provenance rather than a portable
+bibliography; the durable sources below are intended to remain usable from the repository alone.
 
-This map deliberately does not duplicate the full bibliographies from the preceding phases. They remain inherited inputs:
+This map deliberately does not duplicate the full bibliographies from the preceding phases. They remain inherited
+inputs:
 
 - [Continuity and Identity Evidence Map](continuity-and-identity-references.md)
 - [Memory and Remembering Evidence Map](memory-and-remembering-references.md)
 - [Context Selection and Cognitive Framing Evidence Map](context-selection-and-cognitive-framing-references.md)
 
-Rapidly changing runtime and protocol claims were examined on **2026-08-28**. Codex claims below are anchored to an examined repository commit where practical; ACP and MCP claims should be revalidated before later architecture work if their specifications have evolved.
+Rapidly changing runtime and protocol claims were examined on **2026-08-28**. Codex claims below are anchored to an
+examined repository commit where practical; ACP and MCP claims should be revalidated before later architecture work if
+their specifications have evolved.
 
 ## Evidence map for validated conclusions
 
@@ -59,7 +68,10 @@ Rapidly changing runtime and protocol claims were examined on **2026-08-28**. Co
 
 - Paper: https://arxiv.org/abs/2512.08296
 
-Relevant because it evaluates multiple coordination topologies across different task environments and model families. The reported value of multi-agent coordination is strongly task-structure dependent, with parallelizable tasks benefiting more than sequential reasoning tasks. Treat individual percentages and topology rankings as benchmark-specific.
+Relevant because it evaluates multiple coordination topologies across different task environments and model families.
+The reported value of multi-agent coordination is strongly task-structure dependent, with parallelizable tasks
+benefiting more than sequential reasoning tasks. Treat individual percentages and topology rankings as
+benchmark-specific.
 
 ### R2 Why Do Multi-Agent LLM Systems Fail?
 
@@ -67,7 +79,10 @@ Relevant because it evaluates multiple coordination topologies across different 
 
 - Paper: https://arxiv.org/abs/2503.13657
 
-Relevant because the study analyzes 1,642 failure traces from seven multi-agent systems and develops a taxonomy spanning system design/specification, inter-agent misalignment, and verification/termination. Reported failures include repetitive steps, inability to recognize completion, task derailment, information withholding, wrong assumptions, and reasoning/action mismatch.
+Relevant because the study analyzes 1,642 failure traces from seven multi-agent systems and develops a taxonomy spanning
+system design/specification, inter-agent misalignment, and verification/termination. Reported failures include
+repetitive steps, inability to recognize completion, task derailment, information withholding, wrong assumptions, and
+reasoning/action mismatch.
 
 ### R3 Rethinking the Value of Multi-Agent Workflow
 
@@ -75,15 +90,21 @@ Relevant because the study analyzes 1,642 failure traces from seven multi-agent 
 
 - Paper: https://arxiv.org/abs/2601.12307
 
-Relevant because it strengthens the single-agent baseline and shows that some gains attributed to homogeneous multi-agent workflows can be reproduced more efficiently by one agent, particularly when redundant computation and cache reuse are accounted for. The authors explicitly distinguish this from heterogeneous systems with genuinely different capabilities.
+Relevant because it strengthens the single-agent baseline and shows that some gains attributed to homogeneous
+multi-agent workflows can be reproduced more efficiently by one agent, particularly when redundant computation and cache
+reuse are accounted for. The authors explicitly distinguish this from heterogeneous systems with genuinely different
+capabilities.
 
 ### R4 Single-Agent versus Multi-Agent under Equal Thinking Budgets
 
-**Dat Tran, Douwe Kiela.** _Single-Agent LLMs Outperform Multi-Agent Systems on Multi-Hop Reasoning Under Equal Thinking Token Budgets._ 2026.
+**Dat Tran, Douwe Kiela.** _Single-Agent LLMs Outperform Multi-Agent Systems on Multi-Hop Reasoning Under Equal Thinking
+Token Budgets._ 2026.
 
 - Paper: https://arxiv.org/abs/2604.02460
 
-Relevant because it normalizes reasoning compute in evaluated multi-hop reasoning tasks and finds that tested single-agent configurations can match or exceed multi-agent alternatives. It is direct evidence against comparisons where more agents implicitly receive more inference budget.
+Relevant because it normalizes reasoning compute in evaluated multi-hop reasoning tasks and finds that tested
+single-agent configurations can match or exceed multi-agent alternatives. It is direct evidence against comparisons
+where more agents implicitly receive more inference budget.
 
 ### R5 Multi-Agent Teams Hold Experts Back
 
@@ -91,7 +112,9 @@ Relevant because it normalizes reasoning compute in evaluated multi-hop reasonin
 
 - Paper: https://arxiv.org/abs/2602.01011
 
-Relevant because the evaluated team synthesis can underperform the strongest member, showing that aggregation and consensus may dilute expert judgment rather than preserve it. The exact result is task- and setup-specific, but the evidential warning is portable.
+Relevant because the evaluated team synthesis can underperform the strongest member, showing that aggregation and
+consensus may dilute expert judgment rather than preserve it. The exact result is task- and setup-specific, but the
+evidential warning is portable.
 
 ### R6 Silo-Bench
 
@@ -99,7 +122,8 @@ Relevant because the evaluated team synthesis can underperform the strongest mem
 
 - Paper: https://arxiv.org/abs/2603.01045
 
-Relevant because it evaluates coordination where information is distributed across agents. Agents can communicate yet still fail to synthesize distributed state effectively, and coordination overhead grows with the distributed problem.
+Relevant because it evaluates coordination where information is distributed across agents. Agents can communicate yet
+still fail to synthesize distributed state effectively, and coordination overhead grows with the distributed problem.
 
 ### R7 Reliability Limits of Multi-Agent Planning
 
@@ -107,7 +131,9 @@ Relevant because it evaluates coordination where information is distributed acro
 
 - Paper: https://arxiv.org/abs/2603.26993
 
-Relevant as an empirical/theoretical lens on information distribution and correlated error. Under its assumptions, communication does not manufacture new evidence and can discard information. The assumptions are idealized, so this should not be treated as a universal theorem about deployed agent systems.
+Relevant as an empirical/theoretical lens on information distribution and correlated error. Under its assumptions,
+communication does not manufacture new evidence and can discard information. The assumptions are idealized, so this
+should not be treated as a universal theorem about deployed agent systems.
 
 ### R8 Anthropic Multi-Agent Research System
 
@@ -115,7 +141,10 @@ Relevant as an empirical/theoretical lens on information distribution and correl
 
 - Engineering article: https://www.anthropic.com/engineering/multi-agent-research-system
 
-Relevant as a positive production case study. Anthropic reports that a lead Claude Opus 4 plus parallel Sonnet 4 subagents outperformed single-agent Opus 4 by 90.2% on its internal research evaluation and reports large latency improvements from parallel search. The same article emphasizes coordination complexity and much higher token use. This is strong evidence for breadth-first, naturally parallel research, not a controlled universal superiority claim.
+Relevant as a positive production case study. Anthropic reports that a lead Claude Opus 4 plus parallel Sonnet 4
+subagents outperformed single-agent Opus 4 by 90.2% on its internal research evaluation and reports large latency
+improvements from parallel search. The same article emphasizes coordination complexity and much higher token use. This
+is strong evidence for breadth-first, naturally parallel research, not a controlled universal superiority claim.
 
 ### R9 Building a C Compiler with Parallel Claudes
 
@@ -123,15 +152,22 @@ Relevant as a positive production case study. Anthropic reports that a lead Clau
 
 - Engineering article: https://www.anthropic.com/engineering/building-c-compiler
 
-Relevant as a large engineering case study of parallel autonomous coding. Anthropic reports 16 agents, nearly 2,000 Claude Code sessions, roughly $20,000 in API cost, and a 100,000-line Rust-based C compiler capable of building Linux 6.9 on several architectures. The report also documents coordination ceilings and motivates strong executable verification. It is an impressive case study rather than a controlled proof that multi-agent coding dominates a strong single-agent baseline.
+Relevant as a large engineering case study of parallel autonomous coding. Anthropic reports 16 agents, nearly 2,000
+Claude Code sessions, roughly $20,000 in API cost, and a 100,000-line Rust-based C compiler capable of building Linux
+6.9 on several architectures. The report also documents coordination ceilings and motivates strong executable
+verification. It is an impressive case study rather than a controlled proof that multi-agent coding dominates a strong
+single-agent baseline.
 
 ### R10 Got a Secret?
 
-**Aman Priyanshu, Supriti Vijay, Esha Pahwa.** _Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in Multi-Agent Systems._ 2026.
+**Aman Priyanshu, Supriti Vijay, Esha Pahwa.** _Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in
+Multi-Agent Systems._ 2026.
 
 - Paper: https://arxiv.org/abs/2605.27766
 
-Relevant because it measures privacy leakage across synthetic multi-agent interaction and finds that privacy instructions reduce but do not eliminate disclosure. It supports treating every delegate as a new recipient-specific information-flow boundary.
+Relevant because it measures privacy leakage across synthetic multi-agent interaction and finds that privacy
+instructions reduce but do not eliminate disclosure. It supports treating every delegate as a new recipient-specific
+information-flow boundary.
 
 ### R11 OpenAI Codex Runtime
 
@@ -139,9 +175,15 @@ Relevant because it measures privacy leakage across synthetic multi-agent intera
 
 - Repository snapshot: https://github.com/openai/codex/tree/7625343977154efed8c0dadba956374992a1580b
 
-Relevant runtime evidence includes persistent/resumable specialist work, streamed progress, approvals, interruption, steering, compaction, command/file activity, and nested-agent relationships exposed by the current runtime/app-server surfaces. The important semantic observation is that caller-visible control and progress do not make the caller owner of Codex's specialist cognition.
+Relevant runtime evidence includes persistent/resumable specialist work, streamed progress, approvals, interruption,
+steering, compaction, command/file activity, and nested-agent relationships exposed by the current runtime/app-server
+surfaces. The important semantic observation is that caller-visible control and progress do not make the caller owner of
+Codex's specialist cognition.
 
-The examined runtime also makes the side-effect boundary concrete: reverting or interrupting specialist conversation/work state is not equivalent to transactionally reverting external file effects. These claims are rapidly changing implementation evidence and should be revalidated against the then-current Codex version before implementation decisions.
+The examined runtime also makes the side-effect boundary concrete: reverting or interrupting specialist
+conversation/work state is not equivalent to transactionally reverting external file effects. These claims are rapidly
+changing implementation evidence and should be revalidated against the then-current Codex version before implementation
+decisions.
 
 ### R12 Agent Client Protocol
 
@@ -149,7 +191,10 @@ The examined runtime also makes the side-effect boundary concrete: reverting or 
 
 - Repository: https://github.com/agentclientprotocol/agent-client-protocol
 
-Relevant because ACP exposes interoperable session/work continuity, progress, permission requests, cancellation, and resume/load semantics. These facilities demonstrate that autonomous specialist runtimes need richer lifecycle interaction than atomic function calls, while leaving Ember's questions of responsibility, autobiographical ownership, privacy scope, and authority unresolved.
+Relevant because ACP exposes interoperable session/work continuity, progress, permission requests, cancellation, and
+resume/load semantics. These facilities demonstrate that autonomous specialist runtimes need richer lifecycle
+interaction than atomic function calls, while leaving Ember's questions of responsibility, autobiographical ownership,
+privacy scope, and authority unresolved.
 
 ### R13 Model Context Protocol
 
@@ -157,24 +202,47 @@ Relevant because ACP exposes interoperable session/work continuity, progress, pe
 
 - Specification: https://modelcontextprotocol.io/specification/2026-07-28
 
-Relevant because current MCP separates protocol representation from the semantic autonomy behind an endpoint. Tool calls can front arbitrarily sophisticated implementations, and current task facilities expose long-running work, input requirements, terminal states, and cooperative cancellation. This supports the conclusion that `tool` is not a sufficient semantic category for Ember.
+Relevant because current MCP separates protocol representation from the semantic autonomy behind an endpoint. Tool calls
+can front arbitrarily sophisticated implementations, and current task facilities expose long-running work, input
+requirements, terminal states, and cooperative cancellation. This supports the conclusion that `tool` is not a
+sufficient semantic category for Ember.
 
 ## Inherited evidence used by this phase
 
-The following evidence is intentionally not duplicated in full because its portable bibliography already lives in the preceding research maps:
+The following evidence is intentionally not duplicated in full because its portable bibliography already lives in the
+preceding research maps:
 
-- **Continuity and identity:** lineage-sensitive continuity, autobiographical ownership, commitment continuity, model/runtime replacement, and epistemic restraint. See [Continuity and Identity Evidence Map](continuity-and-identity-references.md).
-- **Memory and remembering:** specialist-report provenance, source attribution, evidential conservation, corrections, current-versus-historical truth, and truthful gaps. See [Memory and Remembering Evidence Map](memory-and-remembering-references.md).
-- **Context selection:** least sufficient permitted context, recipient-sensitive privacy, contextual integrity, currentness, stale-state risk, contradiction preservation, and delegation as a new context boundary. See [Context Selection and Cognitive Framing Evidence Map](context-selection-and-cognitive-framing-references.md).
+- **Continuity and identity:** lineage-sensitive continuity, autobiographical ownership, commitment continuity,
+  model/runtime replacement, and epistemic restraint. See
+  [Continuity and Identity Evidence Map](continuity-and-identity-references.md).
+- **Memory and remembering:** specialist-report provenance, source attribution, evidential conservation, corrections,
+  current-versus-historical truth, and truthful gaps. See
+  [Memory and Remembering Evidence Map](memory-and-remembering-references.md).
+- **Context selection:** least sufficient permitted context, recipient-sensitive privacy, contextual integrity,
+  currentness, stale-state risk, contradiction preservation, and delegation as a new context boundary. See
+  [Context Selection and Cognitive Framing Evidence Map](context-selection-and-cognitive-framing-references.md).
 
-Especially relevant inherited sources include CIMemories (`arXiv:2511.14937`), Helen Nissenbaum's _Privacy as Contextual Integrity_, Saltzer and Schroeder's least-privilege/security principles, and the persistent-agent provenance/security literature already mapped by issues #4 and #5.
+Especially relevant inherited sources include CIMemories (`arXiv:2511.14937`), Helen Nissenbaum's _Privacy as Contextual
+Integrity_, Saltzer and Schroeder's least-privilege/security principles, and the persistent-agent provenance/security
+literature already mapped by issues #4 and #5.
 
 ## Evidence limitations and open empirical gaps
 
-No benchmark reviewed in this phase directly evaluates an Ember-like persistent personal agent over long periods while jointly varying delegation, specialist replacement, privacy scope, provenance, late results, commitments, approval, cancellation, partial external effects, and autobiographical continuity. **[H]** The canonical ownership model is therefore a disciplined Ember judgment constrained by several evidence streams rather than a benchmark-proven ontology.
+No benchmark reviewed in this phase directly evaluates an Ember-like persistent personal agent over long periods while
+jointly varying delegation, specialist replacement, privacy scope, provenance, late results, commitments, approval,
+cancellation, partial external effects, and autobiographical continuity. **[H]** The canonical ownership model is
+therefore a disciplined Ember judgment constrained by several evidence streams rather than a benchmark-proven ontology.
 
-The empirical delegation literature is also unusually sensitive to inference budget. Several positive multi-agent results use substantially more tokens, model calls, wall-clock resources, or tool activity than their single-agent comparator, while several negative studies deliberately normalize compute. Any future Ember evaluation should therefore record task success together with inference cost, latency, parallelism, verifier use, context disclosure, and whether the baseline was genuinely competitive.
+The empirical delegation literature is also unusually sensitive to inference budget. Several positive multi-agent
+results use substantially more tokens, model calls, wall-clock resources, or tool activity than their single-agent
+comparator, while several negative studies deliberately normalize compute. Any future Ember evaluation should therefore
+record task success together with inference cost, latency, parallelism, verifier use, context disclosure, and whether
+the baseline was genuinely competitive.
 
-Many multi-agent benchmarks use homogeneous agents. Ember's most compelling future delegation case is often heterogeneous: a specialist may possess tools, environment access, long-lived domain state, or model competence unavailable to Ember's direct loop. Results about homogeneous debate or agent multiplication should not be generalized to that setting without new experiments.
+Many multi-agent benchmarks use homogeneous agents. Ember's most compelling future delegation case is often
+heterogeneous: a specialist may possess tools, environment access, long-lived domain state, or model competence
+unavailable to Ember's direct loop. Results about homogeneous debate or agent multiplication should not be generalized
+to that setting without new experiments.
 
-Current runtime contracts are moving targets. Codex, ACP, and MCP evidence in this map is a dated snapshot used to reveal semantic pressures, not a promise that exact surfaces or guarantees will remain stable.
+Current runtime contracts are moving targets. Codex, ACP, and MCP evidence in this map is a dated snapshot used to
+reveal semantic pressures, not a promise that exact surfaces or guarantees will remain stable.

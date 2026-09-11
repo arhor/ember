@@ -1,6 +1,8 @@
 import { defineConfig } from "oxfmt";
 
 export default defineConfig({
+    proseWrap: "always",
+    embeddedLanguageFormatting: "auto",
     sortImports: {
         groups: [
             "type-import",

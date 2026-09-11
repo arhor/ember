@@ -1,21 +1,30 @@
 ---
-summary: "Preserved Deep Research report behind the canonical operational-model synthesis; non-canonical source material retained for provenance and reconstruction."
+summary:
+  "Preserved Deep Research report behind the canonical operational-model synthesis; non-canonical source material
+  retained for provenance and reconstruction."
 read_when:
   - "Reconstructing the original operational-model research after the canonical note and evidence map are insufficient"
-  - "Auditing source-level evidence, caveats, or research-session reasoning behind sessions, surfaces, recovery, retry, and delivery conclusions"
+  - "Auditing source-level evidence, caveats, or research-session reasoning behind sessions, surfaces, recovery, retry,
+    and delivery conclusions"
 role: source
 discovery_status: current
 ---
 
 # Operational Model, Sessions, and Surfaces - Research Source
 
-> **Source-material status:** non-canonical research artifact preserved behind the issue #8 synthesis. The canonical Ember-facing conclusions live in [Operational Model, Sessions, and Surfaces Semantics](../operational-model-sessions-and-surfaces.md), and the portable bibliography lives in the [evidence map](../operational-model-sessions-and-surfaces-references.md).
+> **Source-material status:** non-canonical research artifact preserved behind the issue #8 synthesis. The canonical
+> Ember-facing conclusions live in
+> [Operational Model, Sessions, and Surfaces Semantics](../operational-model-sessions-and-surfaces.md), and the portable
+> bibliography lives in the [evidence map](../operational-model-sessions-and-surfaces-references.md).
 >
-> An earlier automated research attempt was discarded because it inspected an unrelated repository named `ember`. None of that attempt's findings were used. This artifact records the corrected research grounded first in `arhor/ember` and then in external evidence.
+> An earlier automated research attempt was discarded because it inspected an unrelated repository named `ember`. None
+> of that attempt's findings were used. This artifact records the corrected research grounded first in `arhor/ember` and
+> then in external evidence.
 
 ## Research basis
 
-Issue #8 asks what must remain semantically true when conversations, sessions, surfaces, transports, processes, delegated runtimes, and periods of availability appear and disappear around one continuing Ember.
+Issue #8 asks what must remain semantically true when conversations, sessions, surfaces, transports, processes,
+delegated runtimes, and periods of availability appear and disappear around one continuing Ember.
 
 Before external research, the following repository material was treated as canonical:
 
@@ -27,12 +36,16 @@ Before external research, the following repository material was treated as canon
 - the canonical issue #6 capabilities/delegation research and evidence map;
 - the canonical issue #7 authority research and evidence map;
 - the canonical issue #2 endogenous-agency research and evidence map;
-- the preserved Deep Research artifacts from the completed phases where they clarified provenance or rejected source-level overclaims;
-- Ember's vision, principles, initial architecture model, and existing NanoBot, Hermes, OpenClaw, and Letta reconnaissance.
+- the preserved Deep Research artifacts from the completed phases where they clarified provenance or rejected
+  source-level overclaims;
+- Ember's vision, principles, initial architecture model, and existing NanoBot, Hermes, OpenClaw, and Letta
+  reconnaissance.
 
-The inherited constraints were not reopened casually. No external evidence found in this phase provided a substantive reason to overturn them.
+The inherited constraints were not reopened casually. No external evidence found in this phase provided a substantive
+reason to overturn them.
 
-The research deliberately did **not** design a daemon, queue, broker, IPC layer, actor model, lock strategy, event schema, status enum, persistence layout, process topology, or deployment model.
+The research deliberately did **not** design a daemon, queue, broker, IPC layer, actor model, lock strategy, event
+schema, status enum, persistence layout, process topology, or deployment model.
 
 ## Initial semantic decomposition
 
@@ -60,33 +73,46 @@ Treating all of these as one lifecycle creates false implications such as:
 - a stored session row proves the messaging channel is online;
 - resuming history means old assumptions are current again.
 
-The research therefore began from the opposite direction: determine which meanings differ before asking how future implementation might represent them.
+The research therefore began from the opposite direction: determine which meanings differ before asking how future
+implementation might represent them.
 
 ## Sessions and conversations
 
 ### Session should be temporary
 
-The inherited Ember architecture already describes sessions as temporary conversational or working context. The issue #8 research strengthens that boundary.
+The inherited Ember architecture already describes sessions as temporary conversational or working context. The issue #8
+research strengthens that boundary.
 
-A session is useful because recent interaction creates local structure: pronouns resolve against nearby statements, temporary drafts exist, the current surface has particular affordances, and a participant may expect a coherent local flow.
+A session is useful because recent interaction creates local structure: pronouns resolve against nearby statements,
+temporary drafts exist, the current surface has particular affordances, and a participant may expect a coherent local
+flow.
 
-None of those properties makes the session owner of Ember's persistent identity, relationships, durable memory, standing authority, commitments, or delegated work.
+None of those properties makes the session owner of Ember's persistent identity, relationships, durable memory, standing
+authority, commitments, or delegated work.
 
 Current implementations converge on this pressure without converging on one design.
 
-OpenClaw has session lifecycle/reset rules around a longer-lived agent and can project Gateway-owned session state into several clients. Hermes persists conversations as sessions, can resume or reset them, and keeps sessions with active background work from being reset. Letta now permits several concurrent conversations attached to one persistent agent with shared agent memory.
+OpenClaw has session lifecycle/reset rules around a longer-lived agent and can project Gateway-owned session state into
+several clients. Hermes persists conversations as sessions, can resume or reset them, and keeps sessions with active
+background work from being reset. Letta now permits several concurrent conversations attached to one persistent agent
+with shared agent memory.
 
-Those systems use different definitions and mechanics. Their convergence is therefore useful at the semantic level: _agent continuity and session continuity are not the same problem_.
+Those systems use different definitions and mechanics. Their convergence is therefore useful at the semantic level:
+_agent continuity and session continuity are not the same problem_.
 
 ### Conversation should follow discourse, not transport
 
 A semantic conversation can outlive a socket, terminal, voice call, or chat connection.
 
-If the user discusses a repository bug in CLI, closes the terminal, and continues ten minutes later through Telegram, the transport changed but the discourse may clearly be the same unresolved conversation.
+If the user discusses a repository bug in CLI, closes the terminal, and continues ten minutes later through Telegram,
+the transport changed but the discourse may clearly be the same unresolved conversation.
 
-The inverse also occurs. A long-lived Telegram chat can contain many unrelated conversations. One technical session can contain several semantic threads.
+The inverse also occurs. A long-lived Telegram chat can contain many unrelated conversations. One technical session can
+contain several semantic threads.
 
-This makes "resume" a current-context question rather than an identifier question. A future implementation may have technical identifiers, but the semantic requirement is to recover the relevant ongoing matter, its current constraints, and any changes that occurred during the gap.
+This makes "resume" a current-context question rather than an identifier question. A future implementation may have
+technical identifiers, but the semantic requirement is to recover the relevant ongoing matter, its current constraints,
+and any changes that occurred during the gap.
 
 ## Surfaces and principals
 
@@ -94,7 +120,8 @@ The existing Ember vision already says interfaces are windows into one persisten
 
 Issue #8 adds a critical qualifier: _a window changes who can see what_.
 
-A private CLI, private phone notification, family voice speaker, shared group chat, and web UI can all expose the same Ember while having different:
+A private CLI, private phone notification, family voice speaker, shared group chat, and web UI can all expose the same
+Ember while having different:
 
 - physical audiences;
 - authenticated identities;
@@ -106,13 +133,18 @@ A private CLI, private phone notification, family voice speaker, shared group ch
 
 Therefore "same Ember" cannot imply "same disclosure."
 
-OpenClaw's current session model demonstrates the pressure directly. It supports a default shared direct-message session for single-user continuity, explicitly warns that this is unsafe when several people can message the agent, supports per-peer isolation, and offers identity links for the same human appearing across channels.
+OpenClaw's current session model demonstrates the pressure directly. It supports a default shared direct-message session
+for single-user continuity, explicitly warns that this is unsafe when several people can message the agent, supports
+per-peer isolation, and offers identity links for the same human appearing across channels.
 
 That implementation should not be copied literally, but it demonstrates a durable semantic distinction:
 
 > principal identity, session identity, and agent identity are independent questions.
 
-Family smart-home HCI provides independent evidence. In _FamiData Hub_ (CHI 2025), nearly all studied families used a single parent account for smart-home devices, and children often used those devices independently. Children described their digital identities as mixed with their parents' activity. The study is not about personal agents, but it is strong evidence against treating a shared account or device as proof of one human principal.
+Family smart-home HCI provides independent evidence. In _FamiData Hub_ (CHI 2025), nearly all studied families used a
+single parent account for smart-home devices, and children often used those devices independently. Children described
+their digital identities as mixed with their parents' activity. The study is not about personal agents, but it is strong
+evidence against treating a shared account or device as proof of one human principal.
 
 For Ember, this matters especially where relationship memory, private information, or standing authority is involved.
 
@@ -130,19 +162,23 @@ A persistent agent can be:
 - able to receive messages while unable to perform one external capability;
 - fully unavailable for new cognition while durable state and specialist work persist elsewhere.
 
-Current OpenClaw documentation makes one particularly useful distinction explicit: `openclaw sessions` lists persisted conversation rows and is **not** a channel/provider liveness check.
+Current OpenClaw documentation makes one particularly useful distinction explicit: `openclaw sessions` lists persisted
+conversation rows and is **not** a channel/provider liveness check.
 
 That is an implementation-specific statement with a broadly reusable lesson:
 
 > persistence evidence is not connectivity evidence.
 
-The same caution applies to other operational claims. An accepted task is not necessarily started. Started is not necessarily progressing. A cancellation request is not an observed stop. An observed stop is not rollback. A transport acknowledgement is not human attention.
+The same caution applies to other operational claims. An accepted task is not necessarily started. Started is not
+necessarily progressing. A cancellation request is not an observed stop. An observed stop is not rollback. A transport
+acknowledgement is not human attention.
 
 Issue #8 therefore needs operational truth stronger than a future UI's simplified labels.
 
 ## Long-running work outside sessions
 
-Issue #6 already established that delegated-objective continuity and specialist-thread continuity are distinct from Ember continuity.
+Issue #6 already established that delegated-objective continuity and specialist-thread continuity are distinct from
+Ember continuity.
 
 Issue #8 asks what happens when the interaction that created the work disappears.
 
@@ -150,11 +186,14 @@ The key result is simple:
 
 > if the objective remains semantically live, ending its initiating interaction is not enough reason to kill the work.
 
-Hermes background sessions provide direct implementation evidence: a foreground session remains interactive while background work runs in separate sessions. OpenClaw supports multiple active runs around persistent session state. Codex runtime research from issue #6 already demonstrated independently resumable specialist work.
+Hermes background sessions provide direct implementation evidence: a foreground session remains interactive while
+background work runs in separate sessions. OpenClaw supports multiple active runs around persistent session state. Codex
+runtime research from issue #6 already demonstrated independently resumable specialist work.
 
 Again, these mechanisms are not architecture recommendations. They expose the pressure.
 
-What must survive interaction closure is not the initiating transcript as such, but the meaning necessary to interpret the work later:
+What must survive interaction closure is not the initiating transcript as such, but the meaning necessary to interpret
+the work later:
 
 - objective;
 - governing constraints;
@@ -171,9 +210,11 @@ What must survive interaction closure is not the initiating transcript as such, 
 
 A specialist can successfully complete old work after the user changes the objective.
 
-This is a particularly important case because many runtime models expose terminal states such as "completed" that look stronger than they are.
+This is a particularly important case because many runtime models expose terminal states such as "completed" that look
+stronger than they are.
 
-Completion means the specialist believes the delegated objective reached its terminal success condition. It cannot establish:
+Completion means the specialist believes the delegated objective reached its terminal success condition. It cannot
+establish:
 
 - that the original objective remains current;
 - that world state still matches the assumptions;
@@ -187,7 +228,10 @@ This result is inherited from issue #6 but becomes operationally central in #8.
 
 Distributed-systems evidence sharpened a distinction already latent in Ember's history/memory model.
 
-Amazon SQS standard queues explicitly use at-least-once delivery and may deliver a message more than once or out of order. Google Pub/Sub's exactly-once feature provides deliberately scoped acknowledgement/redelivery semantics. Amazon's FIFO documentation uses explicit deduplication identity because message-body equality is not enough: sometimes identical bodies must be treated as unique, while changed bodies can still represent retries of one intended occurrence.
+Amazon SQS standard queues explicitly use at-least-once delivery and may deliver a message more than once or out of
+order. Google Pub/Sub's exactly-once feature provides deliberately scoped acknowledgement/redelivery semantics. Amazon's
+FIFO documentation uses explicit deduplication identity because message-body equality is not enough: sometimes identical
+bodies must be treated as unique, while changed bodies can still represent retries of one intended occurrence.
 
 The important Ember conclusion is above all of those mechanisms:
 
@@ -195,21 +239,29 @@ The important Ember conclusion is above all of those mechanisms:
 
 This matters for more than message processing.
 
-If one user request is delivered twice, Ember must not infer two independent grants of authority, two autobiographical events, two memories, or two intended external side effects.
+If one user request is delivered twice, Ember must not infer two independent grants of authority, two autobiographical
+events, two memories, or two intended external side effects.
 
-But Ember must also avoid the inverse mistake. Two messages with identical text can be two intentional user actions. Two identical external events can genuinely happen twice.
+But Ember must also avoid the inverse mistake. Two messages with identical text can be two intentional user actions. Two
+identical external events can genuinely happen twice.
 
 Therefore semantic identity cannot be defined by content equality alone.
 
-Source correlation, provenance, causal history, timing, and context can provide evidence. When they do not settle the question, uncertainty should remain uncertainty.
+Source correlation, provenance, causal history, timing, and context can provide evidence. When they do not settle the
+question, uncertainty should remain uncertainty.
 
 ## Retry and uncertain external effects
 
 The most useful external evidence here came from systems dealing with real side effects.
 
-Stripe's advanced error documentation explicitly states that after a network failure a client may not know whether the server received the request. Idempotency keys let the client retry the _same intended operation_ and recover a definitive answer. Stripe also treats some server errors as indeterminate because user-visible effects may already exist.
+Stripe's advanced error documentation explicitly states that after a network failure a client may not know whether the
+server received the request. Idempotency keys let the client retry the _same intended operation_ and recover a
+definitive answer. Stripe also treats some server errors as indeterminate because user-visible effects may already
+exist.
 
-AWS Durable Execution has an even sharper example. For an at-most-once step, if execution is interrupted after the side-effecting body starts but before the SDK checkpoints the result, the SDK does not simply rerun the step. It reports an interrupted condition and instructs the caller to inspect the external system before deciding what to do next.
+AWS Durable Execution has an even sharper example. For an at-most-once step, if execution is interrupted after the
+side-effecting body starts but before the SDK checkpoints the result, the SDK does not simply rerun the step. It reports
+an interrupted condition and instructs the caller to inspect the external system before deciding what to do next.
 
 Neither source means Ember should use Stripe's API strategy or AWS Durable Execution.
 
@@ -221,15 +273,18 @@ This is exactly the distinction Ember needs after a timeout, crash, disconnect, 
 
 The safe conclusion is not "always retry" or "never retry." It is:
 
-> consequential retry after ambiguous failure may require re-establishing external state first, unless the operation is independently known to be safe to repeat.
+> consequential retry after ambiguous failure may require re-establishing external state first, unless the operation is
+> independently known to be safe to repeat.
 
 The consequence level matters. Re-reading status is different from charging a card or sending a public message.
 
-A related conclusion is that _retry_ is itself semantic. Re-executing the same function call after the objective, target, authority, or world state changed may no longer be the same attempt at all.
+A related conclusion is that _retry_ is itself semantic. Re-executing the same function call after the objective,
+target, authority, or world state changed may no longer be the same attempt at all.
 
 ## Concurrency
 
-Issue #8 deliberately forbids choosing locks, transactions, queues, or actors. That does not prevent identifying what those future mechanisms would need to preserve.
+Issue #8 deliberately forbids choosing locks, transactions, queues, or actors. That does not prevent identifying what
+those future mechanisms would need to preserve.
 
 The semantic concurrency problem is stale justification.
 
@@ -253,15 +308,18 @@ Or:
 
 The important problem is not "parallelism" as such. Two unrelated conversations can proceed safely.
 
-Concurrency becomes semantically relevant when another interaction can change a premise, authority, objective, recipient, shared resource, or consequence that the current cognition depends on.
+Concurrency becomes semantically relevant when another interaction can change a premise, authority, objective,
+recipient, shared resource, or consequence that the current cognition depends on.
 
-Current OpenClaw session-state work exposes a concrete version of this pressure with stale-assumption reconciliation among concurrent sessions. That implementation should not be copied. The pressure it exposes is useful.
+Current OpenClaw session-state work exposes a concrete version of this pressure with stale-assumption reconciliation
+among concurrent sessions. That implementation should not be copied. The pressure it exposes is useful.
 
 This leads to a likely future evaluation question rather than an algorithm:
 
 > when does consequence and dependency justify re-establishing currentness before committing an outward action?
 
-Checking every mutable fact before every thought is wasteful. Never checking is unsafe. Issue #8 leaves the threshold open.
+Checking every mutable fact before every thought is wasteful. Never checking is unsafe. Issue #8 leaves the threshold
+open.
 
 ## Downtime
 
@@ -283,7 +341,8 @@ During that interval:
 - a condition can become true;
 - Ember herself may be unable to notice any of those things.
 
-On restart, Ember can truthfully say that the commitment persisted and is being reconsidered now. She cannot claim she spent the night watching it or chose not to speak at 02:00 if no cognition occurred.
+On restart, Ember can truthfully say that the commitment persisted and is being reconsidered now. She cannot claim she
+spent the night watching it or chose not to speak at 02:00 if no cognition occurred.
 
 This is not a break in identity. It is continuity with a gap in experience.
 
@@ -291,9 +350,12 @@ This is not a break in identity. It is continuity with a gap in experience.
 
 The wrong recovery metaphor is replay.
 
-Replaying all old history can still recreate a stale situation. An old objective may have changed. Authority may have been revoked. A result may have arrived elsewhere. The external world may no longer match the state that existed before the crash.
+Replaying all old history can still recreate a stale situation. An old objective may have changed. Authority may have
+been revoked. A result may have arrived elsewhere. The external world may no longer match the state that existed before
+the crash.
 
-Issue #5 already established that reconstruction should restore the current situation rather than the old prompt. Issue #8 extends that idea operationally.
+Issue #5 already established that reconstruction should restore the current situation rather than the old prompt. Issue
+#8 extends that idea operationally.
 
 Recovery should reconcile:
 
@@ -308,11 +370,14 @@ Recovery should reconcile:
 
 HCI interruption research is useful as a lens here.
 
-Trafton, Altmann, Brock, and Mintz (2003) experimentally showed that people who had an interruption lag prepared more and resumed faster, supporting the role of prospective resumption goals.
+Trafton, Altmann, Brock, and Mintz (2003) experimentally showed that people who had an interruption lag prepared more
+and resumed faster, supporting the role of prospective resumption goals.
 
-Parnin and DeLine (CHI 2010) surveyed 371 programmers and experimentally evaluated automated resumption cues. Their cues improved task-completion success compared with notes alone in the study.
+Parnin and DeLine (CHI 2010) surveyed 371 programmers and experimentally evaluated automated resumption cues. Their cues
+improved task-completion success compared with notes alone in the study.
 
-Parnin and Rugaber's broader programming-session analysis found that programmers often spend time navigating and reconstructing context before editing after an interruption.
+Parnin and Rugaber's broader programming-session analysis found that programmers often spend time navigating and
+reconstructing context before editing after an interruption.
 
 These human findings do not imply that Ember has human working memory. They do support a narrow engineering insight:
 
@@ -322,7 +387,8 @@ These human findings do not imply that Ember has human working memory. They do s
 
 Sometimes the evidence is genuinely missing.
 
-An external service may have no audit log. A sensor may itself have been offline. A specialist may disappear without reporting terminal state.
+An external service may have no audit log. A sensor may itself have been offline. A specialist may disappear without
+reporting terminal state.
 
 The correct recovery state can therefore include "unknown."
 
@@ -344,7 +410,8 @@ A future runtime cannot safely apply one generic "catch up missed jobs" rule to 
 
 The semantic requirement is to reconsider the purpose and time meaning.
 
-An exact-time opportunity may have expired. An overdue obligation may still matter. A periodic observation may only require one fresh observation now. A missed wake-up opportunity cannot be described as cognition that happened at 02:00.
+An exact-time opportunity may have expired. An overdue obligation may still matter. A periodic observation may only
+require one fresh observation now. A missed wake-up opportunity cannot be described as cognition that happened at 02:00.
 
 This is an important bridge between #2 and #8: mechanism can be missed, while the underlying reason may survive.
 
@@ -352,11 +419,14 @@ This is an important bridge between #2 and #8: mechanism can be missed, while th
 
 A result becoming available is not the same thing as that result deserving immediate user attention.
 
-Iqbal and Bailey's CHI 2008 experiment found that scheduling notifications at task breakpoints reduced frustration and reaction time relative to immediate delivery in the studied tasks.
+Iqbal and Bailey's CHI 2008 experiment found that scheduling notifications at task breakpoints reduced frustration and
+reaction time relative to immediate delivery in the studied tasks.
 
-The study does not provide an Ember notification algorithm. It directly challenges a naive operational principle: "deliver as soon as technically possible."
+The study does not provide an Ember notification algorithm. It directly challenges a naive operational principle:
+"deliver as soon as technically possible."
 
-Issue #2 independently requires quiet periods and useful non-action. Issue #7 treats contact as an attention-consuming external action.
+Issue #2 independently requires quiet periods and useful non-action. Issue #7 treats contact as an attention-consuming
+external action.
 
 Together these support:
 
@@ -364,17 +434,21 @@ Together these support:
 >
 > candidate information != automatic interruption
 
-The choice also interacts with surfaces. A result from a private CLI task might be suitable for a private Telegram message but not for a family voice speaker or group channel.
+The choice also interacts with surfaces. A result from a private CLI task might be suitable for a private Telegram
+message but not for a family voice speaker or group channel.
 
 Reachability is therefore not enough to choose delivery route.
 
 ## Cross-device interaction
 
-Brudy et al.'s CHI 2019 Cross-Device Taxonomy synthesizes 510 papers on interactions spanning multiple devices. Its value for Ember is not a particular interaction pattern. It shows that cross-device experiences form a broad design space where devices differ in affordances, transfer patterns, roles, and evaluation criteria.
+Brudy et al.'s CHI 2019 Cross-Device Taxonomy synthesizes 510 papers on interactions spanning multiple devices. Its
+value for Ember is not a particular interaction pattern. It shows that cross-device experiences form a broad design
+space where devices differ in affordances, transfer patterns, roles, and evaluation criteria.
 
 The semantic implication for Ember is conservative:
 
-> continuity across surfaces should preserve the agent while allowing presentation, privacy, interruption, and context projection to differ.
+> continuity across surfaces should preserve the agent while allowing presentation, privacy, interruption, and context
+> projection to differ.
 
 Mirroring everything everywhere would be the opposite of this requirement.
 
@@ -384,7 +458,8 @@ Ember's principles already prefer graceful degradation.
 
 Operational research clarifies what must remain true when degradation occurs.
 
-If memory retrieval is down, Ember may still converse about current visible context, but should not pretend old preferences or authority were successfully recalled.
+If memory retrieval is down, Ember may still converse about current visible context, but should not pretend old
+preferences or authority were successfully recalled.
 
 If Telegram is down, CLI may remain functional.
 
@@ -392,7 +467,8 @@ If a specialist is unreachable, the delegated objective can remain live but bloc
 
 If external search is unavailable, local cognition can continue without falsely implying fresh verification.
 
-If the cognition provider changes, continuity can survive while privacy, capability, or behavioural assumptions may need re-evaluation.
+If the cognition provider changes, continuity can survive while privacy, capability, or behavioural assumptions may need
+re-evaluation.
 
 If a transport can receive but not send, Ember may learn new facts without being able to acknowledge them to the user.
 
@@ -408,13 +484,16 @@ No evidence required reopening prior Ember conclusions, but three tensions were 
 
 ### Letta context framing
 
-Current Letta product language can describe context much more strongly as constitutive of the agent's self. Ember's canonical issue #3/#5 research instead treats context as a temporary projection of a continuing agent.
+Current Letta product language can describe context much more strongly as constitutive of the agent's self. Ember's
+canonical issue #3/#5 research instead treats context as a temporary projection of a continuing agent.
 
-The Letta framing is a product philosophy and implementation model, not empirical evidence that Ember's distinction is wrong.
+The Letta framing is a product philosophy and implementation model, not empirical evidence that Ember's distinction is
+wrong.
 
 ### OpenClaw default DM sharing
 
-OpenClaw's default shared direct-message session is convenient under a one-user assumption and is explicitly documented as dangerous when several humans can message the agent.
+OpenClaw's default shared direct-message session is convenient under a one-user assumption and is explicitly documented
+as dangerous when several humans can message the agent.
 
 For Ember this strengthens the distinction among:
 
@@ -428,7 +507,8 @@ For Ember this strengthens the distinction among:
 
 Hermes can restore a prior conversation session and history, which is valuable operational behaviour.
 
-Ember needs a stronger notion after substantial time or external change. Restoring history is evidence for reconstruction, not proof that every restored assumption is current.
+Ember needs a stronger notion after substantial time or external change. Restoring history is evidence for
+reconstruction, not proof that every restored assumption is current.
 
 ## Research synthesis
 
@@ -438,14 +518,17 @@ The operational research can be condensed into ten requirements.
 2. **Work outlives views when its purpose remains live.** Session closure does not silently cancel work or commitments.
 3. **Currentness must be earned after change.** Historical validity and present applicability are different.
 4. **Delivery is not occurrence.** Transport repetition must not manufacture repeated semantic meaning.
-5. **Failure signals have limited epistemic meaning.** Timeout and cancellation cannot establish external-world rollback.
+5. **Failure signals have limited epistemic meaning.** Timeout and cancellation cannot establish external-world
+   rollback.
 6. **Recovery is reconciliation.** Reconstruct the present from durable state, evidence, observation, and explicit gaps.
 7. **Concurrency invalidates assumptions, not identity.** Coordinate only where semantic dependencies exist.
 8. **Surface changes disclosure and interaction, not Ember.** Same-agent continuity does not imply all-state visibility.
 9. **Downtime must remain truthful.** Durable concerns can cross gaps that Ember did not experience.
-10. **Operational presentation must never outrun knowledge.** Simplified status must preserve uncertainty about running, effects, currentness, reachability, and delivery.
+10. **Operational presentation must never outrun knowledge.** Simplified status must preserve uncertainty about running,
+    effects, currentness, reachability, and delivery.
 
-The main research achievement is therefore negative in the useful sense: issue #8 does not justify choosing daemon plus event bus, workflow engine, queue, actor system, or any other operational machinery yet.
+The main research achievement is therefore negative in the useful sense: issue #8 does not justify choosing daemon plus
+event bus, workflow engine, queue, actor system, or any other operational machinery yet.
 
 Instead it makes those later choices easier to evaluate.
 
@@ -462,11 +545,14 @@ A candidate architecture should have to demonstrate how it preserves:
 - graceful degradation;
 - attention-aware delivery.
 
-The machinery should earn its place by preserving those semantics, rather than supplying the semantics merely because its APIs happen to expose nouns such as `session`, `task`, `message`, `event`, or `workflow`.
+The machinery should earn its place by preserving those semantics, rather than supplying the semantics merely because
+its APIs happen to expose nouns such as `session`, `task`, `message`, `event`, or `workflow`.
 
 ## Portable source list
 
-The durable bibliography and interpretation notes are maintained in [the portable evidence map](../operational-model-sessions-and-surfaces-references.md). Principal external sources include:
+The durable bibliography and interpretation notes are maintained in
+[the portable evidence map](../operational-model-sessions-and-surfaces-references.md). Principal external sources
+include:
 
 - OpenClaw session synchronization, session management, and liveness documentation, examined 2026-08-29;
 - Letta's 2026 Conversations API announcement and current repository snapshot;

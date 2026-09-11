@@ -1,5 +1,7 @@
 ---
-summary: "Contributor and agent guide for running, authoring, validating, and extending Ember's documentation discovery metadata."
+summary:
+  "Contributor and agent guide for running, authoring, validating, and extending Ember's documentation discovery
+  metadata."
 read_when:
   - "Adding or materially changing a Markdown document under docs/"
   - "Running documentation discovery or diagnosing metadata validation failures"
@@ -11,17 +13,23 @@ discovery_status: current
 
 # Documentation Discovery Guide
 
-The governing design is [Ember Agent-Aware Documentation Discovery Contract](documentation-discovery.md). This guide explains how to use and maintain the adopted implementation.
+The governing design is [Ember Agent-Aware Documentation Discovery Contract](documentation-discovery.md). This guide
+explains how to use and maintain the adopted implementation.
 
 The central rule remains:
 
 > Discovery metadata helps readers find knowledge. It does not create authority for that knowledge.
 
-A document's repository role, its `discovery_status`, and any role-specific lifecycle such as an ADR's accepted/proposed status remain separate concepts.
+A document's repository role, its `discovery_status`, and any role-specific lifecycle such as an ADR's accepted/proposed
+status remain separate concepts.
 
 ## Commands
 
-Run discovery from the repository root with Node.js built-ins only. Use Node.js 26.8.1 or newer on the Node 26 release line, matching the repository baseline in `package.json`. Ember now has an npm toolchain, but a Markdown/YAML dependency is still a poor fit here: the discovery utility deliberately preserves a narrow, inspectable grammar whose rejection behavior is part of its contract. Keeping discovery dependency-free avoids importing broader parser semantics that the repository does not accept.
+Run discovery from the repository root with Node.js built-ins only. Use Node.js 26.8.1 or newer on the Node 26 release
+line, matching the repository baseline in `package.json`. Ember now has an npm toolchain, but a Markdown/YAML dependency
+is still a poor fit here: the discovery utility deliberately preserves a narrow, inspectable grammar whose rejection
+behavior is part of its contract. Keeping discovery dependency-free avoids importing broader parser semantics that the
+repository does not accept.
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.
@@ -48,11 +56,13 @@ V1 participation is simple:
 
 - every human-authored `docs/**/*.md` file participates;
 - root bootstrap files such as `README.md` and `AGENTS.md` do not;
-- generated Markdown may be excluded only through the explicit `EXCLUDED_PATHS` set in `scripts/docs-discovery.ts` and corresponding tests.
+- generated Markdown may be excluded only through the explicit `EXCLUDED_PATHS` set in `scripts/docs-discovery.ts` and
+  corresponding tests.
 
 There are currently no generated Markdown exclusions.
 
-Deleting frontmatter from a participating document therefore causes validation to fail. Metadata presence is not an opt-in switch that can silently hide a document.
+Deleting frontmatter from a participating document therefore causes validation to fail. Metadata presence is not an
+opt-in switch that can silently hide a document.
 
 ## Metadata
 
@@ -60,7 +70,9 @@ A participating document starts with frontmatter shaped like this:
 
 ```yaml
 ---
-summary: "Canonical semantics for persistent remembered meaning, including provenance, scope, currentness, correction, and forgetting."
+summary:
+  "Canonical semantics for persistent remembered meaning, including provenance, scope, currentness, correction, and
+  forgetting."
 read_when:
   - "Changing how corrected or superseded memory governs later behavior"
   - "Designing persistence for current versus historical remembered meaning"
@@ -77,12 +89,15 @@ supersededBy: docs/architecture/design-directions.md
 
 ### `summary`
 
-Write one compact sentence that distinguishes the document's responsibility from nearby material. Describe what useful knowledge the reader will find, not merely the title or broad topic.
+Write one compact sentence that distinguishes the document's responsibility from nearby material. Describe what useful
+knowledge the reader will find, not merely the title or broad topic.
 
 Prefer:
 
 ```yaml
-summary: "Canonical semantics for persistent remembered meaning, including provenance, scope, currentness, correction, and forgetting."
+summary:
+  "Canonical semantics for persistent remembered meaning, including provenance, scope, currentness, correction, and
+  forgetting."
 ```
 
 Avoid:
@@ -93,7 +108,8 @@ summary: "Memory document"
 
 ### `read_when`
 
-Write a small set of recognizable task situations. Begin from work a contributor or agent may actually be doing, such as changing behavior, making a design decision, investigating a failure, checking evidence, or reconstructing provenance.
+Write a small set of recognizable task situations. Begin from work a contributor or agent may actually be doing, such as
+changing behavior, making a design decision, investigating a failure, checking evidence, or reconstructing provenance.
 
 Prefer:
 
@@ -103,7 +119,8 @@ read_when:
   - "Investigating whether historical evidence should still govern current behavior"
 ```
 
-Avoid keyword lists such as `memory`, `agents`, or hints broad enough to match nearly every task. The deterministic tool does not compare a task to these strings. A human or model reads them and judges relevance.
+Avoid keyword lists such as `memory`, `agents`, or hints broad enough to match nearly every task. The deterministic tool
+does not compare a task to these strings. A human or model reads them and judges relevance.
 
 ### `role`
 
@@ -121,7 +138,8 @@ Choose the document's repository knowledge function, not its topic:
 | `evidence`   | Portable evidence map supporting canonical research              | Deep         |
 | `source`     | Preserved source research artifact                               | Deep         |
 
-A role label projects existing governance into discovery. It cannot turn arbitrary prose into a canonical research result or make a proposed decision accepted.
+A role label projects existing governance into discovery. It cannot turn arbitrary prose into a canonical research
+result or make a proposed decision accepted.
 
 ### `discovery_status`
 
@@ -131,13 +149,20 @@ Use one of:
 - `superseded`: retained but replaced by another participating document;
 - `historical`: retained as history without a current governing claim.
 
-A superseded document must point through `supersededBy` to another participating document. Supersession chains must be acyclic and end at a current document.
+A superseded document must point through `supersededBy` to another participating document. Supersession chains must be
+acyclic and end at a current document.
 
-Do not use `discovery_status` as a substitute for role-specific lifecycle. For example, an ADR may simultaneously have `role: decision`, `discovery_status: current`, and its own `status: proposed`. The first two make it discoverable; only the ADR lifecycle says whether it governs.
+Do not use `discovery_status` as a substitute for role-specific lifecycle. For example, an ADR may simultaneously have
+`role: decision`, `discovery_status: current`, and its own `status: proposed`. The first two make it discoverable; only
+the ADR lifecycle says whether it governs.
 
 ## Ember frontmatter subset
 
-Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an **Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: the repository's established Node.js/npm toolchain does not make a general YAML model a semantic fit. The parser remains small, inspectable, and zero-dependency because its deliberately narrow accepted and rejected forms are part of discovery behavior.
+Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an
+**Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: the repository's
+established Node.js/npm toolchain does not make a general YAML model a semantic fit. The parser remains small,
+inspectable, and zero-dependency because its deliberately narrow accepted and rejected forms are part of discovery
+behavior.
 
 The accepted grammar is limited to what the v1 contract needs:
 
@@ -148,17 +173,23 @@ The accepted grammar is limited to what the v1 contract needs:
 - additional simple scalar fields belonging to another document lifecycle, such as `status: accepted`;
 - plain scalars are treated as literal strings; YAML implicit typing and comment semantics are not part of this grammar.
 
-Features outside that grammar, including inline collections, nested mappings, anchors, folded/literal multiline scalars, and arbitrary indentation, are rejected when encountered. A future parser replacement would need to preserve this grammar and its observable behavior exactly; dependency availability alone is not a reason to broaden it.
+Features outside that grammar, including inline collections, nested mappings, anchors, folded/literal multiline scalars,
+and arbitrary indentation, are rejected when encountered. A future parser replacement would need to preserve this
+grammar and its observable behavior exactly; dependency availability alone is not a reason to broaden it.
 
 ## Default, deep, and history disclosure
 
 The three catalogue modes answer different questions.
 
-**Default discovery** is normal pre-work routing. It contains current `foundation`, `decision`, `design`, `scenario`, `research`, and `guide` documents.
+**Default discovery** is normal pre-work routing. It contains current `foundation`, `decision`, `design`, `scenario`,
+`research`, and `guide` documents.
 
-**Deep discovery** adds current `reference`, `evidence`, and `source` material. Use it when checking why a conclusion exists, challenging evidence, reconstructing provenance, or comparing external systems. Deep does not mean less true. It means the material is not normally the direct governing input to ordinary implementation work.
+**Deep discovery** adds current `reference`, `evidence`, and `source` material. Use it when checking why a conclusion
+exists, challenging evidence, reconstructing provenance, or comparing external systems. Deep does not mean less true. It
+means the material is not normally the direct governing input to ordinary implementation work.
 
-**All/history discovery** additionally exposes superseded and historical documents. Use it for repository evolution and governance questions. A deep investigation does not automatically make old guidance current.
+**All/history discovery** additionally exposes superseded and historical documents. Use it for repository evolution and
+governance questions. A deep investigation does not automatically make old guidance current.
 
 ## Selected-document headings
 
@@ -170,7 +201,9 @@ node scripts/docs-discovery.ts list --headings \
   docs/research/context-selection-and-cognitive-framing.md
 ```
 
-The command accepts explicit participating paths only, emits H1-H4 headings in source order, strips frontmatter, and ignores apparent headings inside fenced code blocks. It does not build routes, anchors, a checked-in docs map, or a whole-corpus structural index.
+The command accepts explicit participating paths only, emits H1-H4 headings in source order, strips frontmatter, and
+ignores apparent headings inside fenced code blocks. It does not build routes, anchors, a checked-in docs map, or a
+whole-corpus structural index.
 
 ## Adding a participating document
 
@@ -184,7 +217,8 @@ When adding `docs/**/*.md`:
 6. inspect `list`, `--deep`, or `--all` to make sure it appears at the intended disclosure depth;
 7. run unit tests and `check` before merging.
 
-Do not copy identical hints across a directory merely to satisfy validation. A directory can contain canonical research, evidence, source artifacts, and reference investigations with intentionally different routing behavior.
+Do not copy identical hints across a directory merely to satisfy validation. A directory can contain canonical research,
+evidence, source artifacts, and reference investigations with intentionally different routing behavior.
 
 ## Validation
 
@@ -195,12 +229,18 @@ npm run test:docs
 node scripts/docs-discovery.ts check
 ```
 
-`check` validates syntax, required fields, role/status values, exact duplicate hints within a document, supersession targets and chains, participation, and explicit exclusions. Exact duplicate hints across documents are reported as maintenance warnings because legitimate overlap is possible.
+`check` validates syntax, required fields, role/status values, exact duplicate hints within a document, supersession
+targets and chains, participation, and explicit exclusions. Exact duplicate hints across documents are reported as
+maintenance warnings because legitimate overlap is possible.
 
-Validation intentionally does **not** claim to prove that a summary is semantically complete, that a hint is ideally broad, that a role declaration is justified by governance, that an ADR is accepted, or that a task maps deterministically to a document set. Those require review and task-oriented evaluation.
+Validation intentionally does **not** claim to prove that a summary is semantically complete, that a hint is ideally
+broad, that a role declaration is justified by governance, that an ADR is accepted, or that a task maps
+deterministically to a document set. Those require review and task-oriented evaluation.
 
 ## What this system intentionally does not do
 
-The discovery layer has no task-query interface. It does not search semantically, score, rank, classify, embed, rerank, infer topics, call a model, maintain a database, create a hidden index, or replace ordinary repository search.
+The discovery layer has no task-query interface. It does not search semantically, score, rank, classify, embed, rerank,
+infer topics, call a model, maintain a database, create a hidden index, or replace ordinary repository search.
 
-Its job is narrower: expose a trustworthy compact catalogue so a human or model can decide what to read next while keeping current canonical material, deeper evidence, and history distinguishable.
+Its job is narrower: expose a trustworthy compact catalogue so a human or model can decide what to read next while
+keeping current canonical material, deeper evidence, and history distinguishable.
