@@ -45,9 +45,12 @@ EMBER_RUN_LIVE_MEMORY_FORMATION=1 npm run eval:memory-formation:live
 Live output is model evidence, not a replacement for deterministic policy proof. Live
 expectations allow semantically equivalent non-adoption decisions such as a valid
 `no_proposal` instead of a generated candidate that the policy rejects. The report
-separates `ember_assertions_passed` from `model_observations_passed`; exit code 1 means
-an Ember invariant failed, while exit code 2 means live model observations missed the
-scenario expectation. The provider configuration establishes fresh invocation intent,
+separates `ember_assertions_passed` from `model_observations_passed`. Deterministic
+mode keeps exact fixture decisions, reasons, current-state expectations, and all-zero
+requested metrics on the Ember assertion / exit-code-1 path. Live mode uses semantic
+decision allowances and reserves exit code 2 for model-observation misses;
+duplicate-state or scope/provenance regressions remain Ember failures. The provider
+configuration establishes fresh invocation intent,
 but the evaluation does not claim an observed external session identity that the
 proposal-generator contract does not expose.
 

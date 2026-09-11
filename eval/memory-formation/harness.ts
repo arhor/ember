@@ -72,6 +72,7 @@ export async function runMemoryFormationScenario(
     generator?: MemoryFormationGenerator,
 ) {
     validateScenario(scenario);
+    const liveEvaluation = generator !== undefined;
     const store = new StateStore(statePath);
     await store.create(initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at));
     const lease = await store.acquireWriteLease();
@@ -154,16 +155,18 @@ export async function runMemoryFormationScenario(
                           scenario.ember.scope,
                       )
                     : null;
-            const allowedDecisions = generator
+            const allowedDecisions = liveEvaluation
                 ? (episode.expect.live_decisions ?? [episode.expect.decision])
                 : [episode.expect.decision];
-            const modelObservationPassed =
-                allowedDecisions.includes(observedDecision) &&
-                (generator !== undefined ||
-                    episode.expect.reason === undefined ||
-                    observedReason === episode.expect.reason) &&
+            const exactScriptedExpectationPassed =
+                observedDecision === episode.expect.decision &&
+                (episode.expect.reason === undefined || observedReason === episode.expect.reason) &&
                 currentMatches;
-            const assertionPassed = memoryGeneratorInvoked && (provenance?.passed ?? true);
+            const liveModelObservationPassed = allowedDecisions.includes(observedDecision) && currentMatches;
+            const assertionPassed =
+                memoryGeneratorInvoked &&
+                (provenance?.passed ?? true) &&
+                (liveEvaluation || exactScriptedExpectationPassed);
             episodes.push({
                 id: episode.id,
                 restart: episode.restart ?? false,
@@ -180,7 +183,7 @@ export async function runMemoryFormationScenario(
                 projected_source_evidence_ids: projectedEvidenceIds,
                 current_meaning_count: state.meanings.filter((meaning) => meaning.currentness === "current").length,
                 ember_assertions_passed: assertionPassed,
-                model_observations_passed: modelObservationPassed,
+                model_observations_passed: liveEvaluation ? liveModelObservationPassed : true,
             });
             finalProjectedEvidenceIds = projectedEvidenceIds;
         }
@@ -202,10 +205,15 @@ export async function runMemoryFormationScenario(
     };
     return {
         report_version: 1,
+        evaluation_mode: liveEvaluation ? "live" : "deterministic",
         scenario_id: scenario.id,
         description: scenario.description,
         scorecard_input: true,
-        ember_assertions_passed: episodes.every((episode) => episode.ember_assertions_passed),
+        ember_assertions_passed:
+            episodes.every((episode) => episode.ember_assertions_passed) &&
+            (liveEvaluation
+                ? metrics.duplicate_adoption.count === 0 && metrics.scope_provenance_violations.count === 0
+                : metrics.all_zero),
         model_observations_passed: episodes.every((episode) => episode.model_observations_passed),
         metrics,
         context_size: {
