@@ -57,12 +57,12 @@ qualification. It does not assert certainty.
 
 The currently proposable canonical families are:
 
-| Kind           | Required ownership/provenance                                                                                              | Supersession                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `fact`         | Owner must agree with user testimony, Ember inference/direct observation, external claim, or delegated report attribution. | May target a current fact in the exact same owner/slot/scope.       |
-| `preference`   | Current user ownership and durable user testimony.                                                                         | May target a current preference in the exact same owner/slot/scope. |
-| `relationship` | Current relationship ownership, fixed `relationship` slot, and durable user testimony.                                     | Unsupported in v1.                                                  |
-| `episode_meta` | Ember or current relationship ownership and durable user testimony in v1.                                                  | Unsupported in v1.                                                  |
+| Kind           | Required ownership/provenance                                                                                              | Supersession                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `fact`         | Owner must agree with user testimony, Ember inference/direct observation, external claim, or delegated report attribution. | Only a user-owned user-testimony fact may target a current user-testimony fact in the exact same owner/slot/scope. |
+| `preference`   | Current user ownership and durable user testimony.                                                                         | May target a current preference in the exact same owner/slot/scope.                                                |
+| `relationship` | Current relationship ownership, fixed `relationship` slot, and durable user testimony.                                     | Unsupported in v1.                                                                                                 |
+| `episode_meta` | Ember or current relationship ownership and durable user testimony in v1.                                                  | Unsupported in v1.                                                                                                 |
 
 `commitment` is an explicit `unsupported` assessment. A statement in conversation may
 be evidence relevant to an undertaking, but it cannot manufacture an Ember-owned
@@ -77,12 +77,17 @@ Every source evidence ID must resolve in the current durable `EmberState.evidenc
 collection. Free-floating text, provider metadata, conversation/session IDs, or an
 unpersisted transcript fragment cannot ground a proposal.
 
-All grounding evidence must share the proposed scope. The proposed epistemic role must
-also retain its source distinction: user testimony requires user-command evidence,
-external claims require external-claim evidence, direct observations require
-Ember-observation evidence, and delegated reports require delegated-report evidence.
-An Ember inference may cite its underlying durable evidence without relabelling that
-evidence as user testimony.
+All grounding evidence must share the proposed scope. Unavailable user detail cannot
+ground a content-bearing proposal: its surviving ID preserves a truthful gap, not the
+forgotten payload or authority to reconstruct it.
+
+Every cited item must retain the proposed epistemic distinction: user testimony
+requires only user-command evidence, direct observations require only
+Ember-observation evidence, and external/delegated evidence must additionally have a
+source actor matching the proposed owner. An Ember inference is the deliberate
+exception: a proposal cites its underlying durable roots, while later adoption would
+have to create the Ember-inference evidence required by the canonical meaning model.
+It may not relabel those roots as user testimony.
 
 These checks establish traceability, not truth. Evidence-grounded proposals can still
 be stale, conflicting, over-broad, insufficiently significant, or too uncertain to
@@ -107,10 +112,12 @@ mutation are deliberately deferred to issue #222.
 
 ## Supersession constraints
 
-A supersession target must exist, remain current, support supersession in the current
-canonical model, and occupy the exact same kind/owner/slot/scope. The proposal does not
-itself change either meaning. This prevents a generated candidate from silently
-retiring unrelated or already historical state.
+A supersession proposal and its target must both be user-owned user testimony, because
+that is the only correction path supported by the canonical v1 model. The target must
+exist, remain current, and occupy the exact same kind/owner/slot/scope. The proposal
+does not itself change either meaning. This prevents a generated candidate from
+silently retiring unrelated, already historical, inferred, observed, external, or
+delegated state.
 
 Relationship and episode-meta supersession remain unsupported because the canonical
 v1 meaning model does not support those transitions. Commitment lifecycle changes use

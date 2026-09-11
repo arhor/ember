@@ -63,6 +63,7 @@ export type InvalidMemoryProposalReason =
     | "invalid_representation"
     | "missing_evidence"
     | "duplicate_evidence"
+    | "unavailable_evidence"
     | "evidence_scope_mismatch"
     | "semantic_mismatch"
     | "invalid_supersession";
@@ -137,6 +138,12 @@ export function assessMemoryProposal(state: EmberState, candidate: unknown): Mem
     if (evidence.some((item) => item!.scope !== typed.scope)) {
         return invalid("evidence_scope_mismatch", "proposal evidence cannot cross the proposed scope");
     }
+    if (evidence.some((item) => item!.sourceRole === "user_command" && item!.availability === "unavailable")) {
+        return invalid(
+            "unavailable_evidence",
+            "unavailable user evidence cannot ground a content-bearing memory proposal",
+        );
+    }
 
     const semanticError = validateKindSemantics(state.runtimeContract.localPrincipal, typed);
     if (semanticError) return invalid("semantic_mismatch", semanticError);
@@ -207,18 +214,18 @@ function validateKindSemantics(principal: string, proposal: MemoryProposalCandid
 }
 
 function validateProvenance(proposal: MemoryProposalCandidate, evidence: EmberState["evidence"]): string | null {
-    const requiredRole =
-        proposal.epistemic_role === "user_testimony"
-            ? "user_command"
-            : proposal.epistemic_role === "external_claim"
-              ? "external_claim"
-              : proposal.epistemic_role === "direct_observation"
-                ? "ember_observation"
-                : proposal.epistemic_role === "delegated_report"
-                  ? "delegated_report"
-                  : null;
-    if (requiredRole !== null && !evidence.some((item) => item.sourceRole === requiredRole))
-        return `proposal epistemic role requires durable ${requiredRole} evidence`;
+    if (proposal.epistemic_role === "ember_inference") return null;
+
+    const matches = evidence.every((item) => {
+        if (proposal.epistemic_role === "user_testimony") return item.sourceRole === "user_command";
+        if (proposal.epistemic_role === "direct_observation") return item.sourceRole === "ember_observation";
+        if (proposal.epistemic_role === "external_claim")
+            return item.sourceRole === "external_claim" && item.sourceActor === proposal.owner;
+        if (proposal.epistemic_role === "delegated_report")
+            return item.sourceRole === "delegated_report" && item.sourceActor === proposal.owner;
+        return false;
+    });
+    if (!matches) return "every cited evidence item must preserve the proposal's epistemic role and source actor";
     return null;
 }
 
@@ -227,9 +234,16 @@ function validateSupersession(state: EmberState, proposal: MemoryProposalCandida
     if (targetId === null) return null;
     if (!(["fact", "preference"] as MeaningKind[]).includes(proposal.kind))
         return `${proposal.kind} proposals do not support supersession in v1`;
+    if (
+        proposal.epistemic_role !== "user_testimony" ||
+        proposal.owner !== `user:${state.runtimeContract.localPrincipal}`
+    )
+        return "v1 supersession supports only user-owned user-testimony facts and preferences";
     const target = state.meanings.find((meaning) => meaning.meaningId === targetId);
     if (!target) return "supersession target does not exist";
     if (target.currentness !== "current") return "supersession target must still be current";
+    if (target.epistemicRole !== "user_testimony" || target.owner !== `user:${state.runtimeContract.localPrincipal}`)
+        return "v1 supersession target must be user-owned user testimony";
     if (
         target.kind !== proposal.kind ||
         target.owner !== proposal.owner ||

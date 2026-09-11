@@ -6,7 +6,15 @@ import type { EvidenceId } from "./model.ts";
 
 import { assessMemoryProposal } from "./memory-proposal.ts";
 import { initialState } from "./model.ts";
-import { rememberFact, userEvidence } from "./semantics.ts";
+import {
+    attachDetail,
+    rememberDirectObservation,
+    rememberEpisode,
+    rememberExternalClaim,
+    rememberFact,
+    userEvidence,
+    withholdDetail,
+} from "./semantics.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";
@@ -66,6 +74,40 @@ test("missing, duplicate, and cross-scope evidence are invalid explicitly", () =
     assert.deepEqual(crossScope.status === "invalid" ? crossScope.reason : null, "evidence_scope_mismatch");
 });
 
+test("unavailable user detail cannot regenerate content through a proposal", () => {
+    const state = initialState("Ember", PRINCIPAL);
+    const episodeId = rememberEpisode(state, PRINCIPAL, "milestone", "ember", SCOPE, "A private milestone occurred");
+    const detailId = attachDetail(state, PRINCIPAL, episodeId, "The unavailable exact private detail");
+    withholdDetail(state, PRINCIPAL, detailId);
+
+    const result = assessMemoryProposal(state, candidate(detailId));
+
+    assert.deepEqual(result.status === "invalid" ? result.reason : null, "unavailable_evidence");
+});
+
+test("every evidence item must match canonical provenance and attributed source actor", () => {
+    const state = initialState("Ember", PRINCIPAL);
+    const user = userEvidence(state, PRINCIPAL, SCOPE, "A mixed source claim");
+    rememberExternalClaim(state, PRINCIPAL, "source-b", "weather", SCOPE, "The forecast says rain");
+    const external = state.evidence.at(-1)!;
+    const externalCandidate = candidate(external.evidenceId, {
+        kind: "fact",
+        owner: "external:source-a",
+        slot: "weather",
+        epistemic_role: "external_claim",
+    });
+
+    const wrongActor = assessMemoryProposal(state, externalCandidate);
+    const mixed = assessMemoryProposal(state, {
+        ...externalCandidate,
+        owner: "external:source-b",
+        source_evidence_ids: [external.evidenceId, user.evidenceId],
+    });
+
+    assert.deepEqual(wrongActor.status === "invalid" ? wrongActor.reason : null, "semantic_mismatch");
+    assert.deepEqual(mixed.status === "invalid" ? mixed.reason : null, "semantic_mismatch");
+});
+
 test("commitment proposal is an explicit unsupported state", () => {
     const state = initialState("Ember", PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "You should promise to check tomorrow");
@@ -106,6 +148,26 @@ test("supersession must target the current meaning in the same semantic slot", (
 
     assert.equal(valid.status, "valid");
     assert.deepEqual(wrongSlot.status === "invalid" ? wrongSlot.reason : null, "invalid_supersession");
+});
+
+test("v1 supersession rejects non-user-testimony facts", () => {
+    const state = initialState("Ember", PRINCIPAL);
+    const oldId = rememberDirectObservation(state, PRINCIPAL, "build-status", SCOPE, "The build failed");
+    const evidence = state.evidence.at(-1)!;
+
+    const result = assessMemoryProposal(
+        state,
+        candidate(evidence.evidenceId, {
+            kind: "fact",
+            owner: "ember",
+            slot: "build-status",
+            content: "The build passed",
+            epistemic_role: "direct_observation",
+            supersedes_meaning_id: oldId,
+        }),
+    );
+
+    assert.deepEqual(result.status === "invalid" ? result.reason : null, "invalid_supersession");
 });
 
 test("unknown shapes and unknown proposal kinds are invalid rather than silently coerced", () => {
