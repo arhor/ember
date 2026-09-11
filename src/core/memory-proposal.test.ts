@@ -221,6 +221,26 @@ test("adoption creates canonical meaning from durable evidence without mutating 
     assert.equal(result.state.meanings[0]!.learnedAt, "2026-09-11T12:01:00Z");
 });
 
+test("adoption is repeatable for identical deterministic inputs", () => {
+    const state = initialState("Ember", PRINCIPAL);
+    const evidence = userEvidence(state, PRINCIPAL, SCOPE, "The build log reports a recurring issue");
+    const proposal = proposed(
+        state,
+        candidate(evidence.evidenceId, {
+            kind: "fact",
+            owner: "ember",
+            slot: "build-pattern",
+            content: "The failure appears recurrent",
+            epistemic_role: "ember_inference",
+        }),
+    );
+
+    const first = resolveMemoryProposal(state, proposal, state.revision, { decidedAt: "2026-09-11T12:01:00Z" });
+    const second = resolveMemoryProposal(state, proposal, state.revision, { decidedAt: "2026-09-11T12:01:00Z" });
+
+    assert.deepEqual(first, second);
+});
+
 test("duplicate and implicit conflict proposals are rejected explicitly", () => {
     const state = initialState("Ember", PRINCIPAL);
     const existingId = rememberPreference(
@@ -287,6 +307,34 @@ test("explicit supersession preserves historical meaning, links, and correction 
     )!;
     assert.deepEqual([old.currentness, old.supersededBy], ["superseded", replacement.meaningId]);
     assert.deepEqual([replacement.supersedes, replacement.sourceEvidenceIds], [oldId, [evidence.evidenceId]]);
+});
+
+test("explicit no-op supersession is rejected without manufacturing correction history", () => {
+    const state = initialState("Ember", PRINCIPAL);
+    const oldId = rememberPreference(
+        state,
+        PRINCIPAL,
+        `user:${PRINCIPAL}`,
+        "response-style",
+        SCOPE,
+        "The user prefers concise responses",
+    );
+    const old = state.meanings.find((meaning) => meaning.meaningId === oldId)!;
+    const evidence = userEvidence(state, PRINCIPAL, SCOPE, "I still prefer concise responses");
+    const proposal = proposed(
+        state,
+        candidate(evidence.evidenceId, {
+            applicable_from: old.applicableFrom,
+            uncertainty: old.uncertainty,
+            supersedes_meaning_id: oldId,
+        }),
+    );
+
+    const result = resolveMemoryProposal(state, proposal, state.revision, { decidedAt: "2026-09-11T12:01:00Z" });
+
+    assert.equal(result.proposal.status === "rejected" && result.proposal.resolution.reason, "duplicate");
+    assert.deepEqual(result.state, state);
+    assert.deepEqual([old.currentness, old.supersededBy], ["current", null]);
 });
 
 test("stale revision and stale supersession fail closed without canonical mutation", () => {

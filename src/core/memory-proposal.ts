@@ -8,8 +8,8 @@ import type {
     MeaningKind,
 } from "./model.ts";
 
-import { exactKeys, isNotBlankString, isObject } from "../util.ts";
-import { isRfc3339Utc, newId, validateState } from "./model.ts";
+import { contentDigest, exactKeys, isNotBlankString, isObject } from "../util.ts";
+import { isRfc3339Utc, validateState } from "./model.ts";
 
 export type MemoryProposalId = `memory-proposal-${string}`;
 export type ProposableMeaningKind = Exclude<MeaningKind, "commitment">;
@@ -73,6 +73,7 @@ export type MemoryProposalRejectionReason =
     | "conflict_requires_supersession"
     | "supersession_stale"
     | "proposal_no_longer_valid"
+    | "deterministic_id_collision"
     | "insufficient_confidence";
 
 export interface MemoryProposalResolution {
@@ -205,9 +206,9 @@ export function resolveMemoryProposal(
     }
 
     const current = currentSlotMeanings(state, proposal);
+    if (current.some((meaning) => sameMeaning(meaning, proposal)))
+        return rejected(state, proposal, decidedAt, "duplicate");
     if (proposal.supersedes_meaning_id === null) {
-        if (current.some((meaning) => sameMeaning(meaning, proposal)))
-            return rejected(state, proposal, decidedAt, "duplicate");
         if (current.length > 0) return rejected(state, proposal, decidedAt, "conflict_requires_supersession");
     }
     if (Object.values(proposal.confidence).some((confidence) => confidence === "low"))
@@ -215,9 +216,15 @@ export function resolveMemoryProposal(
 
     const nextState = structuredClone(state);
     let sourceEvidenceIds = [...proposal.source_evidence_ids];
+    const meaningId = deterministicAdoptionId("meaning", state, proposal, decidedAt) as MeaningId;
+    if (state.meanings.some((meaning) => meaning.meaningId === meaningId))
+        return rejected(state, proposal, decidedAt, "deterministic_id_collision");
     if (proposal.epistemic_role === "ember_inference") {
+        const evidenceId = deterministicAdoptionId("evidence", state, proposal, decidedAt) as EvidenceId;
+        if (state.evidence.some((evidence) => evidence.evidenceId === evidenceId))
+            return rejected(state, proposal, decidedAt, "deterministic_id_collision");
         const inference: EmberInferenceEvidence = {
-            evidenceId: newId("evidence"),
+            evidenceId,
             sourceRole: "ember_inference",
             sourceActor: "ember",
             occurredAt: decidedAt,
@@ -230,7 +237,6 @@ export function resolveMemoryProposal(
         sourceEvidenceIds = [inference.evidenceId];
     }
 
-    const meaningId = newId("meaning");
     const meaning = proposalMeaning(proposal, meaningId, sourceEvidenceIds, decidedAt);
     if (proposal.supersedes_meaning_id !== null) {
         const old = nextState.meanings.find((item) => item.meaningId === proposal.supersedes_meaning_id)!;
@@ -243,6 +249,26 @@ export function resolveMemoryProposal(
         proposal: { ...proposal, status: "adopted", resolution: { decided_at: decidedAt, meaning_id: meaningId } },
         state: nextState,
     };
+}
+
+function deterministicAdoptionId(
+    prefix: "meaning" | "evidence",
+    state: EmberState,
+    proposal: ProposedMemoryProposal,
+    decidedAt: string,
+): string {
+    const digest = contentDigest(
+        JSON.stringify([
+            "memory-adoption-v1",
+            prefix,
+            state.lineage.lineageId,
+            state.revision,
+            proposal.proposal_id,
+            proposal.proposed_at,
+            decidedAt,
+        ]),
+    );
+    return `${prefix}-${digest.slice("sha256:".length)}`;
 }
 
 function rejected(

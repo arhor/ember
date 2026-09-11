@@ -124,7 +124,14 @@ The policy fails closed with inspectable rejection reasons when the expected rev
 is stale, the proposal no longer validates, any confidence dimension is `low`, an
 identical current meaning already exists, or a different current meaning occupies the
 same semantic slot without explicit supersession. Content alone never acts as an
-implicit correction.
+implicit correction, and naming an identical current meaning as a supersession target
+does not manufacture a correction edge.
+
+Adopted meaning and inference-evidence IDs are derived from a canonical tuple of the
+lineage, revision, proposal identity and time, decision time, and ID role. Resolution
+therefore returns the same lifecycle record and replacement state for identical
+deterministic inputs. A collision with an existing canonical ID rejects the proposal
+rather than overwriting or ambiguously reusing canonical identity.
 
 Adoption copies the proposal's semantic metadata and durable evidence links into the
 canonical meaning. Ember inference is the exception required by the canonical model:
@@ -151,8 +158,9 @@ their existing explicit transition boundary rather than memory proposal superses
 `src/core/memory-proposal.test.ts` covers non-mutating valid assessment and resolution,
 missing and duplicate evidence, cross-scope evidence, unsupported commitment formation,
 adoption, duplicate/conflict rejection, confidence rejection, exact-slot supersession,
-stale revisions and targets, inference provenance, unknown fields, and unknown kinds.
-Type tests keep proposed, adopted, and rejected lifecycle records distinct.
+no-op supersession, repeatable deterministic materialization, stale revisions and
+targets, inference provenance, unknown fields, and unknown kinds. Type tests keep
+proposed, adopted, and rejected lifecycle records distinct.
 
 ## Traceability
 
