@@ -23,10 +23,10 @@ boundaries:
 durable evidence -> proposed memory -> deterministic adoption policy -> canonical meaning
 ```
 
-This document and `src/core/memory-proposal.ts` define the first arrow and the proposal
-lifecycle. Issue #222 owns adoption policy. Issue #223 may later use structured AI SDK
-output to produce candidate syntax, but provider and SDK types do not participate in
-this contract.
+This document and `src/core/memory-proposal.ts` define the first arrow, the proposal
+lifecycle, and issue #222's deterministic adoption policy. Issue #223 may later use
+structured AI SDK output to produce candidate syntax, but provider and SDK types do
+not participate in this contract.
 
 Assessing a candidate is read-only. A valid assessment produces a proposal whose
 status is `proposed`; it does not append to `EmberState.meanings`, supersede an existing
@@ -111,8 +111,34 @@ The contract distinguishes:
 
 Invalid and unsupported assessments are not proposal lifecycle transitions: no valid
 proposal was established. Adoption and rejection records carry decision time, and an
-adopted record carries the new meaning ID. The transition mechanics and canonical
-mutation are deliberately deferred to issue #222.
+adopted record carries the new meaning ID.
+
+## Deterministic adoption policy
+
+`resolveMemoryProposal` resolves an assessed proposal against an explicit expected
+canonical revision and returns a replacement state rather than mutating either input.
+Callers remain responsible for committing that replacement through the state store's
+matching optimistic-revision boundary.
+
+The policy fails closed with inspectable rejection reasons when the expected revision
+is stale, the proposal no longer validates, any confidence dimension is `low`, an
+identical current meaning already exists, or a different current meaning occupies the
+same semantic slot without explicit supersession. Content alone never acts as an
+implicit correction, and naming an identical current meaning as a supersession target
+does not manufacture a correction edge.
+
+Adopted meaning and inference-evidence IDs are derived from a canonical tuple of the
+lineage, revision, proposal identity and time, decision time, and ID role. Resolution
+therefore returns the same lifecycle record and replacement state for identical
+deterministic inputs. A collision with an existing canonical ID rejects the proposal
+rather than overwriting or ambiguously reusing canonical identity.
+
+Adoption copies the proposal's semantic metadata and durable evidence links into the
+canonical meaning. Ember inference is the exception required by the canonical model:
+adoption creates one Ember-inference evidence occurrence derived from the proposal's
+durable roots, then cites that occurrence. Explicit supersession atomically installs
+reciprocal predecessor/successor links, removes current authority from the old meaning,
+and retains both the old meaning and the new proposal evidence as truthful history.
 
 ## Supersession constraints
 
@@ -129,15 +155,17 @@ their existing explicit transition boundary rather than memory proposal superses
 
 ## Deterministic coverage
 
-`src/core/memory-proposal.test.ts` covers non-mutating valid assessment, missing and
-duplicate evidence, cross-scope evidence, unsupported commitment formation, exact-slot
-supersession, unknown fields, and unknown kinds. Type tests keep proposed, adopted, and
-rejected lifecycle records distinct.
+`src/core/memory-proposal.test.ts` covers non-mutating valid assessment and resolution,
+missing and duplicate evidence, cross-scope evidence, unsupported commitment formation,
+adoption, duplicate/conflict rejection, confidence rejection, exact-slot supersession,
+no-op supersession, repeatable deterministic materialization, stale revisions and
+targets, inference provenance, unknown fields, and unknown kinds. Type tests keep
+proposed, adopted, and rejected lifecycle records distinct.
 
 ## Traceability
 
 This boundary applies the memory research distinction between retention and
 remembering, preserves ADR 0002's provenance/scope/currentness/lifecycle requirements,
 and maintains ADR 0004's separation of evidence or model confidence from authority.
-It implements issue #221 without pre-implementing epic #220's later generation,
-adoption-policy, or longitudinal-evaluation children.
+It implements issues #221 and #222 without pre-implementing epic #220's later proposal
+generation or longitudinal-evaluation children.
