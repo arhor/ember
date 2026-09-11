@@ -85,6 +85,7 @@ export interface SurfaceInteractionOptions extends Omit<
 export interface SurfaceInteractionResult {
     state: EmberState;
     providerFailure: string | null;
+    memoryProposalFailure: string | null;
     cognitionId: CognitionId;
     cognitionStatus: CognitionStatus;
     occurrenceId: string;
@@ -469,6 +470,7 @@ export async function runSurfaceInteraction(
                 existing.status === "completed"
                     ? null
                     : `transport replay suppressed; existing cognition status is ${existing.status}`,
+            memoryProposalFailure: null,
             cognitionId,
             cognitionStatus: existing.status,
             occurrenceId: accepted.record.occurrence_id,

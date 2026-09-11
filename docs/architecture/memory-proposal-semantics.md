@@ -53,6 +53,10 @@ rejected rather than counted as corroboration.
 `uncertainty: null` explicitly says that the proposer supplied no uncertainty
 qualification. It does not assert certainty.
 
+Issue #223 implements the model-backed next boundary in
+[`conversation-memory-proposal-generation.md`](conversation-memory-proposal-generation.md).
+Generated candidates remain subject to every contract in this document.
+
 ## Supported proposal kinds
 
 The currently proposable canonical families are:
@@ -167,5 +171,6 @@ proposed, adopted, and rejected lifecycle records distinct.
 This boundary applies the memory research distinction between retention and
 remembering, preserves ADR 0002's provenance/scope/currentness/lifecycle requirements,
 and maintains ADR 0004's separation of evidence or model confidence from authority.
-It implements issues #221 and #222 without pre-implementing epic #220's later proposal
-generation or longitudinal-evaluation children.
+It implements issues #221 and #222. Issue #223's generation boundary composes this
+contract without changing it; epic #220's longitudinal-evaluation child remains
+separate.

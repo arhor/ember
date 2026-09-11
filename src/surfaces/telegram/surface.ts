@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
 import type { CognitionId } from "../../core/model.ts";
+import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
 import { ValidationError } from "../../core/errors.ts";
@@ -226,7 +227,17 @@ export async function processTelegramUpdate(
     config: TelegramSurfaceConfig,
     api: TelegramDeliveryApi,
     update: TelegramUpdate,
-    { provider, signal }: { provider?: ProviderInvoker | undefined; signal?: AbortSignal | undefined } = {},
+    {
+        provider,
+        memoryProposalGenerator,
+        memoryProposalProviderLabel,
+        signal,
+    }: {
+        provider?: ProviderInvoker | undefined;
+        memoryProposalGenerator?: MemoryProposalGenerator | undefined;
+        memoryProposalProviderLabel?: string | undefined;
+        signal?: AbortSignal | undefined;
+    } = {},
 ): Promise<TelegramUpdateOutcome> {
     validateTelegramSurfaceConfig(config);
     const inbound = selectTelegramInbound(update, config);
@@ -251,6 +262,12 @@ export async function processTelegramUpdate(
                 providerLabel: providerLabel(config.provider_command),
                 provider: selectedProvider,
                 timeoutSeconds: config.provider_timeout_seconds,
+                ...(memoryProposalGenerator === undefined
+                    ? {}
+                    : {
+                          memoryProposalGenerator,
+                          ...(memoryProposalProviderLabel === undefined ? {} : { memoryProposalProviderLabel }),
+                      }),
                 signal,
                 surfaceId: TELEGRAM_SURFACE_ID,
                 principalProvenance: "configured_surface_mapping",

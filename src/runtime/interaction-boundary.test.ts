@@ -104,6 +104,35 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
     }
 });
 
+test("surface delivery representation should be durable before memory reflection starts", async () => {
+    const f = await fixture();
+    try {
+        let reflected = false;
+        const delivered: string[] = [];
+        const result = await runSurfaceInteraction(f.store, f.state, {
+            ...options(f.runtimeId, countingProvider({ value: 0 }), (text) => {
+                delivered.push(text);
+            }),
+            surfaceId: "local_cli",
+            principalProvenance: "explicit_local_argument",
+            memoryProposalGenerator: async () => {
+                const ledger = await new InteractionLedgerStore(f.store.path).load();
+                assert.equal(ledger.deliveries.length, 1);
+                assert.equal(ledger.deliveries[0]?.representation?.text, "reply\n");
+                assert.deepEqual(ledger.deliveries[0]?.attempts, []);
+                reflected = true;
+                return { contractVersion: 1, candidates: [] };
+            },
+        });
+
+        assert.equal(reflected, true);
+        assert.equal(result.memoryProposalFailure, null);
+        assert.deepEqual(delivered, ["reply\n"]);
+    } finally {
+        await f.close();
+    }
+});
+
 test("replayed messaging update reuses one occurrence and does not repeat cognition or delivery", async () => {
     const f = await fixture();
     try {

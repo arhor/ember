@@ -4,6 +4,7 @@ import { EmberError, ValidationError } from "../../core/errors.ts";
 import { initialState } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
 import { supersede } from "../../core/semantics.ts";
+import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
 import { InteractionLedgerStore, interactionLedgerInspectionView } from "../../runtime/interaction-boundary.ts";
@@ -65,6 +66,7 @@ export async function main(
                 const view = {
                     ...inspectionView(state),
                     interactions: interactionLedgerInspectionView(await new InteractionLedgerStore(store.path).load()),
+                    memoryProposalGenerations: (await new MemoryProposalGenerationStore(store.path).load()).generations,
                 };
                 io.output.write(args.json ? `${JSON.stringify(view, null, 2)}\n` : renderInspection(view));
                 break;
@@ -128,6 +130,7 @@ async function loadForPrincipal(store: StateStore, principal: string) {
 
 type InspectionView = ReturnType<typeof inspectionView> & {
     interactions: ReturnType<typeof interactionLedgerInspectionView>;
+    memoryProposalGenerations: Awaited<ReturnType<MemoryProposalGenerationStore["load"]>>["generations"];
 };
 function renderInspection(view: InspectionView) {
     let text = `Lineage ${view.lineage.lineageId} (${view.lineage.displayName}), revision ${view.revision}\nConstitutive boundaries:\n`;
@@ -140,6 +143,7 @@ function renderInspection(view: InspectionView) {
         ["Cognition episodes", view.cognitionEpisodes],
         ["Interaction occurrences", view.interactions.inbound_occurrences],
         ["Delivery records", view.interactions.deliveries],
+        ["Memory proposal generations", view.memoryProposalGenerations],
     ];
     for (const [label, items] of sections) {
         text += `${label}:\n`;

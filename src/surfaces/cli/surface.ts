@@ -3,6 +3,7 @@ import type { Readable, Writable } from "node:stream";
 import { createInterface } from "node:readline";
 
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
+import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
@@ -33,6 +34,8 @@ export interface CliSurfaceConfig {
     providerCommand: string;
     providerArgs: string[];
     providerTimeoutSeconds: number;
+    memoryProposalGenerator?: MemoryProposalGenerator;
+    memoryProposalProviderLabel?: string;
 }
 
 interface CliSurfaceIo {
@@ -91,6 +94,12 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             text: line,
                             ...configuredCognitionProvider(config),
                             timeoutSeconds: config.providerTimeoutSeconds,
+                            ...(config.memoryProposalGenerator === undefined
+                                ? {}
+                                : {
+                                      memoryProposalGenerator: config.memoryProposalGenerator,
+                                      memoryProposalProviderLabel: config.memoryProposalProviderLabel,
+                                  }),
                             signal,
                             surfaceId: "local_cli",
                             principalProvenance: "explicit_local_argument",
@@ -99,6 +108,8 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                     );
                     state = result.state;
                     if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
+                    if (result.memoryProposalFailure)
+                        io.error.write(`memory proposal: ${result.memoryProposalFailure}\n`);
                 }
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);

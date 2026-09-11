@@ -126,7 +126,10 @@ async function closeSourceFixture(fixture: SourceFixture) {
     try {
         await fixture.source.close();
     } finally {
-        await rm(fixture.directory, { recursive: true, force: true });
+        // The timed-out stdio fixture can finish an already-scheduled log append
+        // while transport shutdown is completing. Let recursive removal retry that
+        // transient ENOTEMPTY race instead of making the acceptance suite flaky.
+        await rm(fixture.directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 });
     }
 }
 
