@@ -1,7 +1,15 @@
-import type { EmberState, EpistemicRole, EvidenceId, MeaningId, MeaningKind } from "./model.ts";
+import type {
+    EmberInferenceEvidence,
+    EmberState,
+    EpistemicRole,
+    EvidenceId,
+    Meaning,
+    MeaningId,
+    MeaningKind,
+} from "./model.ts";
 
 import { exactKeys, isNotBlankString, isObject } from "../util.ts";
-import { isRfc3339Utc, validateState } from "./model.ts";
+import { isRfc3339Utc, newId, validateState } from "./model.ts";
 
 export type MemoryProposalId = `memory-proposal-${string}`;
 export type ProposableMeaningKind = Exclude<MeaningKind, "commitment">;
@@ -53,11 +61,24 @@ export interface RejectedMemoryProposal extends MemoryProposalBase {
     status: "rejected";
     resolution: {
         decided_at: string;
-        reason: string;
+        reason: MemoryProposalRejectionReason;
     };
 }
 
 export type MemoryProposal = ProposedMemoryProposal | AdoptedMemoryProposal | RejectedMemoryProposal;
+
+export type MemoryProposalRejectionReason =
+    | "stale_revision"
+    | "duplicate"
+    | "conflict_requires_supersession"
+    | "supersession_stale"
+    | "proposal_no_longer_valid"
+    | "insufficient_confidence";
+
+export interface MemoryProposalResolution {
+    proposal: AdoptedMemoryProposal | RejectedMemoryProposal;
+    state: EmberState;
+}
 
 export type InvalidMemoryProposalReason =
     | "invalid_representation"
@@ -154,6 +175,136 @@ export function assessMemoryProposal(state: EmberState, candidate: unknown): Mem
     if (supersessionError) return invalid("invalid_supersession", supersessionError);
 
     return { status: "valid", proposal: { ...typed, status: "proposed", resolution: null } };
+}
+
+/**
+ * Deterministically resolves an assessed proposal against one canonical revision.
+ * The input state and proposal remain unchanged; callers may commit the returned
+ * state with the same expected revision through the canonical state store.
+ */
+export function resolveMemoryProposal(
+    state: EmberState,
+    proposal: ProposedMemoryProposal,
+    expectedRevision: number,
+    { decidedAt }: { decidedAt: string },
+): MemoryProposalResolution {
+    validateState(state);
+    if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)
+        throw new TypeError("expectedRevision must be a non-negative safe integer");
+    if (!isRfc3339Utc(decidedAt)) throw new TypeError("decidedAt must be RFC 3339 UTC");
+
+    const candidate = proposalCandidate(proposal);
+    const reassessment = assessMemoryProposal(state, candidate);
+    if (state.revision !== expectedRevision) return rejected(state, proposal, decidedAt, "stale_revision");
+    if (reassessment.status !== "valid") {
+        const reason =
+            reassessment.status === "invalid" && reassessment.reason === "invalid_supersession"
+                ? "supersession_stale"
+                : "proposal_no_longer_valid";
+        return rejected(state, proposal, decidedAt, reason);
+    }
+
+    const current = currentSlotMeanings(state, proposal);
+    if (proposal.supersedes_meaning_id === null) {
+        if (current.some((meaning) => sameMeaning(meaning, proposal)))
+            return rejected(state, proposal, decidedAt, "duplicate");
+        if (current.length > 0) return rejected(state, proposal, decidedAt, "conflict_requires_supersession");
+    }
+    if (Object.values(proposal.confidence).some((confidence) => confidence === "low"))
+        return rejected(state, proposal, decidedAt, "insufficient_confidence");
+
+    const nextState = structuredClone(state);
+    let sourceEvidenceIds = [...proposal.source_evidence_ids];
+    if (proposal.epistemic_role === "ember_inference") {
+        const inference: EmberInferenceEvidence = {
+            evidenceId: newId("evidence"),
+            sourceRole: "ember_inference",
+            sourceActor: "ember",
+            occurredAt: decidedAt,
+            observedAt: decidedAt,
+            derivedFromEvidenceIds: sourceEvidenceIds as [EvidenceId, ...EvidenceId[]],
+            scope: proposal.scope,
+            payloadMode: "descriptor_only",
+        };
+        nextState.evidence.push(inference);
+        sourceEvidenceIds = [inference.evidenceId];
+    }
+
+    const meaningId = newId("meaning");
+    const meaning = proposalMeaning(proposal, meaningId, sourceEvidenceIds, decidedAt);
+    if (proposal.supersedes_meaning_id !== null) {
+        const old = nextState.meanings.find((item) => item.meaningId === proposal.supersedes_meaning_id)!;
+        old.currentness = "superseded";
+        old.supersededBy = meaningId;
+    }
+    nextState.meanings.push(meaning);
+    validateState(nextState);
+    return {
+        proposal: { ...proposal, status: "adopted", resolution: { decided_at: decidedAt, meaning_id: meaningId } },
+        state: nextState,
+    };
+}
+
+function rejected(
+    state: EmberState,
+    proposal: ProposedMemoryProposal,
+    decidedAt: string,
+    reason: MemoryProposalRejectionReason,
+): MemoryProposalResolution {
+    return {
+        proposal: { ...proposal, status: "rejected", resolution: { decided_at: decidedAt, reason } },
+        state: structuredClone(state),
+    };
+}
+
+function proposalCandidate(proposal: ProposedMemoryProposal): MemoryProposalCandidate {
+    const { status: _status, resolution: _resolution, ...candidate } = proposal;
+    return candidate;
+}
+
+function currentSlotMeanings(state: EmberState, proposal: ProposedMemoryProposal): Meaning[] {
+    return state.meanings.filter(
+        (meaning) =>
+            meaning.currentness === "current" &&
+            meaning.kind === proposal.kind &&
+            meaning.owner === proposal.owner &&
+            meaning.slot === proposal.slot &&
+            meaning.scope === proposal.scope,
+    );
+}
+
+function sameMeaning(meaning: Meaning, proposal: ProposedMemoryProposal): boolean {
+    return (
+        meaning.content === proposal.content &&
+        meaning.epistemicRole === proposal.epistemic_role &&
+        meaning.uncertainty === proposal.uncertainty
+    );
+}
+
+function proposalMeaning(
+    proposal: ProposedMemoryProposal,
+    meaningId: MeaningId,
+    sourceEvidenceIds: EvidenceId[],
+    learnedAt: string,
+): Meaning {
+    const base = {
+        meaningId,
+        owner: proposal.owner,
+        slot: proposal.slot,
+        scope: proposal.scope,
+        content: proposal.content,
+        sourceEvidenceIds,
+        epistemicRole: proposal.epistemic_role,
+        learnedAt,
+        applicableFrom: proposal.applicable_from,
+        applicableUntil: proposal.applicable_until,
+        currentness: "current" as const,
+        prospectiveLifecycle: "none" as const,
+        supersedes: proposal.supersedes_meaning_id,
+        supersededBy: null,
+        uncertainty: proposal.uncertainty,
+    };
+    return { ...base, kind: proposal.kind } as Meaning;
 }
 
 function invalid(reason: InvalidMemoryProposalReason, detail: string): MemoryProposalAssessment {
