@@ -14,6 +14,8 @@ import { initialState } from "../core/model.ts";
 import { userEvidence } from "../core/semantics.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
+import { runCognition, startRuntime } from "../runtime/runtime.ts";
+import { cloneState } from "../util.ts";
 import {
     createAiSdkMemoryProposalGenerator,
     generateAndAdoptConversationMemories,
@@ -168,5 +170,97 @@ test("AI SDK provider failure should remain distinct from no proposal and avoid 
         assert.equal(ledger.generations[0]?.failure?.includes("secret"), false);
     } finally {
         await cleanup(f);
+    }
+});
+
+test("malformed SDK-independent candidates should persist as invalid instead of stranding generation", async () => {
+    const f = await fixture();
+    try {
+        const result = await generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            timestamp: AT,
+            generator: async () => ({ contractVersion: 1, candidates: [{ content: "missing fields" }] }),
+        });
+        assert.equal(result.outcomes[0]?.status, "invalid");
+        const ledger = await new MemoryProposalGenerationStore(f.store.path).load();
+        assert.deepEqual(
+            [ledger.generations[0]?.status, ledger.generations[0]?.outcomes[0]?.status],
+            ["completed", "invalid"],
+        );
+    } finally {
+        await cleanup(f);
+    }
+});
+
+test("post-generation stale revision should terminalize with established earlier adoption outcomes", async () => {
+    const f = await fixture();
+    const originalLoad = f.store.load.bind(f.store);
+    let adoptionChecks = 0;
+    f.store.load = async () => {
+        const loaded = await originalLoad();
+        adoptionChecks += 1;
+        if (adoptionChecks === 3) {
+            const stale = cloneState(loaded);
+            stale.revision += 1;
+            return stale;
+        }
+        return loaded;
+    };
+    const second = { ...proposal(f.evidence.evidenceId), slot: "response-format", content: "Prefers plain text" };
+    try {
+        await assert.rejects(
+            generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                timestamp: AT,
+                generator: async () => ({
+                    contractVersion: 1,
+                    candidates: [proposal(f.evidence.evidenceId), second],
+                }),
+            }),
+            /canonical revision changed/,
+        );
+        const ledger = await new MemoryProposalGenerationStore(f.store.path).load();
+        assert.equal(ledger.generations[0]?.status, "outcome_unknown");
+        assert.equal(ledger.generations[0]?.outcomes[0]?.status, "adopted");
+        assert.equal(ledger.generations[0]?.outcomes.length, 1);
+        assert.equal((await originalLoad()).meanings.length, 1);
+    } finally {
+        await cleanup(f);
+    }
+});
+
+test("ordinary runCognition should invoke configured reflection after persisting the exchange", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-memory-cognition-"));
+    const store = new StateStore(join(directory, "ember.json"));
+    let state = initialState("Ember", PRINCIPAL, "2026-09-11T09:00:00Z");
+    await store.create(state);
+    const lease = await store.acquireWriteLease();
+    try {
+        const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-11T09:30:00Z" });
+        state = await store.commit(state.revision, started.state);
+        const result = await runCognition(store, state, {
+            runtimeId: started.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "I prefer concise answers",
+            providerLabel: "scripted-cognition",
+            provider: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
+            timeoutSeconds: 10,
+            output: () => {},
+            memoryProposalProviderLabel: "scripted-reflection",
+            memoryProposalGenerator: async (request) => {
+                const input = request.projection.turns.find((turn) => turn.role === "user")!;
+                assert.equal(input.content, "I prefer concise answers");
+                return { contractVersion: 1, candidates: [proposal(input.evidence_id)] };
+            },
+        });
+        assert.equal(result.memoryProposalFailure, null);
+        assert.equal(result.state.meanings[0]?.content, "Prefers concise answers");
+        assert.equal(result.state.operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
+    } finally {
+        await store.releaseWriteLease(lease).catch(() => {});
+        await rm(directory, { recursive: true, force: true });
     }
 });

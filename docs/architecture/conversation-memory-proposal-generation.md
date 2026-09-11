@@ -40,7 +40,9 @@ model cannot cite other reachable state merely by guessing its ID.
 The SDK-independent `MemoryProposalGenerator` contract returns a versioned list. An
 empty list is a successful and inspectable no-proposal result. Ember supplies the
 generation identity and proposal time; generated identity or timing fields are
-normalized before assessment. The existing `assessMemoryProposal` and
+normalized before assessment. Candidates cross the generator boundary as `unknown`
+and are assessed before any field is dereferenced, so malformed candidates become
+persisted `invalid_representation` outcomes. The existing `assessMemoryProposal` and
 `resolveMemoryProposal` functions remain the only proposal and adoption policy
 boundaries. Invalid and unsupported candidates never reach adoption. Rejected
 proposals do not mutate canonical meaning. Adopted replacement state is committed
@@ -63,6 +65,12 @@ proposal lifecycle to an adopted meaning ID without retaining another transcript
 copy. A generating record left by interruption is truthful unresolved operational
 evidence; readers must not interpret it as no proposal.
 
+After generation returns, assessment and adoption remain inside the terminalization
+boundary. A stale revision, commit failure, or other post-generation interruption is
+recorded as `outcome_unknown` with every outcome already established. This matters
+when an earlier candidate was committed before a later candidate failed. CLI
+inspection includes this ledger next to cognition, interaction, and delivery evidence.
+
 The ledger is operational evidence rather than canonical memory. Canonical meanings
 and their provenance continue to live only in the Ember state store. Ledger loss does
 not remove adopted meaning, while ledger presence cannot establish or modify meaning.
@@ -71,5 +79,11 @@ not remove adopted meaning, while ledger presence cannot establish or modify mea
 
 Deterministic tests use the AI SDK test model and a scripted generator to cover
 bounded disclosure, grounded adoption, durable provenance, empty no-proposal output,
-provider failure, redaction, and zero implicit retries. The proposal-semantic tests
-continue to own invalid, rejection, and supersession policy coverage.
+malformed candidates, partial adoption followed by stale revision, provider failure,
+redaction, and zero implicit retries. `runCognition` invokes reflection after an
+ordinary exchange has been durably recorded when a generator is configured; both CLI
+and Telegram surface paths can supply that generator. The opt-in
+`npm run smoke:memory-proposal:live` command exercises a representative ordinary
+conversation against a live subscription-backed structured-output model. The
+proposal-semantic tests continue to own invalid, rejection, and supersession policy
+coverage.

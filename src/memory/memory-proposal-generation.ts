@@ -13,7 +13,7 @@ import {
 } from "ai";
 
 import type { ConversationId, ProjectedConversationContext } from "../core/conversation-context.ts";
-import type { MemoryProposal, MemoryProposalAssessment, MemoryProposalCandidate } from "../core/memory-proposal.ts";
+import type { MemoryProposal, MemoryProposalAssessment } from "../core/memory-proposal.ts";
 import type { EmberState, EvidenceId, MeaningId } from "../core/model.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 
@@ -59,7 +59,7 @@ export interface MemoryProposalGenerationRequest {
 
 export interface MemoryProposalGenerationResult {
     contractVersion: 1;
-    candidates: MemoryProposalCandidate[];
+    candidates: unknown[];
 }
 
 export type MemoryProposalGenerator = (
@@ -194,37 +194,52 @@ export async function generateAndAdoptConversationMemories(
 
     const outcomes: MemoryProposalGenerationOutcome[] = [];
     let current = state;
-    for (const [index, generatedCandidate] of result.candidates.entries()) {
-        const candidate: MemoryProposalCandidate = {
-            ...generatedCandidate,
-            proposal_id: `memory-proposal-${generationId.slice("memory-generation-".length)}-${index}`,
-            proposed_at: timestamp,
-        };
-        const unprojected = candidate.source_evidence_ids.find(
-            (id) => !projection.selection.source_evidence_ids.includes(id),
-        );
-        const assessment: MemoryProposalAssessment = unprojected
-            ? {
-                  status: "invalid",
-                  reason: "missing_evidence",
-                  detail: `source evidence is outside the bounded conversation projection: ${unprojected}`,
-              }
-            : assessMemoryProposal(current, candidate);
-        if (assessment.status !== "valid") {
-            outcomes.push({ status: assessment.status, candidate: structuredClone(candidate), assessment });
-            continue;
-        }
-        const resolution = resolveMemoryProposal(current, assessment.proposal, current.revision, {
-            decidedAt: timestamp,
-        });
-        if (resolution.proposal.status === "adopted") {
-            const loaded = await store.load();
-            if (loaded.revision !== current.revision) {
-                throw new StaleRevision("canonical revision changed during memory proposal adoption");
+    try {
+        for (const [index, generatedCandidate] of result.candidates.entries()) {
+            const candidate: unknown = isObject(generatedCandidate)
+                ? {
+                      ...generatedCandidate,
+                      proposal_id: `memory-proposal-${generationId.slice("memory-generation-".length)}-${index}`,
+                      proposed_at: timestamp,
+                  }
+                : generatedCandidate;
+            let assessment: MemoryProposalAssessment = assessMemoryProposal(current, candidate);
+            if (assessment.status === "valid") {
+                const unprojected = assessment.proposal.source_evidence_ids.find(
+                    (id) => !projection.selection.source_evidence_ids.includes(id),
+                );
+                if (unprojected) {
+                    assessment = {
+                        status: "invalid",
+                        reason: "missing_evidence",
+                        detail: `source evidence is outside the bounded conversation projection: ${unprojected}`,
+                    };
+                }
             }
-            current = await store.commit(current.revision, resolution.state);
+            if (assessment.status !== "valid") {
+                outcomes.push({ status: assessment.status, candidate: structuredClone(candidate), assessment });
+                continue;
+            }
+            const resolution = resolveMemoryProposal(current, assessment.proposal, current.revision, {
+                decidedAt: timestamp,
+            });
+            if (resolution.proposal.status === "adopted") {
+                const loaded = await store.load();
+                if (loaded.revision !== current.revision) {
+                    throw new StaleRevision("canonical revision changed during memory proposal adoption");
+                }
+                current = await store.commit(current.revision, resolution.state);
+            }
+            outcomes.push({ status: resolution.proposal.status, proposal: resolution.proposal });
         }
-        outcomes.push({ status: resolution.proposal.status, proposal: resolution.proposal });
+    } catch (error) {
+        await ledger.complete(generationId, {
+            completed_at: nowUtc(),
+            status: "outcome_unknown",
+            outcomes,
+            failure: boundedFailure(error),
+        });
+        throw error;
     }
 
     await ledger.complete(generationId, {

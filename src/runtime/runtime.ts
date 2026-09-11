@@ -11,6 +11,7 @@ import type {
     RuntimeEpisode,
     RuntimeId,
 } from "../core/model.ts";
+import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
@@ -19,6 +20,7 @@ import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts
 import { newId, nowUtc, validateState } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
+import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
 import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { cloneState } from "../util.ts";
@@ -145,6 +147,8 @@ export interface RunCognitionOptions {
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
     conversationMembership?: ConversationMembershipIntent;
+    memoryProposalGenerator?: MemoryProposalGenerator;
+    memoryProposalProviderLabel?: string;
     cognitionId?: CognitionId;
     hooks?: {
         afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
@@ -196,10 +200,17 @@ export async function runCognition(
         purpose = "ordinary",
         explainIds = [],
         conversationMembership = { action: "continue", basis: "ordinary_adjacency" },
+        memoryProposalGenerator,
+        memoryProposalProviderLabel,
         cognitionId: requestedCognitionId,
         hooks = {},
     }: RunCognitionOptions,
-): Promise<{ state: EmberState; providerFailure: string | null; cognitionId: CognitionId }> {
+): Promise<{
+    state: EmberState;
+    providerFailure: string | null;
+    memoryProposalFailure: string | null;
+    cognitionId: CognitionId;
+}> {
     requirePrincipal(state, principal);
     if (typeof label !== "string" || !label.trim()) throw new ValidationError("provider label must be non-empty");
     const cognitionId = requestedCognitionId ?? newId("cognition");
@@ -298,7 +309,7 @@ export async function runCognition(
         cognition.lastDurableObservationAt = at;
         findRuntime(failed, runtimeId).lastDurableObservationAt = at;
         state = await store.commit(current.revision, failed);
-        return { state, providerFailure: error.message, cognitionId };
+        return { state, providerFailure: error.message, memoryProposalFailure: null, cognitionId };
     }
 
     const current = await store.load();
@@ -339,6 +350,27 @@ export async function runCognition(
         expression_occurred_at: expression.occurredAt,
         expression_content: result.reply,
     });
+    let memoryProposalFailure: string | null = null;
+    if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
+        try {
+            const reflectionContext = selectRecentConversationContext(state, await conversationStore.load(), {
+                principal,
+                scope,
+                conversationId,
+                membership: resolvedConversation.membership,
+            });
+            const reflection = await generateAndAdoptConversationMemories(store, state, reflectionContext, {
+                principal,
+                scope,
+                generator: memoryProposalGenerator,
+                ...(memoryProposalProviderLabel === undefined ? {} : { providerLabel: memoryProposalProviderLabel }),
+            });
+            state = reflection.state;
+        } catch (error) {
+            memoryProposalFailure = error instanceof Error ? error.message : String(error);
+            state = await store.load();
+        }
+    }
     const outputText = `${result.reply}\n`;
     await hooks.afterExpressionCommit?.(state, outputText);
     await writeOutput(output, outputText);
@@ -350,7 +382,7 @@ export async function runCognition(
     displayedCognition.lastDurableObservationAt = displayedAt;
     findRuntime(displayed, runtimeId).lastDurableObservationAt = displayedAt;
     state = await store.commit(state.revision, displayed);
-    return { state, providerFailure: null, cognitionId };
+    return { state, providerFailure: null, memoryProposalFailure, cognitionId };
 }
 
 export function findCognition(state: EmberState, id: CognitionId | string): CognitionEpisode {
