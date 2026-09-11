@@ -17,6 +17,7 @@ test("memory formation evaluation reports selective adoption, correction, contex
 
     // Then
     assert.equal(report.ember_assertions_passed, true);
+    assert.equal(report.model_observations_passed, true);
     assert.equal(report.scorecard_input, true);
     assert.equal(report.metrics.all_zero, true);
     assert.equal(report.metrics.false_adoption.count, 0);
@@ -31,10 +32,16 @@ test("memory formation evaluation reports selective adoption, correction, contex
     assert.ok(report.context_size.max_bytes >= report.context_size.min_bytes);
     const correction = report.episodes.find((episode) => episode.id === "explicit-correction");
     assert.equal(correction?.restart, true);
-    assert.equal(correction?.provider_invocation_fresh, true);
+    assert.equal(correction?.memory_generator_invoked_after_restart, true);
     assert.equal(correction?.observed_decision, "adopted");
     assert.equal(correction?.provenance?.source_roles[0], "user_command");
+    assert.equal(correction?.provenance?.source_scopes[0], scenario.ember.scope);
     assert.ok(correction?.adoption_decisions.length);
+    assert.equal(report.episodes.find((episode) => episode.id === "useful-fact")?.observed_decision, "adopted");
+    assert.equal(
+        report.episodes.find((episode) => episode.id === "cross-scope-pressure")?.observed_reason,
+        "evidence_scope_mismatch",
+    );
 });
 
 test("memory formation evaluation detects a live generator decision mismatch independently", async () => {
@@ -64,8 +71,29 @@ test("memory formation evaluation detects a live generator decision mismatch ind
     );
 
     // Then
-    assert.equal(report.ember_assertions_passed, false);
+    assert.equal(report.ember_assertions_passed, true);
+    assert.equal(report.model_observations_passed, false);
     assert.equal(report.episodes.find((episode) => episode.id === "incidental-detail")?.observed_decision, "invalid");
+});
+
+test("live evaluation accepts no proposal as equivalent to policy rejection", async () => {
+    // Given
+    const scenario = await loadMemoryFormationScenario(SCENARIO);
+    const directory = await tempDir();
+
+    // When
+    const report = await runMemoryFormationScenario(
+        scenario,
+        join(directory, "ember.json"),
+        async ({ episode, scriptedResult }) =>
+            episode.id === "ambiguous-statement" ? { contractVersion: 1, candidates: [] } : scriptedResult,
+    );
+
+    // Then
+    const ambiguous = report.episodes.find((episode) => episode.id === "ambiguous-statement");
+    assert.equal(ambiguous?.observed_decision, "no_proposal");
+    assert.equal(ambiguous?.model_observations_passed, true);
+    assert.equal(report.model_observations_passed, true);
 });
 
 test("memory formation scenario rejects duplicate episode identities", async () => {

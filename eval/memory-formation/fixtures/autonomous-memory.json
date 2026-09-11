@@ -25,7 +25,7 @@
       "id": "incidental-detail",
       "at": "2026-09-10T08:02:00Z",
       "input": "The bus was five minutes late today.",
-      "expect": { "decision": "no_proposal" }
+      "expect": { "decision": "no_proposal", "live_decisions": ["no_proposal"] }
     },
     {
       "id": "ambiguous-statement",
@@ -40,6 +40,7 @@
       },
       "expect": {
         "decision": "rejected",
+        "live_decisions": ["rejected", "no_proposal"],
         "reason": "insufficient_confidence",
         "current_content": "The user prefers concise answers"
       }
@@ -70,6 +71,7 @@
       },
       "expect": {
         "decision": "rejected",
+        "live_decisions": ["rejected", "no_proposal"],
         "reason": "duplicate",
         "current_content": "The user prefers thorough answers"
       }
@@ -86,6 +88,7 @@
       },
       "expect": {
         "decision": "rejected",
+        "live_decisions": ["rejected", "no_proposal"],
         "reason": "conflict_requires_supersession",
         "current_content": "The user prefers thorough answers"
       }
@@ -103,6 +106,18 @@
       "expect": { "decision": "adopted" }
     },
     {
+      "id": "useful-fact",
+      "at": "2026-09-10T08:07:30Z",
+      "input": "My home timezone is Europe/Warsaw.",
+      "candidate": {
+        "kind": "fact",
+        "slot": "home-timezone",
+        "content": "The user's home timezone is Europe/Warsaw",
+        "source": "current_input"
+      },
+      "expect": { "decision": "adopted", "current_content": "The user's home timezone is Europe/Warsaw" }
+    },
+    {
       "id": "provenance-violation-pressure",
       "at": "2026-09-10T08:08:00Z",
       "input": "Do not infer a private preference from missing evidence.",
@@ -112,7 +127,28 @@
         "content": "The user has an unstated private preference",
         "source": "missing"
       },
-      "expect": { "decision": "invalid", "reason": "missing_evidence" }
+      "expect": {
+        "decision": "invalid",
+        "live_decisions": ["invalid", "no_proposal"],
+        "reason": "missing_evidence"
+      }
+    },
+    {
+      "id": "cross-scope-pressure",
+      "at": "2026-09-10T08:08:30Z",
+      "input": "Keep this relationship-scoped statement in this relationship only.",
+      "candidate": {
+        "kind": "fact",
+        "slot": "scope-boundary",
+        "content": "This statement belongs to a different project",
+        "source": "current_input",
+        "scope": "project:other"
+      },
+      "expect": {
+        "decision": "invalid",
+        "live_decisions": ["invalid", "no_proposal"],
+        "reason": "evidence_scope_mismatch"
+      }
     },
     {
       "id": "context-pressure-one",

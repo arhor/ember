@@ -35,6 +35,7 @@ export interface MemoryFormationEpisode {
     candidate?: MemoryFormationCandidateFixture;
     expect: {
         decision: ExpectedDecision;
+        live_decisions?: ExpectedDecision[];
         reason?: string;
         current_content?: string;
     };
@@ -78,7 +79,6 @@ export async function runMemoryFormationScenario(
     let state = await store.load();
     let runtimeId: RuntimeId | null = null;
     const adoptedByEpisode = new Map<string, MeaningId>();
-    const providerThreadIds = new Set<string>();
     const episodes = [];
     let finalProjectedEvidenceIds: string[] = [];
 
@@ -98,7 +98,7 @@ export async function runMemoryFormationScenario(
 
             let projectedBytes = 0;
             let projectedEvidenceIds: string[] = [];
-            let providerThreadId: string | null = null;
+            let memoryGeneratorInvoked = false;
             const beforeLedgerCount = (await new MemoryProposalGenerationStore(store.path).load()).generations.length;
             const result = await runCognition(store, state, {
                 runtimeId,
@@ -106,21 +106,18 @@ export async function runMemoryFormationScenario(
                 scope: scenario.ember.scope,
                 text: episode.input,
                 providerLabel: "memory-formation-evaluation-provider",
-                provider: async (request) => {
-                    providerThreadId = `fresh-${episode.id}`;
-                    return {
-                        contractVersion: 1,
-                        reply: "Acknowledged.",
-                        usedMeaningIds: request.projection.selection.meaning_ids,
-                        operational: { externalThreadId: providerThreadId },
-                    };
-                },
+                provider: async (request) => ({
+                    contractVersion: 1,
+                    reply: "Acknowledged.",
+                    usedMeaningIds: request.projection.selection.meaning_ids,
+                }),
                 timeoutSeconds: 300,
                 output: () => {},
                 memoryProposalProviderLabel: generator
                     ? "live-memory-formation-generator"
                     : "scripted-memory-formation-generator",
                 memoryProposalGenerator: async (request) => {
+                    memoryGeneratorInvoked = true;
                     projectedBytes = Buffer.byteLength(JSON.stringify(request.projection), "utf8");
                     projectedEvidenceIds = request.projection.selection.source_evidence_ids.map(String);
                     const scriptedResult = scriptedGenerationResult(scenario, episode, request, adoptedByEpisode);
@@ -149,23 +146,31 @@ export async function runMemoryFormationScenario(
                 : true;
             const provenance =
                 adopted?.status === "adopted" && adopted.proposal.status === "adopted"
-                    ? inspectProvenance(state.meanings, state.evidence, adopted.proposal.resolution.meaning_id)
+                    ? inspectProvenance(
+                          state.meanings,
+                          state.evidence,
+                          adopted.proposal.resolution.meaning_id,
+                          scenario.ember.principal,
+                          scenario.ember.scope,
+                      )
                     : null;
-            const providerInvocationFresh = providerThreadId !== null && !providerThreadIds.has(providerThreadId);
-            if (providerThreadId !== null) providerThreadIds.add(providerThreadId);
-            const assertionPassed =
-                observedDecision === episode.expect.decision &&
-                (episode.expect.reason === undefined || observedReason === episode.expect.reason) &&
-                currentMatches &&
-                providerInvocationFresh &&
-                (provenance?.passed ?? true);
+            const allowedDecisions = generator
+                ? (episode.expect.live_decisions ?? [episode.expect.decision])
+                : [episode.expect.decision];
+            const modelObservationPassed =
+                allowedDecisions.includes(observedDecision) &&
+                (generator !== undefined ||
+                    episode.expect.reason === undefined ||
+                    observedReason === episode.expect.reason) &&
+                currentMatches;
+            const assertionPassed = memoryGeneratorInvoked && (provenance?.passed ?? true);
             episodes.push({
                 id: episode.id,
                 restart: episode.restart ?? false,
-                provider_invocation_mode: "fresh" as const,
-                provider_thread_id: providerThreadId,
-                provider_invocation_fresh: providerInvocationFresh,
+                memory_generator_invoked: memoryGeneratorInvoked,
+                memory_generator_invoked_after_restart: episode.restart ? memoryGeneratorInvoked : null,
                 expected_decision: episode.expect.decision,
+                allowed_live_decisions: episode.expect.live_decisions ?? [episode.expect.decision],
                 observed_decision: observedDecision,
                 observed_reason: observedReason,
                 adoption_decisions: record.outcomes,
@@ -175,6 +180,7 @@ export async function runMemoryFormationScenario(
                 projected_source_evidence_ids: projectedEvidenceIds,
                 current_meaning_count: state.meanings.filter((meaning) => meaning.currentness === "current").length,
                 ember_assertions_passed: assertionPassed,
+                model_observations_passed: modelObservationPassed,
             });
             finalProjectedEvidenceIds = projectedEvidenceIds;
         }
@@ -199,7 +205,8 @@ export async function runMemoryFormationScenario(
         scenario_id: scenario.id,
         description: scenario.description,
         scorecard_input: true,
-        ember_assertions_passed: episodes.every((episode) => episode.ember_assertions_passed) && metrics.all_zero,
+        ember_assertions_passed: episodes.every((episode) => episode.ember_assertions_passed),
+        model_observations_passed: episodes.every((episode) => episode.model_observations_passed),
         metrics,
         context_size: {
             projection_bytes_by_episode: Object.fromEntries(
@@ -275,16 +282,39 @@ function reasonFromOutcomes(outcomes: MemoryProposalGenerationOutcome[]) {
 
 function inspectProvenance(
     meanings: Meaning[],
-    evidence: Array<{ evidenceId: string; sourceRole: string }>,
+    evidence: Array<{
+        evidenceId: string;
+        sourceRole: string;
+        sourceActor: string;
+        assertedPrincipal?: string;
+        scope: string;
+    }>,
     meaningId: MeaningId,
+    principal: string,
+    expectedScope: string,
 ) {
     const meaning = meanings.find((item) => item.meaningId === meaningId)!;
     const roots = meaning.sourceEvidenceIds.map((id) => evidence.find((item) => item.evidenceId === id));
+    const expectedOwner = meaning.kind === "relationship" ? `relationship:${principal}` : `user:${principal}`;
     return {
         meaning_id: meaningId,
+        meaning_scope: meaning.scope,
+        meaning_owner: meaning.owner,
         source_evidence_ids: meaning.sourceEvidenceIds,
         source_roles: roots.map((item) => item?.sourceRole ?? "missing"),
-        passed: roots.length > 0 && roots.every((item) => item?.sourceRole === "user_command"),
+        source_scopes: roots.map((item) => item?.scope ?? "missing"),
+        source_actors: roots.map((item) => item?.sourceActor ?? "missing"),
+        passed:
+            meaning.scope === expectedScope &&
+            meaning.owner === expectedOwner &&
+            roots.length > 0 &&
+            roots.every(
+                (item) =>
+                    item?.sourceRole === "user_command" &&
+                    item.sourceActor === `user:${principal}` &&
+                    item.assertedPrincipal === principal &&
+                    item.scope === expectedScope,
+            ),
     };
 }
 
@@ -293,6 +323,7 @@ interface MetricsEpisode {
     expected_decision: ExpectedDecision;
     observed_decision: ExpectedDecision;
     ember_assertions_passed: boolean;
+    model_observations_passed: boolean;
     provenance: { passed: boolean } | null;
 }
 
@@ -310,7 +341,7 @@ function calculateMetrics(episodes: MetricsEpisode[], meanings: Meaning[]) {
     }
     const duplicateAdoption = [...duplicateSlots.values()].filter((count) => count > 1).length;
     const correctionErrors = episodes.filter(
-        (episode) => episode.id.includes("correction") && !episode.ember_assertions_passed,
+        (episode) => episode.id.includes("correction") && !episode.model_observations_passed,
     ).length;
     const staleMemoryRevival = episodes.filter(
         (episode) => episode.id.includes("stale-revival") && episode.observed_decision === "adopted",
@@ -380,7 +411,16 @@ function validateScenario(value: unknown): asserts value is MemoryFormationScena
             !isRfc3339Utc(episode.at) ||
             !nonBlank(episode.input) ||
             !isObject(episode.expect) ||
-            !["adopted", "rejected", "invalid", "no_proposal"].includes(String(episode.expect.decision))
+            !["adopted", "rejected", "invalid", "no_proposal"].includes(String(episode.expect.decision)) ||
+            (episode.expect.live_decisions !== undefined &&
+                (!Array.isArray(episode.expect.live_decisions) ||
+                    episode.expect.live_decisions.length === 0 ||
+                    !episode.expect.live_decisions.every((decision) =>
+                        ["adopted", "rejected", "invalid", "no_proposal"].includes(String(decision)),
+                    ) ||
+                    (episode.expect.decision === "adopted"
+                        ? episode.expect.live_decisions.some((decision) => decision !== "adopted")
+                        : episode.expect.live_decisions.includes("adopted"))))
         )
             throw new ValidationError("memory formation episode is invalid or duplicated");
         ids.add(episode.id);

@@ -34,29 +34,36 @@ npm run eval:memory-formation -- --report ./memory-formation-report.json
 The report path must not already exist. A nonzero exit means an Ember-owned fixture
 assertion or requested metric failed.
 
-The representative live mode is deliberately opt-in and uses isolated, fresh Claude
-Code model invocations with tools, MCP, settings, skills, plugins, and session
-persistence disabled:
+The representative live mode is deliberately opt-in and constructs an isolated Claude
+Code provider for each proposal-generation episode, with tools, MCP, settings, skills,
+plugins, and session persistence disabled:
 
 ```bash
 EMBER_RUN_LIVE_MEMORY_FORMATION=1 npm run eval:memory-formation:live
 ```
 
-Live output is model evidence, not a replacement for deterministic policy proof.
-Because generated candidates may vary, interpret individual adoption decisions and
-their reasons before treating an aggregate count as a regression.
+Live output is model evidence, not a replacement for deterministic policy proof. Live
+expectations allow semantically equivalent non-adoption decisions such as a valid
+`no_proposal` instead of a generated candidate that the policy rejects. The report
+separates `ember_assertions_passed` from `model_observations_passed`; exit code 1 means
+an Ember invariant failed, while exit code 2 means live model observations missed the
+scenario expectation. The provider configuration establishes fresh invocation intent,
+but the evaluation does not claim an observed external session identity that the
+proposal-generator contract does not expose.
 
 ## Coverage and interpretation
 
-The default fixture covers stable preference and relationship adoption, transient
+The default fixture covers stable preference, fact, and relationship adoption, transient
 incidental detail, ambiguous low-confidence meaning, explicit correction across a
 runtime restart and fresh provider invocation, repeated evidence without duplicate
-proliferation, conflicting stale-revival pressure, missing provenance, bounded recent
-dialogue, and canonical availability after the source dialogue leaves that bound.
+proliferation, conflicting stale-revival pressure, missing and cross-scope provenance,
+bounded recent dialogue, and canonical availability after the source dialogue leaves
+that bound.
 
 Every episode reports the expected and observed decision, rejection or invalidity
-reason, complete proposal outcome, bounded source evidence, projection size, current
-meaning count, and adopted-meaning provenance back to user-command evidence. The
+reason, allowed live decisions, complete proposal outcome, bounded source evidence,
+projection size, current meaning count, and adopted-meaning provenance back to the
+expected principal, actor, scope, and user-command evidence. The
 top-level scorecard-ready metrics are:
 
 - `false_adoption`: adoption where the fixture expected no adoption;
@@ -75,6 +82,6 @@ error counts should be zero, while the full episode evidence remains available f
 future unified behavioral-health scorecard.
 
 Keep added fixtures synthetic and deterministic. Expectations should name semantic
-decisions and stable policy reasons rather than generated IDs or timestamps. New live
-providers must remain fresh invocations; provider threads or hidden transcripts may
-not establish continuity or provenance.
+decisions and stable policy reasons rather than generated IDs or timestamps. Live
+allowances may broaden only the pipeline decision, not whether adoption is acceptable.
+Provider threads or hidden transcripts may not establish continuity or provenance.

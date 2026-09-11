@@ -15,17 +15,18 @@ if (options.generator === "claude-code" && process.env.EMBER_RUN_LIVE_MEMORY_FOR
 const directory = await mkdtemp(join(tmpdir(), "ember-memory-formation-eval-"));
 try {
     const scenario = await loadMemoryFormationScenario(options.scenario);
-    const liveGenerator =
-        options.generator === "claude-code" ? createLiveGenerator(directory, options.timeoutSeconds) : undefined;
     const report = await runMemoryFormationScenario(
         scenario,
         join(directory, "ember.json"),
-        liveGenerator ? async ({ request }) => liveGenerator(request) : undefined,
+        options.generator === "claude-code"
+            ? async ({ request }) => createLiveGenerator(directory, options.timeoutSeconds)(request)
+            : undefined,
     );
     const output = `${JSON.stringify(report, null, 2)}\n`;
     if (options.report) await writeFile(options.report, output, { encoding: "utf8", mode: 0o600, flag: "wx" });
     else process.stdout.write(output);
     if (!report.ember_assertions_passed) process.exitCode = 1;
+    else if (!report.model_observations_passed) process.exitCode = 2;
 } finally {
     await rm(directory, { recursive: true, force: true });
 }
