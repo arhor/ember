@@ -350,6 +350,8 @@ export async function runCognition(
         expression_occurred_at: expression.occurredAt,
         expression_content: result.reply,
     });
+    const outputText = `${result.reply}\n`;
+    await hooks.afterExpressionCommit?.(state, outputText);
     let memoryProposalFailure: string | null = null;
     if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
         try {
@@ -371,8 +373,6 @@ export async function runCognition(
             state = await store.load();
         }
     }
-    const outputText = `${result.reply}\n`;
-    await hooks.afterExpressionCommit?.(state, outputText);
     await writeOutput(output, outputText);
     await hooks.afterDisplay?.(state);
     const displayed = cloneState(state);

@@ -81,7 +81,11 @@ Deterministic tests use the AI SDK test model and a scripted generator to cover
 bounded disclosure, grounded adoption, durable provenance, empty no-proposal output,
 malformed candidates, partial adoption followed by stale revision, provider failure,
 redaction, and zero implicit retries. `runCognition` invokes reflection after an
-ordinary exchange has been durably recorded when a generator is configured; both CLI
+ordinary exchange has been durably recorded when a generator is configured. For a
+surface interaction, the delivery hook first persists the committed expression's
+delivery intent and retained representation; only then may reflection begin, and the
+external send remains after reflection. A crash during the model-backed call therefore
+cannot turn an already committed reply into a representation-less delivery. Both CLI
 and Telegram surface paths can supply that generator. The opt-in
 `npm run smoke:memory-proposal:live` command exercises a representative ordinary
 conversation against a live subscription-backed structured-output model. The
