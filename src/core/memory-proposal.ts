@@ -189,6 +189,8 @@ function validateRepresentation(value: unknown): string | null {
 }
 
 function validateKindSemantics(principal: string, proposal: MemoryProposalCandidate): string | null {
+    if (["fact", "preference"].includes(proposal.kind) && proposal.applicable_until !== null)
+        return "fact and preference proposals require an open applicability interval in v1";
     if (proposal.kind === "relationship") {
         if (proposal.owner !== `relationship:${principal}` || proposal.slot !== "relationship")
             return "relationship proposals require the current principal relationship owner and fixed slot";

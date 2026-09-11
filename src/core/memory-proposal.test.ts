@@ -170,6 +170,23 @@ test("v1 supersession rejects non-user-testimony facts", () => {
     assert.deepEqual(result.status === "invalid" ? result.reason : null, "invalid_supersession");
 });
 
+test("v1 fact and preference proposals reject a finite applicability end", () => {
+    const state = initialState("Ember", PRINCIPAL);
+    const evidence = userEvidence(state, PRINCIPAL, SCOPE, "This preference is only for today");
+
+    for (const kind of ["fact", "preference"] as const) {
+        const result = assessMemoryProposal(
+            state,
+            candidate(evidence.evidenceId, {
+                kind,
+                applicable_until: "2026-09-12T00:00:00Z",
+            }),
+        );
+
+        assert.deepEqual(result.status === "invalid" ? result.reason : null, "semantic_mismatch");
+    }
+});
+
 test("unknown shapes and unknown proposal kinds are invalid rather than silently coerced", () => {
     const state = initialState("Ember", PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "Please keep your answers short");

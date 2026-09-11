@@ -64,6 +64,10 @@ The currently proposable canonical families are:
 | `relationship` | Current relationship ownership, fixed `relationship` slot, and durable user testimony.                                     | Unsupported in v1.                                                                                                 |
 | `episode_meta` | Ember or current relationship ownership and durable user testimony in v1.                                                  | Unsupported in v1.                                                                                                 |
 
+Fact and preference proposals must keep `applicable_until: null`. Canonical v1
+does not support rewriting their applicability interval, so a finite end is a semantic
+mismatch rather than a candidate that adoption policy may accept.
+
 `commitment` is an explicit `unsupported` assessment. A statement in conversation may
 be evidence relevant to an undertaking, but it cannot manufacture an Ember-owned
 normative commitment. The existing undertaking/authority boundary must create such a
