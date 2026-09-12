@@ -73,7 +73,7 @@
       "at": "2026-09-02T08:25:00Z"
     },
     {
-      "action": "remember_inference",
+      "action": "remagent_inference",
       "as": "inference_a",
       "slot": "release-inference-a",
       "scope": "project:ember/provenance",
@@ -82,7 +82,7 @@
       "at": "2026-09-02T08:26:00Z"
     },
     {
-      "action": "remember_inference",
+      "action": "remagent_inference",
       "as": "inference_b",
       "slot": "release-inference-b",
       "scope": "project:ember/provenance",
