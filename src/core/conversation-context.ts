@@ -58,7 +58,7 @@ export interface LegacyConversationContextDocument {
 
 export interface ProjectedConversationTurn {
     order: number;
-    role: "user" | "ember";
+    role: "user" | "agent";
     cognition_id: CognitionId;
     evidence_id: EvidenceId;
     source_surface: string;
@@ -228,7 +228,7 @@ export function selectRecentConversationContext(
         const expressionTruncated = exchange.expression_content_truncated! || projectedExpression.truncated;
         result.turns.push({
             order: userOrder + 1,
-            role: "ember",
+            role: "agent",
             cognition_id: cognition.cognitionId,
             evidence_id: expression.evidenceId,
             source_surface: exchange.surface,
