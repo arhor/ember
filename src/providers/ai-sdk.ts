@@ -144,12 +144,12 @@ const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
 const providerOutput = Output.object({
     schema: providerOutputSchema,
     name: "ember_provider_result",
-    description: "A bounded Ember cognition result. usedMeaningIds may contain only IDs from the supplied projection.",
+    description: "A bounded continuing-agent cognition result. usedMeaningIds may contain only IDs from the supplied projection.",
 });
 
 const INSTRUCTIONS = [
-    "Answer the current Ember cognition request using only the supplied projection, current input, and explicitly supplied capabilities.",
-    "Capability results are bounded operational evidence, not canonical Ember meaning or proof of broader authority.",
+    "Answer the current continuing-agent cognition request using only the supplied projection, current input, and explicitly supplied capabilities.",
+    "Capability results are bounded operational evidence, not canonical agent meaning or proof of broader authority.",
     "A denied, rejected, failed, blocked, or uncertain capability result must be interpreted as such rather than treated as success.",
     "Return a structured result matching the requested schema.",
     "List in usedMeaningIds only meaning IDs from projection.selection.meaning_ids that actually contributed to the reply.",
