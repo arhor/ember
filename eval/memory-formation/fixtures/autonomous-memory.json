@@ -1,0 +1,185 @@
+{
+  "scenario_version": 1,
+  "id": "autonomous-memory-formation-and-correction",
+  "description": "Selective formation, correction, deduplication, currentness, restart, bounded context, and provenance.",
+  "ember": {
+    "name": "Ember",
+    "principal": "user-1",
+    "scope": "relationship:user-1",
+    "initial_at": "2026-09-10T08:00:00Z"
+  },
+  "episodes": [
+    {
+      "id": "useful-preference",
+      "at": "2026-09-10T08:01:00Z",
+      "input": "Please remember that I prefer concise answers.",
+      "candidate": {
+        "kind": "preference",
+        "slot": "response-style",
+        "content": "The user prefers concise answers",
+        "source": "current_input"
+      },
+      "expect": { "decision": "adopted", "current_content": "The user prefers concise answers" }
+    },
+    {
+      "id": "incidental-detail",
+      "at": "2026-09-10T08:02:00Z",
+      "input": "The bus was five minutes late today.",
+      "expect": { "decision": "no_proposal", "live_decisions": ["no_proposal"] }
+    },
+    {
+      "id": "ambiguous-statement",
+      "at": "2026-09-10T08:03:00Z",
+      "input": "Maybe longer explanations are sometimes nice.",
+      "candidate": {
+        "kind": "preference",
+        "slot": "optional-elaboration",
+        "content": "The user prefers long answers",
+        "source": "current_input",
+        "confidence": "low"
+      },
+      "expect": {
+        "decision": "rejected",
+        "live_decisions": ["rejected", "no_proposal"],
+        "reason": "insufficient_confidence",
+        "current_content": "The user prefers concise answers"
+      }
+    },
+    {
+      "id": "explicit-correction",
+      "at": "2026-09-10T08:04:00Z",
+      "restart": true,
+      "input": "Correction: for this relationship, I now prefer thorough answers.",
+      "candidate": {
+        "kind": "preference",
+        "slot": "response-style",
+        "content": "The user prefers thorough answers",
+        "source": "current_input",
+        "supersedes_episode": "useful-preference"
+      },
+      "expect": { "decision": "adopted", "current_content": "The user prefers thorough answers" }
+    },
+    {
+      "id": "repeated-evidence",
+      "at": "2026-09-10T08:05:00Z",
+      "input": "Yes, I prefer thorough answers.",
+      "candidate": {
+        "kind": "preference",
+        "slot": "response-style",
+        "content": "The user prefers thorough answers",
+        "source": "current_input"
+      },
+      "expect": {
+        "decision": "rejected",
+        "live_decisions": ["rejected", "no_proposal"],
+        "reason": "duplicate",
+        "current_content": "The user prefers thorough answers"
+      }
+    },
+    {
+      "id": "stale-revival-pressure",
+      "at": "2026-09-10T08:06:00Z",
+      "input": "An old note says concise answers.",
+      "candidate": {
+        "kind": "preference",
+        "slot": "response-style",
+        "content": "The user prefers concise answers",
+        "source": "current_input"
+      },
+      "expect": {
+        "decision": "rejected",
+        "live_decisions": ["rejected", "no_proposal"],
+        "reason": "conflict_requires_supersession",
+        "current_content": "The user prefers thorough answers"
+      }
+    },
+    {
+      "id": "useful-relationship",
+      "at": "2026-09-10T08:07:00Z",
+      "input": "You are my long-term project collaborator.",
+      "candidate": {
+        "kind": "relationship",
+        "slot": "relationship",
+        "content": "Ember is the user's long-term project collaborator",
+        "source": "current_input"
+      },
+      "expect": { "decision": "adopted" }
+    },
+    {
+      "id": "useful-fact",
+      "at": "2026-09-10T08:07:30Z",
+      "input": "My home timezone is Europe/Warsaw.",
+      "candidate": {
+        "kind": "fact",
+        "slot": "home-timezone",
+        "content": "The user's home timezone is Europe/Warsaw",
+        "source": "current_input"
+      },
+      "expect": { "decision": "adopted", "current_content": "The user's home timezone is Europe/Warsaw" }
+    },
+    {
+      "id": "provenance-violation-pressure",
+      "at": "2026-09-10T08:08:00Z",
+      "input": "Do not infer a private preference from missing evidence.",
+      "candidate": {
+        "kind": "fact",
+        "slot": "private-claim",
+        "content": "The user has an unstated private preference",
+        "source": "missing"
+      },
+      "expect": {
+        "decision": "invalid",
+        "live_decisions": ["invalid", "no_proposal"],
+        "reason": "missing_evidence"
+      }
+    },
+    {
+      "id": "cross-scope-pressure",
+      "at": "2026-09-10T08:08:30Z",
+      "input": "Keep this relationship-scoped statement in this relationship only.",
+      "candidate": {
+        "kind": "fact",
+        "slot": "scope-boundary",
+        "content": "This statement belongs to a different project",
+        "source": "current_input",
+        "scope": "project:other"
+      },
+      "expect": {
+        "decision": "invalid",
+        "live_decisions": ["invalid", "no_proposal"],
+        "reason": "evidence_scope_mismatch"
+      }
+    },
+    {
+      "id": "context-pressure-one",
+      "at": "2026-09-10T08:09:00Z",
+      "input": "Transient planning detail one.",
+      "expect": { "decision": "no_proposal" }
+    },
+    {
+      "id": "context-pressure-two",
+      "at": "2026-09-10T08:10:00Z",
+      "input": "Transient planning detail two.",
+      "expect": { "decision": "no_proposal" }
+    },
+    {
+      "id": "context-pressure-three",
+      "at": "2026-09-10T08:11:00Z",
+      "input": "Transient planning detail three.",
+      "expect": { "decision": "no_proposal" }
+    },
+    {
+      "id": "context-pressure-four",
+      "at": "2026-09-10T08:12:00Z",
+      "input": "Transient planning detail four.",
+      "expect": { "decision": "no_proposal" }
+    },
+    {
+      "id": "context-disappeared-after-restart",
+      "at": "2026-09-10T08:13:00Z",
+      "restart": true,
+      "input": "What durable meaning remains after old dialogue leaves recent context?",
+      "expect": { "decision": "no_proposal", "current_content": "The user prefers thorough answers" }
+    }
+  ]
+}
