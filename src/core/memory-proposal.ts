@@ -9,7 +9,7 @@ import type {
 } from "./model.ts";
 
 import { contentDigest, exactKeys, isNotBlankString, isObject } from "../util.ts";
-import { isRfc3339Utc, validateState } from "./model.ts";
+import { agentActor, isRfc3339Utc, validateState } from "./model.ts";
 
 export type MemoryProposalId = `memory-proposal-${string}`;
 export type ProposableMeaningKind = Exclude<MeaningKind, "commitment">;
@@ -127,7 +127,7 @@ const PROPOSABLE_KINDS = new Set<ProposableMeaningKind>(["relationship", "fact",
 const MEANING_KINDS = new Set<MeaningKind>(["relationship", "fact", "preference", "commitment", "episode_meta"]);
 
 /**
- * Checks a provider-independent candidate against existing durable Ember evidence.
+ * Checks a provider-independent candidate against existing durable agent evidence.
  * The function is read-only: even a valid result is only a proposal and never a
  * canonical Meaning.
  */
@@ -143,7 +143,7 @@ export function assessMemoryProposal(state: EmberState, candidate: unknown): Mem
         return {
             status: "unsupported",
             kind: represented.kind,
-            detail: "commitments require an Ember-owned undertaking boundary and cannot be formed as memory proposals",
+            detail: "commitments require an agent-owned undertaking boundary and cannot be formed as memory proposals",
         };
     }
 
@@ -155,7 +155,7 @@ export function assessMemoryProposal(state: EmberState, candidate: unknown): Mem
     const evidenceById = new Map(state.evidence.map((evidence) => [evidence.evidenceId, evidence]));
     const evidence = evidenceIds.map((id) => evidenceById.get(id));
     if (evidence.some((item) => item === undefined)) {
-        return invalid("missing_evidence", "every source evidence ID must resolve in durable Ember evidence");
+        return invalid("missing_evidence", "every source evidence ID must resolve in durable agent evidence");
     }
     if (evidence.some((item) => item!.scope !== typed.scope)) {
         return invalid("evidence_scope_mismatch", "proposal evidence cannot cross the proposed scope");
@@ -167,7 +167,7 @@ export function assessMemoryProposal(state: EmberState, candidate: unknown): Mem
         );
     }
 
-    const semanticError = validateKindSemantics(state.runtimeContract.localPrincipal, typed);
+    const semanticError = validateKindSemantics(state, typed);
     if (semanticError) return invalid("semantic_mismatch", semanticError);
     const provenanceError = validateProvenance(typed, evidence as NonNullable<(typeof evidence)[number]>[]);
     if (provenanceError) return invalid("semantic_mismatch", provenanceError);
@@ -226,7 +226,7 @@ export function resolveMemoryProposal(
         const inference: EmberInferenceEvidence = {
             evidenceId,
             sourceRole: "agent_inference",
-            sourceActor: "ember",
+            sourceActor: agentActor(state.lineage.lineageId),
             occurredAt: decidedAt,
             observedAt: decidedAt,
             derivedFromEvidenceIds: sourceEvidenceIds as [EvidenceId, ...EvidenceId[]],
@@ -365,7 +365,9 @@ function validateRepresentation(value: unknown): string | null {
     return null;
 }
 
-function validateKindSemantics(principal: string, proposal: MemoryProposalCandidate): string | null {
+function validateKindSemantics(state: EmberState, proposal: MemoryProposalCandidate): string | null {
+    const principal = state.runtimeContract.localPrincipal;
+    const actor = agentActor(state.lineage.lineageId);
     if (["fact", "preference"].includes(proposal.kind) && proposal.applicable_until !== null)
         return "fact and preference proposals require an open applicability interval in v1";
     if (proposal.kind === "relationship") {
@@ -376,15 +378,15 @@ function validateKindSemantics(principal: string, proposal: MemoryProposalCandid
         if (proposal.owner !== `user:${principal}`) return "preference proposals require the current user owner";
         if (proposal.epistemic_role !== "user_testimony") return "preference proposals require user testimony";
     } else if (proposal.kind === "episode_meta") {
-        if (!["ember", `relationship:${principal}`].includes(proposal.owner))
-            return "episode proposals require Ember or the current relationship owner";
+        if (![actor, `relationship:${principal}`].includes(proposal.owner))
+            return "episode proposals require the continuing agent or current relationship owner";
         if (proposal.epistemic_role !== "user_testimony") return "episode proposals require user testimony in v1";
     } else if (proposal.kind === "fact") {
         if (proposal.epistemic_role === "agent_commitment") return "facts cannot carry commitment provenance";
         const ownerMatchesRole =
             (proposal.epistemic_role === "user_testimony" && proposal.owner === `user:${principal}`) ||
-            (proposal.epistemic_role === "agent_inference" && proposal.owner === "ember") ||
-            (proposal.epistemic_role === "direct_observation" && proposal.owner === "ember") ||
+            (proposal.epistemic_role === "agent_inference" && proposal.owner === actor) ||
+            (proposal.epistemic_role === "direct_observation" && proposal.owner === actor) ||
             (proposal.epistemic_role === "external_claim" && proposal.owner.startsWith("external:")) ||
             (proposal.epistemic_role === "delegated_report" && proposal.owner.startsWith("delegate:"));
         if (!ownerMatchesRole) return "fact owner and epistemic role do not preserve attribution";
@@ -413,16 +415,21 @@ function validateSupersession(state: EmberState, proposal: MemoryProposalCandida
     if (targetId === null) return null;
     if (!(["fact", "preference"] as MeaningKind[]).includes(proposal.kind))
         return `${proposal.kind} proposals do not support supersession in v1`;
-    if (
-        proposal.epistemic_role !== "user_testimony" ||
-        proposal.owner !== `user:${state.runtimeContract.localPrincipal}`
-    )
-        return "v1 supersession supports only user-owned user-testimony facts and preferences";
+
+    const actor = agentActor(state.lineage.lineageId);
+    const userOwned =
+        proposal.epistemic_role === "user_testimony" &&
+        proposal.owner === `user:${state.runtimeContract.localPrincipal}`;
+    const agentOwned =
+        proposal.kind === "fact" && proposal.epistemic_role === "agent_inference" && proposal.owner === actor;
+    if (!userOwned && !agentOwned)
+        return "v1 supersession requires attributable user testimony or continuing-agent inference";
+
     const target = state.meanings.find((meaning) => meaning.meaningId === targetId);
     if (!target) return "supersession target does not exist";
     if (target.currentness !== "current") return "supersession target must still be current";
-    if (target.epistemicRole !== "user_testimony" || target.owner !== `user:${state.runtimeContract.localPrincipal}`)
-        return "v1 supersession target must be user-owned user testimony";
+    if (target.epistemicRole !== proposal.epistemic_role || target.owner !== proposal.owner)
+        return "supersession target must preserve the same attributable owner and epistemic role";
     if (
         target.kind !== proposal.kind ||
         target.owner !== proposal.owner ||
