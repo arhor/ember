@@ -117,11 +117,11 @@ const CONFIDENCE_FIELDS = ["interpretation", "proposition", "source"];
 const CONFIDENCE_VALUES = new Set<MemoryConfidence>(["high", "medium", "low", "not_applicable"]);
 const EPISTEMIC_ROLES = new Set<EpistemicRole>([
     "user_testimony",
-    "ember_inference",
+    "agent_inference",
     "external_claim",
     "direct_observation",
     "delegated_report",
-    "ember_commitment",
+    "agent_commitment",
 ]);
 const PROPOSABLE_KINDS = new Set<ProposableMeaningKind>(["relationship", "fact", "preference", "episode_meta"]);
 const MEANING_KINDS = new Set<MeaningKind>(["relationship", "fact", "preference", "commitment", "episode_meta"]);
@@ -219,13 +219,13 @@ export function resolveMemoryProposal(
     const meaningId = deterministicAdoptionId("meaning", state, proposal, decidedAt) as MeaningId;
     if (state.meanings.some((meaning) => meaning.meaningId === meaningId))
         return rejected(state, proposal, decidedAt, "deterministic_id_collision");
-    if (proposal.epistemic_role === "ember_inference") {
+    if (proposal.epistemic_role === "agent_inference") {
         const evidenceId = deterministicAdoptionId("evidence", state, proposal, decidedAt) as EvidenceId;
         if (state.evidence.some((evidence) => evidence.evidenceId === evidenceId))
             return rejected(state, proposal, decidedAt, "deterministic_id_collision");
         const inference: EmberInferenceEvidence = {
             evidenceId,
-            sourceRole: "ember_inference",
+            sourceRole: "agent_inference",
             sourceActor: "ember",
             occurredAt: decidedAt,
             observedAt: decidedAt,
@@ -380,10 +380,10 @@ function validateKindSemantics(principal: string, proposal: MemoryProposalCandid
             return "episode proposals require Ember or the current relationship owner";
         if (proposal.epistemic_role !== "user_testimony") return "episode proposals require user testimony in v1";
     } else if (proposal.kind === "fact") {
-        if (proposal.epistemic_role === "ember_commitment") return "facts cannot carry commitment provenance";
+        if (proposal.epistemic_role === "agent_commitment") return "facts cannot carry commitment provenance";
         const ownerMatchesRole =
             (proposal.epistemic_role === "user_testimony" && proposal.owner === `user:${principal}`) ||
-            (proposal.epistemic_role === "ember_inference" && proposal.owner === "ember") ||
+            (proposal.epistemic_role === "agent_inference" && proposal.owner === "ember") ||
             (proposal.epistemic_role === "direct_observation" && proposal.owner === "ember") ||
             (proposal.epistemic_role === "external_claim" && proposal.owner.startsWith("external:")) ||
             (proposal.epistemic_role === "delegated_report" && proposal.owner.startsWith("delegate:"));
@@ -393,11 +393,11 @@ function validateKindSemantics(principal: string, proposal: MemoryProposalCandid
 }
 
 function validateProvenance(proposal: MemoryProposalCandidate, evidence: EmberState["evidence"]): string | null {
-    if (proposal.epistemic_role === "ember_inference") return null;
+    if (proposal.epistemic_role === "agent_inference") return null;
 
     const matches = evidence.every((item) => {
         if (proposal.epistemic_role === "user_testimony") return item.sourceRole === "user_command";
-        if (proposal.epistemic_role === "direct_observation") return item.sourceRole === "ember_observation";
+        if (proposal.epistemic_role === "direct_observation") return item.sourceRole === "agent_observation";
         if (proposal.epistemic_role === "external_claim")
             return item.sourceRole === "external_claim" && item.sourceActor === proposal.owner;
         if (proposal.epistemic_role === "delegated_report")
