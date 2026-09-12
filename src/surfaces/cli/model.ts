@@ -1,9 +1,5 @@
 import type { Readable, Writable } from "node:stream";
 
-import { inspectionView } from "../../core/projection.ts";
-import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
-import { interactionLedgerInspectionView } from "../../runtime/interaction-boundary.ts";
-
 export interface CliIo {
     input: Readable;
     output: Writable;
@@ -26,7 +22,6 @@ export const Commands = {
     CHECK: "check",
     LOCK_STATUS: "lock-status",
     QUARANTINE_STALE_LOCK: "quarantine-stale-lock",
-    QUARANTINE_STALE_LOCK1: "quarantine-stale-lock1",
 } as const;
 
 export const CommandSpecs = {
@@ -146,8 +141,3 @@ export type CliCommandArgs =
     | CheckArgs
     | LockStatusArgs
     | QuarantineStaleLockArgs;
-
-export type InspectionView = ReturnType<typeof inspectionView> & {
-    interactions: ReturnType<typeof interactionLedgerInspectionView>;
-    memoryProposalGenerations: Awaited<ReturnType<MemoryProposalGenerationStore["load"]>>["generations"];
-};

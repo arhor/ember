@@ -6,7 +6,6 @@ import type {
     ExplainArgs,
     InitArgs,
     InspectArgs,
-    InspectionView,
     LockStatusArgs,
     QuarantineStaleLockArgs,
     RunArgs,
@@ -54,7 +53,7 @@ export async function main(
                 return await onQuarantineStaleLock(args, io);
             }
             default: {
-                assertUnreachable(args);
+                assertUnreachable();
             }
         }
     } catch (error) {
@@ -64,20 +63,6 @@ export async function main(
         }
         throw error;
     }
-}
-
-async function onCheck(args: CheckArgs, io: CliIo) {
-    const store = new StateStore(args.state);
-    const state = await store.load();
-    const lock = await store.lockStatus();
-    io.output.write(`valid schema v1 revision ${state.revision}; lock ${JSON.stringify(lock)}\n`);
-    return 0;
-}
-
-async function onLockStatus(args: LockStatusArgs, io: CliIo) {
-    const status = await new StateStore(args.state).lockStatus();
-    io.output.write(`${JSON.stringify(status, null, 2)}\n`);
-    return 0;
 }
 
 async function onInit(args: InitArgs, io: CliIo) {
@@ -134,6 +119,20 @@ async function onCorrect(args: CorrectArgs, io: CliIo) {
     }
 }
 
+async function onCheck(args: CheckArgs, io: CliIo) {
+    const store = new StateStore(args.state);
+    const state = await store.load();
+    const lock = await store.lockStatus();
+    io.output.write(`valid schema v1 revision ${state.revision}; lock ${JSON.stringify(lock)}\n`);
+    return 0;
+}
+
+async function onLockStatus(args: LockStatusArgs, io: CliIo) {
+    const status = await new StateStore(args.state).lockStatus();
+    io.output.write(`${JSON.stringify(status, null, 2)}\n`);
+    return 0;
+}
+
 async function onQuarantineStaleLock(args: QuarantineStaleLockArgs, io: CliIo) {
     const destination = await new StateStore(args.state).quarantineStaleLock({
         ownerToken: args.ownerToken,
@@ -149,6 +148,11 @@ async function loadForPrincipal(store: StateStore, principal: string) {
         throw new ValidationError("asserted principal does not match initialized local principal");
     return state;
 }
+
+type InspectionView = ReturnType<typeof inspectionView> & {
+    interactions: ReturnType<typeof interactionLedgerInspectionView>;
+    memoryProposalGenerations: Awaited<ReturnType<MemoryProposalGenerationStore["load"]>>["generations"];
+};
 
 function renderInspection({
     cognitionEpisodes,
