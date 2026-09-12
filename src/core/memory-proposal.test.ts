@@ -5,7 +5,7 @@ import type { MemoryProposalCandidate } from "./memory-proposal.ts";
 import type { EvidenceId } from "./model.ts";
 
 import { assessMemoryProposal, resolveMemoryProposal } from "./memory-proposal.ts";
-import { initialState } from "./model.ts";
+import { agentActor, initialState } from "./model.ts";
 import {
     attachDetail,
     rememberDirectObservation,
@@ -78,7 +78,14 @@ test("missing, duplicate, and cross-scope evidence are invalid explicitly", () =
 
 test("unavailable user detail cannot regenerate content through a proposal", () => {
     const state = initialState("Ember", PRINCIPAL);
-    const episodeId = rememberEpisode(state, PRINCIPAL, "milestone", "ember", SCOPE, "A private milestone occurred");
+    const episodeId = rememberEpisode(
+        state,
+        PRINCIPAL,
+        "milestone",
+        agentActor(state.lineage.lineageId),
+        SCOPE,
+        "A private milestone occurred",
+    );
     const detailId = attachDetail(state, PRINCIPAL, episodeId, "The unavailable exact private detail");
     withholdDetail(state, PRINCIPAL, detailId);
 
@@ -118,7 +125,7 @@ test("commitment proposal is an explicit unsupported state", () => {
         state,
         candidate(evidence.evidenceId, {
             kind: "commitment",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             epistemic_role: "agent_commitment",
         }),
     );
@@ -161,7 +168,7 @@ test("v1 supersession rejects non-user-testimony facts", () => {
         state,
         candidate(evidence.evidenceId, {
             kind: "fact",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             slot: "build-status",
             content: "The build passed",
             epistemic_role: "direct_observation",
@@ -228,7 +235,7 @@ test("adoption is repeatable for identical deterministic inputs", () => {
         state,
         candidate(evidence.evidenceId, {
             kind: "fact",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             slot: "build-pattern",
             content: "The failure appears recurrent",
             epistemic_role: "agent_inference",
@@ -367,7 +374,7 @@ test("stale revision and stale supersession fail closed without canonical mutati
     assert.deepEqual(staleTarget.state, changed);
 });
 
-test("low-confidence proposals are rejected and Ember inference adoption creates derived provenance", () => {
+test("low-confidence proposals are rejected and agent inference adoption creates derived provenance", () => {
     const state = initialState("Ember", PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "The build log reports a recurring issue");
     const weak = proposed(
@@ -380,7 +387,7 @@ test("low-confidence proposals are rejected and Ember inference adoption creates
         state,
         candidate(evidence.evidenceId, {
             kind: "fact",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             slot: "build-pattern",
             content: "The failure appears recurrent",
             epistemic_role: "agent_inference",
