@@ -417,7 +417,7 @@ test("state validator should reject orphan expression when second descriptor tar
             timeoutSeconds: 1,
             output: () => {},
         }),
-        duplicate = cloneState(result.state.evidence.find((e) => e.sourceRole === "ember_expression_via_provider"));
+        duplicate = cloneState(result.state.evidence.find((e) => e.sourceRole === "agent_expression_via_provider"));
     duplicate.evidenceId += "-orphan";
     result.state.evidence.push(duplicate);
     await fixture.store.releaseWriteLease(fixture.lease);
@@ -474,7 +474,7 @@ test("state validator should reject provider termination when status contradicts
             episode.expressionEvidenceId = null;
             episode.deliveryStatus = "not_attempted";
             episode.usedMeaningIds = [];
-            state.evidence = state.evidence.filter((e) => e.sourceRole !== "ember_expression_via_provider");
+            state.evidence = state.evidence.filter((e) => e.sourceRole !== "agent_expression_via_provider");
         }
         variants.push(state);
     }
@@ -504,7 +504,7 @@ test("state validator should accept cancellation when invocation ends before chi
     episode.expressionEvidenceId = null;
     episode.deliveryStatus = "not_attempted";
     episode.usedMeaningIds = [];
-    state.evidence = state.evidence.filter((e) => e.sourceRole !== "ember_expression_via_provider");
+    state.evidence = state.evidence.filter((e) => e.sourceRole !== "agent_expression_via_provider");
     // When
     const validated = () => validateState(state);
     // Then
