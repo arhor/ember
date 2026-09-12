@@ -276,7 +276,7 @@ test("CLI -> Telegram -> CLI preserves one Ember-owned conversation across proce
                 new Set(
                     selectedCommitment.source_evidence.map((evidence: { sourceRole: string }) => evidence.sourceRole),
                 ),
-                new Set(["ember_adoption", "user_command"]),
+                new Set(["agent_adoption", "user_command"]),
             );
             const selectedFact = requireMeaning(
                 request.projection.meanings,
@@ -289,12 +289,12 @@ test("CLI -> Telegram -> CLI preserves one Ember-owned conversation across proce
 
         assert.equal(confirmedRequest.projection.recoveryAccount.gapKind, "known_clean_stop_interval");
         assert.equal(
-            confirmedRequest.projection.recoveryAccount.emberCognitionDuringInterval,
+            confirmedRequest.projection.recoveryAccount.agentCognitionDuringInterval,
             "none_in_supported_runtime",
         );
         assert.equal(returnRequest.projection.recoveryAccount.gapKind, "known_clean_stop_interval");
         assert.equal(
-            returnRequest.projection.recoveryAccount.emberCognitionDuringInterval,
+            returnRequest.projection.recoveryAccount.agentCognitionDuringInterval,
             "none_in_supported_runtime",
         );
 
