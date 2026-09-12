@@ -7,6 +7,7 @@ declare const idBrand: unique symbol;
 type Brand<Name extends string> = string & { readonly [idBrand]: Name };
 
 export type LineageId = Brand<"LineageId">;
+export type AgentActor = `agent:${string}`;
 export type MeaningId = Brand<"MeaningId">;
 export type EvidenceId = Brand<"EvidenceId">;
 export type RuntimeId = Brand<"RuntimeId">;
@@ -69,7 +70,6 @@ export interface ConstitutiveBoundary {
 
 export interface Lineage {
     lineageId: LineageId;
-    displayName: string;
     establishedAt: string;
     constitutiveBoundaries: ConstitutiveBoundary[];
 }
@@ -115,7 +115,7 @@ export interface UnavailableUserDetailEvidence extends EvidenceBase {
 
 export interface EmberAdoptionEvidence extends EvidenceBase {
     sourceRole: "agent_adoption";
-    sourceActor: "ember";
+    sourceActor: AgentActor;
     assertedPrincipal: string;
     derivedFromEvidenceIds: [EvidenceId];
     payloadMode: "descriptor_only";
@@ -123,7 +123,7 @@ export interface EmberAdoptionEvidence extends EvidenceBase {
 
 export interface EmberExpressionEvidence extends EvidenceBase {
     sourceRole: "agent_expression_via_provider";
-    sourceActor: "ember";
+    sourceActor: AgentActor;
     assertedPrincipal: string;
     derivedFromEvidenceIds: [];
     payloadMode: "descriptor_only";
@@ -146,14 +146,14 @@ export interface ExternalClaimEvidence extends EvidenceBase {
 
 export interface EmberInferenceEvidence extends EvidenceBase {
     sourceRole: "agent_inference";
-    sourceActor: "ember";
+    sourceActor: AgentActor;
     derivedFromEvidenceIds: [EvidenceId, ...EvidenceId[]];
     payloadMode: "descriptor_only";
 }
 
 export interface EmberObservationEvidence extends EvidenceBase {
     sourceRole: "agent_observation";
-    sourceActor: "ember";
+    sourceActor: AgentActor;
     derivedFromEvidenceIds: [];
     payloadMode: "descriptor_only";
 }
@@ -217,7 +217,7 @@ export interface RelationshipMeaning extends MeaningBase {
 
 export interface FactMeaning extends MeaningBase {
     kind: "fact";
-    owner: `user:${string}` | "ember" | `external:${string}` | `delegate:${string}`;
+    owner: `user:${string}` | AgentActor | `external:${string}` | `delegate:${string}`;
     epistemicRole: Exclude<EpistemicRole, "agent_commitment">;
     currentness: "current" | "superseded";
     prospectiveLifecycle: "none";
@@ -233,7 +233,7 @@ export interface PreferenceMeaning extends MeaningBase {
 
 export interface CommitmentMeaning extends MeaningBase {
     kind: "commitment";
-    owner: "ember";
+    owner: AgentActor;
     currentness: "current" | "historical";
     prospectiveLifecycle: CommitmentLifecycle;
     supersedes: null;
@@ -243,7 +243,7 @@ export interface CommitmentMeaning extends MeaningBase {
 
 export interface EpisodeMetaMeaning extends MeaningBase {
     kind: "episode_meta";
-    owner: "ember" | `relationship:${string}`;
+    owner: AgentActor | `relationship:${string}`;
     epistemicRole: "user_testimony";
     currentness: "current";
     prospectiveLifecycle: "none";
@@ -338,6 +338,8 @@ export interface EmberState {
 export const SCHEMA_VERSION = 1;
 export const TOPOLOGY = "single-principal-single-writer" as const;
 export const CONSTITUTIVE_TEXT =
+    "The continuing agent owns this lineage across temporary cognition loci and must not fabricate experience during inactive intervals.";
+const LEGACY_CONSTITUTIVE_TEXT =
     "Ember owns this lineage across temporary cognition loci and must not fabricate experience during inactive intervals.";
 
 export const ASCII_CONTROL_CHARACTER_CLASS = String.raw`[\u0000-\u001f\u007f]`;
@@ -389,14 +391,25 @@ export function nowUtc(): string {
     return new Date().toISOString();
 }
 
-export function initialState(name: string, principal: string, timestamp = nowUtc()): EmberState {
+export function agentActor(lineageId: LineageId | string): AgentActor {
+    if (!isNotBlankString(lineageId) || !lineageId.startsWith("lineage-")) {
+        throw new ValidationError("agent actor requires a stable lineage ID");
+    }
+    return `agent:${lineageId}`;
+}
+
+export function initialState(principal: string): EmberState;
+/** @deprecated Legacy display-name argument is ignored; identity belongs to the lineage, not the product/bootstrap label. */
+export function initialState(legacyDisplayName: string, principal: string, timestamp?: string): EmberState;
+export function initialState(first: string, second?: string, third?: string): EmberState {
+    const principal = second ?? first;
+    const timestamp = third ?? nowUtc();
     const state: EmberState = {
         schemaVersion: 1,
         revision: 0,
         runtimeContract: { localPrincipal: principal, topology: TOPOLOGY },
         lineage: {
             lineageId: newId("lineage"),
-            displayName: name,
             establishedAt: timestamp,
             constitutiveBoundaries: [{ boundaryId: "minimal-continuity-v1", text: CONSTITUTIVE_TEXT }],
         },
@@ -458,6 +471,62 @@ function sameSlot(a: Record<string, any>, b: Record<string, any>) {
     return ["kind", "owner", "slot", "scope"].every((key) => a[key] === b[key]);
 }
 
+export function normalizeLegacyIdentityRepresentation(value: unknown): unknown {
+    if (!isObject(value) || value.schemaVersion !== 1 || !isObject(value.lineage)) return value;
+    if (!validId(value.lineage.lineageId, "lineage-")) return value;
+
+    const normalized = structuredClone(value) as Record<string, any>;
+    const lineage = normalized.lineage as Record<string, any>;
+    const actor = agentActor(lineage.lineageId);
+
+    delete lineage.displayName;
+    if (
+        Array.isArray(lineage.constitutiveBoundaries) &&
+        lineage.constitutiveBoundaries.length === 1 &&
+        isObject(lineage.constitutiveBoundaries[0]) &&
+        lineage.constitutiveBoundaries[0].text === LEGACY_CONSTITUTIVE_TEXT
+    ) {
+        lineage.constitutiveBoundaries[0].text = CONSTITUTIVE_TEXT;
+    }
+
+    const roleMap: Record<string, SourceRole> = {
+        ember_adoption: "agent_adoption",
+        ember_expression_via_provider: "agent_expression_via_provider",
+        ember_inference: "agent_inference",
+        ember_observation: "agent_observation",
+    };
+    if (Array.isArray(normalized.evidence)) {
+        for (const raw of normalized.evidence) {
+            if (!isObject(raw)) continue;
+            if (typeof raw.sourceRole === "string" && raw.sourceRole in roleMap) raw.sourceRole = roleMap[raw.sourceRole];
+            if (raw.sourceActor === "ember") raw.sourceActor = actor;
+        }
+    }
+
+    if (Array.isArray(normalized.meanings)) {
+        for (const raw of normalized.meanings) {
+            if (!isObject(raw)) continue;
+            if (raw.owner === "ember") raw.owner = actor;
+            if (raw.epistemicRole === "ember_inference") raw.epistemicRole = "agent_inference";
+            if (raw.epistemicRole === "ember_commitment") raw.epistemicRole = "agent_commitment";
+        }
+    }
+
+    const runtimeEpisodes = isObject(normalized.operations) && Array.isArray(normalized.operations.runtimeEpisodes)
+        ? normalized.operations.runtimeEpisodes
+        : [];
+    for (const raw of runtimeEpisodes) {
+        if (!isObject(raw) || !isObject(raw.recoveryAccount)) continue;
+        const recovery = raw.recoveryAccount;
+        if ("emberCognitionDuringInterval" in recovery && !("agentCognitionDuringInterval" in recovery)) {
+            recovery.agentCognitionDuringInterval = recovery.emberCognitionDuringInterval;
+            delete recovery.emberCognitionDuringInterval;
+        }
+    }
+
+    return normalized;
+}
+
 export function validateState(state: unknown): asserts state is EmberState {
     const errors: string[] = [];
     const require = (condition: unknown, message: string) => {
@@ -483,14 +552,9 @@ export function validateState(state: unknown): asserts state is EmberState {
 
     const lineage = isObject(state.lineage) ? state.lineage : {};
     require(isObject(state.lineage), "lineage must be an object");
-    require(exactKeys(lineage, [
-        "lineageId",
-        "displayName",
-        "establishedAt",
-        "constitutiveBoundaries",
-    ]), "lineage contains unsupported fields");
+    require(exactKeys(lineage, ["lineageId", "establishedAt", "constitutiveBoundaries"]), "lineage contains unsupported fields");
     require(validId(lineage.lineageId, "lineage-"), "lineageId must be stable lineage ID");
-    require(isNotBlankString(lineage.displayName), "lineage displayName must be non-empty");
+    const continuingAgentActor = validId(lineage.lineageId, "lineage-") ? agentActor(lineage.lineageId) : null;
     require(isRfc3339Utc(lineage.establishedAt), "lineage.establishedAt must be RFC 3339 UTC");
     require(Array.isArray(lineage.constitutiveBoundaries) &&
         lineage.constitutiveBoundaries.length === 1, "exactly one constitutive boundary is required");
@@ -603,13 +667,13 @@ export function validateState(state: unknown): asserts state is EmberState {
         } else if ("assertedPrincipal" in ev)
             require(ev.assertedPrincipal === principal, `${path} asserted principal does not match runtime contract`);
         if (ev.sourceRole === "agent_adoption") {
-            require(ev.sourceActor === "ember", `${path} adoption must be Ember-owned evidence`);
+            require(ev.sourceActor === continuingAgentActor, `${path} adoption must be Ember-owned evidence`);
             require(derived.length === 1, `${path} adoption needs exactly one requesting occurrence`);
             require(ev.payloadMode === "descriptor_only", `${path} adoption must be descriptor-only`);
         }
         if (ev.sourceRole === "agent_expression_via_provider") {
             require(ev.payloadMode === "descriptor_only", `${path} provider expression must be descriptor-only`);
-            require(ev.sourceActor === "ember", `${path} provider expression actor must be Ember`);
+            require(ev.sourceActor === continuingAgentActor, `${path} provider expression actor must be Ember`);
             require(isNotBlankString(ev.cognitionId), `${path} provider expression needs cognitionId`);
             require(isNotBlankString(ev.providerLabel), `${path} provider expression needs providerLabel`);
             require(derived.length === 0, `${path} provider expression cannot derive new evidence`);
@@ -623,12 +687,12 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(ev.payloadMode === "descriptor_only", `${path} external claim must be descriptor-only`);
         }
         if (ev.sourceRole === "agent_inference") {
-            require(ev.sourceActor === "ember", `${path} inference actor must be Ember`);
+            require(ev.sourceActor === continuingAgentActor, `${path} inference actor must be Ember`);
             require(derived.length >= 1, `${path} inference needs source evidence`);
             require(ev.payloadMode === "descriptor_only", `${path} inference must be descriptor-only`);
         }
         if (ev.sourceRole === "agent_observation") {
-            require(ev.sourceActor === "ember", `${path} direct observation actor must be Ember`);
+            require(ev.sourceActor === continuingAgentActor, `${path} direct observation actor must be Ember`);
             require(derived.length === 0, `${path} direct observation cannot masquerade as a derivative`);
             require(ev.payloadMode === "descriptor_only", `${path} direct observation must be descriptor-only`);
         }
@@ -697,7 +761,7 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(m.prospectiveLifecycle === "none", `${path} relationship lifecycle is unsupported`);
         } else if (m.kind === "fact") {
             require(m.owner === `user:${principal}` ||
-                m.owner === "ember" ||
+                m.owner === continuingAgentActor ||
                 (typeof m.owner === "string" &&
                     m.owner.startsWith("external:") &&
                     m.owner.length > "external:".length) ||
@@ -708,15 +772,17 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(m.prospectiveLifecycle === "none", `${path} fact prospective lifecycle is invalid`);
             require(m.applicableUntil === null, `${path} fact applicability interval cannot be rewritten in v1`);
             if (m.currentness === "superseded")
-                require(m.epistemicRole ===
-                    "user_testimony", `${path} only user testimony supports supersession in v1`);
+                require(
+                    ["user_testimony", "agent_inference"].includes(m.epistemicRole),
+                    `${path} superseded fact must preserve supported attributable provenance`,
+                );
         } else if (m.kind === "preference") {
             require(m.owner === `user:${principal}`, `${path} preference owner must be the supported user`);
             require(["current", "superseded"].includes(m.currentness), `${path} preference currentness is invalid`);
             require(m.prospectiveLifecycle === "none", `${path} preference prospective lifecycle is invalid`);
             require(m.applicableUntil === null, `${path} preference applicability interval cannot be rewritten in v1`);
         } else if (m.kind === "commitment") {
-            require(m.owner === "ember", `${path} commitment owner must be Ember`);
+            require(m.owner === continuingAgentActor, `${path} commitment owner must be the continuing agent`);
             require(["live", "fulfilled", "cancelled"].includes(
                 m.prospectiveLifecycle,
             ), `${path} commitment lifecycle is invalid`);
@@ -728,7 +794,7 @@ export function validateState(state: unknown): asserts state is EmberState {
                 require(isRfc3339Utc(m.applicableUntil), `${path} discharged commitment needs applicability end`);
             }
         } else if (m.kind === "episode_meta") {
-            require(["ember", `relationship:${principal}`].includes(m.owner), `${path} episode owner is invalid`);
+            require([continuingAgentActor, `relationship:${principal}`].includes(m.owner), `${path} episode owner is invalid`);
             require(m.currentness === "current", `${path} episode meta must be current`);
             require(m.prospectiveLifecycle === "none", `${path} episode meta lifecycle is invalid`);
         }
