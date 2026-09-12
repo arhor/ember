@@ -114,7 +114,7 @@ function requireMeaning(
     return meaning;
 }
 
-test("CLI -> Telegram -> CLI preserves one Ember-owned conversation across process restart", async () => {
+test("CLI -> Telegram -> CLI preserves one agent-owned conversation across process restart", async () => {
     const directory = await tempDir();
     try {
         const statePath = join(directory, "ember.json");
@@ -124,7 +124,7 @@ test("CLI -> Telegram -> CLI preserves one Ember-owned conversation across proce
         const telegramUncertainCapture = join(directory, "telegram-uncertain-request.json");
         const cliReturnCapture = join(directory, "cli-return-request.json");
 
-        const init = await command(["init", "--state", statePath, "--name", "Ember", "--principal", PRINCIPAL], {
+        const init = await command(["init", "--state", statePath, "--principal", PRINCIPAL], {
             now: "2026-09-05T08:00:00Z",
         });
         assert.equal(init.code, 0, init.stderr);
