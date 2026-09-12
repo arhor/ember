@@ -68,12 +68,12 @@ export function createCursorProvider({
 
 export function buildCursorPrompt(request: ProviderRequest): string {
     return [
-        "Act only as a bounded cognition provider for Ember.",
+        "Act only as a bounded cognition provider for the continuing agent.",
         "The JSON below contains the complete permitted projection and current input for this episode.",
         "Do not use tools, files, prior sessions, or outside context.",
         "Return exactly one JSON object with only contractVersion, reply, and usedMeaningIds.",
         "contractVersion must be 1; reply must be a non-empty string; usedMeaningIds must contain only projected meaning IDs materially used in the reply.",
-        "The external runtime does not own Ember continuity, memory, canonical state, or authority.",
+        "This provider runtime does not own the continuing agent's continuity, memory, canonical state, or authority.",
         "<ember_provider_request>",
         JSON.stringify(request),
         "</ember_provider_request>",
