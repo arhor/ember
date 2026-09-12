@@ -17,24 +17,25 @@ discovery_status: current
 
 ## Purpose
 
-A machine can be new while Ember is not.
+A machine can be new while the continuing agent is not.
 
-Conversely, a machine can already contain Ember software while the user is intentionally
-creating a new Ember lineage.
+Conversely, a machine can already contain the Ember runtime while the user is intentionally
+creating a new continuing-agent lineage. The product/runtime name and the agent's identity
+are separate semantic facts.
 
 Setup therefore must not collapse these distinct questions:
 
-1. **Can this machine run Ember?**
-2. **Which Ember, if any, should continue here?**
-3. **Can Ember successfully obtain cognition on this machine?**
-4. **What durable Ember state is restored or initialized?**
-5. **What should Ember and the user learn about one another through ordinary conversation?**
+1. **Can this machine run the Ember runtime?**
+2. **Which continuing-agent lineage, if any, should continue here?**
+3. **Can that agent successfully obtain cognition through the configured runtime/provider?**
+4. **What durable continuity state is restored or initialized?**
+5. **What should the agent and the user learn about one another through ordinary conversation?**
 6. **Which optional host integrations should be configured?**
 
 The central rule is:
 
-> **Trusted host setup owns machine mechanics; Ember owns continuity, meaning, and the
-> conversational journey once cognition is available.**
+> **Trusted host setup and the Ember runtime own machine mechanics; the continuing agent
+> owns its lineage-bearing meaning and conversational journey once cognition is available.**
 
 This follows the accepted architecture:
 
@@ -63,13 +64,14 @@ implementation stores some of them together.
 | Machine-local bootstrap     | executable paths, runtime availability, local service installation, selected provider command, local state location | trusted host                              | No                       |
 | Secret/auth material        | provider credentials, Telegram bot token, runtime-owned login state                                                 | trusted host or external provider runtime | No                       |
 | Setup operational progress  | which deterministic setup steps succeeded, failed, were skipped, or need retry                                      | trusted host setup                        | No                       |
-| Ember continuity state      | lineage-bearing state, constitutive commitments, owned history, relationships, live commitments                     | Ember                                     | Yes                      |
-| Ordinary remembered meaning | durable user/Ember/relationship meaning adopted through normal memory semantics                                     | Ember                                     | Yes                      |
-| Temporary onboarding work   | unanswered onboarding topics, deferred invitations, temporary conversational goals                                  | Ember work/context layer                  | Not automatically        |
+| Agent continuity state      | lineage-bearing state, constitutive commitments, owned history, relationships, live commitments                     | continuing agent                          | Yes                      |
+| Ordinary remembered meaning | durable user/agent/relationship meaning adopted through normal memory semantics                                     | continuing agent                          | Yes                      |
+| Temporary onboarding work   | unanswered onboarding topics, deferred invitations, temporary conversational goals                                  | agent work/context layer                  | Not automatically        |
 | Surface configuration       | Telegram chat/principal binding, service enablement, transport-local settings                                       | trusted host plus surface semantics       | Not by itself            |
 
-Machine-local state may point to canonical Ember state. It must not silently _become_ the
-identity key merely because a path, service, profile, or installation contains it.
+Machine-local state may point to canonical continuing-agent state. It must not silently
+_become_ the identity key merely because a path, service, profile, installation, or product
+name contains it.
 
 ## Target flow
 
@@ -80,58 +82,58 @@ clean or existing machine
         ↓
 deterministic host preflight
         ↓
-choose: restore existing Ember / create new Ember / leave existing Ember intact
+choose: restore existing lineage / create new lineage / leave existing lineage intact
         ↓
 machine-local provider/runtime bootstrap
         ↓
 verify usable cognition
         ↓
-restore or initialize Ember continuity
+restore or initialize continuing-agent continuity
         ↓
-ordinary Ember-led progressive onboarding
+ordinary agent-led progressive onboarding
         ↓
 optional trusted-host integration setup
         ↓
-normal Ember operation
+normal agent operation through Ember
 ```
 
 The ordering matters.
 
-Conversational onboarding must not depend on an unverified cognition path. Durable Ember
+Conversational onboarding must not depend on an unverified cognition path. Durable agent
 meaning must not be fabricated by deterministic setup code. Optional integration setup
-must not be required merely to establish Ember continuity.
+must not be required merely to establish the continuing lineage.
 
-## New machine is not new Ember
+## New machine or Ember installation is not a new agent
 
-A **new machine** is a host fact.
+A **new machine or Ember installation** is a host/runtime fact.
 
-A **new Ember** is a continuity decision.
+A **new continuing-agent lineage** is an identity/continuity decision.
 
-Installing Ember software onto a clean machine does not create a new Ember merely because
-no local state exists yet. The user may intend to restore an existing Ember.
+Installing Ember software onto a clean machine does not create a new agent merely because
+no local state exists yet. The user may intend to restore an existing lineage.
 
-Likewise, running setup on a machine that already contains Ember state does not authorize
-replacement, reset, or recreation.
+Likewise, running setup on a machine that already contains canonical agent state does not
+authorize replacement, reset, or recreation.
 
 Therefore setup must surface an explicit distinction between:
 
-- **restore existing Ember**;
-- **create new Ember**;
-- **use the already configured Ember without recreating it**.
+- **restore an existing continuing-agent lineage**;
+- **create a new continuing-agent lineage**;
+- **use the already configured lineage without recreating it**.
 
 No branch may be selected implicitly from "directory exists" versus "directory missing"
 alone.
 
 ## Restore-existing semantics
 
-Restore means: make previously durable Ember state available on this machine and attempt
-to resume the recognized Ember lineage represented by that state.
+Restore means: make previously durable agent state available on this machine and attempt
+to resume the recognized continuing-agent lineage represented by that state.
 
 It does **not** mean:
 
 - copied bytes automatically prove unique identity;
 - a restored old snapshot makes later lost experience never have happened;
-- two simultaneous copies are automatically both the unique continuing Ember;
+- two simultaneous copies are automatically both the unique continuing agent;
 - setup may rewrite lineage ambiguity into certainty.
 
 ADR 0001 deliberately leaves fork and stale-backup identity questions unresolved. Setup
@@ -165,11 +167,12 @@ truthfully that restoration did not complete.
 
 ## Create-new semantics
 
-Creating a new Ember means intentionally establishing a new continuity lineage.
+Creating a new agent means intentionally establishing a new continuity lineage. Installing
+or starting Ember is not by itself such a creation event.
 
 The create path must not inherit canonical identity, autobiographical ownership,
-relationship meaning, or live commitments from another Ember merely because machine-local
-configuration or provider login is reusable.
+relationship meaning, preferred name, self-description, or live commitments from another
+agent merely because machine-local configuration or provider login is reusable.
 
 Machine-local conveniences may be reused when semantically safe, for example:
 
@@ -180,15 +183,20 @@ Machine-local conveniences may be reused when semantically safe, for example:
 
 Those are capabilities of the host, not inherited selfhood.
 
-Initial constitutive state for a new Ember must be the minimal reviewed bootstrap needed
-for Ember to exist coherently. User-specific, Ember-specific, and relationship-specific
-meaning should then be formed through ordinary interaction rather than pre-filled by the
-installer as unquestioned fact.
+Initial constitutive state for a new lineage must be the minimal reviewed bootstrap needed
+for coherent continuity. It does not require a personal/display name. User-specific,
+agent-specific, and relationship-specific meaning, including preferred name and
+self-description, should then be formed through ordinary interaction rather than pre-filled
+by the installer as unquestioned fact.
 
-## Deterministic bootstrap before Ember-led onboarding
+The current representation uses the stable lineage-derived actor `agent:<lineageId>` for
+agent-owned evidence and meaning. That actor identifier is not a self-chosen name and must
+not be surfaced as one.
 
-Before Ember can lead a conversation, trusted setup code must establish enough machine
-capability to support one real cognition turn.
+## Deterministic bootstrap before agent-led onboarding
+
+Before the continuing agent can lead a conversation, trusted setup code must establish
+enough machine capability to support one real cognition turn.
 
 The deterministic layer may:
 
@@ -197,8 +205,8 @@ The deterministic layer may:
 - discover supported cognition providers;
 - guide provider authentication through provider-owned or host-owned mechanisms;
 - verify the selected provider with a bounded probe;
-- create or restore the minimum Ember state needed to start;
-- expose typed setup operations Ember may later request;
+- create or restore the minimum continuing-agent state needed to start;
+- expose typed setup operations the agent may later request;
 - persist truthful operational setup results.
 
 It must not:
@@ -211,7 +219,7 @@ It must not:
 
 ## Cognition verification gate
 
-Ember-led onboarding may begin only after setup has evidence that the selected cognition
+Agent-led onboarding may begin only after setup has evidence that the selected cognition
 path can perform a bounded real invocation under the intended machine-local configuration.
 
 Verification should establish the narrow facts needed for onboarding, such as:
@@ -231,12 +239,12 @@ Verification does not prove:
 - successful configuration of unrelated integrations.
 
 A failed verification keeps onboarding unavailable through that provider. It does not
-damage canonical Ember state merely because machine bootstrap is incomplete.
+damage canonical agent state merely because machine bootstrap is incomplete.
 
-## Progressive Ember-led onboarding
+## Progressive agent-led onboarding
 
-Once cognition and continuity are available, onboarding becomes ordinary Ember
-conversation with a temporary purpose: helping Ember and the user establish useful shared
+Once cognition and continuity are available, onboarding becomes ordinary agent conversation
+with a temporary purpose: helping the continuing agent and the user establish useful shared
 context and optionally configure capabilities.
 
 It is not a rigid one-shot questionnaire.
@@ -251,8 +259,8 @@ Onboarding must support:
 - **ordinary interruption**: the user may leave the onboarding topic and use Ember normally.
 
 The agent should choose what is useful to ask next from current needs and available
-meaning, not from a mandatory linear script whose completion flag defines whether Ember is
-"ready".
+meaning, not from a mandatory linear script whose completion flag defines whether the agent
+is "ready".
 
 A UI or CLI may still present suggested sections for usability. Those sections are
 presentation and orchestration mechanics, not canonical semantic stages.
@@ -261,7 +269,7 @@ presentation and orchestration mechanics, not canonical semantic stages.
 
 Onboarding may conversationally encounter information about:
 
-- Ember's preferred self-description or interaction style;
+- the agent's preferred name, self-description, or interaction style;
 - the user's preferences, circumstances, goals, or communication style;
 - the relationship and mutually established conventions;
 - recurring projects, responsibilities, or environmental context;
@@ -269,7 +277,7 @@ Onboarding may conversationally encounter information about:
 
 Encountering information is not the same as remembering it.
 
-Durable meaning learned during onboarding must pass through Ember's **ordinary
+Durable meaning learned during onboarding must pass through the agent's **ordinary
 memory-proposal/adoption/correction semantics**, exactly as comparable information learned
 later in normal conversation would.
 
@@ -286,17 +294,19 @@ This preserves:
 
 Temporary onboarding prompts, unanswered questions, and "topics still worth discussing"
 may remain temporary semantic work or conversational context. They do not become durable
-identity/memory merely because onboarding created them.
+identity/memory merely because onboarding created them. Preferred name and self-description
+follow the same rule: if durable, they are attributable mutable self-related meaning, not
+fields of the stable lineage identity.
 
 ## Onboarding progress is not canonical identity state
 
-There should be no canonical fact such as "Ember is 73% onboarded" that gates whether she
-is a legitimate Ember.
+There should be no canonical fact such as "the agent is 73% onboarded" that gates whether
+the lineage is legitimate.
 
 Progress belongs primarily to **temporary semantic work plus operational setup evidence**:
 
 - host setup records what deterministic machinery has or has not succeeded;
-- Ember may retain a temporary/deferred concern that a useful onboarding topic remains;
+- the agent may retain a temporary/deferred concern that a useful onboarding topic remains;
 - durable learned meaning, if adopted, lives in ordinary canonical memory;
 - completed integrations live in their own host/surface configuration.
 
@@ -304,7 +314,8 @@ A compact host-local convenience marker may summarize completed setup sections f
 It is a projection/cache of operational progress and must be reconstructable from stronger
 truth sources or safely discardable.
 
-This avoids building a second profile database whose lifecycle competes with Ember memory.
+This avoids building a second profile database whose lifecycle competes with canonical
+agent memory.
 
 ## Agent conversation versus trusted host operations
 
