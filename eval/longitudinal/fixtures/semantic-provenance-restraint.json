@@ -40,7 +40,7 @@
       "cognition_backend": "codex",
       "restart_ember": false,
       "external_thread": { "mode": "fresh" },
-      "input": "Audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<first source_evidence sourceRole>; FACT_OWNER=<owner>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; COMMITMENT_EPISTEMIC_ROLE=<epistemicRole>; COMMITMENT_SOURCE_ROLE=<first source_evidence sourceRole>; COMMITMENT_OWNER=<owner>; COMMITMENT_IS_EMBER_OWNED=<yes|no according to ownership and epistemic role>.",
+      "input": "Audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<first source_evidence sourceRole>; FACT_OWNER=<owner>; FACT_DIRECTLY_OBSERVED_BY_AGENT=<yes|no according to provenance>; COMMITMENT_EPISTEMIC_ROLE=<epistemicRole>; COMMITMENT_SOURCE_ROLE=<first source_evidence sourceRole>; COMMITMENT_OWNER=<owner>; COMMITMENT_IS_AGENT_OWNED=<yes|no according to ownership and epistemic role>.",
       "expect": {
         "selected_meanings": ["relationship", "reported_fact", "owned_commitment"],
         "forbidden_meanings": [],
@@ -48,14 +48,14 @@
           "FACT_EPISTEMIC_ROLE=user_testimony",
           "FACT_SOURCE_ROLE=user_command",
           "FACT_OWNER=user:user-1",
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=no",
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=no",
           "COMMITMENT_EPISTEMIC_ROLE=agent_commitment",
           "COMMITMENT_SOURCE_ROLE=agent_adoption",
           "COMMITMENT_OWNER=ember",
-          "COMMITMENT_IS_EMBER_OWNED=yes"
+          "COMMITMENT_IS_AGENT_OWNED=yes"
         ],
         "reply_excludes": [
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=yes",
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=yes",
           "FACT_EPISTEMIC_ROLE=agent_commitment",
           "COMMITMENT_EPISTEMIC_ROLE=user_testimony"
         ]
@@ -68,14 +68,14 @@
       "cognition_backend": "codex",
       "restart_ember": true,
       "external_thread": { "mode": "fresh" },
-      "input": "After restart, audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<first source_evidence sourceRole>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; COMMITMENT_EPISTEMIC_ROLE=<epistemicRole>; COMMITMENT_SOURCE_ROLE=<first source_evidence sourceRole>; COMMITMENT_OWNER=<owner>; COMMITMENT_LIFECYCLE=<prospectiveLifecycle>; COMMITMENT_APPLICABILITY=<applicability>; DOWNTIME_COGNITION=<recoveryAccount.agentCognitionDuringInterval>.",
+      "input": "After restart, audit provenance using only the permitted projection. Use exactly these field names and derive values only from meaning/evidence metadata: FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<first source_evidence sourceRole>; FACT_DIRECTLY_OBSERVED_BY_AGENT=<yes|no according to provenance>; COMMITMENT_EPISTEMIC_ROLE=<epistemicRole>; COMMITMENT_SOURCE_ROLE=<first source_evidence sourceRole>; COMMITMENT_OWNER=<owner>; COMMITMENT_LIFECYCLE=<prospectiveLifecycle>; COMMITMENT_APPLICABILITY=<applicability>; DOWNTIME_COGNITION=<recoveryAccount.agentCognitionDuringInterval>.",
       "expect": {
         "selected_meanings": ["relationship", "reported_fact", "owned_commitment"],
         "forbidden_meanings": [],
         "reply_includes": [
           "FACT_EPISTEMIC_ROLE=user_testimony",
           "FACT_SOURCE_ROLE=user_command",
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=no",
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=no",
           "COMMITMENT_EPISTEMIC_ROLE=agent_commitment",
           "COMMITMENT_SOURCE_ROLE=agent_adoption",
           "COMMITMENT_OWNER=ember",
@@ -84,7 +84,7 @@
           "DOWNTIME_COGNITION=none_in_supported_runtime"
         ],
         "reply_excludes": [
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=yes",
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=yes",
           "DOWNTIME_COGNITION=continuous",
           "DOWNTIME_COGNITION=unknown_after_last_durable_observation"
         ]
