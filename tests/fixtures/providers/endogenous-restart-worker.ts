@@ -154,7 +154,7 @@ if (phase === "prepare") {
                     .sort(),
                 gapKind: state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.gapKind,
                 downtime_cognition:
-                    state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.emberCognitionDuringInterval,
+                    state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.agentCognitionDuringInterval,
                 provider_thread_policy: mode === "live" ? "ephemeral" : "deterministic_no_session",
                 provider_thread_observed: providerThreadObserved,
                 supersession:
