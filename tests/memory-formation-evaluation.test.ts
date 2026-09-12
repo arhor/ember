@@ -76,12 +76,12 @@ test("memory formation evaluation detects a live generator decision mismatch ind
     assert.equal(report.episodes.find((episode) => episode.id === "incidental-detail")?.observed_decision, "invalid");
 });
 
-test("deterministic decision mismatch fails Ember assertions rather than model observations", async () => {
+test("deterministic correction mismatch fails Ember assertions and correction accuracy", async () => {
     // Given
     const scenario = await loadMemoryFormationScenario(SCENARIO);
     const directory = await tempDir();
-    scenario.episodes.find((episode) => episode.id === "repeated-evidence")!.expect.reason =
-        "conflict_requires_supersession";
+    scenario.episodes.find((episode) => episode.id === "explicit-correction")!.expect.current_content =
+        "The user prefers terse answers";
 
     // When
     const report = await runMemoryFormationScenario(scenario, join(directory, "ember.json"));
@@ -90,6 +90,9 @@ test("deterministic decision mismatch fails Ember assertions rather than model o
     assert.equal(report.evaluation_mode, "deterministic");
     assert.equal(report.ember_assertions_passed, false);
     assert.equal(report.model_observations_passed, true);
+    assert.equal(report.metrics.correction_supersession.errors, 1);
+    assert.equal(report.metrics.correction_supersession.accuracy, 0);
+    assert.equal(report.episodes.find((episode) => episode.id === "explicit-correction")?.expectation_passed, false);
 });
 
 test("live evaluation accepts no proposal as equivalent to policy rejection", async () => {

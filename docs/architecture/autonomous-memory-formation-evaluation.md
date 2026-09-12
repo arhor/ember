@@ -64,15 +64,17 @@ bounded recent dialogue, and canonical availability after the source dialogue le
 that bound.
 
 Every episode reports the expected and observed decision, rejection or invalidity
-reason, allowed live decisions, complete proposal outcome, bounded source evidence,
-projection size, current meaning count, and adopted-meaning provenance back to the
+reason, mode-appropriate `expectation_passed`, allowed live decisions, complete
+proposal outcome, bounded source evidence, projection size, current meaning count,
+and adopted-meaning provenance back to the
 expected principal, actor, scope, and user-command evidence. The
 top-level scorecard-ready metrics are:
 
 - `false_adoption`: adoption where the fixture expected no adoption;
 - `missed_adoption`: failure to adopt supported durable meaning;
 - `duplicate_adoption`: multiple current meanings occupying one semantic slot;
-- `correction_supersession`: cases, errors, and accuracy for correction scenarios;
+- `correction_supersession`: cases, errors, and accuracy from exact deterministic or
+  semantically allowed live expectations for correction scenarios;
 - `stale_memory_revival`: adoption under named stale-revival pressure; and
 - `scope_provenance_violations`: an adopted meaning whose source does not resolve to
   durable user-command evidence.

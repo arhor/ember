@@ -167,6 +167,7 @@ export async function runMemoryFormationScenario(
                 memoryGeneratorInvoked &&
                 (provenance?.passed ?? true) &&
                 (liveEvaluation || exactScriptedExpectationPassed);
+            const expectationPassed = liveEvaluation ? liveModelObservationPassed : exactScriptedExpectationPassed;
             episodes.push({
                 id: episode.id,
                 restart: episode.restart ?? false,
@@ -182,6 +183,7 @@ export async function runMemoryFormationScenario(
                 bounded_projection_size_bytes: projectedBytes,
                 projected_source_evidence_ids: projectedEvidenceIds,
                 current_meaning_count: state.meanings.filter((meaning) => meaning.currentness === "current").length,
+                expectation_passed: expectationPassed,
                 ember_assertions_passed: assertionPassed,
                 model_observations_passed: liveEvaluation ? liveModelObservationPassed : true,
             });
@@ -332,6 +334,7 @@ interface MetricsEpisode {
     observed_decision: ExpectedDecision;
     ember_assertions_passed: boolean;
     model_observations_passed: boolean;
+    expectation_passed: boolean;
     provenance: { passed: boolean } | null;
 }
 
@@ -349,7 +352,7 @@ function calculateMetrics(episodes: MetricsEpisode[], meanings: Meaning[]) {
     }
     const duplicateAdoption = [...duplicateSlots.values()].filter((count) => count > 1).length;
     const correctionErrors = episodes.filter(
-        (episode) => episode.id.includes("correction") && !episode.model_observations_passed,
+        (episode) => episode.id.includes("correction") && !episode.expectation_passed,
     ).length;
     const staleMemoryRevival = episodes.filter(
         (episode) => episode.id.includes("stale-revival") && episode.observed_decision === "adopted",
