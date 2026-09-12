@@ -181,7 +181,7 @@ export function selectRecentConversationContext(
                 );
             }
             expression = evidenceById.get(exchange.expression_evidence_id) ?? null;
-            if (!expression || expression.sourceRole !== "ember_expression_via_provider") {
+            if (!expression || expression.sourceRole !== "agent_expression_via_provider") {
                 throw new ValidationError(
                     `conversation exchange expression evidence is invalid: ${exchange.expression_evidence_id}`,
                 );
