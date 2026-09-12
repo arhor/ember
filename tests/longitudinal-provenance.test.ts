@@ -56,23 +56,23 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     assert.equal(observation.epistemicRole, "direct_observation");
     assert.equal(delegateA.epistemicRole, "delegated_report");
     assert.equal(delegateB.epistemicRole, "delegated_report");
-    assert.equal(inferenceA.epistemicRole, "ember_inference");
-    assert.equal(inferenceB.epistemicRole, "ember_inference");
+    assert.equal(inferenceA.epistemicRole, "agent_inference");
+    assert.equal(inferenceB.epistemicRole, "agent_inference");
 
     assert.equal(user.source_evidence[0]!.sourceRole, "user_command");
     assert.equal(external.source_evidence[0]!.sourceRole, "external_claim");
     assert.equal(external.source_evidence[0]!.sourceActor, "external:release-dashboard");
-    assert.equal(observation.source_evidence[0]!.sourceRole, "ember_observation");
+    assert.equal(observation.source_evidence[0]!.sourceRole, "agent_observation");
     assert.equal(delegateA.source_evidence[0]!.sourceRole, "delegated_report");
     assert.equal(delegateA.source_evidence[0]!.sourceActor, "delegate:codex-a");
-    assert.equal(inferenceA.source_evidence[0]!.sourceRole, "ember_inference");
+    assert.equal(inferenceA.source_evidence[0]!.sourceRole, "agent_inference");
     assert.deepEqual(
         inferenceA.source_evidence.map((item) => item.sourceRole),
-        ["ember_inference", "delegated_report", "external_claim"],
+        ["agent_inference", "delegated_report", "external_claim"],
     );
     assert.deepEqual(
         inferenceB.source_evidence.map((item) => item.sourceRole),
-        ["ember_inference", "delegated_report", "external_claim"],
+        ["agent_inference", "delegated_report", "external_claim"],
     );
 
     const externalRoot = roots(external)[0]!;
