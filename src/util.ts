@@ -41,3 +41,7 @@ export function contentDigest(payload: string): `sha256:${string}` {
 
     return `sha256:${updatedHash.digest("hex")}`;
 }
+
+export function assertUnreachable(): never {
+    throw new Error("Didn't expect to get here");
+}
