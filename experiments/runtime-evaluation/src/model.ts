@@ -28,7 +28,7 @@ export interface UserEvidence {
 
 export interface EmberAdoptionEvidence {
     evidenceId: EvidenceId;
-    sourceRole: "ember_adoption";
+    sourceRole: "agent_adoption";
     sourceActor: "ember";
     assertedPrincipal: string;
     occurredAt: string;
@@ -238,7 +238,7 @@ export function fixtureState(): PersistentState {
     );
     const commitmentAdoption: EmberAdoptionEvidence = {
         evidenceId: evidenceId("evidence-commitment-adoption"),
-        sourceRole: "ember_adoption",
+        sourceRole: "agent_adoption",
         sourceActor: "ember",
         assertedPrincipal: "user-1",
         occurredAt: learned,
@@ -316,7 +316,7 @@ export function fixtureState(): PersistentState {
                 supersededBy: null,
             },
             {
-                ...base(commitmentAdoption.evidenceId, "ember_commitment"),
+                ...base(commitmentAdoption.evidenceId, "agent_commitment"),
                 meaningId: meaningId("meaning-commitment"),
                 kind: "commitment",
                 owner: "ember",
