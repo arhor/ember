@@ -14,7 +14,7 @@ interface InspectionSnapshot {
         runtimeId: string;
         recoveryAccount: {
             gapKind: string;
-            emberCognitionDuringInterval: string;
+            agentCognitionDuringInterval: string;
         };
     }>;
     cognitionEpisodes: Array<{
@@ -188,8 +188,8 @@ export async function runProcessRestartScenario(
         observation(
             "restart recovery records no supported cognition during downtime",
             "none_in_supported_runtime",
-            restartedRuntime.recoveryAccount.emberCognitionDuringInterval,
-            restartedRuntime.recoveryAccount.emberCognitionDuringInterval === "none_in_supported_runtime",
+            restartedRuntime.recoveryAccount.agentCognitionDuringInterval,
+            restartedRuntime.recoveryAccount.agentCognitionDuringInterval === "none_in_supported_runtime",
         ),
         observation(
             "durable meanings remain canonical across process restart",
