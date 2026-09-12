@@ -173,7 +173,7 @@ export function rememberDirectObservation(
     const at = nowUtc();
     const evidence: EmberObservationEvidence = {
         evidenceId: newId("evidence"),
-        sourceRole: "ember_observation",
+        sourceRole: "agent_observation",
         sourceActor: "ember",
         occurredAt: at,
         observedAt: at,
@@ -222,7 +222,7 @@ export function rememberInference(
     const at = nowUtc();
     const evidence: EmberInferenceEvidence = {
         evidenceId: newId("evidence"),
-        sourceRole: "ember_inference",
+        sourceRole: "agent_inference",
         sourceActor: "ember",
         occurredAt: at,
         observedAt: at,
@@ -230,7 +230,7 @@ export function rememberInference(
         scope,
         payloadMode: "descriptor_only",
     };
-    return rememberAttributedFact(state, principal, "ember", slot, scope, text, "ember_inference", evidence);
+    return rememberAttributedFact(state, principal, "ember", slot, scope, text, "agent_inference", evidence);
 }
 
 export function rememberRelationship(
@@ -332,7 +332,7 @@ export function undertake(state: EmberState, principal: string, slot: string, sc
     const at = nowUtc();
     const adoption: EmberAdoptionEvidence = {
         evidenceId: newId("evidence"),
-        sourceRole: "ember_adoption",
+        sourceRole: "agent_adoption",
         sourceActor: "ember",
         assertedPrincipal: principal,
         occurredAt: at,
@@ -346,7 +346,7 @@ export function undertake(state: EmberState, principal: string, slot: string, sc
         ...meaningCommon(slot, scope, text, adoption.evidenceId),
         kind: "commitment",
         owner: "ember",
-        epistemicRole: "ember_commitment",
+        epistemicRole: "agent_commitment",
         prospectiveLifecycle: "live",
     };
     state.meanings.push(m);
