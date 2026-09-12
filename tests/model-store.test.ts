@@ -138,7 +138,7 @@ test("state validator should reject state when unsafe integer impersonates revis
 test("state validator should reject state when adoption retains payload", async () => {
     // Given
     const { state } = populatedState(),
-        e = state.evidence.find((e) => e.sourceRole === "ember_adoption");
+        e = state.evidence.find((e) => e.sourceRole === "agent_adoption");
     Object.assign(e, {
         payloadMode: "retained_optional",
         availability: "available",
