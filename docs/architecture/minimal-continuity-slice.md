@@ -179,7 +179,7 @@ It returns one `CognitionResult` containing a non-empty, transient `reply` and m
 the meaning IDs it claims to have used so traces can be compared with the
 projection. Those IDs must be a subset of the supplied projection and do not
 create evidence. The canonical document retains a payload-free
-`ember_expression_via_provider` occurrence descriptor and an operational
+`agent_expression_via_provider` occurrence descriptor and an operational
 outcome, not the reply text or a provider transcript. That descriptor is not
 promoted to durable remembered meaning. The reply bytes exist only long enough
 to validate and attempt the current CLI delivery.
@@ -552,7 +552,7 @@ Before every commit and after every load, ordinary code enforces at least:
     historical, without changing A's content, source, owner, scope, or original
     applicability interval;
 11. a live Ember commitment has owner `ember`, currentness `current`, prospective
-    lifecycle `live`, and an `ember_adoption` source whose
+    lifecycle `live`, and an `agent_adoption` source whose
     `derivedFromEvidenceIds` contains exactly the requesting user-command
     occurrence; the projector exposes both links, the adoption supports only the
     fact that Ember accepted the commitment, and discharge is an explicit
@@ -594,11 +594,11 @@ Every accepted foreground input is stored once as an evidence occurrence with it
 source and times. A remembered meaning is a separate, explicit promotion that
 references that evidence.
 
-The minimum source roles are `user_command`, `ember_adoption`,
-`ember_expression_via_provider`, `runtime_observation`, and `fixture_fault`. A
+The minimum source roles are `user_command`, `agent_adoption`,
+`agent_expression_via_provider`, `runtime_observation`, and `fixture_fault`. A
 completed-expression descriptor cites its cognition episode and provider label
 without retaining the reply payload; it is neither user testimony nor Ember's
-direct observation of external facts. An `ember_adoption` is a distinct
+direct observation of external facts. An `agent_adoption` is a distinct
 occurrence created when the runtime accepts `:undertake`; its mandatory
 `derivedFromEvidenceIds` link names the one user's requesting command. It is
 evidence that Ember accepted the commitment under the explicit transition, not
@@ -684,7 +684,7 @@ The projection contains a recovery account such as:
   "lastDurableObservationAt": "...Z",
   "cleanStopAt": "...Z",
   "restartAt": "...Z",
-  "emberCognitionDuringInterval": "none_in_supported_runtime",
+  "agentCognitionDuringInterval": "none_in_supported_runtime",
   "externalChangesDuringInterval": "unknown"
 }
 ```
@@ -1079,7 +1079,7 @@ filesystems or Windows.
 ### 3. Evidence and explicit semantic operations
 
 Implement occurrence recording plus relationship/fact/preference/commitment and
-episode-meta promotion. Implement `ember_adoption` as a distinct derived
+episode-meta promotion. Implement `agent_adoption` as a distinct derived
 occurrence for `:undertake`. Test that one occurrence can support several meanings
 without becoming several evidence sources, that the adoption does not launder the
 user request into Ember testimony, that its mandatory derivation link remains
