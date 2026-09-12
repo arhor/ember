@@ -47,7 +47,7 @@ export function startRuntime(
                   lastDurableObservationAt: null,
                   cleanStopAt: null,
                   restartAt: timestamp,
-                  emberCognitionDuringInterval: "not_applicable" as const,
+                  agentCognitionDuringInterval: "not_applicable" as const,
                   externalChangesDuringInterval: "unknown" as const,
               }
             : previous.cleanStopAt !== null
@@ -58,7 +58,7 @@ export function startRuntime(
                     lastDurableObservationAt: previous.lastDurableObservationAt,
                     cleanStopAt: previous.cleanStopAt,
                     restartAt: timestamp,
-                    emberCognitionDuringInterval: "none_in_supported_runtime" as const,
+                    agentCognitionDuringInterval: "none_in_supported_runtime" as const,
                     externalChangesDuringInterval: "unknown" as const,
                 }
               : {
@@ -68,7 +68,7 @@ export function startRuntime(
                     lastDurableObservationAt: previous.lastDurableObservationAt,
                     cleanStopAt: null,
                     restartAt: timestamp,
-                    emberCognitionDuringInterval: "unknown_after_last_durable_observation" as const,
+                    agentCognitionDuringInterval: "unknown_after_last_durable_observation" as const,
                     externalChangesDuringInterval: "unknown" as const,
                 };
     if (previous?.cleanStopAt === null) {
@@ -322,7 +322,7 @@ export async function runCognition(
     const at = nowUtc();
     const expression: EmberExpressionEvidence = {
         evidenceId: expressionId,
-        sourceRole: "ember_expression_via_provider",
+        sourceRole: "agent_expression_via_provider",
         sourceActor: "ember",
         assertedPrincipal: principal,
         occurredAt: at,
