@@ -514,7 +514,7 @@ test("CLI run should reject timeout before runtime start when value is infinite"
     // Given
     const directory = await tempDir(),
         path = join(directory, "ember.json");
-    await command(["init", "--state", path, "--name", "Ember", "--principal", PRINCIPAL]);
+    await command(["init", "--state", path, "--principal", PRINCIPAL]);
     // When
     const attempted = await command([
             "run",
@@ -537,7 +537,7 @@ test("CLI run should reject malformed quote and stop cleanly when command parser
     // Given
     const directory = await tempDir(),
         path = join(directory, "ember.json");
-    await command(["init", "--state", path, "--name", "Ember", "--principal", PRINCIPAL]);
+    await command(["init", "--state", path, "--principal", PRINCIPAL]);
     // When
     const attempted = await command(
             [
@@ -570,7 +570,7 @@ test("CLI correct should create attributable successor when current fact is corr
     // Given
     const directory = await tempDir(),
         path = join(directory, "ember.json");
-    await command(["init", "--state", path, "--name", "Ember", "--principal", PRINCIPAL]);
+    await command(["init", "--state", path, "--principal", PRINCIPAL]);
     await command(
         [
             "run",
@@ -622,7 +622,7 @@ test("CLI should refuse wrong principal before rendering when inspection is requ
     const directory = await tempDir(),
         path = join(directory, "ember.json"),
         secret = "PRIVATE_FIXTURE_TEXT";
-    await command(["init", "--state", path, "--name", "Ember", "--principal", PRINCIPAL]);
+    await command(["init", "--state", path, "--principal", PRINCIPAL]);
     const established = await command(
         [
             "run",
@@ -699,7 +699,7 @@ test("CLI parser should reject option when flag is unknown for command", async (
 });
 test("CLI parser should reject arguments when surplus positional is present", async () => {
     // Given
-    const args = ["init", "surplus", "--state", "/tmp/ember.json", "--name", "Ember", "--principal", PRINCIPAL];
+    const args = ["init", "surplus", "--state", "/tmp/ember.json", "--principal", PRINCIPAL];
     // When
     const error = await captureError(() => parseArgs(args));
     // Then
@@ -717,7 +717,7 @@ test("CLI init should report typed failure when state parent is not a directory"
     // Given
     const path = "/dev/null/ember.json";
     // When
-    const attempted = await command(["init", "--state", path, "--name", "Ember", "--principal", PRINCIPAL]);
+    const attempted = await command(["init", "--state", path, "--principal", PRINCIPAL]);
     // Then
     assert.deepEqual(
         [attempted.code, attempted.stderr.startsWith("ember: "), attempted.stderr.includes("\n    at ")],
