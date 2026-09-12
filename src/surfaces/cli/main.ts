@@ -66,7 +66,7 @@ export async function main(
 }
 
 async function onInit(args: InitArgs, io: CliIo) {
-    await new StateStore(args.state).create(initialState(args.name, args.principal));
+    await new StateStore(args.state).create(initialState(args.principal));
     io.output.write("initialized schema v1 continuity state\n");
     return 0;
 }
@@ -160,12 +160,12 @@ function renderInspection({
     gaps,
     historical_meanings,
     interactions: { deliveries, inbound_occurrences },
-    lineage: { constitutiveBoundaries, displayName, lineageId },
+    lineage: { constitutiveBoundaries, lineageId },
     memoryProposalGenerations,
     revision,
     runtimeEpisodes,
 }: InspectionView) {
-    let text = `Lineage ${lineageId} (${displayName}), revision ${revision}\nConstitutive boundaries:\n`;
+    let text = `Lineage ${lineageId}, revision ${revision}\nConstitutive boundaries:\n`;
     for (const boundary of constitutiveBoundaries) {
         text += `  ${boundary.boundaryId}: ${boundary.text}\n`;
     }
@@ -248,7 +248,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
     }
 
     if (command === "init") {
-        return { command, state: required("--state"), name: required("--name"), principal: required("--principal") };
+        return { command, state: required("--state"), principal: required("--principal") };
     }
     if (command === "run") {
         const timeout = Number(required("--provider-timeout-seconds"));
