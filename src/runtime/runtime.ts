@@ -17,7 +17,7 @@ import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts"
 
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import { newId, nowUtc, validateState } from "../core/model.ts";
+import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
@@ -323,7 +323,7 @@ export async function runCognition(
     const expression: EmberExpressionEvidence = {
         evidenceId: expressionId,
         sourceRole: "agent_expression_via_provider",
-        sourceActor: "ember",
+        sourceActor: agentActor(completed.lineage.lineageId),
         assertedPrincipal: principal,
         occurredAt: at,
         observedAt: at,
