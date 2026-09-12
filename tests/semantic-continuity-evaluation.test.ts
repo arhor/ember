@@ -41,8 +41,8 @@ const semanticAuditProvider: HarnessProvider = async (invocation) => {
         `COMMITMENT_EPISTEMIC_ROLE=${commitment?.epistemicRole ?? "none"}`,
         `COMMITMENT_SOURCE_ROLE=${firstSourceRole(commitment)}`,
         `COMMITMENT_OWNER=${commitment?.owner ?? "none"}`,
-        `COMMITMENT_IS_EMBER_OWNED=${commitment?.owner === "ember" && commitment.epistemicRole === "ember_commitment" ? "yes" : "no"}`,
-        `DOWNTIME_COGNITION=${projection.recoveryAccount.emberCognitionDuringInterval}`,
+        `COMMITMENT_IS_EMBER_OWNED=${commitment?.owner === "ember" && commitment.epistemicRole === "agent_commitment" ? "yes" : "no"}`,
+        `DOWNTIME_COGNITION=${projection.recoveryAccount.agentCognitionDuringInterval}`,
     ];
     return {
         result: {
@@ -142,10 +142,10 @@ test("issue 56 provenance scenario should keep user testimony distinct from Embe
         const commitment = requireMeaning(episode.projection.meanings, "commitment");
         assert.equal(fact.epistemicRole, "user_testimony");
         assert.equal(fact.source_evidence[0]?.sourceRole, "user_command");
-        assert.equal(commitment.epistemicRole, "ember_commitment");
+        assert.equal(commitment.epistemicRole, "agent_commitment");
         assert.deepEqual(
             commitment.source_evidence.map((item) => item.sourceRole),
-            ["ember_adoption", "user_command"],
+            ["agent_adoption", "user_command"],
         );
         assert.equal(commitment.owner, "ember");
     }
