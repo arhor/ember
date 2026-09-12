@@ -51,7 +51,7 @@ type StateAction =
           at: string;
       }
     | {
-          action: "remember_inference";
+          action: "remagent_inference";
           as: string;
           slot: string;
           scope: string;
@@ -487,7 +487,7 @@ function applyActions(state: EmberState, actions: StateAction[], principal: stri
                         item.text,
                         resolveEvidenceAliases(state, aliases, item.derived_from),
                     );
-                case "remember_inference":
+                case "remagent_inference":
                     return rememberInference(
                         state,
                         principal,
