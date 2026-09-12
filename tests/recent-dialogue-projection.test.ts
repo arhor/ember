@@ -108,7 +108,7 @@ test("second turn receives prior user and Ember turns separately from canonical 
             projection.conversation_context.turns.map((turn) => [turn.role, turn.content]),
             [
                 ["user", "Choose between red and blue"],
-                ["ember", "Red is first; blue is second."],
+                ["agent", "Red is first; blue is second."],
             ],
         );
         assert.equal(
@@ -231,17 +231,17 @@ test("conversation turn payloads are deterministically truncated to the byte bou
         await runTurn(fixture, provider, "long");
         await runTurn(fixture, provider, "inspect");
 
-        const emberTurn = requests[1]?.projection.conversation_context?.turns.find((turn) => turn.role === "ember");
-        assert.ok(emberTurn);
-        assert.equal(emberTurn.content_truncated, true);
-        assert.ok(Buffer.byteLength(emberTurn.content, "utf8") <= RECENT_DIALOGUE_MAX_TURN_BYTES);
+        const agentTurn = requests[1]?.projection.conversation_context?.turns.find((turn) => turn.role === "agent");
+        assert.ok(agentTurn);
+        assert.equal(agentTurn.content_truncated, true);
+        assert.ok(Buffer.byteLength(agentTurn.content, "utf8") <= RECENT_DIALOGUE_MAX_TURN_BYTES);
         assert.equal(requests[1]?.projection.conversation_context?.selection.truncated_turn_count, 1);
     } finally {
         await closeFixture(fixture);
     }
 });
 
-test("surface changes continue the active Ember-owned conversation trajectory", async () => {
+test("surface changes continue the active agent-owned conversation trajectory", async () => {
     const fixture = await startedFixture();
     const requests: ProviderRequest[] = [];
     const provider = capturingProvider(requests, () => "ack");
@@ -258,7 +258,7 @@ test("surface changes continue the active Ember-owned conversation trajectory", 
             context.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
             [
                 ["user", "cli context", "local_cli"],
-                ["ember", "ack", "local_cli"],
+                ["agent", "ack", "local_cli"],
             ],
         );
         assert.equal(context.selection.strategy, "recent_same_conversation_v2");
@@ -300,7 +300,7 @@ test("membership policy can start a new same-owner trajectory without changing o
             continuedContext?.turns.map((turn) => [turn.role, turn.content]),
             [
                 ["user", "unrelated topic"],
-                ["ember", "ack"],
+                ["agent", "ack"],
             ],
         );
     } finally {
@@ -327,7 +327,7 @@ test("clean process restart continues the same conversation with a fresh provide
             context.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
             [
                 ["user", "before restart", "local_cli"],
-                ["ember", "ack", "local_cli"],
+                ["agent", "ack", "local_cli"],
             ],
         );
     } finally {
