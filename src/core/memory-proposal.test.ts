@@ -119,7 +119,7 @@ test("commitment proposal is an explicit unsupported state", () => {
         candidate(evidence.evidenceId, {
             kind: "commitment",
             owner: "ember",
-            epistemic_role: "ember_commitment",
+            epistemic_role: "agent_commitment",
         }),
     );
 
@@ -231,7 +231,7 @@ test("adoption is repeatable for identical deterministic inputs", () => {
             owner: "ember",
             slot: "build-pattern",
             content: "The failure appears recurrent",
-            epistemic_role: "ember_inference",
+            epistemic_role: "agent_inference",
         }),
     );
 
@@ -383,7 +383,7 @@ test("low-confidence proposals are rejected and Ember inference adoption creates
             owner: "ember",
             slot: "build-pattern",
             content: "The failure appears recurrent",
-            epistemic_role: "ember_inference",
+            epistemic_role: "agent_inference",
         }),
     );
 
@@ -396,7 +396,7 @@ test("low-confidence proposals are rejected and Ember inference adoption creates
     );
     assert.equal(adopted.proposal.status, "adopted");
     const derived = adopted.state.evidence.at(-1)!;
-    assert.equal(derived.sourceRole, "ember_inference");
+    assert.equal(derived.sourceRole, "agent_inference");
     assert.deepEqual(derived.derivedFromEvidenceIds, [evidence.evidenceId]);
     assert.deepEqual(adopted.state.meanings[0]!.sourceEvidenceIds, [derived.evidenceId]);
 });
