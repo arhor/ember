@@ -31,8 +31,8 @@ interface AiSdkOpportunityOutput {
 }
 
 export const AI_SDK_OPPORTUNITY_INSTRUCTION = [
-    "Evaluate only whether the projected current Ember state contains anything worth discretionary cognition now.",
-    "The opportunity itself supplies no topic or motive; select only from projected Ember-owned meaning.",
+    "Evaluate only whether the projected current agent state contains anything worth discretionary cognition now.",
+    "The opportunity itself supplies no topic or motive; select only from projected agent-owned meaning.",
     "Do not use tools, files, prior threads, or outside context.",
     "Return the decision through the supplied structured output schema rather than prose.",
     "For cognition or defer, select at least one projected meaning ID that materially grounds the decision.",
@@ -85,7 +85,7 @@ const opportunityOutputSchema = jsonSchema<AiSdkOpportunityOutput>(
 const opportunityOutput = Output.object({
     schema: opportunityOutputSchema,
     name: "ember_cognition_opportunity_decision",
-    description: "A bounded Ember decision about whether the current projected state warrants cognition.",
+    description: "A bounded continuing-agent decision about whether the current projected state warrants cognition.",
 });
 
 const MAX_AI_SDK_RETRIES = 0;
