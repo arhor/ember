@@ -68,7 +68,7 @@ implementation stores some of them together.
 | Temporary onboarding work   | unanswered onboarding topics, deferred invitations, temporary conversational goals                                  | Ember work/context layer                  | Not automatically        |
 | Surface configuration       | Telegram chat/principal binding, service enablement, transport-local settings                                       | trusted host plus surface semantics       | Not by itself            |
 
-Machine-local state may point to canonical Ember state. It must not silently *become* the
+Machine-local state may point to canonical Ember state. It must not silently _become_ the
 identity key merely because a path, service, profile, or installation contains it.
 
 ## Target flow
