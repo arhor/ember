@@ -12,8 +12,8 @@ import { createCodexProvider } from "../providers/codex.ts";
 import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
 
 export const CODEX_OPPORTUNITY_INSTRUCTION = [
-    "Evaluate only whether the projected current Ember state contains anything worth discretionary cognition now.",
-    "The opportunity itself supplies no topic or motive; select only from projected Ember-owned meaning.",
+    "Evaluate only whether the projected current agent state contains anything worth discretionary cognition now.",
+    "The opportunity itself supplies no topic or motive; select only from projected agent-owned meaning.",
     "Do not use tools, files, prior threads, or outside context.",
     "Reply with exactly one token: cognition, defer, or no_cognition.",
     "For cognition or defer, set usedMeaningIds to at least one projected meaning that materially grounds the decision.",
