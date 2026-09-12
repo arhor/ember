@@ -97,7 +97,7 @@ export function buildMemoryProposalGenerationProjection(
         return (
             evidence?.scope === scope &&
             ((evidence.sourceRole === "user_command" && evidence.availability === "available") ||
-                evidence.sourceRole === "ember_expression_via_provider")
+                evidence.sourceRole === "agent_expression_via_provider")
         );
     });
     const sourceEvidenceIds = turns
@@ -296,7 +296,7 @@ const candidateSchema: JSONSchema7 = {
         scope: { type: "string" },
         content: { type: "string" },
         source_evidence_ids: { type: "array", minItems: 1, items: { type: "string" }, uniqueItems: true },
-        epistemic_role: { type: "string", enum: ["user_testimony", "ember_inference"] },
+        epistemic_role: { type: "string", enum: ["user_testimony", "agent_inference"] },
         applicable_from: { type: "string" },
         applicable_until: { anyOf: [{ type: "string" }, { type: "null" }] },
         proposed_currentness: { type: "string", const: "current" },
