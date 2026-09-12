@@ -58,15 +58,15 @@ this contract.
 Setup touches several kinds of state. They must remain distinguishable even if one
 implementation stores some of them together.
 
-| Domain | Examples | Owner | Canonical Ember meaning? |
-| --- | --- | --- | --- |
-| Machine-local bootstrap | executable paths, runtime availability, local service installation, selected provider command, local state location | trusted host | No |
-| Secret/auth material | provider credentials, Telegram bot token, runtime-owned login state | trusted host or external provider runtime | No |
-| Setup operational progress | which deterministic setup steps succeeded, failed, were skipped, or need retry | trusted host setup | No |
-| Ember continuity state | lineage-bearing state, constitutive commitments, owned history, relationships, live commitments | Ember | Yes |
-| Ordinary remembered meaning | durable user/Ember/relationship meaning adopted through normal memory semantics | Ember | Yes |
-| Temporary onboarding work | unanswered onboarding topics, deferred invitations, temporary conversational goals | Ember work/context layer | Not automatically |
-| Surface configuration | Telegram chat/principal binding, service enablement, transport-local settings | trusted host plus surface semantics | Not by itself |
+| Domain                      | Examples                                                                                                            | Owner                                     | Canonical Ember meaning? |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------ |
+| Machine-local bootstrap     | executable paths, runtime availability, local service installation, selected provider command, local state location | trusted host                              | No                       |
+| Secret/auth material        | provider credentials, Telegram bot token, runtime-owned login state                                                 | trusted host or external provider runtime | No                       |
+| Setup operational progress  | which deterministic setup steps succeeded, failed, were skipped, or need retry                                      | trusted host setup                        | No                       |
+| Ember continuity state      | lineage-bearing state, constitutive commitments, owned history, relationships, live commitments                     | Ember                                     | Yes                      |
+| Ordinary remembered meaning | durable user/Ember/relationship meaning adopted through normal memory semantics                                     | Ember                                     | Yes                      |
+| Temporary onboarding work   | unanswered onboarding topics, deferred invitations, temporary conversational goals                                  | Ember work/context layer                  | Not automatically        |
+| Surface configuration       | Telegram chat/principal binding, service enablement, transport-local settings                                       | trusted host plus surface semantics       | Not by itself            |
 
 Machine-local state may point to canonical Ember state. It must not silently *become* the
 identity key merely because a path, service, profile, or installation contains it.
