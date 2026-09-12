@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { ValidationError } from "../src/core/errors.ts";
-import { newId, validateState } from "../src/core/model.ts";
+import { agentActor, newId, validateState } from "../src/core/model.ts";
 import { buildProjection, inspectionView } from "../src/core/projection.ts";
 import { findMeaning, supersede, userEvidence, withholdDetail } from "../src/core/semantics.ts";
 import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 import { cloneState } from "../src/util.ts";
 import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
-test("commitment should preserve user request and Ember adoption when created", () => {
+test("commitment should preserve user request and agent adoption when created", () => {
     // Given
     const { state, ids } = populatedState(),
         commitment = findMeaning(state, ids.commitment);
@@ -19,7 +19,7 @@ test("commitment should preserve user request and Ember adoption when created", 
     // Then
     assert.deepEqual(
         [adoption.sourceRole, request.sourceRole, commitment.owner],
-        ["agent_adoption", "user_command", "ember"],
+        ["agent_adoption", "user_command", agentActor(state.lineage.lineageId)],
     );
 });
 test("supersession should keep A historical and make B current when slot matches exactly", () => {
