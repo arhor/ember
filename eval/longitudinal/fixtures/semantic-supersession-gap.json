@@ -63,7 +63,7 @@
       "cognition_backend": "codex",
       "restart_ember": false,
       "external_thread": { "mode": "fresh" },
-      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospectiveLifecycle>; FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<sourceRole>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>.",
+      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospectiveLifecycle>; FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<sourceRole>; FACT_DIRECTLY_OBSERVED_BY_AGENT=<yes|no according to provenance>.",
       "expect": {
         "selected_meanings": ["relationship", "sensor_fact", "preference_a", "live_commitment"],
         "forbidden_meanings": ["nickname_episode"],
@@ -73,9 +73,9 @@
           "COMMITMENT_LIFECYCLE=live",
           "FACT_EPISTEMIC_ROLE=user_testimony",
           "FACT_SOURCE_ROLE=user_command",
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=no"
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=no"
         ],
-        "reply_excludes": ["FACT_DIRECTLY_OBSERVED_BY_EMBER=yes", "HIDDEN_NICKNAME_56"]
+        "reply_excludes": ["FACT_DIRECTLY_OBSERVED_BY_AGENT=yes", "HIDDEN_NICKNAME_56"]
       }
     },
     {
@@ -102,7 +102,7 @@
           "at": "2026-09-01T10:56:00Z"
         }
       ],
-      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<current preference content>; HISTORICAL_PREFERENCE=<superseded preference content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospectiveLifecycle>; COMMITMENT_APPLICABILITY=<applicability>; NICKNAME_STATUS=<gapKind or none>; NICKNAME_VALUE=<projected detail, UNAVAILABLE, or NONE according to projection>; FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<sourceRole>; FACT_DIRECTLY_OBSERVED_BY_EMBER=<yes|no according to provenance>; DOWNTIME_COGNITION=<recoveryAccount.agentCognitionDuringInterval>.",
+      "input": "Using only the permitted projection, produce a semantic audit. Use exactly these field names, copy projected content values verbatim, and derive enum-like values only from projection metadata: CURRENT_PREFERENCE=<current preference content>; HISTORICAL_PREFERENCE=<superseded preference content>; LIVE_COMMITMENT=<content>; COMMITMENT_LIFECYCLE=<prospectiveLifecycle>; COMMITMENT_APPLICABILITY=<applicability>; NICKNAME_STATUS=<gapKind or none>; NICKNAME_VALUE=<projected detail, UNAVAILABLE, or NONE according to projection>; FACT_EPISTEMIC_ROLE=<epistemicRole>; FACT_SOURCE_ROLE=<sourceRole>; FACT_DIRECTLY_OBSERVED_BY_AGENT=<yes|no according to provenance>; DOWNTIME_COGNITION=<recoveryAccount.agentCognitionDuringInterval>.",
       "purpose": "explain",
       "explain": ["preference_a", "nickname_episode"],
       "expect": {
@@ -125,13 +125,13 @@
           "NICKNAME_VALUE=UNAVAILABLE",
           "FACT_EPISTEMIC_ROLE=user_testimony",
           "FACT_SOURCE_ROLE=user_command",
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=no",
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=no",
           "DOWNTIME_COGNITION=none_in_supported_runtime"
         ],
         "reply_excludes": [
           "CURRENT_PREFERENCE=Prefer terse semantic reports",
           "NICKNAME_VALUE=HIDDEN_NICKNAME_56",
-          "FACT_DIRECTLY_OBSERVED_BY_EMBER=yes"
+          "FACT_DIRECTLY_OBSERVED_BY_AGENT=yes"
         ]
       }
     },
