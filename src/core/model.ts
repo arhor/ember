@@ -498,7 +498,8 @@ export function normalizeLegacyIdentityRepresentation(value: unknown): unknown {
     if (Array.isArray(normalized.evidence)) {
         for (const raw of normalized.evidence) {
             if (!isObject(raw)) continue;
-            if (typeof raw.sourceRole === "string" && raw.sourceRole in roleMap) raw.sourceRole = roleMap[raw.sourceRole];
+            if (typeof raw.sourceRole === "string" && raw.sourceRole in roleMap)
+                raw.sourceRole = roleMap[raw.sourceRole];
             if (raw.sourceActor === "ember") raw.sourceActor = actor;
         }
     }
@@ -512,9 +513,10 @@ export function normalizeLegacyIdentityRepresentation(value: unknown): unknown {
         }
     }
 
-    const runtimeEpisodes = isObject(normalized.operations) && Array.isArray(normalized.operations.runtimeEpisodes)
-        ? normalized.operations.runtimeEpisodes
-        : [];
+    const runtimeEpisodes =
+        isObject(normalized.operations) && Array.isArray(normalized.operations.runtimeEpisodes)
+            ? normalized.operations.runtimeEpisodes
+            : [];
     for (const raw of runtimeEpisodes) {
         if (!isObject(raw) || !isObject(raw.recoveryAccount)) continue;
         const recovery = raw.recoveryAccount;
@@ -552,7 +554,11 @@ export function validateState(state: unknown): asserts state is EmberState {
 
     const lineage = isObject(state.lineage) ? state.lineage : {};
     require(isObject(state.lineage), "lineage must be an object");
-    require(exactKeys(lineage, ["lineageId", "establishedAt", "constitutiveBoundaries"]), "lineage contains unsupported fields");
+    require(exactKeys(lineage, [
+        "lineageId",
+        "establishedAt",
+        "constitutiveBoundaries",
+    ]), "lineage contains unsupported fields");
     require(validId(lineage.lineageId, "lineage-"), "lineageId must be stable lineage ID");
     const continuingAgentActor = validId(lineage.lineageId, "lineage-") ? agentActor(lineage.lineageId) : null;
     require(isRfc3339Utc(lineage.establishedAt), "lineage.establishedAt must be RFC 3339 UTC");
@@ -772,10 +778,9 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(m.prospectiveLifecycle === "none", `${path} fact prospective lifecycle is invalid`);
             require(m.applicableUntil === null, `${path} fact applicability interval cannot be rewritten in v1`);
             if (m.currentness === "superseded")
-                require(
-                    ["user_testimony", "agent_inference"].includes(m.epistemicRole),
-                    `${path} superseded fact must preserve supported attributable provenance`,
-                );
+                require(["user_testimony", "agent_inference"].includes(
+                    m.epistemicRole,
+                ), `${path} superseded fact must preserve supported attributable provenance`);
         } else if (m.kind === "preference") {
             require(m.owner === `user:${principal}`, `${path} preference owner must be the supported user`);
             require(["current", "superseded"].includes(m.currentness), `${path} preference currentness is invalid`);
@@ -794,7 +799,9 @@ export function validateState(state: unknown): asserts state is EmberState {
                 require(isRfc3339Utc(m.applicableUntil), `${path} discharged commitment needs applicability end`);
             }
         } else if (m.kind === "episode_meta") {
-            require([continuingAgentActor, `relationship:${principal}`].includes(m.owner), `${path} episode owner is invalid`);
+            require([continuingAgentActor, `relationship:${principal}`].includes(
+                m.owner,
+            ), `${path} episode owner is invalid`);
             require(m.currentness === "current", `${path} episode meta must be current`);
             require(m.prospectiveLifecycle === "none", `${path} episode meta lifecycle is invalid`);
         }
