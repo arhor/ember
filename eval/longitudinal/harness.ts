@@ -223,7 +223,7 @@ export async function runLongitudinalScenario(
     validateScenario(scenario);
     const history = expandHistory(scenario.history ?? []);
     const aliases = new Map<string, string>();
-    let state = initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at);
+    let state = initialState(scenario.ember.principal, scenario.ember.initial_at);
     applyActions(state, history.actions, scenario.ember.principal, aliases);
     applyActions(state, scenario.setup, scenario.ember.principal, aliases);
     const store = new StateStore(statePath);
