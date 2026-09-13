@@ -28,7 +28,7 @@ const AT = "2026-09-11T10:00:00Z";
 async function fixture() {
     const directory = await mkdtemp(join(tmpdir(), "ember-memory-generation-"));
     const store = new StateStore(join(directory, "ember.json"));
-    const state = initialState("Ember", PRINCIPAL, "2026-09-11T09:00:00Z");
+    const state = initialState(PRINCIPAL, "2026-09-11T09:00:00Z");
     userEvidence(state, PRINCIPAL, SCOPE, "I prefer concise answers", { timestamp: AT });
     await store.create(state);
     const lease = await store.acquireWriteLease();
@@ -234,7 +234,7 @@ test("post-generation stale revision should terminalize with established earlier
 test("ordinary runCognition should invoke configured reflection after persisting the exchange", async () => {
     const directory = await mkdtemp(join(tmpdir(), "ember-memory-cognition-"));
     const store = new StateStore(join(directory, "ember.json"));
-    let state = initialState("Ember", PRINCIPAL, "2026-09-11T09:00:00Z");
+    let state = initialState(PRINCIPAL, "2026-09-11T09:00:00Z");
     await store.create(state);
     const lease = await store.acquireWriteLease();
     try {
