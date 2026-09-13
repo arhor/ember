@@ -26,7 +26,7 @@ export const Commands = {
 
 export const CommandSpecs = {
     [Commands.INIT]: {
-        flags: ["--state", "--name", "--principal"],
+        flags: ["--state", "--principal"],
         positionals: 0,
     },
     [Commands.RUN]: {
@@ -77,7 +77,6 @@ export const CommandSpecs = {
 export type InitArgs = {
     command: typeof Commands.INIT;
     state: string;
-    name: string;
     principal: string;
 };
 

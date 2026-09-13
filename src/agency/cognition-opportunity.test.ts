@@ -15,7 +15,7 @@ const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";
 
 function startedState(withCommitment = false) {
-    const state = initialState("Ember", PRINCIPAL, "2026-09-03T05:00:00Z");
+    const state = initialState(PRINCIPAL, "2026-09-03T05:00:00Z");
     const commitment = withCommitment
         ? undertake(
               state,

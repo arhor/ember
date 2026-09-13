@@ -49,10 +49,10 @@ explicit epistemic roles:
 - `user_testimony`, sourced by a retained user-command occurrence;
 - `external_claim`, owned by a named `external:<source>` and sourced by an external
   claim occurrence;
-- `direct_observation`, Ember-owned and sourced by an Ember observation occurrence;
+- `direct_observation`, continuing-agent-owned and sourced by an agent observation occurrence;
 - `delegated_report`, owned by a named `delegate:<delegate>` and sourced by a
   delegated-report occurrence;
-- `ember_inference`, Ember-owned and required to derive from at least one earlier
+- `agent_inference`, continuing-agent-owned and required to derive from at least one earlier
   evidence occurrence.
 
 This is intentionally not a universal memory taxonomy. Preferences, relationship

@@ -27,7 +27,7 @@ async function fixture(): Promise<Fixture> {
     const directory = await mkdtemp(join(tmpdir(), "ember-interaction-"));
     const path = join(directory, "ember.json");
     const store = new StateStore(path);
-    await store.create(initialState("Ember", PRINCIPAL));
+    await store.create(initialState(PRINCIPAL));
     const lease = await store.acquireWriteLease();
     const loaded = await store.load();
     const started = startRuntime(loaded, PRINCIPAL, SCOPE);

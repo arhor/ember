@@ -91,7 +91,7 @@ if (process.env.EMBER_RUN_LIVE_SPECIALIST !== "1") {
                     episode_id: spec.episode_id,
                     runtime_state: record.runtime_state,
                     report_state: record.report_state,
-                    ember_disposition: record.ember_disposition,
+                    agent_disposition: record.agent_disposition,
                     report_provenance: record.report_provenance,
                     external_thread_recorded_as_operational_metadata: Boolean(record.externalThreadId),
                     controlled_artifact_verified: true,

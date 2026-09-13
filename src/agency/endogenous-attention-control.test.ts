@@ -87,7 +87,7 @@ test("durable opportunity path should skip repeated evaluator work but reopen af
     process.env.EMBER_TEST_NOW = "2026-09-03T00:00:00Z";
     const directory = await mkdtemp(join(tmpdir(), "ember-attention-control-"));
     const store = new StateStore(join(directory, "ember.json"));
-    let state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    let state = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     undertake(state, PRINCIPAL, "release-notes", SCOPE, "Prepare release notes before release");
     rememberFact(state, PRINCIPAL, `user:${PRINCIPAL}`, "release-window", SCOPE, "Release is imminent");
     await store.create(state);

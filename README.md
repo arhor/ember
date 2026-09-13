@@ -19,7 +19,6 @@ Run the continuity CLI directly from source, for example:
 ```sh
 node bin/ember.ts init \
   --state /tmp/ember-continuity.json \
-  --name Ember \
   --principal user-1
 ```
 

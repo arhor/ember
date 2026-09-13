@@ -255,7 +255,7 @@ not by the number of summaries, delegates, or inferences that repeat a root. See
 #68 fixture and its deterministic/empirical interpretation.
 
 The harness preserves the governing ADR boundaries: lineage and durable meaning
-remain Ember-owned; historical superseded meaning survives without automatically
+remain continuing-agent-owned; historical superseded meaning survives without automatically
 governing ordinary projection; unavailable detail becomes an explicit gap;
 selection includes deliberate exclusion; generated history is only evaluator
 input expressed through canonical semantics; provenance derivation does not create

@@ -591,7 +591,7 @@ describe("CLI run", () => {
         // Given
         const directory = await tempDir();
         const statePath = join(directory, "ember.json");
-        await command(["init", "--state", statePath, "--name", "Ember", "--principal", PRINCIPAL]);
+        await command(["init", "--state", statePath, "--principal", PRINCIPAL]);
 
         // When
         const executed = await command(

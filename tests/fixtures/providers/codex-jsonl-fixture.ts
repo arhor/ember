@@ -15,12 +15,12 @@ const request = JSON.parse(match[1]) as {
     projection: {
         meanings?: Array<{ content?: string }>;
         selection: { meaning_ids: string[] };
-        recoveryAccount?: { emberCognitionDuringInterval?: string };
+        recoveryAccount?: { agentCognitionDuringInterval?: string };
     };
 };
 const reply = [
     ...(request.projection.meanings ?? []).map((item) => item.content ?? ""),
-    request.projection.recoveryAccount?.emberCognitionDuringInterval ?? "unknown_downtime",
+    request.projection.recoveryAccount?.agentCognitionDuringInterval ?? "unknown_downtime",
 ]
     .filter(Boolean)
     .join(" | ");

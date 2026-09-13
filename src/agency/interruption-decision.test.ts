@@ -15,7 +15,7 @@ const AT = "2026-09-05T12:00:00Z";
 function fixture() {
     const previousNow = process.env.EMBER_TEST_NOW;
     process.env.EMBER_TEST_NOW = "2026-09-03T00:00:01Z";
-    const state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    const state = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     let commitmentId: MeaningId;
     let urgencyId: MeaningId;
     try {

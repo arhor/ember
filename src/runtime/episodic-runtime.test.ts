@@ -122,7 +122,7 @@ test("wake worker should record one external-timing opportunity and cleanly stop
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
     const { runner } = capturingRunner();
-    await new StateStore(config.state_path).create(initialState("Ember", PRINCIPAL, "2026-09-03T19:00:00Z"));
+    await new StateStore(config.state_path).create(initialState(PRINCIPAL, "2026-09-03T19:00:00Z"));
     const intent = await scheduleWake(config, configPath, "2026-09-03T20:00:00Z", {
         now: () => "2026-09-03T19:30:00Z",
         runner,

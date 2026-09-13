@@ -25,7 +25,7 @@ await writeFile(
 );
 const codexHome = process.env.CODEX_HOME ?? (process.env.HOME ? join(process.env.HOME, ".codex") : undefined);
 const statePath = join(directory, "ember.json");
-const state = initialState("Ember", PRINCIPAL);
+const state = initialState(PRINCIPAL);
 const relationshipId = rememberRelationship(state, PRINCIPAL, SCOPE, SCOPE, "Synthetic issue-46 collaborator fixture");
 const factId = rememberFact(
     state,

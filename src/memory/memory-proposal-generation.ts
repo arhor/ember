@@ -14,12 +14,12 @@ import {
 
 import type { ConversationId, ProjectedConversationContext } from "../core/conversation-context.ts";
 import type { MemoryProposal, MemoryProposalAssessment } from "../core/memory-proposal.ts";
-import type { EmberState, EvidenceId, MeaningId } from "../core/model.ts";
+import type { AgentActor, EmberState, EvidenceId, MeaningId } from "../core/model.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../core/memory-proposal.ts";
-import { isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
+import { agentActor, isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { contentDigest, exactKeys, isObject } from "../util.ts";
@@ -31,6 +31,7 @@ export interface MemoryProposalGenerationProjection {
     projection_version: 1;
     principal: string;
     scope: string;
+    agent_actor: AgentActor;
     conversation_id: ConversationId | null;
     turns: ProjectedConversationContext["turns"];
     current_meanings: Array<{
@@ -97,20 +98,23 @@ export function buildMemoryProposalGenerationProjection(
         return (
             evidence?.scope === scope &&
             ((evidence.sourceRole === "user_command" && evidence.availability === "available") ||
-                evidence.sourceRole === "ember_expression_via_provider")
+                evidence.sourceRole === "agent_expression_via_provider")
         );
     });
     const sourceEvidenceIds = turns
         .filter((turn) => evidenceById.get(turn.evidence_id)?.sourceRole === "user_command")
         .map((turn) => turn.evidence_id);
+    const continuingAgentActor = agentActor(state.lineage.lineageId);
     const currentMeanings = state.meanings
         .filter(
             (meaning): meaning is Extract<(typeof state.meanings)[number], { kind: "fact" | "preference" }> =>
                 meaning.currentness === "current" &&
                 meaning.scope === scope &&
                 (meaning.kind === "fact" || meaning.kind === "preference") &&
-                meaning.owner === `user:${principal}` &&
-                meaning.epistemicRole === "user_testimony",
+                ((meaning.owner === `user:${principal}` && meaning.epistemicRole === "user_testimony") ||
+                    (meaning.kind === "fact" &&
+                        meaning.owner === continuingAgentActor &&
+                        meaning.epistemicRole === "agent_inference")),
         )
         .map((meaning) => ({
             meaning_id: meaning.meaningId,
@@ -127,6 +131,7 @@ export function buildMemoryProposalGenerationProjection(
         projection_version: 1,
         principal,
         scope,
+        agent_actor: continuingAgentActor,
         conversation_id: conversation.conversation_id,
         turns,
         current_meanings: currentMeanings,
@@ -264,12 +269,13 @@ function boundedFailure(error: unknown): string {
 }
 
 export const AI_SDK_MEMORY_PROPOSAL_INSTRUCTION = [
-    "Inspect only the supplied bounded Ember conversation projection.",
+    "Inspect only the supplied bounded conversation projection for the continuing agent.",
     "Return zero or more durable-memory candidates through the structured schema; an empty list is a valid no-proposal result.",
     "Cite only supplied user evidence IDs and preserve the exact principal and scope.",
-    "Prefer stable user facts, preferences, relationship meaning, or episode metadata; never propose commitments.",
+    "Prefer stable user facts, preferences, relationship meaning, episode metadata, or genuinely supported self-related facts; never propose commitments.",
+    "For self-related facts owned by the continuing agent, use projection.agent_actor with epistemic_role agent_inference. Preferred name and self-description are ordinary mutable facts, not lineage identity.",
     "Use a supplied current meaning ID as supersedes_meaning_id only for an explicit correction in the same semantic slot.",
-    "Do not treat Ember replies, conversation IDs, provider context, or unstated implications as user testimony.",
+    "Do not treat agent replies, conversation IDs, provider context, or unstated implications as user testimony.",
 ].join(" ");
 
 const confidenceSchema: JSONSchema7 = {
@@ -296,7 +302,7 @@ const candidateSchema: JSONSchema7 = {
         scope: { type: "string" },
         content: { type: "string" },
         source_evidence_ids: { type: "array", minItems: 1, items: { type: "string" }, uniqueItems: true },
-        epistemic_role: { type: "string", enum: ["user_testimony", "ember_inference"] },
+        epistemic_role: { type: "string", enum: ["user_testimony", "agent_inference"] },
         applicable_from: { type: "string" },
         applicable_until: { anyOf: [{ type: "string" }, { type: "null" }] },
         proposed_currentness: { type: "string", const: "current" },
@@ -335,7 +341,7 @@ const aiSdkOutput = Output.object({
         required: ["contractVersion", "candidates"],
     }),
     name: "ember_memory_proposals",
-    description: "Evidence-grounded, non-canonical candidates for Ember memory adoption.",
+    description: "Evidence-grounded, non-canonical candidates for continuing-agent memory adoption.",
 });
 
 export function createAiSdkMemoryProposalGenerator(

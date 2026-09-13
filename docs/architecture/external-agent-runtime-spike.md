@@ -200,7 +200,7 @@ The live result was:
   "raw_transcript_included": false,
   "cognition_status": "completed",
   "deliveryStatus": "displayed",
-  "expression_evidence_role": "ember_expression_via_provider",
+  "expression_evidence_role": "agent_expression_via_provider",
   "reply_retained_in_canonical_state": false,
   "reply": "The synthetic fixture server uses EmberBoard 42 hardware."
 }

@@ -5,7 +5,7 @@ import type {
     CognitionEpisode,
     CognitionId,
     CognitionPurpose,
-    EmberExpressionEvidence,
+    AgentExpressionEvidence,
     EmberState,
     MeaningId,
     RuntimeEpisode,
@@ -17,7 +17,7 @@ import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts"
 
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import { newId, nowUtc, validateState } from "../core/model.ts";
+import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
@@ -47,7 +47,7 @@ export function startRuntime(
                   lastDurableObservationAt: null,
                   cleanStopAt: null,
                   restartAt: timestamp,
-                  emberCognitionDuringInterval: "not_applicable" as const,
+                  agentCognitionDuringInterval: "not_applicable" as const,
                   externalChangesDuringInterval: "unknown" as const,
               }
             : previous.cleanStopAt !== null
@@ -58,7 +58,7 @@ export function startRuntime(
                     lastDurableObservationAt: previous.lastDurableObservationAt,
                     cleanStopAt: previous.cleanStopAt,
                     restartAt: timestamp,
-                    emberCognitionDuringInterval: "none_in_supported_runtime" as const,
+                    agentCognitionDuringInterval: "none_in_supported_runtime" as const,
                     externalChangesDuringInterval: "unknown" as const,
                 }
               : {
@@ -68,7 +68,7 @@ export function startRuntime(
                     lastDurableObservationAt: previous.lastDurableObservationAt,
                     cleanStopAt: null,
                     restartAt: timestamp,
-                    emberCognitionDuringInterval: "unknown_after_last_durable_observation" as const,
+                    agentCognitionDuringInterval: "unknown_after_last_durable_observation" as const,
                     externalChangesDuringInterval: "unknown" as const,
                 };
     if (previous?.cleanStopAt === null) {
@@ -320,10 +320,10 @@ export async function runCognition(
     const cognition = findCognition(completed, cognitionId);
     const expressionId = newId("evidence");
     const at = nowUtc();
-    const expression: EmberExpressionEvidence = {
+    const expression: AgentExpressionEvidence = {
         evidenceId: expressionId,
-        sourceRole: "ember_expression_via_provider",
-        sourceActor: "ember",
+        sourceRole: "agent_expression_via_provider",
+        sourceActor: agentActor(completed.lineage.lineageId),
         assertedPrincipal: principal,
         occurredAt: at,
         observedAt: at,

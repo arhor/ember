@@ -136,7 +136,6 @@ Use the ordinary CLI once if the configured state does not yet exist:
 ```bash
 ember init \
   --state /ABSOLUTE/PATH/ember.json \
-  --name Ember \
   --principal local-user
 ```
 

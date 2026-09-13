@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { ValidationError } from "../src/core/errors.ts";
-import { newId, validateState } from "../src/core/model.ts";
+import { agentActor, newId, validateState } from "../src/core/model.ts";
 import { buildProjection, inspectionView } from "../src/core/projection.ts";
 import { findMeaning, supersede, userEvidence, withholdDetail } from "../src/core/semantics.ts";
 import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 import { cloneState } from "../src/util.ts";
 import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
-test("commitment should preserve user request and Ember adoption when created", () => {
+test("commitment should preserve user request and agent adoption when created", () => {
     // Given
     const { state, ids } = populatedState(),
         commitment = findMeaning(state, ids.commitment);
@@ -19,7 +19,7 @@ test("commitment should preserve user request and Ember adoption when created", 
     // Then
     assert.deepEqual(
         [adoption.sourceRole, request.sourceRole, commitment.owner],
-        ["ember_adoption", "user_command", "ember"],
+        ["agent_adoption", "user_command", agentActor(state.lineage.lineageId)],
     );
 });
 test("supersession should keep A historical and make B current when slot matches exactly", () => {
@@ -88,7 +88,7 @@ test("recovery should report clean interval when prior runtime stopped explicitl
         recovery = restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount;
     // Then
     assert.deepEqual(
-        [recovery.gapKind, recovery.emberCognitionDuringInterval, recovery.externalChangesDuringInterval],
+        [recovery.gapKind, recovery.agentCognitionDuringInterval, recovery.externalChangesDuringInterval],
         ["known_clean_stop_interval", "none_in_supported_runtime", "unknown"],
     );
 });
@@ -101,7 +101,7 @@ test("recovery should preserve uncertainty when prior runtime has no clean stop"
         recovery = restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount;
     // Then
     assert.deepEqual(
-        [recovery.gapKind, recovery.emberCognitionDuringInterval],
+        [recovery.gapKind, recovery.agentCognitionDuringInterval],
         ["uncertain_interruption_boundary", "unknown_after_last_durable_observation"],
     );
 });
@@ -133,7 +133,7 @@ test("state validator should reject recovery when clean gap claims continuous co
             timestamp: "2026-08-29T11:00:00Z",
         }),
         restarted = startRuntime(stopped, PRINCIPAL, SCOPE, { timestamp: "2026-08-30T11:00:00Z" });
-    restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount.emberCognitionDuringInterval = "continuous";
+    restarted.state.operations.runtimeEpisodes.at(-1).recoveryAccount.agentCognitionDuringInterval = "continuous";
     // When
     const error = await captureError(() => validateState(restarted.state));
     // Then

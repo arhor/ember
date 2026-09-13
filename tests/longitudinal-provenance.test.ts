@@ -56,23 +56,23 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
     assert.equal(observation.epistemicRole, "direct_observation");
     assert.equal(delegateA.epistemicRole, "delegated_report");
     assert.equal(delegateB.epistemicRole, "delegated_report");
-    assert.equal(inferenceA.epistemicRole, "ember_inference");
-    assert.equal(inferenceB.epistemicRole, "ember_inference");
+    assert.equal(inferenceA.epistemicRole, "agent_inference");
+    assert.equal(inferenceB.epistemicRole, "agent_inference");
 
     assert.equal(user.source_evidence[0]!.sourceRole, "user_command");
     assert.equal(external.source_evidence[0]!.sourceRole, "external_claim");
     assert.equal(external.source_evidence[0]!.sourceActor, "external:release-dashboard");
-    assert.equal(observation.source_evidence[0]!.sourceRole, "ember_observation");
+    assert.equal(observation.source_evidence[0]!.sourceRole, "agent_observation");
     assert.equal(delegateA.source_evidence[0]!.sourceRole, "delegated_report");
     assert.equal(delegateA.source_evidence[0]!.sourceActor, "delegate:codex-a");
-    assert.equal(inferenceA.source_evidence[0]!.sourceRole, "ember_inference");
+    assert.equal(inferenceA.source_evidence[0]!.sourceRole, "agent_inference");
     assert.deepEqual(
         inferenceA.source_evidence.map((item) => item.sourceRole),
-        ["ember_inference", "delegated_report", "external_claim"],
+        ["agent_inference", "delegated_report", "external_claim"],
     );
     assert.deepEqual(
         inferenceB.source_evidence.map((item) => item.sourceRole),
-        ["ember_inference", "delegated_report", "external_claim"],
+        ["agent_inference", "delegated_report", "external_claim"],
     );
 
     const externalRoot = roots(external)[0]!;
@@ -129,7 +129,7 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
 
 test("provenance validation should reject epistemic laundering and cyclic derivation", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const first = rememberDelegatedReport(state, "user-1", "codex-a", "a", "project:ember/provenance", "A", []);
     const firstEvidenceId = findMeaning(state, first).sourceEvidenceIds[0]!;
     const second = rememberDelegatedReport(state, "user-1", "codex-b", "b", "project:ember/provenance", "B", [
@@ -152,7 +152,7 @@ test("provenance validation should reject epistemic laundering and cyclic deriva
 
 test("provenance derivation should not cross evidence scopes or partially mutate state", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const privateReport = rememberDelegatedReport(
         state,
         "user-1",
@@ -187,7 +187,7 @@ test("provenance derivation should not cross evidence scopes or partially mutate
 
 test("canonical validation should reject cross-scope provenance edges", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const privateRoot = rememberDelegatedReport(
         state,
         "user-1",

@@ -29,7 +29,7 @@ const silent: CognitionOpportunityEvaluator = async () => ({
 async function fixture() {
     const directory = await mkdtemp(join(tmpdir(), "ember-opportunity-"));
     const store = new StateStore(join(directory, "ember.json"));
-    let state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    let state = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     await store.create(state);
     const lease = await store.acquireWriteLease();
     const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-03T00:00:01Z" });
@@ -235,7 +235,7 @@ test("inspection should distinguish cancellation and malformed evaluator failure
 
 test("restart should convert an unfinished opportunity to outcome_unknown rather than silence", () => {
     // Given
-    const initial = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    const initial = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     const started = startRuntime(initial, PRINCIPAL, SCOPE, { timestamp: "2026-09-03T00:00:01Z" });
     const state = cloneState(started.state);
     const projection = buildCognitionOpportunityProjection(state, {
@@ -276,7 +276,7 @@ test("restart should convert an unfinished opportunity to outcome_unknown rather
 
 test("schema v1 should continue accepting pre-75 states without an opportunity ledger", () => {
     // Given
-    const legacy = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    const legacy = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     delete legacy.operations.cognitionOpportunities;
 
     // When / Then
@@ -287,7 +287,7 @@ test("schema v1 should continue accepting pre-75 states without an opportunity l
 
 test("durable validator should reject forged silence that claims a selected motive", () => {
     // Given
-    const initial = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    const initial = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     const started = startRuntime(initial, PRINCIPAL, SCOPE, { timestamp: "2026-09-03T00:00:01Z" });
     const state = cloneState(started.state);
     const fake = "meaning-fabricated" as never;

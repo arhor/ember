@@ -56,7 +56,7 @@ export interface SpecialistReintegrationDecision {
         independence: "not_established";
     };
     canonical_mutation: {
-        eligibility: "eligible_after_ember_decision" | "not_eligible";
+        eligibility: "eligible_after_agent_decision" | "not_eligible";
         decision_id: string;
     };
 }
@@ -195,14 +195,14 @@ async function reintegrateAtCurrentRevision(
             decided_at: now(),
             outcome,
             requested_disposition: requestedDisposition,
-            resulting_disposition: reconciled.ember_disposition,
+            resulting_disposition: reconciled.agent_disposition,
             result_shape: resultShape,
             reason,
             checkpoint: structuredClone(checkpoint),
             report_provenance: structuredClone(before.report_provenance!),
             corroboration,
             canonical_mutation: {
-                eligibility: outcome === "integrated" ? "eligible_after_ember_decision" : "not_eligible",
+                eligibility: outcome === "integrated" ? "eligible_after_agent_decision" : "not_eligible",
                 decision_id: decisionId,
             },
         };
@@ -368,7 +368,7 @@ function validateAudit(audit: SpecialistReintegrationAudit | null, record: Speci
     for (const decision of audit.history) validateAuditDecision(decision, record.specification.episode_id);
     const latest = audit.history.at(-1);
     if (!latest) return;
-    if (latest.resulting_disposition !== record.ember_disposition) invalidAudit();
+    if (latest.resulting_disposition !== record.agent_disposition) invalidAudit();
     if (!record.report_provenance || !sameProvenance(latest.report_provenance, record.report_provenance))
         invalidAudit();
     if (
@@ -401,13 +401,13 @@ function validateAuditDecision(decision: SpecialistReintegrationDecision, episod
         decision.report_provenance.episode_id !== episodeId ||
         !validCorroboration(decision.corroboration, episodeId) ||
         !decision.canonical_mutation ||
-        !["eligible_after_ember_decision", "not_eligible"].includes(decision.canonical_mutation.eligibility) ||
+        !["eligible_after_agent_decision", "not_eligible"].includes(decision.canonical_mutation.eligibility) ||
         decision.canonical_mutation.decision_id !== decision.decision_id
     )
         invalidAudit();
     validateReintegrationCheckpoint(decision.checkpoint);
 
-    const eligible = decision.canonical_mutation.eligibility === "eligible_after_ember_decision";
+    const eligible = decision.canonical_mutation.eligibility === "eligible_after_agent_decision";
     if (eligible !== (decision.outcome === "integrated")) invalidAudit();
     if (decision.outcome === "integrated") {
         if (!decision.requested_disposition || decision.requested_disposition !== decision.resulting_disposition)

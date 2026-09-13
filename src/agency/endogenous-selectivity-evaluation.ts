@@ -480,7 +480,7 @@ function buildScenario(workload: SelectivityWorkload, testCase: SelectivityWorkl
     const previousNow = process.env.EMBER_TEST_NOW;
     process.env.EMBER_TEST_NOW = addSeconds(workload.base_time, 1);
     try {
-        const state = initialState("Ember", workload.principal, workload.base_time);
+        const state = initialState(workload.principal, workload.base_time);
         let commitmentId: MeaningId | null = null;
         let urgencyMeaningId: MeaningId | null = null;
         if (testCase.kind !== "quiet") {

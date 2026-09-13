@@ -42,7 +42,7 @@ function scenario({
     relevant?: boolean;
     resolved?: boolean;
 }) {
-    const state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    const state = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     let commitmentId: MeaningId | null = null;
     if (concern)
         commitmentId = undertake(

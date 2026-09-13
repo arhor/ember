@@ -123,7 +123,7 @@ test("Codex specialist should preserve report as attributed unresolved evidence 
         "controlled specialist work\n",
     );
     assert.deepEqual(
-        [record.runtime_state, record.report_state, record.ember_disposition, record.externalThreadId],
+        [record.runtime_state, record.report_state, record.agent_disposition, record.externalThreadId],
         ["exited", "reported_success", "unresolved", "thread-operational-60"],
     );
     assert.equal(record.report?.summary, "Created the requested controlled artifact.");
@@ -136,7 +136,7 @@ test("Codex specialist should preserve report as attributed unresolved evidence 
     assert.deepEqual(record.report?.known_effects, ["Created specialist-result.txt in the selected workspace."]);
     assert.deepEqual(record.known_effects, []);
     assert.deepEqual(record.possible_effects, []);
-    assert.equal(JSON.parse(await readFile(fixture.recordPath, "utf8")).ember_disposition, "unresolved");
+    assert.equal(JSON.parse(await readFile(fixture.recordPath, "utf8")).agent_disposition, "unresolved");
 });
 
 test("specialist disposition should become accepted when Ember explicitly interprets an unresolved report", async () => {
@@ -156,7 +156,7 @@ test("specialist disposition should become accepted when Ember explicitly interp
         { disposition: "accepted" },
     );
 
-    assert.equal(accepted.ember_disposition, "accepted");
+    assert.equal(accepted.agent_disposition, "accepted");
 });
 
 test("successful specialist output should require currentness reconciliation before acceptance", async () => {
@@ -184,7 +184,7 @@ test("requirement change during work should require re-evaluation without erasin
     );
 
     assert.deepEqual(
-        [reconciled.report_state, reconciled.ember_disposition],
+        [reconciled.report_state, reconciled.agent_disposition],
         ["reported_success", "requires_re_evaluation"],
     );
     assert.equal(reconciled.currentness_evaluation?.applicability, "requires_re_evaluation");
@@ -215,7 +215,7 @@ test("re-evaluated result should support a later atomic currentness check and ac
         },
     );
 
-    assert.equal(accepted.ember_disposition, "accepted");
+    assert.equal(accepted.agent_disposition, "accepted");
     assert.equal(accepted.currentness_evaluation?.applicability, "requires_re_evaluation");
     assert.equal(accepted.currentness_evaluation?.resolution?.disposition, "accepted");
 });
@@ -227,7 +227,7 @@ test("currentness reconciliation should reject an in-flight episode", async () =
         specification: fixture.spec,
         runtime_state: "running",
         report_state: "none",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         recovery: {
             effect_state: "no_effect_established",
             continued_work_state: "not_applicable",
@@ -261,7 +261,7 @@ test("late successful result after objective supersession should be classified s
         objective_status: "superseded",
     });
 
-    assert.deepEqual([reconciled.report_state, reconciled.ember_disposition], ["reported_success", "stale"]);
+    assert.deepEqual([reconciled.report_state, reconciled.agent_disposition], ["reported_success", "stale"]);
     assert.equal(reconciled.currentness_evaluation?.applicability, "stale");
     assert.equal(JSON.parse(await readFile(fixture.recordPath, "utf8")).report.objective_disposition, "completed");
 });
@@ -276,7 +276,7 @@ test("cancelled objective should reject a late result while retaining its proven
         objective_status: "cancelled",
     });
 
-    assert.equal(reconciled.ember_disposition, "rejected");
+    assert.equal(reconciled.agent_disposition, "rejected");
     assert.equal(reconciled.report_provenance?.episode_id, fixture.spec.episode_id);
 });
 
@@ -336,7 +336,7 @@ test("Codex specialist should preserve effect uncertainty when cancellation is r
     const record = await promise;
 
     assert.deepEqual(
-        [record.runtime_state, record.report_state, record.ember_disposition],
+        [record.runtime_state, record.report_state, record.agent_disposition],
         ["exited", "ambiguous", "unresolved"],
     );
     assert.match(record.possible_effects.join(" "), /may have occurred/);
@@ -526,7 +526,7 @@ test("effect absence alone should not permit retry while continued specialist wo
         specification: fixture.spec,
         runtime_state: "lost",
         report_state: "ambiguous",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         termination: {
             reason: "explicit_cancellation",
             directChildExitObserved: true,
@@ -565,7 +565,7 @@ test("retry should become safe only after effects and continued work are both re
         specification: fixture.spec,
         runtime_state: "lost",
         report_state: "ambiguous",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         termination: { reason: "timeout", directChildExitObserved: true, all_specialist_work_stopped: "unknown" },
         recovery: {
             effect_state: "effects_possible",
@@ -598,7 +598,7 @@ test("making continued work harmless should permit retry without claiming it sto
         specification: fixture.spec,
         runtime_state: "lost",
         report_state: "ambiguous",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         termination: {
             reason: "explicit_cancellation",
             directChildExitObserved: true,
@@ -672,7 +672,7 @@ test("process-loss recovery should convert a committed running attempt to durabl
         specification: fixture.spec,
         runtime_state: "running",
         report_state: "none",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         recovery: {
             effect_state: "no_effect_established",
             continued_work_state: "not_applicable",
@@ -709,7 +709,7 @@ test("process-loss recovery should preserve ambiguity after launch attempt but b
         specification: fixture.spec,
         runtime_state: "not_started",
         report_state: "none",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         recovery: {
             effect_state: "no_effect_established",
             continued_work_state: "not_applicable",
@@ -747,7 +747,7 @@ for (const interrupted of [
             specification: fixture.spec,
             runtime_state: interrupted.runtimeState,
             report_state: "none",
-            ember_disposition: "unresolved",
+            agent_disposition: "unresolved",
             termination: {
                 reason: interrupted.reason,
                 directChildExitObserved: false,
@@ -874,7 +874,7 @@ test("Codex specialist should settle ambiguously when cancellation intent cannot
 
     assert.deepEqual(signals, ["SIGTERM"]);
     assert.deepEqual(
-        [record.runtime_state, record.report_state, record.ember_disposition],
+        [record.runtime_state, record.report_state, record.agent_disposition],
         ["exited", "ambiguous", "unresolved"],
     );
     assert.match(
@@ -904,7 +904,7 @@ test("Codex specialist should persist an ambiguous terminal record when failure 
     const persisted = JSON.parse(await readFile(fixture.recordPath, "utf8"));
 
     assert.deepEqual(
-        [record.runtime_state, record.report_state, record.ember_disposition],
+        [record.runtime_state, record.report_state, record.agent_disposition],
         ["exited", "ambiguous", "unresolved"],
     );
     assert.equal(persisted.report_state, "ambiguous");
@@ -953,7 +953,7 @@ test("AS-DEL-05 should withhold out-of-scope canonical meaning and preserve a co
     assert.equal(prompt.includes(withheldCanonicalMeaning.content), false);
     assert.equal(prompt.includes("SAFE_SPECIALIST_MARKER_60"), true);
     assert.deepEqual(record.report?.expansion_requests, report.expansion_requests);
-    assert.equal(record.ember_disposition, "unresolved");
+    assert.equal(record.agent_disposition, "unresolved");
     assert.equal(
         record.specification.context_projection.every((item) => item.scope === "project:controlled-specialist-fixture"),
         true,
@@ -1001,6 +1001,6 @@ test("AS-DEL-07 should not turn workspace write capability into broader Ember au
     assert.deepEqual(record.specification.authority_envelope, fixture.spec.authority_envelope);
     assert.deepEqual(record.report?.expansion_requests, report.expansion_requests);
     assert.equal(record.report_state, "reported_failure");
-    assert.equal(record.ember_disposition, "unresolved");
+    assert.equal(record.agent_disposition, "unresolved");
     await assert.rejects(readFile(join(fixture.workspace, "specialist-result.txt"), "utf8"), /ENOENT/);
 });

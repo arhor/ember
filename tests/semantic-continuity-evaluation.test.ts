@@ -37,12 +37,12 @@ const semanticAuditProvider: HarnessProvider = async (invocation) => {
         `FACT_EPISTEMIC_ROLE=${fact?.epistemicRole ?? "none"}`,
         `FACT_SOURCE_ROLE=${firstSourceRole(fact)}`,
         `FACT_OWNER=${fact?.owner ?? "none"}`,
-        `FACT_DIRECTLY_OBSERVED_BY_EMBER=${fact?.epistemicRole === "user_testimony" ? "no" : "unknown"}`,
+        `FACT_DIRECTLY_OBSERVED_BY_AGENT=${fact?.epistemicRole === "user_testimony" ? "no" : "unknown"}`,
         `COMMITMENT_EPISTEMIC_ROLE=${commitment?.epistemicRole ?? "none"}`,
         `COMMITMENT_SOURCE_ROLE=${firstSourceRole(commitment)}`,
         `COMMITMENT_OWNER=${commitment?.owner ?? "none"}`,
-        `COMMITMENT_IS_EMBER_OWNED=${commitment?.owner === "ember" && commitment.epistemicRole === "ember_commitment" ? "yes" : "no"}`,
-        `DOWNTIME_COGNITION=${projection.recoveryAccount.emberCognitionDuringInterval}`,
+        `COMMITMENT_IS_AGENT_OWNED=${commitment?.owner.startsWith("agent:") && commitment.epistemicRole === "agent_commitment" ? "yes" : "no"}`,
+        `DOWNTIME_COGNITION=${projection.recoveryAccount.agentCognitionDuringInterval}`,
     ];
     return {
         result: {
@@ -122,7 +122,7 @@ test("issue 56 supersession scenario should preserve currentness, commitment, ga
     );
 });
 
-test("issue 56 provenance scenario should keep user testimony distinct from Ember-owned commitment across restart", async () => {
+test("issue 56 provenance scenario should keep user testimony distinct from agent-owned commitment across restart", async () => {
     // Given
     const directory = await tempDir();
     const scenario = await loadLongitudinalScenario(PROVENANCE_SCENARIO);
@@ -142,12 +142,12 @@ test("issue 56 provenance scenario should keep user testimony distinct from Embe
         const commitment = requireMeaning(episode.projection.meanings, "commitment");
         assert.equal(fact.epistemicRole, "user_testimony");
         assert.equal(fact.source_evidence[0]?.sourceRole, "user_command");
-        assert.equal(commitment.epistemicRole, "ember_commitment");
+        assert.equal(commitment.epistemicRole, "agent_commitment");
         assert.deepEqual(
             commitment.source_evidence.map((item) => item.sourceRole),
-            ["ember_adoption", "user_command"],
+            ["agent_adoption", "user_command"],
         );
-        assert.equal(commitment.owner, "ember");
+        assert.match(commitment.owner, /^agent:lineage-/);
     }
 
     assert.equal(

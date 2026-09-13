@@ -62,7 +62,7 @@ existing version-3 specialist episode record:
    an optimistic conflict check, not a shared interprocess lock for all specialist
    record writers.
 9. **Gate later canonical mutation.** Only an `integrated` audit decision carries
-   `canonical_mutation.eligibility = eligible_after_ember_decision`. Withheld and
+   `canonical_mutation.eligibility = eligible_after_agent_decision`. Withheld and
    rejected results are always `not_eligible`.
 
 This keeps issue #62 as the single implementation of specialist objective/context
@@ -95,7 +95,7 @@ the specialist claim.
 | Condition                                                  | Outcome                       | Meaning                                                                      |
 | ---------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
 | Canonical `ember_revision` already changed                 | no decision persisted         | Caller must rebuild the checkpoint                                           |
-| Current complete result, no Ember decision                 | `withheld`                    | Attributed evidence only                                                     |
+| Current complete result, no agent decision                 | `withheld`                    | Attributed evidence only                                                     |
 | Current complete result, reasoned acceptance               | `integrated`                  | `accepted`; later canonical mutation may cite the decision ID                |
 | Current non-complete result, attempted acceptance          | `withheld`                    | Completion is not established                                                |
 | Current partial or failed evidence, reasoned qualification | `integrated`                  | `qualified`; reliance is limited to the qualification                        |
@@ -132,7 +132,7 @@ Validation covers both field shape and semantic relationships, including:
 
 - the latest audited disposition must equal the persisted specialist disposition;
 - latest report provenance and currentness checkpoint must match the episode;
-- `eligible_after_ember_decision` is valid only for `integrated` decisions;
+- `eligible_after_agent_decision` is valid only for `integrated` decisions;
 - `integrated` decisions must result in `accepted` or `qualified` under current
   authority and without ambiguous effects;
 - `accepted` is valid only for `complete` results;
@@ -144,7 +144,7 @@ Validation covers both field shape and semantic relationships, including:
 
 Therefore a syntactically valid but contradictory durable JSON object such as
 `outcome: withheld` together with
-`canonical_mutation.eligibility: eligible_after_ember_decision` is rejected during
+`canonical_mutation.eligibility: eligible_after_agent_decision` is rejected during
 inspection rather than becoming a trusted canonical-mutation gate after restart.
 
 ## Canonical mutation boundary
@@ -168,7 +168,7 @@ Ember-owned semantic decision
 atomic episode disposition + reintegration audit
       |
       v
-eligible_after_ember_decision + decision_id
+eligible_after_agent_decision + decision_id
       |
       v
 later canonical semantic operation may rely on that decision

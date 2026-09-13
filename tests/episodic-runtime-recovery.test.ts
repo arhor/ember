@@ -122,7 +122,7 @@ test("manager restart should re-arm one pending wake without manufacturing an op
     const root = await tempDir();
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
-    await new StateStore(config.state_path).create(initialState("Ember", PRINCIPAL, OBSERVED_AT));
+    await new StateStore(config.state_path).create(initialState(PRINCIPAL, OBSERVED_AT));
     const scheduled = missingUnitRunner();
     const wake = await scheduleWake(config, configPath, "2026-09-05T18:00:00Z", {
         now: () => OBSERVED_AT,
@@ -167,7 +167,7 @@ test("stale writer lock should fail closed until explicit quarantine, then dispa
     const root = await tempDir();
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
-    await new StateStore(config.state_path).create(initialState("Ember", PRINCIPAL, OBSERVED_AT));
+    await new StateStore(config.state_path).create(initialState(PRINCIPAL, OBSERVED_AT));
     const supervisor = missingUnitRunner();
     const wake = await scheduleWake(config, configPath, "2026-09-04T18:01:00Z", {
         now: () => OBSERVED_AT,
@@ -216,7 +216,7 @@ test("process restart should classify in-flight cognition and opportunity as out
     const root = await tempDir();
     const config = runtimeConfig(root);
     const store = new StateStore(config.state_path);
-    await store.create(initialState("Ember", PRINCIPAL, OBSERVED_AT));
+    await store.create(initialState(PRINCIPAL, OBSERVED_AT));
     const lease = await store.acquireWriteLease();
     let state = await store.load();
     const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T16:01:00Z" });
@@ -283,7 +283,7 @@ test("restart should preserve completed cognition with pending delivery instead 
     const root = await tempDir();
     const config = runtimeConfig(root);
     const store = new StateStore(config.state_path);
-    await store.create(initialState("Ember", PRINCIPAL, OBSERVED_AT));
+    await store.create(initialState(PRINCIPAL, OBSERVED_AT));
     const lease = await store.acquireWriteLease();
     let state = await store.load();
     const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T16:01:00Z" });
@@ -353,7 +353,7 @@ test("forced specialist loss should preserve effect uncertainty and prohibit bli
         specification: spec,
         runtime_state: "running",
         report_state: "none",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         recovery: {
             effect_state: "no_effect_established",
             continued_work_state: "not_applicable",

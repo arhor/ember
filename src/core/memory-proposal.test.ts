@@ -5,7 +5,7 @@ import type { MemoryProposalCandidate } from "./memory-proposal.ts";
 import type { EvidenceId } from "./model.ts";
 
 import { assessMemoryProposal, resolveMemoryProposal } from "./memory-proposal.ts";
-import { initialState } from "./model.ts";
+import { agentActor, initialState } from "./model.ts";
 import {
     attachDetail,
     rememberDirectObservation,
@@ -44,7 +44,7 @@ function candidate(evidenceId: EvidenceId, overrides: Partial<MemoryProposalCand
 }
 
 test("valid evidence-grounded candidate remains non-canonical and proposed", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "Please keep your answers short");
     const before = structuredClone(state);
 
@@ -60,7 +60,7 @@ test("valid evidence-grounded candidate remains non-canonical and proposed", () 
 });
 
 test("missing, duplicate, and cross-scope evidence are invalid explicitly", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "Please keep your answers short");
     const other = userEvidence(state, PRINCIPAL, "project:private", "Private preference");
 
@@ -77,8 +77,15 @@ test("missing, duplicate, and cross-scope evidence are invalid explicitly", () =
 });
 
 test("unavailable user detail cannot regenerate content through a proposal", () => {
-    const state = initialState("Ember", PRINCIPAL);
-    const episodeId = rememberEpisode(state, PRINCIPAL, "milestone", "ember", SCOPE, "A private milestone occurred");
+    const state = initialState(PRINCIPAL);
+    const episodeId = rememberEpisode(
+        state,
+        PRINCIPAL,
+        "milestone",
+        agentActor(state.lineage.lineageId),
+        SCOPE,
+        "A private milestone occurred",
+    );
     const detailId = attachDetail(state, PRINCIPAL, episodeId, "The unavailable exact private detail");
     withholdDetail(state, PRINCIPAL, detailId);
 
@@ -88,7 +95,7 @@ test("unavailable user detail cannot regenerate content through a proposal", () 
 });
 
 test("every evidence item must match canonical provenance and attributed source actor", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const user = userEvidence(state, PRINCIPAL, SCOPE, "A mixed source claim");
     rememberExternalClaim(state, PRINCIPAL, "source-b", "weather", SCOPE, "The forecast says rain");
     const external = state.evidence.at(-1)!;
@@ -111,15 +118,15 @@ test("every evidence item must match canonical provenance and attributed source 
 });
 
 test("commitment proposal is an explicit unsupported state", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "You should promise to check tomorrow");
 
     const result = assessMemoryProposal(
         state,
         candidate(evidence.evidenceId, {
             kind: "commitment",
-            owner: "ember",
-            epistemic_role: "ember_commitment",
+            owner: agentActor(state.lineage.lineageId),
+            epistemic_role: "agent_commitment",
         }),
     );
 
@@ -128,7 +135,7 @@ test("commitment proposal is an explicit unsupported state", () => {
 });
 
 test("supersession must target the current meaning in the same semantic slot", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const oldId = rememberFact(state, PRINCIPAL, `user:${PRINCIPAL}`, "city", SCOPE, "The user lives in Paris");
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "I moved to Warsaw");
     const valid = assessMemoryProposal(
@@ -153,7 +160,7 @@ test("supersession must target the current meaning in the same semantic slot", (
 });
 
 test("v1 supersession rejects non-user-testimony facts", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const oldId = rememberDirectObservation(state, PRINCIPAL, "build-status", SCOPE, "The build failed");
     const evidence = state.evidence.at(-1)!;
 
@@ -161,7 +168,7 @@ test("v1 supersession rejects non-user-testimony facts", () => {
         state,
         candidate(evidence.evidenceId, {
             kind: "fact",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             slot: "build-status",
             content: "The build passed",
             epistemic_role: "direct_observation",
@@ -173,7 +180,7 @@ test("v1 supersession rejects non-user-testimony facts", () => {
 });
 
 test("v1 fact and preference proposals reject a finite applicability end", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "This preference is only for today");
 
     for (const kind of ["fact", "preference"] as const) {
@@ -190,7 +197,7 @@ test("v1 fact and preference proposals reject a finite applicability end", () =>
 });
 
 test("unknown shapes and unknown proposal kinds are invalid rather than silently coerced", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "Please keep your answers short");
     const malformed = { ...candidate(evidence.evidenceId), providerMetadata: {} };
     const unknown = { ...candidate(evidence.evidenceId), kind: "belief" };
@@ -207,7 +214,7 @@ function proposed(state: ReturnType<typeof initialState>, value: MemoryProposalC
 }
 
 test("adoption creates canonical meaning from durable evidence without mutating inputs", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "Please keep your answers short");
     const proposal = proposed(state, candidate(evidence.evidenceId));
     const before = structuredClone(state);
@@ -222,16 +229,16 @@ test("adoption creates canonical meaning from durable evidence without mutating 
 });
 
 test("adoption is repeatable for identical deterministic inputs", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "The build log reports a recurring issue");
     const proposal = proposed(
         state,
         candidate(evidence.evidenceId, {
             kind: "fact",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             slot: "build-pattern",
             content: "The failure appears recurrent",
-            epistemic_role: "ember_inference",
+            epistemic_role: "agent_inference",
         }),
     );
 
@@ -242,7 +249,7 @@ test("adoption is repeatable for identical deterministic inputs", () => {
 });
 
 test("duplicate and implicit conflict proposals are rejected explicitly", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const existingId = rememberPreference(
         state,
         PRINCIPAL,
@@ -285,7 +292,7 @@ test("duplicate and implicit conflict proposals are rejected explicitly", () => 
 });
 
 test("explicit supersession preserves historical meaning, links, and correction provenance", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const oldId = rememberFact(state, PRINCIPAL, `user:${PRINCIPAL}`, "city", SCOPE, "The user lives in Paris");
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "I moved to Warsaw");
     const proposal = proposed(
@@ -310,7 +317,7 @@ test("explicit supersession preserves historical meaning, links, and correction 
 });
 
 test("explicit no-op supersession is rejected without manufacturing correction history", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const oldId = rememberPreference(
         state,
         PRINCIPAL,
@@ -338,7 +345,7 @@ test("explicit no-op supersession is rejected without manufacturing correction h
 });
 
 test("stale revision and stale supersession fail closed without canonical mutation", () => {
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const oldId = rememberPreference(state, PRINCIPAL, `user:${PRINCIPAL}`, "style", SCOPE, "Concise");
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "Detailed instead");
     const proposal = proposed(
@@ -367,8 +374,8 @@ test("stale revision and stale supersession fail closed without canonical mutati
     assert.deepEqual(staleTarget.state, changed);
 });
 
-test("low-confidence proposals are rejected and Ember inference adoption creates derived provenance", () => {
-    const state = initialState("Ember", PRINCIPAL);
+test("low-confidence proposals are rejected and agent inference adoption creates derived provenance", () => {
+    const state = initialState(PRINCIPAL);
     const evidence = userEvidence(state, PRINCIPAL, SCOPE, "The build log reports a recurring issue");
     const weak = proposed(
         state,
@@ -380,10 +387,10 @@ test("low-confidence proposals are rejected and Ember inference adoption creates
         state,
         candidate(evidence.evidenceId, {
             kind: "fact",
-            owner: "ember",
+            owner: agentActor(state.lineage.lineageId),
             slot: "build-pattern",
             content: "The failure appears recurrent",
-            epistemic_role: "ember_inference",
+            epistemic_role: "agent_inference",
         }),
     );
 
@@ -396,7 +403,7 @@ test("low-confidence proposals are rejected and Ember inference adoption creates
     );
     assert.equal(adopted.proposal.status, "adopted");
     const derived = adopted.state.evidence.at(-1)!;
-    assert.equal(derived.sourceRole, "ember_inference");
+    assert.equal(derived.sourceRole, "agent_inference");
     assert.deepEqual(derived.derivedFromEvidenceIds, [evidence.evidenceId]);
     assert.deepEqual(adopted.state.meanings[0]!.sourceEvidenceIds, [derived.evidenceId]);
 });

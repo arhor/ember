@@ -1,10 +1,11 @@
 import type {
+    AgentActor,
     AvailableUserEvidence,
     CommitmentLifecycle,
     DelegatedReportEvidence,
-    EmberAdoptionEvidence,
-    EmberInferenceEvidence,
-    EmberObservationEvidence,
+    AgentAdoptionEvidence,
+    AgentInferenceEvidence,
+    AgentObservationEvidence,
     EmberState,
     Evidence,
     EvidenceId,
@@ -18,7 +19,7 @@ import type {
 
 import { contentDigest } from "../util.ts";
 import { ValidationError } from "./errors.ts";
-import { newId, nowUtc, validateState } from "./model.ts";
+import { agentActor, newId, nowUtc, validateState } from "./model.ts";
 
 export function userEvidence(
     state: EmberState,
@@ -170,18 +171,19 @@ export function rememberDirectObservation(
     scope: string,
     text: string,
 ): MeaningId {
+    const actor = agentActor(state.lineage.lineageId);
     const at = nowUtc();
-    const evidence: EmberObservationEvidence = {
+    const evidence: AgentObservationEvidence = {
         evidenceId: newId("evidence"),
-        sourceRole: "ember_observation",
-        sourceActor: "ember",
+        sourceRole: "agent_observation",
+        sourceActor: actor,
         occurredAt: at,
         observedAt: at,
         derivedFromEvidenceIds: [],
         scope,
         payloadMode: "descriptor_only",
     };
-    return rememberAttributedFact(state, principal, "ember", slot, scope, text, "direct_observation", evidence);
+    return rememberAttributedFact(state, principal, actor, slot, scope, text, "direct_observation", evidence);
 }
 
 export function rememberDelegatedReport(
@@ -218,19 +220,20 @@ export function rememberInference(
 ): MeaningId {
     const derived = resolveEvidenceIds(state, derivedFrom, scope);
     if (derived.length === 0)
-        throw new ValidationError("Ember inference requires at least one source evidence occurrence");
+        throw new ValidationError("agent inference requires at least one source evidence occurrence");
+    const actor = agentActor(state.lineage.lineageId);
     const at = nowUtc();
-    const evidence: EmberInferenceEvidence = {
+    const evidence: AgentInferenceEvidence = {
         evidenceId: newId("evidence"),
-        sourceRole: "ember_inference",
-        sourceActor: "ember",
+        sourceRole: "agent_inference",
+        sourceActor: actor,
         occurredAt: at,
         observedAt: at,
         derivedFromEvidenceIds: derived as [EvidenceId, ...EvidenceId[]],
         scope,
         payloadMode: "descriptor_only",
     };
-    return rememberAttributedFact(state, principal, "ember", slot, scope, text, "ember_inference", evidence);
+    return rememberAttributedFact(state, principal, actor, slot, scope, text, "agent_inference", evidence);
 }
 
 export function rememberRelationship(
@@ -310,14 +313,15 @@ export function rememberEpisode(
     scope: string,
     summary: string,
 ): MeaningId {
-    if (!["ember", `relationship:${principal}`].includes(owner))
-        throw new ValidationError("episode owner must be ember or relationship:<principal>");
+    const actor = agentActor(state.lineage.lineageId);
+    if (![actor, `relationship:${principal}`].includes(owner))
+        throw new ValidationError("episode owner must be the continuing agent or relationship:<principal>");
     ensureNoCurrent(state, "episode_meta", owner, slot, scope);
     const ev = userEvidence(state, principal, scope, summary);
     const m: Meaning = {
         ...meaningCommon(slot, scope, summary, ev.evidenceId),
         kind: "episode_meta",
-        owner: owner as "ember" | `relationship:${string}`,
+        owner: owner as AgentActor | `relationship:${string}`,
         epistemicRole: "user_testimony",
         prospectiveLifecycle: "none",
     };
@@ -327,13 +331,14 @@ export function rememberEpisode(
 }
 
 export function undertake(state: EmberState, principal: string, slot: string, scope: string, text: string): MeaningId {
-    ensureNoCurrent(state, "commitment", "ember", slot, scope);
+    const actor = agentActor(state.lineage.lineageId);
+    ensureNoCurrent(state, "commitment", actor, slot, scope);
     const request = userEvidence(state, principal, scope, text);
     const at = nowUtc();
-    const adoption: EmberAdoptionEvidence = {
+    const adoption: AgentAdoptionEvidence = {
         evidenceId: newId("evidence"),
-        sourceRole: "ember_adoption",
-        sourceActor: "ember",
+        sourceRole: "agent_adoption",
+        sourceActor: actor,
         assertedPrincipal: principal,
         occurredAt: at,
         observedAt: at,
@@ -345,8 +350,8 @@ export function undertake(state: EmberState, principal: string, slot: string, sc
     const m: Meaning = {
         ...meaningCommon(slot, scope, text, adoption.evidenceId),
         kind: "commitment",
-        owner: "ember",
-        epistemicRole: "ember_commitment",
+        owner: actor,
+        epistemicRole: "agent_commitment",
         prospectiveLifecycle: "live",
     };
     state.meanings.push(m);
@@ -393,19 +398,40 @@ export function supersede(
         throw new ValidationError("only fact and preference correction/supersession is supported");
     if (old.currentness !== "current" || old.supersededBy !== null)
         throw new ValidationError("only a current, unsuperseded meaning can be superseded");
-    if (old.epistemicRole !== "user_testimony")
-        throw new ValidationError("only user-testimony fact or preference supersession is supported in v1");
-    requireUserOwner(principal, old.owner);
+    const actor = agentActor(state.lineage.lineageId);
+    const userOwned = old.epistemicRole === "user_testimony" && old.owner === `user:${principal}`;
+    const agentOwned = old.kind === "fact" && old.epistemicRole === "agent_inference" && old.owner === actor;
+    if (!userOwned && !agentOwned)
+        throw new ValidationError(
+            "only attributable user or continuing-agent fact/preference supersession is supported in v1",
+        );
+
     const payload = reason === null ? text : `Correction: ${text}\nReason: ${reason}`;
-    const ev = userEvidence(state, principal, old.scope, payload);
-    const common = meaningCommon(old.slot, old.scope, text, ev.evidenceId);
+    const correction = userEvidence(state, principal, old.scope, payload);
+    let sourceEvidenceId = correction.evidenceId;
+    if (agentOwned) {
+        const at = nowUtc();
+        const inference: AgentInferenceEvidence = {
+            evidenceId: newId("evidence"),
+            sourceRole: "agent_inference",
+            sourceActor: actor,
+            occurredAt: at,
+            observedAt: at,
+            derivedFromEvidenceIds: [correction.evidenceId],
+            scope: old.scope,
+            payloadMode: "descriptor_only",
+        };
+        state.evidence.push(inference);
+        sourceEvidenceId = inference.evidenceId;
+    }
+    const common = meaningCommon(old.slot, old.scope, text, sourceEvidenceId);
     const next: FactMeaning | PreferenceMeaning =
         old.kind === "fact"
             ? {
                   ...common,
                   kind: "fact",
                   owner: old.owner,
-                  epistemicRole: "user_testimony",
+                  epistemicRole: agentOwned ? "agent_inference" : "user_testimony",
                   prospectiveLifecycle: "none",
                   supersedes: old.meaningId,
               }

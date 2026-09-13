@@ -306,7 +306,7 @@ change justified interpretation of the current turn.
 ### Ember's own previous expression must be recoverable while locally relevant
 
 The existing minimal continuity slice deliberately records
-`ember_expression_via_provider` as descriptor-only evidence and does not retain the
+`agent_expression_via_provider` as descriptor-only evidence and does not retain the
 reply payload. That was sufficient for its earlier continuity fixtures because those
 fixtures intentionally did not depend on conversational references to Ember's own
 prior wording.

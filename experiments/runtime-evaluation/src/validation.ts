@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { EmberAdoptionEvidence, Evidence, Meaning, PersistentState, UserEvidence } from "./model.ts";
+import type { AgentAdoptionEvidence, Evidence, Meaning, PersistentState, UserEvidence } from "./model.ts";
 
 import { evidenceId, lineageId, meaningId } from "./model.ts";
 
@@ -50,7 +50,7 @@ export function validatePersistentState(value: unknown): PersistentState {
     const evidenceById = new Map(evidence.map((item) => [item.evidenceId, item]));
     if (evidenceById.size !== evidence.length) throw new Error("evidence IDs must be unique");
     for (const item of evidence) {
-        if (item.sourceRole === "ember_adoption") {
+        if (item.sourceRole === "agent_adoption") {
             const source = evidenceById.get(item.derivedFromEvidenceIds[0]);
             if (!source) throw new Error("adoption source evidence does not exist");
             if (source.sourceRole !== "user_command") {
@@ -211,7 +211,7 @@ function validateEvidence(value: unknown): Evidence {
         return result;
     }
 
-    if (value.sourceRole === "ember_adoption") {
+    if (value.sourceRole === "agent_adoption") {
         if (
             value.sourceActor !== "ember" ||
             value.derivedFromEvidenceIds.length !== 1 ||
@@ -219,9 +219,9 @@ function validateEvidence(value: unknown): Evidence {
         ) {
             throw new Error("Ember adoption evidence is invalid");
         }
-        const result: EmberAdoptionEvidence = {
+        const result: AgentAdoptionEvidence = {
             evidenceId: id,
-            sourceRole: "ember_adoption",
+            sourceRole: "agent_adoption",
             sourceActor: "ember",
             assertedPrincipal: value.assertedPrincipal,
             occurredAt: value.occurredAt,

@@ -148,7 +148,7 @@ async function prepareWorkload(name: WorkloadName, cli: CliOptions): Promise<Pre
     const workspace = join(root, "workspace");
     const configuredProvider = providerConfiguration(cli);
 
-    await new StateStore(statePath).create(initialState("Ember", PRINCIPAL, FIXED_INITIAL_AT));
+    await new StateStore(statePath).create(initialState(PRINCIPAL, FIXED_INITIAL_AT));
     await mkdir(workspace);
 
     const config: EpisodicRuntimeConfig = {

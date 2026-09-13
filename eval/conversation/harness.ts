@@ -66,7 +66,7 @@ export async function runConversationScenario(
 ) {
     validateScenario(scenario);
     validateProviderControl(providerControl);
-    const state = initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at);
+    const state = initialState(scenario.ember.principal, scenario.ember.initial_at);
     const meaningIds = new Map<string, MeaningId>();
     withFixedTime(scenario.ember.initial_at, () => {
         for (const meaning of scenario.meanings) {

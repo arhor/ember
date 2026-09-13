@@ -21,7 +21,7 @@ const principal = "user-1";
 const scope = "relationship:user-1";
 const directory = await mkdtemp(join(tmpdir(), "ember-live-memory-proposal-"));
 const store = new StateStore(join(directory, "ember.json"));
-await store.create(initialState("Ember", principal));
+await store.create(initialState(principal));
 const lease = await store.acquireWriteLease();
 
 try {

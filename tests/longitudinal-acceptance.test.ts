@@ -11,7 +11,7 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
     const statePath = join(directory, "ember.json");
     const capturePath = join(directory, "last-request.json");
     const counterPath = join(directory, "provider-count.txt");
-    const init = await command(["init", "--state", statePath, "--name", "Ember", "--principal", PRINCIPAL], {
+    const init = await command(["init", "--state", statePath, "--principal", PRINCIPAL], {
         now: "2026-08-29T08:00:00Z",
     });
     const providerArgs = [
@@ -98,7 +98,7 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
             fact.epistemicRole,
             current["restart-provenance-check"].prospectiveLifecycle,
             finalRuntime.recoveryAccount.gapKind,
-            finalRuntime.recoveryAccount.emberCognitionDuringInterval,
+            finalRuntime.recoveryAccount.agentCognitionDuringInterval,
             request.projection.gaps[0].gapKind,
             request.projection.selection.raw_transcript_included,
             projected[preferenceA].currentness,
@@ -152,7 +152,7 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
             "relationship:user-1",
             "user:user-1",
             "last_known_live_needs_currentness_check",
-            new Set(["ember_adoption", "user_command"]),
+            new Set(["agent_adoption", "user_command"]),
             false,
             false,
             true,

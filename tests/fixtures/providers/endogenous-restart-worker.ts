@@ -44,7 +44,7 @@ const deterministicEvaluator: CognitionOpportunityEvaluator = async (request) =>
 };
 
 if (phase === "prepare") {
-    let state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    let state = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     const aliases: Record<string, MeaningId> = {};
     if (kind !== "silence") {
         aliases.concern = undertake(
@@ -154,7 +154,7 @@ if (phase === "prepare") {
                     .sort(),
                 gapKind: state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.gapKind,
                 downtime_cognition:
-                    state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.emberCognitionDuringInterval,
+                    state.operations.runtimeEpisodes.at(-1)!.recoveryAccount.agentCognitionDuringInterval,
                 provider_thread_policy: mode === "live" ? "ephemeral" : "deterministic_no_session",
                 provider_thread_observed: providerThreadObserved,
                 supersession:

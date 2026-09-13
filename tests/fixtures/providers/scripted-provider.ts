@@ -52,7 +52,7 @@ else if (mode === "nonzero") {
         `commitment_applicability:${commitment?.applicability ?? "not_selected"}`,
         `gap:${gap?.gapKind ?? "none"}`,
         `nickname:${gap ? "unavailable" : "not_requested"}`,
-        `downtime:${projection.recoveryAccount?.emberCognitionDuringInterval ?? "none"}`,
+        `downtime:${projection.recoveryAccount?.agentCognitionDuringInterval ?? "none"}`,
     ].join(" | ");
     const result = { contractVersion: 1, reply, usedMeaningIds: projection.selection.meaning_ids };
     if (mode === "unknown-field") result.mutations = [];

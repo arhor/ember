@@ -63,7 +63,7 @@ The final canonical meaning snapshot must equal the snapshot taken after the fir
 
 ### Commitment and provenance survive restart
 
-The cross-surface commitment keeps `prospectiveLifecycle: live`. Provider projections after each restart still expose its original evidence roles, `user_command` and `ember_adoption`, rather than attributing the commitment to Telegram, the CLI, or a later provider invocation.
+The cross-surface commitment keeps `prospectiveLifecycle: live`. Provider projections after each restart still expose its original evidence roles, `user_command` and `agent_adoption`, rather than attributing the commitment to Telegram, the CLI, or a later provider invocation.
 
 The selected fact remains `user_testimony` and retains `user:<principal>` as its source actor. A surface switch therefore cannot launder transport or model evidence into canonical user testimony.
 
@@ -134,7 +134,6 @@ Use one local state path, principal, and active scope for the whole procedure. I
 ```bash
 node bin/ember.ts init \
   --state "$STATE" \
-  --name Ember \
   --principal "$PRINCIPAL"
 ```
 

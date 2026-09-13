@@ -87,12 +87,12 @@ export function createCodexProvider({
 
 export function buildCodexPrompt(request: ProviderRequest): string {
     return [
-        "Act only as a bounded cognition provider for Ember.",
+        "Act only as a bounded cognition provider for the continuing agent.",
         "The JSON below contains the complete permitted projection and current input for this episode.",
         "Do not use tools, files, prior threads, or outside context.",
         "Return one ProviderResult matching the supplied output schema.",
         "Set usedMeaningIds to only projected meaning IDs materially used in the reply.",
-        "The external runtime does not own Ember continuity, memory, canonical state, or authority.",
+        "This provider runtime does not own the continuing agent's continuity, memory, canonical state, or authority.",
         "<ember_provider_request>",
         JSON.stringify(request),
         "</ember_provider_request>",

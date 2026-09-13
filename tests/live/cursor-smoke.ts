@@ -16,7 +16,7 @@ const scope = `relationship:${principal}`;
 const marker = "OUT_OF_SCOPE_MARKER_90";
 const directory = await mkdtemp(join(tmpdir(), "ember-live-cursor-"));
 const statePath = join(directory, "ember.json");
-const state = initialState("Ember", principal);
+const state = initialState(principal);
 const relationshipId = rememberRelationship(state, principal, scope, scope, "Synthetic issue-90 collaborator fixture");
 const factId = rememberFact(
     state,
