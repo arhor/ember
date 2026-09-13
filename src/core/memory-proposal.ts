@@ -1,5 +1,5 @@
 import type {
-    EmberInferenceEvidence,
+    AgentInferenceEvidence,
     EmberState,
     EpistemicRole,
     EvidenceId,
@@ -223,7 +223,7 @@ export function resolveMemoryProposal(
         const evidenceId = deterministicAdoptionId("evidence", state, proposal, decidedAt) as EvidenceId;
         if (state.evidence.some((evidence) => evidence.evidenceId === evidenceId))
             return rejected(state, proposal, decidedAt, "deterministic_id_collision");
-        const inference: EmberInferenceEvidence = {
+        const inference: AgentInferenceEvidence = {
             evidenceId,
             sourceRole: "agent_inference",
             sourceActor: agentActor(state.lineage.lineageId),
