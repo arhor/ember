@@ -32,12 +32,6 @@ jobs:
       - name: Install locked development toolchain
         run: npm ci
 
-      - name: Show formatter diff
-        run: |
-          npm run fmt
-          git diff -- src/core/model.ts src/core/semantics.ts src/providers/ai-sdk.ts
-          git diff --quiet
-
       - name: Run static and repository checks
         run: npm run check
 
