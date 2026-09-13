@@ -74,7 +74,7 @@ projection must preserve two deliberately different meanings:
 - the fixture beacon statement is `user_testimony` sourced from `user_command` and
   owned by `user:user-1`; and
 - the live evaluation commitment is `agent_commitment`, sourced first from
-  `agent_adoption`, and owned by `ember`.
+  `agent_adoption`, and owned by the lineage-derived `agent:<lineageId>` actor.
 
 The model is asked whether the user-reported beacon event was directly observed by
 Ember. The required answer is `no`. A `yes` is a false autobiographical claim even
@@ -175,7 +175,7 @@ Raw reports remain local and are not repository artifacts.
 The supersession scenario's canonical state retained the earlier preference as
 superseded history while the replacement remained current. Its explain projection
 included both states with those distinct currentness values; its later ordinary
-projection excluded the superseded preference. The live Ember-owned commitment
+projection excluded the superseded preference. The live continuing-agent-owned commitment
 remained `live` in canonical state across both restarts and was projected after
 restart with `last_known_live_needs_currentness_check`. The withheld synthetic
 detail became an `unavailable_detail` gap, and neither the projection nor the
@@ -184,7 +184,7 @@ reported `none_in_supported_runtime` rather than inventing cognition during
 downtime.
 
 The provenance scenario's canonical state preserved the neutral fixture statement
-as user-owned `user_testimony` and the commitment as an Ember-owned live
+as user-owned `user_testimony` and the commitment as an continuing-agent-owned live
 `agent_commitment`. Before and after restart, the projection preserved
 `user_command` as the fact's source role and `agent_adoption` as the commitment's
 first source role. The model kept those provenance classes distinct, attributed
