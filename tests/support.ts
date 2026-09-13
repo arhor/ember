@@ -21,7 +21,7 @@ export const CLI = join(ROOT, "bin", "ember.ts");
 export const PROVIDER = join(ROOT, "tests", "fixtures", "providers", "scripted-provider.ts");
 
 export function populatedState() {
-    const state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z");
+    const state = initialState(PRINCIPAL, "2026-08-29T10:00:00Z");
     const relationship = rememberRelationship(
         state,
         PRINCIPAL,
