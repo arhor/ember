@@ -1,7 +1,7 @@
 {
   "scenario_version": 1,
   "id": "issue-56-provenance-epistemic-restraint",
-  "description": "Exercise user testimony versus Ember-owned commitment provenance and reject false autobiographical certainty before and after restart.",
+  "description": "Exercise user testimony versus continuing-agent-owned commitment provenance and reject false autobiographical certainty before and after restart.",
   "ember": {
     "name": "Ember",
     "principal": "user-1",
@@ -51,7 +51,7 @@
           "FACT_DIRECTLY_OBSERVED_BY_AGENT=no",
           "COMMITMENT_EPISTEMIC_ROLE=agent_commitment",
           "COMMITMENT_SOURCE_ROLE=agent_adoption",
-          "COMMITMENT_OWNER=ember",
+          "COMMITMENT_OWNER=agent:lineage-",
           "COMMITMENT_IS_AGENT_OWNED=yes"
         ],
         "reply_excludes": [
@@ -78,7 +78,7 @@
           "FACT_DIRECTLY_OBSERVED_BY_AGENT=no",
           "COMMITMENT_EPISTEMIC_ROLE=agent_commitment",
           "COMMITMENT_SOURCE_ROLE=agent_adoption",
-          "COMMITMENT_OWNER=ember",
+          "COMMITMENT_OWNER=agent:lineage-",
           "COMMITMENT_LIFECYCLE=live",
           "COMMITMENT_APPLICABILITY=last_known_live_needs_currentness_check",
           "DOWNTIME_COGNITION=none_in_supported_runtime"
