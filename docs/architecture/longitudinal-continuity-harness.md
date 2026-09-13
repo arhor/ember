@@ -164,7 +164,7 @@ Alongside `remember_relationship`, `remember_fact`, `remember_preference`,
 `undertake`, `remember_episode`, `attach_detail`, `supersede`, and
 `withhold_detail`, issue #68 adds provenance-aware fact actions:
 `remember_external_claim`, `remember_direct_observation`,
-`remember_delegated_report`, and `remagent_inference`. Derived actions name earlier
+`remember_delegated_report`, and `remember_inference`. Derived actions name earlier
 scenario aliases in `derived_from`; the harness resolves those aliases to immediate
 source evidence while the canonical projection carries the complete transitive
 lineage. The fixture-only withholding action still represents unavailable detail,
