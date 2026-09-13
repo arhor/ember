@@ -398,12 +398,7 @@ export function agentActor(lineageId: LineageId | string): AgentActor {
     return `agent:${lineageId}`;
 }
 
-export function initialState(principal: string): EmberState;
-/** @deprecated Legacy display-name argument is ignored; identity belongs to the lineage, not the product/bootstrap label. */
-export function initialState(legacyDisplayName: string, principal: string, timestamp?: string): EmberState;
-export function initialState(first: string, second?: string, third?: string): EmberState {
-    const principal = second ?? first;
-    const timestamp = third ?? nowUtc();
+export function initialState(principal: string, timestamp = nowUtc()): EmberState {
     const state: EmberState = {
         schemaVersion: 1,
         revision: 0,
