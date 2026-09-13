@@ -5,7 +5,7 @@ import type {
     CognitionEpisode,
     CognitionId,
     CognitionPurpose,
-    EmberExpressionEvidence,
+    AgentExpressionEvidence,
     EmberState,
     MeaningId,
     RuntimeEpisode,
@@ -320,7 +320,7 @@ export async function runCognition(
     const cognition = findCognition(completed, cognitionId);
     const expressionId = newId("evidence");
     const at = nowUtc();
-    const expression: EmberExpressionEvidence = {
+    const expression: AgentExpressionEvidence = {
         evidenceId: expressionId,
         sourceRole: "agent_expression_via_provider",
         sourceActor: agentActor(completed.lineage.lineageId),
