@@ -110,7 +110,7 @@ async function recordFixture(
         specification: spec,
         runtime_state: "exited",
         report_state: report.objective_disposition === "completed" ? "reported_success" : "reported_failure",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         report,
         report_provenance: {
             sourceRole: "specialist_report",
@@ -170,8 +170,8 @@ test("current specialist success requires and persists an Ember-owned reintegrat
     });
 
     assert.equal(accepted.latest_decision?.outcome, "integrated");
-    assert.equal(accepted.record.ember_disposition, "accepted");
-    assert.equal(accepted.latest_decision?.canonical_mutation.eligibility, "eligible_after_ember_decision");
+    assert.equal(accepted.record.agent_disposition, "accepted");
+    assert.equal(accepted.latest_decision?.canonical_mutation.eligibility, "eligible_after_agent_decision");
     assert.equal(accepted.audit?.history.length, 2);
 });
 
@@ -183,7 +183,7 @@ test("reintegration rejects a checkpoint that is not the current canonical Ember
     );
     const inspection = await inspectSpecialistReintegration(fixture.recordPath);
     assert.equal(inspection.audit, null);
-    assert.equal(inspection.record.ember_disposition, "unresolved");
+    assert.equal(inspection.record.agent_disposition, "unresolved");
     assert.equal(inspection.record.currentness_evaluation, undefined);
 });
 
@@ -204,7 +204,7 @@ test("late successful specialist result is withheld as stale against current Emb
     );
 
     assert.equal(inspection.latest_decision?.outcome, "withheld");
-    assert.equal(inspection.record.ember_disposition, "stale");
+    assert.equal(inspection.record.agent_disposition, "stale");
     assert.match(inspection.latest_decision?.reason ?? "", /historical specialist success/);
 });
 
@@ -227,7 +227,7 @@ test("revoked current authority withholds otherwise-current specialist success",
     );
 
     assert.equal(withheld.latest_decision?.outcome, "withheld");
-    assert.equal(withheld.record.ember_disposition, "unresolved");
+    assert.equal(withheld.record.agent_disposition, "unresolved");
     assert.equal(withheld.latest_decision?.canonical_mutation.eligibility, "not_eligible");
     assert.equal(withheld.latest_decision?.checkpoint.authority.status, "revoked");
 });
@@ -250,7 +250,7 @@ test("partial specialist result cannot establish completion but may be qualified
     });
     assert.equal(refused.latest_decision?.result_shape, "partial");
     assert.equal(refused.latest_decision?.outcome, "withheld");
-    assert.equal(refused.record.ember_disposition, "unresolved");
+    assert.equal(refused.record.agent_disposition, "unresolved");
 
     const qualified = await reintegrateSpecialistResult(fixture.store, fixture.recordPath, CURRENT_CHECKPOINT, {
         decision: {
@@ -259,7 +259,7 @@ test("partial specialist result cannot establish completion but may be qualified
         },
     });
     assert.equal(qualified.latest_decision?.outcome, "integrated");
-    assert.equal(qualified.record.ember_disposition, "qualified");
+    assert.equal(qualified.record.agent_disposition, "qualified");
 });
 
 test("failed specialist result cannot be promoted to accepted completion", async () => {
@@ -281,7 +281,7 @@ test("failed specialist result cannot be promoted to accepted completion", async
     });
     assert.equal(refused.latest_decision?.result_shape, "failed");
     assert.equal(refused.latest_decision?.outcome, "withheld");
-    assert.equal(refused.record.ember_disposition, "unresolved");
+    assert.equal(refused.record.agent_disposition, "unresolved");
     assert.equal(refused.latest_decision?.canonical_mutation.eligibility, "not_eligible");
 });
 
@@ -307,7 +307,7 @@ test("ambiguous-effect success remains withheld until effects are independently 
         },
     });
     assert.equal(accepted.latest_decision?.outcome, "integrated");
-    assert.equal(accepted.record.ember_disposition, "accepted");
+    assert.equal(accepted.record.agent_disposition, "accepted");
 });
 
 test("explicit rejection does not pretend ambiguous specialist effects are absent", async () => {
@@ -321,7 +321,7 @@ test("explicit rejection does not pretend ambiguous specialist effects are absen
         },
     });
     assert.equal(rejected.latest_decision?.outcome, "rejected");
-    assert.equal(rejected.record.ember_disposition, "rejected");
+    assert.equal(rejected.record.agent_disposition, "rejected");
     assert.equal(rejected.record.recovery.effect_state, "effects_possible");
     assert.equal(rejected.latest_decision?.canonical_mutation.eligibility, "not_eligible");
 });
@@ -343,7 +343,7 @@ test("failed corroboration validation cannot leave a terminal disposition withou
 
     const inspection = await inspectSpecialistReintegration(primary.recordPath);
     assert.equal(inspection.audit, null);
-    assert.equal(inspection.record.ember_disposition, "unresolved");
+    assert.equal(inspection.record.agent_disposition, "unresolved");
     assert.equal(inspection.record.currentness_evaluation, undefined);
 });
 
@@ -377,7 +377,7 @@ test("changed relevant context remains withheld until Ember records a current-co
         decision: { disposition: "accepted", reason: "Accept after checking the changed requirement." },
     });
     assert.equal(withheld.latest_decision?.outcome, "withheld");
-    assert.equal(withheld.record.ember_disposition, "requires_re_evaluation");
+    assert.equal(withheld.record.agent_disposition, "requires_re_evaluation");
 
     const accepted = await reintegrateSpecialistResult(fixture.store, fixture.recordPath, changedCheckpoint, {
         decision: {
@@ -388,7 +388,7 @@ test("changed relevant context remains withheld until Ember records a current-co
         },
     });
     assert.equal(accepted.latest_decision?.outcome, "integrated");
-    assert.equal(accepted.record.ember_disposition, "accepted");
+    assert.equal(accepted.record.agent_disposition, "accepted");
     assert.equal(accepted.record.currentness_evaluation?.resolution?.disposition, "accepted");
 });
 
@@ -397,7 +397,7 @@ test("inspection rejects a contradictory canonical-mutation gate in the durable 
     await reintegrateSpecialistResult(fixture.store, fixture.recordPath, CURRENT_CHECKPOINT);
 
     const persisted = await readRecord(fixture.recordPath);
-    persisted.reintegration.history[0].canonical_mutation.eligibility = "eligible_after_ember_decision";
+    persisted.reintegration.history[0].canonical_mutation.eligibility = "eligible_after_agent_decision";
     await writeRecord(fixture.recordPath, persisted);
 
     await assert.rejects(
