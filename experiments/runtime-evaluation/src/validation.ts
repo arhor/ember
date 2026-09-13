@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { EmberAdoptionEvidence, Evidence, Meaning, PersistentState, UserEvidence } from "./model.ts";
+import type { AgentAdoptionEvidence, Evidence, Meaning, PersistentState, UserEvidence } from "./model.ts";
 
 import { evidenceId, lineageId, meaningId } from "./model.ts";
 
@@ -219,7 +219,7 @@ function validateEvidence(value: unknown): Evidence {
         ) {
             throw new Error("Ember adoption evidence is invalid");
         }
-        const result: EmberAdoptionEvidence = {
+        const result: AgentAdoptionEvidence = {
             evidenceId: id,
             sourceRole: "agent_adoption",
             sourceActor: "ember",
