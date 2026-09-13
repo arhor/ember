@@ -94,7 +94,7 @@ export async function runProcessRestartScenario(
 
     const initialized = await runCli(
         options,
-        ["init", "--state", options.statePath, "--name", scenario.ember.name, "--principal", scenario.ember.principal],
+        ["init", "--state", options.statePath, "--principal", scenario.ember.principal],
         "",
         scenario.ember.initial_at,
         baseEnvironment,
