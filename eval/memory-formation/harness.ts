@@ -74,7 +74,7 @@ export async function runMemoryFormationScenario(
     validateScenario(scenario);
     const liveEvaluation = generator !== undefined;
     const store = new StateStore(statePath);
-    await store.create(initialState(scenario.ember.name, scenario.ember.principal, scenario.ember.initial_at));
+    await store.create(initialState(scenario.ember.principal, scenario.ember.initial_at));
     const lease = await store.acquireWriteLease();
     const previousNow = process.env.EMBER_TEST_NOW;
     let state = await store.load();
