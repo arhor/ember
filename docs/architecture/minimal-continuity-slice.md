@@ -301,7 +301,7 @@ invocation. The `package.json` bin mapping makes the shorter name available afte
 an optional link or install.
 Its command surface is:
 
-- `ember init --state PATH --name Ember --principal user-1` creates one new
+- `ember init --state PATH --principal user-1` creates one new
   lineage bound to the slice's one supported local principal and refuses to
   overwrite an existing store;
 - `ember run --state PATH --principal user-1 --scope project:ember/docs --provider-command PATH [--provider-arg ARG]... --provider-timeout-seconds N` starts the foreground interaction loop through the versioned process provider; `--provider codex [--codex-command PATH]` selects the supported production Codex backend through the same cognition seam;
