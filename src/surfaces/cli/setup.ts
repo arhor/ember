@@ -1,11 +1,10 @@
 import { lstat, readFile, realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
-import { parseArgs } from "node:util";
 
 import type { EmberState } from "../../core/model.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
-import type { CliIo } from "./model.ts";
+import type { CliIo, ConfiguredRunArgs, SetupArgs, SetupIntent } from "./model.ts";
 
 import { ProviderError, ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
@@ -19,7 +18,6 @@ import { startRuntime } from "../../runtime/runtime.ts";
 import { exactKeys, isObject } from "../../util.ts";
 import { runCliSurface } from "./surface.ts";
 
-type SetupIntent = "create-new" | "restore-existing" | "use-existing";
 export interface SetupProvider {
     kind: "codex" | "cursor" | "claude-code";
     command: string;
@@ -49,8 +47,11 @@ export interface SetupConfig {
 }
 
 export function defaultSetupConfigPath(): string {
-    const base = process.env.XDG_CONFIG_HOME;
-    return join(base && isAbsolute(base) ? base : join(homedir(), ".config"), "ember", "setup.json");
+    return join(homedir(), ".ember", "config", "setup.json");
+}
+
+function defaultSetupStatePath(): string {
+    return join(homedir(), ".ember", "state", "continuity.json");
 }
 
 export function setupProvider(config: SetupProvider): ProviderInvoker {
@@ -184,46 +185,17 @@ async function writeConfig(path: string, config: SetupConfig): Promise<void> {
 }
 
 export async function setupMain(
-    argv: string[],
+    args: SetupArgs,
     io: CliIo,
     dependencies: { provider?: (config: SetupProvider) => ProviderInvoker; signal?: AbortSignal } = {},
 ): Promise<number> {
-    let values;
-    try {
-        const parsed = parseArgs({
-            args: argv,
-            strict: true,
-            allowPositionals: false,
-            tokens: true,
-            options: {
-                config: { type: "string" },
-                state: { type: "string" },
-                principal: { type: "string" },
-                intent: { type: "string" },
-                provider: { type: "string" },
-                "provider-command": { type: "string" },
-                model: { type: "string" },
-                "provider-timeout-seconds": { type: "string" },
-                "accept-continuity-risk": { type: "boolean" },
-                "confirm-provider-change": { type: "boolean" },
-                help: { type: "boolean" },
-            },
-        });
-        const names = parsed.tokens.filter((token) => token.kind === "option").map((token) => token.name);
-        if (new Set(names).size !== names.length) throw new Error();
-        values = parsed.values;
-    } catch {
-        throw new ValidationError("invalid setup options; use ember setup --help (options must not repeat)");
-    }
-    if (values.help) {
+    if (args.help) {
         io.output.write(SETUP_HELP);
         return 0;
     }
-    const configPath = await physicalPath(resolve(values.config ?? defaultSetupConfigPath()));
+    const configPath = await physicalPath(resolve(args.config ?? defaultSetupConfigPath()));
     const existing = await loadSetupConfig(configPath);
-    const statePath = await physicalPath(
-        resolve(values.state ?? existing?.statePath ?? join(dirname(configPath), "continuity.json")),
-    );
+    const statePath = await physicalPath(resolve(args.state ?? existing?.statePath ?? defaultSetupStatePath()));
     if (configPath === statePath || configPath.startsWith(`${statePath}.`) || statePath.startsWith(`${configPath}.`))
         throw new ValidationError("setup configuration and canonical state/sidecars must have separate paths");
     const store = new StateStore(statePath);
@@ -231,12 +203,12 @@ export async function setupMain(
     io.output.write(
         `Machine configuration: ${existing ? "present" : "absent"}; continuity: ${state ? "loadable" : "absent"}.\n`,
     );
-    if (existing && (existing.statePath !== statePath || (values.principal && values.principal !== existing.principal)))
+    if (existing && (existing.statePath !== statePath || (args.principal && args.principal !== existing.principal)))
         throw new ValidationError(
             "existing setup binding is preserved; use a separate --config and --state for another lineage",
         );
     if (existing && state) assertBinding(existing, state);
-    if (!values.intent) {
+    if (!args.intent) {
         if (existing)
             io.output.write(
                 `Last probe: ${existing.verification}; continuity operation: ${existing.continuity}. This inspection does not reverify cognition.\n`,
@@ -244,16 +216,14 @@ export async function setupMain(
         io.output.write(SETUP_HELP);
         return 0;
     }
-    if (!["create-new", "restore-existing", "use-existing"].includes(values.intent))
-        throw new ValidationError("--intent requires create-new, restore-existing, or use-existing");
-    const intent = values.intent as SetupIntent;
+    const intent = args.intent;
     if (existing && intent !== "use-existing" && intent !== existing.intent)
         throw new ValidationError("existing setup intent is preserved; use use-existing or a separate configuration");
     if (intent === "create-new" && state && !existing)
         throw new ValidationError("create-new refuses existing state; choose a separate state path");
     if (intent !== "create-new" && !state)
         throw new ValidationError("selected existing continuity is absent; restore it explicitly before retrying");
-    if (intent === "restore-existing" && !existing && !values["accept-continuity-risk"])
+    if (intent === "restore-existing" && !existing && !args.acceptContinuityRisk)
         throw new ValidationError(
             "restore attaches local state; snapshot age, missing history, and forks remain unresolved. Confirm intended continuation with --accept-continuity-risk",
         );
@@ -261,27 +231,23 @@ export async function setupMain(
         throw new ValidationError(
             "previous continuity operation requires recovery; missing state will not be recreated",
         );
-    const principal = values.principal ?? existing?.principal ?? state?.runtimeContract.localPrincipal;
+    const principal = args.principal ?? existing?.principal ?? state?.runtimeContract.localPrincipal;
     if (!principal || !safeText(principal)) throw new ValidationError("create-new requires --principal");
     if (state && principal !== state.runtimeContract.localPrincipal)
         throw new ValidationError("principal does not match continuity state");
-    const kind = values.provider ?? existing?.provider.kind;
+    const kind = args.provider ?? existing?.provider.kind;
     const changedKind = kind !== existing?.provider.kind;
     const provider = {
         kind,
         command:
-            values["provider-command"] ??
+            args.providerCommand ??
             (!changedKind ? existing?.provider.command : undefined) ??
             (kind === "cursor" ? "cursor-agent" : kind),
-        model: values.model ?? (!changedKind ? existing?.provider.model : undefined) ?? "",
-        timeoutSeconds: Number(values["provider-timeout-seconds"] ?? existing?.provider.timeoutSeconds ?? 60),
+        model: args.model ?? (!changedKind ? existing?.provider.model : undefined) ?? "",
+        timeoutSeconds: args.providerTimeoutSeconds ?? existing?.provider.timeoutSeconds ?? 60,
     };
     validateSetupProvider(provider);
-    if (
-        existing &&
-        JSON.stringify(provider) !== JSON.stringify(existing.provider) &&
-        !values["confirm-provider-change"]
-    )
+    if (existing && JSON.stringify(provider) !== JSON.stringify(existing.provider) && !args.confirmProviderChange)
         throw new ValidationError("provider configuration change requires --confirm-provider-change");
     const candidate = state ?? initialState(principal);
     if (existing && !state) {
@@ -401,28 +367,10 @@ export function assertBinding(config: SetupConfig, state: EmberState): void {
         throw new ValidationError("continuity no longer matches setup binding; explicit recovery is required");
 }
 
-export async function setupRunMain(argv: string[], io: CliIo): Promise<number> {
-    let values;
-    try {
-        const parsed = parseArgs({
-            args: argv,
-            strict: true,
-            allowPositionals: false,
-            tokens: true,
-            options: {
-                config: { type: "string" },
-                scope: { type: "string" },
-            },
-        });
-        const names = parsed.tokens.filter((token) => token.kind === "option").map((token) => token.name);
-        if (new Set(names).size !== names.length) throw new Error();
-        values = parsed.values;
-    } catch {
-        throw new ValidationError("configured run accepts only --config PATH and --scope SCOPE");
-    }
-    if (!values.config || !safeText(values.scope))
+export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<number> {
+    if (!args.config || !safeText(args.scope))
         throw new ValidationError("configured run requires --config PATH and --scope SCOPE");
-    const config = await loadSetupConfig(resolve(values.config));
+    const config = await loadSetupConfig(resolve(args.config));
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
     assertBinding(config, await new StateStore(config.statePath).load());
@@ -430,7 +378,7 @@ export async function setupRunMain(argv: string[], io: CliIo): Promise<number> {
         {
             statePath: config.statePath,
             principal: config.principal,
-            scope: values.scope,
+            scope: args.scope,
             expectedLineageId: config.lineageId,
             providerKind: config.provider.kind,
             providerCommand: config.provider.command,
@@ -443,6 +391,8 @@ export async function setupRunMain(argv: string[], io: CliIo): Promise<number> {
 }
 
 const SETUP_HELP = `ember setup [--config PATH] [--state PATH]
+Defaults: ~/.ember/config/setup.json and ~/.ember/state/continuity.json.
+Config and state path overrides are independent; an existing config retains its state binding.
 Inspect first, then choose explicitly:
   --intent create-new --principal USER --provider codex|cursor|claude-code
   --intent restore-existing --state PATH --accept-continuity-risk --provider PROVIDER

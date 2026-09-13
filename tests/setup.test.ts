@@ -8,10 +8,15 @@ import test from "node:test";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { loadSetupConfig, main, setupMain } from "../src/surfaces/cli/index.ts";
+import { loadSetupConfig, main, parseArgs, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
+async function setupMain(argv, io, dependencies) {
+    const args = parseArgs(["setup", ...argv]);
+    assert.equal(args.command, "setup");
+    return await runSetup(args, io, dependencies);
+}
 function capture(input = ":quit\n") {
     let output = "",
         error = "";
@@ -57,6 +62,118 @@ async function fixture(t) {
     };
 }
 const verified = { provider: () => async () => success };
+
+test("one CLI parser produces typed setup and discriminated run arguments", () => {
+    const setup = parseArgs([
+        "setup",
+        "--intent",
+        "restore-existing",
+        "--provider",
+        "claude-code",
+        "--provider-timeout-seconds",
+        "30",
+        "--accept-continuity-risk",
+    ]);
+    assert.equal(setup.command, "setup");
+    assert.equal(setup.intent, "restore-existing");
+    assert.equal(setup.provider, "claude-code");
+    assert.equal(setup.providerTimeoutSeconds, 30);
+    assert.equal(setup.acceptContinuityRisk, true);
+    assert.equal(parseArgs(["setup", "--help"]).help, true);
+    assert.equal(parseArgs(["setup"]).intent, undefined);
+    assert.deepEqual(parseArgs(["run", "--config", "host.json", "--scope", "test"]), {
+        command: "run",
+        mode: "configured",
+        config: "host.json",
+        scope: "test",
+    });
+    const explicit = parseArgs([
+        "run",
+        "--state",
+        "state.json",
+        "--principal",
+        "user",
+        "--scope",
+        "test",
+        "--provider-command",
+        "fixture",
+        "--provider-arg",
+        "--config",
+        "--provider-timeout-seconds",
+        "1",
+    ]);
+    assert.equal(explicit.mode, "explicit");
+    assert.deepEqual(explicit.providerArgs, ["--config"]);
+});
+
+test("unified CLI parser rejects invalid setup and mixed configured-run options", () => {
+    for (const args of [
+        ["setup", "--config"],
+        ["setup", "--state", ""],
+        ["setup", "extra"],
+        ["setup", "--help", "--help"],
+        ["setup", "--intent", "automatic"],
+        ["setup", "--provider", "unknown"],
+        ["setup", "--unknown"],
+        ["run", "--config", "host.json"],
+        ["run", "--config", "host.json", "--scope", "test", "extra"],
+        ["run", "--config", "a", "--config", "b", "--scope", "test"],
+        ...[
+            "--state",
+            "--principal",
+            "--provider",
+            "--provider-command",
+            "--provider-arg",
+            "--codex-command",
+            "--codex-arg",
+            "--cursor-command",
+            "--cursor-arg",
+            "--provider-timeout-seconds",
+        ].map((flag) => ["run", "--config", "host.json", "--scope", "test", flag, "value"]),
+    ])
+        assert.throws(() => parseArgs(args), undefined, args.join(" "));
+});
+
+for (const override of ["none", "config", "state"]) {
+    test(`application home separates config and state with independent ${override} override`, async (t) => {
+        const f = await fixture(t),
+            executable = join(f.directory, "codex.ts");
+        await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+        await chmod(executable, 0o700);
+        // Isolate the child CLI's user home; no real provider login or user files participate.
+        const env = {
+            HOME: f.directory,
+            XDG_CONFIG_HOME: join(f.directory, "xdg-config"),
+            XDG_STATE_HOME: join(f.directory, "xdg-state"),
+        };
+        const config = override === "config" ? f.config : join(f.directory, ".ember", "config", "setup.json");
+        const state = override === "state" ? f.state : join(f.directory, ".ember", "state", "continuity.json");
+        const options = override === "config" ? ["--config", config] : override === "state" ? ["--state", state] : [];
+        const result = await command(
+            [
+                "setup",
+                ...options,
+                "--intent",
+                "create-new",
+                "--principal",
+                "user",
+                "--provider",
+                "codex",
+                "--provider-command",
+                executable,
+            ],
+            { env },
+        );
+        assert.equal(result.code, 0, JSON.stringify(result));
+        assert.equal((await loadSetupConfig(config)).statePath, state);
+        const before = await readFile(state, "utf8");
+        const rerun = await command(["setup", "--config", config, "--intent", "use-existing"], { env });
+        assert.equal(rerun.code, 0, JSON.stringify(rerun));
+        assert.equal(await readFile(state, "utf8"), before);
+        await assert.rejects(stat(env.XDG_CONFIG_HOME), { code: "ENOENT" });
+        await assert.rejects(stat(env.XDG_STATE_HOME), { code: "ENOENT" });
+    });
+}
 
 test("setup inspection distinguishes absent/configured hosts without choosing a lineage or probing", async (t) => {
     const f = await fixture(t),

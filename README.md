@@ -20,10 +20,12 @@ attach existing continuity. Authenticate with your chosen provider's own login f
 ```sh
 node bin/ember.ts setup
 node bin/ember.ts setup --intent create-new --principal user-1 --provider codex
-node bin/ember.ts run --config "$HOME/.config/ember/setup.json" --scope relationship:user-1
+node bin/ember.ts run --config "$HOME/.ember/config/setup.json" --scope relationship:user-1
 ```
 
-Setup prints the actual configuration path (respecting `XDG_CONFIG_HOME` or `--config`).
+The application home separates machine configuration (`~/.ember/config/`) from continuity
+state (`~/.ember/state/`). Setup prints the configuration path; `--config` and `--state`
+provide independent overrides.
 See [Setup and Onboarding](docs/architecture/setup-and-onboarding-semantics.md#implemented-machine-bootstrap-253)
 for restore, provider selection, and recovery. The low-level `init` command remains available;
 see the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md)

@@ -548,6 +548,7 @@ describe("CLI parser", () => {
         assert.equal(parsed.command, "run");
         assert.deepEqual(parsed, {
             command: "run",
+            mode: "explicit",
             state: "/tmp/ember.json",
             principal: PRINCIPAL,
             scope: SCOPE,

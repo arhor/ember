@@ -1,5 +1,5 @@
 ---
-summary: "Setup semantics and implemented machine bootstrap CLI for explicit restore/create, provider verification, machine-local recovery, and the separate progressive conversational onboarding boundary."
+summary: "Setup semantics and typed bootstrap CLI with an application home separating config/state, explicit restore/create, provider verification, recovery, and a separate conversational onboarding boundary."
 read_when:
   - "Implementing or changing ember setup, machine provisioning, restore/create behavior, provider bootstrap, onboarding, or setup recovery"
   - "Deciding whether setup state belongs to the host, Ember continuity, ordinary memory, or temporary operational work"
@@ -599,11 +599,28 @@ and continuity-operation results. Corrupt/unreadable state fails visibly rather 
 being classified as a clean installation. Setup never scans arbitrary directories for
 other lineages: use `--state PATH` to inspect or attach an existing local store.
 
-The default machine-local record is `$XDG_CONFIG_HOME/ember/setup.json`, falling back
-to `$HOME/.config/ember/setup.json` when XDG configuration is absent or relative.
-`--config PATH` selects a different record. New continuity defaults to `continuity.json`
-beside that record; `--state PATH` selects another location. Paths are host-local
-references, never lineage keys or model-visible setup context.
+Ember intentionally uses one discoverable application home with distinct responsibilities:
+
+```text
+~/.ember/
+├── config/setup.json       # machine-local configuration and setup evidence
+└── state/continuity.json   # canonical continuity, with operational sidecars alongside
+```
+
+This keeps the local installation together for inspection, backup, and movement while
+preserving the semantic configuration/state boundary. XDG variables do not affect these
+defaults. `--config PATH` and `--state PATH` override their respective locations
+independently: moving the configuration does not relocate the default state. A selected
+existing setup record retains its recorded state binding unless an identical `--state`
+is supplied; a different binding is rejected. Paths remain host-local references, never
+lineage keys or model-visible setup context. Moving a whole installation still requires
+explicit attachment at its new location because stored bindings are absolute paths;
+setup does not infer continuity or rewrite a binding from copied directories.
+
+Setup and both run modes use the single typed CLI grammar in `Commands`/`CommandSpecs`.
+`parseArgs()` produces `SetupArgs` or `RunArgs` with an explicit `mode` discriminator,
+and ordinary dispatch passes typed arguments to the handlers. All command forms use
+the same unknown-option, duplicate-option, positional, and required-value validation.
 
 Choose an intent explicitly:
 
