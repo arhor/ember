@@ -668,13 +668,13 @@ export function validateState(state: unknown): asserts state is EmberState {
         } else if ("assertedPrincipal" in ev)
             require(ev.assertedPrincipal === principal, `${path} asserted principal does not match runtime contract`);
         if (ev.sourceRole === "agent_adoption") {
-            require(ev.sourceActor === continuingAgentActor, `${path} adoption must be Ember-owned evidence`);
+            require(ev.sourceActor === continuingAgentActor, `${path} adoption must be continuing-agent-owned evidence`);
             require(derived.length === 1, `${path} adoption needs exactly one requesting occurrence`);
             require(ev.payloadMode === "descriptor_only", `${path} adoption must be descriptor-only`);
         }
         if (ev.sourceRole === "agent_expression_via_provider") {
             require(ev.payloadMode === "descriptor_only", `${path} provider expression must be descriptor-only`);
-            require(ev.sourceActor === continuingAgentActor, `${path} provider expression actor must be Ember`);
+            require(ev.sourceActor === continuingAgentActor, `${path} provider expression actor must be the continuing agent`);
             require(isNotBlankString(ev.cognitionId), `${path} provider expression needs cognitionId`);
             require(isNotBlankString(ev.providerLabel), `${path} provider expression needs providerLabel`);
             require(derived.length === 0, `${path} provider expression cannot derive new evidence`);
@@ -688,12 +688,12 @@ export function validateState(state: unknown): asserts state is EmberState {
             require(ev.payloadMode === "descriptor_only", `${path} external claim must be descriptor-only`);
         }
         if (ev.sourceRole === "agent_inference") {
-            require(ev.sourceActor === continuingAgentActor, `${path} inference actor must be Ember`);
+            require(ev.sourceActor === continuingAgentActor, `${path} inference actor must be the continuing agent`);
             require(derived.length >= 1, `${path} inference needs source evidence`);
             require(ev.payloadMode === "descriptor_only", `${path} inference must be descriptor-only`);
         }
         if (ev.sourceRole === "agent_observation") {
-            require(ev.sourceActor === continuingAgentActor, `${path} direct observation actor must be Ember`);
+            require(ev.sourceActor === continuingAgentActor, `${path} direct observation actor must be the continuing agent`);
             require(derived.length === 0, `${path} direct observation cannot masquerade as a derivative`);
             require(ev.payloadMode === "descriptor_only", `${path} direct observation must be descriptor-only`);
         }
