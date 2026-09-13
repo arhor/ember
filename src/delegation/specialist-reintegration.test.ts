@@ -53,7 +53,7 @@ async function recordFixture(
     const workspace = resolve(root, "workspace");
     const recordPath = join(root, `${options.episodeId ?? "episode-65"}.json`);
     const store = new StateStore(join(root, "state.json"));
-    await store.create(initialState("Ember", "user-1", "2026-09-02T14:00:00Z"));
+    await store.create(initialState("user-1", "2026-09-02T14:00:00Z"));
     const report = options.report ?? specialistReport();
     await mkdir(workspace);
     const spec = createSpecialistEpisode({
