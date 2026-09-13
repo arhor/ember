@@ -32,6 +32,12 @@ jobs:
       - name: Install locked development toolchain
         run: npm ci
 
+      - name: Show formatter diff
+        run: |
+          npm run fmt
+          git diff -- src/core/model.ts docs/architecture/semantic-continuity-evaluation.md
+          git diff --quiet
+
       - name: Run static and repository checks
         run: npm run check
 
