@@ -14,15 +14,20 @@ npm run check
 npm test
 ```
 
-Run the continuity CLI directly from source, for example:
+Inspect machine setup directly from source, then explicitly create a new lineage or
+attach existing continuity. Authenticate with your chosen provider's own login flow first:
 
 ```sh
-node bin/ember.ts init \
-  --state /tmp/ember-continuity.json \
-  --principal user-1
+node bin/ember.ts setup
+node bin/ember.ts setup --intent create-new --principal user-1 --provider codex
+node bin/ember.ts run --config "$HOME/.config/ember/setup.json" --scope relationship:user-1
 ```
 
-See the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md) for complete `run`, inspection, recovery, and provider examples.
+Setup prints the actual configuration path (respecting `XDG_CONFIG_HOME` or `--config`).
+See [Setup and Onboarding](docs/architecture/setup-and-onboarding-semantics.md#implemented-machine-bootstrap-253)
+for restore, provider selection, and recovery. The low-level `init` command remains available;
+see the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md)
+for explicit `run`, inspection, recovery, and provider examples.
 
 ## Repository layout
 
