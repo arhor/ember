@@ -402,7 +402,9 @@ export function supersede(
     const userOwned = old.epistemicRole === "user_testimony" && old.owner === `user:${principal}`;
     const agentOwned = old.kind === "fact" && old.epistemicRole === "agent_inference" && old.owner === actor;
     if (!userOwned && !agentOwned)
-        throw new ValidationError("only attributable user or continuing-agent fact/preference supersession is supported in v1");
+        throw new ValidationError(
+            "only attributable user or continuing-agent fact/preference supersession is supported in v1",
+        );
 
     const payload = reason === null ? text : `Correction: ${text}\nReason: ${reason}`;
     const correction = userEvidence(state, principal, old.scope, payload);
