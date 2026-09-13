@@ -27,7 +27,7 @@ interface Fixture {
 async function startedFixture(): Promise<Fixture> {
     const directory = await tempDir();
     const store = new StateStore(join(directory, "ember.json"));
-    await store.create(initialState("Ember", PRINCIPAL, "2026-09-09T12:00:00Z"));
+    await store.create(initialState(PRINCIPAL, "2026-09-09T12:00:00Z"));
     const lease = await store.acquireWriteLease();
     const loaded = await store.load();
     const started = startRuntime(loaded, PRINCIPAL, SCOPE, { timestamp: "2026-09-09T12:01:00Z" });
