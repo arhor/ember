@@ -144,7 +144,8 @@ const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
 const providerOutput = Output.object({
     schema: providerOutputSchema,
     name: "ember_provider_result",
-    description: "A bounded continuing-agent cognition result. usedMeaningIds may contain only IDs from the supplied projection.",
+    description:
+        "A bounded continuing-agent cognition result. usedMeaningIds may contain only IDs from the supplied projection.",
 });
 
 const INSTRUCTIONS = [
