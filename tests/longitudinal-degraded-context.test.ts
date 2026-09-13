@@ -110,7 +110,7 @@ test("degraded-context pressure should preserve truthful gaps and keep withheld 
 
 test("privacy deletion should not be modeled as unavailable detail", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const episode = rememberEpisode(
         state,
         "user-1",
