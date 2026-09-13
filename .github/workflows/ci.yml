@@ -32,6 +32,12 @@ jobs:
       - name: Install locked development toolchain
         run: npm ci
 
+      - name: Show identity-test formatter diff
+        run: |
+          npm run fmt
+          git diff -- tests/agent-identity.test.ts
+          git diff --quiet
+
       - name: Run static and repository checks
         run: npm run check
 
