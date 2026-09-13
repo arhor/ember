@@ -26,7 +26,7 @@ export interface UserEvidence {
     contentDigest: `sha256:${string}`;
 }
 
-export interface EmberAdoptionEvidence {
+export interface AgentAdoptionEvidence {
     evidenceId: EvidenceId;
     sourceRole: "agent_adoption";
     sourceActor: "ember";
@@ -38,7 +38,7 @@ export interface EmberAdoptionEvidence {
     payloadMode: "descriptor_only";
 }
 
-export type Evidence = UserEvidence | EmberAdoptionEvidence;
+export type Evidence = UserEvidence | AgentAdoptionEvidence;
 
 interface MeaningBase {
     meaningId: MeaningId;
@@ -236,7 +236,7 @@ export function fixtureState(): PersistentState {
         "Check restart reconstruction preserves provenance",
         learned,
     );
-    const commitmentAdoption: EmberAdoptionEvidence = {
+    const commitmentAdoption: AgentAdoptionEvidence = {
         evidenceId: evidenceId("evidence-commitment-adoption"),
         sourceRole: "agent_adoption",
         sourceActor: "ember",
