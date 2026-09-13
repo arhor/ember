@@ -3,9 +3,9 @@ import type {
     AvailableUserEvidence,
     CommitmentLifecycle,
     DelegatedReportEvidence,
-    EmberAdoptionEvidence,
-    EmberInferenceEvidence,
-    EmberObservationEvidence,
+    AgentAdoptionEvidence,
+    AgentInferenceEvidence,
+    AgentObservationEvidence,
     EmberState,
     Evidence,
     EvidenceId,
@@ -173,7 +173,7 @@ export function rememberDirectObservation(
 ): MeaningId {
     const actor = agentActor(state.lineage.lineageId);
     const at = nowUtc();
-    const evidence: EmberObservationEvidence = {
+    const evidence: AgentObservationEvidence = {
         evidenceId: newId("evidence"),
         sourceRole: "agent_observation",
         sourceActor: actor,
@@ -223,7 +223,7 @@ export function rememberInference(
         throw new ValidationError("agent inference requires at least one source evidence occurrence");
     const actor = agentActor(state.lineage.lineageId);
     const at = nowUtc();
-    const evidence: EmberInferenceEvidence = {
+    const evidence: AgentInferenceEvidence = {
         evidenceId: newId("evidence"),
         sourceRole: "agent_inference",
         sourceActor: actor,
@@ -335,7 +335,7 @@ export function undertake(state: EmberState, principal: string, slot: string, sc
     ensureNoCurrent(state, "commitment", actor, slot, scope);
     const request = userEvidence(state, principal, scope, text);
     const at = nowUtc();
-    const adoption: EmberAdoptionEvidence = {
+    const adoption: AgentAdoptionEvidence = {
         evidenceId: newId("evidence"),
         sourceRole: "agent_adoption",
         sourceActor: actor,
@@ -411,7 +411,7 @@ export function supersede(
     let sourceEvidenceId = correction.evidenceId;
     if (agentOwned) {
         const at = nowUtc();
-        const inference: EmberInferenceEvidence = {
+        const inference: AgentInferenceEvidence = {
             evidenceId: newId("evidence"),
             sourceRole: "agent_inference",
             sourceActor: actor,
