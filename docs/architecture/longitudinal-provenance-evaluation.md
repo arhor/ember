@@ -52,7 +52,7 @@ explicit epistemic roles:
 - `direct_observation`, Ember-owned and sourced by an Ember observation occurrence;
 - `delegated_report`, owned by a named `delegate:<delegate>` and sourced by a
   delegated-report occurrence;
-- `agent_inference`, Ember-owned and required to derive from at least one earlier
+- `agent_inference`, continuing-agent-owned and required to derive from at least one earlier
   evidence occurrence.
 
 This is intentionally not a universal memory taxonomy. Preferences, relationship
