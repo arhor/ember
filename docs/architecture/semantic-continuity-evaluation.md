@@ -34,7 +34,7 @@ after cognition.
 | `issue-56-supersession-commitment-gap`    | A live Ember commitment survives restart but remains subject to currentness reconciliation     | [AS-CONT-01](acceptance-scenarios.md#as-cont-01), ADR 0002, ADR 0003                                  |
 | `issue-56-supersession-commitment-gap`    | Unavailable detail remains an explicit gap and is not plausibly reconstructed                  | [AS-MEM-04](acceptance-scenarios.md#as-mem-04), ADR 0002, ADR 0003                                    |
 | `issue-56-supersession-commitment-gap`    | Downtime is represented by the recovery account rather than a seamless autobiographical bridge | [AS-CONT-01](acceptance-scenarios.md#as-cont-01), cross-ADR restart case 1                            |
-| `issue-56-provenance-epistemic-restraint` | User testimony stays user testimony while an Ember commitment stays Ember-owned adoption       | ADR 0002 and [memory provenance semantics](../research/memory-and-remembering.md)                     |
+| `issue-56-provenance-epistemic-restraint` | User testimony stays user testimony while a continuing-agent commitment stays agent-owned adoption       | ADR 0002 and [memory provenance semantics](../research/memory-and-remembering.md)                     |
 | `issue-56-provenance-epistemic-restraint` | A user-reported external event is not retold as Ember's direct observation                     | ADR 0002; the same epistemic-ownership rule exposed by [AS-DEL-03](acceptance-scenarios.md#as-del-03) |
 
 The cross-ADR validation matrix in
