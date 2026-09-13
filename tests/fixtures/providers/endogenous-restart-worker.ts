@@ -44,7 +44,7 @@ const deterministicEvaluator: CognitionOpportunityEvaluator = async (request) =>
 };
 
 if (phase === "prepare") {
-    let state = initialState("Ember", PRINCIPAL, "2026-09-03T00:00:00Z");
+    let state = initialState(PRINCIPAL, "2026-09-03T00:00:00Z");
     const aliases: Record<string, MeaningId> = {};
     if (kind !== "silence") {
         aliases.concern = undertake(
