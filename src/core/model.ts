@@ -113,7 +113,7 @@ export interface UnavailableUserDetailEvidence extends EvidenceBase {
     contentDigest?: never;
 }
 
-export interface EmberAdoptionEvidence extends EvidenceBase {
+export interface AgentAdoptionEvidence extends EvidenceBase {
     sourceRole: "agent_adoption";
     sourceActor: AgentActor;
     assertedPrincipal: string;
@@ -121,7 +121,7 @@ export interface EmberAdoptionEvidence extends EvidenceBase {
     payloadMode: "descriptor_only";
 }
 
-export interface EmberExpressionEvidence extends EvidenceBase {
+export interface AgentExpressionEvidence extends EvidenceBase {
     sourceRole: "agent_expression_via_provider";
     sourceActor: AgentActor;
     assertedPrincipal: string;
@@ -144,14 +144,14 @@ export interface ExternalClaimEvidence extends EvidenceBase {
     payloadMode: "descriptor_only";
 }
 
-export interface EmberInferenceEvidence extends EvidenceBase {
+export interface AgentInferenceEvidence extends EvidenceBase {
     sourceRole: "agent_inference";
     sourceActor: AgentActor;
     derivedFromEvidenceIds: [EvidenceId, ...EvidenceId[]];
     payloadMode: "descriptor_only";
 }
 
-export interface EmberObservationEvidence extends EvidenceBase {
+export interface AgentObservationEvidence extends EvidenceBase {
     sourceRole: "agent_observation";
     sourceActor: AgentActor;
     derivedFromEvidenceIds: [];
@@ -177,12 +177,12 @@ export interface FixtureFaultEvidence extends EvidenceBase {
 export type Evidence =
     | AvailableUserEvidence
     | UnavailableUserDetailEvidence
-    | EmberAdoptionEvidence
-    | EmberExpressionEvidence
+    | AgentAdoptionEvidence
+    | AgentExpressionEvidence
     | RuntimeObservationEvidence
     | ExternalClaimEvidence
-    | EmberInferenceEvidence
-    | EmberObservationEvidence
+    | AgentInferenceEvidence
+    | AgentObservationEvidence
     | DelegatedReportEvidence
     | FixtureFaultEvidence;
 
