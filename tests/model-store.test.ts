@@ -209,7 +209,7 @@ test("state store should round trip complete document when commit succeeds", asy
     const directory = await tempDir(),
         path = join(directory, "ember.json"),
         store = new StateStore(path),
-        state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z");
+        state = initialState(PRINCIPAL, "2026-08-29T10:00:00Z");
     await store.create(state);
     const lease = await store.acquireWriteLease();
     // When
@@ -223,7 +223,7 @@ test("state store should reject stale candidate when revision changed", async ()
     // Given
     const directory = await tempDir(),
         store = new StateStore(join(directory, "ember.json")),
-        state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z");
+        state = initialState(PRINCIPAL, "2026-08-29T10:00:00Z");
     await store.create(state);
     const lease = await store.acquireWriteLease();
     await store.commit(0, cloneState(state));
@@ -237,7 +237,7 @@ test("state store should refuse overwrite when lineage already exists", async ()
     // Given
     const directory = await tempDir(),
         store = new StateStore(join(directory, "ember.json")),
-        state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z");
+        state = initialState(PRINCIPAL, "2026-08-29T10:00:00Z");
     await store.create(state);
     // When
     const error = await captureError(() => store.create(state));
@@ -248,7 +248,7 @@ test("state store should ignore orphan temporary file when canonical document is
     // Given
     const directory = await tempDir(),
         store = new StateStore(join(directory, "ember.json")),
-        state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z");
+        state = initialState(PRINCIPAL, "2026-08-29T10:00:00Z");
     await store.create(state);
     await writeFile(join(directory, ".ember.json.interrupted.tmp"), "{");
     // When
@@ -260,7 +260,7 @@ test("state store should report uncertain durability when directory sync fails a
     // Given
     const directory = await tempDir(),
         path = join(directory, "ember.json"),
-        state = initialState("Ember", PRINCIPAL, "2026-08-29T10:00:00Z"),
+        state = initialState(PRINCIPAL, "2026-08-29T10:00:00Z"),
         store = new StateStore(path);
     await store.create(state);
     store.directorySync = async () => {
