@@ -19,7 +19,7 @@ test("CLI inspection redacts retained delivery representation while exposing rec
     const directory = await mkdtemp(join(tmpdir(), "ember-delivery-inspection-"));
     const statePath = join(directory, "ember.json");
     const store = new StateStore(statePath);
-    await store.create(initialState("Ember", PRINCIPAL));
+    await store.create(initialState(PRINCIPAL));
     const lease = await store.acquireWriteLease();
     try {
         const loaded = await store.load();
