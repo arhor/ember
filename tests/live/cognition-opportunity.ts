@@ -22,7 +22,7 @@ const evaluator = createCodexOpportunityEvaluator({
     timeoutSeconds: 120,
 });
 
-const quietState = initialState("Ember", PRINCIPAL);
+const quietState = initialState(PRINCIPAL);
 const quietRuntime = startRuntime(quietState, PRINCIPAL, SCOPE);
 const quiet = await evaluateCognitionOpportunity(quietRuntime.state, {
     runtimeId: quietRuntime.runtimeId,
@@ -32,7 +32,7 @@ const quiet = await evaluateCognitionOpportunity(quietRuntime.state, {
     evaluator,
 });
 
-const concernedState = initialState("Ember", PRINCIPAL);
+const concernedState = initialState(PRINCIPAL);
 undertake(
     concernedState,
     PRINCIPAL,
