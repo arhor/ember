@@ -25,7 +25,7 @@ await writeFile(
     JSON.stringify({ env: { EMBER_CLAUDE_204_SETTINGS_MARKER: PROJECT_MARKER } }),
 );
 
-const state = initialState("Ember", PRINCIPAL);
+const state = initialState(PRINCIPAL);
 const relationshipId = rememberRelationship(state, PRINCIPAL, SCOPE, SCOPE, "Synthetic issue-204 collaborator fixture");
 const factId = rememberFact(
     state,
