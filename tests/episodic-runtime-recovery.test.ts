@@ -353,7 +353,7 @@ test("forced specialist loss should preserve effect uncertainty and prohibit bli
         specification: spec,
         runtime_state: "running",
         report_state: "none",
-        ember_disposition: "unresolved",
+        agent_disposition: "unresolved",
         recovery: {
             effect_state: "no_effect_established",
             continued_work_state: "not_applicable",
