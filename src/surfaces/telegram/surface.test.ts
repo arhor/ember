@@ -82,7 +82,7 @@ async function fixture() {
     const directory = await mkdtemp(join(tmpdir(), "ember-telegram-"));
     const statePath = join(directory, "ember.json");
     const store = new StateStore(statePath);
-    await store.create(initialState("Ember", PRINCIPAL));
+    await store.create(initialState(PRINCIPAL));
     return {
         directory,
         statePath,
