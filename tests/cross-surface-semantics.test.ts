@@ -65,7 +65,7 @@ function captureProvider(requests: ProviderRequest[]): ProviderInvoker {
 async function fixture() {
     const directory = await mkdtemp(join(tmpdir(), "ember-cross-surface-"));
     const statePath = join(directory, "ember.json");
-    const state = initialState("Ember", PRINCIPAL);
+    const state = initialState(PRINCIPAL);
     const sharedMeaningId = rememberFact(
         state,
         PRINCIPAL,
