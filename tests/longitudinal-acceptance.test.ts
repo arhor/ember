@@ -11,7 +11,7 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
     const statePath = join(directory, "ember.json");
     const capturePath = join(directory, "last-request.json");
     const counterPath = join(directory, "provider-count.txt");
-    const init = await command(["init", "--state", statePath, "--name", "Ember", "--principal", PRINCIPAL], {
+    const init = await command(["init", "--state", statePath, "--principal", PRINCIPAL], {
         now: "2026-08-29T08:00:00Z",
     });
     const providerArgs = [
