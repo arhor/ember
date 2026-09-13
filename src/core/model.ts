@@ -1130,7 +1130,7 @@ export function validateState(state: unknown): asserts state is EmberState {
         if (m.kind === "commitment") {
             const adoptions = refs.filter((ev: Record<string, any> | undefined) => ev?.sourceRole === "agent_adoption");
             const transitions = refs.filter((ev: Record<string, any> | undefined) => ev?.sourceRole === "user_command");
-            require(adoptions.length >= 1, `${id} commitment needs Ember adoption evidence`);
+            require(adoptions.length >= 1, `${id} commitment needs agent adoption evidence`);
             for (const a of adoptions) {
                 require(a!.derivedFromEvidenceIds.length === 1 &&
                     evById.get(a!.derivedFromEvidenceIds[0])?.sourceRole ===
@@ -1154,15 +1154,15 @@ export function validateState(state: unknown): asserts state is EmberState {
                     (ev: Record<string, any> | undefined) => ev?.sourceRole === "user_command",
                 ), `${id} user testimony must cite user-command evidence`);
             } else if (m.epistemicRole === "agent_inference") {
-                require(m.owner === "ember", `${id} Ember inference must be Ember-owned`);
+                require(m.owner === continuingAgentActor, `${id} agent inference must be continuing-agent-owned`);
                 require(refs.every(
                     (ev: Record<string, any> | undefined) => ev?.sourceRole === "agent_inference",
-                ), `${id} Ember inference must cite inference evidence`);
+                ), `${id} agent inference must cite inference evidence`);
             } else if (m.epistemicRole === "direct_observation") {
-                require(m.owner === "ember", `${id} direct observation must be Ember-owned`);
+                require(m.owner === continuingAgentActor, `${id} direct observation must be continuing-agent-owned`);
                 require(refs.every(
                     (ev: Record<string, any> | undefined) => ev?.sourceRole === "agent_observation",
-                ), `${id} direct observation must cite Ember observation evidence`);
+                ), `${id} direct observation must cite agent observation evidence`);
             } else if (m.epistemicRole === "external_claim") {
                 require(typeof m.owner === "string" &&
                     m.owner.startsWith("external:"), `${id} external claim owner must identify its source`);
