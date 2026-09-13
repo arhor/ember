@@ -75,7 +75,7 @@ async function main() {
     };
 
     try {
-        await new StateStore(statePath).create(initialState("Ember", PRINCIPAL));
+        await new StateStore(statePath).create(initialState(PRINCIPAL));
         await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
         await mkdir(specialistWorkspace);
         await writeFile(join(specialistWorkspace, "README.md"), "# Ember episodic runtime live smoke\n", "utf8");
