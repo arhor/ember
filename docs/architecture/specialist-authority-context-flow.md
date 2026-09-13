@@ -137,13 +137,13 @@ Each request carries:
 | `request`                | What expansion Codex says it needs                                            |
 | `purpose`                | Why that expansion is relevant to the delegated objective                     |
 | `consequence`            | What disclosure or effect would become possible if expanded                   |
-| `requires_decision_from` | The authority-holder or Ember decision boundary that must resolve the request |
+| `requires_decision_from` | The authority-holder or agent decision boundary that must resolve the request |
 
 Recording `requires_decision_from` is deliberately not an approval UI. It preserves
 where a legitimate decision is still needed. The adapter does not automatically
 disclose context, mutate the authority envelope, broaden runtime capability, launch
 a replacement attempt, or interpret the request as approval. The returned episode
-remains an attributed report with an initially `unresolved` Ember disposition.
+remains an attributed report with an initially `unresolved` agent disposition.
 
 If additional context is genuinely necessary, Ember may later select a new
 sufficient permitted subset, translate a private reason into an operational
@@ -153,7 +153,7 @@ source must establish it. If additional capability is required but authority
 already covers the intended act, Ember may choose a different or broader runtime
 mechanism without pretending that the mechanism supplied authority.
 
-Material expansion after the attempt is a new Ember decision. The first CLI slice
+Material expansion after the attempt is a new agent decision. The first CLI slice
 does not invent reliable mid-turn steering or interactive approval mediation.
 
 ## Specialist provenance
@@ -179,7 +179,7 @@ handling. Specialist effect claims remain under `report_provenance` instead of b
 silently promoted into unattributed Ember evidence.
 
 `reported_success` and `reported_failure` remain specialist-report states.
-`ember_disposition` remains independently `unresolved` until Ember interprets the
+`agent_disposition` remains independently `unresolved` until Ember interprets the
 report against current objective, authority, world state, and any independent
 verification.
 
