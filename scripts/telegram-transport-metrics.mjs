@@ -177,7 +177,7 @@ async function createFixture(repo, initialState, StateStore) {
     const directory = await mkdtemp(join(tmpdir(), "ember-telegram-metrics-"));
     const statePath = join(directory, "ember.json");
     const store = new StateStore(statePath);
-    await store.create(initialState("Ember", "metrics"));
+    await store.create(initialState("metrics"));
     return {
         config: {
             config_version: 1,
