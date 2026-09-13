@@ -134,7 +134,6 @@ Use one local state path, principal, and active scope for the whole procedure. I
 ```bash
 node bin/ember.ts init \
   --state "$STATE" \
-  --name Ember \
   --principal "$PRINCIPAL"
 ```
 
