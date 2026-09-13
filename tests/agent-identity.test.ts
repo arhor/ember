@@ -4,12 +4,7 @@ import test from "node:test";
 import type { EmberState } from "../src/core/model.ts";
 import type { ProviderRequest } from "../src/providers/contract.ts";
 
-import {
-    agentActor,
-    initialState,
-    normalizeLegacyIdentityRepresentation,
-    validateState,
-} from "../src/core/model.ts";
+import { agentActor, initialState, normalizeLegacyIdentityRepresentation, validateState } from "../src/core/model.ts";
 import { rememberInference, supersede, userEvidence } from "../src/core/semantics.ts";
 import { buildCodexPrompt } from "../src/providers/codex.ts";
 import { buildCursorPrompt } from "../src/providers/cursor.ts";
@@ -32,14 +27,7 @@ test("preferred-name change preserves lineage and stable agent actor", () => {
     const lineageId = state.lineage.lineageId;
     const actor = agentActor(lineageId);
     const suggestion = userEvidence(state, PRINCIPAL, SCOPE, "Use Luna as your preferred name");
-    const luna = rememberInference(
-        state,
-        PRINCIPAL,
-        "preferred-name",
-        SCOPE,
-        "Luna",
-        [suggestion.evidenceId],
-    );
+    const luna = rememberInference(state, PRINCIPAL, "preferred-name", SCOPE, "Luna", [suggestion.evidenceId]);
 
     const chloe = supersede(state, PRINCIPAL, luna, "Chloe", "Preferred self-name changed");
     const oldName = state.meanings.find((meaning) => meaning.meaningId === luna)!;
