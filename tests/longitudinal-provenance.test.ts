@@ -129,7 +129,7 @@ test("longitudinal provenance pressure should preserve classes, derivation roots
 
 test("provenance validation should reject epistemic laundering and cyclic derivation", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const first = rememberDelegatedReport(state, "user-1", "codex-a", "a", "project:ember/provenance", "A", []);
     const firstEvidenceId = findMeaning(state, first).sourceEvidenceIds[0]!;
     const second = rememberDelegatedReport(state, "user-1", "codex-b", "b", "project:ember/provenance", "B", [
@@ -152,7 +152,7 @@ test("provenance validation should reject epistemic laundering and cyclic deriva
 
 test("provenance derivation should not cross evidence scopes or partially mutate state", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const privateReport = rememberDelegatedReport(
         state,
         "user-1",
@@ -187,7 +187,7 @@ test("provenance derivation should not cross evidence scopes or partially mutate
 
 test("canonical validation should reject cross-scope provenance edges", () => {
     // Given
-    const state = initialState("Ember", "user-1", "2026-09-02T08:00:00Z");
+    const state = initialState("user-1", "2026-09-02T08:00:00Z");
     const privateRoot = rememberDelegatedReport(
         state,
         "user-1",
