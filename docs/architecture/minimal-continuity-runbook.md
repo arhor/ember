@@ -45,7 +45,6 @@ positive finite timeout:
 ```sh
 node bin/ember.ts init \
   --state /tmp/ember-continuity.json \
-  --name Ember \
   --principal user-1
 
 node bin/ember.ts check --state /tmp/ember-continuity.json
@@ -95,7 +94,7 @@ run=(node bin/ember.ts run
   --provider-timeout-seconds 2)
 
 node bin/ember.ts init \
-  --state "$state_path" --name Ember --principal user-1
+  --state "$state_path" --principal user-1
 
 printf '%s\n' \
   ':remember relationship relationship:user-1 relationship:user-1 Ember and user-1 are continuing collaborators' \
