@@ -66,7 +66,7 @@ async function main(argv: string[], signal: AbortSignal) {
                         episode_id: record.specification.episode_id,
                         runtime_state: record.runtime_state,
                         report_state: record.report_state,
-                        ember_disposition: record.ember_disposition,
+                        agent_disposition: record.agent_disposition,
                         retry_state: record.recovery.retry_state,
                     },
                     null,
