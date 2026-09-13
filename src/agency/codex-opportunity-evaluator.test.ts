@@ -14,7 +14,7 @@ const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";
 
 function fixture() {
-    const state = initialState("Ember", PRINCIPAL, "2026-09-03T05:00:00Z");
+    const state = initialState(PRINCIPAL, "2026-09-03T05:00:00Z");
     const commitment = undertake(
         state,
         PRINCIPAL,
