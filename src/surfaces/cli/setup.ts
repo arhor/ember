@@ -46,6 +46,12 @@ export interface SetupConfig {
     updatedAt: string;
 }
 
+type SetupDependencies = {
+    provider?: (config: SetupProvider) => ProviderInvoker;
+    signal?: AbortSignal;
+    persistConfig?: (path: string, config: SetupConfig) => Promise<void>;
+};
+
 export function defaultSetupConfigPath(): string {
     return join(homedir(), ".ember", "config", "setup.json");
 }
@@ -151,6 +157,11 @@ function safeText(value: unknown): value is string {
     );
 }
 
+function validateLocalPath(path: string, label: string): void {
+    if (!isAbsolute(path) || !safeText(path))
+        throw new ValidationError(`${label} path must be absolute and contain no control characters`);
+}
+
 async function exists(path: string): Promise<boolean> {
     try {
         await lstat(path);
@@ -184,18 +195,20 @@ async function writeConfig(path: string, config: SetupConfig): Promise<void> {
     });
 }
 
-export async function setupMain(
-    args: SetupArgs,
-    io: CliIo,
-    dependencies: { provider?: (config: SetupProvider) => ProviderInvoker; signal?: AbortSignal } = {},
-): Promise<number> {
+export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupDependencies = {}): Promise<number> {
     if (args.help) {
         io.output.write(SETUP_HELP);
         return 0;
     }
-    const configPath = await physicalPath(resolve(args.config ?? defaultSetupConfigPath()));
+    const requestedConfigPath = resolve(args.config ?? defaultSetupConfigPath());
+    validateLocalPath(requestedConfigPath, "setup configuration");
+    const configPath = await physicalPath(requestedConfigPath);
+    validateLocalPath(configPath, "setup configuration");
     const existing = await loadSetupConfig(configPath);
-    const statePath = await physicalPath(resolve(args.state ?? existing?.statePath ?? defaultSetupStatePath()));
+    const requestedStatePath = resolve(args.state ?? existing?.statePath ?? defaultSetupStatePath());
+    validateLocalPath(requestedStatePath, "continuity state");
+    const statePath = await physicalPath(requestedStatePath);
+    validateLocalPath(statePath, "continuity state");
     if (configPath === statePath || configPath.startsWith(`${statePath}.`) || statePath.startsWith(`${configPath}.`))
         throw new ValidationError("setup configuration and canonical state/sidecars must have separate paths");
     const store = new StateStore(statePath);
@@ -278,17 +291,18 @@ export async function setupMain(
     process.on("SIGTERM", cancel);
     dependencies.signal?.addEventListener("abort", cancel, { once: true });
     if (dependencies.signal?.aborted) cancel();
+    const persistConfig = dependencies.persistConfig ?? writeConfig;
     try {
         // Prevent concurrent setup from replacing a configuration read before acquiring the lease.
         if (JSON.stringify(await loadSetupConfig(configPath)) !== JSON.stringify(existing))
             throw new ValidationError("setup configuration changed; inspect and retry");
-        await writeConfig(configPath, config);
+        await persistConfig(configPath, config);
         if (controller.signal.aborted) {
             io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
             return 2;
         }
         config.verification = "requested";
-        await writeConfig(configPath, config);
+        await persistConfig(configPath, config);
         io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
         try {
             const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
@@ -315,13 +329,13 @@ export async function setupMain(
             config.verification = "verified";
         } catch (error) {
             config.verification = error instanceof ProviderError ? error.outcome : "failed";
-            await writeConfig(configPath, config);
+            await persistConfig(configPath, config);
             io.error.write(
                 `Cognition verification ${config.verification}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
             );
             return 2;
         }
-        await writeConfig(configPath, config);
+        await persistConfig(configPath, config);
         if (controller.signal.aborted) {
             io.output.write(
                 "Cancellation requested; cognition returned successfully, continuity activation was not attempted.\n",
@@ -329,15 +343,15 @@ export async function setupMain(
             return 2;
         }
         config.continuity = "requested";
-        await writeConfig(configPath, config);
+        await persistConfig(configPath, config);
         try {
             if (!state) await store.create(candidate);
             assertBinding(config, await store.load());
             config.continuity = "available";
-            await writeConfig(configPath, config);
+            await persistConfig(configPath, config);
         } catch {
             config.continuity = "outcome_unknown";
-            await writeConfig(configPath, config);
+            await persistConfig(configPath, config);
             io.error.write(
                 "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
             );
@@ -347,8 +361,10 @@ export async function setupMain(
             "Cognition verified; continuity available. Ready for ordinary conversation (conversational onboarding is separate).\n",
         );
         io.output.write(`Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope SCOPE\n`);
-        if (controller.signal.aborted)
+        if (controller.signal.aborted) {
+            await persistConfig(configPath, config);
             io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
+        }
         return controller.signal.aborted ? 2 : 0;
     } finally {
         process.off("SIGINT", cancel);
@@ -373,13 +389,15 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
     const config = await loadSetupConfig(resolve(args.config));
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
-    assertBinding(config, await new StateStore(config.statePath).load());
     return await runCliSurface(
         {
             statePath: config.statePath,
             principal: config.principal,
             scope: args.scope,
-            expectedLineageId: config.lineageId,
+            expectedContinuityBinding: {
+                lineageId: config.lineageId,
+                establishedAt: config.establishedAt,
+            },
             providerKind: config.provider.kind,
             providerCommand: config.provider.command,
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],

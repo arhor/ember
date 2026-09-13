@@ -715,7 +715,9 @@ configured conversation handoff until another successful setup.
 The machine record uses durable replacement with mode `0600` and a cooperative setup
 lease at `<config>.lock`. Canonical initialization uses the existing state-store lease
 and refuses an occupied destination. Config/state alias and sidecar collisions are
-rejected. Setup leases use the existing `lock-status` / `quarantine-stale-lock` tools
+rejected. Resolved config and state paths must be bounded non-empty absolute paths without
+ASCII control characters, using the same invariant before persistence and when loading
+the machine record. Setup leases use the existing `lock-status` / `quarantine-stale-lock` tools
 with `--state` pointing to the **setup record**, including the existing explicit
 quiescence/token checks; there is no automatic stale-lock removal.
 
@@ -723,7 +725,9 @@ Probe results distinguish `not_attempted`, `requested`, `verified`, `failed`, `t
 `cancellation_requested`, and `outcome_unknown`. Continuity operations separately track
 `pending`, `requested`, `available`, and `outcome_unknown`. `cancellationRequested`
 records observed SIGINT/SIGTERM or caller cancellation independently of successful
-effects. Neither cancellation nor timeout proves remote rollback. Hard termination may
+effects. A cancellation observed during the final availability write is persisted again
+before setup returns; already committed continuity stays available. Neither cancellation
+nor timeout proves remote rollback. Hard termination may
 leave `requested` and a lock; inspection reports that surviving evidence without
 claiming failure or completion.
 
@@ -734,6 +738,10 @@ a missing store after a possibly executed or previously available creation is **
 recreated automatically. Restore the intended state or inspect/recover it explicitly.
 If activation/replacement is uncertain, the record remains inspectable and no readiness
 message is emitted. Already committed continuity is never rolled back by setup.
+
+Configured conversation validates the principal, lineage ID, and lineage establishment
+time together after acquiring the canonical state write lease and before starting a
+runtime episode. The setup handoff does not rely on an earlier unlocked state read.
 
 `tests/setup.test.ts` covers fresh/configured inspection, all provider selections,
 restore attachment, reruns, failure/timeout/cancellation, malformed results, concurrent

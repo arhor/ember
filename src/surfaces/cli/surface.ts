@@ -33,7 +33,7 @@ export interface CliSurfaceConfig {
     scope: string;
     providerKind: "process" | "codex" | "cursor" | "claude-code";
     providerModel?: string;
-    expectedLineageId?: string;
+    expectedContinuityBinding?: { lineageId: string; establishedAt: string };
     providerCommand: string;
     providerArgs: string[];
     providerTimeoutSeconds: number;
@@ -52,7 +52,11 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
     const lease = await store.acquireWriteLease();
     try {
         let state = await loadForPrincipal(store, config.principal);
-        if (config.expectedLineageId !== undefined && state.lineage.lineageId !== config.expectedLineageId)
+        if (
+            config.expectedContinuityBinding !== undefined &&
+            (state.lineage.lineageId !== config.expectedContinuityBinding.lineageId ||
+                state.lineage.establishedAt !== config.expectedContinuityBinding.establishedAt)
+        )
             throw new ValidationError("continuity no longer matches setup binding");
         const started = startRuntime(state, config.principal, config.scope);
         state = await store.commit(state.revision, started.state);

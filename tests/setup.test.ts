@@ -8,7 +8,7 @@ import test from "node:test";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { loadSetupConfig, main, parseArgs, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
+import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
@@ -363,6 +363,60 @@ test("cancellation after a successful probe preserves verified cognition but doe
     await assert.rejects(stat(f.state), { code: "ENOENT" });
 });
 
+test("cancellation during the final availability write is persisted after committed continuity", async (t) => {
+    const f = await fixture(t),
+        controller = new AbortController();
+    let availableWrites = 0;
+    assert.equal(
+        await setupMain(f.create, capture(), {
+            ...verified,
+            signal: controller.signal,
+            persistConfig: async (path, config) => {
+                const snapshot = `${JSON.stringify(config, null, 2)}\n`;
+                if (config.continuity === "available") {
+                    availableWrites++;
+                    if (availableWrites === 1) controller.abort();
+                }
+                await writeFile(path, snapshot, { mode: 0o600 });
+            },
+        }),
+        2,
+    );
+    const config = await loadSetupConfig(f.config);
+    assert.equal(availableWrites, 2);
+    assert.equal(config.continuity, "available");
+    assert.equal(config.cancellationRequested, true);
+    assert.equal((await new StateStore(f.state).load()).lineage.lineageId, config.lineageId);
+});
+
+test("configured run checks lineage establishment under the acquired state lease", async (t) => {
+    const f = await fixture(t),
+        state = initialState("user"),
+        store = new StateStore(f.state);
+    await store.create(state);
+    await assert.rejects(
+        runCliSurface(
+            {
+                statePath: f.state,
+                principal: "user",
+                scope: "test",
+                providerKind: "process",
+                providerCommand: "unused",
+                providerArgs: [],
+                providerTimeoutSeconds: 1,
+                expectedContinuityBinding: {
+                    lineageId: state.lineage.lineageId,
+                    establishedAt: "2026-01-01T00:00:00Z",
+                },
+            },
+            capture(),
+        ),
+        /continuity no longer matches setup binding/,
+    );
+    assert.equal((await store.load()).revision, 0);
+    assert.deepEqual(await store.lockStatus(), { status: "absent" });
+});
+
 test("missing previously available or possibly created state is never silently recreated", async (t) => {
     const f = await fixture(t);
     await setupMain(f.create, capture(), verified);
@@ -423,6 +477,22 @@ test("invalid configuration, state, and path aliases fail without replacing file
     await writeFile(f.state, "{broken");
     assert.equal(await main(["setup", ...f.args], capture()), 2);
     assert.equal(await readFile(f.state, "utf8"), "{broken");
+});
+
+test("setup rejects control characters in config and state paths before persistence", async (t) => {
+    const f = await fixture(t);
+    for (const [flag, path] of [
+        ["--config", `${f.config}\nunsafe`],
+        ["--state", `${f.state}\nunsafe`],
+    ]) {
+        const args = [...f.create],
+            index = args.indexOf(flag);
+        args[index + 1] = path;
+        await assert.rejects(setupMain(args, capture(), verified), /contain no control characters/);
+        await assert.rejects(stat(path), { code: "ENOENT" });
+    }
+    assert.equal(await loadSetupConfig(f.config), null);
+    await assert.rejects(stat(f.state), { code: "ENOENT" });
 });
 
 test("setup rejects unsupported, repeated, secret, and unbounded options", async (t) => {
