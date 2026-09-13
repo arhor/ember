@@ -200,7 +200,7 @@ test("CLI and Telegram preserve conversation, principal, and least-sufficient sc
             telegramConversation.turns.map((turn) => [turn.role, turn.content, turn.source_surface]),
             [
                 ["user", "hello from CLI", "local_cli"],
-                ["ember", "accepted", "local_cli"],
+                ["agent", "accepted", "local_cli"],
             ],
         );
 
