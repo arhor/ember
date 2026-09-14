@@ -56,34 +56,34 @@ interface CliSurfaceIo {
 
 export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo): Promise<number> {
     const store = new StateStore(config.statePath);
-    let lease: Awaited<ReturnType<StateStore["acquireWriteLease"]>> | null = await store.acquireWriteLease();
-    let state = await loadForPrincipal(store, config.principal);
-    let started: ReturnType<typeof startRuntime> | null = null;
+    let runtimeId: RuntimeId | null = null;
+    let lease: Awaited<ReturnType<StateStore["acquireWriteLease"]>> | null = null;
     try {
         const onboardingProvider = configuredCognitionProvider(config).provider;
-        if (
-            config.expectedContinuityBinding !== undefined &&
-            (state.lineage.lineageId !== config.expectedContinuityBinding.lineageId ||
-                state.lineage.establishedAt !== config.expectedContinuityBinding.establishedAt)
-        )
-            throw new ValidationError("continuity no longer matches setup binding");
-        started = startRuntime(state, config.principal, config.scope);
-        state = await store.commit(state.revision, started.state);
-        io.output.write(`runtime ${started.runtimeId} started\n`);
+        lease = await store.acquireWriteLease();
+        let state = await loadConfiguredState(store, config);
+        const started = startRuntime(state, config.principal, config.scope);
+        runtimeId = started.runtimeId;
+        await store.commit(state.revision, started.state);
+        await store.releaseWriteLease(lease);
+        lease = null;
+        io.output.write(`runtime ${runtimeId} started\n`);
         let stopReason = "input_eof";
         const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
         for await (const line of lines) {
             if (!line.trim()) continue;
+            lease = await store.acquireWriteLease();
+            state = await loadConfiguredState(store, config);
             if (line === ":quit") {
                 stopReason = "explicit_cli_exit";
                 break;
             }
             if (line === ":setup telegram" && config.configuredSetupHandoff !== undefined) {
-                state = await store.commit(
+                await store.commit(
                     state.revision,
-                    stopRuntime(state, started.runtimeId, { reason: "trusted_host_setup_handoff" }),
+                    stopRuntime(state, runtimeId, { reason: "trusted_host_setup_handoff" }),
                 );
-                started = null;
+                runtimeId = null;
                 await store.releaseWriteLease(lease);
                 lease = null;
                 try {
@@ -93,15 +93,18 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                     io.error.write("Telegram setup failed at the trusted-host boundary. Resuming conversation.\n");
                 } finally {
                     lease = await store.acquireWriteLease();
-                    state = await loadForPrincipal(store, config.principal);
-                    started = startRuntime(state, config.principal, config.scope);
-                    state = await store.commit(state.revision, started.state);
-                    io.output.write(`runtime ${started.runtimeId} started\n`);
+                    state = await loadConfiguredState(store, config);
+                    const resumed = startRuntime(state, config.principal, config.scope);
+                    runtimeId = resumed.runtimeId;
+                    await store.commit(state.revision, resumed.state);
+                    await store.releaseWriteLease(lease);
+                    lease = null;
+                    io.output.write(`runtime ${runtimeId} started\n`);
                 }
                 continue;
             }
-            if (started === null) throw new ValidationError("CLI runtime is not active");
-            const runtimeId = started.runtimeId;
+            if (runtimeId === null) throw new ValidationError("CLI runtime is not active");
+            const activeRuntimeId = runtimeId;
             try {
                 if (line.startsWith(":")) {
                     if (line === ":new-conversation") {
@@ -111,7 +114,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         io.output.write(`${conversationId}\n`);
                     } else if (line.startsWith(":ask ")) {
                         const result = await withSigintCancellation((signal) =>
-                            ask(config, store, state, runtimeId, line, io.output, signal),
+                            ask(config, store, state, activeRuntimeId, line, io.output, signal),
                         );
                         state = result.state;
                         if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
@@ -119,7 +122,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         const result = await semanticCommand(
                             store,
                             state,
-                            runtimeId,
+                            activeRuntimeId,
                             config.principal,
                             config.scope,
                             line,
@@ -146,7 +149,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             : undefined);
                     const result = await withSigintCancellation((signal) =>
                         runSurfaceInteraction(store, state, {
-                            runtimeId,
+                            runtimeId: activeRuntimeId,
                             principal: config.principal,
                             scope: config.scope,
                             text: line,
@@ -175,26 +178,39 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
+            } finally {
+                await store.releaseWriteLease(lease);
+                lease = null;
             }
         }
-        if (started !== null) {
-            const stopped = stopRuntime(state, started.runtimeId, { reason: stopReason });
-            await store.commit(state.revision, stopped);
-            started = null;
+        if (runtimeId !== null) {
+            if (lease === null) lease = await store.acquireWriteLease();
+            state = await loadConfiguredState(store, config);
+            await store.commit(state.revision, stopRuntime(state, runtimeId, { reason: stopReason }));
+            runtimeId = null;
         }
         return 0;
     } finally {
-        if (started !== null) {
+        if (runtimeId !== null) {
+            if (lease === null) lease = await store.acquireWriteLease();
             const current = await store.load();
-            const episode = current.operations.runtimeEpisodes.find((item) => item.runtimeId === started!.runtimeId);
+            const episode = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
             if (episode?.cleanStopAt === null)
-                await store.commit(
-                    current.revision,
-                    stopRuntime(current, started.runtimeId, { reason: "cli_failure" }),
-                );
+                await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: "cli_failure" }));
         }
         if (lease !== null) await store.releaseWriteLease(lease);
     }
+}
+
+async function loadConfiguredState(store: StateStore, config: CliSurfaceConfig) {
+    const state = await loadForPrincipal(store, config.principal);
+    if (
+        config.expectedContinuityBinding !== undefined &&
+        (state.lineage.lineageId !== config.expectedContinuityBinding.lineageId ||
+            state.lineage.establishedAt !== config.expectedContinuityBinding.establishedAt)
+    )
+        throw new ValidationError("continuity no longer matches setup binding");
+    return state;
 }
 
 async function semanticCommand(

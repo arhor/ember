@@ -4,11 +4,13 @@ import type { Readable, Writable } from "node:stream";
 import { spawn } from "node:child_process";
 import { randomInt } from "node:crypto";
 import { openSync } from "node:fs";
-import { chmod, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { access, chmod, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, isAbsolute, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { ReadStream, WriteStream } from "node:tty";
+import { fileURLToPath } from "node:url";
 
 import type { SetupConfig } from "../cli/setup.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./surface.ts";
@@ -61,6 +63,10 @@ export interface TelegramSetupDependencies {
     chmod?: (path: string, mode: number) => Promise<void>;
     command?: (file: string, args: string[]) => Promise<{ code: number | null; signal: string | null }>;
     observeRoundTrip?: (statePath: string, updateId: number) => Promise<boolean>;
+    resolveExecutable?: (command: string) => Promise<string>;
+    delay?: (milliseconds: number) => Promise<void>;
+    now?: () => number;
+    roundTripTimeoutMs?: number;
     verificationCode?: () => string;
     nodePath?: string;
     workingDirectory?: string;
@@ -138,7 +144,7 @@ export async function runTelegramSetup(
         if (selected === null) return { status: "cancelled", stages: { ...stages, mapping: "declined" } };
         stages.mapping = "confirmed";
 
-        const config = telegramV2Config(binding, tokenPath, selected.message!.chat.id, dependencies);
+        const config = await telegramV2Config(binding, tokenPath, selected.message!.chat.id, dependencies);
         const serialized = `${JSON.stringify(serializableV2(config), null, 2)}\n`;
         const existingConfig = await read(configPath);
         if (
@@ -185,13 +191,16 @@ export async function runTelegramSetup(
             }
         }
         stages.activation = "confirmed";
-        stages.round_trip = (await (dependencies.observeRoundTrip ?? observeConfirmedRoundTrip)(
-            binding.setup.statePath,
-            selected.update_id,
-        ))
-            ? "confirmed"
-            : "uncertain";
-        return { status: stages.round_trip === "confirmed" ? "complete" : "uncertain", stages };
+        stages.round_trip = await waitForRoundTrip(binding.setup.statePath, selected.update_id, command, dependencies);
+        return {
+            status:
+                stages.round_trip === "confirmed"
+                    ? "complete"
+                    : stages.round_trip === "failed"
+                      ? "failed"
+                      : "uncertain",
+            stages,
+        };
     } catch (error) {
         io.error.write(`Telegram setup did not complete: ${safeError(error)}\n`);
         const current = (Object.keys(stages) as TelegramSetupStage[]).find(
@@ -202,15 +211,16 @@ export async function runTelegramSetup(
     }
 }
 
-function telegramV2Config(
+async function telegramV2Config(
     binding: TelegramSetupBinding,
     tokenPath: string,
     chatId: number,
     dependencies: TelegramSetupDependencies,
-): TelegramSurfaceConfig {
+): Promise<TelegramSurfaceConfig> {
+    const packageRoot = fileURLToPath(new URL("../../../", import.meta.url));
     const provider: TelegramProviderConfig = {
         kind: binding.setup.provider.kind,
-        command: resolve(binding.setup.provider.command),
+        command: await (dependencies.resolveExecutable ?? resolveExecutable)(binding.setup.provider.command),
         model: binding.setup.provider.model,
         timeout_seconds: binding.setup.provider.timeoutSeconds,
     };
@@ -227,9 +237,10 @@ function telegramV2Config(
         provider_command: provider.command,
         provider_arguments: provider.model ? ["--model", provider.model] : [],
         provider_timeout_seconds: provider.timeout_seconds,
-        working_directory: dependencies.workingDirectory ?? process.cwd(),
+        working_directory: dependencies.workingDirectory ?? packageRoot,
         node_path: dependencies.nodePath ?? process.execPath,
-        surface_entrypoint: dependencies.surfaceEntrypoint ?? resolve("bin/ember-telegram.ts"),
+        surface_entrypoint:
+            dependencies.surfaceEntrypoint ?? fileURLToPath(new URL("../../../bin/ember-telegram.ts", import.meta.url)),
         stop_timeout_seconds: 90,
     };
 }
@@ -271,6 +282,46 @@ async function observeConfirmedRoundTrip(statePath: string, updateId: number) {
             delivery.cognitionId === occurrence.cognitionId &&
             delivery.attempts.some((attempt) => attempt.outcome === "confirmed"),
     );
+}
+
+async function waitForRoundTrip(
+    statePath: string,
+    updateId: number,
+    command: NonNullable<TelegramSetupDependencies["command"]>,
+    dependencies: TelegramSetupDependencies,
+): Promise<TelegramSetupTruth> {
+    const observe = dependencies.observeRoundTrip ?? observeConfirmedRoundTrip;
+    const delay =
+        dependencies.delay ?? ((milliseconds) => new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds)));
+    const now = dependencies.now ?? Date.now;
+    const deadline = now() + (dependencies.roundTripTimeoutMs ?? 60_000);
+    while (true) {
+        if (await observe(statePath, updateId)) return "confirmed";
+        if (now() >= deadline) return "uncertain";
+        await delay(500);
+        const active = await command("systemctl", ["--user", "is-active", "ember-telegram.service"]);
+        if (active.code !== 0) return active.code === null ? "uncertain" : "failed";
+    }
+}
+
+async function resolveExecutable(command: string) {
+    const candidates = isAbsolute(command)
+        ? [command]
+        : command.includes("/")
+          ? [resolve(command)]
+          : (process.env.PATH ?? "")
+                .split(delimiter)
+                .filter(Boolean)
+                .map((directory) => join(directory, command));
+    for (const candidate of candidates) {
+        try {
+            await access(candidate, constants.X_OK);
+            return candidate;
+        } catch {
+            // Continue through the bounded PATH candidates.
+        }
+    }
+    throw new ValidationError("configured cognition provider executable was not found on PATH");
 }
 
 async function readOptional(path: string) {

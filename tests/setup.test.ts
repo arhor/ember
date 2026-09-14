@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chmod, copyFile, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
@@ -167,7 +167,7 @@ for (const override of ["none", "config", "state"]) {
             { env },
         );
         assert.equal(result.code, 0, JSON.stringify(result));
-        assert.equal((await loadSetupConfig(config)).statePath, state);
+        assert.equal((await loadSetupConfig(config)).statePath, await realpath(state));
         const before = await readFile(state, "utf8");
         const rerun = await command(["setup", "--config", config, "--intent", "use-existing"], { env });
         assert.equal(rerun.code, 0, JSON.stringify(rerun));
@@ -485,38 +485,55 @@ test(":setup telegram is local, releases the lease, and resumes in a new runtime
     const store = new StateStore(f.state);
     await store.create(state);
     let handoffs = 0;
-    const io = capture(":setup telegram\n:quit\n");
-    assert.equal(
-        await runCliSurface(
-            {
-                statePath: f.state,
-                principal: "user",
-                scope: "relationship:user",
-                providerKind: "process",
-                providerCommand: "unused",
-                providerArgs: [],
-                providerTimeoutSeconds: 1,
-                configuredSetupHandoff: async () => {
-                    handoffs++;
-                    assert.deepEqual(await store.lockStatus(), { status: "absent" });
-                    return {
-                        status: "cancelled",
-                        stages: {
-                            token_storage: "not_attempted",
-                            bot_preflight: "not_attempted",
-                            mapping: "not_attempted",
-                            configuration: "not_attempted",
-                            unit_installation: "not_attempted",
-                            activation: "not_attempted",
-                            round_trip: "not_attempted",
-                        },
-                    };
-                },
-            },
-            io,
-        ),
-        0,
+    let permitQuit!: () => void;
+    let resumed!: () => void;
+    let waiting!: () => void;
+    const permitQuitPromise = new Promise<void>((resolvePermit) => (permitQuit = resolvePermit));
+    const resumedPromise = new Promise<void>((resolveResumed) => (resumed = resolveResumed));
+    const waitingPromise = new Promise<void>((resolveWaiting) => (waiting = resolveWaiting));
+    const io = capture();
+    io.input = Readable.from(
+        (async function* () {
+            yield ":setup telegram\n";
+            await resumedPromise;
+            waiting();
+            await permitQuitPromise;
+            yield ":quit\n";
+        })(),
     );
+    const running = runCliSurface(
+        {
+            statePath: f.state,
+            principal: "user",
+            scope: "relationship:user",
+            providerKind: "process",
+            providerCommand: "unused",
+            providerArgs: [],
+            providerTimeoutSeconds: 1,
+            configuredSetupHandoff: async () => {
+                handoffs++;
+                assert.deepEqual(await store.lockStatus(), { status: "absent" });
+                resumed();
+                return {
+                    status: "cancelled",
+                    stages: {
+                        token_storage: "not_attempted",
+                        bot_preflight: "not_attempted",
+                        mapping: "not_attempted",
+                        configuration: "not_attempted",
+                        unit_installation: "not_attempted",
+                        activation: "not_attempted",
+                        round_trip: "not_attempted",
+                    },
+                };
+            },
+        },
+        io,
+    );
+    await waitingPromise;
+    assert.deepEqual(await store.lockStatus(), { status: "absent" });
+    permitQuit();
+    assert.equal(await running, 0);
     assert.equal(handoffs, 1);
     const final = await store.load();
     assert.equal(final.operations.runtimeEpisodes.length, 2);

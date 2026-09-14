@@ -826,15 +826,19 @@ Configured local CLI conversation intercepts only the literal `:setup telegram` 
 It cleanly stops the current runtime episode and releases the canonical writer lease before
 entering the Telegram trusted-host wizard. The command is neither provider input nor an
 ordinary interaction occurrence. After completion, cancellation, or a recoverable failure,
-the CLI acquires a fresh lease and starts a new runtime episode over the same configured
-principal, scope, continuity binding, and conversation sidecar.
+the CLI acquires a lease, starts a new runtime episode over the same configured principal,
+scope, continuity binding, and conversation sidecar, then releases writer ownership while
+waiting for the next local interaction. CLI and Telegram interactions each reload current
+state and hold the writer lease only for their bounded work.
 
 The wizard owns masked BotFather-token entry, mode-`0600` storage, bot/webhook preflight,
 short-code private-chat discovery, explicit mapping confirmation, configuration/unit drift
 confirmation, exact-argument `systemctl --user` calls, and ledger-correlated round-trip
 observation. It derives principal, state path, provider, and scope from the verified setup
 binding. Its per-stage result keeps storage, preflight, mapping, rendering, installation,
-activation, and delivery truth separate. Declining service installation leaves a truthful
+activation, and bounded polling for correlated delivery truth separate. Provider executables
+are resolved through `PATH` without a shell, while the worker entrypoint and working directory
+come from the installed package location rather than the caller's current directory. Declining service installation leaves a truthful
 `configured_inactive` result and never blocks ordinary Ember use.
 
 The guided flow writes Telegram surface configuration version 2 with a structured provider

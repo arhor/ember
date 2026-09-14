@@ -50,6 +50,10 @@ test("guided Telegram setup keeps the token out of v2 config and preserves inact
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
             verificationCode: () => "654321",
+            resolveExecutable: async (command) => {
+                assert.equal(command, "/usr/bin/codex");
+                return "/opt/ember/bin/codex";
+            },
             read: async (path) => files.get(path) ?? null,
             write: async (path, value) => void files.set(path, value),
             confirm: async (prompt) => !prompt.startsWith("Install"),
@@ -68,7 +72,41 @@ test("guided Telegram setup keeps the token out of v2 config and preserves inact
     const config = files.get("/tmp/telegram.json")!;
     assert.match(config, /"config_version": 2/);
     assert.match(config, /"kind": "codex"/);
+    assert.match(config, /"command": "\/opt\/ember\/bin\/codex"/);
+    assert.match(config, /"surface_entrypoint": ".*\/bin\/ember-telegram\.ts"/);
     assert.doesNotMatch(config, /abcdefghijklmnopqrstuvwxyz/);
+});
+
+test("round-trip verification polls correlated delivery while the service stays active", async () => {
+    const files = new Map<string, string>();
+    let observations = 0;
+    let activeChecks = 0;
+    const result = await runTelegramSetup(
+        { setup, scope: "relationship:user", configPath: "/tmp/c2", tokenPath: "/tmp/t2", unitPath: "/tmp/u2" },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            resolveExecutable: async () => "/opt/ember/bin/codex",
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async () => true,
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => [candidate()],
+            }),
+            command: async (_file, args) => {
+                if (args[1] === "is-active") activeChecks++;
+                return { code: 0, signal: null };
+            },
+            observeRoundTrip: async () => ++observations === 2,
+            delay: async () => {},
+        },
+    );
+    assert.equal(result.status, "complete");
+    assert.equal(observations, 2);
+    assert.equal(activeChecks, 2); // Initial inspection plus the bounded verification poll.
 });
 
 test("guided Telegram setup executes fixed systemctl arrays and confirms observed delivery", async () => {
@@ -80,6 +118,7 @@ test("guided Telegram setup executes fixed systemctl arrays and confirms observe
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
             verificationCode: () => "654321",
+            resolveExecutable: async () => "/opt/ember/bin/codex",
             read: async (path) => files.get(path) ?? null,
             write: async (path, value) => void files.set(path, value),
             confirm: async () => true,

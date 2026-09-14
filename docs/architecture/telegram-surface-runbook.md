@@ -122,7 +122,9 @@ The wizard defaults to:
 - `~/.config/systemd/user/ember-telegram.service`.
 
 Version 2 stores a structured `provider` block for `codex`, `cursor`, or `claude-code`, with
-the selected command, model, and timeout. Existing version-1 configuration, including the
+the selected command, model, and timeout. Setup resolves a bare provider command through the
+trusted host's `PATH` and derives the worker entrypoint from the installed Ember package, so
+the service does not depend on the directory from which setup was invoked. Existing version-1 configuration, including the
 explicit `process` provider form, remains loadable and is normalized at the surface boundary.
 
 The manual procedure below remains useful for diagnosis and opt-in smoke testing.
