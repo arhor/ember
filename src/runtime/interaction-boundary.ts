@@ -43,6 +43,8 @@ export class SurfaceDeliveryFailure extends Error {
     readonly externalMessageId: string | null;
     readonly retryable: boolean;
     readonly retryAfterSeconds: number | null;
+    memoryProposalFailure: string | null = null;
+    onboardingProgressFailure: string | null = null;
 
     constructor(
         message: string,
@@ -69,6 +71,18 @@ export class SurfaceDeliveryFailure extends Error {
         this.retryable = retryable;
         this.retryAfterSeconds = retryAfterSeconds;
     }
+
+    withCognitionDiagnostics({
+        memoryProposalFailure,
+        onboardingProgressFailure,
+    }: {
+        memoryProposalFailure: string | null;
+        onboardingProgressFailure: string | null;
+    }) {
+        this.memoryProposalFailure = memoryProposalFailure;
+        this.onboardingProgressFailure = onboardingProgressFailure;
+        return this;
+    }
 }
 
 export interface SurfaceInteractionOptions extends Omit<
@@ -86,6 +100,7 @@ export interface SurfaceInteractionResult {
     state: EmberState;
     providerFailure: string | null;
     memoryProposalFailure: string | null;
+    onboardingProgressFailure: string | null;
     cognitionId: CognitionId;
     cognitionStatus: CognitionStatus;
     occurrenceId: string;
@@ -471,6 +486,7 @@ export async function runSurfaceInteraction(
                     ? null
                     : `transport replay suppressed; existing cognition status is ${existing.status}`,
             memoryProposalFailure: null,
+            onboardingProgressFailure: null,
             cognitionId,
             cognitionStatus: existing.status,
             occurrenceId: accepted.record.occurrence_id,
@@ -480,6 +496,10 @@ export async function runSurfaceInteraction(
     }
 
     let deliveryId: string | null = null;
+    let cognitionDiagnostics: {
+        memoryProposalFailure: string | null;
+        onboardingProgressFailure: string | null;
+    } = { memoryProposalFailure: null, onboardingProgressFailure: null };
     const deliveryOutput = async (text: string) => {
         if (deliveryId === null) throw new ValidationError("delivery output has no durable delivery intent");
         const attempt = await ledger.startDeliveryAttempt(deliveryId);
@@ -497,7 +517,7 @@ export async function runSurfaceInteraction(
             } catch (ledgerError) {
                 throw new AggregateError([error, ledgerError], "delivery failed and its outcome could not be recorded");
             }
-            throw error;
+            throw failure === null ? error : failure.withCognitionDiagnostics(cognitionDiagnostics);
         }
         await ledger.finishDeliveryAttempt(attempt.attempt_id, "confirmed", { externalMessageId });
     };
@@ -520,6 +540,9 @@ export async function runSurfaceInteraction(
                     representationText: outputText,
                 });
                 deliveryId = intent.delivery_id;
+            },
+            beforeDisplay: (failures) => {
+                cognitionDiagnostics = failures;
             },
         },
     });

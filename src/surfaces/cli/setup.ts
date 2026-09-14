@@ -8,8 +8,10 @@ import type { CliIo, ConfiguredRunArgs, SetupArgs, SetupIntent } from "./model.t
 
 import { ProviderError, ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
+import { createOnboardingWork } from "../../core/onboarding-work.ts";
 import { buildProjection } from "../../core/projection.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexProvider } from "../../providers/codex.ts";
 import { validateProviderResult } from "../../providers/contract.ts";
@@ -315,6 +317,7 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
+        let continuityMutationStarted = false;
         try {
             const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
             const input =
@@ -362,12 +365,52 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         try {
-            if (!state) await store.create(candidate);
+            const onboardingStore = new OnboardingWorkStore(statePath);
+            if (!state && intent === "create-new") {
+                const work = await onboardingStore.load();
+                if (work === null) {
+                    await onboardingStore.save(
+                        createOnboardingWork(
+                            candidate.lineage.lineageId,
+                            principal,
+                            `relationship:${principal}`,
+                            nowUtc(),
+                            "pending_activation",
+                        ),
+                    );
+                } else if (
+                    work.lineage_id !== candidate.lineage.lineageId ||
+                    work.principal !== principal ||
+                    work.status !== "pending_activation"
+                ) {
+                    throw new ValidationError("onboarding activation evidence conflicts with the intended new lineage");
+                }
+            }
+            if (!state) {
+                continuityMutationStarted = true;
+                await store.create(candidate);
+            }
             assertBinding(config, await store.load());
+            const pendingOnboarding = await onboardingStore.load();
+            if (
+                config.intent === "create-new" &&
+                pendingOnboarding?.status === "pending_activation" &&
+                pendingOnboarding.lineage_id === config.lineageId &&
+                pendingOnboarding.principal === principal
+            ) {
+                pendingOnboarding.status = "active";
+                pendingOnboarding.updated_at = nowUtc();
+                await onboardingStore.save(pendingOnboarding);
+            }
             config.continuity = "available";
             await persistObserved();
         } catch {
-            config.continuity = "outcome_unknown";
+            try {
+                assertBinding(config, await store.load());
+                config.continuity = "available";
+            } catch {
+                config.continuity = continuityMutationStarted ? "outcome_unknown" : "pending";
+            }
             await persistObserved();
             io.error.write(
                 "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
@@ -375,9 +418,12 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         io.output.write(
-            "Cognition verified; continuity available. Ready for ordinary conversation (conversational onboarding is separate).\n",
+            "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
         );
-        io.output.write(`Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope SCOPE\n`);
+        const onboardingScope = `relationship:${principal}`;
+        io.output.write(
+            `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${onboardingScope.replaceAll("'", "'\\''")}'\n`,
+        );
         if (controller.signal.aborted) {
             io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
         }
@@ -405,6 +451,8 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
     const config = await loadSetupConfig(resolve(args.config));
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
+    if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
+        throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
     return await runCliSurface(
         {
             statePath: config.statePath,
