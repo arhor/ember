@@ -1,0 +1,105 @@
+import type { Update } from "node-telegram-bot-api";
+
+import { strict as assert } from "node:assert";
+import { PassThrough } from "node:stream";
+import { test } from "node:test";
+
+import type { SetupConfig } from "../cli/setup.ts";
+
+import { runTelegramSetup } from "./setup.ts";
+
+const setup: SetupConfig = {
+    version: 1,
+    intent: "create-new",
+    statePath: "/var/lib/ember/state.json",
+    principal: "user",
+    lineageId: "lineage-test",
+    establishedAt: "2026-01-01T00:00:00.000Z",
+    provider: { kind: "codex", command: "/usr/bin/codex", model: "gpt-test", timeoutSeconds: 60 },
+    verification: "verified",
+    continuity: "available",
+    cancellationRequested: false,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+};
+
+function candidate(): Update {
+    return {
+        update_id: 42,
+        message: {
+            message_id: 7,
+            date: 1,
+            chat: { id: 123, type: "private" },
+            from: { id: 123, is_bot: false, first_name: "User" },
+            text: "654321",
+        },
+    };
+}
+
+test("guided Telegram setup keeps the token out of v2 config and preserves inactive truth", async () => {
+    const files = new Map<string, string>();
+    const output = new PassThrough();
+    const result = await runTelegramSetup(
+        {
+            setup,
+            scope: "relationship:user",
+            configPath: "/tmp/telegram.json",
+            tokenPath: "/tmp/telegram.token",
+            unitPath: "/tmp/telegram.service",
+        },
+        { input: new PassThrough(), output, error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async (prompt) => !prompt.startsWith("Install"),
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => [candidate()],
+            }),
+            command: async () => ({ code: 1, signal: null }),
+        },
+    );
+    assert.equal(result.status, "configured_inactive");
+    assert.equal(result.stages.mapping, "confirmed");
+    assert.equal(result.stages.activation, "declined");
+    assert.equal(files.get("/tmp/telegram.token"), "12345:abcdefghijklmnopqrstuvwxyz\n");
+    const config = files.get("/tmp/telegram.json")!;
+    assert.match(config, /"config_version": 2/);
+    assert.match(config, /"kind": "codex"/);
+    assert.doesNotMatch(config, /abcdefghijklmnopqrstuvwxyz/);
+});
+
+test("guided Telegram setup executes fixed systemctl arrays and confirms observed delivery", async () => {
+    const files = new Map<string, string>();
+    const commands: Array<[string, string[]]> = [];
+    const result = await runTelegramSetup(
+        { setup, scope: "relationship:user", configPath: "/tmp/c", tokenPath: "/tmp/t", unitPath: "/tmp/u" },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async () => true,
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => [candidate()],
+            }),
+            command: async (file, args) => {
+                commands.push([file, args]);
+                return { code: 0, signal: null };
+            },
+            observeRoundTrip: async (_path, updateId) => updateId === 42,
+        },
+    );
+    assert.equal(result.status, "complete");
+    assert.deepEqual(commands, [
+        ["systemctl", ["--user", "is-enabled", "ember-telegram.service"]],
+        ["systemctl", ["--user", "is-active", "ember-telegram.service"]],
+        ["systemctl", ["--user", "daemon-reload"]],
+        ["systemctl", ["--user", "enable", "--now", "ember-telegram.service"]],
+    ]);
+});

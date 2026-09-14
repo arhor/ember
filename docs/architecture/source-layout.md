@@ -25,6 +25,7 @@ src/surfaces/
 │   └── surface.ts
 └── telegram/
     ├── index.ts
+    ├── setup.ts
     ├── surface.ts
     └── surface.test.ts
 ```
@@ -71,7 +72,7 @@ This keeps the semantic distinction required by the interaction architecture wit
 
 ## Telegram surface
 
-Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as the public entrypoint and `surface.ts` as the concrete implementation. This includes configuration validation, token-file loading, private-chat filtering, long polling, transport occurrence evidence, concrete `sendMessage` delivery, reconciliation, and the systemd unit rendering used by `bin/ember-telegram.ts`.
+Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as its public entrypoint, `surface.ts` as the transport implementation, and `setup.ts` as its trusted-host setup boundary. This includes configuration validation, masked token entry, private-chat mapping, long polling, transport occurrence evidence, concrete `sendMessage` delivery, reconciliation, and systemd unit rendering and installation.
 
 These mechanics remain subordinate to the shared interaction boundary. Telegram update/chat/message identifiers stay operational evidence and do not become canonical memory or semantic authority merely because their adapter is grouped as a surface module.
 

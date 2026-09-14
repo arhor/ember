@@ -479,6 +479,51 @@ test("configured run checks lineage establishment under the acquired state lease
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
+test(":setup telegram is local, releases the lease, and resumes in a new runtime episode", async (t) => {
+    const f = await fixture(t);
+    const state = initialState("user");
+    const store = new StateStore(f.state);
+    await store.create(state);
+    let handoffs = 0;
+    const io = capture(":setup telegram\n:quit\n");
+    assert.equal(
+        await runCliSurface(
+            {
+                statePath: f.state,
+                principal: "user",
+                scope: "relationship:user",
+                providerKind: "process",
+                providerCommand: "unused",
+                providerArgs: [],
+                providerTimeoutSeconds: 1,
+                configuredSetupHandoff: async () => {
+                    handoffs++;
+                    assert.deepEqual(await store.lockStatus(), { status: "absent" });
+                    return {
+                        status: "cancelled",
+                        stages: {
+                            token_storage: "not_attempted",
+                            bot_preflight: "not_attempted",
+                            mapping: "not_attempted",
+                            configuration: "not_attempted",
+                            unit_installation: "not_attempted",
+                            activation: "not_attempted",
+                            round_trip: "not_attempted",
+                        },
+                    };
+                },
+            },
+            io,
+        ),
+        0,
+    );
+    assert.equal(handoffs, 1);
+    const final = await store.load();
+    assert.equal(final.operations.runtimeEpisodes.length, 2);
+    assert.ok(final.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
+    assert.match(io.text(), /Telegram setup: cancelled\. Resuming conversation\./);
+});
+
 test("CLI stops automatic onboarding reflection immediately after closure", async (t) => {
     const f = await fixture(t);
     const state = initialState("user");

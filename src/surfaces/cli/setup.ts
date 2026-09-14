@@ -18,6 +18,7 @@ import { validateProviderResult } from "../../providers/contract.ts";
 import { createCursorProvider } from "../../providers/cursor.ts";
 import { startRuntime } from "../../runtime/runtime.ts";
 import { exactKeys, isObject } from "../../util.ts";
+import { runTelegramSetup } from "../telegram/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export interface SetupProvider {
@@ -209,10 +210,16 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
     const existing = await loadSetupConfig(configPath);
     const requestedStatePath = resolve(args.state ?? existing?.statePath ?? defaultSetupStatePath());
     validateLocalPath(requestedStatePath, "continuity state");
-    const statePath = await physicalPath(requestedStatePath);
-    validateLocalPath(statePath, "continuity state");
-    if (configPath === statePath || configPath.startsWith(`${statePath}.`) || statePath.startsWith(`${configPath}.`))
+    const physicalStatePath = await physicalPath(requestedStatePath);
+    validateLocalPath(physicalStatePath, "continuity state");
+    if (
+        configPath === physicalStatePath ||
+        configPath.startsWith(`${physicalStatePath}.`) ||
+        physicalStatePath.startsWith(`${configPath}.`)
+    )
         throw new ValidationError("setup configuration and canonical state/sidecars must have separate paths");
+    // Preserve the user's absolute spelling in the durable binding while using physical paths only for alias checks.
+    const statePath = requestedStatePath;
     const store = new StateStore(statePath);
     const state = (await exists(statePath)) ? await store.load() : null;
     io.output.write(
@@ -467,6 +474,7 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
             providerModel: config.provider.model,
             providerTimeoutSeconds: config.provider.timeoutSeconds,
+            configuredSetupHandoff: () => runTelegramSetup({ setup: config, scope: args.scope }, io),
         },
         io,
     );

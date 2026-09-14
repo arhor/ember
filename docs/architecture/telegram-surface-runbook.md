@@ -108,6 +108,25 @@ and are not automatically projected into cognition.
 
 ## Bot setup
 
+For configured Ember conversation, enter the literal local command `:setup telegram`.
+The trusted-host wizard explains each mutation, reads the BotFather token through masked
+TTY input, discovers a private chat using a one-time displayed code, and asks before mapping,
+replacing drifted files, installing the unit, or starting the service. Do not paste the token
+into conversation. Declining installation retains the verified mapping and token but reports
+the surface as configured and inactive.
+
+The wizard defaults to:
+
+- `~/.ember/config/telegram.json` (surface configuration version 2);
+- `~/.ember/secrets/telegram.token` (mode `0600`); and
+- `~/.config/systemd/user/ember-telegram.service`.
+
+Version 2 stores a structured `provider` block for `codex`, `cursor`, or `claude-code`, with
+the selected command, model, and timeout. Existing version-1 configuration, including the
+explicit `process` provider form, remains loadable and is normalized at the surface boundary.
+
+The manual procedure below remains useful for diagnosis and opt-in smoke testing.
+
 1. Create a bot with Telegram's official `@BotFather` flow and retain the bot token
    locally.
 2. Send a message to the bot from the private Telegram account that will map to the
