@@ -7,6 +7,8 @@ import test from "node:test";
 
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
+import { createOnboardingWork } from "../src/core/onboarding-work.ts";
+import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { command, populatedState } from "./support.ts";
@@ -477,6 +479,39 @@ test("configured run checks lineage establishment under the acquired state lease
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
+test("CLI stops automatic onboarding reflection immediately after closure", async (t) => {
+    const f = await fixture(t);
+    const state = initialState("user");
+    await new StateStore(f.state).create(state);
+    await new OnboardingWorkStore(f.state).save(
+        createOnboardingWork(state.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
+    );
+    const counter = join(f.directory, "reflection-count.txt");
+    const io = capture("Finish onboarding\nSecond ordinary turn\n:quit\n");
+    assert.equal(
+        await runCliSurface(
+            {
+                statePath: f.state,
+                principal: "user",
+                scope: "relationship:user",
+                providerKind: "process",
+                providerCommand: process.execPath,
+                providerArgs: [
+                    resolve("tests/fixtures/providers/scripted-onboarding-provider.ts"),
+                    "--reflection-counter",
+                    counter,
+                ],
+                providerTimeoutSeconds: 2,
+            },
+            io,
+        ),
+        0,
+    );
+    assert.equal((await new OnboardingWorkStore(f.state).load())?.status, "closed");
+    assert.equal(await readFile(counter, "utf8"), "1");
+    assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
+});
+
 test("missing previously available or possibly created state is never silently recreated", async (t) => {
     const f = await fixture(t);
     await setupMain(f.create, capture(), verified);
@@ -622,7 +657,10 @@ for (const kind of ["codex", "cursor"]) {
         await chmod(executable, 0o700);
         const result = await command(["setup", ...f.create.slice(0, -1), kind, "--provider-command", executable]);
         assert.equal(result.code, 0, JSON.stringify(result));
-        const run = await command(["run", "--config", f.config, "--scope", "test"], { stdin: "hello\n:quit\n" });
+        assert.match(result.stdout, /--scope 'relationship:user-secret-marker'/);
+        const run = await command(["run", "--config", f.config, "--scope", "relationship:user-secret-marker"], {
+            stdin: "hello\n:quit\n",
+        });
         assert.equal(run.code, 0, run.stderr);
         assert.match(run.stdout, new RegExp(`${kind.toUpperCase()}_CLI_RESPONSE`));
         const before = await readFile(f.state, "utf8");

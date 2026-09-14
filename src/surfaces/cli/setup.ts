@@ -420,7 +420,10 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
         io.output.write(
             "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
         );
-        io.output.write(`Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope SCOPE\n`);
+        const onboardingScope = `relationship:${principal}`;
+        io.output.write(
+            `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${onboardingScope.replaceAll("'", "'\\''")}'\n`,
+        );
         if (controller.signal.aborted) {
             io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
         }

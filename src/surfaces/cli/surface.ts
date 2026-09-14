@@ -57,18 +57,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
     const lease = await store.acquireWriteLease();
     try {
         let state = await loadForPrincipal(store, config.principal);
-        const onboardingWork = await new OnboardingWorkStore(config.statePath).load();
         const onboardingProvider = configuredCognitionProvider(config).provider;
-        const onboardingProgressEvaluator =
-            config.onboardingProgressEvaluator ??
-            (onboardingWork?.status === "active" && onboardingWork.scope === config.scope
-                ? createProviderOnboardingProgressEvaluator(onboardingProvider, config.providerTimeoutSeconds)
-                : undefined);
-        const memoryProposalGenerator =
-            config.memoryProposalGenerator ??
-            (onboardingWork?.status === "active" && onboardingWork.scope === config.scope
-                ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
-                : undefined);
         if (
             config.expectedContinuityBinding !== undefined &&
             (state.lineage.lineageId !== config.expectedContinuityBinding.lineageId ||
@@ -112,6 +101,22 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         io.output.write(`${result.id}\n`);
                     }
                 } else {
+                    const onboardingWork = await new OnboardingWorkStore(config.statePath).load();
+                    const onboardingIsActive =
+                        onboardingWork?.status === "active" && onboardingWork.scope === config.scope;
+                    const onboardingProgressEvaluator =
+                        config.onboardingProgressEvaluator ??
+                        (onboardingIsActive
+                            ? createProviderOnboardingProgressEvaluator(
+                                  onboardingProvider,
+                                  config.providerTimeoutSeconds,
+                              )
+                            : undefined);
+                    const memoryProposalGenerator =
+                        config.memoryProposalGenerator ??
+                        (onboardingIsActive
+                            ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
+                            : undefined);
                     const result = await withSigintCancellation((signal) =>
                         runSurfaceInteraction(store, state, {
                             runtimeId: started.runtimeId,

@@ -811,7 +811,10 @@ the work from later cognition projections while adopted canonical meaning and it
 ordinary provenance remain available.
 
 Configured CLI conversation supplies both bounded evaluators automatically only while
-onboarding is active. The Telegram surface applies the same gating with its configured
+onboarding is active. The CLI re-reads that work before every ordinary turn, so closure
+stops automatic reflection immediately rather than only after process restart. Fresh
+setup prints a runnable handoff using the bound `relationship:<principal>` scope instead
+of a placeholder scope that would bypass onboarding. The Telegram surface applies the same gating with its configured
 provider and exposes progress/reflection failures in its update outcome, so a surface or
 provider change does not create a second onboarding lifecycle or hide a failed background
 decision. Explicit lower-level callers may inject
