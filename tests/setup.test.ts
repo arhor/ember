@@ -389,6 +389,62 @@ test("cancellation during the final availability write is persisted after commit
     assert.equal((await new StateStore(f.state).load()).lineage.lineageId, config.lineageId);
 });
 
+test("cancellation during requested continuity persistence prevents creation and remains recoverable", async (t) => {
+    const f = await fixture(t),
+        controller = new AbortController();
+    let requestedWrites = 0;
+    assert.equal(
+        await setupMain(f.create, capture(), {
+            ...verified,
+            signal: controller.signal,
+            persistConfig: async (path, config) => {
+                const snapshot = `${JSON.stringify(config, null, 2)}\n`;
+                if (config.continuity === "requested") {
+                    requestedWrites++;
+                    if (requestedWrites === 1) controller.abort();
+                }
+                await writeFile(path, snapshot, { mode: 0o600 });
+            },
+        }),
+        2,
+    );
+    const config = await loadSetupConfig(f.config);
+    assert.equal(requestedWrites, 2);
+    assert.equal(config.verification, "verified");
+    assert.equal(config.continuity, "pending");
+    assert.equal(config.cancellationRequested, true);
+    await assert.rejects(stat(f.state), { code: "ENOENT" });
+    assert.equal(await setupMain(f.create, capture(), verified), 0);
+    assert.equal((await new StateStore(f.state).load()).lineage.lineageId, config.lineageId);
+});
+
+for (const phase of ["initial", "verification"] as const) {
+    test(`cancellation during ${phase} persistence records cancellation before returning`, async (t) => {
+        const f = await fixture(t),
+            controller = new AbortController();
+        let writes = 0;
+        assert.equal(
+            await setupMain(f.create, capture(), {
+                ...verified,
+                signal: controller.signal,
+                persistConfig: async (path, config) => {
+                    const snapshot = `${JSON.stringify(config, null, 2)}\n`;
+                    const targeted = phase === "initial" ? writes === 0 : config.verification === "verified";
+                    writes++;
+                    if (targeted) controller.abort();
+                    await writeFile(path, snapshot, { mode: 0o600 });
+                },
+            }),
+            2,
+        );
+        const config = await loadSetupConfig(f.config);
+        assert.equal(config.cancellationRequested, true);
+        assert.equal(config.continuity, "pending");
+        assert.equal(config.verification, phase === "initial" ? "not_attempted" : "verified");
+        await assert.rejects(stat(f.state), { code: "ENOENT" });
+    });
+}
+
 test("configured run checks lineage establishment under the acquired state lease", async (t) => {
     const f = await fixture(t),
         state = initialState("user"),

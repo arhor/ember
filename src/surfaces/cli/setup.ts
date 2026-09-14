@@ -292,17 +292,28 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
     dependencies.signal?.addEventListener("abort", cancel, { once: true });
     if (dependencies.signal?.aborted) cancel();
     const persistConfig = dependencies.persistConfig ?? writeConfig;
+    const persistObserved = async () => {
+        const cancellationWasRequested = config.cancellationRequested;
+        await persistConfig(configPath, config);
+        if (!cancellationWasRequested && config.cancellationRequested) await persistConfig(configPath, config);
+    };
     try {
         // Prevent concurrent setup from replacing a configuration read before acquiring the lease.
         if (JSON.stringify(await loadSetupConfig(configPath)) !== JSON.stringify(existing))
             throw new ValidationError("setup configuration changed; inspect and retry");
-        await persistConfig(configPath, config);
+        await persistObserved();
         if (controller.signal.aborted) {
             io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
             return 2;
         }
         config.verification = "requested";
-        await persistConfig(configPath, config);
+        await persistObserved();
+        if (controller.signal.aborted) {
+            config.verification = "not_attempted";
+            await persistObserved();
+            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
+            return 2;
+        }
         io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
         try {
             const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
@@ -329,13 +340,13 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             config.verification = "verified";
         } catch (error) {
             config.verification = error instanceof ProviderError ? error.outcome : "failed";
-            await persistConfig(configPath, config);
+            await persistObserved();
             io.error.write(
                 `Cognition verification ${config.verification}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
             );
             return 2;
         }
-        await persistConfig(configPath, config);
+        await persistObserved();
         if (controller.signal.aborted) {
             io.output.write(
                 "Cancellation requested; cognition returned successfully, continuity activation was not attempted.\n",
@@ -343,15 +354,21 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         config.continuity = "requested";
-        await persistConfig(configPath, config);
+        await persistObserved();
+        if (controller.signal.aborted) {
+            config.continuity = state ? "available" : "pending";
+            await persistObserved();
+            io.output.write("Setup cancelled before continuity activation; continuity unchanged.\n");
+            return 2;
+        }
         try {
             if (!state) await store.create(candidate);
             assertBinding(config, await store.load());
             config.continuity = "available";
-            await persistConfig(configPath, config);
+            await persistObserved();
         } catch {
             config.continuity = "outcome_unknown";
-            await persistConfig(configPath, config);
+            await persistObserved();
             io.error.write(
                 "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
             );
@@ -362,7 +379,6 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
         );
         io.output.write(`Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope SCOPE\n`);
         if (controller.signal.aborted) {
-            await persistConfig(configPath, config);
             io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
         }
         return controller.signal.aborted ? 2 : 0;

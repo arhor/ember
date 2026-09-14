@@ -725,9 +725,12 @@ Probe results distinguish `not_attempted`, `requested`, `verified`, `failed`, `t
 `cancellation_requested`, and `outcome_unknown`. Continuity operations separately track
 `pending`, `requested`, `available`, and `outcome_unknown`. `cancellationRequested`
 records observed SIGINT/SIGTERM or caller cancellation independently of successful
-effects. A cancellation observed during the final availability write is persisted again
-before setup returns; already committed continuity stays available. Neither cancellation
-nor timeout proves remote rollback. Hard termination may
+effects. Every awaited setup-record write reconciles cancellation observed during that
+write before setup makes the next transition or returns. Cancellation observed while
+persisting a pre-effect continuity request restores `pending` (or the already `available`
+state on a rerun) and returns before activation. Cancellation observed during the final
+availability write is persisted while already committed continuity stays available.
+Neither cancellation nor timeout proves remote rollback. Hard termination may
 leave `requested` and a lock; inspection reports that surviving evidence without
 claiming failure or completion.
 
