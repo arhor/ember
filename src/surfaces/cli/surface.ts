@@ -4,6 +4,7 @@ import { createInterface } from "node:readline";
 
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
+import type { ProviderInvoker } from "../../providers/contract.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
@@ -30,7 +31,9 @@ export interface CliSurfaceConfig {
     statePath: string;
     principal: string;
     scope: string;
-    providerKind: "process" | "codex" | "cursor";
+    providerKind: "process" | "codex" | "cursor" | "claude-code";
+    providerModel?: string;
+    expectedContinuityBinding?: { lineageId: string; establishedAt: string };
     providerCommand: string;
     providerArgs: string[];
     providerTimeoutSeconds: number;
@@ -49,6 +52,12 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
     const lease = await store.acquireWriteLease();
     try {
         let state = await loadForPrincipal(store, config.principal);
+        if (
+            config.expectedContinuityBinding !== undefined &&
+            (state.lineage.lineageId !== config.expectedContinuityBinding.lineageId ||
+                state.lineage.establishedAt !== config.expectedContinuityBinding.establishedAt)
+        )
+            throw new ValidationError("continuity no longer matches setup binding");
         const started = startRuntime(state, config.principal, config.scope);
         state = await store.commit(state.revision, started.state);
         io.output.write(`runtime ${started.runtimeId} started\n`);
@@ -192,14 +201,23 @@ async function ask(
 
 function configuredCognitionProvider(config: CliSurfaceConfig) {
     const adapter = { command: config.providerCommand, arguments_: config.providerArgs };
+    const claude: ProviderInvoker = async (request, options) => {
+        const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
+        return await createClaudeCodeProvider(config.providerModel ? { model: config.providerModel } : {})(
+            request,
+            options,
+        );
+    };
     return {
         providerLabel: providerLabel(config.providerCommand),
         provider:
-            config.providerKind === "codex"
-                ? createCodexProvider(adapter)
-                : config.providerKind === "cursor"
-                  ? createCursorProvider(adapter)
-                  : createProcessProvider(adapter),
+            config.providerKind === "claude-code"
+                ? claude
+                : config.providerKind === "codex"
+                  ? createCodexProvider(adapter)
+                  : config.providerKind === "cursor"
+                    ? createCursorProvider(adapter)
+                    : createProcessProvider(adapter),
     };
 }
 

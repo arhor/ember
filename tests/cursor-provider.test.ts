@@ -320,6 +320,7 @@ test("CLI parser should select Cursor with its runtime-specific arguments when r
     // Then
     assert.deepEqual(parsed, {
         command: "run",
+        mode: "explicit",
         state: "/tmp/ember.json",
         principal: PRINCIPAL,
         scope: SCOPE,

@@ -1,9 +1,10 @@
 ---
-summary: "Representation-neutral setup semantics for machine bootstrap, restore/create choice, cognition verification, progressive onboarding, secret-safe host operations, reruns, and partial failure."
+summary: "Setup semantics and typed bootstrap CLI with an application home separating config/state, explicit restore/create, provider verification, recovery, and a separate conversational onboarding boundary."
 read_when:
   - "Implementing or changing ember setup, machine provisioning, restore/create behavior, provider bootstrap, onboarding, or setup recovery"
   - "Deciding whether setup state belongs to the host, Ember continuity, ordinary memory, or temporary operational work"
   - "Changing secret entry, typed host mutations, rerunnable setup sections, or behavior on an already configured machine"
+  - "Running ember setup or configured conversation, selecting a cognition provider, or recovering an interrupted machine bootstrap"
 role: design
 discovery_status: current
 ---
@@ -12,8 +13,8 @@ discovery_status: current
 
 > Status: architecture contract for issue #252 and the setup epic #250.
 >
-> This document defines setup semantics before choosing a concrete wizard, file layout,
-> state-machine representation, or CLI interaction model.
+> The semantic contract precedes implementation. The #253 section below records the
+> subordinate machine bootstrap CLI and its current limits.
 
 ## Purpose
 
@@ -588,6 +589,168 @@ The user points setup at an old backup while another newer Ember state may exist
 Expected: setup can validate/import the snapshot mechanically but must not claim that the
 backup unquestionably replaces newer continuity. The ambiguity is surfaced rather than
 erased.
+
+## Implemented machine bootstrap (#253)
+
+`node bin/ember.ts setup` (or `ember setup` after linking the package) inspects the
+machine without selecting an intent, invoking cognition, or writing files. It reports
+configuration presence, whether the selected continuity store loads, and the last probe
+and continuity-operation results. Corrupt/unreadable state fails visibly rather than
+being classified as a clean installation. Setup never scans arbitrary directories for
+other lineages: use `--state PATH` to inspect or attach an existing local store.
+
+Ember intentionally uses one discoverable application home with distinct responsibilities:
+
+```text
+~/.ember/
+├── config/setup.json       # machine-local configuration and setup evidence
+└── state/continuity.json   # canonical continuity, with operational sidecars alongside
+```
+
+This keeps the local installation together for inspection, backup, and movement while
+preserving the semantic configuration/state boundary. XDG variables do not affect these
+defaults. `--config PATH` and `--state PATH` override their respective locations
+independently: moving the configuration does not relocate the default state. A selected
+existing setup record retains its recorded state binding unless an identical `--state`
+is supplied; a different binding is rejected. Paths remain host-local references, never
+lineage keys or model-visible setup context. Moving a whole installation still requires
+explicit attachment at its new location because stored bindings are absolute paths;
+setup does not infer continuity or rewrite a binding from copied directories.
+
+Setup and both run modes use the single typed CLI grammar in `Commands`/`CommandSpecs`.
+`parseArgs()` produces `SetupArgs` or `RunArgs` with an explicit `mode` discriminator,
+and ordinary dispatch passes typed arguments to the handlers. All command forms use
+the same unknown-option, duplicate-option, positional, and required-value validation.
+
+Choose an intent explicitly:
+
+```sh
+# Create only after a successful real provider probe.
+ember setup --intent create-new --principal user-1 --provider codex
+
+# Attach previously restored local state, keeping its accompanying sidecars in place.
+ember setup --intent restore-existing --state /data/restored/continuity.json \
+  --provider cursor --accept-continuity-risk
+
+# Reverify the existing binding/provider, preserving canonical bytes.
+ember setup --intent use-existing
+
+# Configure a separate lineage without replacing an existing setup binding.
+ember setup --config /data/new-host/setup.json --state /data/new-agent/continuity.json \
+  --intent create-new --principal user-1 --provider claude-code
+```
+
+Restore currently means **attachment**, not archive extraction, copying one JSON file,
+automatic relocation of operational sidecars, or general historical migration. Place
+the intended local store and its operational sidecars together before attachment.
+The existing `StateStore.load` validation and supported in-memory legacy identity
+normalization establish structural/loadability facts; setup does not rewrite the source.
+`--accept-continuity-risk` explicitly acknowledges intended continuation despite
+unresolved snapshot age, missing history, or forks. It is host-local evidence of the
+operator's choice, not a canonical claim that ambiguity has disappeared. `use-existing`
+can also attach a loadable, already-local store without claiming an import occurred.
+
+### Provider configuration and real verification
+
+Setup supports the production `codex`, `cursor`, and `claude-code` adapters. There is no
+implicit provider default. `--model MODEL` selects a model; `--provider-command PATH`
+selects an installed Codex/Cursor executable. Claude Code uses its adopted SDK adapter
+and does not accept an executable override. Model and executable selection stay in the
+machine record. Arbitrary shell commands, passthrough arguments, keys, or tokens are
+not setup options.
+
+Authenticate through the provider-owned flow first: Codex's login, Cursor's browser
+login, or `claude auth login`. Ember neither launches nor mediates those login flows
+in this slice, and never reads/copies their credentials. Provider-specific isolation and
+authentication limits remain those documented in the
+[continuity runbook](minimal-continuity-runbook.md) and
+[Claude Code adapter contract](claude-code-ai-sdk-provider.md). In particular, setup's
+Codex path uses the adapter's default credential route; specialized auth passthrough
+remains available only through the existing explicit low-level CLI.
+
+Each mutating setup invocation makes one real, non-retried invocation through the selected
+production adapter. The request uses a disposable synthetic in-memory lineage/runtime,
+no user meaning, no canonical lineage or principal, and no host paths or credentials.
+The response must pass `ProviderResult` validation with an empty permitted meaning set.
+Provider reply, external session identifiers, and raw error diagnostics are discarded.
+Setup records only normalized probe outcomes. Failure instructions direct the operator
+to check provider-owned authentication and retry or explicitly select another provider.
+
+`--provider-timeout-seconds` defaults to 60 and must be positive and at most 120.
+Existing adapter timeout, output bounds, isolation, and cancellation handling apply.
+Verification proves that invocation worked at that time; it does not prove future
+availability, model quality, continuity, or authority for unrelated actions.
+
+### Continuity and conversational handoff
+
+After verification, `create-new` persists only the reviewed `initialState` bootstrap.
+The selected lineage ID and establishment time are recorded as pending machine-local
+intent first so a retry does not generate a different candidate. No name, biography,
+relationship, learned memory, probe reply, or probe cognition episode is adopted.
+
+Setup prints a command of the form:
+
+```sh
+ember run --config /path/to/setup.json --scope relationship:user-1
+```
+
+Configured `run` requires a successful recorded verification and available continuity,
+reloads the state, checks its principal/lineage binding, and then uses the ordinary CLI
+conversation surface. It uses the exact configured provider/model/timeout; provider
+overrides cannot be mixed into this invocation. The explicit config selects the locally
+asserted principal. The original explicit `run --state ...` interface remains available.
+Conversational onboarding prompts and memory formation are the separate #254 task;
+setup establishes readiness and does not start or claim completion of that journey.
+
+### Rerun, interruption, and recovery
+
+Setup never overwrites existing canonical state. A recorded binding cannot silently be
+retargeted to a different state path, principal, or lineage. To create another lineage,
+choose separate configuration and state paths. Provider changes require
+`--confirm-provider-change`, invalidate the previous verification, and make a fresh probe.
+Repeating the recorded intent or choosing `use-existing` re-verifies without rewriting
+canonical continuity. Failed re-verification leaves continuity intact and blocks the
+configured conversation handoff until another successful setup.
+
+The machine record uses durable replacement with mode `0600` and a cooperative setup
+lease at `<config>.lock`. Canonical initialization uses the existing state-store lease
+and refuses an occupied destination. Config/state alias and sidecar collisions are
+rejected. Resolved config and state paths must be bounded non-empty absolute paths without
+ASCII control characters, using the same invariant before persistence and when loading
+the machine record. Setup leases use the existing `lock-status` / `quarantine-stale-lock` tools
+with `--state` pointing to the **setup record**, including the existing explicit
+quiescence/token checks; there is no automatic stale-lock removal.
+
+Probe results distinguish `not_attempted`, `requested`, `verified`, `failed`, `timed_out`,
+`cancellation_requested`, and `outcome_unknown`. Continuity operations separately track
+`pending`, `requested`, `available`, and `outcome_unknown`. `cancellationRequested`
+records observed SIGINT/SIGTERM or caller cancellation independently of successful
+effects. Every awaited setup-record write reconciles cancellation observed during that
+write before setup makes the next transition or returns. Cancellation observed while
+persisting a pre-effect continuity request restores `pending` (or the already `available`
+state on a rerun) and returns before activation. Cancellation observed during the final
+availability write is persisted while already committed continuity stays available.
+Neither cancellation nor timeout proves remote rollback. Hard termination may
+leave `requested` and a lock; inspection reports that surviving evidence without
+claiming failure or completion.
+
+An interrupted probe can be explicitly retried: it has no canonical or integration
+mutation authority. An interrupted state creation is reconciled against the surviving
+store and intended lineage before any retry. A matching loadable store can continue;
+a missing store after a possibly executed or previously available creation is **not**
+recreated automatically. Restore the intended state or inspect/recover it explicitly.
+If activation/replacement is uncertain, the record remains inspectable and no readiness
+message is emitted. Already committed continuity is never rolled back by setup.
+
+Configured conversation validates the principal, lineage ID, and lineage establishment
+time together after acquiring the canonical state write lease and before starting a
+runtime episode. The setup handoff does not rely on an earlier unlocked state read.
+
+`tests/setup.test.ts` covers fresh/configured inspection, all provider selections,
+restore attachment, reruns, failure/timeout/cancellation, malformed results, concurrent
+setup, activation races, path aliases, and real CLI subprocess handoffs using deterministic
+Codex/Cursor executables. Live provider authentication remains opt-in; it is not required
+by the deterministic acceptance gate.
 
 ## Non-goals
 

@@ -14,6 +14,7 @@ export interface CommandSpec {
 }
 
 export const Commands = {
+    SETUP: "setup",
     INIT: "init",
     RUN: "run",
     INSPECT: "inspect",
@@ -25,12 +26,30 @@ export const Commands = {
 } as const;
 
 export const CommandSpecs = {
+    [Commands.SETUP]: {
+        flags: [
+            "--config",
+            "--state",
+            "--principal",
+            "--intent",
+            "--provider",
+            "--provider-command",
+            "--model",
+            "--provider-timeout-seconds",
+            "--accept-continuity-risk",
+            "--confirm-provider-change",
+            "--help",
+        ],
+        booleans: ["--accept-continuity-risk", "--confirm-provider-change", "--help"],
+        positionals: 0,
+    },
     [Commands.INIT]: {
         flags: ["--state", "--principal"],
         positionals: 0,
     },
     [Commands.RUN]: {
         flags: [
+            "--config",
             "--state",
             "--principal",
             "--scope",
@@ -80,8 +99,32 @@ export type InitArgs = {
     principal: string;
 };
 
-export type RunArgs = {
+export type SetupIntent = "create-new" | "restore-existing" | "use-existing";
+export type SetupArgs = {
+    command: typeof Commands.SETUP;
+    config: string | undefined;
+    state: string | undefined;
+    principal: string | undefined;
+    intent: SetupIntent | undefined;
+    provider: "codex" | "cursor" | "claude-code" | undefined;
+    providerCommand: string | undefined;
+    model: string | undefined;
+    providerTimeoutSeconds: number | undefined;
+    acceptContinuityRisk: boolean;
+    confirmProviderChange: boolean;
+    help: boolean;
+};
+
+export type ConfiguredRunArgs = {
     command: typeof Commands.RUN;
+    mode: "configured";
+    config: string;
+    scope: string;
+};
+
+export type ExplicitRunArgs = {
+    command: typeof Commands.RUN;
+    mode: "explicit";
     state: string;
     principal: string;
     scope: string;
@@ -90,6 +133,8 @@ export type RunArgs = {
     providerArgs: string[];
     providerTimeoutSeconds: number;
 };
+
+export type RunArgs = ExplicitRunArgs | ConfiguredRunArgs;
 
 export type InspectArgs = {
     command: typeof Commands.INSPECT;
@@ -132,6 +177,7 @@ export type QuarantineStaleLockArgs = {
 };
 
 export type CliCommandArgs =
+    | SetupArgs
     | InitArgs
     | RunArgs
     | InspectArgs

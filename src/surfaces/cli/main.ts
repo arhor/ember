@@ -21,6 +21,7 @@ import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { assertUnreachable, cloneState } from "../../util.ts";
 import { Commands, CommandSpecs } from "./model.ts";
+import { setupMain, setupRunMain } from "./setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export async function main(
@@ -30,6 +31,8 @@ export async function main(
     try {
         const args = parseArgs(argv);
         switch (args.command) {
+            case Commands.SETUP:
+                return await setupMain(args, io);
             case Commands.INIT:
                 return await onInit(args, io);
             case Commands.RUN:
@@ -72,6 +75,7 @@ async function onInit(args: InitArgs, io: CliIo) {
 }
 
 async function onRun(args: RunArgs, io: CliIo) {
+    if (args.mode === "configured") return await setupRunMain(args, io);
     return await runCliSurface(
         {
             statePath: args.state,
@@ -247,10 +251,51 @@ export function parseArgs(argv: string[]): CliCommandArgs {
         return value;
     }
 
+    function optional(flag: string): string | undefined {
+        return values[flag] === undefined ? undefined : required(flag);
+    }
+
+    if (command === Commands.SETUP) {
+        const intent = optional("--intent");
+        if (
+            intent !== undefined &&
+            intent !== "create-new" &&
+            intent !== "restore-existing" &&
+            intent !== "use-existing"
+        )
+            throw new ValidationError("--intent requires create-new, restore-existing, or use-existing");
+        const provider = optional("--provider");
+        if (provider !== undefined && provider !== "codex" && provider !== "cursor" && provider !== "claude-code")
+            throw new ValidationError("--provider supports codex, cursor, or claude-code for setup");
+        const timeoutValue = optional("--provider-timeout-seconds");
+        const timeout = timeoutValue === undefined ? undefined : Number(timeoutValue);
+        if (timeout !== undefined && (!Number.isFinite(timeout) || timeout <= 0 || timeout > 120))
+            throw new ValidationError("setup provider timeout must be in (0, 120] seconds");
+        return {
+            command,
+            config: optional("--config"),
+            state: optional("--state"),
+            principal: optional("--principal"),
+            intent,
+            provider,
+            providerCommand: optional("--provider-command"),
+            model: optional("--model"),
+            providerTimeoutSeconds: timeout,
+            acceptContinuityRisk: values["--accept-continuity-risk"] === true,
+            confirmProviderChange: values["--confirm-provider-change"] === true,
+            help: values["--help"] === true,
+        };
+    }
+
     if (command === "init") {
         return { command, state: required("--state"), principal: required("--principal") };
     }
     if (command === "run") {
+        if (values["--config"] !== undefined) {
+            if (Object.keys(values).some((flag) => flag !== "--config" && flag !== "--scope"))
+                throw new ValidationError("configured run accepts only --config PATH and --scope SCOPE");
+            return { command, mode: "configured", config: required("--config"), scope: required("--scope") };
+        }
         const timeout = Number(required("--provider-timeout-seconds"));
         if (!Number.isFinite(timeout) || timeout <= 0) {
             throw new ValidationError("--provider-timeout-seconds must be a positive finite number");
@@ -277,6 +322,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
                 principal: required("--principal"),
                 scope: required("--scope"),
                 providerKind: "codex",
+                mode: "explicit",
                 providerCommand: typeof values["--codex-command"] === "string" ? values["--codex-command"] : "codex",
                 providerArgs: Array.isArray(values["--codex-arg"]) ? (values["--codex-arg"] as string[]) : [],
                 providerTimeoutSeconds: timeout,
@@ -297,6 +343,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
                 principal: required("--principal"),
                 scope: required("--scope"),
                 providerKind: "cursor",
+                mode: "explicit",
                 providerCommand:
                     typeof values["--cursor-command"] === "string" ? values["--cursor-command"] : "cursor-agent",
                 providerArgs: Array.isArray(values["--cursor-arg"]) ? (values["--cursor-arg"] as string[]) : [],
@@ -315,6 +362,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             principal: required("--principal"),
             scope: required("--scope"),
             providerKind: "process",
+            mode: "explicit",
             providerCommand: required("--provider-command"),
             providerArgs: Array.isArray(values["--provider-arg"]) ? (values["--provider-arg"] as string[]) : [],
             providerTimeoutSeconds: timeout,

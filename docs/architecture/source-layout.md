@@ -1,5 +1,5 @@
 ---
-summary: "Current source-layout rules for interaction surfaces, CLI-local command plumbing, and inward dependency boundaries."
+summary: "Current source-layout rules for interaction surfaces, unified typed CLI routing, machine-local setup, and inward dependency boundaries."
 read_when:
   - "Adding or reorganizing an interaction surface under src/surfaces/"
   - "Deciding whether CLI code belongs to conversational surface mechanics or CLI-local command plumbing"
@@ -21,6 +21,7 @@ src/surfaces/
 ├── cli/
 │   ├── index.ts
 │   ├── main.ts
+│   ├── setup.ts
 │   └── surface.ts
 └── telegram/
     ├── index.ts
@@ -43,12 +44,20 @@ Surface-local tests belong beside their implementation when they primarily exerc
 Everything that is specifically CLI-facing stays inside `src/surfaces/cli/`. The current internal split is deliberately small:
 
 - `index.ts` defines the public module API;
-- `main.ts` owns CLI argument parsing and command dispatch; and
+- `main.ts` owns CLI argument parsing and command dispatch;
+- `setup.ts` owns machine-local bootstrap, provider verification, setup recovery, and the configured `run` handoff; and
 - `surface.ts` owns the conversational `run` mechanics.
+
+Every command passes through `parseArgs()` once and the same dispatch switch.
+`model.ts` defines `Commands`, `CommandSpecs`, and the typed command arguments, including
+`SetupArgs` and `RunArgs` with `mode: "explicit" | "configured"`. Setup and configured
+run handlers receive those typed arguments; they do not parse their own option grammar
+or bypass dispatch based on the presence of a flag.
 
 The CLI dispatch includes commands such as:
 
 - `init`;
+- `setup`;
 - `inspect` and `explain`;
 - `correct`;
 - `check` and `lock-status`; and
