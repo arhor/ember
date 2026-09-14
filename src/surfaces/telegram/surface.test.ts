@@ -8,6 +8,8 @@ import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "./surface.ts";
 
 import { initialState } from "../../core/model.ts";
+import { createOnboardingWork } from "../../core/onboarding-work.ts";
+import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
 import {
@@ -101,6 +103,39 @@ function readyApi(overrides: Record<string, unknown> = {}) {
         ...overrides,
     } as Parameters<typeof runTelegramPolling>[1];
 }
+
+test("Telegram uses the ordinary onboarding progress and memory seams", async () => {
+    const f = await fixture();
+    try {
+        const state = await f.store.load();
+        await new OnboardingWorkStore(f.statePath).save(
+            createOnboardingWork(
+                state.lineage.lineageId,
+                PRINCIPAL,
+                `relationship:${PRINCIPAL}`,
+                "2026-09-01T00:00:00.000Z",
+            ),
+        );
+        const outcome = await processTelegramUpdate(f.config, readyApi(), update(7, "Let's do introductions later."), {
+            provider: async () => ({ contractVersion: 1, reply: "Of course.", usedMeaningIds: [] }),
+            onboardingProgressEvaluator: async () => ({
+                decision_version: 1,
+                updates: [
+                    { topic: "forms_of_address", action: "defer", basis: "later" },
+                    { topic: "expectations", action: "defer", basis: "later" },
+                    { topic: "optional_capabilities", action: "defer", basis: "later" },
+                ],
+            }),
+            memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
+        });
+        assert.equal(outcome.kind, "processed");
+        assert.ok(
+            (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "deferred"),
+        );
+    } finally {
+        await f.close();
+    }
+});
 
 async function expectUncertainDelivery(run: () => Promise<unknown>) {
     await assert.rejects(run(), (error: unknown) => {

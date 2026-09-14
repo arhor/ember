@@ -5,6 +5,12 @@ import { isRfc3339Utc } from "./model.ts";
 export const ONBOARDING_TOPICS = ["forms_of_address", "expectations", "optional_capabilities"] as const;
 export type OnboardingTopic = (typeof ONBOARDING_TOPICS)[number];
 export type OnboardingTopicStatus = "open" | "deferred" | "declined" | "resolved";
+export type OnboardingProgressAction = "leave_open" | "defer" | "decline" | "resolve" | "resume";
+
+export interface OnboardingProgressDecision {
+    decision_version: 1;
+    updates: Array<{ topic: OnboardingTopic; action: OnboardingProgressAction; basis: string }>;
+}
 
 export interface OnboardingTopicWork {
     topic: OnboardingTopic;
@@ -18,7 +24,7 @@ export interface OnboardingWorkDocument {
     lineage_id: string;
     principal: string;
     scope: string;
-    status: "active" | "closed";
+    status: "pending_activation" | "active" | "closed";
     created_at: string;
     updated_at: string;
     topics: OnboardingTopicWork[];
@@ -36,13 +42,14 @@ export function createOnboardingWork(
     principal: string,
     scope: string,
     timestamp: string,
+    status: OnboardingWorkDocument["status"] = "active",
 ): OnboardingWorkDocument {
     const document: OnboardingWorkDocument = {
         onboarding_work_version: 1,
         lineage_id: lineageId,
         principal,
         scope,
-        status: "active",
+        status,
         created_at: timestamp,
         updated_at: timestamp,
         topics: ONBOARDING_TOPICS.map((topic) => ({
@@ -57,7 +64,7 @@ export function createOnboardingWork(
 }
 
 export function projectOnboardingWork(document: OnboardingWorkDocument | null): ProjectedOnboardingWork | undefined {
-    if (document === null || document.status === "closed") return undefined;
+    if (document === null || document.status !== "active") return undefined;
     return {
         work_version: 1,
         status: "active",
@@ -67,50 +74,66 @@ export function projectOnboardingWork(document: OnboardingWorkDocument | null): 
     };
 }
 
-export function advanceOnboardingWork(
+export function applyOnboardingProgressDecision(
     document: OnboardingWorkDocument,
-    text: string,
+    decision: OnboardingProgressDecision,
     evidenceId: string,
     timestamp: string,
 ): OnboardingWorkDocument {
     validateOnboardingWork(document);
-    if (document.status === "closed") return structuredClone(document);
+    validateOnboardingProgressDecision(decision);
+    if (document.status !== "active") return structuredClone(document);
     const next = structuredClone(document);
-    const normalized = text.trim().toLowerCase();
-    const set = (topics: readonly OnboardingTopic[], status: OnboardingTopicStatus) => {
-        for (const item of next.topics) {
-            if (!topics.includes(item.topic)) continue;
-            item.status = status;
-            item.updated_at = timestamp;
-            if (!item.source_evidence_ids.includes(evidenceId)) item.source_evidence_ids.push(evidenceId);
-        }
-    };
-    if (/\b(skip|stop|finish|end)\b.*\bonboarding\b|\bno onboarding\b/.test(normalized)) {
-        set(ONBOARDING_TOPICS, "declined");
-    } else if (/\b(defer|pause)\b.*\bonboarding\b|\bonboarding\b.*\b(later|not now)\b/.test(normalized)) {
-        set(
-            next.topics.filter((item) => item.status === "open").map((item) => item.topic),
-            "deferred",
-        );
-    } else if (/\b(resume|continue)\b.*\bonboarding\b/.test(normalized)) {
-        set(
-            next.topics.filter((item) => item.status === "deferred").map((item) => item.topic),
-            "open",
-        );
-    } else {
-        if (/\b(call me|my name is|address me as|your name is|i(?:'ll| will) call you)\b/.test(normalized))
-            set(["forms_of_address"], "resolved");
-        if (/\b(i expect|i prefer (?:you|our)|please always|please never|boundary|boundaries)\b/.test(normalized))
-            set(["expectations"], "resolved");
-        if (/\b(no integrations|skip integrations|don't configure|do not configure)\b/.test(normalized))
-            set(["optional_capabilities"], "declined");
-        else if (/\b(telegram|integration|capabilit(?:y|ies))\b/.test(normalized))
-            set(["optional_capabilities"], "resolved");
+    for (const update of decision.updates) {
+        const item = next.topics.find((candidate) => candidate.topic === update.topic)!;
+        const status = progressStatus(item.status, update.action);
+        if (status === item.status) continue;
+        item.status = status;
+        item.updated_at = timestamp;
+        if (!item.source_evidence_ids.includes(evidenceId)) item.source_evidence_ids.push(evidenceId);
     }
     if (next.topics.every((item) => item.status === "resolved" || item.status === "declined")) next.status = "closed";
     next.updated_at = timestamp;
     validateOnboardingWork(next);
     return next;
+}
+
+export function validateOnboardingProgressDecision(
+    value: unknown,
+    currentInput?: string,
+): asserts value is OnboardingProgressDecision {
+    if (
+        !isObject(value) ||
+        !exactKeys(value, ["decision_version", "updates"]) ||
+        value.decision_version !== 1 ||
+        !Array.isArray(value.updates)
+    )
+        throw new ValidationError("onboarding progress decision is invalid");
+    const seen = new Set<string>();
+    for (const update of value.updates) {
+        if (
+            !isObject(update) ||
+            !exactKeys(update, ["topic", "action", "basis"]) ||
+            !ONBOARDING_TOPICS.includes(update.topic as OnboardingTopic) ||
+            !["leave_open", "defer", "decline", "resolve", "resume"].includes(String(update.action)) ||
+            typeof update.basis !== "string" ||
+            !update.basis.trim() ||
+            update.basis.length > 512 ||
+            (currentInput !== undefined &&
+                !currentInput.toLocaleLowerCase().includes(update.basis.toLocaleLowerCase())) ||
+            seen.has(String(update.topic))
+        )
+            throw new ValidationError("onboarding progress update is invalid");
+        seen.add(String(update.topic));
+    }
+}
+
+function progressStatus(current: OnboardingTopicStatus, action: OnboardingProgressAction): OnboardingTopicStatus {
+    if (action === "leave_open") return current;
+    if (action === "resume") return current === "deferred" ? "open" : current;
+    if (current === "declined" || current === "resolved") return current;
+    if (action === "defer") return "deferred";
+    return action === "decline" ? "declined" : "resolved";
 }
 
 export function validateOnboardingWork(value: unknown): asserts value is OnboardingWorkDocument {
@@ -136,7 +159,7 @@ export function validateOnboardingWork(value: unknown): asserts value is Onboard
         !value.principal.trim() ||
         typeof value.scope !== "string" ||
         !value.scope.trim() ||
-        !["active", "closed"].includes(String(value.status)) ||
+        !["pending_activation", "active", "closed"].includes(String(value.status)) ||
         !isRfc3339Utc(value.created_at) ||
         !isRfc3339Utc(value.updated_at) ||
         !Array.isArray(value.topics)
@@ -154,7 +177,8 @@ export function validateOnboardingWork(value: unknown): asserts value is Onboard
             !["open", "deferred", "declined", "resolved"].includes(String(item.status)) ||
             !isRfc3339Utc(item.updated_at) ||
             !Array.isArray(item.source_evidence_ids) ||
-            !item.source_evidence_ids.every((id) => typeof id === "string")
+            !item.source_evidence_ids.every((id) => typeof id === "string" && id.startsWith("evidence-")) ||
+            new Set(item.source_evidence_ids).size !== item.source_evidence_ids.length
         )
             throw new ValidationError("onboarding work topic is invalid");
         seen.add(String(item.topic));

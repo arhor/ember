@@ -11,6 +11,7 @@ import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, now
 import { createOnboardingWork } from "../../core/onboarding-work.ts";
 import { buildProjection } from "../../core/projection.ts";
 import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
+import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
@@ -318,6 +319,7 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
+        let continuityMutationStarted = false;
         try {
             const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
             const input =
@@ -365,17 +367,52 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         try {
-            if (!state) await store.create(candidate);
-            assertBinding(config, await store.load());
+            const onboardingStore = new OnboardingWorkStore(statePath);
             if (!state && intent === "create-new") {
-                await new OnboardingWorkStore(statePath).save(
-                    createOnboardingWork(candidate.lineage.lineageId, principal, `relationship:${principal}`, nowUtc()),
-                );
+                const work = await onboardingStore.load();
+                if (work === null) {
+                    await onboardingStore.save(
+                        createOnboardingWork(
+                            candidate.lineage.lineageId,
+                            principal,
+                            `relationship:${principal}`,
+                            nowUtc(),
+                            "pending_activation",
+                        ),
+                    );
+                } else if (
+                    work.lineage_id !== candidate.lineage.lineageId ||
+                    work.principal !== principal ||
+                    work.status !== "pending_activation"
+                ) {
+                    throw new ValidationError("onboarding activation evidence conflicts with the intended new lineage");
+                }
+            }
+            if (!state) {
+                continuityMutationStarted = true;
+                await store.create(candidate);
+            }
+            assertBinding(config, await store.load());
+            const pendingOnboarding = await onboardingStore.load();
+            if (
+                config.intent === "create-new" &&
+                pendingOnboarding?.status === "pending_activation" &&
+                pendingOnboarding.lineage_id === config.lineageId &&
+                pendingOnboarding.principal === principal
+            ) {
+                pendingOnboarding.status = "active";
+                pendingOnboarding.updated_at = nowUtc();
+                await onboardingStore.save(pendingOnboarding);
             }
             config.continuity = "available";
             await persistObserved();
         } catch {
-            config.continuity = "outcome_unknown";
+            try {
+                assertBinding(config, await store.load());
+                config.continuity = "available";
+            } catch {
+                config.continuity = continuityMutationStarted ? "outcome_unknown" : "pending";
+            }
             await persistObserved();
             io.error.write(
                 "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
@@ -413,6 +450,8 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
     const config = await loadSetupConfig(resolve(args.config));
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
+    if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
+        throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
     const provider = setupProvider(config.provider);
     return await runCliSurface(
         {
@@ -430,6 +469,10 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerTimeoutSeconds: config.provider.timeoutSeconds,
             memoryProposalGenerator: createProviderMemoryProposalGenerator(provider, config.provider.timeoutSeconds),
             memoryProposalProviderLabel: `${config.provider.kind}:memory-proposal`,
+            onboardingProgressEvaluator: createProviderOnboardingProgressEvaluator(
+                provider,
+                config.provider.timeoutSeconds,
+            ),
         },
         io,
     );

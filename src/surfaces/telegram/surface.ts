@@ -6,10 +6,14 @@ import { isAbsolute } from "node:path";
 
 import type { CognitionId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
+import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
+import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
+import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexProvider } from "../../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
@@ -231,11 +235,13 @@ export async function processTelegramUpdate(
         provider,
         memoryProposalGenerator,
         memoryProposalProviderLabel,
+        onboardingProgressEvaluator,
         signal,
     }: {
         provider?: ProviderInvoker | undefined;
         memoryProposalGenerator?: MemoryProposalGenerator | undefined;
         memoryProposalProviderLabel?: string | undefined;
+        onboardingProgressEvaluator?: OnboardingProgressEvaluator | undefined;
         signal?: AbortSignal | undefined;
     } = {},
 ): Promise<TelegramUpdateOutcome> {
@@ -253,6 +259,17 @@ export async function processTelegramUpdate(
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
         const selectedProvider = provider ?? providerForConfig(config);
+        const onboardingWork = await new OnboardingWorkStore(config.state_path).load();
+        const selectedMemoryGenerator =
+            memoryProposalGenerator ??
+            (provider === undefined && onboardingWork?.status === "active"
+                ? createProviderMemoryProposalGenerator(selectedProvider, config.provider_timeout_seconds)
+                : undefined);
+        const selectedOnboardingEvaluator =
+            onboardingProgressEvaluator ??
+            (provider === undefined && onboardingWork?.status === "active"
+                ? createProviderOnboardingProgressEvaluator(selectedProvider, config.provider_timeout_seconds)
+                : undefined);
         try {
             const result = await runSurfaceInteraction(store, state, {
                 runtimeId,
@@ -262,12 +279,15 @@ export async function processTelegramUpdate(
                 providerLabel: providerLabel(config.provider_command),
                 provider: selectedProvider,
                 timeoutSeconds: config.provider_timeout_seconds,
-                ...(memoryProposalGenerator === undefined
+                ...(selectedMemoryGenerator === undefined
                     ? {}
                     : {
-                          memoryProposalGenerator,
+                          memoryProposalGenerator: selectedMemoryGenerator,
                           ...(memoryProposalProviderLabel === undefined ? {} : { memoryProposalProviderLabel }),
                       }),
+                ...(selectedOnboardingEvaluator === undefined
+                    ? {}
+                    : { onboardingProgressEvaluator: selectedOnboardingEvaluator }),
                 signal,
                 surfaceId: TELEGRAM_SURFACE_ID,
                 principalProvenance: "configured_surface_mapping",

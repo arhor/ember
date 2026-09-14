@@ -597,6 +597,23 @@ test("restart reconciles a matching committed lineage after an interrupted activ
     assert.equal(await readFile(f.state, "utf8"), before);
 });
 
+test("restart activates matching pending onboarding work after continuity was committed", async (t) => {
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const onboardingPath = `${f.state}.onboarding.json`;
+    const onboarding = JSON.parse(await readFile(onboardingPath, "utf8"));
+    onboarding.status = "pending_activation";
+    await writeFile(onboardingPath, JSON.stringify(onboarding));
+    const config = await loadSetupConfig(f.config);
+    config.continuity = "available";
+    await writeFile(f.config, JSON.stringify(config));
+
+    assert.equal(await main(["run", "--config", f.config, "--scope", "test"], capture()), 2);
+    assert.equal(await setupMain([...f.args, "--intent", "use-existing"], capture(), verified), 0);
+    assert.equal(JSON.parse(await readFile(onboardingPath, "utf8")).status, "active");
+    assert.equal((await loadSetupConfig(f.config)).continuity, "available");
+});
+
 for (const kind of ["codex", "cursor"]) {
     test(`actual CLI setup and configured conversation use the ${kind} production adapter with a deterministic executable`, async (t) => {
         const f = await fixture(t);

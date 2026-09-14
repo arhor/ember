@@ -4,6 +4,7 @@ import { createInterface } from "node:readline";
 
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
@@ -18,7 +19,10 @@ import {
     undertake,
     withholdDetail,
 } from "../../core/semantics.ts";
+import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
+import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
+import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexProvider } from "../../providers/codex.ts";
 import { createCursorProvider } from "../../providers/cursor.ts";
@@ -39,6 +43,7 @@ export interface CliSurfaceConfig {
     providerTimeoutSeconds: number;
     memoryProposalGenerator?: MemoryProposalGenerator;
     memoryProposalProviderLabel?: string;
+    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
 }
 
 interface CliSurfaceIo {
@@ -52,6 +57,18 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
     const lease = await store.acquireWriteLease();
     try {
         let state = await loadForPrincipal(store, config.principal);
+        const onboardingWork = await new OnboardingWorkStore(config.statePath).load();
+        const onboardingProvider = configuredCognitionProvider(config).provider;
+        const onboardingProgressEvaluator =
+            config.onboardingProgressEvaluator ??
+            (onboardingWork?.status === "active"
+                ? createProviderOnboardingProgressEvaluator(onboardingProvider, config.providerTimeoutSeconds)
+                : undefined);
+        const memoryProposalGenerator =
+            config.memoryProposalGenerator ??
+            (onboardingWork?.status === "active"
+                ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
+                : undefined);
         if (
             config.expectedContinuityBinding !== undefined &&
             (state.lineage.lineageId !== config.expectedContinuityBinding.lineageId ||
@@ -103,12 +120,13 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             text: line,
                             ...configuredCognitionProvider(config),
                             timeoutSeconds: config.providerTimeoutSeconds,
-                            ...(config.memoryProposalGenerator === undefined
+                            ...(memoryProposalGenerator === undefined
                                 ? {}
                                 : {
-                                      memoryProposalGenerator: config.memoryProposalGenerator,
+                                      memoryProposalGenerator,
                                       memoryProposalProviderLabel: config.memoryProposalProviderLabel,
                                   }),
+                            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
                             signal,
                             surfaceId: "local_cli",
                             principalProvenance: "explicit_local_argument",
@@ -119,6 +137,8 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                     if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
                     if (result.memoryProposalFailure)
                         io.error.write(`memory proposal: ${result.memoryProposalFailure}\n`);
+                    if (result.onboardingProgressFailure)
+                        io.error.write(`onboarding progress: ${result.onboardingProgressFailure}\n`);
                 }
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);

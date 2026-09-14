@@ -777,17 +777,27 @@ Creating a new lineage after verified cognition now creates
 to the lineage and principal. It records the small initial topic set—forms of address,
 expectations, and optional capabilities—with distinct `open`, `deferred`, `declined`,
 and `resolved` states. A closed record remains as operational evidence so a later setup
-rerun or process restart does not treat the lineage as newborn. Restore-existing and
+rerun or process restart does not treat the lineage as newborn. Setup first records
+`pending_activation`, then activates the work only after the intended lineage is loadable
+and matches the setup binding. A restart can reconcile that boundary without recreating
+canonical state or inventing onboarding for another lineage. Restore-existing and
 use-existing never synthesize this record merely because it is absent locally.
 
 Active work is projected into the ordinary provider request beside bounded conversation
 context. The projection directs Ember to handle the user's current request first, make
 at most one useful invitation, respect deferred or declined topics, and never request
 reusable secrets. It does not introduce a separate onboarding cognition purpose or
-provider session. Explicit user language advances, defers, resumes, declines, or closes
-work using the durable user-command evidence from the same ordinary cognition episode;
-provider reply text has no authority to mutate progress. Real-work input with no such
-explicit onboarding evidence leaves progress open and does not block the work.
+provider session. Onboarding begins with the first ordinary user turn; startup does not
+fabricate a user message or force cognition merely to emit an introductory prompt. A
+separate bounded progress evaluation returns a versioned typed
+decision over the current input and projected work. Ember validates its exact shape,
+topic uniqueness, supported actions, an exact supporting span from the current user input,
+and legal lifecycle transitions before advancing,
+deferring, resuming, declining, resolving, or closing work using the durable user-command
+evidence from the same ordinary cognition episode. Provider reply text has no authority
+to mutate progress. Evaluation failure leaves the prior work unchanged and is reported
+separately from the successful ordinary reply. Real-work input yields no progress updates,
+leaves progress open, and does not block the work.
 
 Configured conversation also creates a bounded reflection adapter over the configured
 cognition provider. After an ordinary exchange is durable, the adapter asks for the
@@ -797,6 +807,11 @@ memory projection. Its output still passes through `assessMemoryProposal` and
 and no onboarding code writes canonical meaning directly. Closing onboarding removes
 the work from later cognition projections while adopted canonical meaning and its
 ordinary provenance remain available.
+
+Configured CLI conversation supplies both bounded evaluators automatically. The Telegram
+surface uses the same seams with its configured provider, so a surface or provider change
+does not create a second onboarding lifecycle. Explicit lower-level callers may inject
+deterministic evaluators for testing while core transition validation remains unchanged.
 
 ## Handoff to epic tasks
 

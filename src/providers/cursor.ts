@@ -73,6 +73,7 @@ export function buildCursorPrompt(request: ProviderRequest): string {
         "Do not use tools, files, prior sessions, or outside context.",
         "Return exactly one JSON object with only contractVersion, reply, and usedMeaningIds.",
         "contractVersion must be 1; reply must be a non-empty string; usedMeaningIds must contain only projected meaning IDs materially used in the reply.",
+        "When onboarding_work is present, follow its guidance through ordinary conversation and prioritize the user's current request.",
         "This provider runtime does not own the continuing agent's continuity, memory, canonical state, or authority.",
         "<ember_provider_request>",
         JSON.stringify(request),

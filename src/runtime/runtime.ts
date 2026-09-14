@@ -12,13 +12,14 @@ import type {
     RuntimeId,
 } from "../core/model.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
-import { advanceOnboardingWork, projectOnboardingWork } from "../core/onboarding-work.ts";
+import { applyOnboardingProgressDecision, projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
@@ -151,6 +152,7 @@ export interface RunCognitionOptions {
     conversationMembership?: ConversationMembershipIntent;
     memoryProposalGenerator?: MemoryProposalGenerator;
     memoryProposalProviderLabel?: string;
+    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     cognitionId?: CognitionId;
     hooks?: {
         afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
@@ -204,6 +206,7 @@ export async function runCognition(
         conversationMembership = { action: "continue", basis: "ordinary_adjacency" },
         memoryProposalGenerator,
         memoryProposalProviderLabel,
+        onboardingProgressEvaluator,
         cognitionId: requestedCognitionId,
         hooks = {},
     }: RunCognitionOptions,
@@ -211,6 +214,7 @@ export async function runCognition(
     state: EmberState;
     providerFailure: string | null;
     memoryProposalFailure: string | null;
+    onboardingProgressFailure: string | null;
     cognitionId: CognitionId;
 }> {
     requirePrincipal(state, principal);
@@ -287,12 +291,6 @@ export async function runCognition(
         input_evidence_id: input.evidenceId,
         started_at: timestamp,
     });
-    if (onboardingDocument?.status === "active") {
-        await new OnboardingWorkStore(store.path).save(
-            advanceOnboardingWork(onboardingDocument, text, input.evidenceId, timestamp),
-        );
-    }
-
     const request: ProviderRequest = {
         contractVersion: CONTRACT_VERSION,
         cognitionId: cognitionId,
@@ -325,7 +323,13 @@ export async function runCognition(
         cognition.lastDurableObservationAt = at;
         findRuntime(failed, runtimeId).lastDurableObservationAt = at;
         state = await store.commit(current.revision, failed);
-        return { state, providerFailure: error.message, memoryProposalFailure: null, cognitionId };
+        return {
+            state,
+            providerFailure: error.message,
+            memoryProposalFailure: null,
+            onboardingProgressFailure: null,
+            cognitionId,
+        };
     }
 
     const current = await store.load();
@@ -368,6 +372,25 @@ export async function runCognition(
     });
     const outputText = `${result.reply}\n`;
     await hooks.afterExpressionCommit?.(state, outputText);
+    let onboardingProgressFailure: string | null = null;
+    if (
+        purpose === "ordinary" &&
+        onboardingDocument?.status === "active" &&
+        onboardingProgressEvaluator !== undefined
+    ) {
+        try {
+            const decision = await onboardingProgressEvaluator({
+                projection,
+                onboardingWork: onboardingWork!,
+                input: text,
+            });
+            await new OnboardingWorkStore(store.path).save(
+                applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
+            );
+        } catch (error) {
+            onboardingProgressFailure = error instanceof Error ? error.message : String(error);
+        }
+    }
     let memoryProposalFailure: string | null = null;
     if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
         try {
@@ -398,7 +421,7 @@ export async function runCognition(
     displayedCognition.lastDurableObservationAt = displayedAt;
     findRuntime(displayed, runtimeId).lastDurableObservationAt = displayedAt;
     state = await store.commit(state.revision, displayed);
-    return { state, providerFailure: null, memoryProposalFailure, cognitionId };
+    return { state, providerFailure: null, memoryProposalFailure, onboardingProgressFailure, cognitionId };
 }
 
 export function findCognition(state: EmberState, id: CognitionId | string): CognitionEpisode {
