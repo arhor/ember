@@ -8,8 +8,11 @@ import type { CliIo, ConfiguredRunArgs, SetupArgs, SetupIntent } from "./model.t
 
 import { ProviderError, ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
+import { createOnboardingWork } from "../../core/onboarding-work.ts";
 import { buildProjection } from "../../core/projection.ts";
+import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexProvider } from "../../providers/codex.ts";
 import { validateProviderResult } from "../../providers/contract.ts";
@@ -364,6 +367,11 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
         try {
             if (!state) await store.create(candidate);
             assertBinding(config, await store.load());
+            if (!state && intent === "create-new") {
+                await new OnboardingWorkStore(statePath).save(
+                    createOnboardingWork(candidate.lineage.lineageId, principal, `relationship:${principal}`, nowUtc()),
+                );
+            }
             config.continuity = "available";
             await persistObserved();
         } catch {
@@ -375,7 +383,7 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
             return 2;
         }
         io.output.write(
-            "Cognition verified; continuity available. Ready for ordinary conversation (conversational onboarding is separate).\n",
+            "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
         );
         io.output.write(`Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope SCOPE\n`);
         if (controller.signal.aborted) {
@@ -405,6 +413,7 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
     const config = await loadSetupConfig(resolve(args.config));
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
+    const provider = setupProvider(config.provider);
     return await runCliSurface(
         {
             statePath: config.statePath,
@@ -419,6 +428,8 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
             providerModel: config.provider.model,
             providerTimeoutSeconds: config.provider.timeoutSeconds,
+            memoryProposalGenerator: createProviderMemoryProposalGenerator(provider, config.provider.timeoutSeconds),
+            memoryProposalProviderLabel: `${config.provider.kind}:memory-proposal`,
         },
         io,
     );

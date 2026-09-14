@@ -18,10 +18,12 @@ import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts"
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
+import { advanceOnboardingWork, projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
 import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
+import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { cloneState } from "../util.ts";
 
@@ -233,6 +235,14 @@ export async function runCognition(
         conversationId,
         membership: resolvedConversation.membership,
     });
+    const onboardingDocument = await new OnboardingWorkStore(store.path).load();
+    if (
+        onboardingDocument !== null &&
+        (onboardingDocument.lineage_id !== state.lineage.lineageId || onboardingDocument.principal !== principal)
+    ) {
+        throw new ValidationError("onboarding work does not match current continuity and principal");
+    }
+    const onboardingWork = projectOnboardingWork(onboardingDocument);
     const projection = buildProjection(state, {
         principal,
         scope,
@@ -243,6 +253,7 @@ export async function runCognition(
         purpose,
         explainIds,
         conversationContext,
+        ...(onboardingWork === undefined ? {} : { onboardingWork }),
     });
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
@@ -276,6 +287,11 @@ export async function runCognition(
         input_evidence_id: input.evidenceId,
         started_at: timestamp,
     });
+    if (onboardingDocument?.status === "active") {
+        await new OnboardingWorkStore(store.path).save(
+            advanceOnboardingWork(onboardingDocument, text, input.evidenceId, timestamp),
+        );
+    }
 
     const request: ProviderRequest = {
         contractVersion: CONTRACT_VERSION,

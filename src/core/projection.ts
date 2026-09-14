@@ -11,6 +11,7 @@ import type {
     RuntimeEpisode,
     RuntimeId,
 } from "./model.ts";
+import type { ProjectedOnboardingWork } from "./onboarding-work.ts";
 
 import { cloneState } from "../util.ts";
 import { emptyConversationContext } from "./conversation-context.ts";
@@ -48,6 +49,7 @@ export interface Projection {
     current_input: string;
     recoveryAccount: RecoveryAccount;
     conversation_context?: ProjectedConversationContext;
+    onboarding_work?: ProjectedOnboardingWork;
     meanings: ProjectedMeaning[];
     gaps: ProjectionGap[];
     selection: {
@@ -68,6 +70,7 @@ export interface BuildProjectionOptions {
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
     conversationContext?: ProjectedConversationContext;
+    onboardingWork?: ProjectedOnboardingWork;
 }
 
 export function buildProjection(
@@ -82,6 +85,7 @@ export function buildProjection(
         purpose = "ordinary",
         explainIds = [],
         conversationContext = emptyConversationContext(),
+        onboardingWork,
     }: BuildProjectionOptions,
 ): Projection {
     validateState(state);
@@ -175,6 +179,7 @@ export function buildProjection(
         current_input: currentInput,
         recoveryAccount: cloneState(runtime.recoveryAccount),
         conversation_context: cloneState(conversationContext),
+        ...(onboardingWork === undefined ? {} : { onboarding_work: cloneState(onboardingWork) }),
         meanings: projected,
         gaps,
         selection: {

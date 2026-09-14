@@ -223,6 +223,9 @@ for (const kind of ["codex", "cursor", "claude-code"]) {
         assert.equal(config.lineageId, state.lineage.lineageId);
         assert.deepEqual(state.meanings, []);
         assert.deepEqual(state.operations.cognitionEpisodes, []);
+        const onboarding = JSON.parse(await readFile(`${f.state}.onboarding.json`, "utf8"));
+        assert.equal(onboarding.lineage_id, state.lineage.lineageId);
+        assert.equal(onboarding.status, "active");
         assert.equal((await stat(f.config)).mode & 0o777, 0o600);
         assert.doesNotMatch(await readFile(f.state, "utf8"), /provider|PROBE_REPLY|setup.json/);
         assert.doesNotMatch(await readFile(f.config, "utf8"), /PROBE_REPLY/);
@@ -255,6 +258,7 @@ test("restore attaches validated state without rewriting meaning or sidecars and
     assert.equal(await setupMain([...args, "--accept-continuity-risk"], capture(), verified), 0);
     assert.equal(await readFile(f.state, "utf8"), before);
     assert.equal(await readFile(`${f.state}.conversation.json`, "utf8"), "retained sidecar");
+    await assert.rejects(stat(`${f.state}.onboarding.json`), { code: "ENOENT" });
     assert.equal((await loadSetupConfig(f.config)).lineageId, state.lineage.lineageId);
 });
 

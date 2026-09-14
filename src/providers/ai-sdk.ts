@@ -154,6 +154,7 @@ const INSTRUCTIONS = [
     "A denied, rejected, failed, blocked, or uncertain capability result must be interpreted as such rather than treated as success.",
     "Return a structured result matching the requested schema.",
     "List in usedMeaningIds only meaning IDs from projection.selection.meaning_ids that actually contributed to the reply.",
+    "When onboarding_work is present, follow its guidance through ordinary conversation and prioritize the user's current request.",
 ].join(" ");
 
 const MAX_TOOL_LOOP_STEPS = 4;

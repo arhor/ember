@@ -5,9 +5,11 @@ export {};
 let input = "";
 process.stdin.setEncoding("utf8");
 for await (const chunk of process.stdin) input += chunk;
-const match = input.match(/<ember_provider_request>\n(.+)\n<\/ember_provider_request>/s);
-if (!match) throw new Error("missing bounded provider request");
-const request = JSON.parse(match[1]);
+const start = input.indexOf("<ember_provider_request>");
+const end = input.indexOf("</ember_provider_request>");
+if (start < 0 || end < 0) throw new Error("missing bounded provider request");
+const payload = input.slice(start + "<ember_provider_request>".length, end);
+const request = JSON.parse(payload.slice(payload.indexOf("{"), payload.lastIndexOf("}") + 1));
 process.stdout.write(
     `${JSON.stringify({
         type: "result",

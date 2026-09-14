@@ -770,6 +770,34 @@ Issue #252 does not decide:
 Those belong to later implementation work or remain deliberately open until evidence
 earns a stronger decision.
 
+## Implemented progressive onboarding (#254)
+
+Creating a new lineage after verified cognition now creates
+`<continuity-state-path>.onboarding.json`. This sidecar is temporary semantic work bound
+to the lineage and principal. It records the small initial topic set—forms of address,
+expectations, and optional capabilities—with distinct `open`, `deferred`, `declined`,
+and `resolved` states. A closed record remains as operational evidence so a later setup
+rerun or process restart does not treat the lineage as newborn. Restore-existing and
+use-existing never synthesize this record merely because it is absent locally.
+
+Active work is projected into the ordinary provider request beside bounded conversation
+context. The projection directs Ember to handle the user's current request first, make
+at most one useful invitation, respect deferred or declined topics, and never request
+reusable secrets. It does not introduce a separate onboarding cognition purpose or
+provider session. Explicit user language advances, defers, resumes, declines, or closes
+work using the durable user-command evidence from the same ordinary cognition episode;
+provider reply text has no authority to mutate progress. Real-work input with no such
+explicit onboarding evidence leaves progress open and does not block the work.
+
+Configured conversation also creates a bounded reflection adapter over the configured
+cognition provider. After an ordinary exchange is durable, the adapter asks for the
+existing versioned memory-candidate structure using only the ordinary conversation
+memory projection. Its output still passes through `assessMemoryProposal` and
+`resolveMemoryProposal`; malformed output is an inspectable memory-generation failure,
+and no onboarding code writes canonical meaning directly. Closing onboarding removes
+the work from later cognition projections while adopted canonical meaning and its
+ordinary provenance remain available.
+
 ## Handoff to epic tasks
 
 - **#253** should implement deterministic host bootstrap, explicit restore/create,
