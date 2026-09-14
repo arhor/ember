@@ -10,8 +10,6 @@ import { ProviderError, ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
 import { createOnboardingWork } from "../../core/onboarding-work.ts";
 import { buildProjection } from "../../core/projection.ts";
-import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
-import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
@@ -452,7 +450,6 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
     if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
         throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
-    const provider = setupProvider(config.provider);
     return await runCliSurface(
         {
             statePath: config.statePath,
@@ -467,12 +464,6 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
             providerModel: config.provider.model,
             providerTimeoutSeconds: config.provider.timeoutSeconds,
-            memoryProposalGenerator: createProviderMemoryProposalGenerator(provider, config.provider.timeoutSeconds),
-            memoryProposalProviderLabel: `${config.provider.kind}:memory-proposal`,
-            onboardingProgressEvaluator: createProviderOnboardingProgressEvaluator(
-                provider,
-                config.provider.timeoutSeconds,
-            ),
         },
         io,
     );

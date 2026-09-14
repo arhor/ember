@@ -73,6 +73,8 @@ export type TelegramUpdateOutcome =
           updateId: number;
           cognitionId: CognitionId;
           providerFailure: string | null;
+          memoryProposalFailure: string | null;
+          onboardingProgressFailure: string | null;
           deliveryFailure: "failed" | "uncertain" | null;
       };
 
@@ -262,12 +264,16 @@ export async function processTelegramUpdate(
         const onboardingWork = await new OnboardingWorkStore(config.state_path).load();
         const selectedMemoryGenerator =
             memoryProposalGenerator ??
-            (provider === undefined && onboardingWork?.status === "active"
+            (provider === undefined &&
+            onboardingWork?.status === "active" &&
+            onboardingWork.scope === config.activeScope
                 ? createProviderMemoryProposalGenerator(selectedProvider, config.provider_timeout_seconds)
                 : undefined);
         const selectedOnboardingEvaluator =
             onboardingProgressEvaluator ??
-            (provider === undefined && onboardingWork?.status === "active"
+            (provider === undefined &&
+            onboardingWork?.status === "active" &&
+            onboardingWork.scope === config.activeScope
                 ? createProviderOnboardingProgressEvaluator(selectedProvider, config.provider_timeout_seconds)
                 : undefined);
         try {
@@ -305,6 +311,8 @@ export async function processTelegramUpdate(
                 updateId: update.update_id,
                 cognitionId: result.cognitionId,
                 providerFailure: result.providerFailure,
+                memoryProposalFailure: result.memoryProposalFailure,
+                onboardingProgressFailure: result.onboardingProgressFailure,
                 deliveryFailure: null,
             };
         } catch (error) {
@@ -323,6 +331,8 @@ export async function processTelegramUpdate(
                 updateId: update.update_id,
                 cognitionId: occurrence.cognitionId,
                 providerFailure: null,
+                memoryProposalFailure: error.memoryProposalFailure,
+                onboardingProgressFailure: error.onboardingProgressFailure,
                 deliveryFailure: error.outcome,
             };
         }

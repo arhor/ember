@@ -774,7 +774,9 @@ earns a stronger decision.
 
 Creating a new lineage after verified cognition now creates
 `<continuity-state-path>.onboarding.json`. This sidecar is temporary semantic work bound
-to the lineage and principal. It records the small initial topic set—forms of address,
+to the lineage, principal, and relationship scope. Other scopes neither receive nor
+advance that work, preventing onboarding-derived meaning from being adopted into an
+unrelated scope. It records the small initial topic set—forms of address,
 expectations, and optional capabilities—with distinct `open`, `deferred`, `declined`,
 and `resolved` states. A closed record remains as operational evidence so a later setup
 rerun or process restart does not treat the lineage as newborn. Setup first records
@@ -783,7 +785,7 @@ and matches the setup binding. A restart can reconcile that boundary without rec
 canonical state or inventing onboarding for another lineage. Restore-existing and
 use-existing never synthesize this record merely because it is absent locally.
 
-Active work is projected into the ordinary provider request beside bounded conversation
+Active work is projected only into an ordinary provider request in its bound scope beside bounded conversation
 context. The projection directs Ember to handle the user's current request first, make
 at most one useful invitation, respect deferred or declined topics, and never request
 reusable secrets. It does not introduce a separate onboarding cognition purpose or
@@ -808,9 +810,11 @@ and no onboarding code writes canonical meaning directly. Closing onboarding rem
 the work from later cognition projections while adopted canonical meaning and its
 ordinary provenance remain available.
 
-Configured CLI conversation supplies both bounded evaluators automatically. The Telegram
-surface uses the same seams with its configured provider, so a surface or provider change
-does not create a second onboarding lifecycle. Explicit lower-level callers may inject
+Configured CLI conversation supplies both bounded evaluators automatically only while
+onboarding is active. The Telegram surface applies the same gating with its configured
+provider and exposes progress/reflection failures in its update outcome, so a surface or
+provider change does not create a second onboarding lifecycle or hide a failed background
+decision. Explicit lower-level callers may inject
 deterministic evaluators for testing while core transition validation remains unchanged.
 
 ## Handoff to epic tasks

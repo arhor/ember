@@ -82,7 +82,7 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
     const state = initialState("user");
     await new StateStore(statePath).create(state);
     await new OnboardingWorkStore(statePath).save(
-        createOnboardingWork(state.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
+        createOnboardingWork(state.lineage.lineageId, "user", "test", "2026-01-01T00:00:00.000Z"),
     );
     const projections: Array<unknown> = [];
     const provider = async (request) => {
@@ -145,6 +145,60 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
     await restartedStore.releaseWriteLease(restartedLease);
 });
 
+test("onboarding is isolated to ordinary cognition in its bound scope", async (t) => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-onboarding-isolation-"));
+    t.after(() => rm(directory, { recursive: true, force: true }));
+    const statePath = join(directory, "continuity.json");
+    const initial = initialState("user");
+    await new StateStore(statePath).create(initial);
+    await new OnboardingWorkStore(statePath).save(
+        createOnboardingWork(initial.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
+    );
+    const store = new StateStore(statePath);
+    const lease = await store.acquireWriteLease();
+    let state = await store.load();
+    const projectRuntime = startRuntime(state, "user", "project:ember");
+    state = await store.commit(state.revision, projectRuntime.state);
+    const projectResult = await runCognition(store, state, {
+        runtimeId: projectRuntime.runtimeId,
+        principal: "user",
+        scope: "project:ember",
+        text: "Call me Sam",
+        providerLabel: "scripted",
+        provider: async (request) => {
+            assert.equal("onboarding_work" in request.projection, false);
+            return { contractVersion: 1, reply: "Hello.", usedMeaningIds: [] };
+        },
+        timeoutSeconds: 1,
+        output: () => {},
+        onboardingProgressEvaluator: async () => assert.fail("out-of-scope onboarding must not be evaluated"),
+    });
+    state = projectResult.state;
+    state = await store.commit(
+        state.revision,
+        stopRuntime(state, projectRuntime.runtimeId, { reason: "scope_isolation_test" }),
+    );
+    const relationshipRuntime = startRuntime(state, "user", "relationship:user");
+    state = await store.commit(state.revision, relationshipRuntime.state);
+    await runCognition(store, state, {
+        runtimeId: relationshipRuntime.runtimeId,
+        principal: "user",
+        scope: "relationship:user",
+        text: "Explain the current evidence",
+        purpose: "explain",
+        explainIds: [],
+        providerLabel: "scripted",
+        provider: async (request) => {
+            assert.equal("onboarding_work" in request.projection, false);
+            return { contractVersion: 1, reply: "Explanation.", usedMeaningIds: [] };
+        },
+        timeoutSeconds: 1,
+        output: () => {},
+    });
+    assert.equal((await new OnboardingWorkStore(statePath).load())?.status, "active");
+    await store.releaseWriteLease(lease);
+});
+
 test("completion closes temporary work while adopted meaning remains available", async (t) => {
     const directory = await mkdtemp(join(tmpdir(), "ember-onboarding-completion-"));
     t.after(() => rm(directory, { recursive: true, force: true }));
@@ -152,7 +206,7 @@ test("completion closes temporary work while adopted meaning remains available",
     const initial = initialState("user", "2026-01-01T00:00:00.000Z");
     await new StateStore(statePath).create(initial);
     await new OnboardingWorkStore(statePath).save(
-        createOnboardingWork(initial.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
+        createOnboardingWork(initial.lineage.lineageId, "user", "test", "2026-01-01T00:00:00.000Z"),
     );
     const store = new StateStore(statePath);
     const lease = await store.acquireWriteLease();

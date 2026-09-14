@@ -61,12 +61,12 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
         const onboardingProvider = configuredCognitionProvider(config).provider;
         const onboardingProgressEvaluator =
             config.onboardingProgressEvaluator ??
-            (onboardingWork?.status === "active"
+            (onboardingWork?.status === "active" && onboardingWork.scope === config.scope
                 ? createProviderOnboardingProgressEvaluator(onboardingProvider, config.providerTimeoutSeconds)
                 : undefined);
         const memoryProposalGenerator =
             config.memoryProposalGenerator ??
-            (onboardingWork?.status === "active"
+            (onboardingWork?.status === "active" && onboardingWork.scope === config.scope
                 ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
                 : undefined);
         if (

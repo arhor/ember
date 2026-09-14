@@ -109,12 +109,7 @@ test("Telegram uses the ordinary onboarding progress and memory seams", async ()
     try {
         const state = await f.store.load();
         await new OnboardingWorkStore(f.statePath).save(
-            createOnboardingWork(
-                state.lineage.lineageId,
-                PRINCIPAL,
-                `relationship:${PRINCIPAL}`,
-                "2026-09-01T00:00:00.000Z",
-            ),
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, f.config.activeScope, "2026-09-01T00:00:00.000Z"),
         );
         const outcome = await processTelegramUpdate(f.config, readyApi(), update(7, "Let's do introductions later."), {
             provider: async () => ({ contractVersion: 1, reply: "Of course.", usedMeaningIds: [] }),
@@ -132,6 +127,41 @@ test("Telegram uses the ordinary onboarding progress and memory seams", async ()
         assert.ok(
             (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "deferred"),
         );
+    } finally {
+        await f.close();
+    }
+});
+
+test("Telegram reports onboarding background failures even when delivery also fails", async () => {
+    const f = await fixture();
+    try {
+        const state = await f.store.load();
+        await new OnboardingWorkStore(f.statePath).save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, f.config.activeScope, "2026-09-01T00:00:00.000Z"),
+        );
+        const outcome = await processTelegramUpdate(
+            f.config,
+            readyApi({
+                sendMessage: async () => {
+                    throw new SurfaceDeliveryFailure("delivery uncertain");
+                },
+            }),
+            update(8, "Hello"),
+            {
+                provider: async () => ({ contractVersion: 1, reply: "Hello.", usedMeaningIds: [] }),
+                onboardingProgressEvaluator: async () => {
+                    throw new Error("progress unavailable");
+                },
+                memoryProposalGenerator: async () => {
+                    throw new Error("reflection unavailable");
+                },
+            },
+        );
+        assert.equal(outcome.kind, "processed");
+        if (outcome.kind === "ignored") assert.fail("mapped Telegram update was ignored");
+        assert.equal(outcome.onboardingProgressFailure, "progress unavailable");
+        assert.equal(outcome.memoryProposalFailure, "reflection unavailable");
+        assert.equal(outcome.deliveryFailure, "uncertain");
     } finally {
         await f.close();
     }

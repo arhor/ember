@@ -156,6 +156,10 @@ export interface RunCognitionOptions {
     cognitionId?: CognitionId;
     hooks?: {
         afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
+        beforeDisplay?: (failures: {
+            memoryProposalFailure: string | null;
+            onboardingProgressFailure: string | null;
+        }) => void | Promise<void>;
         afterDisplay?: (state: EmberState) => void | Promise<void>;
     };
 }
@@ -239,13 +243,15 @@ export async function runCognition(
         conversationId,
         membership: resolvedConversation.membership,
     });
-    const onboardingDocument = await new OnboardingWorkStore(store.path).load();
+    const loadedOnboardingDocument = purpose === "ordinary" ? await new OnboardingWorkStore(store.path).load() : null;
     if (
-        onboardingDocument !== null &&
-        (onboardingDocument.lineage_id !== state.lineage.lineageId || onboardingDocument.principal !== principal)
+        loadedOnboardingDocument !== null &&
+        (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
+            loadedOnboardingDocument.principal !== principal)
     ) {
         throw new ValidationError("onboarding work does not match current continuity and principal");
     }
+    const onboardingDocument = loadedOnboardingDocument?.scope === scope ? loadedOnboardingDocument : null;
     const onboardingWork = projectOnboardingWork(onboardingDocument);
     const projection = buildProjection(state, {
         principal,
@@ -412,6 +418,7 @@ export async function runCognition(
             state = await store.load();
         }
     }
+    await hooks.beforeDisplay?.({ memoryProposalFailure, onboardingProgressFailure });
     await writeOutput(output, outputText);
     await hooks.afterDisplay?.(state);
     const displayed = cloneState(state);
