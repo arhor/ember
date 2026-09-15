@@ -176,26 +176,31 @@ user-testimony `fact` or `preference` in `USER.md`, then explicitly applies the 
 
 ```bash
 ember apply-materialized-edits \
-  --state PATH --principal PRINCIPAL --scope SCOPE --input DIRECTORY
+  --state PATH --principal PRINCIPAL --scope SCOPE --input DIRECTORY \
+  --approval-evidence EVIDENCE_ID
 ```
 
 `SELF.md`, `RELATIONSHIP.md`, and `MEMORY.md` are generated-only. Within `USER.md`,
 adding or removing entries; changing stable IDs, metadata, ownership, scope,
 currentness, lineage, or evidence; deleting content; and editing historical or
-unsupported meaning kinds all fail closed. New meanings are not accepted through
-Markdown v1 because the view cannot provide new attributable evidence without a
-separate evidence-authoring boundary.
+unsupported meaning kinds all fail closed. Each edit requires one
+`--approval-evidence` ID naming already-canonical, available `user_command` evidence
+from the asserted principal, in the same scope, whose retained payload exactly equals
+the edited value. The flag identifies evidence; it does not manufacture authorship or
+consent. Multiple edits require distinct flags in deterministic view order. New
+meanings are not accepted through Markdown v1 because the view cannot provide new
+attributable evidence without a separate evidence-authoring boundary.
 
 The importer verifies all four artifacts against the current canonical revision and
-scope. Each supported content delta first becomes fresh, attributable retained user
-evidence describing the source view, base revision, predecessor ID, and edited
-content. An ordinary memory proposal cites that edit evidence—not the predecessor's
-evidence—and explicitly supersedes the stable predecessor ID. Proposals are assessed
-and resolved under the canonical writer lease; any rejection aborts the whole edit
-set without committing canonical state. The candidate views are fully rendered and
-published before the canonical commit, so a render or publication failure leaves the
-canonical revision unchanged. A successful set then commits one new canonical
-revision and emits an
+scope. Each supported content delta becomes an ordinary memory proposal that cites
+the matching pre-existing approval evidence—not the predecessor's evidence—and
+explicitly supersedes the stable predecessor ID. Proposals are assessed and resolved
+under the canonical writer lease; any rejection aborts the whole edit set without
+committing canonical state. The candidate views are fully rendered and published
+before the canonical commit, so a render or publication failure leaves the canonical
+revision unchanged. Sequential publication failures report the failed artifact and
+the ordered set already replaced, making a mixed snapshot explicit rather than merely
+detectable later. A successful set then commits one new canonical revision and emits an
 inspection result containing the source view, base revision, affected IDs, proposal
 resolutions, and resulting revision. The edited files themselves never acquire
 canonical authority.

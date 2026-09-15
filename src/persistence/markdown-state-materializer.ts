@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import type { EpistemicRole, MeaningId, MeaningKind } from "../core/model.ts";
 import type { MaterializedMeaning, StateMaterialization } from "../core/state-materialization.ts";
 
-import { ValidationError } from "../core/errors.ts";
+import { PartialPublication, ValidationError } from "../core/errors.ts";
 import { replaceFileAtomically } from "./file-replacement.ts";
 
 const VIEW_TITLES: Record<keyof StateMaterialization["views"], string> = {
@@ -44,6 +44,7 @@ export async function publishMarkdownStateViews(
     outputDirectory: string,
     canonicalStatePath: string,
     materialization: StateMaterialization,
+    { replace = replaceFileAtomically }: { replace?: typeof replaceFileAtomically } = {},
 ) {
     const rendered = renderMarkdownStateViews(materialization);
     const names = Object.keys(rendered).sort() as Array<keyof typeof rendered>;
@@ -59,8 +60,17 @@ export async function publishMarkdownStateViews(
         throw new ValidationError("materialized view target aliases the canonical state path");
 
     await mkdir(outputDirectory, { recursive: true, mode: 0o700 });
+    const published: string[] = [];
     for (const target of targets) {
-        await replaceFileAtomically(target.path, rendered[target.name], { mode: 0o600 });
+        try {
+            await replace(target.path, rendered[target.name], { mode: 0o600 });
+            published.push(target.path);
+        } catch (error) {
+            throw new PartialPublication(
+                `materialized view publication failed at ${target.path}; published before failure: ${JSON.stringify(published)}`,
+                { cause: error, publishedArtifacts: published, failedArtifact: target.path },
+            );
+        }
     }
     return targets.map((target) => target.path);
 }

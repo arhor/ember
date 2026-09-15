@@ -3,8 +3,9 @@ import { chmod, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import { PartialPublication } from "../src/core/errors.ts";
 import { validateState } from "../src/core/model.ts";
-import { supersede } from "../src/core/semantics.ts";
+import { supersede, userEvidence } from "../src/core/semantics.ts";
 import { buildStateMaterialization } from "../src/core/state-materialization.ts";
 import { publishMarkdownStateViews, renderMarkdownStateViews } from "../src/persistence/markdown-state-materializer.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -30,6 +31,7 @@ test("supported USER.md content edit becomes an adopted supersession and regener
     const statePath = join(directory, "ember.json");
     const output = join(directory, "views");
     const { state, ids } = populatedState();
+    const approval = userEvidence(state, PRINCIPAL, SCOPE, "Prefer detailed answers");
     await new StateStore(statePath).create(state);
     await command([
         "materialize",
@@ -56,6 +58,8 @@ test("supported USER.md content edit becomes an adopted supersession and regener
         SCOPE,
         "--input",
         output,
+        "--approval-evidence",
+        approval.evidenceId,
     ]);
 
     assert.equal(result.code, 0, result.stderr);
@@ -64,12 +68,7 @@ test("supported USER.md content edit becomes an adopted supersession and regener
     const replacement = committed.meanings.find((meaning) => meaning.supersedes === ids.preference)!;
     assert.deepEqual([old.currentness, old.supersededBy], ["superseded", replacement.meaningId]);
     assert.equal(replacement.content, "Prefer detailed answers");
-    assert.notDeepEqual(replacement.sourceEvidenceIds, old.sourceEvidenceIds);
-    const editEvidence = committed.evidence.find(
-        (evidence) => evidence.evidenceId === replacement.sourceEvidenceIds[0],
-    );
-    assert.equal(editEvidence?.sourceRole, "user_command");
-    assert.match("payload" in editEvidence! ? editEvidence.payload! : "", /materialized_state_edit/);
+    assert.deepEqual(replacement.sourceEvidenceIds, [approval.evidenceId]);
     assert.match(result.stdout, /"status": "adopted"/);
     assert.match(result.stdout, /"resulting_revision": 1/);
     assert.match(await readFile(userPath, "utf8"), /source-revision: 1/);
@@ -179,6 +178,7 @@ test("failed view regeneration leaves canonical revision unchanged", async () =>
     const statePath = join(directory, "ember.json");
     const output = join(directory, "views");
     const { state } = populatedState();
+    const approval = userEvidence(state, PRINCIPAL, SCOPE, "Prefer detail");
     await new StateStore(statePath).create(state);
     await command([
         "materialize",
@@ -208,12 +208,85 @@ test("failed view regeneration leaves canonical revision unchanged", async () =>
             SCOPE,
             "--input",
             output,
+            "--approval-evidence",
+            approval.evidenceId,
         ]);
         assert.equal(result.code, 2);
         assert.equal((await new StateStore(statePath).load()).revision, 0);
     } finally {
         await chmod(output, 0o700);
     }
+});
+
+test("materialized edits require matching attributable user approval evidence", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    const unrelated = userEvidence(state, PRINCIPAL, SCOPE, "A different user statement");
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    await writeFile(
+        userPath,
+        (await readFile(userPath, "utf8")).replace("Prefer concise architectural rationale", "Agent-authored edit"),
+    );
+
+    const result = await command([
+        "apply-materialized-edits",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--input",
+        output,
+        "--approval-evidence",
+        unrelated.evidenceId,
+    ]);
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /payload exactly matching edit/);
+    assert.equal((await new StateStore(statePath).load()).revision, 0);
+});
+
+test("partial publication reports artifacts replaced before an injected failure", async () => {
+    const directory = await tempDir();
+    const materialization = buildStateMaterialization(populatedState().state, {
+        principal: PRINCIPAL,
+        scope: SCOPE,
+    });
+    let replacement = 0;
+    let error: unknown;
+    try {
+        await publishMarkdownStateViews(directory, join(directory, "ember.json"), materialization, {
+            replace: async (path, content) => {
+                replacement += 1;
+                if (replacement === 3) throw new Error("injected third replacement failure");
+                await writeFile(path, content, { mode: 0o600 });
+            },
+        });
+        assert.fail("expected partial publication failure");
+    } catch (caught) {
+        error = caught;
+    }
+    assert.equal(error instanceof PartialPublication, true);
+    if (!(error instanceof PartialPublication)) return;
+    assert.equal(error.publishedArtifacts.length, 2);
+    assert.match(error.failedArtifact, /SELF\.md$/);
+    assert.match(error.message, /published before failure:/);
+    for (const path of error.publishedArtifacts) assert.match(await readFile(path, "utf8"), /source-revision: 0/);
+    assert.equal(await stat(error.failedArtifact).catch(() => null), null);
 });
 
 test("materialized edits cannot change identity, provenance, scope, or historical meaning", async () => {

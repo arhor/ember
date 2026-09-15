@@ -77,7 +77,8 @@ export const CommandSpecs = {
         positionals: 0,
     },
     [Commands.APPLY_MATERIALIZED_EDITS]: {
-        flags: ["--state", "--principal", "--scope", "--input"],
+        flags: ["--state", "--principal", "--scope", "--input", "--approval-evidence"],
+        repeatable: ["--approval-evidence"],
         positionals: 0,
     },
     [Commands.EXPLAIN]: {
@@ -167,6 +168,7 @@ export type ApplyMaterializedEditsArgs = {
     principal: string;
     scope: string;
     input: string;
+    approvalEvidenceIds: string[];
 };
 
 export type ExplainArgs = {

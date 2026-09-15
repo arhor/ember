@@ -15,9 +15,9 @@ import type {
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
-import { initialState, nowUtc } from "../../core/model.ts";
+import { initialState } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
-import { supersede, userEvidence } from "../../core/semantics.ts";
+import { supersede } from "../../core/semantics.ts";
 import { buildStateMaterialization } from "../../core/state-materialization.ts";
 import {
     inspectMarkdownStateEdits,
@@ -137,24 +137,28 @@ async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: Cl
         const state = await loadForPrincipal(store, args.principal);
         const materialization = buildStateMaterialization(state, { principal: args.principal, scope: args.scope });
         const inspection = inspectMarkdownStateEdits(materialization, await readMarkdownStateViews(args.input));
+        if (args.approvalEvidenceIds.length !== inspection.edits.length)
+            throw new ValidationError("each materialized edit requires one --approval-evidence ID");
+        if (new Set(args.approvalEvidenceIds).size !== args.approvalEvidenceIds.length)
+            throw new ValidationError("materialized edits require distinct approval evidence IDs");
         let candidate = state;
         const outcomes = [];
-        for (const edit of inspection.edits) {
-            candidate = cloneState(candidate);
-            const editEvidence = userEvidence(
-                candidate,
-                args.principal,
-                edit.scope,
-                JSON.stringify({
-                    source: "materialized_state_edit",
-                    view: inspection.source_view,
-                    base_revision: inspection.base_revision,
-                    meaning_id: edit.meaning_id,
-                    content: edit.content,
-                }),
-                { timestamp: nowUtc() },
-            );
-            const proposedAt = editEvidence.occurredAt;
+        for (const [index, edit] of inspection.edits.entries()) {
+            const approvalId = args.approvalEvidenceIds[index]!;
+            const approval = candidate.evidence.find((evidence) => evidence.evidenceId === approvalId);
+            if (
+                !approval ||
+                approval.sourceRole !== "user_command" ||
+                approval.sourceActor !== `user:${args.principal}` ||
+                approval.assertedPrincipal !== args.principal ||
+                approval.scope !== edit.scope ||
+                approval.availability !== "available" ||
+                approval.payload !== edit.content
+            )
+                throw new ValidationError(
+                    `approval evidence must be available attributable user evidence with payload exactly matching edit: ${edit.meaning_id}`,
+                );
+            const proposedAt = approval.observedAt;
             const assessment = assessMemoryProposal(candidate, {
                 proposal_version: 1,
                 proposal_id: `memory-proposal-file-edit-${inspection.base_revision}-${edit.meaning_id}`,
@@ -164,7 +168,7 @@ async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: Cl
                 slot: edit.slot,
                 scope: edit.scope,
                 content: edit.content,
-                source_evidence_ids: [editEvidence.evidenceId],
+                source_evidence_ids: [approval.evidenceId],
                 epistemic_role: edit.epistemic_role,
                 applicable_from: proposedAt,
                 applicable_until: null,
@@ -489,6 +493,9 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             principal: required("--principal"),
             scope: required("--scope"),
             input: required("--input"),
+            approvalEvidenceIds: Array.isArray(values["--approval-evidence"])
+                ? (values["--approval-evidence"] as string[])
+                : [],
         };
     }
     if (command === "explain") {
