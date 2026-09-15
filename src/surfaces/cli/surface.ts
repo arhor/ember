@@ -122,18 +122,22 @@ async function withCliLease(
 ) {
     const lease = await store.acquireWriteLease();
     let runtimeId: RuntimeId | null = null;
+    let stopReason = "cli_interaction_complete";
     try {
         let state = await loadConfiguredState(store, config);
         const started = startRuntime(state, config.principal, config.scope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
         await work(state, runtimeId);
+    } catch (error) {
+        stopReason = "cli_failure";
+        throw error;
     } finally {
         if (runtimeId !== null) {
             const current = await store.load();
             const episode = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
             if (episode?.cleanStopAt === null)
-                await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: "input_eof" }));
+                await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: stopReason }));
         }
         await store.releaseWriteLease(lease);
     }
