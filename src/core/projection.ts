@@ -60,6 +60,73 @@ export interface Projection {
     };
 }
 
+export interface ProjectionMeaningReader {
+    listMeanings(): Meaning[];
+    findMeaning(id: MeaningId | string): Meaning | null;
+    linkedMeaningIds(id: MeaningId | string): MeaningId[];
+}
+
+export interface ProjectionMeaningSelectionOptions {
+    principal: string;
+    scope: string;
+    purpose: CognitionPurpose;
+    explainIds: Array<MeaningId | string>;
+}
+
+export function stateProjectionMeaningReader(state: Pick<EmberState, "meanings">): ProjectionMeaningReader {
+    return {
+        listMeanings: () => state.meanings,
+        findMeaning: (id) => state.meanings.find((meaning) => meaning.meaningId === id) ?? null,
+        linkedMeaningIds: (id) => {
+            const meaning = state.meanings.find((candidate) => candidate.meaningId === id);
+            if (!meaning) return [];
+            return [meaning.supersedes, meaning.supersededBy].filter((linked): linked is MeaningId => linked !== null);
+        },
+    };
+}
+
+/**
+ * Selects the semantic meanings that cognition may project without depending on a
+ * particular persistence or materialized representation.
+ */
+export function selectProjectionMeanings(
+    reader: ProjectionMeaningReader,
+    { principal, scope, purpose, explainIds }: ProjectionMeaningSelectionOptions,
+): Meaning[] {
+    const selected = new Map<MeaningId, Meaning>();
+    const explicit = [...new Set(explainIds)];
+
+    for (const meaning of reader.listMeanings()) {
+        if (
+            (meaning.kind === "relationship" && meaning.owner === `relationship:${principal}`) ||
+            ((meaning.kind === "fact" || meaning.kind === "preference") &&
+                meaning.currentness === "current" &&
+                meaning.scope === scope) ||
+            (meaning.kind === "commitment" &&
+                meaning.currentness === "current" &&
+                meaning.prospectiveLifecycle === "live" &&
+                meaning.scope === scope)
+        ) {
+            selected.set(meaning.meaningId, meaning);
+        }
+    }
+
+    if (purpose === "explain") {
+        for (const id of explicit) {
+            const meaning = reader.findMeaning(id);
+            if (!meaning) throw new ValidationError(`projection meaning does not exist: ${id}`);
+            selected.set(meaning.meaningId, meaning);
+            for (const linkedId of reader.linkedMeaningIds(meaning.meaningId)) {
+                const linked = reader.findMeaning(linkedId);
+                if (!linked) throw new ValidationError(`projection linked meaning does not exist: ${linkedId}`);
+                selected.set(linked.meaningId, linked);
+            }
+        }
+    }
+
+    return [...selected.values()].map(cloneState);
+}
+
 export interface BuildProjectionOptions {
     principal: string;
     scope: string;
@@ -99,39 +166,20 @@ export function buildProjection(
         throw new ValidationError("projection purpose must be ordinary or explain");
     }
     const runtime = findRuntime(state, runtimeId);
-    const selected = new Map<MeaningId, Meaning>();
     const explicit = [...new Set(explainIds)];
-
-    for (const m of state.meanings) {
-        if (
-            (m.kind === "relationship" && m.owner === `relationship:${principal}`) ||
-            ((m.kind === "fact" || m.kind === "preference") && m.currentness === "current" && m.scope === scope) ||
-            (m.kind === "commitment" &&
-                m.currentness === "current" &&
-                m.prospectiveLifecycle === "live" &&
-                m.scope === scope)
-        ) {
-            selected.set(m.meaningId, m);
-        }
-    }
-    if (purpose === "explain") {
-        for (const id of explicit) {
-            const m = findMeaning(state, id);
-            selected.set(m.meaningId, m);
-            for (const linked of [m.supersedes, m.supersededBy]) {
-                if (linked) {
-                    selected.set(linked, findMeaning(state, linked));
-                }
-            }
-        }
-    }
+    const selected = selectProjectionMeanings(stateProjectionMeaningReader(state), {
+        principal,
+        scope,
+        purpose,
+        explainIds: explicit,
+    });
 
     const evidenceById = new Map(state.evidence.map((e) => [e.evidenceId, e]));
     const selectedEvidence = new Map<EvidenceId, Evidence>();
     const gaps: ProjectionGap[] = [];
     const projected: ProjectedMeaning[] = [];
 
-    for (const m of selected.values()) {
+    for (const m of selected) {
         const item = cloneState(m) as ProjectedMeaning;
         if (m.kind === "commitment" && m.currentness === "current" && m.prospectiveLifecycle === "live") {
             item.applicability =
@@ -183,7 +231,7 @@ export function buildProjection(
         meanings: projected,
         gaps,
         selection: {
-            meaning_ids: [...selected.keys()],
+            meaning_ids: selected.map((meaning) => meaning.meaningId),
             evidence_ids: [...selectedEvidence.keys()],
             explicit_explain_ids: explicit,
             raw_transcript_included: false,

@@ -63,6 +63,10 @@ Current architecture material:
   human-readable materializations, and cognition projections, including stable IDs,
   safe edit proposals, drift, regeneration, migration, and a graph/multi-resolution
   replacement path.
+- [Graph-Backed and Multi-Resolution Memory Spike](graph-memory-spike-evaluation.md)
+  records issue #260's fixture-backed proof that Markdown and a graph-shaped view can
+  share the representation-neutral semantic boundary, evaluates L0-L3 provenance and
+  Pi-class storage choices, and keeps graph adoption gated on issue #240 evidence.
 - [Source Layout and Surface Placement](source-layout.md) records the current
   `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
   mechanics and operator/application commands, and the intended inward dependency
