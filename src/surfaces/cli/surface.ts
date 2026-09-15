@@ -56,55 +56,32 @@ interface CliSurfaceIo {
 
 export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo): Promise<number> {
     const store = new StateStore(config.statePath);
-    let runtimeId: RuntimeId | null = null;
-    let lease: Awaited<ReturnType<StateStore["acquireWriteLease"]>> | null = null;
+    const initialLease = await store.acquireWriteLease();
     try {
-        const onboardingProvider = configuredCognitionProvider(config).provider;
-        lease = await store.acquireWriteLease();
-        let state = await loadConfiguredState(store, config);
-        const started = startRuntime(state, config.principal, config.scope);
-        runtimeId = started.runtimeId;
-        await store.commit(state.revision, started.state);
-        await store.releaseWriteLease(lease);
-        lease = null;
-        io.output.write(`runtime ${runtimeId} started\n`);
-        let stopReason = "input_eof";
-        const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
-        for await (const line of lines) {
-            if (!line.trim()) continue;
-            lease = await store.acquireWriteLease();
-            state = await loadConfiguredState(store, config);
-            if (line === ":quit") {
-                stopReason = "explicit_cli_exit";
-                break;
+        await loadConfiguredState(store, config);
+    } finally {
+        await store.releaseWriteLease(initialLease);
+    }
+    const onboardingProvider = configuredCognitionProvider(config).provider;
+    let runtimeAnnounced = false;
+    const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
+    for await (const line of lines) {
+        if (!line.trim()) continue;
+        if (line === ":quit") return 0;
+        if (line === ":setup telegram" && config.configuredSetupHandoff !== undefined) {
+            try {
+                const setup = await config.configuredSetupHandoff();
+                io.output.write(`Telegram setup: ${setup.status}. Resuming conversation.\n`);
+            } catch {
+                io.error.write("Telegram setup failed at the trusted-host boundary. Resuming conversation.\n");
             }
-            if (line === ":setup telegram" && config.configuredSetupHandoff !== undefined) {
-                await store.commit(
-                    state.revision,
-                    stopRuntime(state, runtimeId, { reason: "trusted_host_setup_handoff" }),
-                );
-                runtimeId = null;
-                await store.releaseWriteLease(lease);
-                lease = null;
-                try {
-                    const setup = await config.configuredSetupHandoff();
-                    io.output.write(`Telegram setup: ${setup.status}. Resuming conversation.\n`);
-                } catch {
-                    io.error.write("Telegram setup failed at the trusted-host boundary. Resuming conversation.\n");
-                } finally {
-                    lease = await store.acquireWriteLease();
-                    state = await loadConfiguredState(store, config);
-                    const resumed = startRuntime(state, config.principal, config.scope);
-                    runtimeId = resumed.runtimeId;
-                    await store.commit(state.revision, resumed.state);
-                    await store.releaseWriteLease(lease);
-                    lease = null;
-                    io.output.write(`runtime ${runtimeId} started\n`);
-                }
-                continue;
+            continue;
+        }
+        await withCliLease(store, config, async (state, runtimeId) => {
+            if (!runtimeAnnounced) {
+                io.output.write(`runtime ${runtimeId} started\n`);
+                runtimeAnnounced = true;
             }
-            if (runtimeId === null) throw new ValidationError("CLI runtime is not active");
-            const activeRuntimeId = runtimeId;
             try {
                 if (line.startsWith(":")) {
                     if (line === ":new-conversation") {
@@ -114,92 +91,96 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         io.output.write(`${conversationId}\n`);
                     } else if (line.startsWith(":ask ")) {
                         const result = await withSigintCancellation((signal) =>
-                            ask(config, store, state, activeRuntimeId, line, io.output, signal),
+                            ask(config, store, state, runtimeId, line, io.output, signal),
                         );
-                        state = result.state;
                         if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
                     } else {
                         const result = await semanticCommand(
                             store,
                             state,
-                            activeRuntimeId,
+                            runtimeId,
                             config.principal,
                             config.scope,
                             line,
                         );
-                        state = result.state;
                         io.output.write(`${result.id}\n`);
                     }
-                } else {
-                    const onboardingWork = await new OnboardingWorkStore(config.statePath).load();
-                    const onboardingIsActive =
-                        onboardingWork?.status === "active" && onboardingWork.scope === config.scope;
-                    const onboardingProgressEvaluator =
-                        config.onboardingProgressEvaluator ??
-                        (onboardingIsActive
-                            ? createProviderOnboardingProgressEvaluator(
-                                  onboardingProvider,
-                                  config.providerTimeoutSeconds,
-                              )
-                            : undefined);
-                    const memoryProposalGenerator =
-                        config.memoryProposalGenerator ??
-                        (onboardingIsActive
-                            ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
-                            : undefined);
-                    const result = await withSigintCancellation((signal) =>
-                        runSurfaceInteraction(store, state, {
-                            runtimeId: activeRuntimeId,
-                            principal: config.principal,
-                            scope: config.scope,
-                            text: line,
-                            ...configuredCognitionProvider(config),
-                            timeoutSeconds: config.providerTimeoutSeconds,
-                            ...(memoryProposalGenerator === undefined
-                                ? {}
-                                : {
-                                      memoryProposalGenerator,
-                                      memoryProposalProviderLabel: config.memoryProposalProviderLabel,
-                                  }),
-                            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
-                            signal,
-                            surfaceId: "local_cli",
-                            principalProvenance: "explicit_local_argument",
-                            deliver: io.output,
-                        }),
-                    );
-                    state = result.state;
-                    if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
-                    if (result.memoryProposalFailure)
-                        io.error.write(`memory proposal: ${result.memoryProposalFailure}\n`);
-                    if (result.onboardingProgressFailure)
-                        io.error.write(`onboarding progress: ${result.onboardingProgressFailure}\n`);
-                }
+                } else await runOrdinaryCliInteraction(config, store, state, runtimeId, onboardingProvider, line, io);
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
-            } finally {
-                await store.releaseWriteLease(lease);
-                lease = null;
             }
-        }
-        if (runtimeId !== null) {
-            if (lease === null) lease = await store.acquireWriteLease();
-            state = await loadConfiguredState(store, config);
-            await store.commit(state.revision, stopRuntime(state, runtimeId, { reason: stopReason }));
-            runtimeId = null;
-        }
-        return 0;
+        });
+    }
+    return 0;
+}
+
+async function withCliLease(
+    store: StateStore,
+    config: CliSurfaceConfig,
+    work: (state: EmberState, runtimeId: RuntimeId) => Promise<void>,
+) {
+    const lease = await store.acquireWriteLease();
+    let runtimeId: RuntimeId | null = null;
+    try {
+        let state = await loadConfiguredState(store, config);
+        const started = startRuntime(state, config.principal, config.scope);
+        runtimeId = started.runtimeId;
+        state = await store.commit(state.revision, started.state);
+        await work(state, runtimeId);
     } finally {
         if (runtimeId !== null) {
-            if (lease === null) lease = await store.acquireWriteLease();
             const current = await store.load();
             const episode = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
             if (episode?.cleanStopAt === null)
-                await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: "cli_failure" }));
+                await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: "input_eof" }));
         }
-        if (lease !== null) await store.releaseWriteLease(lease);
+        await store.releaseWriteLease(lease);
     }
+}
+
+async function runOrdinaryCliInteraction(
+    config: CliSurfaceConfig,
+    store: StateStore,
+    state: EmberState,
+    runtimeId: RuntimeId,
+    onboardingProvider: ProviderInvoker,
+    line: string,
+    io: CliSurfaceIo,
+) {
+    const onboardingWork = await new OnboardingWorkStore(config.statePath).load();
+    const onboardingIsActive = onboardingWork?.status === "active" && onboardingWork.scope === config.scope;
+    const onboardingProgressEvaluator =
+        config.onboardingProgressEvaluator ??
+        (onboardingIsActive
+            ? createProviderOnboardingProgressEvaluator(onboardingProvider, config.providerTimeoutSeconds)
+            : undefined);
+    const memoryProposalGenerator =
+        config.memoryProposalGenerator ??
+        (onboardingIsActive
+            ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
+            : undefined);
+    const result = await withSigintCancellation((signal) =>
+        runSurfaceInteraction(store, state, {
+            runtimeId,
+            principal: config.principal,
+            scope: config.scope,
+            text: line,
+            ...configuredCognitionProvider(config),
+            timeoutSeconds: config.providerTimeoutSeconds,
+            ...(memoryProposalGenerator === undefined
+                ? {}
+                : { memoryProposalGenerator, memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
+            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
+            signal,
+            surfaceId: "local_cli",
+            principalProvenance: "explicit_local_argument",
+            deliver: io.output,
+        }),
+    );
+    if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
+    if (result.memoryProposalFailure) io.error.write(`memory proposal: ${result.memoryProposalFailure}\n`);
+    if (result.onboardingProgressFailure) io.error.write(`onboarding progress: ${result.onboardingProgressFailure}\n`);
 }
 
 async function loadConfiguredState(store: StateStore, config: CliSurfaceConfig) {

@@ -95,6 +95,8 @@ export async function runTelegramSetup(
     const read = dependencies.read ?? readOptional;
     const write = dependencies.write ?? writeSecretSafe;
     const confirm = dependencies.confirm ?? trustedConfirm;
+    const command = dependencies.command ?? runCommand;
+    let restoreActiveService = false;
 
     try {
         const existingToken = await read(tokenPath);
@@ -119,6 +121,25 @@ export async function runTelegramSetup(
         >;
         await verifyTelegramLongPollingReady(api);
         stages.bot_preflight = "confirmed";
+
+        const [enabled, active] = await Promise.all([
+            command("systemctl", ["--user", "is-enabled", "ember-telegram.service"]),
+            command("systemctl", ["--user", "is-active", "ember-telegram.service"]),
+        ]);
+        const wasActive = active.code === 0;
+        io.output.write(
+            `Existing Telegram service: installed ${enabled.code === 0 ? "yes" : enabled.code === null ? "unknown" : "no"}; active ${wasActive ? "yes" : active.code === null ? "unknown" : "no"}.\n`,
+        );
+        if (wasActive) {
+            if (!(await confirm("Temporarily stop the active Telegram service for exclusive mapping discovery?")))
+                return { status: "cancelled", stages: { ...stages, mapping: "declined" } };
+            const stopped = await command("systemctl", ["--user", "stop", "ember-telegram.service"]);
+            if (stopped.code !== 0) {
+                stages.mapping = stopped.code === null ? "uncertain" : "failed";
+                return { status: stopped.code === null ? "uncertain" : "failed", stages };
+            }
+            restoreActiveService = true;
+        }
 
         const code = dependencies.verificationCode?.() ?? String(randomInt(100_000, 1_000_000));
         io.output.write(`Send this verification code privately to the bot: ${code}\n`);
@@ -158,14 +179,6 @@ export async function runTelegramSetup(
 
         const unit = renderTelegramSurfaceUnit(config, configPath);
         const existingUnit = await read(unitPath);
-        const command = dependencies.command ?? runCommand;
-        const [enabled, active] = await Promise.all([
-            command("systemctl", ["--user", "is-enabled", "ember-telegram.service"]),
-            command("systemctl", ["--user", "is-active", "ember-telegram.service"]),
-        ]);
-        io.output.write(
-            `Existing Telegram service: installed ${enabled.code === 0 ? "yes" : enabled.code === null ? "unknown" : "no"}; active ${active.code === 0 ? "yes" : active.code === null ? "unknown" : "no"}.\n`,
-        );
         if (!(await confirm("Install and start the Telegram user service?")))
             return {
                 status: "configured_inactive",
@@ -182,7 +195,9 @@ export async function runTelegramSetup(
 
         for (const args of [
             ["--user", "daemon-reload"],
-            ["--user", "enable", "--now", "ember-telegram.service"],
+            wasActive
+                ? ["--user", "restart", "ember-telegram.service"]
+                : ["--user", "enable", "--now", "ember-telegram.service"],
         ]) {
             const outcome = await command("systemctl", args);
             if (outcome.code !== 0) {
@@ -191,6 +206,7 @@ export async function runTelegramSetup(
             }
         }
         stages.activation = "confirmed";
+        restoreActiveService = false;
         stages.round_trip = await waitForRoundTrip(binding.setup.statePath, selected.update_id, command, dependencies);
         return {
             status:
@@ -208,6 +224,16 @@ export async function runTelegramSetup(
         );
         if (current) stages[current] = "failed";
         return { status: "failed", stages };
+    } finally {
+        if (restoreActiveService) {
+            try {
+                const restored = await command("systemctl", ["--user", "start", "ember-telegram.service"]);
+                if (restored.code !== 0)
+                    io.error.write("Previously active Telegram service could not be restored; reconcile it locally.\n");
+            } catch {
+                io.error.write("Previously active Telegram service restoration is unknown; reconcile it locally.\n");
+            }
+        }
     }
 }
 
@@ -218,12 +244,19 @@ async function telegramV2Config(
     dependencies: TelegramSetupDependencies,
 ): Promise<TelegramSurfaceConfig> {
     const packageRoot = fileURLToPath(new URL("../../../", import.meta.url));
-    const provider: TelegramProviderConfig = {
-        kind: binding.setup.provider.kind,
-        command: await (dependencies.resolveExecutable ?? resolveExecutable)(binding.setup.provider.command),
-        model: binding.setup.provider.model,
-        timeout_seconds: binding.setup.provider.timeoutSeconds,
-    };
+    const provider: TelegramProviderConfig =
+        binding.setup.provider.kind === "claude-code"
+            ? {
+                  kind: "claude-code",
+                  model: binding.setup.provider.model,
+                  timeout_seconds: binding.setup.provider.timeoutSeconds,
+              }
+            : {
+                  kind: binding.setup.provider.kind,
+                  command: await (dependencies.resolveExecutable ?? resolveExecutable)(binding.setup.provider.command),
+                  model: binding.setup.provider.model,
+                  timeout_seconds: binding.setup.provider.timeoutSeconds,
+              };
     return {
         config_version: 2,
         state_path: binding.setup.statePath,
@@ -234,7 +267,7 @@ async function telegramV2Config(
         poll_timeout_seconds: 30,
         provider,
         provider_kind: provider.kind,
-        provider_command: provider.command,
+        provider_command: provider.kind === "claude-code" ? "claude-code" : provider.command,
         provider_arguments: provider.model ? ["--model", provider.model] : [],
         provider_timeout_seconds: provider.timeout_seconds,
         working_directory: dependencies.workingDirectory ?? packageRoot,

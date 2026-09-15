@@ -10,6 +10,7 @@ import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
+import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { command, populatedState } from "./support.ts";
 
@@ -479,7 +480,7 @@ test("configured run checks lineage establishment under the acquired state lease
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
-test(":setup telegram is local, releases the lease, and resumes in a new runtime episode", async (t) => {
+test(":setup telegram is local, keeps no runtime open, and resumes conversation", async (t) => {
     const f = await fixture(t);
     const state = initialState("user");
     const store = new StateStore(f.state);
@@ -532,12 +533,28 @@ test(":setup telegram is local, releases the lease, and resumes in a new runtime
     );
     await waitingPromise;
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
+    const telegramLease = await store.acquireWriteLease();
+    const beforeTelegram = await store.load();
+    const telegram = startRuntime(beforeTelegram, "user", "relationship:user");
+    assert.equal(telegram.state.operations.runtimeEpisodes.at(-1)?.recoveryAccount.gapKind, "initial_start");
+    const telegramStarted = await store.commit(beforeTelegram.revision, telegram.state);
+    await store.commit(
+        telegramStarted.revision,
+        stopRuntime(telegramStarted, telegram.runtimeId, { reason: "telegram_update_complete" }),
+    );
+    await store.releaseWriteLease(telegramLease);
     permitQuit();
     assert.equal(await running, 0);
     assert.equal(handoffs, 1);
     const final = await store.load();
-    assert.equal(final.operations.runtimeEpisodes.length, 2);
+    assert.equal(final.operations.runtimeEpisodes.length, 1);
     assert.ok(final.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
+    assert.equal(
+        final.operations.runtimeEpisodes.some(
+            (episode) => episode.recoveryAccount.gapKind === "uncertain_interruption_boundary",
+        ),
+        false,
+    );
     assert.match(io.text(), /Telegram setup: cancelled\. Resuming conversation\./);
 });
 

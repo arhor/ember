@@ -32,12 +32,9 @@ export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";
 export const TELEGRAM_BOT_API_BASE_URL = "https://api.telegram.org";
 
-export interface TelegramProviderConfig {
-    kind: "codex" | "cursor" | "claude-code";
-    command: string;
-    model: string;
-    timeout_seconds: number;
-}
+export type TelegramProviderConfig =
+    | { kind: "codex" | "cursor"; command: string; model: string; timeout_seconds: number }
+    | { kind: "claude-code"; model: string; timeout_seconds: number };
 
 export interface TelegramSurfaceConfig {
     config_version: 1 | 2;
@@ -542,11 +539,15 @@ function validateLegacyProvider(value: Record<string, unknown>) {
 }
 
 function validateStructuredProvider(value: unknown): asserts value is TelegramProviderConfig {
-    if (!isObject(value) || !exactKeys(value, ["kind", "command", "model", "timeout_seconds"]))
-        throw new ValidationError("Telegram provider configuration is invalid");
+    if (!isObject(value)) throw new ValidationError("Telegram provider configuration is invalid");
     if (!["codex", "cursor", "claude-code"].includes(String(value.kind)))
         throw new ValidationError("Telegram provider kind is unsupported");
-    requireAbsolutePath(value.command, "Telegram provider command");
+    const fields =
+        value.kind === "claude-code"
+            ? ["kind", "model", "timeout_seconds"]
+            : ["kind", "command", "model", "timeout_seconds"];
+    if (!exactKeys(value, fields)) throw new ValidationError("Telegram provider configuration is invalid");
+    if (value.kind !== "claude-code") requireAbsolutePath(value.command, "Telegram provider command");
     if (typeof value.model !== "string" || ASCII_CONTROL_CHARACTER_PATTERN.test(value.model))
         throw new ValidationError("Telegram provider model is invalid");
 }
@@ -563,7 +564,7 @@ function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): Telegram
     return {
         ...config,
         provider_kind: provider.kind,
-        provider_command: provider.command,
+        provider_command: provider.kind === "claude-code" ? "claude-code" : provider.command,
         provider_arguments: provider.model ? ["--model", provider.model] : [],
         provider_timeout_seconds: provider.timeout_seconds,
     };

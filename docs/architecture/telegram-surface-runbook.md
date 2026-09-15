@@ -124,7 +124,11 @@ The wizard defaults to:
 Version 2 stores a structured `provider` block for `codex`, `cursor`, or `claude-code`, with
 the selected command, model, and timeout. Setup resolves a bare provider command through the
 trusted host's `PATH` and derives the worker entrypoint from the installed Ember package, so
-the service does not depend on the directory from which setup was invoked. Existing version-1 configuration, including the
+the service does not depend on the directory from which setup was invoked. Claude Code keeps
+its SDK-owned provider form and does not require a fictional process executable. On rerun,
+setup stops an active worker before private-chat discovery and explicitly restarts it after
+accepted configuration or unit drift so only one long poll owns updates and the live process
+uses the rendered files. Existing version-1 configuration, including the
 explicit `process` provider form, remains loadable and is normalized at the surface boundary.
 
 The manual procedure below remains useful for diagnosis and opt-in smoke testing.

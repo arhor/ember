@@ -826,10 +826,10 @@ Configured local CLI conversation intercepts only the literal `:setup telegram` 
 It cleanly stops the current runtime episode and releases the canonical writer lease before
 entering the Telegram trusted-host wizard. The command is neither provider input nor an
 ordinary interaction occurrence. After completion, cancellation, or a recoverable failure,
-the CLI acquires a lease, starts a new runtime episode over the same configured principal,
-scope, continuity binding, and conversation sidecar, then releases writer ownership while
-waiting for the next local interaction. CLI and Telegram interactions each reload current
-state and hold the writer lease only for their bounded work.
+the CLI resumes its input loop over the same configured principal, scope, continuity binding,
+and conversation sidecar. It holds neither a writer lease nor an open runtime episode while
+waiting for input. CLI and Telegram interactions each reload current state and create one
+lease-bounded runtime episode for their work, preserving the sequential recovery model.
 
 The wizard owns masked BotFather-token entry, mode-`0600` storage, bot/webhook preflight,
 short-code private-chat discovery, explicit mapping confirmation, configuration/unit drift
@@ -837,8 +837,12 @@ confirmation, exact-argument `systemctl --user` calls, and ledger-correlated rou
 observation. It derives principal, state path, provider, and scope from the verified setup
 binding. Its per-stage result keeps storage, preflight, mapping, rendering, installation,
 activation, and bounded polling for correlated delivery truth separate. Provider executables
-are resolved through `PATH` without a shell, while the worker entrypoint and working directory
-come from the installed package location rather than the caller's current directory. Declining service installation leaves a truthful
+for Codex and Cursor are resolved through `PATH` without a shell; Claude Code retains its
+SDK-owned runtime representation. The worker entrypoint and working directory come from the
+installed package location rather than the caller's current directory. An already-active
+Telegram worker is explicitly stopped before mapping discovery and restarted after changed
+configuration or unit files are installed, preventing competing long polls and stale process
+configuration. Declining service installation leaves a truthful
 `configured_inactive` result and never blocks ordinary Ember use.
 
 The guided flow writes Telegram surface configuration version 2 with a structured provider

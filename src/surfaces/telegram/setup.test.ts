@@ -78,9 +78,13 @@ test("guided Telegram setup keeps the token out of v2 config and preserves inact
 });
 
 test("round-trip verification polls correlated delivery while the service stays active", async () => {
-    const files = new Map<string, string>();
+    const files = new Map<string, string>([
+        ["/tmp/c2", "drifted config"],
+        ["/tmp/u2", "drifted unit"],
+    ]);
     let observations = 0;
     let activeChecks = 0;
+    const serviceActions: string[] = [];
     const result = await runTelegramSetup(
         { setup, scope: "relationship:user", configPath: "/tmp/c2", tokenPath: "/tmp/t2", unitPath: "/tmp/u2" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
@@ -97,6 +101,7 @@ test("round-trip verification polls correlated delivery while the service stays 
                 getUpdates: async () => [candidate()],
             }),
             command: async (_file, args) => {
+                serviceActions.push(args[1]!);
                 if (args[1] === "is-active") activeChecks++;
                 return { code: 0, signal: null };
             },
@@ -107,6 +112,46 @@ test("round-trip verification polls correlated delivery while the service stays 
     assert.equal(result.status, "complete");
     assert.equal(observations, 2);
     assert.equal(activeChecks, 2); // Initial inspection plus the bounded verification poll.
+    assert.ok(serviceActions.indexOf("stop") < serviceActions.indexOf("restart"));
+    assert.equal(serviceActions.includes("enable"), false);
+});
+
+test("Claude Code v2 setup does not resolve or persist a process executable", async () => {
+    const files = new Map<string, string>();
+    const claudeSetup: SetupConfig = {
+        ...setup,
+        provider: { kind: "claude-code", command: "claude-code", model: "sonnet", timeoutSeconds: 60 },
+    };
+    const result = await runTelegramSetup(
+        {
+            setup: claudeSetup,
+            scope: "relationship:user",
+            configPath: "/tmp/cc",
+            tokenPath: "/tmp/ct",
+            unitPath: "/tmp/cu",
+        },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            resolveExecutable: async () => assert.fail("Claude Code must not resolve a process executable"),
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async (prompt) => !prompt.startsWith("Install"),
+            command: async () => ({ code: 1, signal: null }),
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => [candidate()],
+            }),
+        },
+    );
+    assert.equal(result.status, "configured_inactive");
+    assert.deepEqual(JSON.parse(files.get("/tmp/cc")!).provider, {
+        kind: "claude-code",
+        model: "sonnet",
+        timeout_seconds: 60,
+    });
 });
 
 test("guided Telegram setup executes fixed systemctl arrays and confirms observed delivery", async () => {
@@ -129,7 +174,10 @@ test("guided Telegram setup executes fixed systemctl arrays and confirms observe
             }),
             command: async (file, args) => {
                 commands.push([file, args]);
-                return { code: 0, signal: null };
+                return {
+                    code: args[1] === "is-enabled" || args[1] === "is-active" ? 1 : 0,
+                    signal: null,
+                };
             },
             observeRoundTrip: async (_path, updateId) => updateId === 42,
         },
