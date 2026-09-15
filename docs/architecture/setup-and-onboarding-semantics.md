@@ -820,6 +820,37 @@ provider change does not create a second onboarding lifecycle or hide a failed b
 decision. Explicit lower-level callers may inject
 deterministic evaluators for testing while core transition validation remains unchanged.
 
+## Implemented guided Telegram setup (#255)
+
+Configured local CLI conversation intercepts only the literal `:setup telegram` command.
+Because the idle CLI holds neither a canonical writer lease nor an open runtime episode, the
+command enters the Telegram trusted-host wizard without inventing a cognition/runtime boundary.
+It is neither provider input nor an ordinary interaction occurrence. After completion,
+cancellation, or a recoverable failure, the CLI resumes its input loop over the same configured
+principal, scope, continuity binding, and conversation sidecar. CLI and Telegram interactions
+each reload current state and create one lease-bounded runtime episode for their actual work,
+preserving the sequential recovery model.
+
+The wizard owns masked BotFather-token entry, mode-`0600` storage, bot/webhook preflight,
+short-code private-chat discovery, explicit mapping confirmation, configuration/unit drift
+confirmation, exact-argument `systemctl --user` calls, and ledger-correlated round-trip
+observation. It derives principal, state path, provider, and scope from the verified setup
+binding. Its per-stage result keeps storage, preflight, mapping, rendering, installation,
+activation, and bounded polling for correlated delivery truth separate. Provider executables
+for Codex and Cursor are resolved through `PATH` without a shell; Claude Code retains its
+SDK-owned runtime representation. The worker entrypoint and working directory come from the
+installed package location rather than the caller's current directory. An already-active
+Telegram worker is explicitly stopped before mapping discovery and restarted after changed
+configuration or unit files are installed, preventing competing long polls and stale process
+configuration. Mapping discovery polls for a bounded interval without advancing Telegram's
+acknowledgement offset, so an earlier pending message such as `/start` cannot cause immediate
+failure and is not silently consumed by setup. Declining final service activation leaves a
+previously active worker stopped and returns truthful `configured_inactive` state.
+
+The guided flow writes Telegram surface configuration version 2 with a structured provider
+block. The Telegram loader continues to accept and normalize version 1, including its
+explicit process-provider representation. Neither representation stores the bot token.
+
 ## Handoff to epic tasks
 
 - **#253** should implement deterministic host bootstrap, explicit restore/create,
@@ -827,8 +858,8 @@ deterministic evaluators for testing while core transition validation remains un
 - **#254** should implement progressive Ember-led onboarding as ordinary conversation,
   routing durable learned meaning through the memory-formation semantics already
   established by #220.
-- **#255** should compose secret-safe Telegram setup from typed host operations while
-  preserving the existing Telegram surface boundary.
+- **#255** implements secret-safe Telegram setup from typed host operations while preserving
+  the existing Telegram surface boundary.
 - **#256** should prove fresh-create, fresh-restore, rerun, interruption, partial-failure,
   and restart behavior end to end.
 

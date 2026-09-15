@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chmod, copyFile, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
@@ -10,6 +10,7 @@ import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
+import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
 import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { command, populatedState } from "./support.ts";
 
@@ -167,7 +168,7 @@ for (const override of ["none", "config", "state"]) {
             { env },
         );
         assert.equal(result.code, 0, JSON.stringify(result));
-        assert.equal((await loadSetupConfig(config)).statePath, state);
+        assert.equal((await loadSetupConfig(config)).statePath, await realpath(state));
         const before = await readFile(state, "utf8");
         const rerun = await command(["setup", "--config", config, "--intent", "use-existing"], { env });
         assert.equal(rerun.code, 0, JSON.stringify(rerun));
@@ -479,6 +480,84 @@ test("configured run checks lineage establishment under the acquired state lease
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
+test(":setup telegram is local, keeps no runtime open, and resumes conversation", async (t) => {
+    const f = await fixture(t);
+    const state = initialState("user");
+    const store = new StateStore(f.state);
+    await store.create(state);
+    let handoffs = 0;
+    let permitQuit!: () => void;
+    let resumed!: () => void;
+    let waiting!: () => void;
+    const permitQuitPromise = new Promise<void>((resolvePermit) => (permitQuit = resolvePermit));
+    const resumedPromise = new Promise<void>((resolveResumed) => (resumed = resolveResumed));
+    const waitingPromise = new Promise<void>((resolveWaiting) => (waiting = resolveWaiting));
+    const io = capture();
+    io.input = Readable.from(
+        (async function* () {
+            yield ":setup telegram\n";
+            await resumedPromise;
+            waiting();
+            await permitQuitPromise;
+            yield ":quit\n";
+        })(),
+    );
+    const running = runCliSurface(
+        {
+            statePath: f.state,
+            principal: "user",
+            scope: "relationship:user",
+            providerKind: "process",
+            providerCommand: "unused",
+            providerArgs: [],
+            providerTimeoutSeconds: 1,
+            configuredSetupHandoff: async () => {
+                handoffs++;
+                assert.deepEqual(await store.lockStatus(), { status: "absent" });
+                resumed();
+                return {
+                    status: "cancelled",
+                    stages: {
+                        token_storage: "not_attempted",
+                        bot_preflight: "not_attempted",
+                        mapping: "not_attempted",
+                        configuration: "not_attempted",
+                        unit_installation: "not_attempted",
+                        activation: "not_attempted",
+                        round_trip: "not_attempted",
+                    },
+                };
+            },
+        },
+        io,
+    );
+    await waitingPromise;
+    assert.deepEqual(await store.lockStatus(), { status: "absent" });
+    const telegramLease = await store.acquireWriteLease();
+    const beforeTelegram = await store.load();
+    const telegram = startRuntime(beforeTelegram, "user", "relationship:user");
+    assert.equal(telegram.state.operations.runtimeEpisodes.at(-1)?.recoveryAccount.gapKind, "initial_start");
+    const telegramStarted = await store.commit(beforeTelegram.revision, telegram.state);
+    await store.commit(
+        telegramStarted.revision,
+        stopRuntime(telegramStarted, telegram.runtimeId, { reason: "telegram_update_complete" }),
+    );
+    await store.releaseWriteLease(telegramLease);
+    permitQuit();
+    assert.equal(await running, 0);
+    assert.equal(handoffs, 1);
+    const final = await store.load();
+    assert.equal(final.operations.runtimeEpisodes.length, 1);
+    assert.ok(final.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
+    assert.equal(
+        final.operations.runtimeEpisodes.some(
+            (episode) => episode.recoveryAccount.gapKind === "uncertain_interruption_boundary",
+        ),
+        false,
+    );
+    assert.match(io.text(), /Telegram setup: cancelled\. Resuming conversation\./);
+});
+
 test("CLI stops automatic onboarding reflection immediately after closure", async (t) => {
     const f = await fixture(t);
     const state = initialState("user");
@@ -510,6 +589,9 @@ test("CLI stops automatic onboarding reflection immediately after closure", asyn
     assert.equal((await new OnboardingWorkStore(f.state).load())?.status, "closed");
     assert.equal(await readFile(counter, "utf8"), "1");
     assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
+    const runtimes = (await new StateStore(f.state).load()).operations.runtimeEpisodes;
+    assert.equal(runtimes.length, 2);
+    assert.ok(runtimes.every((runtime) => runtime.stopReason === "cli_interaction_complete"));
 });
 
 test("missing previously available or possibly created state is never silently recreated", async (t) => {

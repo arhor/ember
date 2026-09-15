@@ -563,7 +563,7 @@ test("CLI run should reject malformed quote and stop cleanly when command parser
             attempted.stderr.includes("command rejected"),
             state.operations.runtimeEpisodes.at(-1).stopReason,
         ],
-        [0, true, "input_eof"],
+        [0, true, "cli_interaction_complete"],
     );
 });
 test("CLI correct should create attributable successor when current fact is corrected", async () => {

@@ -18,6 +18,7 @@ import { validateProviderResult } from "../../providers/contract.ts";
 import { createCursorProvider } from "../../providers/cursor.ts";
 import { startRuntime } from "../../runtime/runtime.ts";
 import { exactKeys, isObject } from "../../util.ts";
+import { runTelegramSetup } from "../telegram/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export interface SetupProvider {
@@ -467,6 +468,7 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
             providerModel: config.provider.model,
             providerTimeoutSeconds: config.provider.timeoutSeconds,
+            configuredSetupHandoff: () => runTelegramSetup({ setup: config, scope: args.scope }, io),
         },
         io,
     );

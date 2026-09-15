@@ -108,6 +108,33 @@ and are not automatically projected into cognition.
 
 ## Bot setup
 
+For configured Ember conversation, enter the literal local command `:setup telegram`.
+The trusted-host wizard explains each mutation, reads the BotFather token through masked
+TTY input, discovers a private chat using a one-time displayed code, and asks before mapping,
+replacing drifted files, installing the unit, or starting the service. Discovery is bounded
+and does not advance Telegram's update acknowledgement offset merely to skip an earlier
+non-matching message such as `/start`. Do not paste the token into conversation. Declining
+activation retains the verified mapping and token, leaves the worker stopped, and reports the
+surface as configured and inactive.
+
+The wizard defaults to:
+
+- `~/.ember/config/telegram.json` (surface configuration version 2);
+- `~/.ember/secrets/telegram.token` (mode `0600`); and
+- `~/.config/systemd/user/ember-telegram.service`.
+
+Version 2 stores a structured `provider` block for `codex`, `cursor`, or `claude-code`, with
+the selected command, model, and timeout. Setup resolves a bare provider command through the
+trusted host's `PATH` and derives the worker entrypoint from the installed Ember package, so
+the service does not depend on the directory from which setup was invoked. Claude Code keeps
+its SDK-owned provider form and does not require a fictional process executable. On rerun,
+setup stops an active worker before private-chat discovery and explicitly restarts it after
+accepted configuration or unit drift so only one long poll owns updates and the live process
+uses the rendered files. Existing version-1 configuration, including the
+explicit `process` provider form, remains loadable and is normalized at the surface boundary.
+
+The manual procedure below remains useful for diagnosis and opt-in smoke testing.
+
 1. Create a bot with Telegram's official `@BotFather` flow and retain the bot token
    locally.
 2. Send a message to the bot from the private Telegram account that will map to the

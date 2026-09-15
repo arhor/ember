@@ -69,7 +69,7 @@ export function projectOnboardingWork(document: OnboardingWorkDocument | null): 
         work_version: 1,
         status: "active",
         guidance:
-            "Treat onboarding as optional ordinary conversation. Address the user's current request first. Invite at most one useful open topic; respect deferred and declined topics, and never request reusable secrets.",
+            "Treat onboarding as optional ordinary conversation. Address the user's current request first. Invite at most one useful open topic; respect deferred and declined topics, and never request reusable secrets. When Telegram is wanted on the local CLI, you may explain BotFather and invite the exact local command :setup telegram; never ask for its token in conversation.",
         topics: document.topics.map(({ topic, status }) => ({ topic, status })),
     };
 }

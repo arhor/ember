@@ -32,18 +32,23 @@ export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";
 export const TELEGRAM_BOT_API_BASE_URL = "https://api.telegram.org";
 
+export type TelegramProviderConfig =
+    | { kind: "codex" | "cursor"; command: string; model: string; timeout_seconds: number }
+    | { kind: "claude-code"; model: string; timeout_seconds: number };
+
 export interface TelegramSurfaceConfig {
-    config_version: 1;
+    config_version: 1 | 2;
     state_path: string;
     principal: string;
     activeScope: string;
     chat_id: number;
     token_file: string;
     poll_timeout_seconds: number;
-    provider_kind: "process" | "codex" | "cursor";
+    provider_kind: "process" | "codex" | "cursor" | "claude-code";
     provider_command: string;
     provider_arguments: string[];
     provider_timeout_seconds: number;
+    provider?: TelegramProviderConfig;
     working_directory: string;
     node_path: string;
     surface_entrypoint: string;
@@ -188,7 +193,7 @@ export async function loadTelegramSurfaceConfig(path: string): Promise<TelegramS
         throw error;
     }
     validateTelegramSurfaceConfig(value);
-    return value;
+    return normalizeTelegramSurfaceConfig(value);
 }
 
 export async function readTelegramBotToken(path: string) {
@@ -464,7 +469,7 @@ export function renderTelegramSurfaceUnit(config: TelegramSurfaceConfig, configP
 
 export function validateTelegramSurfaceConfig(value: unknown): asserts value is TelegramSurfaceConfig {
     if (!isObject(value)) throw new ValidationError("Telegram surface config must be an object");
-    const fields = [
+    const legacyFields = [
         "activeScope",
         "chat_id",
         "config_version",
@@ -481,31 +486,36 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         "token_file",
         "working_directory",
     ];
-    if (!exactKeys(value, fields)) throw new ValidationError("Telegram surface config contains unsupported fields");
-    if (value.config_version !== 1) throw new ValidationError("Telegram surface config version is unsupported");
+    const v2Fields = legacyFields.filter((field) => !field.startsWith("provider_")).concat("provider");
+    if (
+        (value.config_version !== 1 || !exactKeys(value, legacyFields)) &&
+        (value.config_version !== 2 ||
+            (!exactKeys(value, v2Fields) &&
+                !exactKeys(value, [
+                    ...v2Fields,
+                    "provider_kind",
+                    "provider_command",
+                    "provider_arguments",
+                    "provider_timeout_seconds",
+                ])))
+    )
+        throw new ValidationError("Telegram surface config contains unsupported fields or version");
     validateOpaque(value.principal, "Telegram principal", 256);
     validateOpaque(value.activeScope, "Telegram active scope", 256);
     validateChatId(value.chat_id);
     requireAbsolutePath(value.state_path, "Telegram state path");
     requireAbsolutePath(value.token_file, "Telegram token file");
-    requireAbsolutePath(value.provider_command, "Telegram provider command");
     requireAbsolutePath(value.working_directory, "Telegram working directory");
     requireAbsolutePath(value.node_path, "Telegram Node path");
     requireAbsolutePath(value.surface_entrypoint, "Telegram surface entrypoint");
-    if (!["process", "codex", "cursor"].includes(value.provider_kind as string))
-        throw new ValidationError("Telegram provider kind is unsupported");
-    if (!Array.isArray(value.provider_arguments) || value.provider_arguments.some((arg) => typeof arg !== "string"))
-        throw new ValidationError("Telegram provider arguments must be a string list");
-    for (const argument of value.provider_arguments as string[]) {
-        if (ASCII_CONTROL_CHARACTER_PATTERN.test(argument))
-            throw new ValidationError("Telegram provider argument contains a control character");
-    }
+    if (value.config_version === 1) validateLegacyProvider(value);
+    else validateStructuredProvider(value.provider);
     validatePollTimeout(value.poll_timeout_seconds);
     if (
-        typeof value.provider_timeout_seconds !== "number" ||
-        !Number.isFinite(value.provider_timeout_seconds) ||
-        value.provider_timeout_seconds <= 0 ||
-        value.provider_timeout_seconds > MAX_PROVIDER_TIMEOUT_SECONDS
+        typeof providerTimeout(value) !== "number" ||
+        !Number.isFinite(providerTimeout(value)) ||
+        providerTimeout(value) <= 0 ||
+        providerTimeout(value) > MAX_PROVIDER_TIMEOUT_SECONDS
     )
         throw new ValidationError(`Telegram provider timeout must be in (0, ${MAX_PROVIDER_TIMEOUT_SECONDS}]`);
     if (
@@ -517,10 +527,61 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         throw new ValidationError("Telegram stop timeout must be an integer between 1 and 3600 seconds");
 }
 
+function validateLegacyProvider(value: Record<string, unknown>) {
+    requireAbsolutePath(value.provider_command, "Telegram provider command");
+    if (!["process", "codex", "cursor"].includes(value.provider_kind as string))
+        throw new ValidationError("Telegram provider kind is unsupported");
+    if (!Array.isArray(value.provider_arguments) || value.provider_arguments.some((arg) => typeof arg !== "string"))
+        throw new ValidationError("Telegram provider arguments must be a string list");
+    for (const argument of value.provider_arguments as string[])
+        if (ASCII_CONTROL_CHARACTER_PATTERN.test(argument))
+            throw new ValidationError("Telegram provider argument contains a control character");
+}
+
+function validateStructuredProvider(value: unknown): asserts value is TelegramProviderConfig {
+    if (!isObject(value)) throw new ValidationError("Telegram provider configuration is invalid");
+    if (!["codex", "cursor", "claude-code"].includes(String(value.kind)))
+        throw new ValidationError("Telegram provider kind is unsupported");
+    const fields =
+        value.kind === "claude-code"
+            ? ["kind", "model", "timeout_seconds"]
+            : ["kind", "command", "model", "timeout_seconds"];
+    if (!exactKeys(value, fields)) throw new ValidationError("Telegram provider configuration is invalid");
+    if (value.kind !== "claude-code") requireAbsolutePath(value.command, "Telegram provider command");
+    if (typeof value.model !== "string" || ASCII_CONTROL_CHARACTER_PATTERN.test(value.model))
+        throw new ValidationError("Telegram provider model is invalid");
+}
+
+function providerTimeout(value: Record<string, unknown>) {
+    return value.config_version === 2 && isObject(value.provider)
+        ? value.provider.timeout_seconds
+        : value.provider_timeout_seconds;
+}
+
+function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): TelegramSurfaceConfig {
+    if (config.config_version === 1) return config;
+    const provider = config.provider!;
+    return {
+        ...config,
+        provider_kind: provider.kind,
+        provider_command: provider.kind === "claude-code" ? "claude-code" : provider.command,
+        provider_arguments: provider.model ? ["--model", provider.model] : [],
+        provider_timeout_seconds: provider.timeout_seconds,
+    };
+}
+
 function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
     const adapter = { command: config.provider_command, arguments_: config.provider_arguments };
     if (config.provider_kind === "codex") return createCodexProvider(adapter);
     if (config.provider_kind === "cursor") return createCursorProvider(adapter);
+    if (config.provider_kind === "claude-code")
+        return async (request, options) => {
+            const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
+            return createClaudeCodeProvider(config.provider?.model ? { model: config.provider.model } : {})(
+                request,
+                options,
+            );
+        };
     return createProcessProvider(adapter);
 }
 
@@ -600,7 +661,7 @@ function parseTelegramDestination(value: string | null) {
     return { chatId, messageThreadId };
 }
 
-function validateTelegramToken(token: string) {
+export function validateTelegramToken(token: string) {
     if (!/^\d{5,}:[A-Za-z0-9_-]{20,}$/.test(token))
         throw new ValidationError("Telegram bot token has an invalid shape");
 }
