@@ -2,12 +2,14 @@ import type { Readable, Writable } from "node:stream";
 
 import { createInterface } from "node:readline";
 
+import type { GoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
+import { selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
 import {
@@ -46,6 +48,7 @@ export interface CliSurfaceConfig {
     memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     configuredSetupHandoff?: () => Promise<TelegramSetupResult>;
+    googleCalendarConfig?: GoogleCalendarConfig;
 }
 
 interface CliSurfaceIo {
@@ -263,10 +266,19 @@ function configuredCognitionProvider(config: CliSurfaceConfig) {
     const adapter = { command: config.providerCommand, arguments_: config.providerArgs };
     const claude: ProviderInvoker = async (request, options) => {
         const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
-        return await createClaudeCodeProvider(config.providerModel ? { model: config.providerModel } : {})(
-            request,
-            options,
-        );
+        return await createClaudeCodeProvider({
+            ...(config.providerModel ? { model: config.providerModel } : {}),
+            ...(config.googleCalendarConfig
+                ? {
+                      selectCapabilities: (selectedRequest) =>
+                          selectGoogleCalendarCapability(config.googleCalendarConfig, {
+                              principal: selectedRequest.projection.principal,
+                              scope: selectedRequest.projection.activeScope,
+                              surface: selectedRequest.projection.surface,
+                          }),
+                  }
+                : {}),
+        })(request, options);
     };
     return {
         providerLabel: providerLabel(config.providerCommand),

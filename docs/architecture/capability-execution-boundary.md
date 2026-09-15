@@ -195,3 +195,19 @@ authority.
 
 Persistent SDK agents, sessions, memory, delegation, generic plugin discovery, and a
 generalized permission language remain outside this boundary.
+
+## Read-only Google Calendar capability
+
+Issue #231 adds the first external read capability behind this boundary. Ember calls
+Google Calendar REST directly with the single `calendar.readonly` OAuth scope. The
+model supplies only a positive RFC 3339 UTC interval of at most 31 days; Ember injects
+the configured calendar and timezone, requests at most 20 ordered expanded events,
+and permits one request per cognition.
+
+The adapter returns only observation time, a hashed source/event correlation ID,
+configured source label, interval, collection freshness evidence, truncation, and
+title/status/start/end/source-update evidence. Descriptions, attendees, locations,
+links, conference data, calendar addresses, credentials, and Google errors do not
+cross the capability boundary. `source_unavailable` and `source_stale` are explicit
+failure outcomes and never carry events. Observations remain episode-local tool
+evidence and are neither cached nor promoted into canonical state automatically.

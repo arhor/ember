@@ -29,6 +29,7 @@ import { StateStore } from "../../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { assertUnreachable, cloneState } from "../../util.ts";
+import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
 import { Commands, CommandSpecs } from "./model.ts";
 import { setupMain, setupRunMain } from "./setup.ts";
 import { runCliSurface } from "./surface.ts";
@@ -38,6 +39,7 @@ export async function main(
     io: CliIo = { input: process.stdin, output: process.stdout, error: process.stderr },
 ): Promise<number> {
     try {
+        if (argv[0] === "setup-google-calendar") return await setupGoogleCalendarMain(argv.slice(1), io);
         const args = parseArgs(argv);
         switch (args.command) {
             case Commands.SETUP:

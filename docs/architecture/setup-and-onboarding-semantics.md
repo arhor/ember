@@ -33,6 +33,14 @@ Setup therefore must not collapse these distinct questions:
 5. **What should the agent and the user learn about one another through ordinary conversation?**
 6. **Which optional host integrations should be configured?**
 
+The current optional Google Calendar integration is configured by the trusted-host
+`ember setup-google-calendar` command after lineage setup. Its versioned config binds
+one calendar to the setup lineage, principal, scope, and an explicit CLI/Telegram
+surface allowlist. The loopback installed-app OAuth flow uses PKCE and exact state
+verification, stores its refresh token in a dedicated mode-0600 file, keeps access
+tokens in memory, and activates only after a bounded read succeeds. Disabling the
+integration preserves credentials for explicit recovery or reconfiguration.
+
 The central rule is:
 
 > **Trusted host setup and the Ember runtime own machine mechanics; the continuing agent
