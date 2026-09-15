@@ -90,6 +90,35 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
         config: "host.json",
         scope: "test",
     });
+    assert.deepEqual(
+        parseArgs([
+            "setup-google-calendar",
+            "--setup-config",
+            "/tmp/setup.json",
+            "--config",
+            "/tmp/calendar.json",
+            "--surface",
+            "local_cli",
+            "--surface",
+            "telegram_bot",
+            "--disable",
+        ]),
+        {
+            command: "setup-google-calendar",
+            setupConfig: "/tmp/setup.json",
+            config: "/tmp/calendar.json",
+            clientId: undefined,
+            clientSecretFile: undefined,
+            refreshTokenFile: undefined,
+            calendarId: undefined,
+            calendarLabel: undefined,
+            timezone: undefined,
+            scope: undefined,
+            surfaces: ["local_cli", "telegram_bot"],
+            disable: true,
+            reconfigure: false,
+        },
+    );
     const explicit = parseArgs([
         "run",
         "--state",
@@ -248,6 +277,21 @@ test("rerun verifies again while preserving canonical bytes and rejects an impli
     assert.equal(await setupMain([...rerun, "--confirm-provider-change"], capture(), verified), 0);
     assert.equal((await loadSetupConfig(f.config)).provider.kind, "cursor");
     assert.equal(await readFile(f.state, "utf8"), before);
+});
+
+test("rerunning setup preserves a v2 Google Calendar binding", async (t) => {
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const existing = await loadSetupConfig(f.config);
+    const calendarPath = join(f.directory, "google-calendar.json");
+    await writeFile(
+        f.config,
+        `${JSON.stringify({ ...existing, version: 2, googleCalendarConfigPath: calendarPath }, null, 2)}\n`,
+    );
+    await setupMain([...f.args, "--intent", "use-existing", "--provider", "codex"], capture(), verified);
+    const rerun = await loadSetupConfig(f.config);
+    assert.equal(rerun.version, 2);
+    assert.equal(rerun.googleCalendarConfigPath, calendarPath);
 });
 
 test("restore attaches validated state without rewriting meaning or sidecars and requires a continuity choice", async (t) => {

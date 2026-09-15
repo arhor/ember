@@ -81,11 +81,30 @@ test("calendar binding constructs a bounded request and redacts external identif
 
 test("calendar selection and ranges preserve standing-authority boundaries", async () => {
     assert.equal(
-        selectGoogleCalendarCapability(config, { principal: "mallory", scope: "private", surface: "local_cli" }).length,
+        selectGoogleCalendarCapability(config, {
+            lineageId: "lineage-test",
+            principal: "mallory",
+            scope: "private",
+            surface: "local_cli",
+        }).length,
         0,
     );
     assert.equal(
-        selectGoogleCalendarCapability(config, { principal: "alice", scope: "other", surface: "local_cli" }).length,
+        selectGoogleCalendarCapability(config, {
+            lineageId: "lineage-test",
+            principal: "alice",
+            scope: "other",
+            surface: "local_cli",
+        }).length,
+        0,
+    );
+    assert.equal(
+        selectGoogleCalendarCapability(config, {
+            lineageId: "lineage-other",
+            principal: "alice",
+            scope: "private",
+            surface: "local_cli",
+        }).length,
         0,
     );
     const capability = createGoogleCalendarCapability(config);

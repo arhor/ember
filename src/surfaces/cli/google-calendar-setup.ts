@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { isAbsolute, resolve } from "node:path";
 
 import type { GoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
-import type { CliIo } from "./model.ts";
+import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
 import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
 import {
@@ -18,13 +18,12 @@ import { loadSetupConfig } from "./setup.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 
-export async function setupGoogleCalendarMain(argv: string[], io: CliIo): Promise<number> {
-    const options = parseOptions(argv);
-    const setupPath = resolve(required(options, "--setup-config"));
-    const configPath = resolve(required(options, "--config"));
+export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io: CliIo): Promise<number> {
+    const setupPath = resolve(args.setupConfig);
+    const configPath = resolve(args.config);
     const setup = await loadSetupConfig(setupPath);
     if (!setup) throw new ValidationError("setup-google-calendar requires an existing setup lineage");
-    if (options.has("--disable")) {
+    if (args.disable) {
         const existing = JSON.parse(await readFile(configPath, "utf8")) as GoogleCalendarConfig;
         await durableWrite(configPath, `${JSON.stringify({ ...existing, enabled: false }, null, 2)}\n`);
         io.output.write("Google Calendar integration disabled; credentials were preserved.\n");
@@ -32,19 +31,22 @@ export async function setupGoogleCalendarMain(argv: string[], io: CliIo): Promis
     }
     try {
         await readFile(configPath, "utf8");
-        if (!options.has("--reconfigure"))
+        if (!args.reconfigure)
             throw new ValidationError("existing Google Calendar configuration requires --reconfigure");
     } catch (error) {
         if (error instanceof ValidationError) throw error;
         if (!isMissing(error)) throw error;
     }
-    const surfaces = options.get("--surface") ?? [];
+    const surfaces = args.surfaces;
     if (!surfaces.length || surfaces.some((surface) => surface !== "local_cli" && surface !== "telegram_bot"))
         throw new ValidationError("at least one --surface local_cli|telegram_bot is required");
-    const clientId = required(options, "--client-id");
-    const clientSecretFile = absolute(required(options, "--client-secret-file"));
-    const refreshTokenFile = absolute(required(options, "--refresh-token-file"));
-    const scope = required(options, "--scope");
+    const clientId = required(args.clientId, "--client-id");
+    const clientSecretFile = absolute(required(args.clientSecretFile, "--client-secret-file"));
+    const requestedRefreshTokenFile = absolute(required(args.refreshTokenFile, "--refresh-token-file"));
+    const refreshTokenFile = args.reconfigure
+        ? `${requestedRefreshTokenFile}.${base64Url(randomBytes(12))}`
+        : requestedRefreshTokenFile;
+    const scope = required(args.scope, "--scope");
     const verifier = base64Url(randomBytes(48));
     const state = base64Url(randomBytes(32));
     const callback = await awaitAuthorizationCode(clientId, verifier, state, io);
@@ -85,9 +87,9 @@ export async function setupGoogleCalendarMain(argv: string[], io: CliIo): Promis
             .update(`${setup.lineageId}\0${scope}\0${surfaces.join(",")}`)
             .digest("hex")
             .slice(0, 24)}`,
-        calendar_id: required(options, "--calendar-id"),
-        calendar_label: required(options, "--calendar-label"),
-        timezone: required(options, "--timezone"),
+        calendar_id: required(args.calendarId, "--calendar-id"),
+        calendar_label: required(args.calendarLabel, "--calendar-label"),
+        timezone: required(args.timezone, "--timezone"),
         client_id: clientId,
         client_secret_file: clientSecretFile,
         refresh_token_file: refreshTokenFile,
@@ -164,43 +166,7 @@ async function awaitAuthorizationCode(clientId: string, verifier: string, expect
     });
 }
 
-function parseOptions(argv: string[]) {
-    const allowed = new Set([
-        "--setup-config",
-        "--config",
-        "--client-id",
-        "--client-secret-file",
-        "--refresh-token-file",
-        "--calendar-id",
-        "--calendar-label",
-        "--timezone",
-        "--scope",
-        "--surface",
-        "--disable",
-        "--reconfigure",
-    ]);
-    const values = new Map<string, string[]>();
-    for (let index = 0; index < argv.length; index += 1) {
-        const flag = argv[index]!;
-        if (!allowed.has(flag)) throw new ValidationError(`unsupported setup-google-calendar option: ${flag}`);
-        if (flag === "--disable" || flag === "--reconfigure") {
-            values.set(flag, []);
-            continue;
-        }
-        if (!flag.startsWith("--") || index + 1 >= argv.length)
-            throw new ValidationError(`malformed setup-google-calendar option: ${flag}`);
-        const value = argv[++index]!;
-        if (flag !== "--surface" && values.has(flag)) throw new ValidationError(`${flag} must not be repeated`);
-        values.set(flag, [...(values.get(flag) ?? []), value]);
-    }
-    return {
-        has: (key: string) => values.has(key),
-        get: (key: string) => values.get(key),
-        value: (key: string) => values.get(key)?.at(-1),
-    };
-}
-function required(options: ReturnType<typeof parseOptions>, flag: string) {
-    const value = options.value(flag);
+function required(value: string | undefined, flag: string) {
     if (!value) throw new ValidationError(`${flag} is required`);
     return value;
 }

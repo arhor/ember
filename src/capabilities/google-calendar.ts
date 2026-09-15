@@ -95,12 +95,13 @@ export function validateGoogleCalendarConfig(value: unknown): asserts value is G
 
 export function selectGoogleCalendarCapability(
     config: GoogleCalendarConfig | undefined,
-    context: Pick<CapabilityContext, "principal" | "scope" | "surface">,
+    context: Pick<CapabilityContext, "principal" | "scope" | "surface"> & { lineageId: string },
     dependencies: Partial<Dependencies> = {},
 ): CapabilityBinding[] {
     if (
         !config?.enabled ||
         config.principal !== context.principal ||
+        config.setup_lineage_id !== context.lineageId ||
         config.scope !== context.scope ||
         !config.surfaces.includes(context.surface as never)
     )

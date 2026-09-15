@@ -293,7 +293,8 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
         candidate.lineage.establishedAt = existing.establishedAt;
     }
     const config: SetupConfig = {
-        version: 1,
+        version: existing?.version ?? 1,
+        ...(existing?.version === 2 ? { googleCalendarConfigPath: existing.googleCalendarConfigPath } : {}),
         intent: existing?.intent ?? intent,
         statePath,
         principal,
@@ -478,6 +479,8 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
         throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
     const googleCalendarConfig =
         config.version === 2 ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath!) : undefined;
+    if (googleCalendarConfig && googleCalendarConfig.setup_lineage_id !== config.lineageId)
+        throw new ValidationError("Google Calendar configuration belongs to a different setup lineage");
     return await runCliSurface(
         {
             statePath: config.statePath,

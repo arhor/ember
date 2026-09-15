@@ -273,6 +273,7 @@ function configuredCognitionProvider(config: CliSurfaceConfig) {
                       selectCapabilities: (selectedRequest) =>
                           selectGoogleCalendarCapability(config.googleCalendarConfig, {
                               principal: selectedRequest.projection.principal,
+                              lineageId: selectedRequest.projection.lineage.lineageId,
                               scope: selectedRequest.projection.activeScope,
                               surface: selectedRequest.projection.surface,
                           }),

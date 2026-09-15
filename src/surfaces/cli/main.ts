@@ -11,6 +11,7 @@ import type {
     LockStatusArgs,
     QuarantineStaleLockArgs,
     RunArgs,
+    SetupGoogleCalendarArgs,
 } from "./model.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
@@ -39,11 +40,12 @@ export async function main(
     io: CliIo = { input: process.stdin, output: process.stdout, error: process.stderr },
 ): Promise<number> {
     try {
-        if (argv[0] === "setup-google-calendar") return await setupGoogleCalendarMain(argv.slice(1), io);
         const args = parseArgs(argv);
         switch (args.command) {
             case Commands.SETUP:
                 return await setupMain(args, io);
+            case Commands.SETUP_GOOGLE_CALENDAR:
+                return await setupGoogleCalendarMain(args, io);
             case Commands.INIT:
                 return await onInit(args, io);
             case Commands.RUN:
@@ -395,6 +397,24 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             confirmProviderChange: values["--confirm-provider-change"] === true,
             help: values["--help"] === true,
         };
+    }
+
+    if (command === Commands.SETUP_GOOGLE_CALENDAR) {
+        return {
+            command,
+            setupConfig: required("--setup-config"),
+            config: required("--config"),
+            clientId: optional("--client-id"),
+            clientSecretFile: optional("--client-secret-file"),
+            refreshTokenFile: optional("--refresh-token-file"),
+            calendarId: optional("--calendar-id"),
+            calendarLabel: optional("--calendar-label"),
+            timezone: optional("--timezone"),
+            scope: optional("--scope"),
+            surfaces: Array.isArray(values["--surface"]) ? values["--surface"] : [],
+            disable: values["--disable"] === true,
+            reconfigure: values["--reconfigure"] === true,
+        } satisfies SetupGoogleCalendarArgs;
     }
 
     if (command === "init") {

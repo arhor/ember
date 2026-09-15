@@ -38,7 +38,9 @@ the refresh token with mode 0600, verifies one one-minute calendar read, and the
 activates configuration. The calendar ID and credential paths are host configuration;
 they never enter canonical continuity state.
 
-Rerun configuration deliberately to replace the grant. Disable it with the same
+Rerun configuration deliberately with `--reconfigure` to replace the grant. A
+reconfiguration writes and verifies a new versioned token file; the active config and
+its prior token remain untouched unless verification succeeds. Disable it with the same
 `--setup-config` and `--config` plus `--disable`; this marks the integration inactive
 without deleting credentials. For revoked or expired authorization, revoke the old
 grant in the Google account, preserve the config for diagnosis, and repeat setup to
@@ -54,7 +56,9 @@ an `observed` result with an empty event list. Pagination is reported as truncat
 Inspect only the non-secret config, file modes, and sanitized capability ledger in a
 test harness. Never print token files, authorization headers, raw event IDs, calendar
 addresses, or raw Google errors. Canonical `ember inspect` output must contain none of
-the Google configuration, event observations, or capability evidence.
+the Google configuration, event observations, or capability evidence. A calendar
+configuration whose setup lineage does not match the current projection is inactive,
+even if its principal, scope, and surface happen to match.
 
 ## Live smoke
 

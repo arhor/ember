@@ -593,6 +593,7 @@ function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
                           selectCapabilities: (selectedRequest) =>
                               selectGoogleCalendarCapability(calendar, {
                                   principal: selectedRequest.projection.principal,
+                                  lineageId: selectedRequest.projection.lineage.lineageId,
                                   scope: selectedRequest.projection.activeScope,
                                   surface: selectedRequest.projection.surface,
                               }),
