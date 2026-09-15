@@ -38,10 +38,10 @@ function renderView(title: string, meanings: MaterializedMeaning[], source: Stat
         `representation-version: ${source.materializationVersion}`,
         `source-schema-version: ${source.sourceSchemaVersion}`,
         `source-revision: ${source.sourceRevision}`,
-        `lineage-id: ${source.lineageId}`,
+        `lineage-id: ${renderCanonicalString(source.lineageId, "metadata")}`,
         `purpose: ${source.purpose}`,
-        `principal: ${source.disclosurePolicy.principal}`,
-        `scope: ${source.disclosurePolicy.scope}`,
+        `principal: ${renderCanonicalString(source.disclosurePolicy.principal, "metadata")}`,
+        `scope: ${renderCanonicalString(source.disclosurePolicy.scope, "metadata")}`,
         `evidence-payloads: ${source.disclosurePolicy.evidencePayloads}`,
         `interaction-mode: ${source.interactionMode}`,
         "-->",
@@ -55,33 +55,36 @@ function renderView(title: string, meanings: MaterializedMeaning[], source: Stat
 
 function renderMeaning(meaning: MaterializedMeaning) {
     const relation = [
-        meaning.supersedes && `supersedes \`${meaning.supersedes}\``,
-        meaning.supersededBy && `superseded by \`${meaning.supersededBy}\``,
+        meaning.supersedes && `supersedes ${renderCode(meaning.supersedes)}`,
+        meaning.supersededBy && `superseded by ${renderCode(meaning.supersededBy)}`,
     ].filter(Boolean);
-    let text = `\n## Meaning \`${meaning.meaningId}\`\n\n`;
-    text += `${indent(meaning.content)}\n\n`;
-    text += `- Kind: \`${meaning.kind}\`\n- Owner: \`${meaning.owner}\`\n- Slot: \`${meaning.slot}\`\n`;
-    text += `- Scope: \`${meaning.scope}\`\n- Currentness: \`${meaning.currentness}\`\n`;
-    text += `- Lifecycle: \`${meaning.prospectiveLifecycle}\`\n- Epistemic role: \`${meaning.epistemicRole}\`\n`;
-    text += `- Learned at: \`${meaning.learnedAt}\`\n- Applicable: \`${meaning.applicableFrom}\` to \`${meaning.applicableUntil ?? "open"}\`\n`;
-    text += `- Uncertainty: ${meaning.uncertainty === null ? "none recorded" : indentInline(meaning.uncertainty)}\n`;
+    let text = `\n## Meaning ${renderCode(meaning.meaningId)}\n\n`;
+    text += `${renderCanonicalString(meaning.content, "block")}\n\n`;
+    text += `- Kind: ${renderCode(meaning.kind)}\n- Owner: ${renderCode(meaning.owner)}\n- Slot: ${renderCode(meaning.slot)}\n`;
+    text += `- Scope: ${renderCode(meaning.scope)}\n- Currentness: ${renderCode(meaning.currentness)}\n`;
+    text += `- Lifecycle: ${renderCode(meaning.prospectiveLifecycle)}\n- Epistemic role: ${renderCode(meaning.epistemicRole)}\n`;
+    text += `- Learned at: ${renderCode(meaning.learnedAt)}\n- Applicable: ${renderCode(meaning.applicableFrom)} to ${renderCode(meaning.applicableUntil ?? "open")}\n`;
+    text += `- Uncertainty: ${meaning.uncertainty === null ? "none recorded" : renderCanonicalString(meaning.uncertainty, "inline")}\n`;
     text += `- Lineage: ${relation.length ? relation.join("; ") : "none"}\n- Source evidence:\n`;
     for (const evidence of meaning.sourceEvidence) {
-        text += `  - \`${evidence.evidenceId}\`: role \`${evidence.sourceRole}\`, actor \`${evidence.sourceActor}\`, occurred \`${evidence.occurredAt}\`, observed \`${evidence.observedAt}\``;
+        text += `  - ${renderCode(evidence.evidenceId)}: role ${renderCode(evidence.sourceRole)}, actor ${renderCode(evidence.sourceActor)}, occurred ${renderCode(evidence.occurredAt)}, observed ${renderCode(evidence.observedAt)}`;
         if (evidence.derivedFromEvidenceIds.length)
-            text += `, derived from ${evidence.derivedFromEvidenceIds.map((id) => `\`${id}\``).join(", ")}`;
+            text += `, derived from ${evidence.derivedFromEvidenceIds.map(renderCode).join(", ")}`;
         text += "\n";
     }
     return text;
 }
 
-function indent(value: string) {
-    return value
+function renderCode(value: string) {
+    return `<code>${renderCanonicalString(value, "inline")}</code>`;
+}
+
+/** The only boundary through which canonical strings enter a Markdown artifact. */
+function renderCanonicalString(value: string, context: "metadata" | "inline" | "block") {
+    const escaped = value.replace(/[&<>`*_{}[\]()#+!|\\\r\n]/gu, (character) => `&#${character.codePointAt(0)};`);
+    if (context !== "block") return escaped;
+    return escaped
         .split("\n")
         .map((line) => `    ${line}`)
         .join("\n");
-}
-
-function indentInline(value: string) {
-    return value.replaceAll("\n", " ");
 }

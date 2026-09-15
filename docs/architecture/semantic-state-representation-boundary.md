@@ -292,7 +292,9 @@ purpose, principal, exact scope, evidence-payload policy, and generated-only mod
 Entries carry stable meaning IDs, lifecycle/currentness, supersession links, and
 descriptor-only source-evidence references. Evidence payloads and content digests are
 excluded, and meanings outside the exact requested scope are not selected. Content is
-indented as prose so embedded Markdown cannot manufacture headings or metadata.
+rendered through one context-aware escaping boundary so canonical newlines, comment
+terminators, backticks, and Markdown metacharacters cannot manufacture headings,
+metadata, or inline structure.
 
 Identical canonical state, policy, and renderer version produce byte-identical files;
 wall-clock attempt data is not rendered. Publication uses private files and atomic

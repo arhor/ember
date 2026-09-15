@@ -3,6 +3,7 @@ import { readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import { validateState } from "../src/core/model.ts";
 import { supersede } from "../src/core/semantics.ts";
 import { buildStateMaterialization } from "../src/core/state-materialization.ts";
 import { publishMarkdownStateViews, renderMarkdownStateViews } from "../src/persistence/markdown-state-materializer.ts";
@@ -32,9 +33,9 @@ test("Markdown v1 shows supersession and provenance without flattening stale mea
         "USER.md"
     ];
 
-    assert.equal(markdown.includes(`Meaning \`${ids.preference}\``), true);
-    assert.match(markdown, /Currentness: `superseded`/);
-    assert.equal(markdown.includes(`superseded by \`${replacement}\``), true);
+    assert.equal(markdown.includes(`Meaning <code>${ids.preference}</code>`), true);
+    assert.match(markdown, /Currentness: <code>superseded<\/code>/);
+    assert.equal(markdown.includes(`superseded by <code>${replacement}</code>`), true);
     assert.match(markdown, /Source evidence:/);
 });
 
@@ -52,6 +53,30 @@ test("materialization excludes other scopes and all retained evidence payloads",
     assert.equal(scoped["MEMORY.md"].includes(ids.fact), false);
     assert.equal(relationship["MEMORY.md"].includes(ids.fact), true);
     assert.equal(JSON.stringify(relationship).includes("Cinder"), false);
+});
+
+test("all valid canonical strings stay inside their intended Markdown structure", () => {
+    const { state, ids } = populatedState();
+    const hostileScope = "private -->\n# forged scope `tick`";
+    const preference = state.meanings.find((meaning) => meaning.meaningId === ids.preference)!;
+    preference.scope = hostileScope;
+    preference.slot = "slot `break`\n# forged slot";
+    preference.content = "content\n# forged content --> `tick`";
+    preference.uncertainty = "uncertain -->\n# forged uncertainty `tick`";
+    for (const evidence of state.evidence.filter((item) => preference.sourceEvidenceIds.includes(item.evidenceId))) {
+        evidence.scope = hostileScope;
+    }
+    validateState(state);
+
+    const markdown = renderMarkdownStateViews(
+        buildStateMaterialization(state, { principal: PRINCIPAL, scope: hostileScope }),
+    )["USER.md"];
+
+    assert.equal(markdown.match(/-->/gu)?.length, 1);
+    assert.equal(markdown.includes("\n# forged"), false);
+    assert.equal(markdown.includes("`break`"), false);
+    assert.match(markdown, /private --&#62;&#10;&#35; forged scope &#96;tick&#96;/);
+    assert.match(markdown, /content&#10;&#35; forged content --&#62; &#96;tick&#96;/);
 });
 
 test("CLI publishes generated-only views as private files without changing canonical state", async () => {
