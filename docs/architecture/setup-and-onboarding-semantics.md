@@ -823,13 +823,13 @@ deterministic evaluators for testing while core transition validation remains un
 ## Implemented guided Telegram setup (#255)
 
 Configured local CLI conversation intercepts only the literal `:setup telegram` command.
-It cleanly stops the current runtime episode and releases the canonical writer lease before
-entering the Telegram trusted-host wizard. The command is neither provider input nor an
-ordinary interaction occurrence. After completion, cancellation, or a recoverable failure,
-the CLI resumes its input loop over the same configured principal, scope, continuity binding,
-and conversation sidecar. It holds neither a writer lease nor an open runtime episode while
-waiting for input. CLI and Telegram interactions each reload current state and create one
-lease-bounded runtime episode for their work, preserving the sequential recovery model.
+Because the idle CLI holds neither a canonical writer lease nor an open runtime episode, the
+command enters the Telegram trusted-host wizard without inventing a cognition/runtime boundary.
+It is neither provider input nor an ordinary interaction occurrence. After completion,
+cancellation, or a recoverable failure, the CLI resumes its input loop over the same configured
+principal, scope, continuity binding, and conversation sidecar. CLI and Telegram interactions
+each reload current state and create one lease-bounded runtime episode for their actual work,
+preserving the sequential recovery model.
 
 The wizard owns masked BotFather-token entry, mode-`0600` storage, bot/webhook preflight,
 short-code private-chat discovery, explicit mapping confirmation, configuration/unit drift
@@ -842,8 +842,10 @@ SDK-owned runtime representation. The worker entrypoint and working directory co
 installed package location rather than the caller's current directory. An already-active
 Telegram worker is explicitly stopped before mapping discovery and restarted after changed
 configuration or unit files are installed, preventing competing long polls and stale process
-configuration. Declining service installation leaves a truthful
-`configured_inactive` result and never blocks ordinary Ember use.
+configuration. Mapping discovery polls for a bounded interval without advancing Telegram's
+acknowledgement offset, so an earlier pending message such as `/start` cannot cause immediate
+failure and is not silently consumed by setup. Declining final service activation leaves a
+previously active worker stopped and returns truthful `configured_inactive` state.
 
 The guided flow writes Telegram surface configuration version 2 with a structured provider
 block. The Telegram loader continues to accept and normalize version 1, including its
