@@ -327,7 +327,7 @@ async function waitForMappingCandidates(
         const updates = await api.getUpdates({ timeout, allowed_updates: ["message"] });
         const candidates = matchingPrivateUpdates(updates, code);
         if (candidates.length) return candidates;
-        if (now() < deadline) await delay(250);
+        if (now() < deadline) await delay(1000);
     }
     return [];
 }
