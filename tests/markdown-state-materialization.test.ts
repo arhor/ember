@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -20,7 +20,8 @@ test("Markdown v1 is deterministic and carries stable semantic and evidence refe
     assert.deepEqual(second, first);
     assert.match(first["SELF.md"], new RegExp(ids.commitment));
     assert.match(first["USER.md"], new RegExp(ids.preference));
-    assert.match(first["MEMORY.md"], /interaction-mode: selective_proposal_authoring/);
+    assert.match(first["USER.md"], /interaction-mode: selective_proposal_authoring/);
+    assert.match(first["MEMORY.md"], /interaction-mode: generated_only/);
     assert.match(first["MEMORY.md"], /source-revision: 0/);
 });
 
@@ -63,7 +64,12 @@ test("supported USER.md content edit becomes an adopted supersession and regener
     const replacement = committed.meanings.find((meaning) => meaning.supersedes === ids.preference)!;
     assert.deepEqual([old.currentness, old.supersededBy], ["superseded", replacement.meaningId]);
     assert.equal(replacement.content, "Prefer detailed answers");
-    assert.deepEqual(replacement.sourceEvidenceIds, old.sourceEvidenceIds);
+    assert.notDeepEqual(replacement.sourceEvidenceIds, old.sourceEvidenceIds);
+    const editEvidence = committed.evidence.find(
+        (evidence) => evidence.evidenceId === replacement.sourceEvidenceIds[0],
+    );
+    assert.equal(editEvidence?.sourceRole, "user_command");
+    assert.match("payload" in editEvidence! ? editEvidence.payload! : "", /materialized_state_edit/);
     assert.match(result.stdout, /"status": "adopted"/);
     assert.match(result.stdout, /"resulting_revision": 1/);
     assert.match(await readFile(userPath, "utf8"), /source-revision: 1/);
@@ -128,6 +134,88 @@ test("materialized edits fail closed for generated-view drift, stale bases, and 
     }
 });
 
+test("materialized edit parser rejects trailing malformed sections without committing", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    const edited = (await readFile(userPath, "utf8")).replace(
+        "Prefer concise architectural rationale",
+        "Prefer detail",
+    );
+    await writeFile(userPath, `${edited}\n## Meaning forged garbage\narbitrary bytes here\n`);
+
+    const result = await command([
+        "apply-materialized-edits",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--input",
+        output,
+    ]);
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /malformed or unknown structure/);
+    assert.equal((await new StateStore(statePath).load()).revision, 0);
+});
+
+test("failed view regeneration leaves canonical revision unchanged", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    await writeFile(
+        userPath,
+        (await readFile(userPath, "utf8")).replace("Prefer concise architectural rationale", "Prefer detail"),
+    );
+    await chmod(output, 0o500);
+    try {
+        const result = await command([
+            "apply-materialized-edits",
+            "--state",
+            statePath,
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--input",
+            output,
+        ]);
+        assert.equal(result.code, 2);
+        assert.equal((await new StateStore(statePath).load()).revision, 0);
+    } finally {
+        await chmod(output, 0o700);
+    }
+});
+
 test("materialized edits cannot change identity, provenance, scope, or historical meaning", async () => {
     for (const replacement of [
         ["- Owner: <code>user:user-1</code>", "- Owner: <code>agent:stolen</code>"],
@@ -184,7 +272,6 @@ test("materialized edits cannot change identity, provenance, scope, or historica
             inspectMarkdownStateEdits(
                 buildStateMaterialization(state, { principal: PRINCIPAL, scope: SCOPE }),
                 rendered,
-                "2026-09-15T12:00:00Z",
             ),
         /generated-only/,
     );

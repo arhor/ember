@@ -17,7 +17,7 @@ import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
 import { initialState, nowUtc } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
-import { supersede } from "../../core/semantics.ts";
+import { supersede, userEvidence } from "../../core/semantics.ts";
 import { buildStateMaterialization } from "../../core/state-materialization.ts";
 import {
     inspectMarkdownStateEdits,
@@ -136,31 +136,60 @@ async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: Cl
     try {
         const state = await loadForPrincipal(store, args.principal);
         const materialization = buildStateMaterialization(state, { principal: args.principal, scope: args.scope });
-        const inspection = inspectMarkdownStateEdits(
-            materialization,
-            await readMarkdownStateViews(args.input),
-            nowUtc(),
-        );
+        const inspection = inspectMarkdownStateEdits(materialization, await readMarkdownStateViews(args.input));
         let candidate = state;
         const outcomes = [];
-        for (const proposalCandidate of inspection.proposals) {
-            const assessment = assessMemoryProposal(candidate, proposalCandidate);
+        for (const edit of inspection.edits) {
+            candidate = cloneState(candidate);
+            const editEvidence = userEvidence(
+                candidate,
+                args.principal,
+                edit.scope,
+                JSON.stringify({
+                    source: "materialized_state_edit",
+                    view: inspection.source_view,
+                    base_revision: inspection.base_revision,
+                    meaning_id: edit.meaning_id,
+                    content: edit.content,
+                }),
+                { timestamp: nowUtc() },
+            );
+            const proposedAt = editEvidence.occurredAt;
+            const assessment = assessMemoryProposal(candidate, {
+                proposal_version: 1,
+                proposal_id: `memory-proposal-file-edit-${inspection.base_revision}-${edit.meaning_id}`,
+                proposed_at: proposedAt,
+                kind: edit.kind,
+                owner: edit.owner,
+                slot: edit.slot,
+                scope: edit.scope,
+                content: edit.content,
+                source_evidence_ids: [editEvidence.evidenceId],
+                epistemic_role: edit.epistemic_role,
+                applicable_from: proposedAt,
+                applicable_until: null,
+                proposed_currentness: "current",
+                confidence: { source: "high", proposition: "high", interpretation: "high" },
+                uncertainty: edit.uncertainty,
+                supersedes_meaning_id: edit.meaning_id,
+            });
             if (assessment.status !== "valid")
                 throw new ValidationError(`materialized edit proposal was ${assessment.status}: ${assessment.detail}`);
             const resolution = resolveMemoryProposal(candidate, assessment.proposal, state.revision, {
-                decidedAt: proposalCandidate.proposed_at,
+                decidedAt: proposedAt,
             });
             outcomes.push(resolution.proposal);
             if (resolution.proposal.status !== "adopted")
                 throw new ValidationError(`materialized edit was rejected: ${resolution.proposal.resolution.reason}`);
             candidate = resolution.state;
         }
-        const committed = await store.commit(state.revision, candidate);
+        candidate.revision = state.revision + 1;
         await publishMarkdownStateViews(
             args.input,
             args.state,
-            buildStateMaterialization(committed, { principal: args.principal, scope: args.scope }),
+            buildStateMaterialization(candidate, { principal: args.principal, scope: args.scope }),
         );
+        const committed = await store.commit(state.revision, candidate);
         io.output.write(
             `${JSON.stringify({ ...inspection, proposals: outcomes, resulting_revision: committed.revision }, null, 2)}\n`,
         );

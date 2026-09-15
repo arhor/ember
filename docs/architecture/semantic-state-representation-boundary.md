@@ -128,9 +128,9 @@ tractable, but byte equality is not semantic equality across renderer versions. 
 render attempt and its time may be recorded separately without changing the artifact.
 Generated output must identify its interaction mode clearly enough that ordinary
 editing cannot be mistaken for successful canonical mutation. Markdown v1 now uses
-`selective_proposal_authoring`: only the content of current, user-owned facts and
-preferences in `USER.md` is an authoring surface. All other bytes and views remain
-generated-only.
+`selective_proposal_authoring` on `USER.md`: only the content of current, user-owned
+facts and preferences in that view is an authoring surface. `SELF.md`,
+`RELATIONSHIP.md`, and `MEMORY.md` each declare `generated_only`.
 
 ## Edit and round-trip semantics
 
@@ -187,14 +187,24 @@ Markdown v1 because the view cannot provide new attributable evidence without a
 separate evidence-authoring boundary.
 
 The importer verifies all four artifacts against the current canonical revision and
-scope. Each supported content delta becomes an ordinary memory proposal that cites
-the predecessor's evidence and explicitly supersedes its stable meaning ID. Proposals
-are assessed and resolved under the canonical writer lease; any rejection aborts the
-whole edit set without committing canonical state. A successful set commits one new
-canonical revision, regenerates all four views from that state, and emits an
+scope. Each supported content delta first becomes fresh, attributable retained user
+evidence describing the source view, base revision, predecessor ID, and edited
+content. An ordinary memory proposal cites that edit evidence—not the predecessor's
+evidence—and explicitly supersedes the stable predecessor ID. Proposals are assessed
+and resolved under the canonical writer lease; any rejection aborts the whole edit
+set without committing canonical state. The candidate views are fully rendered and
+published before the canonical commit, so a render or publication failure leaves the
+canonical revision unchanged. A successful set then commits one new canonical
+revision and emits an
 inspection result containing the source view, base revision, affected IDs, proposal
 resolutions, and resulting revision. The edited files themselves never acquire
 canonical authority.
+
+Because the filesystem cannot provide a transaction across canonical JSON and four
+view files, a canonical commit failure after successful candidate publication can
+leave ahead-of-canonical views. Their source revision makes that state detectable and
+the next materialization safely regenerates them; it never makes those bytes
+canonical.
 
 This v1 policy intentionally treats any concurrently changed canonical revision as
 stale, even if prose comparison suggests a non-overlapping edit. That conservative
@@ -327,7 +337,7 @@ directory. The first three group selected meanings by owner; `MEMORY.md` is the
 scope-bounded overview. These are navigation groupings, not canonical kinds.
 
 Each artifact declares representation version, source schema and revision, lineage,
-purpose, principal, exact scope, evidence-payload policy, and selective-authoring mode.
+purpose, principal, exact scope, evidence-payload policy, and its own interaction mode.
 Entries carry stable meaning IDs, lifecycle/currentness, supersession links, and
 descriptor-only source-evidence references. Evidence payloads and content digests are
 excluded, and meanings outside the exact requested scope are not selected. Content is

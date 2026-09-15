@@ -1,8 +1,7 @@
 import { mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
-import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
-import type { MeaningId } from "../core/model.ts";
+import type { EpistemicRole, MeaningId, MeaningKind } from "../core/model.ts";
 import type { MaterializedMeaning, StateMaterialization } from "../core/state-materialization.ts";
 
 import { ValidationError } from "../core/errors.ts";
@@ -20,14 +19,23 @@ export interface MarkdownEditInspection {
     source_view: "USER.md";
     base_revision: number;
     affected_meaning_ids: string[];
-    proposals: MemoryProposalCandidate[];
+    edits: Array<{
+        meaning_id: MeaningId;
+        kind: MeaningKind;
+        owner: string;
+        slot: string;
+        scope: string;
+        content: string;
+        epistemic_role: EpistemicRole;
+        uncertainty: string | null;
+    }>;
 }
 
 export function renderMarkdownStateViews(materialization: StateMaterialization) {
     return Object.fromEntries(
         Object.entries(materialization.views).map(([name, meanings]) => [
             name,
-            renderView(VIEW_TITLES[name as keyof StateMaterialization["views"]], meanings, materialization),
+            renderView(name as keyof StateMaterialization["views"], meanings, materialization),
         ]),
     ) as Record<keyof StateMaterialization["views"], string>;
 }
@@ -68,7 +76,6 @@ export async function readMarkdownStateViews(directory: string) {
 export function inspectMarkdownStateEdits(
     materialization: StateMaterialization,
     edited: Record<keyof StateMaterialization["views"], string>,
-    proposedAt: string,
 ): MarkdownEditInspection {
     const expected = renderMarkdownStateViews(materialization);
     for (const name of ["SELF.md", "RELATIONSHIP.md", "MEMORY.md"] as const) {
@@ -87,7 +94,7 @@ export function inspectMarkdownStateEdits(
     if (editedEntries.size !== expectedEntries.size)
         throw new ValidationError("USER.md meanings cannot be added or removed");
 
-    const proposals: MemoryProposalCandidate[] = [];
+    const edits: MarkdownEditInspection["edits"] = [];
     for (const [id, expectedEntry] of expectedEntries) {
         const editedEntry = editedEntries.get(id);
         if (!editedEntry) throw new ValidationError(`USER.md meaning identity changed or is missing: ${id}`);
@@ -103,32 +110,24 @@ export function inspectMarkdownStateEdits(
             throw new ValidationError(`meaning is generated-only and cannot be edited: ${id}`);
         const content = decodeCanonicalString(editedEntry.content).trim();
         if (!content) throw new ValidationError(`edited meaning content must be non-empty: ${id}`);
-        proposals.push({
-            proposal_version: 1,
-            proposal_id: `memory-proposal-file-edit-${materialization.sourceRevision}-${id}`,
-            proposed_at: proposedAt,
+        edits.push({
+            meaning_id: meaning.meaningId,
             kind: meaning.kind,
             owner: meaning.owner,
             slot: meaning.slot,
             scope: meaning.scope,
             content,
-            source_evidence_ids: [...meaning.sourceEvidenceIds],
             epistemic_role: meaning.epistemicRole,
-            applicable_from: proposedAt,
-            applicable_until: null,
-            proposed_currentness: "current",
-            confidence: { source: "high", proposition: "high", interpretation: "high" },
             uncertainty: meaning.uncertainty,
-            supersedes_meaning_id: meaning.meaningId,
         });
     }
-    if (!proposals.length) throw new ValidationError("no supported USER.md content edits were found");
+    if (!edits.length) throw new ValidationError("no supported USER.md content edits were found");
     return {
         edit_version: 1,
         source_view: "USER.md",
         base_revision: materialization.sourceRevision,
-        affected_meaning_ids: proposals.map((proposal) => proposal.supersedes_meaning_id!),
-        proposals,
+        affected_meaning_ids: edits.map((edit) => edit.meaning_id),
+        edits,
     };
 }
 
@@ -142,11 +141,15 @@ function metadataBlock(markdown: string) {
 function parseEntries(markdown: string) {
     const entries = new Map<string, { content: string; suffix: string }>();
     const pattern = /\n## Meaning <code>([^<\n]+)<\/code>\n\n([\s\S]*?)\n\n(- Kind: [\s\S]*?)(?=\n## Meaning |$)/gu;
+    let consumed = entryPrefix(markdown).length;
     for (const match of markdown.matchAll(pattern)) {
+        if (match.index !== consumed) throw new ValidationError("USER.md contains malformed or unknown structure");
         const id = decodeCanonicalString(match[1]!);
         if (entries.has(id)) throw new ValidationError(`duplicate materialized meaning ID: ${id}`);
         entries.set(id, { content: match[2]!, suffix: match[3]! });
+        consumed = match.index + match[0].length;
     }
+    if (consumed !== markdown.length) throw new ValidationError("USER.md contains malformed or unknown structure");
     return entries;
 }
 
@@ -175,7 +178,12 @@ function isMissingPath(error: unknown): error is NodeJS.ErrnoException {
     return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
-function renderView(title: string, meanings: MaterializedMeaning[], source: StateMaterialization) {
+function renderView(
+    name: keyof StateMaterialization["views"],
+    meanings: MaterializedMeaning[],
+    source: StateMaterialization,
+) {
+    const title = VIEW_TITLES[name];
     const metadata = [
         "<!-- ember-state-materialization",
         `representation-version: ${source.materializationVersion}`,
@@ -186,7 +194,7 @@ function renderView(title: string, meanings: MaterializedMeaning[], source: Stat
         `principal: ${renderCanonicalString(source.disclosurePolicy.principal, "metadata")}`,
         `scope: ${renderCanonicalString(source.disclosurePolicy.scope, "metadata")}`,
         `evidence-payloads: ${source.disclosurePolicy.evidencePayloads}`,
-        `interaction-mode: ${source.interactionMode}`,
+        `interaction-mode: ${source.interactionModes[name]}`,
         "-->",
     ].join("\n");
     let markdown = `${metadata}\n\n# ${title}\n\n`;
