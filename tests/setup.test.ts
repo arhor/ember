@@ -6,13 +6,15 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import { ProviderError } from "../src/core/errors.ts";
+import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+import { setupGoogleCalendarMain } from "../src/surfaces/cli/google-calendar-setup.ts";
 import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
-import { command, populatedState } from "./support.ts";
+import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
 async function setupMain(argv, io, dependencies) {
@@ -382,6 +384,136 @@ test("Google Calendar setup should preserve continuity when refresh-token path o
     assert.equal(await readFile(f.state, "utf8"), before);
     await assert.rejects(stat(`${f.state}.conversation.json`), { code: "ENOENT" });
 });
+
+test("Google Calendar setup should preserve a foreign config when disable uses another lineage", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const configPath = join(f.directory, "foreign-calendar.json");
+    const foreign = calendarConfig("lineage-foreign", "user-secret-marker", f.directory);
+    await writeFile(configPath, `${JSON.stringify(foreign)}\n`);
+    const before = await readFile(configPath, "utf8");
+
+    // When
+    const result = await main(
+        ["setup-google-calendar", "--setup-config", f.config, "--config", configPath, "--disable"],
+        capture(),
+    );
+
+    // Then
+    assert.equal(result, 2);
+    assert.equal(await readFile(configPath, "utf8"), before);
+});
+
+test("Google Calendar setup should preserve a foreign config when reconfigure uses another lineage", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const configPath = join(f.directory, "foreign-calendar.json");
+    const foreign = calendarConfig("lineage-foreign", "user-secret-marker", f.directory);
+    await writeFile(configPath, `${JSON.stringify(foreign)}\n`);
+    const before = await readFile(configPath, "utf8");
+
+    // When
+    const result = await main(
+        ["setup-google-calendar", "--setup-config", f.config, "--config", configPath, "--reconfigure"],
+        capture(),
+    );
+
+    // Then
+    assert.equal(result, 2);
+    assert.equal(await readFile(configPath, "utf8"), before);
+});
+
+test("Google Calendar setup should retain staged token when config publication is durability-uncertain", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const configPath = join(f.directory, "calendar.json");
+    const secretPath = join(f.directory, "client-secret");
+    const tokenPath = join(f.directory, "refresh-token");
+    await writeFile(secretPath, "client-secret", { mode: 0o600 });
+    const args = parseArgs([
+        "setup-google-calendar",
+        "--setup-config",
+        f.config,
+        "--config",
+        configPath,
+        "--client-id",
+        "client",
+        "--client-secret-file",
+        secretPath,
+        "--refresh-token-file",
+        tokenPath,
+        "--calendar-id",
+        "primary",
+        "--calendar-label",
+        "Personal",
+        "--timezone",
+        "UTC",
+        "--scope",
+        "private",
+        "--surface",
+        "local_cli",
+    ]);
+    assert.equal(args.command, "setup-google-calendar");
+
+    // When
+    const failure = await captureError(() =>
+        setupGoogleCalendarMain(args, capture(), {
+            authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
+            fetch: async () => new Response(JSON.stringify({ refresh_token: "refresh-secret" }), { status: 200 }),
+            verify: async () => {},
+            write: async (path, content) => {
+                await writeFile(path, content, { mode: 0o600 });
+                if (path === configPath) throw new DurabilityUncertain("directory sync failed");
+            },
+        }),
+    );
+
+    // Then
+    assert.ok(failure instanceof DurabilityUncertain);
+    assert.equal((await readFile(tokenPath, "utf8")).trim(), "refresh-secret");
+    assert.equal(JSON.parse(await readFile(configPath, "utf8")).refresh_token_file, tokenPath);
+});
+
+test("Google Calendar setup should recover binding when initial config publication preceded setup failure", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const setup = await loadSetupConfig(f.config);
+    const configPath = join(f.directory, "calendar.json");
+    await writeFile(configPath, `${JSON.stringify(calendarConfig(setup.lineageId, setup.principal, f.directory))}\n`);
+    const args = parseArgs(["setup-google-calendar", "--setup-config", f.config, "--config", configPath]);
+    assert.equal(args.command, "setup-google-calendar");
+
+    // When
+    const result = await setupGoogleCalendarMain(args, capture(), { verify: async () => {} });
+
+    // Then
+    assert.equal(result, 0);
+    const recovered = await loadSetupConfig(f.config);
+    assert.equal(recovered.version, 2);
+    assert.equal(recovered.googleCalendarConfigPath, configPath);
+});
+
+function calendarConfig(lineage: string, principal: string, directory: string) {
+    return {
+        config_version: 1,
+        enabled: true,
+        setup_lineage_id: lineage,
+        principal,
+        scope: "private",
+        surfaces: ["local_cli"],
+        authority_source_id: "authority:foreign",
+        calendar_id: "primary",
+        calendar_label: "Personal",
+        timezone: "UTC",
+        client_id: "client",
+        client_secret_file: join(directory, "foreign-secret"),
+        refresh_token_file: join(directory, "foreign-token"),
+    };
+}
 
 test("restore attaches validated state without rewriting meaning or sidecars and requires a continuity choice", async (t) => {
     const f = await fixture(t),

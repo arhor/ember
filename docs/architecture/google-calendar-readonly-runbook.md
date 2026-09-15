@@ -50,6 +50,14 @@ without deleting credentials. For revoked or expired authorization, revoke the o
 grant in the Google account, preserve the config for diagnosis, and repeat setup to
 obtain a fresh refresh token.
 
+Disable and reconfigure operations require the existing Calendar config to match the
+setup lineage and principal. A v2 setup also accepts only its already-bound config path.
+If first activation published the Calendar config but failed before upgrading setup to
+v2, rerunning the command with the same paths verifies the owned config and completes
+that binding without issuing another grant. If config replacement reports uncertain
+durability after publication began, preserve the new token: the possibly-visible config
+may already reference it, so deleting it would make recovery destructive.
+
 ## Reproduce and inspect
 
 Start configured CLI conversation with the bound scope, or regenerate Telegram setup

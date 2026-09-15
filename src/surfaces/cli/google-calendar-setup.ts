@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { chmod, readFile, realpath, unlink } from "node:fs/promises";
+import { readFile, realpath, unlink } from "node:fs/promises";
 import { createServer } from "node:http";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
@@ -19,23 +19,57 @@ import { loadSetupConfig } from "./setup.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 
-export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io: CliIo): Promise<number> {
+export interface GoogleCalendarSetupDependencies {
+    authorize?: (
+        clientId: string,
+        verifier: string,
+        state: string,
+        io: CliIo,
+    ) => Promise<{ code: string; redirectUri: string }>;
+    fetch?: typeof fetch;
+    write?: typeof durableWrite;
+    remove?: (path: string) => Promise<void>;
+    random?: (size: number) => Uint8Array;
+    verify?: (config: GoogleCalendarConfig) => Promise<void>;
+}
+
+export async function setupGoogleCalendarMain(
+    args: SetupGoogleCalendarArgs,
+    io: CliIo,
+    dependencies: GoogleCalendarSetupDependencies = {},
+): Promise<number> {
+    const write = dependencies.write ?? durableWrite;
+    const remove = dependencies.remove ?? ((path: string) => unlink(path));
+    const random = dependencies.random ?? randomBytes;
+    const verify = dependencies.verify ?? verifyCalendarConfig;
     const setupPath = resolve(args.setupConfig);
     const configPath = resolve(args.config);
     const setup = await loadSetupConfig(setupPath);
     if (!setup) throw new ValidationError("setup-google-calendar requires an existing setup lineage");
     const protectedPaths = await Promise.all([setupPath, setup.statePath, configPath].map(physicalPath));
     assertSeparatePaths(protectedPaths);
+    if (setup.version === 2 && (await physicalPath(setup.googleCalendarConfigPath!)) !== protectedPaths[2])
+        throw new ValidationError("Google Calendar config path does not match the setup binding");
     if (args.disable) {
         const existing = await loadGoogleCalendarConfig(configPath);
-        await durableWrite(configPath, `${JSON.stringify({ ...existing, enabled: false }, null, 2)}\n`);
+        assertCalendarOwnership(existing, setup);
+        await write(configPath, `${JSON.stringify({ ...existing, enabled: false }, null, 2)}\n`);
         io.output.write("Google Calendar integration disabled; credentials were preserved.\n");
         return 0;
     }
     let previous: GoogleCalendarConfig | null = null;
-    let configActivated = false;
     try {
         previous = await loadGoogleCalendarConfig(configPath);
+        assertCalendarOwnership(previous, setup);
+        if (!args.reconfigure && setup.version === 1) {
+            await verify(previous);
+            await write(
+                setupPath,
+                `${JSON.stringify({ ...setup, version: 2, googleCalendarConfigPath: configPath }, null, 2)}\n`,
+            );
+            io.output.write("Recovered the verified Google Calendar setup binding.\n");
+            return 0;
+        }
         if (!args.reconfigure)
             throw new ValidationError("existing Google Calendar configuration requires --reconfigure");
     } catch (error) {
@@ -51,14 +85,14 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
     const credentialPaths = await Promise.all([clientSecretFile, requestedRefreshTokenFile].map(physicalPath));
     assertSeparatePaths([...protectedPaths, ...credentialPaths]);
     const refreshTokenFile = args.reconfigure
-        ? `${requestedRefreshTokenFile}.${base64Url(randomBytes(12))}`
+        ? `${requestedRefreshTokenFile}.${base64Url(random(12))}`
         : requestedRefreshTokenFile;
     const scope = required(args.scope, "--scope");
-    const verifier = base64Url(randomBytes(48));
-    const state = base64Url(randomBytes(32));
-    const callback = await awaitAuthorizationCode(clientId, verifier, state, io);
+    const verifier = base64Url(random(48));
+    const state = base64Url(random(32));
+    const callback = await (dependencies.authorize ?? awaitAuthorizationCode)(clientId, verifier, state, io);
     const clientSecret = (await readFile(clientSecretFile, "utf8")).trim();
-    const tokenResponse = await fetch(GOOGLE_OAUTH_TOKEN_ENDPOINT, {
+    const tokenResponse = await (dependencies.fetch ?? fetch)(GOOGLE_OAUTH_TOKEN_ENDPOINT, {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -81,8 +115,6 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
         throw new ValidationError(
             "Google authorization did not return a refresh token; revoke access and retry with consent",
         );
-    await durableWrite(refreshTokenFile, `${token.refresh_token}\n`);
-    await chmod(refreshTokenFile, 0o600);
     const config: GoogleCalendarConfig = {
         config_version: 1,
         enabled: true,
@@ -101,27 +133,19 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
         client_secret_file: clientSecretFile,
         refresh_token_file: refreshTokenFile,
     };
+    let publication: "before_token" | "token_written" | "config_started" = "before_token";
     try {
-        const verification = await createCapabilityExecutionFirewall([createGoogleCalendarCapability(config)], {
-            cognitionId: "cognition-google-calendar-setup" as never,
-            principal: setup.principal,
-            scope,
-            surface: surfaces[0]!,
-            validatedRevision: 0,
-        }).execute("googleCalendarEvents", {
-            timeMin: new Date().toISOString(),
-            timeMax: new Date(Date.now() + 60_000).toISOString(),
-        });
-        if (verification.outcome !== "succeeded")
-            throw new ValidationError(`Google Calendar verification failed: ${verification.outcome}`);
-        await durableWrite(configPath, `${JSON.stringify(config, null, 2)}\n`);
-        configActivated = true;
-        await durableWrite(
+        await write(refreshTokenFile, `${token.refresh_token}\n`);
+        publication = "token_written";
+        await verify(config);
+        publication = "config_started";
+        await write(configPath, `${JSON.stringify(config, null, 2)}\n`);
+        await write(
             setupPath,
             `${JSON.stringify({ ...setup, version: 2, googleCalendarConfigPath: configPath }, null, 2)}\n`,
         );
     } catch (error) {
-        if (!configActivated) await unlink(refreshTokenFile).catch(() => {});
+        if (publication !== "config_started") await remove(refreshTokenFile).catch(() => {});
         throw error;
     }
     io.output.write("Google Calendar read-only integration verified and activated.\n");
@@ -130,6 +154,29 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
             `Prior refresh token retained for explicit rollback or revocation: ${previous.refresh_token_file}\n`,
         );
     return 0;
+}
+
+async function verifyCalendarConfig(config: GoogleCalendarConfig) {
+    const verification = await createCapabilityExecutionFirewall([createGoogleCalendarCapability(config)], {
+        cognitionId: "cognition-google-calendar-setup" as never,
+        principal: config.principal,
+        scope: config.scope,
+        surface: config.surfaces[0]!,
+        validatedRevision: 0,
+    }).execute("googleCalendarEvents", {
+        timeMin: new Date().toISOString(),
+        timeMax: new Date(Date.now() + 60_000).toISOString(),
+    });
+    if (verification.outcome !== "succeeded")
+        throw new ValidationError(`Google Calendar verification failed: ${verification.outcome}`);
+}
+
+function assertCalendarOwnership(
+    config: GoogleCalendarConfig,
+    setup: NonNullable<Awaited<ReturnType<typeof loadSetupConfig>>>,
+) {
+    if (config.setup_lineage_id !== setup.lineageId || config.principal !== setup.principal)
+        throw new ValidationError("Google Calendar configuration belongs to a different setup binding");
 }
 
 export function googleAuthorizationUrl(clientId: string, redirectUri: string, state: string, verifier: string) {
