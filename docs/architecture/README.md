@@ -55,6 +55,9 @@ Current architecture material:
   defines issue #252's representation-neutral boundary between machine bootstrap,
   explicit restore/create choice, verified cognition, ordinary Ember-led onboarding,
   secret-safe typed host operations, reruns, and truthful partial-failure recovery.
+- [Setup and Onboarding End-to-End Validation](setup-onboarding-validation.md) records
+  issue #256's deterministic create/restore oracle, sanitized report, recovery and
+  secret-containment evidence, and opt-in clean-host smoke procedure.
 - [Source Layout and Surface Placement](source-layout.md) records the current
   `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
   mechanics and operator/application commands, and the intended inward dependency
