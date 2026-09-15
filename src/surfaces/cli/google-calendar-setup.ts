@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
-import { chmod, readFile } from "node:fs/promises";
+import { chmod, readFile, realpath, unlink } from "node:fs/promises";
 import { createServer } from "node:http";
-import { isAbsolute, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 import type { GoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
 import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
@@ -11,6 +11,7 @@ import {
     GOOGLE_CALENDAR_SCOPE,
     GOOGLE_OAUTH_TOKEN_ENDPOINT,
     createGoogleCalendarCapability,
+    loadGoogleCalendarConfig,
 } from "../../capabilities/google-calendar.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
@@ -23,14 +24,18 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
     const configPath = resolve(args.config);
     const setup = await loadSetupConfig(setupPath);
     if (!setup) throw new ValidationError("setup-google-calendar requires an existing setup lineage");
+    const protectedPaths = await Promise.all([setupPath, setup.statePath, configPath].map(physicalPath));
+    assertSeparatePaths(protectedPaths);
     if (args.disable) {
-        const existing = JSON.parse(await readFile(configPath, "utf8")) as GoogleCalendarConfig;
+        const existing = await loadGoogleCalendarConfig(configPath);
         await durableWrite(configPath, `${JSON.stringify({ ...existing, enabled: false }, null, 2)}\n`);
         io.output.write("Google Calendar integration disabled; credentials were preserved.\n");
         return 0;
     }
+    let previous: GoogleCalendarConfig | null = null;
+    let configActivated = false;
     try {
-        await readFile(configPath, "utf8");
+        previous = await loadGoogleCalendarConfig(configPath);
         if (!args.reconfigure)
             throw new ValidationError("existing Google Calendar configuration requires --reconfigure");
     } catch (error) {
@@ -43,6 +48,8 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
     const clientId = required(args.clientId, "--client-id");
     const clientSecretFile = absolute(required(args.clientSecretFile, "--client-secret-file"));
     const requestedRefreshTokenFile = absolute(required(args.refreshTokenFile, "--refresh-token-file"));
+    const credentialPaths = await Promise.all([clientSecretFile, requestedRefreshTokenFile].map(physicalPath));
+    assertSeparatePaths([...protectedPaths, ...credentialPaths]);
     const refreshTokenFile = args.reconfigure
         ? `${requestedRefreshTokenFile}.${base64Url(randomBytes(12))}`
         : requestedRefreshTokenFile;
@@ -94,24 +101,34 @@ export async function setupGoogleCalendarMain(args: SetupGoogleCalendarArgs, io:
         client_secret_file: clientSecretFile,
         refresh_token_file: refreshTokenFile,
     };
-    const verification = await createCapabilityExecutionFirewall([createGoogleCalendarCapability(config)], {
-        cognitionId: "cognition-google-calendar-setup" as never,
-        principal: setup.principal,
-        scope,
-        surface: surfaces[0]!,
-        validatedRevision: 0,
-    }).execute("googleCalendarEvents", {
-        timeMin: new Date().toISOString(),
-        timeMax: new Date(Date.now() + 60_000).toISOString(),
-    });
-    if (verification.outcome !== "succeeded")
-        throw new ValidationError(`Google Calendar verification failed: ${verification.outcome}`);
-    await durableWrite(configPath, `${JSON.stringify(config, null, 2)}\n`);
-    await durableWrite(
-        setupPath,
-        `${JSON.stringify({ ...setup, version: 2, googleCalendarConfigPath: configPath }, null, 2)}\n`,
-    );
+    try {
+        const verification = await createCapabilityExecutionFirewall([createGoogleCalendarCapability(config)], {
+            cognitionId: "cognition-google-calendar-setup" as never,
+            principal: setup.principal,
+            scope,
+            surface: surfaces[0]!,
+            validatedRevision: 0,
+        }).execute("googleCalendarEvents", {
+            timeMin: new Date().toISOString(),
+            timeMax: new Date(Date.now() + 60_000).toISOString(),
+        });
+        if (verification.outcome !== "succeeded")
+            throw new ValidationError(`Google Calendar verification failed: ${verification.outcome}`);
+        await durableWrite(configPath, `${JSON.stringify(config, null, 2)}\n`);
+        configActivated = true;
+        await durableWrite(
+            setupPath,
+            `${JSON.stringify({ ...setup, version: 2, googleCalendarConfigPath: configPath }, null, 2)}\n`,
+        );
+    } catch (error) {
+        if (!configActivated) await unlink(refreshTokenFile).catch(() => {});
+        throw error;
+    }
     io.output.write("Google Calendar read-only integration verified and activated.\n");
+    if (previous && previous.refresh_token_file !== refreshTokenFile)
+        io.output.write(
+            `Prior refresh token retained for explicit rollback or revocation: ${previous.refresh_token_file}\n`,
+        );
     return 0;
 }
 
@@ -184,4 +201,22 @@ function durableWrite(path: string, content: string) {
     return replaceFileDurably(path, content, {
         durabilityUncertainMessage: "Google Calendar configuration write may be visible; inspect it before retrying",
     });
+}
+
+export function assertSeparatePaths(paths: readonly string[]) {
+    for (const [index, path] of paths.entries())
+        for (const other of paths.slice(index + 1))
+            if (path === other || path.startsWith(`${other}.`) || other.startsWith(`${path}.`))
+                throw new ValidationError("setup, continuity, Calendar config, and credential paths must be separate");
+}
+
+async function physicalPath(path: string): Promise<string> {
+    try {
+        return await realpath(path);
+    } catch (error) {
+        if (!isMissing(error)) throw error;
+        const parent = dirname(path);
+        if (parent === path) throw error;
+        return join(await physicalPath(parent), basename(path));
+    }
 }

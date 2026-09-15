@@ -140,3 +140,31 @@ test("calendar reports unavailable and stale sources without exposing events", a
         assert.doesNotMatch(JSON.stringify(result), /must-not-leak/);
     }
 });
+
+test("calendar observes legitimate untitled events with Google's default status", async () => {
+    let call = 0;
+    const capability = createGoogleCalendarCapability(config, {
+        now: () => new Date("2026-09-15T10:01:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () =>
+            ++call === 1
+                ? response({ access_token: "token" })
+                : response({
+                      items: [
+                          {
+                              id: "untitled-event",
+                              start: { date: "2026-09-16" },
+                              end: { date: "2026-09-17" },
+                              updated: "2026-09-15T09:00:00Z",
+                          },
+                      ],
+                  }),
+    });
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        timeMin: "2026-09-15T00:00:00Z",
+        timeMax: "2026-09-16T00:00:00Z",
+    });
+    assert.equal(result.outcome, "succeeded");
+    assert.match(JSON.stringify(result.output), /"title":null/);
+    assert.match(JSON.stringify(result.output), /"status":"confirmed"/);
+});

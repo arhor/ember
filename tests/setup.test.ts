@@ -90,35 +90,6 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
         config: "host.json",
         scope: "test",
     });
-    assert.deepEqual(
-        parseArgs([
-            "setup-google-calendar",
-            "--setup-config",
-            "/tmp/setup.json",
-            "--config",
-            "/tmp/calendar.json",
-            "--surface",
-            "local_cli",
-            "--surface",
-            "telegram_bot",
-            "--disable",
-        ]),
-        {
-            command: "setup-google-calendar",
-            setupConfig: "/tmp/setup.json",
-            config: "/tmp/calendar.json",
-            clientId: undefined,
-            clientSecretFile: undefined,
-            refreshTokenFile: undefined,
-            calendarId: undefined,
-            calendarLabel: undefined,
-            timezone: undefined,
-            scope: undefined,
-            surfaces: ["local_cli", "telegram_bot"],
-            disable: true,
-            reconfigure: false,
-        },
-    );
     const explicit = parseArgs([
         "run",
         "--state",
@@ -136,6 +107,42 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     ]);
     assert.equal(explicit.mode, "explicit");
     assert.deepEqual(explicit.providerArgs, ["--config"]);
+});
+
+test("CLI parser should route Google Calendar setup when typed options are supplied", () => {
+    // Given
+    const argv = [
+        "setup-google-calendar",
+        "--setup-config",
+        "/tmp/setup.json",
+        "--config",
+        "/tmp/calendar.json",
+        "--surface",
+        "local_cli",
+        "--surface",
+        "telegram_bot",
+        "--disable",
+    ];
+
+    // When
+    const parsed = parseArgs(argv);
+
+    // Then
+    assert.deepEqual(parsed, {
+        command: "setup-google-calendar",
+        setupConfig: "/tmp/setup.json",
+        config: "/tmp/calendar.json",
+        clientId: undefined,
+        clientSecretFile: undefined,
+        refreshTokenFile: undefined,
+        calendarId: undefined,
+        calendarLabel: undefined,
+        timezone: undefined,
+        scope: undefined,
+        surfaces: ["local_cli", "telegram_bot"],
+        disable: true,
+        reconfigure: false,
+    });
 });
 
 test("unified CLI parser rejects invalid setup and mixed configured-run options", () => {
@@ -279,7 +286,8 @@ test("rerun verifies again while preserving canonical bytes and rejects an impli
     assert.equal(await readFile(f.state, "utf8"), before);
 });
 
-test("rerunning setup preserves a v2 Google Calendar binding", async (t) => {
+test("setup should preserve a v2 Google Calendar binding when setup is rerun", async (t) => {
+    // Given
     const f = await fixture(t);
     await setupMain(f.create, capture(), verified);
     const existing = await loadSetupConfig(f.config);
@@ -288,10 +296,91 @@ test("rerunning setup preserves a v2 Google Calendar binding", async (t) => {
         f.config,
         `${JSON.stringify({ ...existing, version: 2, googleCalendarConfigPath: calendarPath }, null, 2)}\n`,
     );
+    // When
     await setupMain([...f.args, "--intent", "use-existing", "--provider", "codex"], capture(), verified);
     const rerun = await loadSetupConfig(f.config);
+
+    // Then
     assert.equal(rerun.version, 2);
     assert.equal(rerun.googleCalendarConfigPath, calendarPath);
+});
+
+test("Google Calendar setup should preserve continuity when config path overlaps canonical state", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const before = await readFile(f.state, "utf8");
+
+    // When
+    const result = await main(
+        ["setup-google-calendar", "--setup-config", f.config, "--config", f.state, "--disable"],
+        capture(),
+    );
+
+    // Then
+    assert.equal(result, 2);
+    assert.equal(await readFile(f.state, "utf8"), before);
+});
+
+test("Google Calendar setup should preserve continuity when config path aliases canonical state", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const alias = join(f.directory, "calendar-alias.json");
+    await symlink(f.state, alias);
+    const before = await readFile(f.state, "utf8");
+
+    // When
+    const result = await main(
+        ["setup-google-calendar", "--setup-config", f.config, "--config", alias, "--disable"],
+        capture(),
+    );
+
+    // Then
+    assert.equal(result, 2);
+    assert.equal(await readFile(f.state, "utf8"), before);
+});
+
+test("Google Calendar setup should preserve continuity when refresh-token path overlaps a state sidecar", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const clientSecret = join(f.directory, "client-secret.json");
+    await writeFile(clientSecret, "secret", { mode: 0o600 });
+    const before = await readFile(f.state, "utf8");
+
+    // When
+    const result = await main(
+        [
+            "setup-google-calendar",
+            "--setup-config",
+            f.config,
+            "--config",
+            join(f.directory, "calendar.json"),
+            "--client-id",
+            "client",
+            "--client-secret-file",
+            clientSecret,
+            "--refresh-token-file",
+            `${f.state}.conversation.json`,
+            "--calendar-id",
+            "primary",
+            "--calendar-label",
+            "Personal",
+            "--timezone",
+            "UTC",
+            "--scope",
+            "private",
+            "--surface",
+            "local_cli",
+        ],
+        capture(),
+    );
+
+    // Then
+    assert.equal(result, 2);
+    assert.equal(await readFile(f.state, "utf8"), before);
+    await assert.rejects(stat(`${f.state}.conversation.json`), { code: "ENOENT" });
 });
 
 test("restore attaches validated state without rewriting meaning or sidecars and requires a continuity choice", async (t) => {

@@ -9,7 +9,7 @@ import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc } from "../core/model.ts"
 import { exactKeys, isObject } from "../util.ts";
 import { CapabilityExecutionFailure } from "./execution.ts";
 
-export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly";
 export const GOOGLE_CALENDAR_API_ORIGIN = "https://www.googleapis.com";
 export const GOOGLE_OAUTH_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const MAX_RANGE_MS = 31 * 24 * 60 * 60 * 1000;
@@ -276,8 +276,8 @@ async function lookup(
         truncated: typeof body.nextPageToken === "string",
         events: body.items.map((item: Record<string, unknown>) => ({
             id: hash(item.id as string),
-            title: item.summary as string,
-            status: item.status as string,
+            title: typeof item.summary === "string" ? item.summary : null,
+            status: typeof item.status === "string" ? item.status : "confirmed",
             start: eventTime(item.start as Record<string, unknown>),
             end: eventTime(item.end as Record<string, unknown>),
             sourceUpdatedAt: item.updated as string,
@@ -289,8 +289,8 @@ function validEvent(value: unknown): value is Record<string, unknown> {
     return (
         isObject(value) &&
         safeText(value.id) &&
-        typeof value.summary === "string" &&
-        safeText(value.status) &&
+        (value.summary === undefined || typeof value.summary === "string") &&
+        (value.status === undefined || safeText(value.status)) &&
         validEventTime(value.start) &&
         validEventTime(value.end) &&
         safeText(value.updated)

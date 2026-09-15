@@ -199,7 +199,8 @@ generalized permission language remain outside this boundary.
 ## Read-only Google Calendar capability
 
 Issue #231 adds the first external read capability behind this boundary. Ember calls
-Google Calendar REST directly with the single `calendar.readonly` OAuth scope. The
+Google Calendar REST directly with the least-privileged `calendar.events.readonly`
+OAuth scope. The
 model supplies only a positive RFC 3339 UTC interval of at most 31 days; Ember injects
 the configured calendar and timezone, requests at most 20 ordered expanded events,
 and permits one request per cognition.

@@ -33,14 +33,18 @@ ember setup-google-calendar \
 ```
 
 Open the printed Google URL. Ember listens only on `127.0.0.1`, verifies OAuth state
-and PKCE, requests exactly `https://www.googleapis.com/auth/calendar.readonly`, stores
+and PKCE, requests exactly
+`https://www.googleapis.com/auth/calendar.events.readonly`, stores
 the refresh token with mode 0600, verifies one one-minute calendar read, and then
 activates configuration. The calendar ID and credential paths are host configuration;
 they never enter canonical continuity state.
 
 Rerun configuration deliberately with `--reconfigure` to replace the grant. A
-reconfiguration writes and verifies a new versioned token file; the active config and
-its prior token remain untouched unless verification succeeds. Disable it with the same
+reconfiguration writes and verifies a new versioned token file; a failed verification
+removes that staged credential, while the active config and prior token remain untouched.
+After successful replacement, the prior mode-0600 token is deliberately retained at its
+known old config path for explicit rollback or revocation rather than silently deleted.
+Disable the integration with the same
 `--setup-config` and `--config` plus `--disable`; this marks the integration inactive
 without deleting credentials. For revoked or expired authorization, revoke the old
 grant in the Google account, preserve the config for diagnosis, and repeat setup to
