@@ -169,10 +169,13 @@ the filesystem does not receive a privileged mutation path.
 
 Canonical state is the authority when it and a materialized view diverge.
 
-- For a generated-only view, unexpected modification is drift. Regeneration may
-  replace it only through an explicit materialization operation that reports the drift
-  and follows the view's backup/recovery policy; the modified bytes do not mutate
-  canonical state.
+- For a generated-only view, unexpected modification is drift, but detecting and
+  classifying that drift requires an explicit comparison or tracked artifact identity.
+  A materializer that implements detection must report drift and follow its declared
+  backup/recovery policy. A materializer that does not inspect prior artifacts may
+  replace them only through an explicit regeneration operation whose contract clearly
+  states that existing bytes are overwritten without drift classification or backup.
+  In either case, modified view bytes do not mutate canonical state.
 - For an editable view, the recorded base revision is compared with current canonical
   state. Non-overlapping, semantically unambiguous proposals may be evaluated normally.
   Concurrent changes affecting the same semantic IDs, slots, lifecycle edges, evidence,
@@ -298,8 +301,11 @@ metadata, or inline structure.
 
 Identical canonical state, policy, and renderer version produce byte-identical files;
 wall-clock attempt data is not rendered. Publication uses private files and atomic
-per-file replacement. Re-running materialization explicitly replaces drift, but never
-reads generated prose or mutates canonical state. The command is:
+per-file replacement. Re-running materialization explicitly replaces existing target
+bytes, but never reads generated prose or mutates canonical state. Markdown v1 therefore overwrites any
+existing target without classifying it as generated-view drift or retaining a backup;
+drift detection, reporting, and recovery policy are explicitly deferred to issue #259.
+The command is:
 
 ```bash
 ember materialize --state PATH --principal PRINCIPAL --scope SCOPE --output DIRECTORY

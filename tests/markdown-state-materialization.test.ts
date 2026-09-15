@@ -105,7 +105,7 @@ test("CLI publishes generated-only views as private files without changing canon
     assert.equal((await stat(join(output, "MEMORY.md"))).mode & 0o777, 0o600);
 });
 
-test("publishing unchanged state replaces drift deterministically", async () => {
+test("explicit regeneration deterministically replaces an existing view without classifying drift", async () => {
     const directory = await tempDir();
     const materialization = buildStateMaterialization(populatedState().state, {
         principal: PRINCIPAL,
@@ -113,7 +113,7 @@ test("publishing unchanged state replaces drift deterministically", async () => 
     });
     await publishMarkdownStateViews(directory, join(directory, "ember.json"), materialization);
     const expected = await readFile(join(directory, "MEMORY.md"), "utf8");
-    await writeFile(join(directory, "MEMORY.md"), "drift\n");
+    await writeFile(join(directory, "MEMORY.md"), "unclassified existing bytes\n");
 
     await publishMarkdownStateViews(directory, join(directory, "ember.json"), materialization);
 
