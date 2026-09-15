@@ -330,11 +330,10 @@ function quoteToken(value: string) {
 
 function parseSetupAliases(stdout: string, setup: ScenarioAction[]) {
     const lines = stdout.split(/\r?\n/);
-    if (!lines[0]?.startsWith("runtime ")) throw new Error("baseline process did not report a runtime start");
     const aliases = new Map<string, string>();
     for (let index = 0; index < setup.length; index += 1) {
         const action = setup[index]!;
-        const id = lines[index + 1];
+        const id = lines[index];
         if (typeof id !== "string" || !id.startsWith("meaning-"))
             throw new Error(`setup action ${action.as} did not return a meaning id`);
         aliases.set(action.as, id);
@@ -350,10 +349,7 @@ function requireExpectationAliases(episode: ScenarioEpisode, aliases: Map<string
 
 function extractRunReply(stdout: string, setupCount: number) {
     const lines = stdout.split(/\r?\n/);
-    return lines
-        .slice(1 + setupCount)
-        .join("\n")
-        .trim();
+    return lines.slice(setupCount).join("\n").trim();
 }
 
 async function inspectState(
