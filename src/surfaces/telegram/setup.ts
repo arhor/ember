@@ -67,6 +67,7 @@ export interface TelegramSetupDependencies {
     delay?: (milliseconds: number) => Promise<void>;
     now?: () => number;
     roundTripTimeoutMs?: number;
+    mappingTimeoutMs?: number;
     verificationCode?: () => string;
     nodePath?: string;
     workingDirectory?: string;
@@ -130,6 +131,10 @@ export async function runTelegramSetup(
         io.output.write(
             `Existing Telegram service: installed ${enabled.code === 0 ? "yes" : enabled.code === null ? "unknown" : "no"}; active ${wasActive ? "yes" : active.code === null ? "unknown" : "no"}.\n`,
         );
+        if (active.code === null) {
+            stages.mapping = "uncertain";
+            return { status: "uncertain", stages };
+        }
         if (wasActive) {
             if (!(await confirm("Temporarily stop the active Telegram service for exclusive mapping discovery?")))
                 return { status: "cancelled", stages: { ...stages, mapping: "declined" } };
@@ -143,10 +148,9 @@ export async function runTelegramSetup(
 
         const code = dependencies.verificationCode?.() ?? String(randomInt(100_000, 1_000_000));
         io.output.write(`Send this verification code privately to the bot: ${code}\n`);
-        const updates = await api.getUpdates({ timeout: 30, allowed_updates: ["message"] });
-        const candidates = matchingPrivateUpdates(updates, code);
+        const candidates = await waitForMappingCandidates(api, code, dependencies);
         if (!candidates.length)
-            throw new ValidationError("no matching private Telegram verification message was found");
+            throw new ValidationError("no matching private Telegram verification message was found before timeout");
         let selected: PrivateMessageUpdate | null = null;
         for (const candidate of candidates) {
             const message = candidate.message!;
@@ -179,17 +183,21 @@ export async function runTelegramSetup(
 
         const unit = renderTelegramSurfaceUnit(config, configPath);
         const existingUnit = await read(unitPath);
-        if (!(await confirm("Install and start the Telegram user service?")))
+        if (!(await confirm("Install and start the Telegram user service?"))) {
+            restoreActiveService = false;
             return {
                 status: "configured_inactive",
                 stages: { ...stages, unit_installation: "declined", activation: "declined" },
             };
+        }
         if (
             existingUnit !== null &&
             existingUnit !== unit &&
             !(await confirm("Replace the drifted Telegram systemd unit?"))
-        )
+        ) {
+            restoreActiveService = false;
             return { status: "configured_inactive", stages: { ...stages, unit_installation: "declined" } };
+        }
         if (existingUnit !== unit) await write(unitPath, unit, 0o600);
         stages.unit_installation = "confirmed";
 
@@ -302,6 +310,26 @@ function matchingPrivateUpdates(updates: Update[], code: string): PrivateMessage
             message.text?.trim() === code
         );
     });
+}
+
+async function waitForMappingCandidates(
+    api: Pick<Api, "getUpdates">,
+    code: string,
+    dependencies: TelegramSetupDependencies,
+): Promise<PrivateMessageUpdate[]> {
+    const delay =
+        dependencies.delay ?? ((milliseconds) => new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds)));
+    const now = dependencies.now ?? Date.now;
+    const deadline = now() + (dependencies.mappingTimeoutMs ?? 120_000);
+    while (now() < deadline) {
+        const remainingMs = deadline - now();
+        const timeout = Math.max(1, Math.min(30, Math.ceil(remainingMs / 1000)));
+        const updates = await api.getUpdates({ timeout, allowed_updates: ["message"] });
+        const candidates = matchingPrivateUpdates(updates, code);
+        if (candidates.length) return candidates;
+        if (now() < deadline) await delay(250);
+    }
+    return [];
 }
 
 async function observeConfirmedRoundTrip(statePath: string, updateId: number) {
