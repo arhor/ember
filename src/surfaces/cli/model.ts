@@ -15,6 +15,7 @@ export interface CommandSpec {
 
 export const Commands = {
     SETUP: "setup",
+    SETUP_GOOGLE_CALENDAR: "setup-google-calendar",
     INIT: "init",
     RUN: "run",
     INSPECT: "inspect",
@@ -43,6 +44,25 @@ export const CommandSpecs = {
             "--help",
         ],
         booleans: ["--accept-continuity-risk", "--confirm-provider-change", "--help"],
+        positionals: 0,
+    },
+    [Commands.SETUP_GOOGLE_CALENDAR]: {
+        flags: [
+            "--setup-config",
+            "--config",
+            "--client-id",
+            "--client-secret-file",
+            "--refresh-token-file",
+            "--calendar-id",
+            "--calendar-label",
+            "--timezone",
+            "--scope",
+            "--surface",
+            "--disable",
+            "--reconfigure",
+        ],
+        booleans: ["--disable", "--reconfigure"],
+        repeatable: ["--surface"],
         positionals: 0,
     },
     [Commands.INIT]: {
@@ -126,6 +146,22 @@ export type SetupArgs = {
     help: boolean;
 };
 
+export type SetupGoogleCalendarArgs = {
+    command: typeof Commands.SETUP_GOOGLE_CALENDAR;
+    setupConfig: string;
+    config: string;
+    clientId: string | undefined;
+    clientSecretFile: string | undefined;
+    refreshTokenFile: string | undefined;
+    calendarId: string | undefined;
+    calendarLabel: string | undefined;
+    timezone: string | undefined;
+    scope: string | undefined;
+    surfaces: string[];
+    disable: boolean;
+    reconfigure: boolean;
+};
+
 export type ConfiguredRunArgs = {
     command: typeof Commands.RUN;
     mode: "configured";
@@ -206,6 +242,7 @@ export type QuarantineStaleLockArgs = {
 
 export type CliCommandArgs =
     | SetupArgs
+    | SetupGoogleCalendarArgs
     | InitArgs
     | RunArgs
     | InspectArgs

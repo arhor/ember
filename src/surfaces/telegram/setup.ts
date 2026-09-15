@@ -266,7 +266,10 @@ async function telegramV2Config(
                   timeout_seconds: binding.setup.provider.timeoutSeconds,
               };
     return {
-        config_version: 2,
+        config_version: binding.setup.version === 2 ? 3 : 2,
+        ...(binding.setup.googleCalendarConfigPath
+            ? { google_calendar_config_path: binding.setup.googleCalendarConfigPath }
+            : {}),
         state_path: binding.setup.statePath,
         principal: binding.setup.principal,
         activeScope: binding.scope,

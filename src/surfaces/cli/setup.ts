@@ -6,6 +6,7 @@ import type { EmberState } from "../../core/model.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { CliIo, ConfiguredRunArgs, SetupArgs, SetupIntent } from "./model.ts";
 
+import { loadGoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
 import { ProviderError, ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
 import { createOnboardingWork } from "../../core/onboarding-work.ts";
@@ -29,7 +30,8 @@ export interface SetupProvider {
 }
 
 export interface SetupConfig {
-    version: 1;
+    version: 1 | 2;
+    googleCalendarConfigPath?: string;
     intent: SetupIntent;
     statePath: string;
     principal: string;
@@ -89,20 +91,40 @@ export async function loadSetupConfig(path: string): Promise<SetupConfig | null>
     }
     if (
         !isObject(value) ||
-        !exactKeys(value, [
-            "version",
-            "intent",
-            "statePath",
-            "principal",
-            "lineageId",
-            "establishedAt",
-            "provider",
-            "verification",
-            "continuity",
-            "cancellationRequested",
-            "updatedAt",
-        ]) ||
-        value.version !== 1 ||
+        !exactKeys(
+            value,
+            value.version === 2
+                ? [
+                      "version",
+                      "googleCalendarConfigPath",
+                      "intent",
+                      "statePath",
+                      "principal",
+                      "lineageId",
+                      "establishedAt",
+                      "provider",
+                      "verification",
+                      "continuity",
+                      "cancellationRequested",
+                      "updatedAt",
+                  ]
+                : [
+                      "version",
+                      "intent",
+                      "statePath",
+                      "principal",
+                      "lineageId",
+                      "establishedAt",
+                      "provider",
+                      "verification",
+                      "continuity",
+                      "cancellationRequested",
+                      "updatedAt",
+                  ],
+        ) ||
+        (value.version !== 1 && value.version !== 2) ||
+        (value.version === 2 &&
+            (!safeText(value.googleCalendarConfigPath) || !isAbsolute(value.googleCalendarConfigPath))) ||
         typeof value.cancellationRequested !== "boolean" ||
         typeof value.intent !== "string" ||
         !["create-new", "restore-existing", "use-existing"].includes(String(value.intent)) ||
@@ -271,7 +293,8 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
         candidate.lineage.establishedAt = existing.establishedAt;
     }
     const config: SetupConfig = {
-        version: 1,
+        version: existing?.version ?? 1,
+        ...(existing?.version === 2 ? { googleCalendarConfigPath: existing.googleCalendarConfigPath } : {}),
         intent: existing?.intent ?? intent,
         statePath,
         principal,
@@ -454,6 +477,10 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
     if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
         throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
+    const googleCalendarConfig =
+        config.version === 2 ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath!) : undefined;
+    if (googleCalendarConfig && googleCalendarConfig.setup_lineage_id !== config.lineageId)
+        throw new ValidationError("Google Calendar configuration belongs to a different setup lineage");
     return await runCliSurface(
         {
             statePath: config.statePath,
@@ -468,6 +495,9 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
             providerModel: config.provider.model,
             providerTimeoutSeconds: config.provider.timeoutSeconds,
+            ...(googleCalendarConfig === undefined
+                ? {}
+                : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
             configuredSetupHandoff: () => runTelegramSetup({ setup: config, scope: args.scope }, io),
         },
         io,

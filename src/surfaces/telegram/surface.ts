@@ -4,11 +4,13 @@ import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "n
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
+import type { GoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
 import type { CognitionId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
+import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
 import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
@@ -37,7 +39,8 @@ export type TelegramProviderConfig =
     | { kind: "claude-code"; model: string; timeout_seconds: number };
 
 export interface TelegramSurfaceConfig {
-    config_version: 1 | 2;
+    config_version: 1 | 2 | 3;
+    google_calendar_config_path?: string;
     state_path: string;
     principal: string;
     activeScope: string;
@@ -487,12 +490,13 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         "working_directory",
     ];
     const v2Fields = legacyFields.filter((field) => !field.startsWith("provider_")).concat("provider");
+    const structuredFields = value.config_version === 3 ? [...v2Fields, "google_calendar_config_path"] : v2Fields;
     if (
         (value.config_version !== 1 || !exactKeys(value, legacyFields)) &&
-        (value.config_version !== 2 ||
-            (!exactKeys(value, v2Fields) &&
+        ((value.config_version !== 2 && value.config_version !== 3) ||
+            (!exactKeys(value, structuredFields) &&
                 !exactKeys(value, [
-                    ...v2Fields,
+                    ...structuredFields,
                     "provider_kind",
                     "provider_command",
                     "provider_arguments",
@@ -508,6 +512,8 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
     requireAbsolutePath(value.working_directory, "Telegram working directory");
     requireAbsolutePath(value.node_path, "Telegram Node path");
     requireAbsolutePath(value.surface_entrypoint, "Telegram surface entrypoint");
+    if (value.config_version === 3)
+        requireAbsolutePath(value.google_calendar_config_path, "Google Calendar config path");
     if (value.config_version === 1) validateLegacyProvider(value);
     else validateStructuredProvider(value.provider);
     validatePollTimeout(value.poll_timeout_seconds);
@@ -553,7 +559,7 @@ function validateStructuredProvider(value: unknown): asserts value is TelegramPr
 }
 
 function providerTimeout(value: Record<string, unknown>) {
-    return value.config_version === 2 && isObject(value.provider)
+    return value.config_version !== 1 && isObject(value.provider)
         ? value.provider.timeout_seconds
         : value.provider_timeout_seconds;
 }
@@ -577,10 +583,23 @@ function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
     if (config.provider_kind === "claude-code")
         return async (request, options) => {
             const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
-            return createClaudeCodeProvider(config.provider?.model ? { model: config.provider.model } : {})(
-                request,
-                options,
-            );
+            const calendar: GoogleCalendarConfig | undefined = config.google_calendar_config_path
+                ? await loadGoogleCalendarConfig(config.google_calendar_config_path)
+                : undefined;
+            return createClaudeCodeProvider({
+                ...(config.provider?.model ? { model: config.provider.model } : {}),
+                ...(calendar
+                    ? {
+                          selectCapabilities: (selectedRequest) =>
+                              selectGoogleCalendarCapability(calendar, {
+                                  principal: selectedRequest.projection.principal,
+                                  lineageId: selectedRequest.projection.lineage.lineageId,
+                                  scope: selectedRequest.projection.activeScope,
+                                  surface: selectedRequest.projection.surface,
+                              }),
+                      }
+                    : {}),
+            })(request, options);
         };
     return createProcessProvider(adapter);
 }
