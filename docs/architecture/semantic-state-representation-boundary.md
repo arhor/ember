@@ -107,18 +107,25 @@ metadata to establish at least:
 - representation and renderer version;
 - source lineage and canonical revision or equivalent snapshot identity;
 - view purpose and disclosure/scope policy;
-- generation time; and
 - whether the artifact is generated-only, proposal-authoring, or another explicitly
   supported interaction mode.
+
+Wall-clock render time is operational evidence about a materialization attempt, not
+projection content, and must remain outside the deterministic artifact. Other volatile
+attempt metadata such as process IDs, temporary paths, and attempt IDs is excluded for
+the same reason. Source times already belonging to the selected canonical state may be
+rendered when the view contract calls for them; they are semantic inputs rather than
+facts manufactured by rendering.
 
 Candidate views named `SELF`, `USER`, `RELATIONSHIP`, and `MEMORY` are useful human
 groupings, not canonical kinds. One meaning may legitimately participate in multiple
 views; placement does not change ownership. `SELF.md` cannot make a user statement
 Ember-owned, and moving text between files cannot change its semantic scope.
 
-Markdown v1 should prefer deterministic output for identical canonical state,
-renderer version, and view configuration. Determinism makes review and drift detection
-tractable, but byte equality is not semantic equality across renderer versions.
+Markdown v1 must produce byte-identical output for identical canonical state, renderer
+version, and view configuration. Determinism makes review and drift detection
+tractable, but byte equality is not semantic equality across renderer versions. A
+render attempt and its time may be recorded separately without changing the artifact.
 Generated output must identify its interaction mode clearly enough that ordinary
 editing cannot be mistaken for successful canonical mutation.
 
@@ -239,7 +246,8 @@ retrieval pressure under issue #240.
 4. Any representation that claims losslessness preserves provenance, ownership, scope,
    uncertainty, currentness, lifecycle, evidence lineage, and supersession.
 5. Materializations identify their source revision, representation version, purpose,
-   disclosure boundary, and interaction mode.
+   disclosure boundary, and interaction mode without embedding volatile render-attempt
+   metadata; attempt time remains separate operational evidence.
 6. Cognition projections are built from canonical state for the present purpose, not
    scraped from filesystem views.
 7. Stale, malformed, missing, partially written, or edited views cannot silently
