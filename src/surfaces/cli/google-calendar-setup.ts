@@ -15,6 +15,7 @@ import {
 } from "../../capabilities/google-calendar.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { StateStore } from "../../persistence/state-store.ts";
 import { loadSetupConfig } from "./setup.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -37,6 +38,24 @@ export async function setupGoogleCalendarMain(
     args: SetupGoogleCalendarArgs,
     io: CliIo,
     dependencies: GoogleCalendarSetupDependencies = {},
+): Promise<number> {
+    const paths = [resolve(args.setupConfig), resolve(args.config)].sort();
+    const leases: Array<{ store: StateStore; lease: Awaited<ReturnType<StateStore["acquireWriteLease"]>> }> = [];
+    try {
+        for (const path of paths) {
+            const store = new StateStore(path);
+            leases.push({ store, lease: await store.acquireWriteLease() });
+        }
+        return await setupGoogleCalendarLocked(args, io, dependencies);
+    } finally {
+        for (const { store, lease } of leases.reverse()) await store.releaseWriteLease(lease);
+    }
+}
+
+async function setupGoogleCalendarLocked(
+    args: SetupGoogleCalendarArgs,
+    io: CliIo,
+    dependencies: GoogleCalendarSetupDependencies,
 ): Promise<number> {
     const write = dependencies.write ?? durableWrite;
     const remove = dependencies.remove ?? ((path: string) => unlink(path));

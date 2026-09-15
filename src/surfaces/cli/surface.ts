@@ -2,14 +2,15 @@ import type { Readable, Writable } from "node:stream";
 
 import { createInterface } from "node:readline";
 
-import type { GoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
+import type { CapabilityBinding } from "../../capabilities/execution.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
+import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
-import { selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
+import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
 import {
@@ -48,7 +49,11 @@ export interface CliSurfaceConfig {
     memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     configuredSetupHandoff?: () => Promise<TelegramSetupResult>;
-    googleCalendarConfig?: GoogleCalendarConfig;
+    googleCalendarConfigPath?: string;
+    claudeProviderFactory?: (options: {
+        model?: string;
+        selectCapabilities?: (request: ProviderRequest) => readonly CapabilityBinding[];
+    }) => ProviderInvoker;
 }
 
 interface CliSurfaceIo {
@@ -266,12 +271,15 @@ function configuredCognitionProvider(config: CliSurfaceConfig) {
     const adapter = { command: config.providerCommand, arguments_: config.providerArgs };
     const claude: ProviderInvoker = async (request, options) => {
         const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
-        return await createClaudeCodeProvider({
+        const googleCalendarConfig = config.googleCalendarConfigPath
+            ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath)
+            : undefined;
+        return await (config.claudeProviderFactory ?? createClaudeCodeProvider)({
             ...(config.providerModel ? { model: config.providerModel } : {}),
-            ...(config.googleCalendarConfig
+            ...(googleCalendarConfig
                 ? {
                       selectCapabilities: (selectedRequest) =>
-                          selectGoogleCalendarCapability(config.googleCalendarConfig, {
+                          selectGoogleCalendarCapability(googleCalendarConfig, {
                               principal: selectedRequest.projection.principal,
                               lineageId: selectedRequest.projection.lineage.lineageId,
                               scope: selectedRequest.projection.activeScope,

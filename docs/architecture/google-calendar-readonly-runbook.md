@@ -58,12 +58,20 @@ that binding without issuing another grant. If config replacement reports uncert
 durability after publication began, preserve the new token: the possibly-visible config
 may already reference it, so deleting it would make recovery destructive.
 
+Calendar setup holds compatible writer leases for both the setup record and Calendar
+config from its initial read through OAuth and publication. Concurrent ordinary setup
+or another Calendar claim fails closed and can be retried after the active operation;
+the retry observes current lineage ownership instead of overwriting a stale snapshot.
+
 ## Reproduce and inspect
 
 Start configured CLI conversation with the bound scope, or regenerate Telegram setup
 after calendar configuration so its v3 config references the calendar config. Ask for
 events in an explicit interval no longer than 31 days. A successful empty interval is
 an `observed` result with an empty event list. Pagination is reported as truncation.
+The CLI reloads the Calendar config at each cognition boundary, so disablement or
+reconfiguration revokes previously captured standing authority without requiring a
+surface restart.
 
 Inspect only the non-secret config, file modes, and sanitized capability ledger in a
 test harness. Never print token files, authorization headers, raw event IDs, calendar

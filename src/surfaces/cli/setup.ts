@@ -495,7 +495,9 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
             providerModel: config.provider.model,
             providerTimeoutSeconds: config.provider.timeoutSeconds,
-            ...(googleCalendarConfig === undefined ? {} : { googleCalendarConfig }),
+            ...(googleCalendarConfig === undefined
+                ? {}
+                : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
             configuredSetupHandoff: () => runTelegramSetup({ setup: config, scope: args.scope }, io),
         },
         io,

@@ -497,6 +497,138 @@ test("Google Calendar setup should recover binding when initial config publicati
     assert.equal(recovered.googleCalendarConfigPath, configPath);
 });
 
+test("CLI Calendar authority should refresh when config is disabled between cognition turns", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const state = initialState("user-secret-marker");
+    await new StateStore(f.state).create(state);
+    const configPath = join(f.directory, "calendar.json");
+    const calendar = calendarConfig(state.lineage.lineageId, "user-secret-marker", f.directory);
+    await writeFile(configPath, `${JSON.stringify(calendar)}\n`);
+    const selectedCounts: number[] = [];
+    const io = capture("first\nsecond\n:quit\n");
+
+    // When
+    await runCliSurface(
+        {
+            statePath: f.state,
+            principal: "user-secret-marker",
+            scope: "private",
+            providerKind: "claude-code",
+            providerCommand: "claude-code",
+            providerArgs: [],
+            providerTimeoutSeconds: 30,
+            googleCalendarConfigPath: configPath,
+            claudeProviderFactory: (options) => async (request) => {
+                selectedCounts.push(options.selectCapabilities?.(request).length ?? 0);
+                if (selectedCounts.length === 1)
+                    await writeFile(configPath, `${JSON.stringify({ ...calendar, enabled: false })}\n`);
+                return success;
+            },
+        },
+        io,
+    );
+
+    // Then
+    assert.deepEqual(selectedCounts, [1, 0]);
+});
+
+test("Calendar setup should reject ordinary setup mutation while OAuth holds the setup lease", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const secretPath = join(f.directory, "client-secret");
+    await writeFile(secretPath, "secret", { mode: 0o600 });
+    let authorizeStarted!: () => void;
+    let authorizeContinue!: () => void;
+    const started = new Promise<void>((resolvePromise) => (authorizeStarted = resolvePromise));
+    const proceed = new Promise<void>((resolvePromise) => (authorizeContinue = resolvePromise));
+    const args = calendarSetupArgs(f, join(f.directory, "calendar.json"), secretPath);
+    const calendarSetup = setupGoogleCalendarMain(args, capture(), {
+        authorize: async () => {
+            authorizeStarted();
+            await proceed;
+            return { code: "code", redirectUri: "http://127.0.0.1/callback" };
+        },
+        fetch: async () => new Response(JSON.stringify({ refresh_token: "token" }), { status: 200 }),
+        verify: async () => {},
+        random: (size) => new Uint8Array(size).fill(1),
+    });
+    await started;
+
+    // When
+    const concurrent = await captureError(() =>
+        setupMain(
+            [...f.args, "--intent", "use-existing", "--provider", "cursor", "--confirm-provider-change"],
+            capture(),
+            verified,
+        ),
+    );
+    authorizeContinue();
+    await calendarSetup;
+
+    // Then
+    assert.match(String(concurrent), /writer lock|concurrent/i);
+    const setup = await loadSetupConfig(f.config);
+    assert.equal(setup.provider.kind, "codex");
+    assert.equal(setup.version, 2);
+});
+
+test("Calendar setup should preserve first lineage claim when two lineages race for one config", async (t) => {
+    // Given
+    const first = await fixture(t);
+    const second = await fixture(t);
+    await setupMain(first.create, capture(), verified);
+    await setupMain(second.create, capture(), verified);
+    const sharedConfig = join(first.directory, "shared-calendar.json");
+    const firstSecret = join(first.directory, "first-secret");
+    const secondSecret = join(second.directory, "second-secret");
+    await writeFile(firstSecret, "secret", { mode: 0o600 });
+    await writeFile(secondSecret, "secret", { mode: 0o600 });
+    let authorizeStarted!: () => void;
+    let authorizeContinue!: () => void;
+    const started = new Promise<void>((resolvePromise) => (authorizeStarted = resolvePromise));
+    const proceed = new Promise<void>((resolvePromise) => (authorizeContinue = resolvePromise));
+    const dependencies = {
+        authorize: async () => {
+            authorizeStarted();
+            await proceed;
+            return { code: "code", redirectUri: "http://127.0.0.1/callback" };
+        },
+        fetch: async () => new Response(JSON.stringify({ refresh_token: "token" }), { status: 200 }),
+        verify: async () => {},
+        random: (size: number) => new Uint8Array(size).fill(1),
+    };
+    const firstSetup = setupGoogleCalendarMain(
+        calendarSetupArgs(first, sharedConfig, firstSecret),
+        capture(),
+        dependencies,
+    );
+    await started;
+
+    // When
+    const racingFailure = await captureError(() =>
+        setupGoogleCalendarMain(calendarSetupArgs(second, sharedConfig, secondSecret), capture(), {
+            ...dependencies,
+            authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
+        }),
+    );
+    authorizeContinue();
+    await firstSetup;
+    const retryFailure = await captureError(() =>
+        setupGoogleCalendarMain(calendarSetupArgs(second, sharedConfig, secondSecret), capture(), {
+            ...dependencies,
+            authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
+        }),
+    );
+
+    // Then
+    assert.match(String(racingFailure), /writer lock|concurrent/i);
+    assert.match(String(retryFailure), /different setup binding/);
+    const claimed = JSON.parse(await readFile(sharedConfig, "utf8"));
+    assert.equal(claimed.setup_lineage_id, (await loadSetupConfig(first.config)).lineageId);
+});
+
 function calendarConfig(lineage: string, principal: string, directory: string) {
     return {
         config_version: 1,
@@ -513,6 +645,34 @@ function calendarConfig(lineage: string, principal: string, directory: string) {
         client_secret_file: join(directory, "foreign-secret"),
         refresh_token_file: join(directory, "foreign-token"),
     };
+}
+
+function calendarSetupArgs(f: Awaited<ReturnType<typeof fixture>>, configPath: string, secretPath: string) {
+    const args = parseArgs([
+        "setup-google-calendar",
+        "--setup-config",
+        f.config,
+        "--config",
+        configPath,
+        "--client-id",
+        "client",
+        "--client-secret-file",
+        secretPath,
+        "--refresh-token-file",
+        join(f.directory, "refresh-token"),
+        "--calendar-id",
+        "primary",
+        "--calendar-label",
+        "Personal",
+        "--timezone",
+        "UTC",
+        "--scope",
+        "private",
+        "--surface",
+        "local_cli",
+    ]);
+    assert.equal(args.command, "setup-google-calendar");
+    return args;
 }
 
 test("restore attaches validated state without rewriting meaning or sidecars and requires a continuity choice", async (t) => {
