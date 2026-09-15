@@ -10,6 +10,22 @@ export class StoreUnavailable extends EmberError {}
 export class StoreExists extends EmberError {}
 export class StaleRevision extends EmberError {}
 
+export interface PartialPublicationOptions extends ErrorOptions {
+    publishedArtifacts: string[];
+    failedArtifact: string;
+}
+
+export class PartialPublication extends EmberError {
+    readonly publishedArtifacts: string[];
+    readonly failedArtifact: string;
+
+    constructor(message: string, { publishedArtifacts, failedArtifact, cause }: PartialPublicationOptions) {
+        super(message, { cause });
+        this.publishedArtifacts = publishedArtifacts;
+        this.failedArtifact = failedArtifact;
+    }
+}
+
 export class DurabilityUncertain extends EmberError {
     readonly replacementMayBeVisible = true;
 }

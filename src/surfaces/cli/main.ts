@@ -1,5 +1,6 @@
 import type {
     CheckArgs,
+    ApplyMaterializedEditsArgs,
     CliCommandArgs,
     CliIo,
     CorrectArgs,
@@ -13,11 +14,16 @@ import type {
 } from "./model.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
+import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
 import { initialState } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
 import { supersede } from "../../core/semantics.ts";
 import { buildStateMaterialization } from "../../core/state-materialization.ts";
-import { publishMarkdownStateViews } from "../../persistence/markdown-state-materializer.ts";
+import {
+    inspectMarkdownStateEdits,
+    publishMarkdownStateViews,
+    readMarkdownStateViews,
+} from "../../persistence/markdown-state-materializer.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
@@ -45,6 +51,9 @@ export async function main(
             }
             case Commands.MATERIALIZE: {
                 return await onMaterialize(args, io);
+            }
+            case Commands.APPLY_MATERIALIZED_EDITS: {
+                return await onApplyMaterializedEdits(args, io);
             }
             case Commands.EXPLAIN: {
                 return await onExplain(args, io);
@@ -119,6 +128,86 @@ async function onMaterialize(args: MaterializeArgs, io: CliIo) {
         `materialized Markdown v1 revision ${state.revision}:\n${files.map((file) => `  ${file}`).join("\n")}\n`,
     );
     return 0;
+}
+
+async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: CliIo) {
+    const store = new StateStore(args.state);
+    const lease = await store.acquireWriteLease();
+    try {
+        const state = await loadForPrincipal(store, args.principal);
+        const materialization = buildStateMaterialization(state, { principal: args.principal, scope: args.scope });
+        const inspection = inspectMarkdownStateEdits(materialization, await readMarkdownStateViews(args.input));
+        if (args.approvalEvidenceIds.length !== inspection.edits.length)
+            throw new ValidationError("each materialized edit requires one --approval-evidence ID");
+        if (new Set(args.approvalEvidenceIds).size !== args.approvalEvidenceIds.length)
+            throw new ValidationError("materialized edits require distinct approval evidence IDs");
+        let candidate = state;
+        const outcomes = [];
+        for (const [index, edit] of inspection.edits.entries()) {
+            const approvalId = args.approvalEvidenceIds[index]!;
+            const approval = candidate.evidence.find((evidence) => evidence.evidenceId === approvalId);
+            const target = candidate.meanings.find((meaning) => meaning.meaningId === edit.meaning_id);
+            if (
+                !approval ||
+                !target ||
+                approval.sourceRole !== "user_command" ||
+                approval.sourceActor !== `user:${args.principal}` ||
+                approval.assertedPrincipal !== args.principal ||
+                approval.scope !== edit.scope ||
+                approval.availability !== "available" ||
+                approval.payload !== edit.content
+            )
+                throw new ValidationError(
+                    `approval evidence must be available attributable user evidence with payload exactly matching edit: ${edit.meaning_id}`,
+                );
+            const targetCurrentnessBoundary = Math.max(Date.parse(target.learnedAt), Date.parse(target.applicableFrom));
+            if (Date.parse(approval.occurredAt) <= targetCurrentnessBoundary)
+                throw new ValidationError(
+                    `approval evidence must be newer than the current meaning it supersedes: ${edit.meaning_id}`,
+                );
+            const proposedAt = approval.observedAt;
+            const assessment = assessMemoryProposal(candidate, {
+                proposal_version: 1,
+                proposal_id: `memory-proposal-file-edit-${inspection.base_revision}-${edit.meaning_id}`,
+                proposed_at: proposedAt,
+                kind: edit.kind,
+                owner: edit.owner,
+                slot: edit.slot,
+                scope: edit.scope,
+                content: edit.content,
+                source_evidence_ids: [approval.evidenceId],
+                epistemic_role: edit.epistemic_role,
+                applicable_from: proposedAt,
+                applicable_until: null,
+                proposed_currentness: "current",
+                confidence: { source: "high", proposition: "high", interpretation: "high" },
+                uncertainty: edit.uncertainty,
+                supersedes_meaning_id: edit.meaning_id,
+            });
+            if (assessment.status !== "valid")
+                throw new ValidationError(`materialized edit proposal was ${assessment.status}: ${assessment.detail}`);
+            const resolution = resolveMemoryProposal(candidate, assessment.proposal, state.revision, {
+                decidedAt: proposedAt,
+            });
+            outcomes.push(resolution.proposal);
+            if (resolution.proposal.status !== "adopted")
+                throw new ValidationError(`materialized edit was rejected: ${resolution.proposal.resolution.reason}`);
+            candidate = resolution.state;
+        }
+        candidate.revision = state.revision + 1;
+        await publishMarkdownStateViews(
+            args.input,
+            args.state,
+            buildStateMaterialization(candidate, { principal: args.principal, scope: args.scope }),
+        );
+        const committed = await store.commit(state.revision, candidate);
+        io.output.write(
+            `${JSON.stringify({ ...inspection, proposals: outcomes, resulting_revision: committed.revision }, null, 2)}\n`,
+        );
+        return 0;
+    } finally {
+        await store.releaseWriteLease(lease);
+    }
 }
 
 async function onExplain(args: ExplainArgs, io: CliIo) {
@@ -402,6 +491,18 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             principal: required("--principal"),
             scope: required("--scope"),
             output: required("--output"),
+        };
+    }
+    if (command === "apply-materialized-edits") {
+        return {
+            command,
+            state: required("--state"),
+            principal: required("--principal"),
+            scope: required("--scope"),
+            input: required("--input"),
+            approvalEvidenceIds: Array.isArray(values["--approval-evidence"])
+                ? (values["--approval-evidence"] as string[])
+                : [],
         };
     }
     if (command === "explain") {

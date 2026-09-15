@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import { PartialPublication } from "../src/core/errors.ts";
 import { validateState } from "../src/core/model.ts";
-import { supersede } from "../src/core/semantics.ts";
+import { supersede, userEvidence } from "../src/core/semantics.ts";
 import { buildStateMaterialization } from "../src/core/state-materialization.ts";
 import { publishMarkdownStateViews, renderMarkdownStateViews } from "../src/persistence/markdown-state-materializer.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -20,8 +21,387 @@ test("Markdown v1 is deterministic and carries stable semantic and evidence refe
     assert.deepEqual(second, first);
     assert.match(first["SELF.md"], new RegExp(ids.commitment));
     assert.match(first["USER.md"], new RegExp(ids.preference));
+    assert.match(first["USER.md"], /interaction-mode: selective_proposal_authoring/);
     assert.match(first["MEMORY.md"], /interaction-mode: generated_only/);
     assert.match(first["MEMORY.md"], /source-revision: 0/);
+});
+
+test("supported USER.md content edit becomes an adopted supersession and regenerates views", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state, ids } = populatedState();
+    const approval = userEvidence(state, PRINCIPAL, SCOPE, "Prefer detailed answers", {
+        timestamp: "2026-09-16T10:00:00Z",
+    });
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    const before = await readFile(userPath, "utf8");
+    await writeFile(userPath, before.replace("Prefer concise architectural rationale", "Prefer detailed answers"));
+
+    const result = await command([
+        "apply-materialized-edits",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--input",
+        output,
+        "--approval-evidence",
+        approval.evidenceId,
+    ]);
+
+    assert.equal(result.code, 0, result.stderr);
+    const committed = await new StateStore(statePath).load();
+    const old = committed.meanings.find((meaning) => meaning.meaningId === ids.preference)!;
+    const replacement = committed.meanings.find((meaning) => meaning.supersedes === ids.preference)!;
+    assert.deepEqual([old.currentness, old.supersededBy], ["superseded", replacement.meaningId]);
+    assert.equal(replacement.content, "Prefer detailed answers");
+    assert.deepEqual(replacement.sourceEvidenceIds, [approval.evidenceId]);
+    assert.match(result.stdout, /"status": "adopted"/);
+    assert.match(result.stdout, /"resulting_revision": 1/);
+    assert.match(await readFile(userPath, "utf8"), /source-revision: 1/);
+    assert.match(await readFile(join(output, "MEMORY.md"), "utf8"), /Prefer detailed answers/);
+});
+
+test("materialized edits fail closed for generated-view drift, stale bases, and metadata changes", async () => {
+    for (const scenario of ["generated", "stale", "metadata", "structure"] as const) {
+        const directory = await tempDir();
+        const statePath = join(directory, "ember.json");
+        const output = join(directory, "views");
+        const { state } = populatedState();
+        const store = new StateStore(statePath);
+        await store.create(state);
+        await command([
+            "materialize",
+            "--state",
+            statePath,
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--output",
+            output,
+        ]);
+        const userPath = join(output, "USER.md");
+        await writeFile(
+            userPath,
+            (await readFile(userPath, "utf8")).replace("Prefer concise architectural rationale", "Prefer detail"),
+        );
+        if (scenario === "generated") await writeFile(join(output, "SELF.md"), "unsupported drift\n");
+        if (scenario === "metadata")
+            await writeFile(
+                userPath,
+                (await readFile(userPath, "utf8")).replace(`scope: ${SCOPE}`, "scope: private:other"),
+            );
+        if (scenario === "structure")
+            await writeFile(userPath, (await readFile(userPath, "utf8")).replace("# User understanding", "# Forged"));
+        if (scenario === "stale") {
+            const lease = await store.acquireWriteLease();
+            await store.commit(state.revision, cloneState(state));
+            await store.releaseWriteLease(lease);
+        }
+
+        const result = await command([
+            "apply-materialized-edits",
+            "--state",
+            statePath,
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--input",
+            output,
+        ]);
+        assert.equal(result.code, 2);
+        assert.match(result.stderr, /generated-only|stale or changed|structure contains drift/);
+        assert.equal(
+            (await store.load()).meanings.some((meaning) => meaning.content === "Prefer detail"),
+            false,
+        );
+    }
+});
+
+test("materialized edit parser rejects trailing malformed sections without committing", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    const edited = (await readFile(userPath, "utf8")).replace(
+        "Prefer concise architectural rationale",
+        "Prefer detail",
+    );
+    await writeFile(userPath, `${edited}\n## Meaning forged garbage\narbitrary bytes here\n`);
+
+    const result = await command([
+        "apply-materialized-edits",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--input",
+        output,
+    ]);
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /malformed or unknown structure/);
+    assert.equal((await new StateStore(statePath).load()).revision, 0);
+});
+
+test("failed view regeneration leaves canonical revision unchanged", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    const approval = userEvidence(state, PRINCIPAL, SCOPE, "Prefer detail", {
+        timestamp: "2026-09-16T10:00:00Z",
+    });
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    await writeFile(
+        userPath,
+        (await readFile(userPath, "utf8")).replace("Prefer concise architectural rationale", "Prefer detail"),
+    );
+    await chmod(output, 0o500);
+    try {
+        const result = await command([
+            "apply-materialized-edits",
+            "--state",
+            statePath,
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--input",
+            output,
+            "--approval-evidence",
+            approval.evidenceId,
+        ]);
+        assert.equal(result.code, 2);
+        assert.equal((await new StateStore(statePath).load()).revision, 0);
+    } finally {
+        await chmod(output, 0o700);
+    }
+});
+
+test("materialized edits require matching attributable user approval evidence", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    const unrelated = userEvidence(state, PRINCIPAL, SCOPE, "A different user statement");
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    await writeFile(
+        userPath,
+        (await readFile(userPath, "utf8")).replace("Prefer concise architectural rationale", "Agent-authored edit"),
+    );
+
+    const result = await command([
+        "apply-materialized-edits",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--input",
+        output,
+        "--approval-evidence",
+        unrelated.evidenceId,
+    ]);
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /payload exactly matching edit/);
+    assert.equal((await new StateStore(statePath).load()).revision, 0);
+});
+
+test("historical approval evidence cannot resurrect an older preference as current", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const output = join(directory, "views");
+    const { state } = populatedState();
+    const historical = userEvidence(state, PRINCIPAL, SCOPE, "Prefer detailed answers", {
+        timestamp: "2026-08-29T09:00:00Z",
+    });
+    await new StateStore(statePath).create(state);
+    await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        output,
+    ]);
+    const userPath = join(output, "USER.md");
+    await writeFile(
+        userPath,
+        (await readFile(userPath, "utf8")).replace("Prefer concise architectural rationale", "Prefer detailed answers"),
+    );
+
+    const result = await command([
+        "apply-materialized-edits",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--input",
+        output,
+        "--approval-evidence",
+        historical.evidenceId,
+    ]);
+
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /approval evidence must be newer than the current meaning/);
+    const unchanged = await new StateStore(statePath).load();
+    assert.equal(unchanged.revision, 0);
+    assert.equal(
+        unchanged.meanings.some((meaning) => meaning.content === "Prefer detailed answers"),
+        false,
+    );
+});
+
+test("partial publication reports artifacts replaced before an injected failure", async () => {
+    const directory = await tempDir();
+    const materialization = buildStateMaterialization(populatedState().state, {
+        principal: PRINCIPAL,
+        scope: SCOPE,
+    });
+    let replacement = 0;
+    let error: unknown;
+    try {
+        await publishMarkdownStateViews(directory, join(directory, "ember.json"), materialization, {
+            replace: async (path, content) => {
+                replacement += 1;
+                if (replacement === 3) throw new Error("injected third replacement failure");
+                await writeFile(path, content, { mode: 0o600 });
+            },
+        });
+        assert.fail("expected partial publication failure");
+    } catch (caught) {
+        error = caught;
+    }
+    assert.equal(error instanceof PartialPublication, true);
+    if (!(error instanceof PartialPublication)) return;
+    assert.equal(error.publishedArtifacts.length, 2);
+    assert.match(error.failedArtifact, /SELF\.md$/);
+    assert.match(error.message, /published before failure:/);
+    for (const path of error.publishedArtifacts) assert.match(await readFile(path, "utf8"), /source-revision: 0/);
+    assert.equal(await stat(error.failedArtifact).catch(() => null), null);
+});
+
+test("materialized edits cannot change identity, provenance, scope, or historical meaning", async () => {
+    for (const replacement of [
+        ["- Owner: <code>user:user-1</code>", "- Owner: <code>agent:stolen</code>"],
+        [`- Scope: <code>${SCOPE}</code>`, "- Scope: <code>private:other</code>"],
+        ["evidence-preference", "evidence-stolen"],
+    ] as const) {
+        const directory = await tempDir();
+        const statePath = join(directory, "ember.json");
+        const output = join(directory, "views");
+        const { state, ids } = populatedState();
+        await new StateStore(statePath).create(state);
+        await command([
+            "materialize",
+            "--state",
+            statePath,
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--output",
+            output,
+        ]);
+        const userPath = join(output, "USER.md");
+        const preferenceEvidence = state.meanings.find((meaning) => meaning.meaningId === ids.preference)!
+            .sourceEvidenceIds[0]!;
+        const editPair =
+            replacement[0] === "evidence-preference" ? [preferenceEvidence, "evidence-stolen"] : replacement;
+        const edited = (await readFile(userPath, "utf8"))
+            .replace("Prefer concise architectural rationale", "Changed")
+            .replace(editPair[0], editPair[1]);
+        await writeFile(userPath, edited);
+        const result = await command([
+            "apply-materialized-edits",
+            "--state",
+            statePath,
+            "--principal",
+            PRINCIPAL,
+            "--scope",
+            SCOPE,
+            "--input",
+            output,
+        ]);
+        assert.equal(result.code, 2);
+        assert.match(result.stderr, /metadata or provenance changed/);
+    }
+
+    const { state, ids } = populatedState();
+    supersede(state, PRINCIPAL, ids.preference, "New current preference", { reason: "changed" });
+    const rendered = renderMarkdownStateViews(buildStateMaterialization(state, { principal: PRINCIPAL, scope: SCOPE }));
+    rendered["USER.md"] = rendered["USER.md"].replace("Prefer concise architectural rationale", "Rewrite history");
+    const { inspectMarkdownStateEdits } = await import("../src/persistence/markdown-state-materializer.ts");
+    assert.throws(
+        () =>
+            inspectMarkdownStateEdits(
+                buildStateMaterialization(state, { principal: PRINCIPAL, scope: SCOPE }),
+                rendered,
+            ),
+        /generated-only/,
+    );
 });
 
 test("Markdown v1 shows supersession and provenance without flattening stale meaning", () => {

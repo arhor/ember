@@ -19,6 +19,7 @@ export const Commands = {
     RUN: "run",
     INSPECT: "inspect",
     MATERIALIZE: "materialize",
+    APPLY_MATERIALIZED_EDITS: "apply-materialized-edits",
     EXPLAIN: "explain",
     CORRECT: "correct",
     CHECK: "check",
@@ -73,6 +74,11 @@ export const CommandSpecs = {
     },
     [Commands.MATERIALIZE]: {
         flags: ["--state", "--principal", "--scope", "--output"],
+        positionals: 0,
+    },
+    [Commands.APPLY_MATERIALIZED_EDITS]: {
+        flags: ["--state", "--principal", "--scope", "--input", "--approval-evidence"],
+        repeatable: ["--approval-evidence"],
         positionals: 0,
     },
     [Commands.EXPLAIN]: {
@@ -156,6 +162,15 @@ export type MaterializeArgs = {
     output: string;
 };
 
+export type ApplyMaterializedEditsArgs = {
+    command: typeof Commands.APPLY_MATERIALIZED_EDITS;
+    state: string;
+    principal: string;
+    scope: string;
+    input: string;
+    approvalEvidenceIds: string[];
+};
+
 export type ExplainArgs = {
     command: typeof Commands.EXPLAIN;
     state: string;
@@ -195,6 +210,7 @@ export type CliCommandArgs =
     | RunArgs
     | InspectArgs
     | MaterializeArgs
+    | ApplyMaterializedEditsArgs
     | ExplainArgs
     | CorrectArgs
     | CheckArgs
