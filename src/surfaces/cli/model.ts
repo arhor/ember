@@ -18,6 +18,7 @@ export const Commands = {
     INIT: "init",
     RUN: "run",
     INSPECT: "inspect",
+    MATERIALIZE: "materialize",
     EXPLAIN: "explain",
     CORRECT: "correct",
     CHECK: "check",
@@ -68,6 +69,10 @@ export const CommandSpecs = {
     [Commands.INSPECT]: {
         flags: ["--state", "--principal", "--json"],
         booleans: ["--json"],
+        positionals: 0,
+    },
+    [Commands.MATERIALIZE]: {
+        flags: ["--state", "--principal", "--scope", "--output"],
         positionals: 0,
     },
     [Commands.EXPLAIN]: {
@@ -143,6 +148,14 @@ export type InspectArgs = {
     json: boolean;
 };
 
+export type MaterializeArgs = {
+    command: typeof Commands.MATERIALIZE;
+    state: string;
+    principal: string;
+    scope: string;
+    output: string;
+};
+
 export type ExplainArgs = {
     command: typeof Commands.EXPLAIN;
     state: string;
@@ -181,6 +194,7 @@ export type CliCommandArgs =
     | InitArgs
     | RunArgs
     | InspectArgs
+    | MaterializeArgs
     | ExplainArgs
     | CorrectArgs
     | CheckArgs

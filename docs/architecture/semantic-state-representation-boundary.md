@@ -278,6 +278,35 @@ The child tasks may choose, with evidence:
   and
 - presentation wording, ordering, grouping, redaction, and localization.
 
+## Markdown v1 materialization
+
+Issue #258 selects a deliberately small, generated-only filesystem representation.
+The typed semantic selector is independent of Markdown and requires an asserted local
+principal plus one exact permitted scope. The Markdown adapter publishes `SELF.md`,
+`USER.md`, `RELATIONSHIP.md`, and `MEMORY.md` into an explicitly selected output
+directory. The first three group selected meanings by owner; `MEMORY.md` is the
+scope-bounded overview. These are navigation groupings, not canonical kinds.
+
+Each artifact declares representation version, source schema and revision, lineage,
+purpose, principal, exact scope, evidence-payload policy, and generated-only mode.
+Entries carry stable meaning IDs, lifecycle/currentness, supersession links, and
+descriptor-only source-evidence references. Evidence payloads and content digests are
+excluded, and meanings outside the exact requested scope are not selected. Content is
+indented as prose so embedded Markdown cannot manufacture headings or metadata.
+
+Identical canonical state, policy, and renderer version produce byte-identical files;
+wall-clock attempt data is not rendered. Publication uses private files and atomic
+per-file replacement. Re-running materialization explicitly replaces drift, but never
+reads generated prose or mutates canonical state. The command is:
+
+```bash
+ember materialize --state PATH --principal PRINCIPAL --scope SCOPE --output DIRECTORY
+```
+
+This per-file publication does not claim a transactionally atomic four-file snapshot:
+each file identifies its canonical revision so interrupted or mixed publication stays
+detectable. Safe edit proposals and richer drift recovery remain issue #259 work.
+
 Those choices may change without weakening the invariants above.
 
 ## Traceability

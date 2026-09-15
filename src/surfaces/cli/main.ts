@@ -6,6 +6,7 @@ import type {
     ExplainArgs,
     InitArgs,
     InspectArgs,
+    MaterializeArgs,
     LockStatusArgs,
     QuarantineStaleLockArgs,
     RunArgs,
@@ -15,6 +16,8 @@ import { EmberError, ValidationError } from "../../core/errors.ts";
 import { initialState } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
 import { supersede } from "../../core/semantics.ts";
+import { buildStateMaterialization } from "../../core/state-materialization.ts";
+import { publishMarkdownStateViews } from "../../persistence/markdown-state-materializer.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
@@ -39,6 +42,9 @@ export async function main(
                 return await onRun(args, io);
             case Commands.INSPECT: {
                 return await onInspect(args, io);
+            }
+            case Commands.MATERIALIZE: {
+                return await onMaterialize(args, io);
             }
             case Commands.EXPLAIN: {
                 return await onExplain(args, io);
@@ -99,6 +105,18 @@ async function onInspect(args: InspectArgs, io: CliIo) {
         memoryProposalGenerations: (await new MemoryProposalGenerationStore(store.path).load()).generations,
     };
     io.output.write(args.json ? `${JSON.stringify(view, null, 2)}\n` : renderInspection(view));
+    return 0;
+}
+
+async function onMaterialize(args: MaterializeArgs, io: CliIo) {
+    const state = await loadForPrincipal(new StateStore(args.state), args.principal);
+    const files = await publishMarkdownStateViews(
+        args.output,
+        buildStateMaterialization(state, { principal: args.principal, scope: args.scope }),
+    );
+    io.output.write(
+        `materialized Markdown v1 revision ${state.revision}:\n${files.map((file) => `  ${file}`).join("\n")}\n`,
+    );
     return 0;
 }
 
@@ -374,6 +392,15 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             state: required("--state"),
             principal: required("--principal"),
             json: values["--json"] === true,
+        };
+    }
+    if (command === "materialize") {
+        return {
+            command,
+            state: required("--state"),
+            principal: required("--principal"),
+            scope: required("--scope"),
+            output: required("--output"),
         };
     }
     if (command === "explain") {
