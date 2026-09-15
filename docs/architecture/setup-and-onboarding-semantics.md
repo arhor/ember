@@ -851,17 +851,13 @@ The guided flow writes Telegram surface configuration version 2 with a structure
 block. The Telegram loader continues to accept and normalize version 1, including its
 explicit process-provider representation. Neither representation stores the bot token.
 
-## Handoff to epic tasks
+## Implemented validation (#256)
 
-- **#253** should implement deterministic host bootstrap, explicit restore/create,
-  provider verification, rerunnable operational sections, and truthful recovery.
-- **#254** should implement progressive Ember-led onboarding as ordinary conversation,
-  routing durable learned meaning through the memory-formation semantics already
-  established by #220.
-- **#255** implements secret-safe Telegram setup from typed host operations while preserving
-  the existing Telegram surface boundary.
-- **#256** should prove fresh-create, fresh-restore, rerun, interruption, partial-failure,
-  and restart behavior end to end.
+The [setup and onboarding end-to-end validation](setup-onboarding-validation.md) exercises
+fresh creation, restoration, progressive onboarding, provider replacement, guided
+Telegram setup, restart recovery, provenance, and secret containment through production
+boundaries. It emits a sanitized version-1 report for future scorecard aggregation and
+keeps real-provider and real-Telegram operation as a separate opt-in clean-host smoke.
 
 The implementation may refine representations, but any representation that violates the
 ownership and truthfulness boundaries above requires an explicit architecture change

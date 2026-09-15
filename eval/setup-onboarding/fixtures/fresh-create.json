@@ -1,0 +1,32 @@
+{
+  "scenario_version": 1,
+  "id": "issue-256-fresh-create",
+  "description": "Fresh creation, progressive onboarding, provider replacement, and Telegram setup.",
+  "flow": "fresh-create",
+  "principal": "user-1",
+  "scope": "relationship:user-1",
+  "episodes": [
+    {
+      "id": "defer",
+      "at": "2026-09-15T08:01:00Z",
+      "input": "Let's do real work first and return to onboarding later."
+    },
+    { "id": "learn", "at": "2026-09-15T08:02:00Z", "input": "Please remember that I prefer concise replies." },
+    {
+      "id": "close",
+      "at": "2026-09-15T08:03:00Z",
+      "input": "Resume and finish onboarding; no optional integrations in conversation."
+    }
+  ],
+  "assertions": [
+    { "id": "lineage_after_verified_probe", "expected": "one lineage created only after successful verification" },
+    { "id": "deferred_work_survives_restart", "expected": "deferred onboarding remains non-blocking after restart" },
+    { "id": "ordinary_memory_adoption", "expected": "user preference is adopted from conversation evidence" },
+    {
+      "id": "provider_replacement_preserves_continuity",
+      "expected": "Cursor keeps the Codex-created lineage and meaning"
+    },
+    { "id": "telegram_round_trip", "expected": "all typed Telegram setup stages are confirmed" },
+    { "id": "secret_containment", "expected": "token occurs only in the mode-0600 token store" }
+  ]
+}

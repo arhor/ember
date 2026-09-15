@@ -1,0 +1,25 @@
+{
+  "scenario_version": 1,
+  "id": "issue-256-restore-existing",
+  "description": "Clean-host attachment of an established lineage without importing old-host configuration.",
+  "flow": "restore-existing",
+  "principal": "user-1",
+  "scope": "relationship:user-1",
+  "episodes": [{ "id": "resume", "at": "2026-09-15T09:01:00Z", "input": "Continue the existing work." }],
+  "assertions": [
+    {
+      "id": "restore_bytes_preserved_before_conversation",
+      "expected": "setup attachment preserves canonical and sidecar bytes"
+    },
+    {
+      "id": "lineage_and_meaning_identity_preserved",
+      "expected": "lineage, establishment, and meaning identifiers remain exact"
+    },
+    { "id": "original_provenance_projected", "expected": "eligible meaning and original evidence are projected" },
+    { "id": "no_newborn_onboarding", "expected": "restore does not synthesize onboarding work" },
+    {
+      "id": "old_host_state_excluded",
+      "expected": "old provider, Telegram mapping, and secret never enter the new host or provider request"
+    }
+  ]
+}
