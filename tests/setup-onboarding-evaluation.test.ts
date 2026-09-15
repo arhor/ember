@@ -33,10 +33,13 @@ test("setup/onboarding fixtures reject unsupported fields, invalid flows, and du
     for (const invalid of [
         { ...base, unsupported: true },
         { ...base, flow: "copy-installation" },
+        { ...base, episodes: [] },
+        { ...base, episodes: base.episodes.slice(0, 1) },
+        { ...base, assertions: base.assertions.slice(0, 1) },
         { ...base, episodes: [...base.episodes, base.episodes[0]] },
         { ...base, assertions: [...base.assertions, base.assertions[0]] },
     ])
-        assert.throws(() => validateSetupOnboardingScenario(invalid), /invalid|unsupported|duplicated/);
+        assert.throws(() => validateSetupOnboardingScenario(invalid), /invalid|unsupported|duplicated|contract/);
     await assert.rejects(loadSetupOnboardingScenario("relative.json"), /absolute/);
 });
 
@@ -53,6 +56,14 @@ for (const [flow, fault, assertion] of [
         const report = await runSetupOnboardingScenario(scenario, root, fault);
         assert.equal(report.passed, false);
         assert.equal(report.assertions.find((item) => item.assertion === assertion)?.passed, false);
+        if (fault === "direct_memory") {
+            assert.equal(report.ember_assertions_passed, false);
+            assert.equal(report.host_assertions_passed, true);
+        }
+        if (fault === "secret_leakage") {
+            assert.equal(report.ember_assertions_passed, true);
+            assert.equal(report.host_assertions_passed, false);
+        }
     });
 }
 

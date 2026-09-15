@@ -19,15 +19,17 @@ try {
         scenarios.push(
             await runSetupOnboardingScenario(await loadSetupOnboardingScenario(path), join(root, String(index))),
         );
-    const passed = scenarios.every((scenario) => scenario.passed);
+    const emberAssertionsPassed = scenarios.every((scenario) => scenario.ember_assertions_passed);
+    const hostAssertionsPassed = scenarios.every((scenario) => scenario.host_assertions_passed);
+    const passed = emberAssertionsPassed && hostAssertionsPassed;
     const report = {
         report_version: 1,
         suite_id: "issue-256-setup-onboarding",
         execution_mode: "deterministic",
         sanitized: true,
         scorecard_input: true,
-        ember_assertions_passed: passed,
-        host_assertions_passed: passed,
+        ember_assertions_passed: emberAssertionsPassed,
+        host_assertions_passed: hostAssertionsPassed,
         passed,
         scenarios,
     };

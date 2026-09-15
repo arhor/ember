@@ -30,9 +30,10 @@ projection, and Telegram setup boundaries with deterministic provider, Bot API, 
 systemd substitutes. Each run uses isolated application paths. A report path must not
 already exist and is created with mode `0600`.
 
-The top-level `ember_assertions_passed` and `host_assertions_passed` distinguish the two
-responsibilities without introducing a common evaluation vocabulary that issue #245 has
-not decided. `passed` requires both. `sanitized: true` means the emitted report contains
+Each assertion identifies its `ember` or `host` responsibility. The per-scenario and
+top-level `ember_assertions_passed` and `host_assertions_passed` values aggregate those
+classes independently without introducing a common evaluation vocabulary that issue #245
+has not decided. `passed` requires both. `sanitized: true` means the emitted report contains
 only named expectations and bounded observations: raw prompts, provider responses,
 temporary paths, configuration content, and secrets are excluded. `scorecard_input: true`
 marks the report as suitable input to a future aggregate; it is not itself a health score.
@@ -41,7 +42,16 @@ The structural oracle, rather than conversational familiarity, proves continuity
 compares lineage and establishment identity, canonical bytes at the attachment boundary,
 meaning identifiers, selected evidence, and provenance. Negative tests demonstrate that
 lineage replacement, newborn onboarding on restore, non-provenanced memory, and token
-leakage fail named assertions.
+leakage fail named assertions. The fresh flow also makes provider verification fail before
+canonical creation, retries through setup, and proves that the pending lineage candidate is
+neither replaced nor duplicated. Its process-restart boundary releases the writer lease,
+constructs a fresh store, reacquires the lease, and reloads durable state before resuming.
+
+The deterministic Telegram assertion proves that the trusted-host wizard completes every
+typed stage when its bounded round-trip observation seam reports correlated delivery. The
+production ledger correlation algorithm has separate transport tests; this scenario does
+not independently replay a Telegram worker update and therefore does not claim to test that
+algorithm.
 
 The suite is deterministic and network-, credential-, and systemd-independent. It proves
 Ember's boundary behavior against faithful substitutes; it cannot prove that a particular

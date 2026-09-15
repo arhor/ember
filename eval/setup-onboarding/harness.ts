@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
@@ -28,6 +28,7 @@ export interface SetupOnboardingScenario {
 export type OracleFault = "lineage_replacement" | "newborn_onboarding" | "direct_memory" | "secret_leakage";
 export interface AssertionRecord {
     assertion: string;
+    responsibility: "ember" | "host";
     expected: string;
     observed: string;
     passed: boolean;
@@ -37,6 +38,30 @@ const SECRET = "123456:Issue256SecretSentinel_abcdef";
 const OLD_SECRET = "987654:OldHostSecretSentinel_abcdef";
 const OLD_PROVIDER = "/old-host/bin/codex-secret-path";
 const OLD_CHAT = "telegram:chat:998877";
+const FLOW_CONTRACTS = {
+    "fresh-create": {
+        episodes: ["defer", "learn", "close"],
+        assertions: [
+            "provider_failure_retry_preserves_candidate",
+            "lineage_after_verified_probe",
+            "deferred_work_survives_restart",
+            "ordinary_memory_adoption",
+            "provider_replacement_preserves_continuity",
+            "telegram_setup_completion",
+            "secret_containment",
+        ],
+    },
+    "restore-existing": {
+        episodes: ["resume"],
+        assertions: [
+            "restore_bytes_preserved_before_conversation",
+            "lineage_and_meaning_identity_preserved",
+            "original_provenance_projected",
+            "no_newborn_onboarding",
+            "old_host_state_excluded",
+        ],
+    },
+} as const;
 
 export async function loadSetupOnboardingScenario(path: string): Promise<SetupOnboardingScenario> {
     if (!isAbsolute(path)) throw new ValidationError("setup/onboarding scenario path must be absolute");
@@ -97,6 +122,14 @@ export function validateSetupOnboardingScenario(value: unknown): asserts value i
             throw new ValidationError("setup/onboarding assertion is invalid or duplicated");
         assertionIds.add(assertion.id);
     }
+    const contract = FLOW_CONTRACTS[value.flow as SetupOnboardingFlow];
+    if (
+        episodeIds.size !== contract.episodes.length ||
+        !contract.episodes.every((id) => episodeIds.has(id)) ||
+        assertionIds.size !== contract.assertions.length ||
+        !contract.assertions.every((id) => assertionIds.has(id))
+    )
+        throw new ValidationError("setup/onboarding scenario does not satisfy its flow-specific contract");
 }
 
 export async function runSetupOnboardingScenario(
@@ -114,8 +147,20 @@ export async function runSetupOnboardingScenario(
     if (assertions.some((item) => !declared.has(item.assertion)) || declared.size !== assertions.length)
         throw new ValidationError("fixture assertions do not match the flow oracle");
     for (const assertion of assertions) assertion.expected = declared.get(assertion.assertion)!;
-    const passed = assertions.every((item) => item.passed);
-    return { id: scenario.id, flow: scenario.flow, passed, assertions };
+    const emberAssertionsPassed = assertions
+        .filter((item) => item.responsibility === "ember")
+        .every((item) => item.passed);
+    const hostAssertionsPassed = assertions
+        .filter((item) => item.responsibility === "host")
+        .every((item) => item.passed);
+    return {
+        id: scenario.id,
+        flow: scenario.flow,
+        ember_assertions_passed: emberAssertionsPassed,
+        host_assertions_passed: hostAssertionsPassed,
+        passed: emberAssertionsPassed && hostAssertionsPassed,
+        assertions,
+    };
 }
 
 async function fresh(s: SetupOnboardingScenario, directory: string, fault?: OracleFault): Promise<AssertionRecord[]> {
@@ -133,6 +178,45 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
             usedMeaningIds: request.projection.selection.meaning_ids,
         };
     };
+    const recoveryConfigPath = `${directory}/recovery/setup.json`;
+    const recoveryStatePath = `${directory}/recovery/continuity.json`;
+    const recoveryArgs = {
+        command: "setup" as const,
+        config: recoveryConfigPath,
+        state: recoveryStatePath,
+        intent: "create-new" as const,
+        principal: s.principal,
+        provider: "codex" as const,
+        providerCommand: "/fixture/codex",
+        model: undefined,
+        providerTimeoutSeconds: undefined,
+        acceptContinuityRisk: false,
+        confirmProviderChange: false,
+        help: false,
+    };
+    const failedCode = await setupMain(recoveryArgs, io, {
+        provider: () => async () => {
+            throw new Error("deterministic verification failure");
+        },
+    });
+    const pendingLineage = (JSON.parse(await readFile(recoveryConfigPath, "utf8")) as SetupConfig).lineageId;
+    const retryCode = await setupMain(recoveryArgs, io, {
+        provider: () => async (request: any) => ({
+            contractVersion: 1,
+            reply: "verified after retry",
+            usedMeaningIds: request.projection.selection.meaning_ids,
+        }),
+    });
+    const recoveredConfig = JSON.parse(await readFile(recoveryConfigPath, "utf8")) as SetupConfig;
+    const recoveredState = await new StateStore(recoveryStatePath).load();
+    const recovery = record(
+        "provider_failure_retry_preserves_candidate",
+        failedCode === 2 &&
+            retryCode === 0 &&
+            recoveredConfig.lineageId === pendingLineage &&
+            recoveredState.lineage.lineageId === pendingLineage,
+        `failure_exit=${failedCode}; retry_exit=${retryCode}; candidate_preserved=${recoveredConfig.lineageId === pendingLineage}`,
+    );
     const code = await setupMain(
         {
             command: "setup",
@@ -160,8 +244,8 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         `exit=${code}; probes=${probes}; revision=${created.revision}`,
     );
 
-    const store = new StateStore(statePath);
-    const lease = await store.acquireWriteLease();
+    let store = new StateStore(statePath);
+    let lease = await store.acquireWriteLease();
     let state = await store.load();
     let runtime = startRuntime(state, s.principal, s.scope);
     state = await store.commit(state.revision, runtime.state);
@@ -170,6 +254,9 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         await runCognition(store, state, cognition(runtime.runtimeId, s, defer, projections, { onboarding: "defer" }))
     ).state;
     state = await store.commit(state.revision, stopRuntime(state, runtime.runtimeId, { reason: "evaluation_restart" }));
+    await store.releaseWriteLease(lease);
+    store = new StateStore(statePath);
+    lease = await store.acquireWriteLease();
     runtime = startRuntime(await store.load(), s.principal, s.scope);
     state = await store.commit(state.revision, runtime.state);
     const work = await new OnboardingWorkStore(statePath).load();
@@ -182,20 +269,25 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     state = (await runCognition(store, state, cognition(runtime.runtimeId, s, learn, projections, { memory: true })))
         .state;
     const meaning = state.meanings.find((item) => item.slot === "response-style");
-    const source = meaning && state.evidence.find((item) => item.evidenceId === meaning.sourceEvidenceIds[0]);
-    const third = record(
-        "ordinary_memory_adoption",
-        fault !== "direct_memory" &&
-            !!meaning &&
-            source?.sourceRole === "user_command" &&
-            meaning.sourceEvidenceIds.length > 0,
-        meaning ? `meaning=${meaning.meaningId}; source=${source?.sourceRole ?? "none"}` : "missing",
-    );
     const close = s.episodes[2]!;
     state = (
         await runCognition(store, state, cognition(runtime.runtimeId, s, close, projections, { onboarding: "close" }))
     ).state;
     await store.releaseWriteLease(lease);
+    const observedMeaning = meaning ? structuredClone(meaning) : undefined;
+    if (fault === "direct_memory" && observedMeaning)
+        observedMeaning.sourceEvidenceIds = ["evidence-direct-unprovenanced" as EvidenceId];
+    const observedSource =
+        observedMeaning && state.evidence.find((item) => item.evidenceId === observedMeaning.sourceEvidenceIds[0]);
+    const third = record(
+        "ordinary_memory_adoption",
+        !!observedMeaning &&
+            observedSource?.sourceRole === "user_command" &&
+            observedMeaning.sourceEvidenceIds.length > 0,
+        observedMeaning
+            ? `meaning=${observedMeaning.meaningId}; source=${observedSource?.sourceRole ?? "missing"}`
+            : "missing",
+    );
 
     await setupMain(
         {
@@ -272,7 +364,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         },
     );
     const fifth = record(
-        "telegram_round_trip",
+        "telegram_setup_completion",
         telegram.status === "complete" && Object.values(telegram.stages).every((value) => value === "confirmed"),
         `${telegram.status}:${Object.values(telegram.stages).join(",")}`,
     );
@@ -293,14 +385,15 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
             !disk.includes(SECRET),
         `token_mode=${modes.get(allowed)?.toString(8)}; leaked_locations=${leaked.length}; leaked_evidence=${disk.includes(SECRET)}`,
     );
-    return [first, second, third, fourth, fifth, sixth];
+    return [recovery, first, second, third, fourth, fifth, sixth];
 }
 
 async function restore(s: SetupOnboardingScenario, directory: string, fault?: OracleFault): Promise<AssertionRecord[]> {
-    const statePath = `${directory}/restored/continuity.json`,
+    const oldStatePath = `${directory}/old-host/state/continuity.json`,
+        statePath = `${directory}/restored/continuity.json`,
         configPath = `${directory}/new-host/setup.json`;
-    const bundle = await establishedBundle(s, statePath);
-    const before = await readFile(statePath, "utf8"),
+    const bundle = await establishedBundle(s, oldStatePath);
+    const before = await readFile(oldStatePath, "utf8"),
         openWork = createOnboardingWork(bundle.lineage.lineageId, s.principal, s.scope, "2025-01-01T00:01:00Z"),
         closedWork = applyOnboardingProgressDecision(
             openWork,
@@ -316,7 +409,18 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
             "2025-01-01T00:02:00Z",
         ),
         sidecarBefore = `${JSON.stringify(closedWork, null, 2)}\n`;
-    await import("node:fs/promises").then(({ writeFile }) => writeFile(`${statePath}.onboarding.json`, sidecarBefore));
+    await writeFile(`${oldStatePath}.onboarding.json`, sidecarBefore);
+    const oldSetupPath = `${directory}/old-host/config/setup.json`,
+        oldTelegramPath = `${directory}/old-host/config/telegram.json`,
+        oldTokenPath = `${directory}/old-host/secrets/telegram.token`;
+    await mkdir(`${directory}/old-host/config`, { recursive: true });
+    await mkdir(`${directory}/old-host/secrets`, { recursive: true });
+    await writeFile(oldSetupPath, JSON.stringify({ provider_command: OLD_PROVIDER }));
+    await writeFile(oldTelegramPath, JSON.stringify({ mapping: OLD_CHAT, token_file: oldTokenPath }));
+    await writeFile(oldTokenPath, `${OLD_SECRET}\n`, { mode: 0o600 });
+    await mkdir(`${directory}/restored`, { recursive: true });
+    await copyFile(oldStatePath, statePath);
+    await copyFile(`${oldStatePath}.onboarding.json`, `${statePath}.onboarding.json`);
     const projections: any[] = [];
     const io = quietIo();
     await setupMain(
@@ -404,10 +508,20 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
     );
     const config = await readFile(configPath, "utf8");
     const all = `${config}\n${JSON.stringify(state)}\n${JSON.stringify(projections)}`;
+    const oldHostSource = [
+        await readFile(oldSetupPath, "utf8"),
+        await readFile(oldTelegramPath, "utf8"),
+        await readFile(oldTokenPath, "utf8"),
+    ].join("\n");
     const e = record(
         "old_host_state_excluded",
-        !all.includes(OLD_PROVIDER) && !all.includes(OLD_CHAT) && !all.includes(OLD_SECRET),
-        `old_provider=${all.includes(OLD_PROVIDER)}; old_chat=${all.includes(OLD_CHAT)}; old_secret=${all.includes(OLD_SECRET)}`,
+        oldHostSource.includes(OLD_PROVIDER) &&
+            oldHostSource.includes(OLD_CHAT) &&
+            oldHostSource.includes(OLD_SECRET) &&
+            !all.includes(OLD_PROVIDER) &&
+            !all.includes(OLD_CHAT) &&
+            !all.includes(OLD_SECRET),
+        `source_complete=${oldHostSource.includes(OLD_PROVIDER) && oldHostSource.includes(OLD_CHAT) && oldHostSource.includes(OLD_SECRET)}; old_provider_imported=${all.includes(OLD_PROVIDER)}; old_chat_imported=${all.includes(OLD_CHAT)}; old_secret_imported=${all.includes(OLD_SECRET)}`,
     );
     return [a, b, c, d, e];
 }
@@ -530,7 +644,21 @@ function cognition(
     };
 }
 function record(assertion: string, passed: boolean, observed: string): AssertionRecord {
-    return { assertion, expected: "", observed, passed };
+    const hostAssertions = new Set([
+        "provider_failure_retry_preserves_candidate",
+        "lineage_after_verified_probe",
+        "telegram_setup_completion",
+        "secret_containment",
+        "restore_bytes_preserved_before_conversation",
+        "old_host_state_excluded",
+    ]);
+    return {
+        assertion,
+        responsibility: hostAssertions.has(assertion) ? "host" : "ember",
+        expected: "",
+        observed,
+        passed,
+    };
 }
 function quietIo(): any {
     return { input: process.stdin, output: { write: () => true }, error: { write: () => true } };

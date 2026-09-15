@@ -19,6 +19,10 @@
     }
   ],
   "assertions": [
+    {
+      "id": "provider_failure_retry_preserves_candidate",
+      "expected": "failed verification retries without premature or duplicate lineage creation"
+    },
     { "id": "lineage_after_verified_probe", "expected": "one lineage created only after successful verification" },
     { "id": "deferred_work_survives_restart", "expected": "deferred onboarding remains non-blocking after restart" },
     { "id": "ordinary_memory_adoption", "expected": "user preference is adopted from conversation evidence" },
@@ -26,7 +30,10 @@
       "id": "provider_replacement_preserves_continuity",
       "expected": "Cursor keeps the Codex-created lineage and meaning"
     },
-    { "id": "telegram_round_trip", "expected": "all typed Telegram setup stages are confirmed" },
+    {
+      "id": "telegram_setup_completion",
+      "expected": "typed Telegram setup completes when the bounded round-trip observer confirms delivery"
+    },
     { "id": "secret_containment", "expected": "token occurs only in the mode-0600 token store" }
   ]
 }
