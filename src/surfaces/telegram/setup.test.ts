@@ -35,6 +35,19 @@ function candidate(): Update {
     };
 }
 
+function pendingStart(): Update {
+    return {
+        update_id: 41,
+        message: {
+            message_id: 6,
+            date: 1,
+            chat: { id: 123, type: "private" },
+            from: { id: 123, is_bot: false, first_name: "User" },
+            text: "/start",
+        },
+    };
+}
+
 test("guided Telegram setup keeps the token out of v2 config and preserves inactive truth", async () => {
     const files = new Map<string, string>();
     const output = new PassThrough();
@@ -75,6 +88,101 @@ test("guided Telegram setup keeps the token out of v2 config and preserves inact
     assert.match(config, /"command": "\/opt\/ember\/bin\/codex"/);
     assert.match(config, /"surface_entrypoint": ".*\/bin\/ember-telegram\.ts"/);
     assert.doesNotMatch(config, /abcdefghijklmnopqrstuvwxyz/);
+});
+
+test("mapping discovery tolerates an earlier pending message without acknowledging it", async () => {
+    const files = new Map<string, string>();
+    let polls = 0;
+    const result = await runTelegramSetup(
+        { setup, scope: "relationship:user", configPath: "/tmp/mpc", tokenPath: "/tmp/mpt", unitPath: "/tmp/mpu" },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            resolveExecutable: async () => "/opt/ember/bin/codex",
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async (prompt) => !prompt.startsWith("Install"),
+            delay: async () => {},
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async (options) => {
+                    polls++;
+                    assert.equal("offset" in options, false);
+                    return polls === 1 ? [pendingStart()] : [pendingStart(), candidate()];
+                },
+            }),
+            command: async (_file, args) => ({
+                code: args[1] === "is-enabled" || args[1] === "is-active" ? 1 : 0,
+                signal: null,
+            }),
+        },
+    );
+    assert.equal(result.status, "configured_inactive");
+    assert.equal(result.stages.mapping, "confirmed");
+    assert.equal(polls, 2);
+});
+
+test("declining activation after stopping an active service leaves it inactive", async () => {
+    const files = new Map<string, string>();
+    const serviceActions: string[] = [];
+    const result = await runTelegramSetup(
+        { setup, scope: "relationship:user", configPath: "/tmp/ac", tokenPath: "/tmp/at", unitPath: "/tmp/au" },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            resolveExecutable: async () => "/opt/ember/bin/codex",
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async (prompt) => !prompt.startsWith("Install"),
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => [candidate()],
+            }),
+            command: async (_file, args) => {
+                serviceActions.push(args[1]!);
+                return { code: 0, signal: null };
+            },
+        },
+    );
+    assert.equal(result.status, "configured_inactive");
+    assert.equal(result.stages.activation, "declined");
+    assert.ok(serviceActions.includes("stop"));
+    assert.equal(serviceActions.includes("start"), false);
+    assert.equal(serviceActions.includes("restart"), false);
+    assert.equal(serviceActions.includes("enable"), false);
+});
+
+test("unknown active-service state fails closed before mapping discovery", async () => {
+    let getUpdatesCalled = false;
+    const result = await runTelegramSetup(
+        { setup, scope: "relationship:user", configPath: "/tmp/uc", tokenPath: "/tmp/ut", unitPath: "/tmp/uu" },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            read: async () => null,
+            write: async () => {},
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => {
+                    getUpdatesCalled = true;
+                    return [];
+                },
+            }),
+            command: async (_file, args) =>
+                args[1] === "is-active"
+                    ? { code: null, signal: "SIGTERM" }
+                    : { code: 0, signal: null },
+        },
+    );
+    assert.equal(result.status, "uncertain");
+    assert.equal(result.stages.mapping, "uncertain");
+    assert.equal(getUpdatesCalled, false);
 });
 
 test("round-trip verification polls correlated delivery while the service stays active", async () => {
