@@ -174,10 +174,10 @@ test("unknown active-service state fails closed before mapping discovery", async
                     return [];
                 },
             }),
-            command: async (_file, args) =>
-                args[1] === "is-active"
-                    ? { code: null, signal: "SIGTERM" }
-                    : { code: 0, signal: null },
+            command: async (_file, args) => {
+                if (args[1] === "is-active") return { code: null, signal: "SIGTERM" };
+                return { code: 0, signal: null };
+            },
         },
     );
     assert.equal(result.status, "uncertain");
