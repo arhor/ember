@@ -63,7 +63,6 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
         await store.releaseWriteLease(initialLease);
     }
     const onboardingProvider = configuredCognitionProvider(config).provider;
-    let runtimeAnnounced = false;
     const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     for await (const line of lines) {
         if (!line.trim()) continue;
@@ -78,10 +77,6 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
             continue;
         }
         await withCliLease(store, config, async (state, runtimeId) => {
-            if (!runtimeAnnounced) {
-                io.output.write(`runtime ${runtimeId} started\n`);
-                runtimeAnnounced = true;
-            }
             try {
                 if (line.startsWith(":")) {
                     if (line === ":new-conversation") {
