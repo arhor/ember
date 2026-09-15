@@ -305,6 +305,11 @@ reads generated prose or mutates canonical state. The command is:
 ember materialize --state PATH --principal PRINCIPAL --scope SCOPE --output DIRECTORY
 ```
 
+Before creating or replacing any view, publication resolves the canonical path and all
+four targets through existing filesystem aliases and fails closed if a target aliases
+the canonical state. This preflight prevents both direct path and symlinked-path
+collisions from partially publishing a generated set or replacing canonical state.
+
 This per-file publication does not claim a transactionally atomic four-file snapshot:
 each file identifies its canonical revision so interrupted or mixed publication stays
 detectable. Safe edit proposals and richer drift recovery remain issue #259 work.

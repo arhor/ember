@@ -1,8 +1,9 @@
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, realpath } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 
 import type { MaterializedMeaning, StateMaterialization } from "../core/state-materialization.ts";
 
+import { ValidationError } from "../core/errors.ts";
 import { replaceFileAtomically } from "./file-replacement.ts";
 
 const VIEW_TITLES: Record<keyof StateMaterialization["views"], string> = {
@@ -21,15 +22,45 @@ export function renderMarkdownStateViews(materialization: StateMaterialization) 
     ) as Record<keyof StateMaterialization["views"], string>;
 }
 
-export async function publishMarkdownStateViews(outputDirectory: string, materialization: StateMaterialization) {
-    await mkdir(outputDirectory, { recursive: true, mode: 0o700 });
+export async function publishMarkdownStateViews(
+    outputDirectory: string,
+    canonicalStatePath: string,
+    materialization: StateMaterialization,
+) {
     const rendered = renderMarkdownStateViews(materialization);
-    for (const name of Object.keys(rendered).sort() as Array<keyof typeof rendered>) {
-        await replaceFileAtomically(join(outputDirectory, name), rendered[name], { mode: 0o600 });
+    const names = Object.keys(rendered).sort() as Array<keyof typeof rendered>;
+    const canonicalPath = await resolvePhysicalPath(canonicalStatePath);
+    const targets = await Promise.all(
+        names.map(async (name) => ({
+            name,
+            path: join(outputDirectory, name),
+            physical: await resolvePhysicalPath(join(outputDirectory, name)),
+        })),
+    );
+    if (targets.some((target) => target.physical === canonicalPath))
+        throw new ValidationError("materialized view target aliases the canonical state path");
+
+    await mkdir(outputDirectory, { recursive: true, mode: 0o700 });
+    for (const target of targets) {
+        await replaceFileAtomically(target.path, rendered[target.name], { mode: 0o600 });
     }
-    return Object.keys(rendered)
-        .sort()
-        .map((name) => join(outputDirectory, name));
+    return targets.map((target) => target.path);
+}
+
+async function resolvePhysicalPath(path: string): Promise<string> {
+    const absolute = resolve(path);
+    try {
+        return await realpath(absolute);
+    } catch (error) {
+        if (!isMissingPath(error)) throw error;
+        const parent = dirname(absolute);
+        if (parent === absolute) return absolute;
+        return join(await resolvePhysicalPath(parent), absolute.slice(parent.length + 1));
+    }
+}
+
+function isMissingPath(error: unknown): error is NodeJS.ErrnoException {
+    return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
 function renderView(title: string, meanings: MaterializedMeaning[], source: StateMaterialization) {

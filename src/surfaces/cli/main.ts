@@ -112,6 +112,7 @@ async function onMaterialize(args: MaterializeArgs, io: CliIo) {
     const state = await loadForPrincipal(new StateStore(args.state), args.principal);
     const files = await publishMarkdownStateViews(
         args.output,
+        args.state,
         buildStateMaterialization(state, { principal: args.principal, scope: args.scope }),
     );
     io.output.write(

@@ -111,11 +111,38 @@ test("publishing unchanged state replaces drift deterministically", async () => 
         principal: PRINCIPAL,
         scope: SCOPE,
     });
-    await publishMarkdownStateViews(directory, materialization);
+    await publishMarkdownStateViews(directory, join(directory, "ember.json"), materialization);
     const expected = await readFile(join(directory, "MEMORY.md"), "utf8");
     await writeFile(join(directory, "MEMORY.md"), "drift\n");
 
-    await publishMarkdownStateViews(directory, materialization);
+    await publishMarkdownStateViews(directory, join(directory, "ember.json"), materialization);
 
     assert.equal(await readFile(join(directory, "MEMORY.md"), "utf8"), expected);
+});
+
+test("CLI refuses canonical target aliases before publishing any generated view", async () => {
+    const directory = await tempDir();
+    const statePath = join(directory, "MEMORY.md");
+    const { state } = populatedState();
+    await new StateStore(statePath).create(state);
+    const before = await readFile(statePath, "utf8");
+
+    const result = await command([
+        "materialize",
+        "--state",
+        statePath,
+        "--principal",
+        PRINCIPAL,
+        "--scope",
+        SCOPE,
+        "--output",
+        directory,
+    ]);
+
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /target aliases the canonical state path/);
+    assert.equal(await readFile(statePath, "utf8"), before);
+    for (const name of ["SELF.md", "USER.md", "RELATIONSHIP.md"]) {
+        await assert.rejects(readFile(join(directory, name), "utf8"), { code: "ENOENT" });
+    }
 });
