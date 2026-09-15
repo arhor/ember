@@ -589,6 +589,9 @@ test("CLI stops automatic onboarding reflection immediately after closure", asyn
     assert.equal((await new OnboardingWorkStore(f.state).load())?.status, "closed");
     assert.equal(await readFile(counter, "utf8"), "1");
     assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
+    const runtimes = (await new StateStore(f.state).load()).operations.runtimeEpisodes;
+    assert.equal(runtimes.length, 2);
+    assert.ok(runtimes.every((runtime) => runtime.stopReason === "cli_interaction_complete"));
 });
 
 test("missing previously available or possibly created state is never silently recreated", async (t) => {
