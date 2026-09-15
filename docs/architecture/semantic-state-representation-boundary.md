@@ -186,8 +186,11 @@ currentness, lineage, or evidence; deleting content; and editing historical or
 unsupported meaning kinds all fail closed. Each edit requires one
 `--approval-evidence` ID naming already-canonical, available `user_command` evidence
 from the asserted principal, in the same scope, whose retained payload exactly equals
-the edited value. The flag identifies evidence; it does not manufacture authorship or
-consent. Multiple edits require distinct flags in deterministic view order. New
+the edited value. The testimony must also have occurred strictly after the current
+target was learned and became applicable; durable historical testimony cannot be
+replayed to reverse a later correction. The flag identifies evidence; it does not
+manufacture authorship, consent, or currentness. Multiple edits require distinct flags
+in deterministic view order. New
 meanings are not accepted through Markdown v1 because the view cannot provide new
 attributable evidence without a separate evidence-authoring boundary.
 

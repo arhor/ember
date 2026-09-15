@@ -146,8 +146,10 @@ async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: Cl
         for (const [index, edit] of inspection.edits.entries()) {
             const approvalId = args.approvalEvidenceIds[index]!;
             const approval = candidate.evidence.find((evidence) => evidence.evidenceId === approvalId);
+            const target = candidate.meanings.find((meaning) => meaning.meaningId === edit.meaning_id);
             if (
                 !approval ||
+                !target ||
                 approval.sourceRole !== "user_command" ||
                 approval.sourceActor !== `user:${args.principal}` ||
                 approval.assertedPrincipal !== args.principal ||
@@ -157,6 +159,11 @@ async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: Cl
             )
                 throw new ValidationError(
                     `approval evidence must be available attributable user evidence with payload exactly matching edit: ${edit.meaning_id}`,
+                );
+            const targetCurrentnessBoundary = Math.max(Date.parse(target.learnedAt), Date.parse(target.applicableFrom));
+            if (Date.parse(approval.occurredAt) <= targetCurrentnessBoundary)
+                throw new ValidationError(
+                    `approval evidence must be newer than the current meaning it supersedes: ${edit.meaning_id}`,
                 );
             const proposedAt = approval.observedAt;
             const assessment = assessMemoryProposal(candidate, {
