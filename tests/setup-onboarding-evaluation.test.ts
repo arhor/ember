@@ -43,6 +43,20 @@ test("setup/onboarding fixtures reject unsupported fields, invalid flows, and du
     await assert.rejects(loadSetupOnboardingScenario("relative.json"), /absolute/);
 });
 
+test("fresh flow resolves episodes by identity rather than fixture order", async (t) => {
+    const root = await mkdtemp(join(tmpdir(), "ember-setup-reordered-"));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    const scenario = await loadSetupOnboardingScenario(freshPath);
+    scenario.episodes = [scenario.episodes[1]!, scenario.episodes[2]!, scenario.episodes[0]!];
+    validateSetupOnboardingScenario(scenario);
+    const report = await runSetupOnboardingScenario(scenario, root);
+    assert.equal(report.passed, true);
+    assert.match(
+        report.assertions.find((item) => item.assertion === "provider_failure_retry_preserves_candidate")!.observed,
+        /state_absent=true; onboarding_absent=true/,
+    );
+});
+
 for (const [flow, fault, assertion] of [
     ["fresh", "lineage_replacement", "provider_replacement_preserves_continuity"],
     ["fresh", "direct_memory", "ordinary_memory_adoption"],

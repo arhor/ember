@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
@@ -58,7 +58,7 @@ const FLOW_CONTRACTS = {
             "lineage_and_meaning_identity_preserved",
             "original_provenance_projected",
             "no_newborn_onboarding",
-            "old_host_state_excluded",
+            "old_host_state_not_transferred",
         ],
     },
 } as const;
@@ -200,6 +200,8 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         },
     });
     const pendingLineage = (JSON.parse(await readFile(recoveryConfigPath, "utf8")) as SetupConfig).lineageId;
+    const stateAbsentAfterFailure = !(await pathExists(recoveryStatePath));
+    const onboardingAbsentAfterFailure = !(await pathExists(`${recoveryStatePath}.onboarding.json`));
     const retryCode = await setupMain(recoveryArgs, io, {
         provider: () => async (request: any) => ({
             contractVersion: 1,
@@ -212,10 +214,12 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     const recovery = record(
         "provider_failure_retry_preserves_candidate",
         failedCode === 2 &&
+            stateAbsentAfterFailure &&
+            onboardingAbsentAfterFailure &&
             retryCode === 0 &&
             recoveredConfig.lineageId === pendingLineage &&
             recoveredState.lineage.lineageId === pendingLineage,
-        `failure_exit=${failedCode}; retry_exit=${retryCode}; candidate_preserved=${recoveredConfig.lineageId === pendingLineage}`,
+        `failure_exit=${failedCode}; state_absent=${stateAbsentAfterFailure}; onboarding_absent=${onboardingAbsentAfterFailure}; retry_exit=${retryCode}; candidate_preserved=${recoveredConfig.lineageId === pendingLineage}`,
     );
     const code = await setupMain(
         {
@@ -249,7 +253,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     let state = await store.load();
     let runtime = startRuntime(state, s.principal, s.scope);
     state = await store.commit(state.revision, runtime.state);
-    const defer = s.episodes[0]!;
+    const defer = scenarioEpisode(s, "defer");
     state = (
         await runCognition(store, state, cognition(runtime.runtimeId, s, defer, projections, { onboarding: "defer" }))
     ).state;
@@ -265,11 +269,11 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         !!work && work.topics.every((topic) => topic.status === "deferred"),
         work?.topics.map((topic) => topic.status).join(",") ?? "missing",
     );
-    const learn = s.episodes[1]!;
+    const learn = scenarioEpisode(s, "learn");
     state = (await runCognition(store, state, cognition(runtime.runtimeId, s, learn, projections, { memory: true })))
         .state;
     const meaning = state.meanings.find((item) => item.slot === "response-style");
-    const close = s.episodes[2]!;
+    const close = scenarioEpisode(s, "close");
     state = (
         await runCognition(store, state, cognition(runtime.runtimeId, s, close, projections, { onboarding: "close" }))
     ).state;
@@ -458,7 +462,7 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
     );
     if (fault === "newborn_onboarding")
         await new OnboardingWorkStore(statePath).save(
-            createOnboardingWork(bundle.lineage.lineageId, s.principal, s.scope, s.episodes[0]!.at),
+            createOnboardingWork(bundle.lineage.lineageId, s.principal, s.scope, scenarioEpisode(s, "resume").at),
         );
     const store = new StateStore(statePath),
         lease = await store.acquireWriteLease();
@@ -470,7 +474,7 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
             runtimeId: started.runtimeId,
             principal: s.principal,
             scope: s.scope,
-            text: s.episodes[0]!.input,
+            text: scenarioEpisode(s, "resume").input,
             providerLabel: "restore-fixture",
             provider: async (request) => {
                 projections.push(request.projection);
@@ -514,7 +518,7 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
         await readFile(oldTokenPath, "utf8"),
     ].join("\n");
     const e = record(
-        "old_host_state_excluded",
+        "old_host_state_not_transferred",
         oldHostSource.includes(OLD_PROVIDER) &&
             oldHostSource.includes(OLD_CHAT) &&
             oldHostSource.includes(OLD_SECRET) &&
@@ -650,7 +654,7 @@ function record(assertion: string, passed: boolean, observed: string): Assertion
         "telegram_setup_completion",
         "secret_containment",
         "restore_bytes_preserved_before_conversation",
-        "old_host_state_excluded",
+        "old_host_state_not_transferred",
     ]);
     return {
         assertion,
@@ -665,4 +669,20 @@ function quietIo(): any {
 }
 function text(value: unknown): value is string {
     return typeof value === "string" && value.trim().length > 0;
+}
+
+function scenarioEpisode(scenario: SetupOnboardingScenario, id: string) {
+    const episode = scenario.episodes.find((candidate) => candidate.id === id);
+    if (!episode) throw new ValidationError(`setup/onboarding scenario is missing episode ${id}`);
+    return episode;
+}
+
+async function pathExists(path: string) {
+    try {
+        await lstat(path);
+        return true;
+    } catch (error) {
+        if (isObject(error) && error.code === "ENOENT") return false;
+        throw error;
+    }
 }

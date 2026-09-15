@@ -18,8 +18,8 @@
     { "id": "original_provenance_projected", "expected": "eligible meaning and original evidence are projected" },
     { "id": "no_newborn_onboarding", "expected": "restore does not synthesize onboarding work" },
     {
-      "id": "old_host_state_excluded",
-      "expected": "old provider, Telegram mapping, and secret never enter the new host or provider request"
+      "id": "old_host_state_not_transferred",
+      "expected": "the modeled attachment transfers only canonical state and its sidecar, excluding old-host provider, Telegram, and secret files"
     }
   ]
 }

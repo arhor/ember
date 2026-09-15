@@ -40,11 +40,17 @@ marks the report as suitable input to a future aggregate; it is not itself a hea
 
 The structural oracle, rather than conversational familiarity, proves continuity. It
 compares lineage and establishment identity, canonical bytes at the attachment boundary,
-meaning identifiers, selected evidence, and provenance. Negative tests demonstrate that
+meaning identifiers, selected evidence, and provenance. The restore fixture models the
+documented attachment procedure by transferring only the explicitly selected canonical
+store and its onboarding sidecar from an old-host directory that also contains provider,
+Telegram, and secret files. It then proves those unselected host-local files do not appear
+downstream; production setup receives a continuity-store path and does not itself filter or
+import a host directory. Negative tests demonstrate that
 lineage replacement, newborn onboarding on restore, non-provenanced memory, and token
 leakage fail named assertions. The fresh flow also makes provider verification fail before
-canonical creation, retries through setup, and proves that the pending lineage candidate is
-neither replaced nor duplicated. Its process-restart boundary releases the writer lease,
+canonical creation, verifies that canonical state and onboarding activation remain absent,
+retries through setup, and proves that the pending lineage candidate is neither replaced nor
+duplicated. Its process-restart boundary releases the writer lease,
 constructs a fresh store, reacquires the lease, and reloads durable state before resuming.
 
 The deterministic Telegram assertion proves that the trusted-host wizard completes every
