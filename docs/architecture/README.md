@@ -58,6 +58,11 @@ Current architecture material:
 - [Setup and Onboarding End-to-End Validation](setup-onboarding-validation.md) records
   issue #256's deterministic create/restore oracle, sanitized report, recovery and
   secret-containment evidence, and opt-in clean-host smoke procedure.
+- [Semantic-State Representation and Projection Boundary](semantic-state-representation-boundary.md)
+  defines issue #257's separation of canonical meaning, persistence encodings,
+  human-readable materializations, and cognition projections, including stable IDs,
+  safe edit proposals, drift, regeneration, migration, and a graph/multi-resolution
+  replacement path.
 - [Source Layout and Surface Placement](source-layout.md) records the current
   `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
   mechanics and operator/application commands, and the intended inward dependency
