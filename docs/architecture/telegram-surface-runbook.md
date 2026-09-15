@@ -111,9 +111,11 @@ and are not automatically projected into cognition.
 For configured Ember conversation, enter the literal local command `:setup telegram`.
 The trusted-host wizard explains each mutation, reads the BotFather token through masked
 TTY input, discovers a private chat using a one-time displayed code, and asks before mapping,
-replacing drifted files, installing the unit, or starting the service. Do not paste the token
-into conversation. Declining installation retains the verified mapping and token but reports
-the surface as configured and inactive.
+replacing drifted files, installing the unit, or starting the service. Discovery is bounded
+and does not advance Telegram's update acknowledgement offset merely to skip an earlier
+non-matching message such as `/start`. Do not paste the token into conversation. Declining
+activation retains the verified mapping and token, leaves the worker stopped, and reports the
+surface as configured and inactive.
 
 The wizard defaults to:
 
