@@ -24,7 +24,7 @@ export interface StateMaterialization {
     lineageId: string;
     purpose: "filesystem_inspection";
     disclosurePolicy: { principal: string; scope: string; evidencePayloads: "excluded" };
-    interactionMode: "generated_only";
+    interactionMode: "selective_proposal_authoring";
     views: Record<MaterializedViewName, MaterializedMeaning[]>;
 }
 
@@ -67,7 +67,7 @@ export function buildStateMaterialization(state: EmberState, policy: StateMateri
         lineageId: state.lineage.lineageId,
         purpose: "filesystem_inspection",
         disclosurePolicy: { principal: policy.principal, scope: policy.scope, evidencePayloads: "excluded" },
-        interactionMode: "generated_only",
+        interactionMode: "selective_proposal_authoring",
         views,
     };
 }

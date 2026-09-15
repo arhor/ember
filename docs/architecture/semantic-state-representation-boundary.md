@@ -10,7 +10,7 @@ discovery_status: current
 
 # Semantic-State Representation and Projection Boundary
 
-> Status: architecture contract for issue #257 and the representation epic #251.
+> Status: architecture contract for issues #257–#259 and the representation epic #251.
 
 ## Purpose and scope
 
@@ -127,7 +127,10 @@ version, and view configuration. Determinism makes review and drift detection
 tractable, but byte equality is not semantic equality across renderer versions. A
 render attempt and its time may be recorded separately without changing the artifact.
 Generated output must identify its interaction mode clearly enough that ordinary
-editing cannot be mistaken for successful canonical mutation.
+editing cannot be mistaken for successful canonical mutation. Markdown v1 now uses
+`selective_proposal_authoring`: only the content of current, user-owned facts and
+preferences in `USER.md` is an authoring surface. All other bytes and views remain
+generated-only.
 
 ## Edit and round-trip semantics
 
@@ -164,6 +167,39 @@ base revision was read, which semantic IDs were affected, which rules accepted o
 rejected the change, and what canonical revision resulted. Existing memory-proposal and
 explicit lifecycle-operation boundaries should be reused where their semantics match;
 the filesystem does not receive a privileged mutation path.
+
+### Markdown v1 selective round-trip updates
+
+Issue #259 implements one deliberately narrow edit grammar. A human or agent first
+runs `ember materialize`, changes only the rendered content block of a current
+user-testimony `fact` or `preference` in `USER.md`, then explicitly applies the set:
+
+```bash
+ember apply-materialized-edits \
+  --state PATH --principal PRINCIPAL --scope SCOPE --input DIRECTORY
+```
+
+`SELF.md`, `RELATIONSHIP.md`, and `MEMORY.md` are generated-only. Within `USER.md`,
+adding or removing entries; changing stable IDs, metadata, ownership, scope,
+currentness, lineage, or evidence; deleting content; and editing historical or
+unsupported meaning kinds all fail closed. New meanings are not accepted through
+Markdown v1 because the view cannot provide new attributable evidence without a
+separate evidence-authoring boundary.
+
+The importer verifies all four artifacts against the current canonical revision and
+scope. Each supported content delta becomes an ordinary memory proposal that cites
+the predecessor's evidence and explicitly supersedes its stable meaning ID. Proposals
+are assessed and resolved under the canonical writer lease; any rejection aborts the
+whole edit set without committing canonical state. A successful set commits one new
+canonical revision, regenerates all four views from that state, and emits an
+inspection result containing the source view, base revision, affected IDs, proposal
+resolutions, and resulting revision. The edited files themselves never acquire
+canonical authority.
+
+This v1 policy intentionally treats any concurrently changed canonical revision as
+stale, even if prose comparison suggests a non-overlapping edit. That conservative
+rule is deterministic and avoids claiming a semantic merge facility that has not
+been implemented.
 
 ## Drift and conflict behavior
 
@@ -275,15 +311,15 @@ The child tasks may choose, with evidence:
 - whether Markdown v1 is only a view or also the first canonical persistence encoding;
 - renderer APIs, semantic query shapes, atomic publication mechanics, and drift backup
   policy;
-- the safe editable subset, proposal grammar, conflict user experience, and whether
-  some views remain generated-only permanently;
+- broader editable subsets, proposal grammars, conflict user experience, and whether
+  the currently generated-only views remain so permanently;
 - graph engine, schema, indexes, embeddings, retrieval, caching, and resolution storage;
   and
 - presentation wording, ordering, grouping, redaction, and localization.
 
 ## Markdown v1 materialization
 
-Issue #258 selects a deliberately small, generated-only filesystem representation.
+Issues #258 and #259 select a deliberately small, selectively editable filesystem representation.
 The typed semantic selector is independent of Markdown and requires an asserted local
 principal plus one exact permitted scope. The Markdown adapter publishes `SELF.md`,
 `USER.md`, `RELATIONSHIP.md`, and `MEMORY.md` into an explicitly selected output
@@ -291,7 +327,7 @@ directory. The first three group selected meanings by owner; `MEMORY.md` is the
 scope-bounded overview. These are navigation groupings, not canonical kinds.
 
 Each artifact declares representation version, source schema and revision, lineage,
-purpose, principal, exact scope, evidence-payload policy, and generated-only mode.
+purpose, principal, exact scope, evidence-payload policy, and selective-authoring mode.
 Entries carry stable meaning IDs, lifecycle/currentness, supersession links, and
 descriptor-only source-evidence references. Evidence payloads and content digests are
 excluded, and meanings outside the exact requested scope are not selected. Content is
@@ -302,9 +338,11 @@ metadata, or inline structure.
 Identical canonical state, policy, and renderer version produce byte-identical files;
 wall-clock attempt data is not rendered. Publication uses private files and atomic
 per-file replacement. Re-running materialization explicitly replaces existing target
-bytes, but never reads generated prose or mutates canonical state. Markdown v1 therefore overwrites any
+bytes, but never reads generated prose or mutates canonical state. Markdown v1
+therefore overwrites any
 existing target without classifying it as generated-view drift or retaining a backup;
-drift detection, reporting, and recovery policy are explicitly deferred to issue #259.
+the explicit edit-application command instead validates the complete view set and
+classifies unsupported changes as drift before canonical mutation.
 The command is:
 
 ```bash
@@ -318,7 +356,8 @@ collisions from partially publishing a generated set or replacing canonical stat
 
 This per-file publication does not claim a transactionally atomic four-file snapshot:
 each file identifies its canonical revision so interrupted or mixed publication stays
-detectable. Safe edit proposals and richer drift recovery remain issue #259 work.
+detectable. Selective edit proposals are implemented by issue #259; backup-based drift
+recovery and broader edit grammars remain deferred.
 
 Those choices may change without weakening the invariants above.
 

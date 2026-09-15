@@ -1,6 +1,8 @@
-import { mkdir, realpath } from "node:fs/promises";
+import { mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
+import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
+import type { MeaningId } from "../core/model.ts";
 import type { MaterializedMeaning, StateMaterialization } from "../core/state-materialization.ts";
 
 import { ValidationError } from "../core/errors.ts";
@@ -12,6 +14,14 @@ const VIEW_TITLES: Record<keyof StateMaterialization["views"], string> = {
     "RELATIONSHIP.md": "Relationship",
     "MEMORY.md": "Durable memory overview",
 };
+
+export interface MarkdownEditInspection {
+    edit_version: 1;
+    source_view: "USER.md";
+    base_revision: number;
+    affected_meaning_ids: string[];
+    proposals: MemoryProposalCandidate[];
+}
 
 export function renderMarkdownStateViews(materialization: StateMaterialization) {
     return Object.fromEntries(
@@ -47,6 +57,108 @@ export async function publishMarkdownStateViews(
     return targets.map((target) => target.path);
 }
 
+export async function readMarkdownStateViews(directory: string) {
+    const names = Object.keys(VIEW_TITLES) as Array<keyof StateMaterialization["views"]>;
+    return Object.fromEntries(
+        await Promise.all(names.map(async (name) => [name, await readFile(join(directory, name), "utf8")] as const)),
+    ) as Record<keyof StateMaterialization["views"], string>;
+}
+
+/** Parses the deliberately narrow Markdown v1 edit surface into semantic proposals. */
+export function inspectMarkdownStateEdits(
+    materialization: StateMaterialization,
+    edited: Record<keyof StateMaterialization["views"], string>,
+    proposedAt: string,
+): MarkdownEditInspection {
+    const expected = renderMarkdownStateViews(materialization);
+    for (const name of ["SELF.md", "RELATIONSHIP.md", "MEMORY.md"] as const) {
+        if (edited[name] !== expected[name]) throw new ValidationError(`${name} is generated-only and contains drift`);
+    }
+    const actualMetadata = metadataBlock(edited["USER.md"]);
+    const expectedMetadata = metadataBlock(expected["USER.md"]);
+    if (actualMetadata !== expectedMetadata)
+        throw new ValidationError("USER.md materialization metadata is stale or changed");
+    if (entryPrefix(edited["USER.md"]) !== entryPrefix(expected["USER.md"]))
+        throw new ValidationError("USER.md generated structure contains drift");
+
+    const meanings = new Map(materialization.views["USER.md"].map((meaning) => [meaning.meaningId, meaning]));
+    const expectedEntries = parseEntries(expected["USER.md"]);
+    const editedEntries = parseEntries(edited["USER.md"]);
+    if (editedEntries.size !== expectedEntries.size)
+        throw new ValidationError("USER.md meanings cannot be added or removed");
+
+    const proposals: MemoryProposalCandidate[] = [];
+    for (const [id, expectedEntry] of expectedEntries) {
+        const editedEntry = editedEntries.get(id);
+        if (!editedEntry) throw new ValidationError(`USER.md meaning identity changed or is missing: ${id}`);
+        if (editedEntry.suffix !== expectedEntry.suffix)
+            throw new ValidationError(`USER.md metadata or provenance changed for meaning: ${id}`);
+        if (editedEntry.content === expectedEntry.content) continue;
+        const meaning = meanings.get(id as MeaningId)!;
+        if (
+            meaning.currentness !== "current" ||
+            !["fact", "preference"].includes(meaning.kind) ||
+            meaning.epistemicRole !== "user_testimony"
+        )
+            throw new ValidationError(`meaning is generated-only and cannot be edited: ${id}`);
+        const content = decodeCanonicalString(editedEntry.content).trim();
+        if (!content) throw new ValidationError(`edited meaning content must be non-empty: ${id}`);
+        proposals.push({
+            proposal_version: 1,
+            proposal_id: `memory-proposal-file-edit-${materialization.sourceRevision}-${id}`,
+            proposed_at: proposedAt,
+            kind: meaning.kind,
+            owner: meaning.owner,
+            slot: meaning.slot,
+            scope: meaning.scope,
+            content,
+            source_evidence_ids: [...meaning.sourceEvidenceIds],
+            epistemic_role: meaning.epistemicRole,
+            applicable_from: proposedAt,
+            applicable_until: null,
+            proposed_currentness: "current",
+            confidence: { source: "high", proposition: "high", interpretation: "high" },
+            uncertainty: meaning.uncertainty,
+            supersedes_meaning_id: meaning.meaningId,
+        });
+    }
+    if (!proposals.length) throw new ValidationError("no supported USER.md content edits were found");
+    return {
+        edit_version: 1,
+        source_view: "USER.md",
+        base_revision: materialization.sourceRevision,
+        affected_meaning_ids: proposals.map((proposal) => proposal.supersedes_meaning_id!),
+        proposals,
+    };
+}
+
+function metadataBlock(markdown: string) {
+    const end = markdown.indexOf("-->\n");
+    if (!markdown.startsWith("<!-- ember-state-materialization\n") || end < 0)
+        throw new ValidationError("materialized view metadata is missing or malformed");
+    return markdown.slice(0, end + 4);
+}
+
+function parseEntries(markdown: string) {
+    const entries = new Map<string, { content: string; suffix: string }>();
+    const pattern = /\n## Meaning <code>([^<\n]+)<\/code>\n\n([\s\S]*?)\n\n(- Kind: [\s\S]*?)(?=\n## Meaning |$)/gu;
+    for (const match of markdown.matchAll(pattern)) {
+        const id = decodeCanonicalString(match[1]!);
+        if (entries.has(id)) throw new ValidationError(`duplicate materialized meaning ID: ${id}`);
+        entries.set(id, { content: match[2]!, suffix: match[3]! });
+    }
+    return entries;
+}
+
+function entryPrefix(markdown: string) {
+    const first = markdown.indexOf("\n## Meaning ");
+    return first < 0 ? markdown : markdown.slice(0, first);
+}
+
+function decodeCanonicalString(value: string) {
+    return value.replace(/&#(\d+);/gu, (_match, point: string) => String.fromCodePoint(Number(point)));
+}
+
 async function resolvePhysicalPath(path: string): Promise<string> {
     const absolute = resolve(path);
     try {
@@ -78,7 +190,10 @@ function renderView(title: string, meanings: MaterializedMeaning[], source: Stat
         "-->",
     ].join("\n");
     let markdown = `${metadata}\n\n# ${title}\n\n`;
-    markdown += "Generated-only inspection view. Editing this file does not change canonical Ember state.\n";
+    markdown +=
+        title === VIEW_TITLES["USER.md"]
+            ? "Proposal-authoring view. Only content of current user facts and preferences is editable; apply edits explicitly.\n"
+            : "Generated-only inspection view. Editing this file does not change canonical Ember state.\n";
     if (!meanings.length) return `${markdown}\nNo meanings are visible under this disclosure policy.\n`;
     for (const meaning of meanings) markdown += renderMeaning(meaning);
     return markdown;

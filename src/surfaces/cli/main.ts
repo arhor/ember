@@ -1,5 +1,6 @@
 import type {
     CheckArgs,
+    ApplyMaterializedEditsArgs,
     CliCommandArgs,
     CliIo,
     CorrectArgs,
@@ -13,11 +14,16 @@ import type {
 } from "./model.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
-import { initialState } from "../../core/model.ts";
+import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
+import { initialState, nowUtc } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
 import { supersede } from "../../core/semantics.ts";
 import { buildStateMaterialization } from "../../core/state-materialization.ts";
-import { publishMarkdownStateViews } from "../../persistence/markdown-state-materializer.ts";
+import {
+    inspectMarkdownStateEdits,
+    publishMarkdownStateViews,
+    readMarkdownStateViews,
+} from "../../persistence/markdown-state-materializer.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
@@ -45,6 +51,9 @@ export async function main(
             }
             case Commands.MATERIALIZE: {
                 return await onMaterialize(args, io);
+            }
+            case Commands.APPLY_MATERIALIZED_EDITS: {
+                return await onApplyMaterializedEdits(args, io);
             }
             case Commands.EXPLAIN: {
                 return await onExplain(args, io);
@@ -119,6 +128,46 @@ async function onMaterialize(args: MaterializeArgs, io: CliIo) {
         `materialized Markdown v1 revision ${state.revision}:\n${files.map((file) => `  ${file}`).join("\n")}\n`,
     );
     return 0;
+}
+
+async function onApplyMaterializedEdits(args: ApplyMaterializedEditsArgs, io: CliIo) {
+    const store = new StateStore(args.state);
+    const lease = await store.acquireWriteLease();
+    try {
+        const state = await loadForPrincipal(store, args.principal);
+        const materialization = buildStateMaterialization(state, { principal: args.principal, scope: args.scope });
+        const inspection = inspectMarkdownStateEdits(
+            materialization,
+            await readMarkdownStateViews(args.input),
+            nowUtc(),
+        );
+        let candidate = state;
+        const outcomes = [];
+        for (const proposalCandidate of inspection.proposals) {
+            const assessment = assessMemoryProposal(candidate, proposalCandidate);
+            if (assessment.status !== "valid")
+                throw new ValidationError(`materialized edit proposal was ${assessment.status}: ${assessment.detail}`);
+            const resolution = resolveMemoryProposal(candidate, assessment.proposal, state.revision, {
+                decidedAt: proposalCandidate.proposed_at,
+            });
+            outcomes.push(resolution.proposal);
+            if (resolution.proposal.status !== "adopted")
+                throw new ValidationError(`materialized edit was rejected: ${resolution.proposal.resolution.reason}`);
+            candidate = resolution.state;
+        }
+        const committed = await store.commit(state.revision, candidate);
+        await publishMarkdownStateViews(
+            args.input,
+            args.state,
+            buildStateMaterialization(committed, { principal: args.principal, scope: args.scope }),
+        );
+        io.output.write(
+            `${JSON.stringify({ ...inspection, proposals: outcomes, resulting_revision: committed.revision }, null, 2)}\n`,
+        );
+        return 0;
+    } finally {
+        await store.releaseWriteLease(lease);
+    }
 }
 
 async function onExplain(args: ExplainArgs, io: CliIo) {
@@ -402,6 +451,15 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             principal: required("--principal"),
             scope: required("--scope"),
             output: required("--output"),
+        };
+    }
+    if (command === "apply-materialized-edits") {
+        return {
+            command,
+            state: required("--state"),
+            principal: required("--principal"),
+            scope: required("--scope"),
+            input: required("--input"),
         };
     }
     if (command === "explain") {
