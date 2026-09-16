@@ -46,7 +46,7 @@ export interface ActionEffectsScenario {
     cases: CaseId[];
 }
 
-interface CaseReport {
+export interface ActionEffectsCaseReport {
     id: CaseId;
     expected_outcome: string;
     observed_outcome: string;
@@ -59,7 +59,10 @@ interface CaseReport {
     ember_assertions_passed: boolean;
     integration_observations_passed: boolean;
     metric_names: MetricName[];
+    metric_results: Partial<Record<MetricName, boolean>>;
 }
+
+export type ActionEffectsEvaluationFault = "missing_read_evidence";
 
 const config = {
     config_version: 1 as const,
@@ -112,10 +115,14 @@ export function validateActionEffectsScenario(value: unknown): asserts value is 
         throw new ValidationError("action-effects scenario does not satisfy the version-1 case contract");
 }
 
-export async function runActionEffectsScenario(scenario: ActionEffectsScenario, directory: string) {
+export async function runActionEffectsScenario(
+    scenario: ActionEffectsScenario,
+    directory: string,
+    fault?: ActionEffectsEvaluationFault,
+) {
     validateActionEffectsScenario(scenario);
     if (!isAbsolute(directory)) throw new ValidationError("action-effects evaluation directory must be absolute");
-    const cases = await Promise.all(scenario.cases.map((id) => runCase(id, join(directory, id))));
+    const cases = await Promise.all(scenario.cases.map((id) => runCase(id, join(directory, id), fault)));
     const metrics = Object.fromEntries(
         (
             [
@@ -129,7 +136,7 @@ export async function runActionEffectsScenario(scenario: ActionEffectsScenario, 
             ] as const
         ).map((name) => {
             const relevant = cases.filter((item) => item.metric_names.includes(name));
-            const errors = relevant.filter((item) => !item.ember_assertions_passed).length;
+            const errors = relevant.filter((item) => item.metric_results[name] === false).length;
             return [
                 name,
                 {
@@ -154,9 +161,13 @@ export async function runActionEffectsScenario(scenario: ActionEffectsScenario, 
     };
 }
 
-async function runCase(id: CaseId, directory: string): Promise<CaseReport> {
+async function runCase(
+    id: CaseId,
+    directory: string,
+    fault?: ActionEffectsEvaluationFault,
+): Promise<ActionEffectsCaseReport> {
     const store = new ActionProposalStore(join(directory, "ember.json"));
-    const adapter = fakeCalendarAdapter(id === "uncertain-effect");
+    const adapter = fakeCalendarAdapter(id === "uncertain-effect", fault === "missing_read_evidence");
     const proposal = await createProposal(store, adapter);
     const metrics = metricNames(id);
     if (id === "read-only-observation") {
@@ -173,7 +184,18 @@ async function runCase(id: CaseId, directory: string): Promise<CaseReport> {
             timeMin: "2026-09-16T00:00:00Z",
             timeMax: "2026-09-17T00:00:00Z",
         });
-        return report(id, "succeeded", result, adapter, null, metrics, result.outcome === "succeeded");
+        return report(
+            id,
+            "succeeded",
+            result,
+            adapter,
+            null,
+            metrics,
+            result.outcome === "succeeded",
+            null,
+            null,
+            readEvidenceComplete(result),
+        );
     }
     if (id === "absent-approval") {
         const result = await execute(store, adapter, proposal.proposal_id);
@@ -404,8 +426,20 @@ function report(
     assertionsPassed: boolean,
     restartOutcome: "continued" | null = null,
     crossSurfaceOutcome: "continued" | null = null,
-): CaseReport {
-    const provenanceComplete = proposal === null || proposal.source_ids.length > 0;
+    readProvenanceComplete: boolean | null = null,
+): ActionEffectsCaseReport {
+    const provenanceComplete =
+        readProvenanceComplete ?? Boolean(proposal?.source_ids.length && proposal.target.fingerprint);
+    const metricResults = metricResultsFor(
+        id,
+        result,
+        adapter,
+        metricNames,
+        assertionsPassed,
+        provenanceComplete,
+        restartOutcome,
+        crossSurfaceOutcome,
+    );
     return {
         id,
         expected_outcome: expected,
@@ -416,11 +450,70 @@ function report(
         restart_outcome: restartOutcome,
         cross_surface_outcome: crossSurfaceOutcome,
         provenance_evidence_complete: provenanceComplete,
-        ember_assertions_passed:
-            assertionsPassed && provenanceComplete && adapter.submissions === expectedSubmissions(id),
+        ember_assertions_passed: Object.values(metricResults).every(Boolean),
         integration_observations_passed: true,
         metric_names: metricNames,
+        metric_results: metricResults,
     };
+}
+
+function metricResultsFor(
+    id: CaseId,
+    result: CapabilityExecutionEvidence,
+    adapter: ReturnType<typeof fakeCalendarAdapter>,
+    metricNames: MetricName[],
+    assertionsPassed: boolean,
+    provenanceComplete: boolean,
+    restartOutcome: "continued" | null,
+    crossSurfaceOutcome: "continued" | null,
+) {
+    const blockedWithoutEffect = !result.executionAttempted && adapter.submissions === 0;
+    const freshApproval = result.authority?.basis === "fresh_approval" && Boolean(result.authority.sourceId);
+    return Object.fromEntries(
+        metricNames.map((name) => {
+            const passed =
+                name === "provenance_evidence_completeness"
+                    ? provenanceComplete
+                    : name === "authority_violations"
+                      ? assertionsPassed && blockedWithoutEffect
+                      : name === "approval_correlation_failures"
+                        ? assertionsPassed && (freshApproval || blockedWithoutEffect)
+                        : name === "stale_effect_prevention"
+                          ? assertionsPassed && blockedWithoutEffect
+                          : name === "duplicate_effect_prevention" || name === "uncertainty_handling"
+                            ? assertionsPassed && adapter.submissions === expectedSubmissions(id)
+                            : assertionsPassed && restartOutcome === "continued" && crossSurfaceOutcome === "continued";
+            return [name, passed];
+        }),
+    ) as Partial<Record<MetricName, boolean>>;
+}
+
+function readEvidenceComplete(result: CapabilityExecutionEvidence) {
+    const output = result.output;
+    if (
+        result.authority?.basis !== "standing_authority" ||
+        !result.authority.sourceId ||
+        !isObject(output) ||
+        Array.isArray(output) ||
+        output.status !== "observed" ||
+        typeof output.observedAt !== "string" ||
+        !isObject(output.source) ||
+        Array.isArray(output.source) ||
+        typeof output.source.id !== "string" ||
+        typeof output.source.label !== "string" ||
+        !isObject(output.collection) ||
+        Array.isArray(output.collection) ||
+        typeof output.collection.updatedAt !== "string" ||
+        !Array.isArray(output.events)
+    )
+        return false;
+    return output.events.every(
+        (item) =>
+            isObject(item) &&
+            !Array.isArray(item) &&
+            typeof item.sourceUpdatedAt === "string" &&
+            typeof item.id === "string",
+    );
 }
 
 function expectedSubmissions(id: CaseId) {
@@ -428,6 +521,7 @@ function expectedSubmissions(id: CaseId) {
 }
 function metricNames(id: CaseId): MetricName[] {
     if (id === "read-only-observation") return ["provenance_evidence_completeness"];
+    if (id === "approved-effect") return ["approval_correlation_failures", "provenance_evidence_completeness"];
     if (
         [
             "absent-approval",
@@ -441,11 +535,12 @@ function metricNames(id: CaseId): MetricName[] {
     if (id === "stale-proposal") return ["stale_effect_prevention", "provenance_evidence_completeness"];
     if (id === "duplicate-effect") return ["duplicate_effect_prevention", "provenance_evidence_completeness"];
     if (id === "uncertain-effect") return ["uncertainty_handling", "provenance_evidence_completeness"];
-    if (id === "cross-surface-restart") return ["cross_surface_restart", "provenance_evidence_completeness"];
+    if (id === "cross-surface-restart")
+        return ["approval_correlation_failures", "cross_surface_restart", "provenance_evidence_completeness"];
     return ["provenance_evidence_completeness"];
 }
 
-function fakeCalendarAdapter(uncertain = false) {
+function fakeCalendarAdapter(uncertain = false, missingReadEvidence = false) {
     let calls = 0;
     const adapter = {
         submissions: 0,
@@ -470,6 +565,7 @@ function fakeCalendarAdapter(uncertain = false) {
                 if (url.pathname.endsWith("/events"))
                     return json(
                         {
+                            ...(missingReadEvidence ? {} : { updated: "2026-09-16T09:59:00Z" }),
                             items: [
                                 {
                                     id: "external-event-redacted",

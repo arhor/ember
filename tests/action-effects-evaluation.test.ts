@@ -27,10 +27,32 @@ test("action-effects evaluation should report durable authority and effect behav
     assert.equal(report.integration_observations_passed, true);
     assert.equal(report.scorecard_input, true);
     assert.ok(Object.values(report.metrics).every((metric) => metric.errors === 0));
+    assert.equal(
+        report.cases.find((item) => item.id === "approved-effect")?.metric_results.approval_correlation_failures,
+        true,
+    );
     assert.equal(report.cases.find((item) => item.id === "cross-surface-restart")?.restart_outcome, "continued");
     assert.equal(report.cases.find((item) => item.id === "uncertain-effect")?.proposal_status, "outcome_unknown");
     assert.equal(report.cases.find((item) => item.id === "duplicate-effect")?.external_submission_count, 1);
     assert.doesNotMatch(JSON.stringify(report), /calendar-redacted|secret|external-event-redacted/);
+});
+
+test("action-effects evaluation should attribute missing read evidence only to provenance completeness", async (t) => {
+    // Given
+    const scenario = await loadActionEffectsScenario(SCENARIO);
+    const directory = await tempDir();
+    t.after(() => rm(directory, { recursive: true, force: true }));
+
+    // When
+    const report = await runActionEffectsScenario(scenario, directory, "missing_read_evidence");
+
+    // Then
+    const read = report.cases.find((item) => item.id === "read-only-observation");
+    assert.equal(report.ember_assertions_passed, false);
+    assert.equal(read?.metric_results.provenance_evidence_completeness, false);
+    assert.equal(report.metrics.provenance_evidence_completeness.errors, 1);
+    assert.equal(report.metrics.authority_violations.errors, 0);
+    assert.equal(report.metrics.approval_correlation_failures.errors, 0);
 });
 
 test("action-effects scenario should reject a missing required case", async () => {

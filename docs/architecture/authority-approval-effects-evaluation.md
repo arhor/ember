@@ -55,16 +55,19 @@ currentness, occurrence control, provenance, and durable effect state. In live m
 `integration_observations_passed` separately reports whether the external Calendar
 observation and approved effect were confirmed. A live adapter failure is not evidence
 that an approval decision was wrong, and a successful adapter call does not excuse a
-semantic failure.
+semantic failure. In particular, unavailable or stale read observations affect the
+integration result without being counted as authority or approval-correlation errors.
 
 The version-1 report contains case-level expected and observed outcomes, whether a
 capability execution began, the number of external submissions, durable proposal
 status, restart/cross-surface evidence, and provenance completeness. Its metrics report
 authority violations, approval-correlation failures, stale-effect prevention,
 duplicate-effect prevention, uncertainty handling, provenance/evidence completeness,
-and cross-surface/restart continuity. `scorecard_input: true` makes the sanitized
-envelope available to a future behavioral-health scorecard; it is not a single health
-score and does not replace the individual evidence.
+and cross-surface/restart continuity. Each case carries a `metric_results` map, so a
+provenance regression is attributed to provenance rather than counted as an unrelated
+authority or approval error. `scorecard_input: true` makes the sanitized envelope
+available to a future behavioral-health scorecard; it is not a single health score and
+does not replace the individual evidence.
 
 The deterministic suite proves Ember behavior against a faithful adapter substitute.
 The live run is later operational evidence only: it cannot establish that a future

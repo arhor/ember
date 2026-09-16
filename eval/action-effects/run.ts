@@ -72,7 +72,7 @@ async function runLiveGoogleCalendarEvaluation(directory: string) {
     );
     let effectOutcome = "not_attempted";
     let proposalStatus: string | null = null;
-    let semanticPassed = observation.outcome === "succeeded" && proposalResult.outcome === "succeeded";
+    let semanticPassed = proposalResult.outcome === "succeeded";
     if (proposalResult.outcome === "succeeded" && proposalResult.output && typeof proposalResult.output === "object") {
         const proposalId = (proposalResult.output as Record<string, unknown>).proposalId;
         if (typeof proposalId === "string") {
