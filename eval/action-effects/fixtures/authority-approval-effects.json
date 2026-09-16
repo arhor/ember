@@ -1,0 +1,18 @@
+{
+  "scenario_version": 1,
+  "id": "authority-approval-and-effects",
+  "description": "Read observation, proposal-specific approval, currentness, restart, and truthful Calendar effect outcomes.",
+  "cases": [
+    "read-only-observation",
+    "approved-effect",
+    "absent-approval",
+    "rejected-approval",
+    "mismatched-approval",
+    "ambiguous-assent",
+    "cross-surface-restart",
+    "stale-proposal",
+    "duplicate-effect",
+    "uncertain-effect",
+    "capability-without-authority"
+  ]
+}

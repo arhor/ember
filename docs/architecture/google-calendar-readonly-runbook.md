@@ -125,3 +125,5 @@ event count, observation time, hashed source ID, collection update time, and tru
 The consequential write smoke is separately gated by the exact environment-value
 interlock documented in
 [Capability Execution Boundary](capability-execution-boundary.md#approved-google-calendar-event-creation).
+For the broader deterministic authority/restart/effect suite and its opt-in live
+evaluation, use [Authority, Approval, and Effects Evaluation](authority-approval-effects-evaluation.md).
