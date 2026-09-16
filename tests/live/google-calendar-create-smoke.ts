@@ -9,7 +9,10 @@ import type { CapabilityJsonValue } from "../../src/capabilities/execution.ts";
 
 import { ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
-import { createApprovedGoogleCalendarEventCapability } from "../../src/capabilities/google-calendar-create.ts";
+import {
+    calendarTargetFingerprint,
+    createApprovedGoogleCalendarEventCapability,
+} from "../../src/capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig } from "../../src/capabilities/google-calendar.ts";
 
 if (process.env.EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE !== "1") {
@@ -38,15 +41,26 @@ try {
         purpose: "Operator-requested live integration smoke",
         consequence: "Creates one real calendar event without sending attendee updates",
         payload: event as CapabilityJsonValue,
+        target: { label: config.calendar_label, fingerprint: calendarTargetFingerprint(config) },
         sourceIds: ["live-smoke:explicit-environment-approval"],
         createdAt: now.toISOString(),
         expiresAt: new Date(now.getTime() + 5 * 60_000).toISOString(),
+    });
+    const presented = await store.present({
+        proposalId: proposal.proposal_id,
+        principal: config.principal,
+        scope: config.scope,
+        surface: "local_cli",
+        presentedAt: new Date().toISOString(),
     });
     await store.decide({
         proposalId: proposal.proposal_id,
         decision: "approved",
         principal: config.principal,
         payloadDigest: proposal.payload_digest,
+        scope: config.scope,
+        surface: "local_cli",
+        presentationId: presented.presentations.at(-1)!.presentation_id,
         decidedAt: new Date().toISOString(),
         authoritySourceId: "live-smoke:exact-environment-confirmation",
     });

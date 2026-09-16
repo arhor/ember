@@ -99,15 +99,53 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             ask(config, store, state, runtimeId, line, io.output, signal),
                         );
                         if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
+                    } else if (line.startsWith(":show-action ")) {
+                        const [command, proposalId, ...extra] = splitCommand(line);
+                        if (!proposalId || extra.length) throw new ValidationError(`${command} requires PROPOSAL_ID`);
+                        const proposal = await new ActionProposalStore(config.statePath).present({
+                            proposalId,
+                            principal: config.principal,
+                            scope: config.scope,
+                            surface: "local_cli",
+                            presentedAt: nowUtc(),
+                        });
+                        const presentation = proposal.presentations.at(-1)!;
+                        io.output.write(
+                            `${JSON.stringify({
+                                proposalId: proposal.proposal_id,
+                                payloadDigest: proposal.payload_digest,
+                                target: proposal.target.label,
+                                event: proposal.payload,
+                                purpose: proposal.purpose,
+                                consequence: proposal.consequence,
+                                expiresAt: proposal.expires_at,
+                                presentationId: presentation.presentation_id,
+                            })}\n`,
+                        );
                     } else if (line.startsWith(":approve-action ") || line.startsWith(":reject-action ")) {
                         const [command, proposalId, payloadDigest, ...extra] = splitCommand(line);
                         if (!proposalId || !payloadDigest || extra.length)
                             throw new ValidationError(`${command} requires PROPOSAL_ID PAYLOAD_DIGEST`);
-                        const proposal = await new ActionProposalStore(config.statePath).decide({
+                        const actions = new ActionProposalStore(config.statePath);
+                        const pending = await actions.get(proposalId);
+                        const presentation = pending?.presentations
+                            .filter(
+                                (candidate) =>
+                                    candidate.principal === config.principal &&
+                                    candidate.scope === config.scope &&
+                                    candidate.surface === "local_cli",
+                            )
+                            .at(-1);
+                        if (!presentation)
+                            throw new ValidationError("action approval requires :show-action in this scope first");
+                        const proposal = await actions.decide({
                             proposalId,
                             decision: command === ":approve-action" ? "approved" : "rejected",
                             principal: config.principal,
                             payloadDigest,
+                            scope: config.scope,
+                            surface: "local_cli",
+                            presentationId: presentation.presentation_id,
                             decidedAt: nowUtc(),
                             authoritySourceId: `local_cli:${config.principal}`,
                         });

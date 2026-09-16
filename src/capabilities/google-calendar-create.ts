@@ -102,6 +102,7 @@ export function createGoogleCalendarEventProposalCapability(
                 purpose: value.purpose,
                 consequence: value.consequence,
                 payload: value.event,
+                target: { label: config.calendar_label, fingerprint: calendarTargetFingerprint(config) },
                 sourceIds: [context.cognitionId],
                 createdAt: createdAt.toISOString(),
                 expiresAt: new Date(createdAt.getTime() + 15 * 60_000).toISOString(),
@@ -166,6 +167,8 @@ export function createApprovedGoogleCalendarEventCapability(
         authorize: async (context, input) => {
             if (!validInput(input)) return { status: "denied", reason: "calendar event proposal payload is invalid" };
             const existing = await store.correlate(input.proposalId, "googleCalendarCreateEvent", input.event, context);
+            if (existing && existing.target.fingerprint !== calendarTargetFingerprint(config))
+                return { status: "denied", reason: "calendar target configuration changed after proposal creation" };
             if (existing?.status === "executing") {
                 const persistedInput = { proposalId: existing.proposal_id, event: existing.payload };
                 if (!validInput(persistedInput))
@@ -205,11 +208,19 @@ async function executeCreate(
     let effectSubmitted = false;
     let accessToken: string;
     try {
-        accessToken = await token(config, dependencies, signal);
-        const current = await dependencies.fetch(eventUrl(config, dependencies.apiOrigin, externalId), {
-            ...(signal === undefined ? {} : { signal }),
-            headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
-        });
+        let current: Response;
+        try {
+            accessToken = await token(config, dependencies, signal);
+            current = await dependencies.fetch(eventUrl(config, dependencies.apiOrigin, externalId), {
+                ...(signal === undefined ? {} : { signal }),
+                headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
+            });
+        } catch (error) {
+            throw new CapabilityExecutionFailure("calendar pre-effect authentication or currentness check failed", {
+                effectState: "not_started",
+                cause: error,
+            });
+        }
         if (current.ok) {
             await store.beginAttempt(input.proposalId, startedAt);
             await fail(store, input.proposalId, dependencies, "deterministic event identifier is already occupied");
@@ -284,14 +295,18 @@ async function executeCreate(
         if (error instanceof CapabilityExecutionFailure) throw error;
         const latest = (await store.load()).proposals.find((item) => item.proposal_id === input.proposalId);
         if (latest?.status === "executing") {
-            if (effectSubmitted)
+            if (effectSubmitted) {
                 await unknown(
                     store,
                     input.proposalId,
                     dependencies,
                     "execution ended without trustworthy effect evidence",
                 );
-            else
+                throw new CapabilityExecutionFailure("calendar event outcome is unknown after effect submission", {
+                    effectState: "unknown",
+                    cause: error,
+                });
+            } else
                 await store.completeAttempt(input.proposalId, "failed", dependencies.now().toISOString(), {
                     status: "confirmed_failure",
                     reason: "execution failed before effect submission",
@@ -484,6 +499,18 @@ function validProposalInput(value: unknown): value is unknown & GoogleCalendarPr
 }
 function eventUrl(config: GoogleCalendarConfig, origin: string, id: string) {
     return new URL(`/calendar/v3/calendars/${encodeURIComponent(config.calendar_id)}/events/${id}`, origin);
+}
+export function calendarTargetFingerprint(config: GoogleCalendarConfig): `sha256:${string}` {
+    return `sha256:${createHash("sha256")
+        .update(
+            JSON.stringify({
+                setupLineageId: config.setup_lineage_id,
+                calendarId: config.calendar_id,
+                clientId: config.client_id,
+                refreshTokenFile: config.refresh_token_file,
+            }),
+        )
+        .digest("hex")}`;
 }
 function externalEventId(proposalId: string) {
     return `ember${createHash("sha256").update(proposalId).digest("hex").slice(0, 32)}`;

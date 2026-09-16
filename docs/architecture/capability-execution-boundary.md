@@ -228,8 +228,14 @@ Ordinary configured Claude Code cognition can first call
 `googleCalendarProposeEvent`. That non-effectful capability persists a 15-minute
 proposal grounded in the current cognition and returns its exact proposal ID, payload
 digest, parameters, purpose, consequence, and expiry for presentation. It grants no
-authority. On the trusted local CLI, the principal can then use
-`:approve-action PROPOSAL_ID PAYLOAD_DIGEST` or the corresponding `:reject-action`;
+authority. The proposal digest also binds an adapter-local fingerprint of the Calendar
+resource and credential/config generation while exposing only the configured target
+label. Reconfiguration therefore blocks the old proposal instead of redirecting it.
+
+On the trusted local CLI, `:show-action PROPOSAL_ID` renders and durably correlates the
+exact target label, event, purpose, consequence, digest, and expiry in the active scope.
+Only after that presentation can the principal use `:approve-action PROPOSAL_ID
+PAYLOAD_DIGEST` or the corresponding `:reject-action` on the same surface and scope;
 `:withdraw-action PROPOSAL_ID REASON` and `:supersede-action PROPOSAL_ID REASON`
 durably revoke a not-yet-started approval. A later cognition may execute only the
 exact approved payload. This makes propose, decide, and execute reachable through the
@@ -253,7 +259,10 @@ the deterministic event ID. An exact event including timezone is confirmed succe
 conflicting event is confirmed failure. Absence after submission cannot prove the event
 never existed, so it remains `outcome_unknown`. Non-2xx and lost responses use the same
 reconciliation instead of being assumed failures, and no ambiguous effect is retried
-under the old approval.
+under the old approval. Authentication and currentness transport failures before the
+attempt are safely retryable `not_started` failures. Malformed 2xx responses after
+submission produce `outcome_unknown` in both the durable action ledger and capability
+evidence.
 
 Deterministic coverage lives in `src/capabilities/google-calendar-create.test.ts`.
 The opt-in real smoke requires a refresh token granted the

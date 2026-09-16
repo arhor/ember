@@ -9,6 +9,7 @@ import { tempDir } from "../../tests/support.ts";
 import { ActionProposalStore } from "./action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "./execution.ts";
 import {
+    calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
     createGoogleCalendarEventProposalCapability,
 } from "./google-calendar-create.ts";
@@ -50,9 +51,31 @@ async function proposed(store: ActionProposalStore) {
         purpose: "Keep the dental appointment",
         consequence: "Creates one private calendar event without attendee notifications",
         payload: event as CapabilityJsonValue,
+        target: { label: config.calendar_label, fingerprint: calendarTargetFingerprint(config) },
         sourceIds: ["evidence-user-request"],
         createdAt: "2026-09-16T10:00:00Z",
         expiresAt: "2026-09-16T11:00:00Z",
+    });
+}
+
+async function approve(store: ActionProposalStore, proposal: Awaited<ReturnType<typeof proposed>>) {
+    const presented = await store.present({
+        proposalId: proposal.proposal_id,
+        principal: "alice",
+        scope: "private",
+        surface: "local_cli",
+        presentedAt: "2026-09-16T10:04:00Z",
+    });
+    return store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        scope: "private",
+        surface: "local_cli",
+        presentationId: presented.presentations.at(-1)!.presentation_id,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
     });
 }
 
@@ -89,14 +112,7 @@ test("calendar event capability should create one event when durable exact appro
     const statePath = join(directory, "ember.json");
     const firstStore = new ActionProposalStore(statePath);
     const proposal = await proposed(firstStore);
-    await firstStore.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(firstStore, proposal);
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     const restartedStore = new ActionProposalStore(statePath);
     const capability = createApprovedGoogleCalendarEventCapability(config, restartedStore, {
@@ -138,6 +154,13 @@ test("action proposal decision should reject stale and materially mismatched app
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
+    const presented = await store.present({
+        proposalId: proposal.proposal_id,
+        principal: "alice",
+        scope: "private",
+        surface: "local_cli",
+        presentedAt: "2026-09-16T10:04:00Z",
+    });
 
     // When
     const mismatch = store.decide({
@@ -145,6 +168,9 @@ test("action proposal decision should reject stale and materially mismatched app
         decision: "approved",
         principal: "alice",
         payloadDigest: "sha256:mismatch",
+        scope: "private",
+        surface: "local_cli",
+        presentationId: presented.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
     });
@@ -167,15 +193,32 @@ test("action proposal decision should preserve rejection and refuse ambiguous de
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const rejectedProposal = await proposed(store);
+    const rejectedPresentation = await store.present({
+        proposalId: rejectedProposal.proposal_id,
+        principal: "alice",
+        scope: "private",
+        surface: "local_cli",
+        presentedAt: "2026-09-16T10:04:00Z",
+    });
     await store.decide({
         proposalId: rejectedProposal.proposal_id,
         decision: "rejected",
         principal: "alice",
         payloadDigest: rejectedProposal.payload_digest,
+        scope: "private",
+        surface: "local_cli",
+        presentationId: rejectedPresentation.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
     });
     const ambiguousProposal = await proposed(store);
+    const ambiguousPresentation = await store.present({
+        proposalId: ambiguousProposal.proposal_id,
+        principal: "alice",
+        scope: "private",
+        surface: "local_cli",
+        presentedAt: "2026-09-16T10:04:00Z",
+    });
 
     // When
     const rejected = await store.authorize(
@@ -190,6 +233,9 @@ test("action proposal decision should preserve rejection and refuse ambiguous de
         decision: "maybe" as never,
         principal: "alice",
         payloadDigest: ambiguousProposal.payload_digest,
+        scope: "private",
+        surface: "local_cli",
+        presentationId: ambiguousPresentation.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
     });
@@ -206,14 +252,7 @@ test("calendar event capability should persist uncertainty and never replay appr
     const statePath = join(directory, "ember.json");
     const store = new ActionProposalStore(statePath);
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
     let calls = 0;
     const capability = createApprovedGoogleCalendarEventCapability(config, store, {
         now: () => new Date("2026-09-16T10:10:00Z"),
@@ -292,14 +331,7 @@ test("action proposal authorization should stop after durable withdrawal or supe
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
 
     // When
     await store.invalidate({
@@ -356,14 +388,7 @@ test("calendar event capability should reconcile a submitted attempt after resta
     const statePath = join(directory, "ember.json");
     const store = new ActionProposalStore(statePath);
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
     await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
     await store.markSubmitted(proposal.proposal_id);
     let calls = 0;
@@ -400,14 +425,7 @@ test("calendar event capability should treat timezone mismatch as a confirmed re
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
     let calls = 0;
     const capability = createApprovedGoogleCalendarEventCapability(config, store, {
         now: () => new Date("2026-09-16T10:10:00Z"),
@@ -466,14 +484,7 @@ test("calendar recovery should not mutate submitted proposal when invocation pay
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
     await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
     await store.markSubmitted(proposal.proposal_id);
     let calls = 0;
@@ -503,14 +514,7 @@ test("calendar event capability should preserve approval when currentness rechec
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
     let calls = 0;
     const capability = createApprovedGoogleCalendarEventCapability(config, store, {
         now: () => new Date("2026-09-16T10:10:00Z"),
@@ -536,14 +540,7 @@ test("calendar recovery should terminalize uncertainty when successful HTTP body
     const directory = await tempDir();
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
-    await store.decide({
-        proposalId: proposal.proposal_id,
-        decision: "approved",
-        principal: "alice",
-        payloadDigest: proposal.payload_digest,
-        decidedAt: "2026-09-16T10:05:00Z",
-        authoritySourceId: "authenticated-cli:alice",
-    });
+    await approve(store, proposal);
     await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
     await store.markSubmitted(proposal.proposal_id);
     let calls = 0;
@@ -579,6 +576,7 @@ test("calendar event validation should compare fractional timestamps chronologic
         purpose: "test",
         consequence: "test",
         payload: { ...event, start: "2026-09-18T08:00:00.1Z", end: "2026-09-18T08:00:00Z" },
+        target: { label: config.calendar_label, fingerprint: calendarTargetFingerprint(config) },
         sourceIds: ["source"],
         createdAt: "2026-09-16T10:00:00Z",
         expiresAt: "2026-09-16T11:00:00Z",
@@ -594,6 +592,122 @@ test("calendar event validation should compare fractional timestamps chronologic
     // Then
     assert.equal(result.outcome, "authority_denied");
     assert.equal(result.executionAttempted, false);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal decision should require trusted presentation in the same scope and surface", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+
+    // When
+    const decision = store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        scope: "private",
+        surface: "local_cli",
+        presentationId: "action-presentation-missing",
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+
+    // Then
+    await assert.rejects(decision, /does not match/);
+    assert.equal((await store.load()).proposals[0]!.status, "pending");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should block approved proposal when configured target changes", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(
+        { ...config, calendar_id: "different@example.test", refresh_token_file: "/secret/reconfigured-refresh" },
+        store,
+        {
+            now: () => new Date("2026-09-16T10:10:00Z"),
+            fetch: async () => {
+                calls += 1;
+                return json({});
+            },
+        },
+    );
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "authority_denied");
+    assert.match(result.reason ?? "", /target configuration changed/);
+    assert.equal(calls, 0);
+    assert.equal((await store.load()).proposals[0]!.status, "approved");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should align durable and firewall uncertainty when POST response is malformed", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(config, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () => {
+            calls += 1;
+            if (calls === 1) return json({ access_token: "token" });
+            if (calls === 2) return json({}, { status: 404 });
+            return new Response("not-json", { status: 200 });
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "outcome_unknown");
+    assert.equal(result.retry, "unsafe");
+    assert.equal((await store.load()).proposals[0]!.status, "outcome_unknown");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should classify authentication transport failure before attempt as safe", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+    const capability = createApprovedGoogleCalendarEventCapability(config, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () => {
+            throw new Error("token transport unavailable");
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "failed");
+    assert.equal(result.retry, "safe");
+    assert.equal((await store.load()).proposals[0]!.status, "approved");
     await rm(directory, { recursive: true, force: true });
 });
 

@@ -86,9 +86,16 @@ the resulting reply must identify the proposal ID, payload digest, exact event,
 purpose, consequence, and expiry. Approve or reject it locally with:
 
 ```text
+:show-action ACTION_PROPOSAL_ID
 :approve-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST
 :reject-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST
 ```
+
+The trusted `:show-action` rendering must precede the decision in the same active scope;
+it records which exact material proposal was presented rather than trusting provider
+prose as awareness evidence. The bound target fingerprint changes when the Calendar
+resource, client, or refresh-token generation changes, so reconfiguration invalidates
+execution eligibility for an older approval without exposing raw adapter identifiers.
 
 An approved proposal can be revoked before execution with
 `:withdraw-action ACTION_PROPOSAL_ID REASON`, or marked obsolete with the analogous

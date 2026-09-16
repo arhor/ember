@@ -553,11 +553,14 @@ test("CLI action command should durably approve an exact pending calendar propos
             end: "2026-09-18T09:00:00Z",
             timezone: "Europe/Warsaw",
         },
+        target: { label: "Personal", fingerprint: `sha256:${"a".repeat(64)}` },
         sourceIds: ["cognition-test-proposal"],
         createdAt: "2026-09-16T00:00:00Z",
         expiresAt: "2026-09-17T00:00:00Z",
     });
-    const io = capture(`:approve-action ${proposal.proposal_id} ${proposal.payload_digest}\n:quit\n`);
+    const io = capture(
+        `:show-action ${proposal.proposal_id}\n:approve-action ${proposal.proposal_id} ${proposal.payload_digest}\n:quit\n`,
+    );
 
     // When
     await runCliSurface(
