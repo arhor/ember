@@ -4,6 +4,7 @@ read_when:
   - "Adding or changing a model-visible capability, tool source, or capability executor"
   - "Changing authority, approval, argument constraints, retries, cancellation, timeout, or effect evidence around model tool calls"
   - "Replacing AI SDK tool mechanics or adding MCP behind Ember capability semantics"
+  - "Changing the approved Google Calendar event creation capability or its durable effect evidence"
 role: design
 discovery_status: current
 ---
@@ -212,3 +213,42 @@ links, conference data, calendar addresses, credentials, and Google errors do no
 cross the capability boundary. `source_unavailable` and `source_stale` are explicit
 failure outcomes and never carry events. Observations remain episode-local tool
 evidence and are neither cached nor promoted into canonical state automatically.
+
+## Approved Google Calendar event creation
+
+Issue [#233](https://github.com/arhor/ember/issues/233) adds the first consequential
+capability. `googleCalendarCreateEvent` creates one bounded event with an exact title,
+start, end, and configured timezone. It deliberately excludes attendees, descriptions,
+conference links, recurrence, reminders, and update notifications. Google credentials,
+calendar IDs, access tokens, and the deterministic external event ID remain inside the
+adapter.
+
+`ActionProposalStore` persists the proposal, integrity-bound payload, provenance,
+principal/scope boundary, expiry, exact decision, and one execution attempt in the
+canonical state sidecar `<state>.actions.json`. Capability authorization reloads that
+ledger, requires a matching current approval, and rejects absent, rejected, expired,
+mismatched, executed, failed, or uncertain proposals. A restart therefore does not
+turn approval into a provider-session flag or make it reusable.
+
+Immediately before insertion, the adapter durably records the attempt and checks the
+proposal-derived Google event ID. Absence permits creation; an exact existing event is
+reconciled as confirmed success; a conflicting event is confirmed failure. A lost or
+unverifiable response after submission becomes durable `outcome_unknown` evidence and
+is never retried under the old approval. Token and pre-submission failures remain
+confirmed failures distinct from uncertain external effects.
+
+Deterministic coverage lives in `src/capabilities/google-calendar-create.test.ts`.
+The opt-in real smoke requires a refresh token granted the
+`https://www.googleapis.com/auth/calendar.events` scope and runs with:
+
+```bash
+EMBER_GOOGLE_CALENDAR_CONFIG=/absolute/path/to/calendar.json \
+EMBER_GOOGLE_CALENDAR_EVENT_TITLE='Ember live smoke' \
+EMBER_GOOGLE_CALENDAR_EVENT_START='2026-09-18T08:00:00Z' \
+EMBER_GOOGLE_CALENDAR_EVENT_END='2026-09-18T08:15:00Z' \
+EMBER_GOOGLE_CALENDAR_EXACT_APPROVAL='Ember live smoke|2026-09-18T08:00:00Z|2026-09-18T08:15:00Z' \
+npm run smoke:google-calendar-create:live
+```
+
+The repeated exact approval value is an explicit smoke-test safety interlock, not a
+general approval UI or evidence that environment variables constitute human authority.

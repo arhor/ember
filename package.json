@@ -17,6 +17,7 @@
     "smoke:cursor": "node tests/live/cursor-smoke.ts",
     "smoke:claude": "node tests/live/claude-code-smoke.ts",
     "smoke:memory-proposal:live": "EMBER_RUN_LIVE_MEMORY_PROPOSAL=1 node tests/live/memory-proposal-smoke.ts",
+    "smoke:google-calendar-create:live": "EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE=1 node tests/live/google-calendar-create-smoke.ts",
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node tests/live/codex-specialist.ts",
     "smoke:runtime:live": "EMBER_RUN_LIVE_EPISODIC=1 node tests/live/episodic-runtime-smoke.ts",
     "eval:runtime-resource": "node eval/runtime-resource/run.ts",
