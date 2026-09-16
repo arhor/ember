@@ -34,15 +34,15 @@ surface message used to create or present it.
 
 A proposal preserves at least:
 
-| Field                   | Semantic responsibility                                                                                                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `proposal_id`           | Stable Ember-owned identity for this occurrence of the proposed decision; never derived only from display text or parameters.                                                             |
-| action and parameters   | The operation, target, recipient, resource, quantity, content/disclosure boundary, and other values that determine the material effect.                                                   |
-| purpose and consequence | Why the action is proposed, who or what it serves, expected effects, cost, recoverability, public visibility, security significance, and material third-party impact.                     |
-| principal and scope     | The principal on whose behalf Ember would act, the authority-holder or holders entitled to decide, and the semantic/privacy scope in which the proposal may be disclosed and resolved.    |
-| source provenance       | The source cognition, instruction, canonical meaning, observations, specialist request, and other evidence that justified proposing the action, without treating any of them as approval. |
-| currentness basis       | The assumptions and observed versions or facts whose material change requires revalidation, plus any explicit expiry condition or time.                                                   |
-| lifecycle evidence      | Creation, presentation attempts, resolution, expiry, supersession, execution correlation, and known or possible effects, with occurrence and observation times where relevant.            |
+| Field                   | Semantic responsibility                                                                                                                                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `proposal_id`           | Stable Ember-owned identity for this occurrence of the proposed decision; never derived only from display text or parameters.                                                                                                                     |
+| action and parameters   | The operation, target, recipient, resource, quantity, content/disclosure boundary, and other values that determine the material effect.                                                                                                           |
+| purpose and consequence | Why the action is proposed, who or what it serves, expected effects, cost, recoverability, public visibility, security significance, and material third-party impact.                                                                             |
+| principal and scope     | The principal on whose behalf Ember would act, each independently required authority boundary and the holder entitled to decide it, and the semantic/privacy scope in which the proposal may be disclosed and resolved.                           |
+| source provenance       | The source cognition, instruction, canonical meaning, observations, specialist request, and other evidence that justified proposing the action, without treating any of them as approval.                                                         |
+| currentness basis       | The assumptions and observed versions or facts whose material change requires revalidation, plus any explicit expiry condition or time.                                                                                                           |
+| lifecycle evidence      | Creation, presentation occurrences, delivery attempts and outcomes, awareness evidence, decisions, withdrawals, expiry, supersession, execution correlation, and known or possible effects, with occurrence and observation times where relevant. |
 
 The representation may additionally contain a machine-normalized action payload and
 a human-facing explanation. Neither substitutes for the other. Display text alone
@@ -58,7 +58,8 @@ under an old approval.
 ## Approval and rejection are proposal-specific decisions
 
 An **approval decision** is durable evidence that an authenticated principal made a
-decision about one exact `proposal_id`. It records:
+decision about one exact `proposal_id` and one or more authority boundaries that
+principal is entitled to decide. It records:
 
 - the decision (`approved` or `rejected`) and its own stable occurrence identity;
 - the deciding principal and evidence used to map the interaction to that principal;
@@ -67,7 +68,7 @@ decision about one exact `proposal_id`. It records:
 - the scope, surface, conversation turn or other interaction evidence through which
   the decision arrived;
 - the authority provenance establishing that the principal could decide the affected
-  interests; and
+  interests and the exact required boundaries the decision satisfies; and
 - occurrence and observation time, plus any explicit conditions, narrowing, or
   expiry stated by the principal.
 
@@ -81,11 +82,72 @@ A provider's or tool runtime's approval flag may be operational evidence that a 
 was crossed. It is not this authority event. Ember translates legitimate human input
 into its own record before any runtime resumes.
 
+### Multiple authority boundaries aggregate conjunctively
+
+A proposal identifies every independently required authority boundary before it can
+become execution-eligible. A boundary might concern the acting principal's resource,
+a recipient's disclosure interests, a shared calendar participant, or an applicable
+governing policy. Each boundary records who may decide it and what part of the
+proposal that decision covers. Merely listing several possible approvers is not a
+threshold or voting rule.
+
+Execution eligibility requires a current valid approval for **every** required
+boundary. One principal may satisfy several boundaries only when their authority
+provenance establishes entitlement to each. One valid approval cannot stand in for
+another affected principal's unresolved decision, and majority, first-response, and
+last-response rules are invalid unless a governing authority source explicitly makes
+one of those rules the legitimate decision boundary.
+
+A valid rejection at any required boundary blocks the whole inseparable proposal.
+Approvals at other boundaries remain attributable history but cannot outvote it. If
+the action can be narrowed into a part whose boundaries are all satisfied, that part
+is a new proposal with a new identity; Ember does not execute a hidden subset under
+the rejected proposal. Conflicting or uncertain decisions remain blocked until
+legitimate provenance, scope, supersession, clarification, or a new proposal resolves
+them. Convenience, recency, or the most permissive answer never resolves conflict.
+
+### Withdrawal and counter-decision are durable events
+
+An approval decision is immutable historical evidence, but its current mandate is
+revocable before execution. A later withdrawal records its own stable occurrence
+identity, the exact proposal and authority boundary or prior decision it targets, the
+authenticated withdrawing principal, their authority provenance, correlation
+evidence, scope, and occurrence and observation times.
+
+The original approving principal may withdraw their own still-relevant decision. A
+different principal may withdraw or supersede it only when current authority
+provenance establishes that they govern that same boundary; surface recency or
+greater technical access is insufficient. A legitimate rejection after approval is
+therefore preserved as a withdrawal or counter-decision rather than overwriting the
+approval event.
+
+A valid withdrawal immediately removes satisfaction of its targeted boundary and
+therefore removes execution eligibility for the proposal. It survives turns,
+surfaces, and restarts exactly as the approval does. An ambiguous "stop" fails closed
+for execution while Ember clarifies which pending proposal or boundary it concerns;
+it must not be discarded merely because its target is uncertain. Withdrawal observed
+after execution began cannot undo an effect or prove rollback: it blocks any not-yet-
+started or repeated effect and leaves the in-flight outcome to reconciliation.
+
 ## Correlation across turns, surfaces, and restart
 
 The correlation key is `proposal_id`, not adjacency, wording, provider session,
 surface thread, or the bare token "yes". The proposal, its presentation evidence, and
 its resolution survive process restart in Ember-owned durable state.
+
+Presentation occurrence, delivery, and principal awareness are separate facts. Ember
+records which proposal version and material explanation it intended to present, each
+delivery attempt and observed outcome, and whether suitable awareness by each deciding
+principal is established or unknown. A committed presentation or confirmed transport
+delivery does not by itself prove the principal saw or understood the exact material
+parameters, and an uncertain delivery must remain uncertain after restart.
+
+Meaningful approval requires evidence that the deciding principal knew the exact
+proposal version and material implications. That awareness may be established by
+strong shared-ground evidence tied to the presentation occurrence, or by the approval
+interaction itself explicitly identifying or restating enough material parameters to
+establish knowledge. A later bare assent cannot combine with a persisted send attempt
+or transport confirmation to manufacture awareness.
 
 A response may resolve a proposal when all of the following hold:
 
@@ -93,9 +155,11 @@ A response may resolve a proposal when all of the following hold:
    proposal reference or equally strong Ember-owned reply correlation;
 2. the responding principal is authenticated strongly enough for the consequence and
    is entitled to decide the affected scope;
-3. the response meaning is an unambiguous approval or rejection of the presented
-   material parameters; and
-4. no scope, disclosure, currentness, expiry, or supersession conflict invalidates
+3. suitable awareness of the exact proposal version is established independently of
+   mere delivery, or the response itself explicitly establishes that knowledge;
+4. the response meaning is an unambiguous approval, rejection, or withdrawal for the
+   presented material parameters and applicable authority boundary; and
+5. no scope, disclosure, currentness, expiry, withdrawal, or supersession conflict invalidates
    the correlation.
 
 A change of surface does not invalidate approval or create it. Cross-surface
@@ -120,23 +184,35 @@ authored approvals remain distinct evidence even if their text is identical.
 
 ## Lifecycle and currentness
 
-A proposal has an independent lifecycle:
+A proposal has an independent lifecycle. Per-boundary decisions and aggregate
+eligibility must not be collapsed into one generic `approved` bit:
 
 ```text
-pending -> approved -> execution-eligible -> execution-correlated
-   |          |               |
-   +-> rejected               +-> stale / expired / superseded
-   +-> expired
-   +-> superseded
+pending -> awaiting-required-decisions -> authority-satisfied
+   |                 |                         |
+   |                 +-> rejected / withdrawn +-> revalidation
+   |                                               |
+   +-> expired / superseded                        +-> execution-eligible
+                                                       |
+                                                       +-> execution-correlated
+
+Any nonterminal state -> stale / expired / superseded
 ```
 
-`approved` records historical authorization; it does not guarantee present execution
-eligibility. Immediately before crossing the external-effect boundary, Ember must
-revalidate:
+An individual approval records historical authorization for named boundaries;
+`authority-satisfied` means every required boundary currently has a valid approval.
+A rejection or withdrawal at any pre-execution state returns the aggregate proposal
+to a blocked decision state; it cannot remain `authority-satisfied` or
+`execution-eligible` merely because that eligibility was computed earlier.
+
+Neither an individual approval nor aggregate authority satisfaction guarantees
+present execution eligibility. Immediately before crossing the external-effect
+boundary, Ember must revalidate:
 
 - the proposal is the exact approved identity and its integrity-bound material
   parameters have not changed;
-- the approval is authentic, attributable, in scope, and not revoked or expired;
+- every required boundary remains satisfied by an authentic, attributable, in-scope
+  approval that has not been withdrawn, superseded, or expired;
 - the proposal has not been rejected, superseded, executed, or made uncertain by a
   prior attempt;
 - purpose, target, recipient, resource, price or quantity, disclosure, recoverability,
@@ -187,6 +263,19 @@ Two pending proposals exist: publish a repository comment and send a calendar
 invitation. The user sends "yes" without a reply reference. Ember records an
 unresolved interaction or asks which proposal they mean. Neither action executes.
 
+The same result applies when only one proposal is pending but Ember knows only that
+its presentation was attempted or transport-confirmed. Unless shared-ground evidence
+or the response itself establishes awareness of the exact material proposal, the bare
+"yes" does not approve it.
+
+### Several affected principals
+
+A shared-calendar change requires decisions at the organizer's resource boundary and
+an independently affected participant's boundary. The organizer approves and the
+participant rejects. The proposal remains blocked: neither the first response nor a
+majority makes it authority-satisfied. A separable organizer-only alternative must be
+represented and decided as a new proposal.
+
 ### Cross-surface decision after restart
 
 Ember presents a proposal on the CLI, persists it, and stops. After restart the same
@@ -206,6 +295,13 @@ creates a new proposal; the earlier approval cannot authorize it.
 The user approves a purchase bounded to a quoted price and expiry. After the quote
 expires, the historical approval remains attributable but execution is blocked until
 the current proposal is re-established and approved as required.
+
+### Approval withdrawn before execution
+
+The user approves a proposal, then sends an authenticated, explicitly correlated
+"stop" before execution. Ember preserves both events, marks the applicable authority
+boundary withdrawn, and blocks execution. The later event does not erase the fact
+that approval once existed.
 
 ### Crash after execution begins
 
@@ -233,12 +329,13 @@ provenance, fail-closed correlation, and revalidation semantics above.
 
 ## Traceability
 
-| Governing source                                                                              | Constraint carried forward                                                                         |
-| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [ADR 0002](decisions/0002-preserve-persistent-meaning.md)                                     | Authority, proposal, decision, currentness, and supersession retain provenance and history.        |
-| [ADR 0004](decisions/0004-separate-capability-from-authority.md)                              | Capability and runtime permission do not create authority; material change requires re-evaluation. |
-| [ADR 0005](decisions/0005-distinguish-operational-continuity.md)                              | Occurrence, delivery, effects, restart recovery, and current applicability remain distinct.        |
-| [Action, Authority, and Permission Semantics](../research/action-authority-and-permission.md) | Approval must be meaningful, attributable, bounded, and current rather than a ritual confirmation. |
-| [Conversation Context and Turn Semantics](conversation-context-turn-semantics.md)             | Conversation and surface signals are supporting evidence, not sufficient semantic identity.        |
-| [Capability Execution Boundary](capability-execution-boundary.md)                             | Ember owns approval and effect semantics outside provider tool mechanics.                          |
-| [AS-DEL-07](acceptance-scenarios.md#as-del-07)                                                | A specialist approval request preserves the exact contemplated action without becoming authority.  |
+| Governing source                                                                              | Constraint carried forward                                                                                      |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [ADR 0002](decisions/0002-preserve-persistent-meaning.md)                                     | Authority, proposal, decision, currentness, and supersession retain provenance and history.                     |
+| [ADR 0004](decisions/0004-separate-capability-from-authority.md)                              | Capability and runtime permission do not create authority; material change requires re-evaluation.              |
+| [ADR 0005](decisions/0005-distinguish-operational-continuity.md)                              | Occurrence, delivery, effects, restart recovery, and current applicability remain distinct.                     |
+| [Action, Authority, and Permission Semantics](../research/action-authority-and-permission.md) | Approval must be meaningful, attributable, bounded, and current rather than a ritual confirmation.              |
+| [Conversation Context and Turn Semantics](conversation-context-turn-semantics.md)             | Presentation occurrence, delivery, awareness, shared ground, conversation, and surface signals remain distinct. |
+| [Capability Execution Boundary](capability-execution-boundary.md)                             | Ember owns approval and effect semantics outside provider tool mechanics.                                       |
+| [AS-DEL-07](acceptance-scenarios.md#as-del-07)                                                | A specialist approval request preserves the exact contemplated action without becoming authority.               |
+| [AS-AUTH-05](acceptance-scenarios.md#as-auth-05)                                              | Every material affected-principal boundary needs attributable authority rather than one principal's preference. |
