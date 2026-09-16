@@ -6,12 +6,13 @@ import test from "node:test";
 import type { CapabilityJsonValue } from "./execution.ts";
 
 import { tempDir } from "../../tests/support.ts";
-import { ActionProposalStore } from "./action-proposal.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "./action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "./execution.ts";
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
     createGoogleCalendarEventProposalCapability,
+    googleCalendarRecoveryBinding,
 } from "./google-calendar-create.ts";
 
 const config = {
@@ -76,6 +77,7 @@ async function approve(store: ActionProposalStore, proposal: Awaited<ReturnType<
         presentationId: presented.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
+        materialConfirmation: actionProposalConfirmation(proposal),
     });
 }
 
@@ -173,6 +175,7 @@ test("action proposal decision should reject stale and materially mismatched app
         presentationId: presented.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
+        materialConfirmation: actionProposalConfirmation(proposal),
     });
 
     // Then
@@ -210,6 +213,7 @@ test("action proposal decision should preserve rejection and refuse ambiguous de
         presentationId: rejectedPresentation.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
+        materialConfirmation: actionProposalConfirmation(rejectedProposal),
     });
     const ambiguousProposal = await proposed(store);
     const ambiguousPresentation = await store.present({
@@ -238,6 +242,7 @@ test("action proposal decision should preserve rejection and refuse ambiguous de
         presentationId: ambiguousPresentation.presentations.at(-1)!.presentation_id,
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
+        materialConfirmation: actionProposalConfirmation(ambiguousProposal),
     });
 
     // Then
@@ -389,7 +394,7 @@ test("calendar event capability should reconcile a submitted attempt after resta
     const store = new ActionProposalStore(statePath);
     const proposal = await proposed(store);
     await approve(store, proposal);
-    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z", googleCalendarRecoveryBinding(config));
     await store.markSubmitted(proposal.proposal_id);
     let calls = 0;
     const capability = createApprovedGoogleCalendarEventCapability(config, new ActionProposalStore(statePath), {
@@ -485,7 +490,7 @@ test("calendar recovery should not mutate submitted proposal when invocation pay
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
     await approve(store, proposal);
-    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z", googleCalendarRecoveryBinding(config));
     await store.markSubmitted(proposal.proposal_id);
     let calls = 0;
     const capability = createApprovedGoogleCalendarEventCapability(config, store, {
@@ -541,7 +546,7 @@ test("calendar recovery should terminalize uncertainty when successful HTTP body
     const store = new ActionProposalStore(join(directory, "ember.json"));
     const proposal = await proposed(store);
     await approve(store, proposal);
-    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z", googleCalendarRecoveryBinding(config));
     await store.markSubmitted(proposal.proposal_id);
     let calls = 0;
     const capability = createApprovedGoogleCalendarEventCapability(config, store, {
@@ -612,6 +617,40 @@ test("action proposal decision should require trusted presentation in the same s
         presentationId: "action-presentation-missing",
         decidedAt: "2026-09-16T10:05:00Z",
         authoritySourceId: "authenticated-cli:alice",
+        materialConfirmation: actionProposalConfirmation(proposal),
+    });
+
+    // Then
+    await assert.rejects(decision, /does not match/);
+    assert.equal((await store.load()).proposals[0]!.status, "pending");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal decision should require explicit material awareness when presentation exists", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    const presented = await store.present({
+        proposalId: proposal.proposal_id,
+        principal: "alice",
+        scope: "private",
+        surface: "local_cli",
+        presentedAt: "2026-09-16T10:04:00Z",
+    });
+
+    // When
+    const decision = store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        scope: "private",
+        surface: "local_cli",
+        presentationId: presented.presentations.at(-1)!.presentation_id,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+        materialConfirmation: "I saw something",
     });
 
     // Then
@@ -649,6 +688,113 @@ test("calendar event capability should block approved proposal when configured t
     assert.equal(result.outcome, "authority_denied");
     assert.match(result.reason ?? "", /target configuration changed/);
     assert.equal(calls, 0);
+    assert.equal((await store.load()).proposals[0]!.status, "approved");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should reconcile submitted attempt against original target after reconfiguration", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z", googleCalendarRecoveryBinding(config));
+    await store.markSubmitted(proposal.proposal_id);
+    const reconfigured = {
+        ...config,
+        calendar_id: "different@example.test",
+        client_id: "different-client",
+        client_secret_file: "/secret/different-client",
+        refresh_token_file: "/secret/different-refresh",
+    };
+    const requestedSecrets: string[] = [];
+    const requestedUrls: string[] = [];
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(reconfigured, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async (path) => {
+            requestedSecrets.push(path);
+            return "secret";
+        },
+        fetch: async (url) => {
+            calls += 1;
+            requestedUrls.push(String(url));
+            return calls === 1
+                ? json({ access_token: "token" })
+                : json({
+                      summary: event.title,
+                      start: { dateTime: event.start, timeZone: event.timezone },
+                      end: { dateTime: event.end, timeZone: event.timezone },
+                  });
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "authority_denied");
+    assert.deepEqual(requestedSecrets.sort(), [config.client_secret_file, config.refresh_token_file].sort());
+    assert.match(requestedUrls.at(-1)!, /alice%40example\.test/);
+    assert.equal((await store.load()).proposals[0]!.status, "succeeded");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal store should reject causally impossible persisted lifecycle timestamps", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+    const document = await store.load();
+    document.proposals[0]!.presentations[0]!.presented_at = "2026-09-16T09:59:00Z";
+    await writeFile(store.path, JSON.stringify(document));
+
+    // When
+    const loaded = store.load();
+
+    // Then
+    await assert.rejects(loaded, /record is invalid/);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal store should reject persisted decision before correlated presentation", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+    const document = await store.load();
+    document.proposals[0]!.decision!.decided_at = "2026-09-16T10:03:00Z";
+    await writeFile(store.path, JSON.stringify(document));
+
+    // When
+    const loaded = store.load();
+
+    // Then
+    await assert.rejects(loaded, /record is invalid/);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal attempt should reject start before approval decision", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await approve(store, proposal);
+
+    // When
+    const attempt = store.beginAttempt(
+        proposal.proposal_id,
+        "2026-09-16T10:04:30Z",
+        googleCalendarRecoveryBinding(config),
+    );
+
+    // Then
+    await assert.rejects(attempt, /no longer execution eligible/);
     assert.equal((await store.load()).proposals[0]!.status, "approved");
     await rm(directory, { recursive: true, force: true });
 });

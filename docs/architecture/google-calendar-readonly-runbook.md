@@ -87,15 +87,18 @@ purpose, consequence, and expiry. Approve or reject it locally with:
 
 ```text
 :show-action ACTION_PROPOSAL_ID
-:approve-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST
-:reject-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST
+:approve-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST 'MATERIAL_CONFIRMATION_FROM_SHOW_ACTION'
+:reject-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST 'MATERIAL_CONFIRMATION_FROM_SHOW_ACTION'
 ```
 
-The trusted `:show-action` rendering must precede the decision in the same active scope;
-it records which exact material proposal was presented rather than trusting provider
-prose as awareness evidence. The bound target fingerprint changes when the Calendar
+The trusted `:show-action` rendering must precede the decision in the same active scope,
+and the decision must explicitly repeat its emitted human-readable material confirmation.
+This separates presentation evidence from awareness rather than trusting provider prose
+or delivery as awareness evidence. The bound target fingerprint changes when the Calendar
 resource, client, or refresh-token generation changes, so reconfiguration invalidates
-execution eligibility for an older approval without exposing raw adapter identifiers.
+execution eligibility for an older not-yet-started approval without exposing raw adapter
+identifiers. A prepared attempt retains an adapter-local recovery binding so it can still
+be reconciled against its original Calendar after reconfiguration.
 
 An approved proposal can be revoked before execution with
 `:withdraw-action ACTION_PROPOSAL_ID REASON`, or marked obsolete with the analogous

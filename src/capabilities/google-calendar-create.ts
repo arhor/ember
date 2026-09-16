@@ -22,6 +22,16 @@ export interface GoogleCalendarCreateInput {
     };
 }
 
+interface CalendarRecoveryBinding extends Record<string, CapabilityJsonValue> {
+    kind: "google_calendar_v1";
+    targetFingerprint: `sha256:${string}`;
+    calendarId: string;
+    clientId: string;
+    clientSecretFile: string;
+    refreshTokenFile: string;
+    setupLineageId: string;
+}
+
 interface GoogleCalendarProposalInput {
     event: GoogleCalendarCreateInput["event"];
     purpose: string;
@@ -167,14 +177,23 @@ export function createApprovedGoogleCalendarEventCapability(
         authorize: async (context, input) => {
             if (!validInput(input)) return { status: "denied", reason: "calendar event proposal payload is invalid" };
             const existing = await store.correlate(input.proposalId, "googleCalendarCreateEvent", input.event, context);
-            if (existing && existing.target.fingerprint !== calendarTargetFingerprint(config))
-                return { status: "denied", reason: "calendar target configuration changed after proposal creation" };
             if (existing?.status === "executing") {
                 const persistedInput = { proposalId: existing.proposal_id, event: existing.payload };
                 if (!validInput(persistedInput))
                     return { status: "denied", reason: "persisted proposal payload is invalid" };
-                await reconcileInterruptedAttempt(config, store, persistedInput, dependencies, existing.attempt!.phase);
+                const recoveryConfig = recoveryConfigFor(existing.attempt!.recovery_binding, config);
+                if (!recoveryConfig)
+                    return { status: "denied", reason: "submitted attempt recovery binding is invalid" };
+                await reconcileInterruptedAttempt(
+                    recoveryConfig,
+                    store,
+                    persistedInput,
+                    dependencies,
+                    existing.attempt!.phase,
+                );
             }
+            if (existing?.status !== "executing" && existing?.target.fingerprint !== calendarTargetFingerprint(config))
+                return { status: "denied", reason: "calendar target configuration changed after proposal creation" };
             return store.authorize(
                 input.proposalId,
                 "googleCalendarCreateEvent",
@@ -222,7 +241,7 @@ async function executeCreate(
             });
         }
         if (current.ok) {
-            await store.beginAttempt(input.proposalId, startedAt);
+            await store.beginAttempt(input.proposalId, startedAt, googleCalendarRecoveryBinding(config));
             await fail(store, input.proposalId, dependencies, "deterministic event identifier is already occupied");
         }
         if (current.status !== 404)
@@ -230,7 +249,7 @@ async function executeCreate(
                 effectState: "not_started",
             });
 
-        await store.beginAttempt(input.proposalId, startedAt);
+        await store.beginAttempt(input.proposalId, startedAt, googleCalendarRecoveryBinding(config));
         let response: Response;
         try {
             const url = new URL(
@@ -507,10 +526,52 @@ export function calendarTargetFingerprint(config: GoogleCalendarConfig): `sha256
                 setupLineageId: config.setup_lineage_id,
                 calendarId: config.calendar_id,
                 clientId: config.client_id,
+                clientSecretFile: config.client_secret_file,
                 refreshTokenFile: config.refresh_token_file,
             }),
         )
         .digest("hex")}`;
+}
+export function googleCalendarRecoveryBinding(config: GoogleCalendarConfig): CalendarRecoveryBinding {
+    return {
+        kind: "google_calendar_v1",
+        targetFingerprint: calendarTargetFingerprint(config),
+        calendarId: config.calendar_id,
+        clientId: config.client_id,
+        clientSecretFile: config.client_secret_file,
+        refreshTokenFile: config.refresh_token_file,
+        setupLineageId: config.setup_lineage_id,
+    };
+}
+function recoveryConfigFor(value: CapabilityJsonValue, current: GoogleCalendarConfig): GoogleCalendarConfig | null {
+    if (
+        !isObject(value) ||
+        Array.isArray(value) ||
+        !exactKeys(value, [
+            "calendarId",
+            "clientId",
+            "clientSecretFile",
+            "kind",
+            "refreshTokenFile",
+            "setupLineageId",
+            "targetFingerprint",
+        ]) ||
+        value.kind !== "google_calendar_v1" ||
+        ![value.calendarId, value.clientId, value.clientSecretFile, value.refreshTokenFile, value.setupLineageId].every(
+            (item) => typeof item === "string" && item.length > 0,
+        ) ||
+        typeof value.targetFingerprint !== "string"
+    )
+        return null;
+    const recovered = {
+        ...current,
+        calendar_id: value.calendarId as string,
+        client_id: value.clientId as string,
+        client_secret_file: value.clientSecretFile as string,
+        refresh_token_file: value.refreshTokenFile as string,
+        setup_lineage_id: value.setupLineageId as string,
+    };
+    return calendarTargetFingerprint(recovered) === value.targetFingerprint ? recovered : null;
 }
 function externalEventId(proposalId: string) {
     return `ember${createHash("sha256").update(proposalId).digest("hex").slice(0, 32)}`;

@@ -230,12 +230,18 @@ proposal grounded in the current cognition and returns its exact proposal ID, pa
 digest, parameters, purpose, consequence, and expiry for presentation. It grants no
 authority. The proposal digest also binds an adapter-local fingerprint of the Calendar
 resource and credential/config generation while exposing only the configured target
-label. Reconfiguration therefore blocks the old proposal instead of redirecting it.
+label. Reconfiguration therefore blocks a not-yet-started old proposal instead of
+redirecting it. Once an attempt is prepared, the attempt durably retains its
+adapter-local recovery binding so later reconfiguration cannot strand accounting for
+a possibly submitted effect.
 
 On the trusted local CLI, `:show-action PROPOSAL_ID` renders and durably correlates the
 exact target label, event, purpose, consequence, digest, and expiry in the active scope.
 Only after that presentation can the principal use `:approve-action PROPOSAL_ID
-PAYLOAD_DIGEST` or the corresponding `:reject-action` on the same surface and scope;
+PAYLOAD_DIGEST QUOTED_MATERIAL_CONFIRMATION` or the corresponding `:reject-action` on
+the same surface and scope. The final argument must exactly restate the human-readable
+target, action, purpose, consequence, and expiry emitted by `:show-action`; presentation
+or transport evidence alone does not establish awareness.
 `:withdraw-action PROPOSAL_ID REASON` and `:supersede-action PROPOSAL_ID REASON`
 durably revoke a not-yet-started approval. A later cognition may execute only the
 exact approved payload. This makes propose, decide, and execute reachable through the

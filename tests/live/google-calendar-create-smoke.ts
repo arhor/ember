@@ -7,7 +7,7 @@ import { join } from "node:path";
 
 import type { CapabilityJsonValue } from "../../src/capabilities/execution.ts";
 
-import { ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
 import {
     calendarTargetFingerprint,
@@ -63,6 +63,7 @@ try {
         presentationId: presented.presentations.at(-1)!.presentation_id,
         decidedAt: new Date().toISOString(),
         authoritySourceId: "live-smoke:exact-environment-confirmation",
+        materialConfirmation: actionProposalConfirmation(proposal),
     });
     const capability = createApprovedGoogleCalendarEventCapability(config, store);
     const result = await createCapabilityExecutionFirewall([capability], {

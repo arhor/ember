@@ -5,7 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import { ActionProposalStore } from "../src/capabilities/action-proposal.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../src/capabilities/action-proposal.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
@@ -559,7 +559,7 @@ test("CLI action command should durably approve an exact pending calendar propos
         expiresAt: "2026-09-17T00:00:00Z",
     });
     const io = capture(
-        `:show-action ${proposal.proposal_id}\n:approve-action ${proposal.proposal_id} ${proposal.payload_digest}\n:quit\n`,
+        `:show-action ${proposal.proposal_id}\n:approve-action ${proposal.proposal_id} ${proposal.payload_digest} ${JSON.stringify(actionProposalConfirmation(proposal))}\n:quit\n`,
     );
 
     // When

@@ -10,7 +10,7 @@ import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
-import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
@@ -120,12 +120,15 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                                 consequence: proposal.consequence,
                                 expiresAt: proposal.expires_at,
                                 presentationId: presentation.presentation_id,
+                                approvalConfirmation: actionProposalConfirmation(proposal),
                             })}\n`,
                         );
                     } else if (line.startsWith(":approve-action ") || line.startsWith(":reject-action ")) {
-                        const [command, proposalId, payloadDigest, ...extra] = splitCommand(line);
-                        if (!proposalId || !payloadDigest || extra.length)
-                            throw new ValidationError(`${command} requires PROPOSAL_ID PAYLOAD_DIGEST`);
+                        const [command, proposalId, payloadDigest, materialConfirmation, ...extra] = splitCommand(line);
+                        if (!proposalId || !payloadDigest || !materialConfirmation || extra.length)
+                            throw new ValidationError(
+                                `${command} requires PROPOSAL_ID PAYLOAD_DIGEST QUOTED_MATERIAL_CONFIRMATION`,
+                            );
                         const actions = new ActionProposalStore(config.statePath);
                         const pending = await actions.get(proposalId);
                         const presentation = pending?.presentations
@@ -148,6 +151,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             presentationId: presentation.presentation_id,
                             decidedAt: nowUtc(),
                             authoritySourceId: `local_cli:${config.principal}`,
+                            materialConfirmation,
                         });
                         io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
                     } else if (line.startsWith(":withdraw-action ") || line.startsWith(":supersede-action ")) {

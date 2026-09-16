@@ -53,6 +53,8 @@ export interface ActionProposalRecord {
         surface: string;
         decided_at: string;
         authority_source_id: string;
+        awareness_basis: "explicit_material_restatement";
+        awareness_digest: `sha256:${string}`;
     };
     invalidation: null | {
         invalidation_id: `action-invalidation-${string}`;
@@ -69,6 +71,7 @@ export interface ActionProposalRecord {
         outcome: "executing" | "succeeded" | "failed" | "outcome_unknown";
         phase: "prepared" | "submitted" | "terminal";
         evidence: CapabilityJsonValue | null;
+        recovery_binding: CapabilityJsonValue;
     };
 }
 
@@ -170,6 +173,7 @@ export class ActionProposalStore {
                 proposal.scope !== input.scope ||
                 !isNotBlankString(input.surface) ||
                 !isRfc3339Utc(input.presentedAt) ||
+                Date.parse(input.presentedAt) < Date.parse(proposal.created_at) ||
                 Date.parse(input.presentedAt) > Date.parse(proposal.expires_at)
             )
                 throw new ValidationError("action proposal cannot be presented in this authority context");
@@ -195,6 +199,7 @@ export class ActionProposalStore {
         presentationId: string;
         decidedAt: string;
         authoritySourceId: string;
+        materialConfirmation: string;
     }): Promise<ActionProposalRecord> {
         return this.mutate((document) => {
             const proposal = requiredProposal(document, input.proposalId);
@@ -212,6 +217,8 @@ export class ActionProposalStore {
                 presentation.principal !== input.principal ||
                 presentation.scope !== input.scope ||
                 presentation.surface !== input.surface ||
+                input.materialConfirmation !== actionProposalConfirmation(proposal) ||
+                decidedAt < Date.parse(presentation.presented_at) ||
                 proposal.scope !== input.scope ||
                 !isRfc3339Utc(input.decidedAt) ||
                 decidedAt < Date.parse(proposal.created_at) ||
@@ -229,6 +236,8 @@ export class ActionProposalStore {
                 surface: input.surface,
                 decided_at: input.decidedAt,
                 authority_source_id: input.authoritySourceId,
+                awareness_basis: "explicit_material_restatement",
+                awareness_digest: payloadDigest(input.materialConfirmation),
             };
             proposal.status = input.decision === "approved" ? "approved" : "rejected";
             return structuredClone(proposal);
@@ -310,13 +319,18 @@ export class ActionProposalStore {
         return structuredClone(proposal);
     }
 
-    async beginAttempt(proposalId: string, now: string): Promise<ActionProposalRecord> {
+    async beginAttempt(
+        proposalId: string,
+        now: string,
+        recoveryBinding: CapabilityJsonValue,
+    ): Promise<ActionProposalRecord> {
         return this.mutate((document) => {
             const proposal = requiredProposal(document, proposalId);
             if (
                 proposal.status !== "approved" ||
                 proposal.attempt !== null ||
                 !isRfc3339Utc(now) ||
+                Date.parse(now) < Date.parse(proposal.decision!.decided_at) ||
                 Date.parse(now) > Date.parse(proposal.expires_at)
             )
                 throw new ValidationError("action proposal is no longer execution eligible");
@@ -328,6 +342,7 @@ export class ActionProposalStore {
                 outcome: "executing",
                 phase: "prepared",
                 evidence: null,
+                recovery_binding: structuredClone(recoveryBinding),
             };
             return structuredClone(proposal);
         });
@@ -395,6 +410,16 @@ export class ActionProposalStore {
 
 export function payloadDigest(payload: CapabilityJsonValue): `sha256:${string}` {
     return `sha256:${createHash("sha256").update(JSON.stringify(payload)).digest("hex")}`;
+}
+
+export function actionProposalConfirmation(proposal: ActionProposalRecord): string {
+    return JSON.stringify({
+        target: proposal.target.label,
+        action: proposal.payload,
+        purpose: proposal.purpose,
+        consequence: proposal.consequence,
+        expiresAt: proposal.expires_at,
+    });
 }
 
 function boundPayloadDigest(payload: CapabilityJsonValue, targetFingerprint: string): `sha256:${string}` {
@@ -500,6 +525,8 @@ function validDecision(value: unknown, proposal: Record<string, unknown>) {
         isObject(value) &&
         exactKeys(value, [
             "authority_source_id",
+            "awareness_basis",
+            "awareness_digest",
             "decided_at",
             "decision",
             "decision_id",
@@ -525,12 +552,18 @@ function validDecision(value: unknown, proposal: Record<string, unknown>) {
                 presentation.presentation_id === value.presentation_id &&
                 presentation.principal === value.principal &&
                 presentation.scope === value.scope &&
-                presentation.surface === value.surface,
+                presentation.surface === value.surface &&
+                isRfc3339Utc(presentation.presented_at) &&
+                isRfc3339Utc(value.decided_at) &&
+                Date.parse(value.decided_at) >= Date.parse(presentation.presented_at),
         ) &&
         isRfc3339Utc(value.decided_at) &&
         Date.parse(value.decided_at) >= Date.parse(proposal.created_at as string) &&
         Date.parse(value.decided_at) <= Date.parse(proposal.expires_at as string) &&
-        isNotBlankString(value.authority_source_id)
+        isNotBlankString(value.authority_source_id) &&
+        value.awareness_basis === "explicit_material_restatement" &&
+        value.awareness_digest ===
+            payloadDigest(actionProposalConfirmation(proposal as unknown as ActionProposalRecord))
     );
 }
 
@@ -544,6 +577,7 @@ function validPresentation(value: unknown, proposal: Record<string, unknown>) {
         value.scope === proposal.scope &&
         isNotBlankString(value.surface) &&
         isRfc3339Utc(value.presented_at) &&
+        Date.parse(value.presented_at) >= Date.parse(proposal.created_at as string) &&
         Date.parse(value.presented_at) <= Date.parse(proposal.expires_at as string) &&
         value.payload_digest === proposal.payload_digest
     );
@@ -571,11 +605,21 @@ function validAttempt(value: unknown, proposal: Record<string, unknown>) {
     if (value === null) return true;
     if (
         !isObject(value) ||
-        !exactKeys(value, ["attempt_id", "completed_at", "evidence", "outcome", "phase", "started_at"]) ||
+        !exactKeys(value, [
+            "attempt_id",
+            "completed_at",
+            "evidence",
+            "outcome",
+            "phase",
+            "recovery_binding",
+            "started_at",
+        ]) ||
         !isNotBlankString(value.attempt_id) ||
         !value.attempt_id.startsWith("action-attempt-") ||
         !isRfc3339Utc(value.started_at) ||
         Date.parse(value.started_at) > Date.parse(proposal.expires_at as string) ||
+        !isObject(proposal.decision) ||
+        Date.parse(value.started_at) < Date.parse(proposal.decision.decided_at as string) ||
         !["executing", "succeeded", "failed", "outcome_unknown"].includes(String(value.outcome)) ||
         !["prepared", "submitted", "terminal"].includes(String(value.phase))
     )
