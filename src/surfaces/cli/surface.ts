@@ -10,6 +10,8 @@ import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
+import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
+import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
@@ -278,13 +280,24 @@ function configuredCognitionProvider(config: CliSurfaceConfig) {
             ...(config.providerModel ? { model: config.providerModel } : {}),
             ...(googleCalendarConfig
                 ? {
-                      selectCapabilities: (selectedRequest) =>
-                          selectGoogleCalendarCapability(googleCalendarConfig, {
+                      selectCapabilities: (selectedRequest) => [
+                          ...selectGoogleCalendarCapability(googleCalendarConfig, {
                               principal: selectedRequest.projection.principal,
                               lineageId: selectedRequest.projection.lineage.lineageId,
                               scope: selectedRequest.projection.activeScope,
                               surface: selectedRequest.projection.surface,
                           }),
+                          ...selectApprovedGoogleCalendarEventCapability(
+                              googleCalendarConfig,
+                              new ActionProposalStore(config.statePath),
+                              {
+                                  principal: selectedRequest.projection.principal,
+                                  lineageId: selectedRequest.projection.lineage.lineageId,
+                                  scope: selectedRequest.projection.activeScope,
+                                  surface: selectedRequest.projection.surface,
+                              },
+                          ),
+                      ],
                   }
                 : {}),
         })(request, options);

@@ -200,8 +200,9 @@ generalized permission language remain outside this boundary.
 ## Read-only Google Calendar capability
 
 Issue #231 adds the first external read capability behind this boundary. Ember calls
-Google Calendar REST directly with the least-privileged `calendar.events.readonly`
-OAuth scope. The
+Google Calendar REST directly. Setup now requests `calendar.events` so the same
+credential can reach the separately approval-gated issue #233 write capability; this
+technical scope does not authorize writes. The
 model supplies only a positive RFC 3339 UTC interval of at most 31 days; Ember injects
 the configured calendar and timezone, requests at most 20 ordered expanded events,
 and permits one request per cognition.
@@ -227,15 +228,19 @@ adapter.
 principal/scope boundary, expiry, exact decision, and one execution attempt in the
 canonical state sidecar `<state>.actions.json`. Capability authorization reloads that
 ledger, requires a matching current approval, and rejects absent, rejected, expired,
-mismatched, executed, failed, or uncertain proposals. A restart therefore does not
-turn approval into a provider-session flag or make it reusable.
+mismatched, withdrawn, superseded, executed, failed, or uncertain proposals. Sidecar
+mutations use a dedicated cooperating writer lease, and nested decision, invalidation,
+and attempt evidence is validated exactly against the proposal lifecycle. A restart
+therefore does not turn approval into a provider-session flag or make it reusable.
 
-Immediately before insertion, the adapter durably records the attempt and checks the
-proposal-derived Google event ID. Absence permits creation; an exact existing event is
-reconciled as confirmed success; a conflicting event is confirmed failure. A lost or
-unverifiable response after submission becomes durable `outcome_unknown` evidence and
-is never retried under the old approval. Token and pre-submission failures remain
-confirmed failures distinct from uncertain external effects.
+Immediately before insertion, the adapter checks the proposal-derived Google event ID,
+then durably records prepared and submitted attempt phases around request submission.
+Restart reconciles prepared attempts as not submitted and submitted attempts against
+the deterministic event ID. An exact event including timezone is confirmed success; a
+conflicting event is confirmed failure. Absence after submission cannot prove the event
+never existed, so it remains `outcome_unknown`. Non-2xx and lost responses use the same
+reconciliation instead of being assumed failures, and no ambiguous effect is retried
+under the old approval.
 
 Deterministic coverage lives in `src/capabilities/google-calendar-create.test.ts`.
 The opt-in real smoke requires a refresh token granted the

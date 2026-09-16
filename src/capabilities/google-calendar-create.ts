@@ -22,6 +22,23 @@ export interface GoogleCalendarCreateInput {
     };
 }
 
+export function selectApprovedGoogleCalendarEventCapability(
+    config: GoogleCalendarConfig | undefined,
+    store: ActionProposalStore,
+    context: Pick<CapabilityContext, "principal" | "scope" | "surface"> & { lineageId: string },
+    dependencies: Partial<Dependencies> = {},
+): CapabilityBinding[] {
+    if (
+        !config?.enabled ||
+        config.principal !== context.principal ||
+        config.setup_lineage_id !== context.lineageId ||
+        config.scope !== context.scope ||
+        !config.surfaces.includes(context.surface as never)
+    )
+        return [];
+    return [createApprovedGoogleCalendarEventCapability(config, store, dependencies)];
+}
+
 interface Dependencies {
     fetch: typeof fetch;
     now: () => Date;
@@ -68,6 +85,9 @@ export function createApprovedGoogleCalendarEventCapability(
         occurrencePolicy: "at_most_once_per_cognition",
         authorize: async (context, input) => {
             if (!validInput(input)) return { status: "denied", reason: "calendar event proposal payload is invalid" };
+            const existing = await store.get(input.proposalId);
+            if (existing?.status === "executing")
+                await reconcileInterruptedAttempt(config, store, input, dependencies, existing.attempt!.phase);
             return store.authorize(
                 input.proposalId,
                 "googleCalendarCreateEvent",
@@ -97,8 +117,7 @@ async function executeCreate(
     signal?: AbortSignal,
 ): Promise<CapabilityJsonValue> {
     const startedAt = dependencies.now().toISOString();
-    const proposal = await store.beginAttempt(input.proposalId, startedAt);
-    const externalId = externalEventId(proposal.proposal_id);
+    const externalId = externalEventId(input.proposalId);
     let effectSubmitted = false;
     let accessToken: string;
     try {
@@ -108,17 +127,13 @@ async function executeCreate(
             headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
         });
         if (current.ok) {
-            const existing: unknown = await current.json();
-            if (matchesExisting(existing, input.event)) {
-                const evidence = { status: "confirmed", reconciliation: "already_present" };
-                await store.completeAttempt(input.proposalId, "succeeded", dependencies.now().toISOString(), evidence);
-                return evidence;
-            }
+            await store.beginAttempt(input.proposalId, startedAt);
             await fail(store, input.proposalId, dependencies, "deterministic event identifier is already occupied");
         }
         if (current.status !== 404)
             await fail(store, input.proposalId, dependencies, "calendar currentness recheck failed");
 
+        await store.beginAttempt(input.proposalId, startedAt);
         let response: Response;
         try {
             const url = new URL(
@@ -126,6 +141,7 @@ async function executeCreate(
                 dependencies.apiOrigin,
             );
             url.searchParams.set("sendUpdates", "none");
+            await store.markSubmitted(input.proposalId);
             effectSubmitted = true;
             response = await dependencies.fetch(url, {
                 method: "POST",
@@ -143,14 +159,26 @@ async function executeCreate(
                 }),
             });
         } catch (error) {
-            await unknown(store, input.proposalId, dependencies, "calendar response was not observed after submission");
-            throw new CapabilityExecutionFailure("calendar event outcome is unknown after request submission", {
-                effectState: "unknown",
-                cause: error,
-            });
+            return await reconcileAfterSubmission(
+                config,
+                store,
+                input,
+                dependencies,
+                accessToken,
+                `calendar response was not observed after submission: ${error instanceof Error ? error.message : String(error)}`,
+                signal,
+            );
         }
         if (!response.ok)
-            await fail(store, input.proposalId, dependencies, `calendar confirmed failure (${response.status})`);
+            return await reconcileAfterSubmission(
+                config,
+                store,
+                input,
+                dependencies,
+                accessToken,
+                `calendar returned HTTP ${response.status} after submission`,
+                signal,
+            );
         const body: unknown = await response.json();
         if (!matchesExisting(body, input.event)) {
             await unknown(
@@ -185,6 +213,89 @@ async function executeCreate(
         }
         throw error;
     }
+}
+
+async function reconcileInterruptedAttempt(
+    config: GoogleCalendarConfig,
+    store: ActionProposalStore,
+    input: GoogleCalendarCreateInput,
+    dependencies: Dependencies,
+    phase: "prepared" | "submitted" | "terminal",
+) {
+    if (phase === "prepared") {
+        await store.completeAttempt(input.proposalId, "failed", dependencies.now().toISOString(), {
+            status: "confirmed_failure",
+            reason: "process stopped before effect submission",
+        });
+        return;
+    }
+    if (phase !== "submitted") return;
+    let accessToken: string;
+    try {
+        accessToken = await token(config, dependencies);
+    } catch {
+        await unknown(store, input.proposalId, dependencies, "submitted attempt could not be reconciled after restart");
+        return;
+    }
+    try {
+        await reconcileAfterSubmission(
+            config,
+            store,
+            input,
+            dependencies,
+            accessToken,
+            "process stopped after effect submission",
+        );
+    } catch {
+        // Reconciliation persists a terminal state before reporting it.
+    }
+}
+
+async function reconcileAfterSubmission(
+    config: GoogleCalendarConfig,
+    store: ActionProposalStore,
+    input: GoogleCalendarCreateInput,
+    dependencies: Dependencies,
+    accessToken: string,
+    ambiguity: string,
+    signal?: AbortSignal,
+): Promise<CapabilityJsonValue> {
+    let response: Response;
+    try {
+        response = await dependencies.fetch(
+            eventUrl(config, dependencies.apiOrigin, externalEventId(input.proposalId)),
+            {
+                ...(signal === undefined ? {} : { signal }),
+                headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
+            },
+        );
+    } catch (error) {
+        await unknown(store, input.proposalId, dependencies, `${ambiguity}; reconciliation request failed`);
+        throw new CapabilityExecutionFailure("calendar event outcome remains unknown after reconciliation failed", {
+            effectState: "unknown",
+            cause: error,
+        });
+    }
+    if (response.ok) {
+        const body: unknown = await response.json();
+        if (matchesExisting(body, input.event)) {
+            const evidence = { status: "confirmed", reconciliation: "found_after_ambiguity" };
+            await store.completeAttempt(input.proposalId, "succeeded", dependencies.now().toISOString(), evidence);
+            return evidence;
+        }
+        await fail(store, input.proposalId, dependencies, "calendar event identifier contains a conflicting event");
+    }
+    await unknown(
+        store,
+        input.proposalId,
+        dependencies,
+        response.status === 404
+            ? `${ambiguity}; absence now cannot prove the effect never occurred`
+            : `${ambiguity}; reconciliation returned HTTP ${response.status}`,
+    );
+    throw new CapabilityExecutionFailure("calendar event outcome remains unknown after submission", {
+        effectState: "unknown",
+    });
 }
 
 async function token(config: GoogleCalendarConfig, dependencies: Dependencies, signal?: AbortSignal) {
@@ -258,7 +369,9 @@ function matchesExisting(value: unknown, event: GoogleCalendarCreateInput["event
         value.summary === event.title &&
         isObject(value.start) &&
         value.start.dateTime === event.start &&
+        value.start.timeZone === event.timezone &&
         isObject(value.end) &&
-        value.end.dateTime === event.end
+        value.end.dateTime === event.end &&
+        value.end.timeZone === event.timezone
     );
 }

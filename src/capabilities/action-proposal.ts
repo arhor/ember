@@ -7,12 +7,15 @@ import type { CapabilityAuthorityDecision, CapabilityContext, CapabilityJsonValu
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
+import { StateStore } from "../persistence/state-store.ts";
 import { exactKeys, isNotBlankString, isObject } from "../util.ts";
 
 export type ActionProposalStatus =
     | "pending"
     | "approved"
     | "rejected"
+    | "withdrawn"
+    | "superseded"
     | "executing"
     | "succeeded"
     | "failed"
@@ -39,11 +42,20 @@ export interface ActionProposalRecord {
         decided_at: string;
         authority_source_id: string;
     };
+    invalidation: null | {
+        invalidation_id: `action-invalidation-${string}`;
+        kind: "withdrawn" | "superseded";
+        principal: string;
+        occurred_at: string;
+        authority_source_id: string;
+        reason: string;
+    };
     attempt: null | {
         attempt_id: `action-attempt-${string}`;
         started_at: string;
         completed_at: string | null;
         outcome: "executing" | "succeeded" | "failed" | "outcome_unknown";
+        phase: "prepared" | "submitted" | "terminal";
         evidence: CapabilityJsonValue | null;
     };
 }
@@ -55,10 +67,12 @@ interface ActionProposalDocument {
 
 export class ActionProposalStore {
     readonly path: string;
+    private readonly lock: StateStore;
 
     constructor(canonicalStatePath: string) {
         if (!canonicalStatePath.trim()) throw new ValidationError("action proposal store requires a state path");
         this.path = `${canonicalStatePath}.actions.json`;
+        this.lock = new StateStore(this.path);
     }
 
     async load(): Promise<ActionProposalDocument> {
@@ -84,7 +98,11 @@ export class ActionProposalStore {
         createdAt: string;
         expiresAt: string;
     }): Promise<ActionProposalRecord> {
-        if (!isRfc3339Utc(input.createdAt) || !isRfc3339Utc(input.expiresAt) || input.expiresAt <= input.createdAt)
+        if (
+            !isRfc3339Utc(input.createdAt) ||
+            !isRfc3339Utc(input.expiresAt) ||
+            Date.parse(input.expiresAt) <= Date.parse(input.createdAt)
+        )
             throw new ValidationError("action proposal requires a positive RFC 3339 UTC validity interval");
         for (const value of [input.capability, input.principal, input.scope, input.purpose, input.consequence])
             if (!isNotBlankString(value)) throw new ValidationError("action proposal text fields must be non-empty");
@@ -104,11 +122,12 @@ export class ActionProposalStore {
             expires_at: input.expiresAt,
             status: "pending",
             decision: null,
+            invalidation: null,
             attempt: null,
         };
-        const document = await this.load();
-        document.proposals.push(proposal);
-        await this.replace(document);
+        await this.mutate((document) => {
+            document.proposals.push(proposal);
+        });
         return structuredClone(proposal);
     }
 
@@ -120,30 +139,66 @@ export class ActionProposalStore {
         decidedAt: string;
         authoritySourceId: string;
     }): Promise<ActionProposalRecord> {
-        const document = await this.load();
-        const proposal = requiredProposal(document, input.proposalId);
-        if (proposal.status !== "pending") throw new ValidationError("only a pending action proposal can be decided");
-        if (
-            (input.decision !== "approved" && input.decision !== "rejected") ||
-            proposal.principal !== input.principal ||
-            proposal.payload_digest !== input.payloadDigest ||
-            !isRfc3339Utc(input.decidedAt) ||
-            input.decidedAt < proposal.created_at ||
-            input.decidedAt > proposal.expires_at ||
-            !isNotBlankString(input.authoritySourceId)
-        )
-            throw new ValidationError("action decision does not match the current proposal authority boundary");
-        proposal.decision = {
-            decision_id: `action-decision-${randomUUID()}`,
-            decision: input.decision,
-            principal: input.principal,
-            payload_digest: proposal.payload_digest,
-            decided_at: input.decidedAt,
-            authority_source_id: input.authoritySourceId,
-        };
-        proposal.status = input.decision === "approved" ? "approved" : "rejected";
-        await this.replace(document);
-        return structuredClone(proposal);
+        return this.mutate((document) => {
+            const proposal = requiredProposal(document, input.proposalId);
+            if (proposal.status !== "pending")
+                throw new ValidationError("only a pending action proposal can be decided");
+            const decidedAt = Date.parse(input.decidedAt);
+            if (
+                (input.decision !== "approved" && input.decision !== "rejected") ||
+                proposal.principal !== input.principal ||
+                proposal.payload_digest !== input.payloadDigest ||
+                !isRfc3339Utc(input.decidedAt) ||
+                decidedAt < Date.parse(proposal.created_at) ||
+                decidedAt > Date.parse(proposal.expires_at) ||
+                !isNotBlankString(input.authoritySourceId)
+            )
+                throw new ValidationError("action decision does not match the current proposal authority boundary");
+            proposal.decision = {
+                decision_id: `action-decision-${randomUUID()}`,
+                decision: input.decision,
+                principal: input.principal,
+                payload_digest: proposal.payload_digest,
+                decided_at: input.decidedAt,
+                authority_source_id: input.authoritySourceId,
+            };
+            proposal.status = input.decision === "approved" ? "approved" : "rejected";
+            return structuredClone(proposal);
+        });
+    }
+
+    async invalidate(input: {
+        proposalId: string;
+        kind: "withdrawn" | "superseded";
+        principal: string;
+        occurredAt: string;
+        authoritySourceId: string;
+        reason: string;
+    }): Promise<ActionProposalRecord> {
+        return this.mutate((document) => {
+            const proposal = requiredProposal(document, input.proposalId);
+            if (proposal.status !== "approved")
+                throw new ValidationError("only an approved, not-yet-started proposal can be invalidated");
+            if (
+                (input.kind !== "withdrawn" && input.kind !== "superseded") ||
+                proposal.principal !== input.principal ||
+                !isRfc3339Utc(input.occurredAt) ||
+                Date.parse(input.occurredAt) < Date.parse(proposal.decision!.decided_at) ||
+                !isNotBlankString(input.authoritySourceId) ||
+                !isNotBlankString(input.reason)
+            )
+                throw new ValidationError("action invalidation does not match the current proposal authority boundary");
+            proposal.invalidation = {
+                invalidation_id: `action-invalidation-${randomUUID()}`,
+                kind: input.kind,
+                principal: input.principal,
+                occurred_at: input.occurredAt,
+                authority_source_id: input.authoritySourceId,
+                reason: input.reason,
+            };
+            proposal.status = input.kind;
+            return structuredClone(proposal);
+        });
     }
 
     async authorize(
@@ -165,7 +220,8 @@ export class ActionProposalStore {
                 status: "denied",
                 reason: "action proposal does not match capability, payload, principal, and scope",
             };
-        if (now > proposal.expires_at) return { status: "denied", reason: "action proposal approval is stale" };
+        if (!isRfc3339Utc(now) || Date.parse(now) > Date.parse(proposal.expires_at))
+            return { status: "denied", reason: "action proposal approval is stale" };
         if (proposal.status === "pending")
             return { status: "approval_required", reason: `proposal ${proposal.proposal_id} requires exact approval` };
         if (proposal.status !== "approved" || proposal.decision?.decision !== "approved")
@@ -179,20 +235,36 @@ export class ActionProposalStore {
     }
 
     async beginAttempt(proposalId: string, now: string): Promise<ActionProposalRecord> {
-        const document = await this.load();
-        const proposal = requiredProposal(document, proposalId);
-        if (proposal.status !== "approved" || proposal.attempt !== null || now > proposal.expires_at)
-            throw new ValidationError("action proposal is no longer execution eligible");
-        proposal.status = "executing";
-        proposal.attempt = {
-            attempt_id: `action-attempt-${randomUUID()}`,
-            started_at: now,
-            completed_at: null,
-            outcome: "executing",
-            evidence: null,
-        };
-        await this.replace(document);
-        return structuredClone(proposal);
+        return this.mutate((document) => {
+            const proposal = requiredProposal(document, proposalId);
+            if (
+                proposal.status !== "approved" ||
+                proposal.attempt !== null ||
+                !isRfc3339Utc(now) ||
+                Date.parse(now) > Date.parse(proposal.expires_at)
+            )
+                throw new ValidationError("action proposal is no longer execution eligible");
+            proposal.status = "executing";
+            proposal.attempt = {
+                attempt_id: `action-attempt-${randomUUID()}`,
+                started_at: now,
+                completed_at: null,
+                outcome: "executing",
+                phase: "prepared",
+                evidence: null,
+            };
+            return structuredClone(proposal);
+        });
+    }
+
+    async markSubmitted(proposalId: string): Promise<ActionProposalRecord> {
+        return this.mutate((document) => {
+            const proposal = requiredProposal(document, proposalId);
+            if (proposal.status !== "executing" || proposal.attempt?.phase !== "prepared")
+                throw new ValidationError("action proposal does not have a prepared attempt");
+            proposal.attempt.phase = "submitted";
+            return structuredClone(proposal);
+        });
     }
 
     async completeAttempt(
@@ -201,16 +273,39 @@ export class ActionProposalStore {
         completedAt: string,
         evidence: CapabilityJsonValue,
     ): Promise<ActionProposalRecord> {
-        const document = await this.load();
-        const proposal = requiredProposal(document, proposalId);
-        if (proposal.status !== "executing" || proposal.attempt?.outcome !== "executing")
-            throw new ValidationError("action proposal does not have an executing attempt");
-        proposal.status = outcome;
-        proposal.attempt.outcome = outcome;
-        proposal.attempt.completed_at = completedAt;
-        proposal.attempt.evidence = structuredClone(evidence);
-        await this.replace(document);
-        return structuredClone(proposal);
+        return this.mutate((document) => {
+            const proposal = requiredProposal(document, proposalId);
+            if (
+                proposal.status !== "executing" ||
+                proposal.attempt?.outcome !== "executing" ||
+                !isRfc3339Utc(completedAt) ||
+                Date.parse(completedAt) < Date.parse(proposal.attempt.started_at)
+            )
+                throw new ValidationError("action proposal does not have an executing attempt");
+            proposal.status = outcome;
+            proposal.attempt.outcome = outcome;
+            proposal.attempt.phase = "terminal";
+            proposal.attempt.completed_at = completedAt;
+            proposal.attempt.evidence = structuredClone(evidence);
+            return structuredClone(proposal);
+        });
+    }
+
+    async get(proposalId: string): Promise<ActionProposalRecord | null> {
+        const proposal = (await this.load()).proposals.find((candidate) => candidate.proposal_id === proposalId);
+        return proposal ? structuredClone(proposal) : null;
+    }
+
+    private async mutate<T>(update: (document: ActionProposalDocument) => T): Promise<T> {
+        const lease = await this.lock.acquireWriteLease();
+        try {
+            const document = await this.load();
+            const result = update(document);
+            await this.replace(document);
+            return result;
+        } finally {
+            await this.lock.releaseWriteLease(lease);
+        }
     }
 
     private async replace(document: ActionProposalDocument) {
@@ -258,6 +353,7 @@ function validProposal(value: unknown): value is ActionProposalRecord {
             "created_at",
             "decision",
             "expires_at",
+            "invalidation",
             "payload",
             "payload_digest",
             "principal",
@@ -269,9 +365,17 @@ function validProposal(value: unknown): value is ActionProposalRecord {
         ]) ||
         !isNotBlankString(value.proposal_id) ||
         !value.proposal_id.startsWith("action-proposal-") ||
-        !["pending", "approved", "rejected", "executing", "succeeded", "failed", "outcome_unknown"].includes(
-            String(value.status),
-        ) ||
+        ![
+            "pending",
+            "approved",
+            "rejected",
+            "withdrawn",
+            "superseded",
+            "executing",
+            "succeeded",
+            "failed",
+            "outcome_unknown",
+        ].includes(String(value.status)) ||
         !isRfc3339Utc(value.created_at) ||
         !isRfc3339Utc(value.expires_at) ||
         !Array.isArray(value.source_ids) ||
@@ -280,11 +384,94 @@ function validProposal(value: unknown): value is ActionProposalRecord {
         value.payload_digest !== payloadDigest(value.payload as CapabilityJsonValue)
     )
         return false;
-    if (value.decision !== null && (!isObject(value.decision) || !isNotBlankString(value.decision.decision_id)))
+    if (!validDecision(value.decision, value) || !validInvalidation(value.invalidation, value)) return false;
+    if (!validAttempt(value.attempt, value)) return false;
+    if (value.status === "pending")
+        return value.decision === null && value.invalidation === null && value.attempt === null;
+    if (value.status === "approved")
+        return value.decision?.decision === "approved" && value.invalidation === null && value.attempt === null;
+    if (value.status === "rejected")
+        return value.decision?.decision === "rejected" && value.invalidation === null && value.attempt === null;
+    if (value.status === "withdrawn" || value.status === "superseded")
+        return (
+            value.decision?.decision === "approved" &&
+            value.invalidation?.kind === value.status &&
+            value.attempt === null
+        );
+    return (
+        value.decision?.decision === "approved" &&
+        value.invalidation === null &&
+        value.attempt?.outcome === value.status
+    );
+}
+
+function validDecision(value: unknown, proposal: Record<string, unknown>) {
+    if (value === null) return true;
+    return (
+        isObject(value) &&
+        exactKeys(value, [
+            "authority_source_id",
+            "decided_at",
+            "decision",
+            "decision_id",
+            "payload_digest",
+            "principal",
+        ]) &&
+        isNotBlankString(value.decision_id) &&
+        value.decision_id.startsWith("action-decision-") &&
+        (value.decision === "approved" || value.decision === "rejected") &&
+        value.principal === proposal.principal &&
+        value.payload_digest === proposal.payload_digest &&
+        isRfc3339Utc(value.decided_at) &&
+        Date.parse(value.decided_at) >= Date.parse(proposal.created_at as string) &&
+        Date.parse(value.decided_at) <= Date.parse(proposal.expires_at as string) &&
+        isNotBlankString(value.authority_source_id)
+    );
+}
+
+function validInvalidation(value: unknown, proposal: Record<string, unknown>) {
+    if (value === null) return true;
+    const decision = proposal.decision;
+    return (
+        isObject(value) &&
+        exactKeys(value, ["authority_source_id", "invalidation_id", "kind", "occurred_at", "principal", "reason"]) &&
+        isNotBlankString(value.invalidation_id) &&
+        value.invalidation_id.startsWith("action-invalidation-") &&
+        (value.kind === "withdrawn" || value.kind === "superseded") &&
+        value.principal === proposal.principal &&
+        isRfc3339Utc(value.occurred_at) &&
+        isObject(decision) &&
+        Date.parse(value.occurred_at) >= Date.parse(decision.decided_at as string) &&
+        isNotBlankString(value.authority_source_id) &&
+        isNotBlankString(value.reason)
+    );
+}
+
+function validAttempt(value: unknown, proposal: Record<string, unknown>) {
+    if (value === null) return true;
+    if (
+        !isObject(value) ||
+        !exactKeys(value, ["attempt_id", "completed_at", "evidence", "outcome", "phase", "started_at"]) ||
+        !isNotBlankString(value.attempt_id) ||
+        !value.attempt_id.startsWith("action-attempt-") ||
+        !isRfc3339Utc(value.started_at) ||
+        Date.parse(value.started_at) > Date.parse(proposal.expires_at as string) ||
+        !["executing", "succeeded", "failed", "outcome_unknown"].includes(String(value.outcome)) ||
+        !["prepared", "submitted", "terminal"].includes(String(value.phase))
+    )
         return false;
-    if (value.attempt !== null && (!isObject(value.attempt) || !isNotBlankString(value.attempt.attempt_id)))
-        return false;
-    return true;
+    if (value.outcome === "executing")
+        return (
+            (value.phase === "prepared" || value.phase === "submitted") &&
+            value.completed_at === null &&
+            value.evidence === null
+        );
+    return (
+        value.phase === "terminal" &&
+        isRfc3339Utc(value.completed_at) &&
+        Date.parse(value.completed_at) >= Date.parse(value.started_at) &&
+        value.evidence !== null
+    );
 }
 
 function errorCode(error: unknown) {

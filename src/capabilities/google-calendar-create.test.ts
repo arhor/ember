@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { rm } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -103,7 +103,11 @@ test("calendar event capability should create one event when durable exact appro
             calls.push({ url: String(input), ...(init ? { init } : {}) });
             if (calls.length === 1) return json({ access_token: "token" });
             if (calls.length === 2) return json({}, { status: 404 });
-            return json({ summary: event.title, start: { dateTime: event.start }, end: { dateTime: event.end } });
+            return json({
+                summary: event.title,
+                start: { dateTime: event.start, timeZone: event.timezone },
+                end: { dateTime: event.end, timeZone: event.timezone },
+            });
         },
     });
 
@@ -215,7 +219,8 @@ test("calendar event capability should persist uncertainty and never replay appr
             calls += 1;
             if (calls === 1) return json({ access_token: "token" });
             if (calls === 2) return json({}, { status: 404 });
-            throw new Error("connection lost after submission");
+            if (calls === 3) throw new Error("connection lost after submission");
+            return json({}, { status: 404 });
         },
     });
 
@@ -238,6 +243,194 @@ test("calendar event capability should persist uncertainty and never replay appr
     assert.equal(repeated.outcome, "authority_denied");
     assert.match(repeated.reason ?? "", /outcome_unknown/);
     assert.equal((await store.load()).proposals[0]!.status, "outcome_unknown");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal store should fail closed when persisted decision and lifecycle evidence are malformed", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    const document = await store.load();
+    document.proposals[0] = {
+        ...proposal,
+        status: "approved",
+        decision: { decision_id: "action-decision-forged", decision: "approved" } as never,
+    };
+    await writeFile(store.path, JSON.stringify(document));
+
+    // When
+    const loaded = store.load();
+
+    // Then
+    await assert.rejects(loaded, /record is invalid/);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal store should serialize concurrent writers without losing an accepted mutation", async () => {
+    // Given
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const first = new ActionProposalStore(statePath);
+    const second = new ActionProposalStore(statePath);
+
+    // When
+    const results = await Promise.allSettled([proposed(first), proposed(second)]);
+
+    // Then
+    assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+    assert.equal(results.filter((result) => result.status === "rejected").length, 1);
+    assert.equal((await first.load()).proposals.length, 1);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal authorization should stop after durable withdrawal or supersession", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+
+    // When
+    await store.invalidate({
+        proposalId: proposal.proposal_id,
+        kind: "withdrawn",
+        principal: "alice",
+        occurredAt: "2026-09-16T10:06:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+        reason: "the principal said stop",
+    });
+    const decision = await store.authorize(
+        proposal.proposal_id,
+        proposal.capability,
+        event as CapabilityJsonValue,
+        context,
+        "2026-09-16T10:07:00Z",
+    );
+
+    // Then
+    assert.deepEqual(decision, { status: "denied", reason: "action proposal is not execution eligible: withdrawn" });
+    assert.equal(
+        (await new ActionProposalStore(join(directory, "ember.json")).load()).proposals[0]!.status,
+        "withdrawn",
+    );
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("action proposal timestamps should compare instants when fractional precision differs", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+
+    // When
+    const invalid = store.create({
+        capability: "googleCalendarCreateEvent",
+        principal: "alice",
+        scope: "private",
+        purpose: "test",
+        consequence: "test",
+        payload: event as CapabilityJsonValue,
+        sourceIds: ["source"],
+        createdAt: "2026-09-16T10:00:00.1Z",
+        expiresAt: "2026-09-16T10:00:00Z",
+    });
+
+    // Then
+    await assert.rejects(invalid, /positive/);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should reconcile a submitted attempt after restart without replaying it", async () => {
+    // Given
+    const directory = await tempDir();
+    const statePath = join(directory, "ember.json");
+    const store = new ActionProposalStore(statePath);
+    const proposal = await proposed(store);
+    await store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
+    await store.markSubmitted(proposal.proposal_id);
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(config, new ActionProposalStore(statePath), {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () => {
+            calls += 1;
+            return calls === 1
+                ? json({ access_token: "token" })
+                : json({
+                      summary: event.title,
+                      start: { dateTime: event.start, timeZone: event.timezone },
+                      end: { dateTime: event.end, timeZone: event.timezone },
+                  });
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "authority_denied");
+    assert.equal(calls, 2);
+    assert.equal((await store.load()).proposals[0]!.status, "succeeded");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should treat timezone mismatch as a confirmed reconciliation conflict", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(config, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () => {
+            calls += 1;
+            if (calls === 1) return json({ access_token: "token" });
+            if (calls === 2) return json({}, { status: 404 });
+            if (calls === 3) return json({}, { status: 500 });
+            return json({
+                summary: event.title,
+                start: { dateTime: event.start, timeZone: "UTC" },
+                end: { dateTime: event.end, timeZone: "UTC" },
+            });
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "failed");
+    assert.equal((await store.load()).proposals[0]!.status, "failed");
     await rm(directory, { recursive: true, force: true });
 });
 

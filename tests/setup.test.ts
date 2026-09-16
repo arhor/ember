@@ -531,7 +531,7 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     );
 
     // Then
-    assert.deepEqual(selectedCounts, [1, 0]);
+    assert.deepEqual(selectedCounts, [2, 0]);
 });
 
 test("Calendar setup should reject ordinary setup mutation while OAuth holds the setup lease", async (t) => {

@@ -1,16 +1,18 @@
 ---
-summary: "Issue #231 runbook for Ember's bounded read-only Google Calendar capability, OAuth recovery, surface activation, inspection, and live smoke."
+summary: "Issues #231 and #233 runbook for Ember's bounded Google Calendar read and proposal-approved event creation capabilities, OAuth recovery, surface activation, inspection, and live smoke."
 read_when:
   - "Configuring, disabling, recovering, or inspecting the Google Calendar integration"
   - "Reproducing calendar lookup through CLI or Telegram or diagnosing why it is inactive"
-  - "Changing Google Calendar OAuth, credentials, observation evidence, or live verification"
+  - "Changing Google Calendar OAuth, credentials, observation or approved-effect evidence, or live verification"
 role: guide
 discovery_status: current
 ---
 
-# Google Calendar Read-only Runbook
+# Google Calendar Runbook
 
-Google Calendar is optional standing authority, not canonical Ember memory. It is
+Google Calendar is optional configured capability, not canonical Ember memory. Reading
+the selected calendar has explicit standing authority; creating an event additionally
+requires a current exact durable action approval. The integration is
 active only for the configured lineage principal, scope, and `local_cli` and/or
 `telegram_bot` surfaces, and only while Claude Code is the cognition provider.
 Codex and Cursor conversations continue normally but cannot see the tool.
@@ -34,10 +36,14 @@ ember setup-google-calendar \
 
 Open the printed Google URL. Ember listens only on `127.0.0.1`, verifies OAuth state
 and PKCE, requests exactly
-`https://www.googleapis.com/auth/calendar.events.readonly`, stores
+`https://www.googleapis.com/auth/calendar.events`, stores
 the refresh token with mode 0600, verifies one one-minute calendar read, and then
 activates configuration. The calendar ID and credential paths are host configuration;
 they never enter canonical continuity state.
+
+The broader OAuth scope supplies technical write reachability only. It does not grant
+Ember authority to create an event: the write binding still rejects execution without
+a matching current proposal-specific approval in the durable action sidecar.
 
 Rerun configuration deliberately with `--reconfigure` to replace the grant. A
 reconfiguration writes and verifies a new versioned token file; a failed verification
@@ -74,6 +80,12 @@ The CLI reloads the Calendar config at each cognition boundary, so disablement o
 reconfiguration revokes previously captured standing authority without requiring a
 surface restart.
 
+Configured Claude Code cognition receives both the bounded read binding and the
+approved event-creation binding. Event creation is limited to exact title, start, end,
+and configured timezone fields; it never adds attendees or sends updates. Withdrawal,
+supersession, expiry, payload mismatch, a prior attempt, or uncertain reconciliation
+blocks execution.
+
 Inspect only the non-secret config, file modes, and sanitized capability ledger in a
 test harness. Never print token files, authorization headers, raw event IDs, calendar
 addresses, or raw Google errors. Canonical `ember inspect` output must contain none of
@@ -87,3 +99,7 @@ The setup verification is the opt-in live smoke: it performs one caller-authoriz
 one-minute lookup and reports only activation status. For a wider smoke, use an
 ordinary configured conversation and a caller-specified interval; report only outcome,
 event count, observation time, hashed source ID, collection update time, and truncation.
+
+The consequential write smoke is separately gated by the exact environment-value
+interlock documented in
+[Capability Execution Boundary](capability-execution-boundary.md#approved-google-calendar-event-creation).

@@ -10,6 +10,8 @@ import type { MemoryProposalGenerator } from "../../memory/memory-proposal-gener
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
+import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
+import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
@@ -590,13 +592,24 @@ function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
                 ...(config.provider?.model ? { model: config.provider.model } : {}),
                 ...(calendar
                     ? {
-                          selectCapabilities: (selectedRequest) =>
-                              selectGoogleCalendarCapability(calendar, {
+                          selectCapabilities: (selectedRequest) => [
+                              ...selectGoogleCalendarCapability(calendar, {
                                   principal: selectedRequest.projection.principal,
                                   lineageId: selectedRequest.projection.lineage.lineageId,
                                   scope: selectedRequest.projection.activeScope,
                                   surface: selectedRequest.projection.surface,
                               }),
+                              ...selectApprovedGoogleCalendarEventCapability(
+                                  calendar,
+                                  new ActionProposalStore(config.state_path),
+                                  {
+                                      principal: selectedRequest.projection.principal,
+                                      lineageId: selectedRequest.projection.lineage.lineageId,
+                                      scope: selectedRequest.projection.activeScope,
+                                      surface: selectedRequest.projection.surface,
+                                  },
+                              ),
+                          ],
                       }
                     : {}),
             })(request, options);

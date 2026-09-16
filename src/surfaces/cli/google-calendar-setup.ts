@@ -172,7 +172,9 @@ async function setupGoogleCalendarLocked(
         if (publication !== "config_started") await remove(refreshTokenFile).catch(() => {});
         throw error;
     }
-    io.output.write("Google Calendar read-only integration verified and activated.\n");
+    io.output.write(
+        "Google Calendar read/write integration verified and activated; writes still require exact approval.\n",
+    );
     if (previous && previous.refresh_token_file !== refreshTokenFile)
         io.output.write(
             `Prior refresh token retained for explicit rollback or revocation: ${previous.refresh_token_file}\n`,

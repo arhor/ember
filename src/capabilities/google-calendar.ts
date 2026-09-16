@@ -9,7 +9,7 @@ import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc } from "../core/model.ts"
 import { exactKeys, isObject } from "../util.ts";
 import { CapabilityExecutionFailure } from "./execution.ts";
 
-export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly";
+export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 export const GOOGLE_CALENDAR_API_ORIGIN = "https://www.googleapis.com";
 export const GOOGLE_OAUTH_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const MAX_RANGE_MS = 31 * 24 * 60 * 60 * 1000;
