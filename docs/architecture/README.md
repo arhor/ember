@@ -55,6 +55,10 @@ Current architecture material:
   defines issue #232's provider-independent proposal identity, exact-parameter human
   decisions, cross-turn/surface/restart correlation, fail-closed ambiguity handling,
   and currentness revalidation before consequential execution.
+- [Authority, Approval, and Effects Evaluation](authority-approval-effects-evaluation.md)
+  records issue #234's deterministic Calendar capability proof and separately
+  attributable opt-in live integration evidence for approval, restart, duplicate, and
+  uncertain-effect behavior.
 - [Installation, Restore/Create, and Conversational Onboarding Semantics](setup-and-onboarding-semantics.md)
   defines issue #252's representation-neutral boundary between machine bootstrap,
   explicit restore/create choice, verified cognition, ordinary Ember-led onboarding,
