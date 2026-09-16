@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
@@ -430,6 +430,7 @@ test("Google Calendar setup should retain staged token when config publication i
     const f = await fixture(t);
     await setupMain(f.create, capture(), verified);
     const configPath = join(f.directory, "calendar.json");
+    const canonicalConfigPath = join(await realpath(dirname(configPath)), basename(configPath));
     const secretPath = join(f.directory, "client-secret");
     const tokenPath = join(f.directory, "refresh-token");
     await writeFile(secretPath, "client-secret", { mode: 0o600 });
@@ -466,7 +467,7 @@ test("Google Calendar setup should retain staged token when config publication i
             verify: async () => {},
             write: async (path, content) => {
                 await writeFile(path, content, { mode: 0o600 });
-                if (path === configPath) throw new DurabilityUncertain("directory sync failed");
+                if (path === canonicalConfigPath) throw new DurabilityUncertain("directory sync failed");
             },
         }),
     );
@@ -494,7 +495,7 @@ test("Google Calendar setup should recover binding when initial config publicati
     assert.equal(result, 0);
     const recovered = await loadSetupConfig(f.config);
     assert.equal(recovered.version, 2);
-    assert.equal(recovered.googleCalendarConfigPath, configPath);
+    assert.equal(recovered.googleCalendarConfigPath, join(await realpath(dirname(configPath)), basename(configPath)));
 });
 
 test("CLI Calendar authority should refresh when config is disabled between cognition turns", async (t) => {
@@ -574,13 +575,58 @@ test("Calendar setup should reject ordinary setup mutation while OAuth holds the
     assert.equal(setup.version, 2);
 });
 
-test("Calendar setup should preserve first lineage claim when two lineages race for one config", async (t) => {
+test("Calendar setup should share the ordinary setup lease when setup path uses a symlink alias", async (t) => {
+    // Given
+    const f = await fixture(t);
+    await setupMain(f.create, capture(), verified);
+    const aliasDirectory = join(f.directory, "setup-alias");
+    await symlink(f.directory, aliasDirectory);
+    const secretPath = join(f.directory, "alias-client-secret");
+    await writeFile(secretPath, "secret", { mode: 0o600 });
+    const args = calendarSetupArgs(f, join(f.directory, "alias-calendar.json"), secretPath);
+    args.setupConfig = join(aliasDirectory, "setup.json");
+    let authorizeStarted!: () => void;
+    let authorizeContinue!: () => void;
+    const started = new Promise<void>((resolvePromise) => (authorizeStarted = resolvePromise));
+    const proceed = new Promise<void>((resolvePromise) => (authorizeContinue = resolvePromise));
+    const calendarSetup = setupGoogleCalendarMain(args, capture(), {
+        authorize: async () => {
+            authorizeStarted();
+            await proceed;
+            return { code: "code", redirectUri: "http://127.0.0.1/callback" };
+        },
+        fetch: async () => new Response(JSON.stringify({ refresh_token: "token" }), { status: 200 }),
+        verify: async () => {},
+        random: (size) => new Uint8Array(size).fill(2),
+    });
+    await started;
+
+    // When
+    const concurrent = await captureError(() =>
+        setupMain(
+            [...f.args, "--intent", "use-existing", "--provider", "cursor", "--confirm-provider-change"],
+            capture(),
+            verified,
+        ),
+    );
+    authorizeContinue();
+    await calendarSetup;
+
+    // Then
+    assert.match(String(concurrent), /writer lock|concurrent/i);
+    assert.equal((await loadSetupConfig(f.config)).provider.kind, "codex");
+});
+
+test("Calendar setup should preserve first lineage claim when config target uses a symlink alias", async (t) => {
     // Given
     const first = await fixture(t);
     const second = await fixture(t);
     await setupMain(first.create, capture(), verified);
     await setupMain(second.create, capture(), verified);
     const sharedConfig = join(first.directory, "shared-calendar.json");
+    const aliasDirectory = join(second.directory, "calendar-alias");
+    await symlink(first.directory, aliasDirectory);
+    const aliasedConfig = join(aliasDirectory, "shared-calendar.json");
     const firstSecret = join(first.directory, "first-secret");
     const secondSecret = join(second.directory, "second-secret");
     await writeFile(firstSecret, "secret", { mode: 0o600 });
@@ -608,7 +654,7 @@ test("Calendar setup should preserve first lineage claim when two lineages race 
 
     // When
     const racingFailure = await captureError(() =>
-        setupGoogleCalendarMain(calendarSetupArgs(second, sharedConfig, secondSecret), capture(), {
+        setupGoogleCalendarMain(calendarSetupArgs(second, aliasedConfig, secondSecret), capture(), {
             ...dependencies,
             authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
         }),
@@ -616,7 +662,7 @@ test("Calendar setup should preserve first lineage claim when two lineages race 
     authorizeContinue();
     await firstSetup;
     const retryFailure = await captureError(() =>
-        setupGoogleCalendarMain(calendarSetupArgs(second, sharedConfig, secondSecret), capture(), {
+        setupGoogleCalendarMain(calendarSetupArgs(second, aliasedConfig, secondSecret), capture(), {
             ...dependencies,
             authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
         }),

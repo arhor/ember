@@ -39,14 +39,19 @@ export async function setupGoogleCalendarMain(
     io: CliIo,
     dependencies: GoogleCalendarSetupDependencies = {},
 ): Promise<number> {
-    const paths = [resolve(args.setupConfig), resolve(args.config)].sort();
+    const [setupConfig, config] = await Promise.all([
+        physicalPath(resolve(args.setupConfig)),
+        physicalPath(resolve(args.config)),
+    ]);
+    const canonicalArgs = { ...args, setupConfig, config };
+    const paths = [setupConfig, config].sort();
     const leases: Array<{ store: StateStore; lease: Awaited<ReturnType<StateStore["acquireWriteLease"]>> }> = [];
     try {
         for (const path of paths) {
             const store = new StateStore(path);
             leases.push({ store, lease: await store.acquireWriteLease() });
         }
-        return await setupGoogleCalendarLocked(args, io, dependencies);
+        return await setupGoogleCalendarLocked(canonicalArgs, io, dependencies);
     } finally {
         for (const { store, lease } of leases.reverse()) await store.releaseWriteLease(lease);
     }

@@ -58,8 +58,9 @@ that binding without issuing another grant. If config replacement reports uncert
 durability after publication began, preserve the new token: the possibly-visible config
 may already reference it, so deleting it would make recovery destructive.
 
-Calendar setup holds compatible writer leases for both the setup record and Calendar
-config from its initial read through OAuth and publication. Concurrent ordinary setup
+Calendar setup resolves physical paths, including parent aliases for targets not yet
+created, before it acquires compatible writer leases for both the setup record and
+Calendar config from its initial read through OAuth and publication. Concurrent ordinary setup
 or another Calendar claim fails closed and can be retried after the active operation;
 the retry observes current lineage ownership instead of overwriting a stale snapshot.
 
