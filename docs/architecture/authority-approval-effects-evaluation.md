@@ -65,9 +65,11 @@ authority violations, approval-correlation failures, stale-effect prevention,
 duplicate-effect prevention, uncertainty handling, provenance/evidence completeness,
 and cross-surface/restart continuity. Each case carries a `metric_results` map, so a
 provenance regression is attributed to provenance rather than counted as an unrelated
-authority or approval error. `scorecard_input: true` makes the sanitized envelope
-available to a future behavioral-health scorecard; it is not a single health score and
-does not replace the individual evidence.
+authority or approval error; the ordinary approved-effect case evaluates only its
+first authorized effect, while duplicate-attempt behavior belongs to the dedicated
+duplicate-effect case. `scorecard_input: true` makes the sanitized envelope available
+to a future behavioral-health scorecard; it is not a single health score and does not
+replace the individual evidence.
 
 The deterministic suite proves Ember behavior against a faithful adapter substitute.
 The live run is later operational evidence only: it cannot establish that a future

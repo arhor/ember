@@ -31,6 +31,7 @@ test("action-effects evaluation should report durable authority and effect behav
         report.cases.find((item) => item.id === "approved-effect")?.metric_results.approval_correlation_failures,
         true,
     );
+    assert.equal(report.cases.find((item) => item.id === "approved-effect")?.external_submission_count, 1);
     assert.equal(report.cases.find((item) => item.id === "cross-surface-restart")?.restart_outcome, "continued");
     assert.equal(report.cases.find((item) => item.id === "uncertain-effect")?.proposal_status, "outcome_unknown");
     assert.equal(report.cases.find((item) => item.id === "duplicate-effect")?.external_submission_count, 1);

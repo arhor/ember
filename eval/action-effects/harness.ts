@@ -316,6 +316,20 @@ async function runCase(
             "continued",
         );
     }
+    if (id === "approved-effect") {
+        await decide(store, proposal.proposal_id, "approved", "local_cli");
+        const result = await execute(store, adapter, proposal.proposal_id);
+        const status = await store.get(proposal.proposal_id);
+        return report(
+            id,
+            "succeeded",
+            result,
+            adapter,
+            status,
+            metrics,
+            result.outcome === "succeeded" && status?.status === "succeeded",
+        );
+    }
     await decide(store, proposal.proposal_id, "approved", "local_cli");
     const first = await execute(store, adapter, proposal.proposal_id);
     const second = await execute(store, adapter, proposal.proposal_id);
