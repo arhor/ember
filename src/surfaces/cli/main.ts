@@ -11,6 +11,7 @@ import type {
     LockStatusArgs,
     QuarantineStaleLockArgs,
     RunArgs,
+    SetupGoogleCalendarArgs,
 } from "./model.ts";
 
 import { EmberError, ValidationError } from "../../core/errors.ts";
@@ -29,6 +30,7 @@ import { StateStore } from "../../persistence/state-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { assertUnreachable, cloneState } from "../../util.ts";
+import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
 import { Commands, CommandSpecs } from "./model.ts";
 import { setupMain, setupRunMain } from "./setup.ts";
 import { runCliSurface } from "./surface.ts";
@@ -42,6 +44,8 @@ export async function main(
         switch (args.command) {
             case Commands.SETUP:
                 return await setupMain(args, io);
+            case Commands.SETUP_GOOGLE_CALENDAR:
+                return await setupGoogleCalendarMain(args, io);
             case Commands.INIT:
                 return await onInit(args, io);
             case Commands.RUN:
@@ -393,6 +397,24 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             confirmProviderChange: values["--confirm-provider-change"] === true,
             help: values["--help"] === true,
         };
+    }
+
+    if (command === Commands.SETUP_GOOGLE_CALENDAR) {
+        return {
+            command,
+            setupConfig: required("--setup-config"),
+            config: required("--config"),
+            clientId: optional("--client-id"),
+            clientSecretFile: optional("--client-secret-file"),
+            refreshTokenFile: optional("--refresh-token-file"),
+            calendarId: optional("--calendar-id"),
+            calendarLabel: optional("--calendar-label"),
+            timezone: optional("--timezone"),
+            scope: optional("--scope"),
+            surfaces: Array.isArray(values["--surface"]) ? values["--surface"] : [],
+            disable: values["--disable"] === true,
+            reconfigure: values["--reconfigure"] === true,
+        } satisfies SetupGoogleCalendarArgs;
     }
 
     if (command === "init") {

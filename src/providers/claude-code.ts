@@ -6,18 +6,22 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { InferenceEvidenceSink } from "./ai-sdk.ts";
+import type { ProviderRequest } from "./contract.ts";
 import type { ProviderInvoker } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { createAiSdkProvider } from "./ai-sdk.ts";
 
 const DEFAULT_MODEL = "sonnet";
-const ALLOWED_OPTION_KEYS = new Set(["model", "inferenceEvidence"]);
+const ALLOWED_OPTION_KEYS = new Set(["model", "inferenceEvidence", "selectCapabilities", "capabilityLedger"]);
 
 export interface ClaudeCodeProviderOptions {
     model?: string;
     inferenceEvidence?: InferenceEvidenceSink;
+    selectCapabilities?: (request: ProviderRequest) => readonly CapabilityBinding[];
+    capabilityLedger?: CapabilityExecutionLedger;
 }
 
 interface ClaudeCodeProviderDependencies {
@@ -52,6 +56,8 @@ export function createClaudeCodeProviderWithDependencies(
             const model = dependencies.createModel(modelId, claudeCodeSettings(directory, dependencies.environment));
             const provider = createAiSdkProvider(model, {
                 ...(options.inferenceEvidence === undefined ? {} : { inferenceEvidence: options.inferenceEvidence }),
+                ...(options.selectCapabilities === undefined ? {} : { selectCapabilities: options.selectCapabilities }),
+                ...(options.capabilityLedger === undefined ? {} : { capabilityLedger: options.capabilityLedger }),
             });
             try {
                 return await provider(request, invocationOptions);

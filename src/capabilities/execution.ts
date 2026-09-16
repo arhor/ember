@@ -56,6 +56,8 @@ export interface CapabilityBinding {
 
 export type CapabilityExecutionOutcome =
     | "succeeded"
+    | "source_unavailable"
+    | "source_stale"
     | "authority_denied"
     | "approval_required"
     | "input_rejected"
@@ -70,11 +72,20 @@ export type CapabilityFailureEffectState = "not_started" | "unknown";
 
 export class CapabilityExecutionFailure extends Error {
     readonly effectState: CapabilityFailureEffectState;
+    readonly outcome: "failed" | "source_unavailable" | "source_stale";
 
-    constructor(message: string, options: { effectState: CapabilityFailureEffectState; cause?: unknown }) {
+    constructor(
+        message: string,
+        options: {
+            effectState: CapabilityFailureEffectState;
+            outcome?: "failed" | "source_unavailable" | "source_stale";
+            cause?: unknown;
+        },
+    ) {
         super(message, options.cause === undefined ? undefined : { cause: options.cause });
         this.name = "CapabilityExecutionFailure";
         this.effectState = options.effectState;
+        this.outcome = options.outcome ?? "failed";
     }
 }
 
@@ -213,7 +224,7 @@ export function createCapabilityExecutionFirewall(
                     if (error.effectState === "not_started") {
                         return record(
                             ledger,
-                            evidence(context, capability.name, "failed", true, "safe", {
+                            evidence(context, capability.name, error.outcome, true, "safe", {
                                 authority: authorityEvidence(authority),
                                 ...interruptionEvidence,
                                 reason: error.message,
