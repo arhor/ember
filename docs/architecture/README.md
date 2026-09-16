@@ -51,6 +51,10 @@ Current architecture material:
   defines issue #216's Ember-owned short-lived dialogue trajectory, turn/exchange
   correlation, bounded currentness, cross-surface continuation, restart behavior, and
   provider-independent conversation identity without transcript-as-memory.
+- [Durable Action Proposal and Approval Correlation](durable-action-proposal-approval.md)
+  defines issue #232's provider-independent proposal identity, exact-parameter human
+  decisions, cross-turn/surface/restart correlation, fail-closed ambiguity handling,
+  and currentness revalidation before consequential execution.
 - [Installation, Restore/Create, and Conversational Onboarding Semantics](setup-and-onboarding-semantics.md)
   defines issue #252's representation-neutral boundary between machine bootstrap,
   explicit restore/create choice, verified cognition, ordinary Ember-led onboarding,
