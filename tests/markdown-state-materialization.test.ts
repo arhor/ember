@@ -27,12 +27,14 @@ test("Markdown v1 is deterministic and carries stable semantic and evidence refe
 });
 
 test("supported USER.md content edit becomes an adopted supersession and regenerates views", async () => {
+    // Given
     const directory = await tempDir();
     const statePath = join(directory, "ember.json");
     const output = join(directory, "views");
     const { state, ids } = populatedState();
+    const current = state.meanings.find((meaning) => meaning.meaningId === ids.preference)!;
     const approval = userEvidence(state, PRINCIPAL, SCOPE, "Prefer detailed answers", {
-        timestamp: "2026-09-16T10:00:00Z",
+        timestamp: new Date(Date.parse(current.applicableFrom) + 1_000).toISOString(),
     });
     await new StateStore(statePath).create(state);
     await command([
@@ -50,6 +52,7 @@ test("supported USER.md content edit becomes an adopted supersession and regener
     const before = await readFile(userPath, "utf8");
     await writeFile(userPath, before.replace("Prefer concise architectural rationale", "Prefer detailed answers"));
 
+    // When
     const result = await command([
         "apply-materialized-edits",
         "--state",
@@ -64,6 +67,7 @@ test("supported USER.md content edit becomes an adopted supersession and regener
         approval.evidenceId,
     ]);
 
+    // Then
     assert.equal(result.code, 0, result.stderr);
     const committed = await new StateStore(statePath).load();
     const old = committed.meanings.find((meaning) => meaning.meaningId === ids.preference)!;

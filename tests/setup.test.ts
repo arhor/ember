@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
+import { actionProposalConfirmation, ActionProposalStore } from "../src/capabilities/action-proposal.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
@@ -531,7 +532,54 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     );
 
     // Then
-    assert.deepEqual(selectedCounts, [1, 0]);
+    assert.deepEqual(selectedCounts, [3, 0]);
+});
+
+test("CLI action command should durably approve an exact pending calendar proposal", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const state = initialState("user-secret-marker");
+    await new StateStore(f.state).create(state);
+    const actions = new ActionProposalStore(f.state);
+    const proposal = await actions.create({
+        capability: "googleCalendarCreateEvent",
+        principal: "user-secret-marker",
+        scope: "private",
+        purpose: "Keep an appointment",
+        consequence: "Create one calendar event",
+        payload: {
+            title: "Dentist",
+            start: "2026-09-18T08:00:00Z",
+            end: "2026-09-18T09:00:00Z",
+            timezone: "Europe/Warsaw",
+        },
+        target: { label: "Personal", fingerprint: `sha256:${"a".repeat(64)}` },
+        sourceIds: ["cognition-test-proposal"],
+        createdAt: "2026-09-16T00:00:00Z",
+        expiresAt: "2026-09-17T00:00:00Z",
+    });
+    const io = capture(
+        `:show-action ${proposal.proposal_id}\n:approve-action ${proposal.proposal_id} ${proposal.payload_digest} ${JSON.stringify(actionProposalConfirmation(proposal))}\n:quit\n`,
+    );
+
+    // When
+    await runCliSurface(
+        {
+            statePath: f.state,
+            principal: "user-secret-marker",
+            scope: "private",
+            providerKind: "claude-code",
+            providerCommand: "claude-code",
+            providerArgs: [],
+            providerTimeoutSeconds: 30,
+            claudeProviderFactory: () => async () => success,
+        },
+        io,
+    );
+
+    // Then
+    assert.match(io.text(), /"status":"approved"/);
+    assert.equal((await actions.load()).proposals[0]!.status, "approved");
 });
 
 test("Calendar setup should reject ordinary setup mutation while OAuth holds the setup lease", async (t) => {

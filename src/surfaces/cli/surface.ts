@@ -10,6 +10,8 @@ import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
+import { actionProposalConfirmation, ActionProposalStore } from "../../capabilities/action-proposal.ts";
+import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
@@ -97,6 +99,74 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             ask(config, store, state, runtimeId, line, io.output, signal),
                         );
                         if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
+                    } else if (line.startsWith(":show-action ")) {
+                        const [command, proposalId, ...extra] = splitCommand(line);
+                        if (!proposalId || extra.length) throw new ValidationError(`${command} requires PROPOSAL_ID`);
+                        const proposal = await new ActionProposalStore(config.statePath).present({
+                            proposalId,
+                            principal: config.principal,
+                            scope: config.scope,
+                            surface: "local_cli",
+                            presentedAt: nowUtc(),
+                        });
+                        const presentation = proposal.presentations.at(-1)!;
+                        io.output.write(
+                            `${JSON.stringify({
+                                proposalId: proposal.proposal_id,
+                                payloadDigest: proposal.payload_digest,
+                                target: proposal.target.label,
+                                event: proposal.payload,
+                                purpose: proposal.purpose,
+                                consequence: proposal.consequence,
+                                expiresAt: proposal.expires_at,
+                                presentationId: presentation.presentation_id,
+                                approvalConfirmation: actionProposalConfirmation(proposal),
+                            })}\n`,
+                        );
+                    } else if (line.startsWith(":approve-action ") || line.startsWith(":reject-action ")) {
+                        const [command, proposalId, payloadDigest, materialConfirmation, ...extra] = splitCommand(line);
+                        if (!proposalId || !payloadDigest || !materialConfirmation || extra.length)
+                            throw new ValidationError(
+                                `${command} requires PROPOSAL_ID PAYLOAD_DIGEST QUOTED_MATERIAL_CONFIRMATION`,
+                            );
+                        const actions = new ActionProposalStore(config.statePath);
+                        const pending = await actions.get(proposalId);
+                        const presentation = pending?.presentations
+                            .filter(
+                                (candidate) =>
+                                    candidate.principal === config.principal &&
+                                    candidate.scope === config.scope &&
+                                    candidate.surface === "local_cli",
+                            )
+                            .at(-1);
+                        if (!presentation)
+                            throw new ValidationError("action approval requires :show-action in this scope first");
+                        const proposal = await actions.decide({
+                            proposalId,
+                            decision: command === ":approve-action" ? "approved" : "rejected",
+                            principal: config.principal,
+                            payloadDigest,
+                            scope: config.scope,
+                            surface: "local_cli",
+                            presentationId: presentation.presentation_id,
+                            decidedAt: nowUtc(),
+                            authoritySourceId: `local_cli:${config.principal}`,
+                            materialConfirmation,
+                        });
+                        io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
+                    } else if (line.startsWith(":withdraw-action ") || line.startsWith(":supersede-action ")) {
+                        const [command, proposalId, ...reason] = splitCommand(line);
+                        if (!proposalId || !reason.length)
+                            throw new ValidationError(`${command} requires PROPOSAL_ID REASON`);
+                        const proposal = await new ActionProposalStore(config.statePath).invalidate({
+                            proposalId,
+                            kind: command === ":withdraw-action" ? "withdrawn" : "superseded",
+                            principal: config.principal,
+                            occurredAt: nowUtc(),
+                            authoritySourceId: `local_cli:${config.principal}`,
+                            reason: reason.join(" "),
+                        });
+                        io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
                     } else {
                         const result = await semanticCommand(
                             store,
@@ -278,13 +348,24 @@ function configuredCognitionProvider(config: CliSurfaceConfig) {
             ...(config.providerModel ? { model: config.providerModel } : {}),
             ...(googleCalendarConfig
                 ? {
-                      selectCapabilities: (selectedRequest) =>
-                          selectGoogleCalendarCapability(googleCalendarConfig, {
+                      selectCapabilities: (selectedRequest) => [
+                          ...selectGoogleCalendarCapability(googleCalendarConfig, {
                               principal: selectedRequest.projection.principal,
                               lineageId: selectedRequest.projection.lineage.lineageId,
                               scope: selectedRequest.projection.activeScope,
                               surface: selectedRequest.projection.surface,
                           }),
+                          ...selectApprovedGoogleCalendarEventCapability(
+                              googleCalendarConfig,
+                              new ActionProposalStore(config.statePath),
+                              {
+                                  principal: selectedRequest.projection.principal,
+                                  lineageId: selectedRequest.projection.lineage.lineageId,
+                                  scope: selectedRequest.projection.activeScope,
+                                  surface: selectedRequest.projection.surface,
+                              },
+                          ),
+                      ],
                   }
                 : {}),
         })(request, options);

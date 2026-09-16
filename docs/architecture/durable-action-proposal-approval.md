@@ -345,6 +345,14 @@ first attempt never occurred.
 
 ## Deliberately unresolved representation questions
 
+Issue #233 now supplies one deliberately narrow representation for Google Calendar
+event creation: the durable action sidecar, exact payload digest, proposal-specific
+decision, and pre-effect attempt record described in the
+[Capability Execution Boundary](capability-execution-boundary.md#approved-google-calendar-event-creation).
+That implementation is evidence for this semantic contract, not a universal schema or
+policy language; the remaining representation questions below stay open for other
+capabilities.
+
 This design does not choose:
 
 - database tables, files, event sourcing, serialization, hashes, signatures, or lock
