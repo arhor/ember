@@ -22,6 +22,12 @@ export interface GoogleCalendarCreateInput {
     };
 }
 
+interface GoogleCalendarProposalInput {
+    event: GoogleCalendarCreateInput["event"];
+    purpose: string;
+    consequence: string;
+}
+
 export function selectApprovedGoogleCalendarEventCapability(
     config: GoogleCalendarConfig | undefined,
     store: ActionProposalStore,
@@ -36,7 +42,81 @@ export function selectApprovedGoogleCalendarEventCapability(
         !config.surfaces.includes(context.surface as never)
     )
         return [];
-    return [createApprovedGoogleCalendarEventCapability(config, store, dependencies)];
+    return [
+        createGoogleCalendarEventProposalCapability(config, store, dependencies),
+        createApprovedGoogleCalendarEventCapability(config, store, dependencies),
+    ];
+}
+
+export function createGoogleCalendarEventProposalCapability(
+    config: GoogleCalendarConfig,
+    store: ActionProposalStore,
+    overrides: Partial<Dependencies> = {},
+): CapabilityBinding {
+    const now = overrides.now ?? (() => new Date());
+    return {
+        name: "googleCalendarProposeEvent",
+        description:
+            "Create a durable proposal for one calendar event. This does not create the event or grant approval.",
+        inputSchema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+                event: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                        title: { type: "string" },
+                        start: { type: "string", format: "date-time" },
+                        end: { type: "string", format: "date-time" },
+                        timezone: { type: "string" },
+                    },
+                    required: ["title", "start", "end", "timezone"],
+                },
+                purpose: { type: "string" },
+                consequence: { type: "string" },
+            },
+            required: ["event", "purpose", "consequence"],
+        },
+        occurrencePolicy: "at_most_once_per_cognition",
+        authorize: (context) =>
+            context.principal === config.principal && context.scope === config.scope
+                ? {
+                      status: "authorized",
+                      basis: "current_instruction",
+                      sourceId: context.cognitionId,
+                      current: true,
+                  }
+                : { status: "denied", reason: "calendar proposal principal or scope does not match configuration" },
+        validateInput: (_context, input) =>
+            validProposalInput(input)
+                ? { status: "allowed" }
+                : { status: "rejected", reason: "calendar proposal fields are invalid or unbounded" },
+        execute: async (context, input) => {
+            const value = input as GoogleCalendarProposalInput;
+            const createdAt = now();
+            const proposal = await store.create({
+                capability: "googleCalendarCreateEvent",
+                principal: context.principal,
+                scope: context.scope,
+                purpose: value.purpose,
+                consequence: value.consequence,
+                payload: value.event,
+                sourceIds: [context.cognitionId],
+                createdAt: createdAt.toISOString(),
+                expiresAt: new Date(createdAt.getTime() + 15 * 60_000).toISOString(),
+            });
+            return {
+                status: "approval_required",
+                proposalId: proposal.proposal_id,
+                payloadDigest: proposal.payload_digest,
+                expiresAt: proposal.expires_at,
+                event: proposal.payload,
+                purpose: proposal.purpose,
+                consequence: proposal.consequence,
+            };
+        },
+    };
 }
 
 interface Dependencies {
@@ -85,9 +165,13 @@ export function createApprovedGoogleCalendarEventCapability(
         occurrencePolicy: "at_most_once_per_cognition",
         authorize: async (context, input) => {
             if (!validInput(input)) return { status: "denied", reason: "calendar event proposal payload is invalid" };
-            const existing = await store.get(input.proposalId);
-            if (existing?.status === "executing")
-                await reconcileInterruptedAttempt(config, store, input, dependencies, existing.attempt!.phase);
+            const existing = await store.correlate(input.proposalId, "googleCalendarCreateEvent", input.event, context);
+            if (existing?.status === "executing") {
+                const persistedInput = { proposalId: existing.proposal_id, event: existing.payload };
+                if (!validInput(persistedInput))
+                    return { status: "denied", reason: "persisted proposal payload is invalid" };
+                await reconcileInterruptedAttempt(config, store, persistedInput, dependencies, existing.attempt!.phase);
+            }
             return store.authorize(
                 input.proposalId,
                 "googleCalendarCreateEvent",
@@ -131,7 +215,9 @@ async function executeCreate(
             await fail(store, input.proposalId, dependencies, "deterministic event identifier is already occupied");
         }
         if (current.status !== 404)
-            await fail(store, input.proposalId, dependencies, "calendar currentness recheck failed");
+            throw new CapabilityExecutionFailure("calendar currentness recheck failed before effect submission", {
+                effectState: "not_started",
+            });
 
         await store.beginAttempt(input.proposalId, startedAt);
         let response: Response;
@@ -277,7 +363,33 @@ async function reconcileAfterSubmission(
         });
     }
     if (response.ok) {
-        const body: unknown = await response.json();
+        let body: unknown;
+        try {
+            body = await response.json();
+        } catch (error) {
+            await unknown(store, input.proposalId, dependencies, `${ambiguity}; reconciliation response was malformed`);
+            throw new CapabilityExecutionFailure(
+                "calendar event outcome remains unknown after malformed reconciliation",
+                {
+                    effectState: "unknown",
+                    cause: error,
+                },
+            );
+        }
+        if (!validReconciliationEvent(body)) {
+            await unknown(
+                store,
+                input.proposalId,
+                dependencies,
+                `${ambiguity}; reconciliation response shape was invalid`,
+            );
+            throw new CapabilityExecutionFailure(
+                "calendar event outcome remains unknown after invalid reconciliation",
+                {
+                    effectState: "unknown",
+                },
+            );
+        }
         if (matchesExisting(body, input.event)) {
             const evidence = { status: "confirmed", reconciliation: "found_after_ambiguity" };
             await store.completeAttempt(input.proposalId, "succeeded", dependencies.now().toISOString(), evidence);
@@ -351,10 +463,23 @@ function validInput(value: unknown): value is unknown & GoogleCalendarCreateInpu
         event.title.length <= 256 &&
         isRfc3339Utc(event.start) &&
         isRfc3339Utc(event.end) &&
-        event.end > event.start &&
+        Date.parse(event.end) > Date.parse(event.start) &&
         typeof event.timezone === "string" &&
         event.timezone.length > 0 &&
         event.timezone.length <= 100
+    );
+}
+function validProposalInput(value: unknown): value is unknown & GoogleCalendarProposalInput {
+    return (
+        isObject(value) &&
+        exactKeys(value, ["consequence", "event", "purpose"]) &&
+        typeof value.purpose === "string" &&
+        value.purpose.trim().length > 0 &&
+        value.purpose.length <= 1_024 &&
+        typeof value.consequence === "string" &&
+        value.consequence.trim().length > 0 &&
+        value.consequence.length <= 1_024 &&
+        validInput({ proposalId: "action-proposal-validation", event: value.event })
     );
 }
 function eventUrl(config: GoogleCalendarConfig, origin: string, id: string) {
@@ -373,5 +498,17 @@ function matchesExisting(value: unknown, event: GoogleCalendarCreateInput["event
         isObject(value.end) &&
         value.end.dateTime === event.end &&
         value.end.timeZone === event.timezone
+    );
+}
+function validReconciliationEvent(value: unknown) {
+    return (
+        isObject(value) &&
+        typeof value.summary === "string" &&
+        isObject(value.start) &&
+        typeof value.start.dateTime === "string" &&
+        typeof value.start.timeZone === "string" &&
+        isObject(value.end) &&
+        typeof value.end.dateTime === "string" &&
+        typeof value.end.timeZone === "string"
     );
 }

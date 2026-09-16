@@ -8,7 +8,10 @@ import type { CapabilityJsonValue } from "./execution.ts";
 import { tempDir } from "../../tests/support.ts";
 import { ActionProposalStore } from "./action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "./execution.ts";
-import { createApprovedGoogleCalendarEventCapability } from "./google-calendar-create.ts";
+import {
+    createApprovedGoogleCalendarEventCapability,
+    createGoogleCalendarEventProposalCapability,
+} from "./google-calendar-create.ts";
 
 const config = {
     config_version: 1 as const,
@@ -431,6 +434,166 @@ test("calendar event capability should treat timezone mismatch as a confirmed re
     // Then
     assert.equal(result.outcome, "failed");
     assert.equal((await store.load()).proposals[0]!.status, "failed");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar proposal capability should create an approval-ready proposal during ordinary cognition", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const capability = createGoogleCalendarEventProposalCapability(config, store, {
+        now: () => new Date("2026-09-16T10:00:00Z"),
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        event,
+        purpose: "Keep the appointment",
+        consequence: "Create one event without notifying attendees",
+    });
+
+    // Then
+    assert.equal(result.outcome, "succeeded");
+    assert.match(JSON.stringify(result.output), /approval_required/);
+    const persisted = (await store.load()).proposals[0]!;
+    assert.equal(persisted.status, "pending");
+    assert.deepEqual(persisted.source_ids, [context.cognitionId]);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar recovery should not mutate submitted proposal when invocation payload is mismatched", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
+    await store.markSubmitted(proposal.proposal_id);
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(config, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        fetch: async () => {
+            calls += 1;
+            return json({});
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event: { ...event, title: "Different event" },
+    });
+
+    // Then
+    assert.equal(result.outcome, "authority_denied");
+    assert.equal(calls, 0);
+    assert.equal((await store.load()).proposals[0]!.status, "executing");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event capability should preserve approval when currentness recheck fails before attempt", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(config, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () => (++calls === 1 ? json({ access_token: "token" }) : json({}, { status: 503 })),
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "failed");
+    assert.equal(result.retry, "safe");
+    assert.equal((await store.load()).proposals[0]!.status, "approved");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar recovery should terminalize uncertainty when successful HTTP body is malformed", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await proposed(store);
+    await store.decide({
+        proposalId: proposal.proposal_id,
+        decision: "approved",
+        principal: "alice",
+        payloadDigest: proposal.payload_digest,
+        decidedAt: "2026-09-16T10:05:00Z",
+        authoritySourceId: "authenticated-cli:alice",
+    });
+    await store.beginAttempt(proposal.proposal_id, "2026-09-16T10:06:00Z");
+    await store.markSubmitted(proposal.proposal_id);
+    let calls = 0;
+    const capability = createApprovedGoogleCalendarEventCapability(config, store, {
+        now: () => new Date("2026-09-16T10:10:00Z"),
+        readSecret: async () => "secret",
+        fetch: async () => {
+            calls += 1;
+            return calls === 1 ? json({ access_token: "token" }) : new Response("not-json", { status: 200 });
+        },
+    });
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event,
+    });
+
+    // Then
+    assert.equal(result.outcome, "authority_denied");
+    assert.equal((await store.load()).proposals[0]!.status, "outcome_unknown");
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("calendar event validation should compare fractional timestamps chronologically", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new ActionProposalStore(join(directory, "ember.json"));
+    const proposal = await store.create({
+        capability: "googleCalendarCreateEvent",
+        principal: "alice",
+        scope: "private",
+        purpose: "test",
+        consequence: "test",
+        payload: { ...event, start: "2026-09-18T08:00:00.1Z", end: "2026-09-18T08:00:00Z" },
+        sourceIds: ["source"],
+        createdAt: "2026-09-16T10:00:00Z",
+        expiresAt: "2026-09-16T11:00:00Z",
+    });
+    const capability = createApprovedGoogleCalendarEventCapability(config, store);
+
+    // When
+    const result = await createCapabilityExecutionFirewall([capability], context).execute(capability.name, {
+        proposalId: proposal.proposal_id,
+        event: proposal.payload,
+    });
+
+    // Then
+    assert.equal(result.outcome, "authority_denied");
+    assert.equal(result.executionAttempted, false);
     await rm(directory, { recursive: true, force: true });
 });
 

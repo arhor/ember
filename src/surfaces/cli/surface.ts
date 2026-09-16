@@ -99,6 +99,32 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             ask(config, store, state, runtimeId, line, io.output, signal),
                         );
                         if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
+                    } else if (line.startsWith(":approve-action ") || line.startsWith(":reject-action ")) {
+                        const [command, proposalId, payloadDigest, ...extra] = splitCommand(line);
+                        if (!proposalId || !payloadDigest || extra.length)
+                            throw new ValidationError(`${command} requires PROPOSAL_ID PAYLOAD_DIGEST`);
+                        const proposal = await new ActionProposalStore(config.statePath).decide({
+                            proposalId,
+                            decision: command === ":approve-action" ? "approved" : "rejected",
+                            principal: config.principal,
+                            payloadDigest,
+                            decidedAt: nowUtc(),
+                            authoritySourceId: `local_cli:${config.principal}`,
+                        });
+                        io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
+                    } else if (line.startsWith(":withdraw-action ") || line.startsWith(":supersede-action ")) {
+                        const [command, proposalId, ...reason] = splitCommand(line);
+                        if (!proposalId || !reason.length)
+                            throw new ValidationError(`${command} requires PROPOSAL_ID REASON`);
+                        const proposal = await new ActionProposalStore(config.statePath).invalidate({
+                            proposalId,
+                            kind: command === ":withdraw-action" ? "withdrawn" : "superseded",
+                            principal: config.principal,
+                            occurredAt: nowUtc(),
+                            authoritySourceId: `local_cli:${config.principal}`,
+                            reason: reason.join(" "),
+                        });
+                        io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
                     } else {
                         const result = await semanticCommand(
                             store,

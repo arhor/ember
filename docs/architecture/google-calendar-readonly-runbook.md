@@ -81,7 +81,19 @@ reconfiguration revokes previously captured standing authority without requiring
 surface restart.
 
 Configured Claude Code cognition receives both the bounded read binding and the
-approved event-creation binding. Event creation is limited to exact title, start, end,
+proposal and approved event-creation bindings. Ask Ember to propose the event first;
+the resulting reply must identify the proposal ID, payload digest, exact event,
+purpose, consequence, and expiry. Approve or reject it locally with:
+
+```text
+:approve-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST
+:reject-action ACTION_PROPOSAL_ID SHA256_PAYLOAD_DIGEST
+```
+
+An approved proposal can be revoked before execution with
+`:withdraw-action ACTION_PROPOSAL_ID REASON`, or marked obsolete with the analogous
+`:supersede-action`. Then ask Ember to execute that exact approved proposal. Event
+creation is limited to exact title, start, end,
 and configured timezone fields; it never adds attendees or sends updates. Withdrawal,
 supersession, expiry, payload mismatch, a prior attempt, or uncertain reconciliation
 blocks execution.

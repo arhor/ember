@@ -224,6 +224,17 @@ conference links, recurrence, reminders, and update notifications. Google creden
 calendar IDs, access tokens, and the deterministic external event ID remain inside the
 adapter.
 
+Ordinary configured Claude Code cognition can first call
+`googleCalendarProposeEvent`. That non-effectful capability persists a 15-minute
+proposal grounded in the current cognition and returns its exact proposal ID, payload
+digest, parameters, purpose, consequence, and expiry for presentation. It grants no
+authority. On the trusted local CLI, the principal can then use
+`:approve-action PROPOSAL_ID PAYLOAD_DIGEST` or the corresponding `:reject-action`;
+`:withdraw-action PROPOSAL_ID REASON` and `:supersede-action PROPOSAL_ID REASON`
+durably revoke a not-yet-started approval. A later cognition may execute only the
+exact approved payload. This makes propose, decide, and execute reachable through the
+ordinary runtime without treating model interpretation as the human decision.
+
 `ActionProposalStore` persists the proposal, integrity-bound payload, provenance,
 principal/scope boundary, expiry, exact decision, and one execution attempt in the
 canonical state sidecar `<state>.actions.json`. Capability authorization reloads that
@@ -235,7 +246,9 @@ therefore does not turn approval into a provider-session flag or make it reusabl
 
 Immediately before insertion, the adapter checks the proposal-derived Google event ID,
 then durably records prepared and submitted attempt phases around request submission.
-Restart reconciles prepared attempts as not submitted and submitted attempts against
+Restart reconciliation first correlates principal, scope, capability, and payload
+against the persisted proposal, then uses the persisted payload rather than untrusted
+new tool input. It reconciles prepared attempts as not submitted and submitted attempts against
 the deterministic event ID. An exact event including timezone is confirmed success; a
 conflicting event is confirmed failure. Absence after submission cannot prove the event
 never existed, so it remains `outcome_unknown`. Non-2xx and lost responses use the same

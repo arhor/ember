@@ -208,18 +208,8 @@ export class ActionProposalStore {
         context: Pick<CapabilityContext, "principal" | "scope">,
         now: string,
     ): Promise<CapabilityAuthorityDecision> {
-        const proposal = (await this.load()).proposals.find((candidate) => candidate.proposal_id === proposalId);
+        const proposal = await this.correlate(proposalId, capability, payload, context);
         if (!proposal) return { status: "denied", reason: "action proposal does not exist" };
-        if (
-            proposal.capability !== capability ||
-            proposal.principal !== context.principal ||
-            proposal.scope !== context.scope ||
-            proposal.payload_digest !== payloadDigest(payload)
-        )
-            return {
-                status: "denied",
-                reason: "action proposal does not match capability, payload, principal, and scope",
-            };
         if (!isRfc3339Utc(now) || Date.parse(now) > Date.parse(proposal.expires_at))
             return { status: "denied", reason: "action proposal approval is stale" };
         if (proposal.status === "pending")
@@ -232,6 +222,24 @@ export class ActionProposalStore {
             sourceId: proposal.decision.decision_id,
             current: true,
         };
+    }
+
+    async correlate(
+        proposalId: string,
+        capability: string,
+        payload: CapabilityJsonValue,
+        context: Pick<CapabilityContext, "principal" | "scope">,
+    ): Promise<ActionProposalRecord | null> {
+        const proposal = (await this.load()).proposals.find((candidate) => candidate.proposal_id === proposalId);
+        if (
+            !proposal ||
+            proposal.capability !== capability ||
+            proposal.principal !== context.principal ||
+            proposal.scope !== context.scope ||
+            proposal.payload_digest !== payloadDigest(payload)
+        )
+            return null;
+        return structuredClone(proposal);
     }
 
     async beginAttempt(proposalId: string, now: string): Promise<ActionProposalRecord> {
