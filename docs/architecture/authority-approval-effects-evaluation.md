@@ -16,6 +16,23 @@ not a second capability, approval, or retry policy. The deterministic harness in
 the production capability selectors, firewall, durable action sidecar, and Calendar
 adapter contracts with an isolated deterministic external substitute.
 
+## Multi-episode objective composition
+
+Issue [#238](https://github.com/arhor/ember/issues/238) extends the deterministic
+evidence with `src/objectives/objective-action.test.ts`. The scenario creates an
+objective action proposal in one bounded episode, persists an exact approval on a
+different surface, reconstructs both ledgers in a fresh process/provider episode,
+revalidates objective currentness before the Google Calendar effect, and
+reintegrates the confirmed attempt into objective progress. A replay assertion
+proves that the same durable proposal cannot submit the external effect twice.
+
+A companion scenario terminalizes a submitted attempt as `outcome_unknown` and
+proves that objective progress remains explicitly uncertain with reconciliation
+required before retry. These tests compose the existing issue #234 action/effect
+evidence with the issue #237 multi-episode objective ledger; they do not replace the
+opt-in live Calendar smoke test or claim that deterministic HTTP doubles establish
+live provider behavior.
+
 ## Run the evaluation
 
 Run the network-free acceptance suite with:
