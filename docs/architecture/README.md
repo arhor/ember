@@ -59,6 +59,11 @@ Current architecture material:
   defines issue #236's Ember-owned objective identity, lifecycle and currentness,
   multi-episode checkpoint evidence, restart-safe next-step ownership, and
   cancellation without false stop or rollback claims.
+- [Durable Objective LangGraph.js Evaluation](durable-objective-langgraph-evaluation.md)
+  records issue #239's evidence-based decision to defer LangGraph.js after comparing
+  its checkpoint, interrupt, replay, cancellation, testing, and operational mechanics
+  with the implemented durable objective, approval, and effect boundaries from issues
+  #237 and #238.
 - [Authority, Approval, and Effects Evaluation](authority-approval-effects-evaluation.md)
   records issue #234's deterministic Calendar capability proof and separately
   attributable opt-in live integration evidence for approval, restart, duplicate, and
