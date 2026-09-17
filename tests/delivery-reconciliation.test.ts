@@ -203,22 +203,25 @@ test("legacy interaction ledger migrates without inventing a lost delivery repre
         const legacy = {
             ledger_version: 1,
             inbound_occurrences: current.inbound_occurrences,
-            deliveries: current.deliveries.map(({ representation: _representation, attempts, ...delivery }) => ({
-                ...delivery,
-                attempts: attempts.map(
-                    ({
-                        observedAt: _observedAt,
-                        retryable: _retryable,
-                        retry_after_seconds: _retryAfter,
-                        ...attempt
-                    }) => attempt,
-                ),
-            })),
+            deliveries: current.deliveries.map(
+                ({ representation: _representation, origin: _origin, send_fence: _fence, attempts, ...delivery }) => ({
+                    ...delivery,
+                    attempts: attempts.map(
+                        ({
+                            observedAt: _observedAt,
+                            retryable: _retryable,
+                            retry_after_seconds: _retryAfter,
+                            ...attempt
+                        }) => attempt,
+                    ),
+                }),
+            ),
         };
         await writeFile(`${f.statePath}.interactions.json`, `${JSON.stringify(legacy, null, 2)}\n`, "utf8");
 
         const migrated = await new InteractionLedgerStore(f.statePath).load();
-        assert.equal(migrated.ledger_version, 2);
+        assert.equal(migrated.ledger_version, 3);
+        assert.deepEqual(migrated.deliveries[0]?.origin, { kind: "ordinary_cognition" });
         assert.equal(migrated.deliveries[0]?.representation, null);
         assert.equal(migrated.deliveries[0]?.attempts[0]?.retryable, false);
         assert.equal(
@@ -241,6 +244,41 @@ test("inspection exposes delivery representation availability and digest without
         assert.equal(serialized.includes("durable reply"), false);
         assert.equal(inspected.deliveries[0]?.representation.available, true);
         assert.match(inspected.deliveries[0]?.representation.contentDigest ?? "", /^sha256:[0-9a-f]{64}$/);
+    } finally {
+        await f.close();
+    }
+});
+
+test("a proactive no-further-send fence withdraws an unattempted delivery", async () => {
+    const f = await fixture();
+    try {
+        const calls = { provider: 0, delivery: 0 };
+        const source = await createRetryableFailure(f, calls);
+        const ledger = new InteractionLedgerStore(f.statePath);
+        const proactive = await ledger.createDeliveryIntent({
+            cognitionId: source.cognitionId,
+            expressionEvidenceId: source.expressionEvidenceId,
+            surfaceId: "messaging:test",
+            destinationId: "chat-proactive",
+            representationText: "proactive retained representation",
+            origin: {
+                kind: "proactive_contact",
+                contact_intent_id: "contact-intent-fenced",
+                policy_assessment_id: "contact-policy-fenced",
+            },
+        });
+        await ledger.fenceDelivery(proactive.delivery_id, "intent_cancelled", "2026-09-17T15:00:00Z");
+        let sends = 0;
+        const result = await reconcileSurfaceDelivery(
+            f.store,
+            proactive.delivery_id,
+            () => {
+                sends += 1;
+            },
+            { observedAt: "2026-09-17T15:01:00Z" },
+        );
+        assert.equal(result.status, "withdrawn");
+        assert.equal(sends, 0);
     } finally {
         await f.close();
     }

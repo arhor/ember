@@ -145,6 +145,22 @@ export interface DeliveryAttemptRecord extends DeliveryAttemptIdentity {
     retry_after_seconds: number | null;
 }
 
+export type DeliveryOrigin =
+    | { kind: "ordinary_cognition" }
+    | {
+          kind: "proactive_contact";
+          contact_intent_id: `contact-intent-${string}`;
+          policy_assessment_id: `contact-policy-${string}`;
+      };
+
+export type DeliverySendFence =
+    | { status: "open" }
+    | {
+          status: "no_further_send";
+          fenced_at: string;
+          basis: string;
+      };
+
 interface DeliveryRecordIdentity {
     delivery_id: string;
     cognitionId: CognitionId;
@@ -155,6 +171,8 @@ interface DeliveryRecordIdentity {
 }
 
 export interface DeliveryRecord extends DeliveryRecordIdentity {
+    origin: DeliveryOrigin;
+    send_fence: DeliverySendFence;
     representation: DeliveryRepresentation | null;
     attempts: DeliveryAttemptRecord[];
 }
@@ -164,8 +182,18 @@ interface InteractionLedgerSharedFields {
 }
 
 export interface InteractionLedgerDocument extends InteractionLedgerSharedFields {
-    ledger_version: 2;
+    ledger_version: 3;
     deliveries: DeliveryRecord[];
+}
+
+interface V2DeliveryRecord extends DeliveryRecordIdentity {
+    representation: DeliveryRepresentation | null;
+    attempts: DeliveryAttemptRecord[];
+}
+
+interface V2InteractionLedgerDocument extends InteractionLedgerSharedFields {
+    ledger_version: 2;
+    deliveries: V2DeliveryRecord[];
 }
 
 interface LegacyDeliveryAttemptRecord extends DeliveryAttemptIdentity {
@@ -202,7 +230,8 @@ export type DeliveryReconciliationStatus =
     | "retryable_failure"
     | "failed_non_retryable"
     | "blocked_uncertain"
-    | "blocked_missing_representation";
+    | "blocked_missing_representation"
+    | "withdrawn";
 
 export interface DeliveryReconciliationResult {
     deliveryId: string;
@@ -241,6 +270,10 @@ export class InteractionLedgerStore {
         if (ledgerVersion(value) === 1) {
             validateLegacyLedger(value);
             return migrateLegacyLedger(value);
+        }
+        if (ledgerVersion(value) === 2) {
+            validateV2Ledger(value);
+            return migrateV2Ledger(value);
         }
         validateLedger(value);
         return value;
@@ -298,29 +331,50 @@ export class InteractionLedgerStore {
             surfaceId,
             destinationId,
             representationText,
+            origin = { kind: "ordinary_cognition" },
         }: {
             cognitionId: CognitionId;
             expressionEvidenceId: EvidenceId;
             surfaceId: string;
             destinationId: string | null;
             representationText: string | null;
+            origin?: DeliveryOrigin;
         },
         intendedAt = nowUtc(),
     ): Promise<DeliveryRecord> {
         validateOpaque(surfaceId, "delivery surface_id", 128);
         validateNullableOpaque(destinationId, "delivery destination_id");
         if (representationText !== null) validateDeliveryRepresentationText(representationText);
+        validateDeliveryOrigin(origin);
+        if (origin.kind === "proactive_contact" && representationText === null)
+            throw new ValidationError("proactive delivery requires a retained representation");
         if (!isRfc3339Utc(intendedAt)) throw new ValidationError("delivery intended_at must be RFC 3339 UTC");
 
         return this.update((ledger) => {
-            const existing = ledger.deliveries.find(
-                (record) =>
-                    record.cognitionId === cognitionId &&
-                    record.expressionEvidenceId === expressionEvidenceId &&
-                    record.surface_id === surfaceId &&
-                    record.destination_id === destinationId,
-            );
+            const existing =
+                origin.kind === "proactive_contact"
+                    ? ledger.deliveries.find(
+                          (record) =>
+                              record.origin.kind === "proactive_contact" &&
+                              record.origin.contact_intent_id === origin.contact_intent_id,
+                      )
+                    : ledger.deliveries.find(
+                          (record) =>
+                              record.origin.kind === "ordinary_cognition" &&
+                              record.cognitionId === cognitionId &&
+                              record.expressionEvidenceId === expressionEvidenceId &&
+                              record.surface_id === surfaceId &&
+                              record.destination_id === destinationId,
+                      );
             if (existing) {
+                if (
+                    existing.cognitionId !== cognitionId ||
+                    existing.expressionEvidenceId !== expressionEvidenceId ||
+                    existing.surface_id !== surfaceId ||
+                    existing.destination_id !== destinationId ||
+                    JSON.stringify(existing.origin) !== JSON.stringify(origin)
+                )
+                    throw new ValidationError("delivery replay conflicts with the established intent");
                 if (representationText !== null) {
                     const representation = deliveryRepresentation(representationText);
                     if (existing.representation === null) existing.representation = representation;
@@ -337,6 +391,8 @@ export class InteractionLedgerStore {
                 surface_id: surfaceId,
                 destination_id: destinationId,
                 intended_at: intendedAt,
+                origin: structuredClone(origin),
+                send_fence: { status: "open" },
                 representation: representationText === null ? null : deliveryRepresentation(representationText),
                 attempts: [],
             };
@@ -345,10 +401,31 @@ export class InteractionLedgerStore {
         });
     }
 
+    async fenceDelivery(deliveryId: string, basis: string, fencedAt?: string): Promise<DeliveryRecord> {
+        validateOpaque(basis, "delivery fence basis");
+        if (fencedAt !== undefined && !isRfc3339Utc(fencedAt))
+            throw new ValidationError("delivery fenced_at must be RFC 3339 UTC");
+        return this.update((ledger) => {
+            const delivery = requireDelivery(ledger, deliveryId);
+            if (delivery.send_fence.status === "no_further_send") {
+                if (
+                    delivery.send_fence.basis !== basis ||
+                    (fencedAt !== undefined && delivery.send_fence.fenced_at !== fencedAt)
+                )
+                    throw new ValidationError("delivery fence replay conflicts with the established fence");
+                return structuredClone(delivery);
+            }
+            delivery.send_fence = { status: "no_further_send", fenced_at: fencedAt ?? nowUtc(), basis };
+            return structuredClone(delivery);
+        });
+    }
+
     async startDeliveryAttempt(deliveryId: string, attemptedAt = nowUtc()): Promise<DeliveryAttemptRecord> {
         if (!isRfc3339Utc(attemptedAt)) throw new ValidationError("delivery attempted_at must be RFC 3339 UTC");
         return this.update((ledger) => {
             const delivery = requireDelivery(ledger, deliveryId);
+            if (delivery.send_fence.status === "no_further_send")
+                throw new ValidationError("delivery is fenced against further sends");
             const latest = latestDeliveryAttempt(delivery);
             if (latest?.outcome === "confirmed")
                 throw new ValidationError("confirmed delivery cannot be attempted again");
@@ -570,7 +647,7 @@ export async function reconcileSurfaceDelivery(
     const cognition = findCognition(state, delivery.cognitionId);
     if (cognition.status !== "completed" || cognition.expressionEvidenceId !== delivery.expressionEvidenceId)
         throw new ValidationError("delivery does not refer to a completed matching cognition");
-    if (cognition.deliveryStatus === "displayed") {
+    if (delivery.origin.kind === "ordinary_cognition" && cognition.deliveryStatus === "displayed") {
         return resultFor(delivery, "confirmed", latestDeliveryAttempt(delivery)?.attempt_id ?? null, null);
     }
 
@@ -580,11 +657,15 @@ export async function reconcileSurfaceDelivery(
         return resultFor(delivery, "blocked_uncertain", latest.attempt_id, null);
     }
     if (latest?.outcome === "confirmed") {
-        await markCanonicalDeliveryDisplayed(store, delivery.cognitionId);
+        if (delivery.origin.kind === "ordinary_cognition")
+            await markCanonicalDeliveryDisplayed(store, delivery.cognitionId);
         return resultFor(delivery, "confirmed", latest.attempt_id, null);
     }
     if (latest?.outcome === "uncertain") {
         return resultFor(delivery, "blocked_uncertain", latest.attempt_id, null);
+    }
+    if (delivery.send_fence.status === "no_further_send") {
+        return resultFor(delivery, "withdrawn", latest?.attempt_id ?? null, null);
     }
     if (latest?.outcome === "failed" && !latest.retryable) {
         return resultFor(delivery, "failed_non_retryable", latest.attempt_id, null);
@@ -620,7 +701,8 @@ export async function reconcileSurfaceDelivery(
         externalMessageId,
         observedAt,
     });
-    await markCanonicalDeliveryDisplayed(store, delivery.cognitionId);
+    if (delivery.origin.kind === "ordinary_cognition")
+        await markCanonicalDeliveryDisplayed(store, delivery.cognitionId);
     document = await ledger.load();
     delivery = requireDelivery(document, deliveryId);
     latest = latestDeliveryAttempt(delivery);
@@ -719,7 +801,7 @@ function resultFor(
 }
 
 function emptyLedger(): InteractionLedgerDocument {
-    return { ledger_version: 2, inbound_occurrences: [], deliveries: [] };
+    return { ledger_version: 3, inbound_occurrences: [], deliveries: [] };
 }
 
 function ledgerVersion(value: unknown) {
@@ -728,7 +810,7 @@ function ledgerVersion(value: unknown) {
 
 function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): InteractionLedgerDocument {
     return {
-        ledger_version: 2,
+        ledger_version: 3,
         inbound_occurrences: structuredClone(legacy.inbound_occurrences),
         deliveries: legacy.deliveries.map((delivery) => ({
             delivery_id: delivery.delivery_id,
@@ -737,6 +819,8 @@ function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): Interacti
             surface_id: delivery.surface_id,
             destination_id: delivery.destination_id,
             intended_at: delivery.intended_at,
+            origin: { kind: "ordinary_cognition" },
+            send_fence: { status: "open" },
             representation: null,
             attempts: delivery.attempts.map((attempt) => ({
                 attempt_id: attempt.attempt_id,
@@ -747,6 +831,18 @@ function migrateLegacyLedger(legacy: LegacyInteractionLedgerDocument): Interacti
                 retry_after_seconds: null,
                 external_message_id: attempt.external_message_id,
             })),
+        })),
+    };
+}
+
+function migrateV2Ledger(legacy: V2InteractionLedgerDocument): InteractionLedgerDocument {
+    return {
+        ledger_version: 3,
+        inbound_occurrences: structuredClone(legacy.inbound_occurrences),
+        deliveries: legacy.deliveries.map((delivery) => ({
+            ...structuredClone(delivery),
+            origin: { kind: "ordinary_cognition" },
+            send_fence: { status: "open" },
         })),
     };
 }
@@ -820,11 +916,22 @@ function validateLedger(value: unknown): asserts value is InteractionLedgerDocum
     if (!isObject(value)) throw new ValidationError("interaction ledger must be an object");
     if (!exactKeys(value, ["deliveries", "inbound_occurrences", "ledger_version"]))
         throw new ValidationError("interaction ledger contains unsupported fields");
-    if (value.ledger_version !== 2) throw new ValidationError("interaction ledger version is unsupported");
+    if (value.ledger_version !== 3) throw new ValidationError("interaction ledger version is unsupported");
     if (!Array.isArray(value.inbound_occurrences))
         throw new ValidationError("interaction ledger inbound_occurrences must be a list");
     if (!Array.isArray(value.deliveries)) throw new ValidationError("interaction ledger deliveries must be a list");
     validateLedgerRecords(value.inbound_occurrences, value.deliveries, validateDeliveryRecord);
+}
+
+function validateV2Ledger(value: unknown): asserts value is V2InteractionLedgerDocument {
+    if (!isObject(value)) throw new ValidationError("interaction ledger must be an object");
+    if (!exactKeys(value, ["deliveries", "inbound_occurrences", "ledger_version"]))
+        throw new ValidationError("interaction ledger contains unsupported fields");
+    if (value.ledger_version !== 2) throw new ValidationError("interaction ledger version is unsupported");
+    if (!Array.isArray(value.inbound_occurrences))
+        throw new ValidationError("interaction ledger inbound_occurrences must be a list");
+    if (!Array.isArray(value.deliveries)) throw new ValidationError("interaction ledger deliveries must be a list");
+    validateLedgerRecords(value.inbound_occurrences, value.deliveries, validateV2DeliveryRecord);
 }
 
 function validateLegacyLedger(value: unknown): asserts value is LegacyInteractionLedgerDocument {
@@ -858,11 +965,18 @@ function validateLedgerRecords(inbound: unknown[], deliveries: unknown[], valida
 
     const deliveryIds = new Set<string>();
     const attemptIds = new Set<string>();
+    const proactiveIntentIds = new Set<string>();
     for (const raw of deliveries) {
         validateDelivery(raw);
         const record = raw as { delivery_id: string; attempts: Array<{ attempt_id: string }> };
         if (deliveryIds.has(record.delivery_id)) throw new ValidationError("duplicate delivery_id");
         deliveryIds.add(record.delivery_id);
+        const origin = (raw as DeliveryRecord).origin;
+        if (origin?.kind === "proactive_contact") {
+            if (proactiveIntentIds.has(origin.contact_intent_id))
+                throw new ValidationError("duplicate proactive contact delivery");
+            proactiveIntentIds.add(origin.contact_intent_id);
+        }
         for (const attempt of record.attempts) {
             if (attemptIds.has(attempt.attempt_id)) throw new ValidationError("duplicate delivery attempt_id");
             attemptIds.add(attempt.attempt_id);
@@ -928,12 +1042,51 @@ const DELIVERY_IDENTITY_FIELDS = [
 
 function validateDeliveryRecord(value: unknown) {
     if (!isObject(value)) throw new ValidationError("delivery record must be an object");
+    const fields = [...DELIVERY_IDENTITY_FIELDS, "origin", "send_fence", "representation", "attempts"];
+    if (!exactKeys(value, fields)) throw new ValidationError("delivery record contains unsupported fields");
+    validateDeliveryIdentityFields(value);
+    validateDeliveryOrigin(value.origin);
+    validateDeliverySendFence(value.send_fence);
+    if (value.representation !== null) validateDeliveryRepresentation(value.representation);
+    if (!Array.isArray(value.attempts)) throw new ValidationError("delivery attempts must be a list");
+    for (const attempt of value.attempts) validateDeliveryAttempt(attempt);
+}
+
+function validateV2DeliveryRecord(value: unknown) {
+    if (!isObject(value)) throw new ValidationError("delivery record must be an object");
     const fields = [...DELIVERY_IDENTITY_FIELDS, "representation", "attempts"];
     if (!exactKeys(value, fields)) throw new ValidationError("delivery record contains unsupported fields");
     validateDeliveryIdentityFields(value);
     if (value.representation !== null) validateDeliveryRepresentation(value.representation);
     if (!Array.isArray(value.attempts)) throw new ValidationError("delivery attempts must be a list");
     for (const attempt of value.attempts) validateDeliveryAttempt(attempt);
+}
+
+function validateDeliveryOrigin(value: unknown): asserts value is DeliveryOrigin {
+    if (!isObject(value)) throw new ValidationError("delivery origin must be an object");
+    if (value.kind === "ordinary_cognition") {
+        if (!exactKeys(value, ["kind"]))
+            throw new ValidationError("ordinary delivery origin contains unsupported fields");
+        return;
+    }
+    if (value.kind !== "proactive_contact" || !exactKeys(value, ["contact_intent_id", "kind", "policy_assessment_id"]))
+        throw new ValidationError("delivery origin is invalid");
+    if (typeof value.contact_intent_id !== "string" || !value.contact_intent_id.startsWith("contact-intent-"))
+        throw new ValidationError("delivery proactive contact intent id is invalid");
+    if (typeof value.policy_assessment_id !== "string" || !value.policy_assessment_id.startsWith("contact-policy-"))
+        throw new ValidationError("delivery proactive policy assessment id is invalid");
+}
+
+function validateDeliverySendFence(value: unknown): asserts value is DeliverySendFence {
+    if (!isObject(value)) throw new ValidationError("delivery send fence must be an object");
+    if (value.status === "open") {
+        if (!exactKeys(value, ["status"])) throw new ValidationError("open delivery fence contains unsupported fields");
+        return;
+    }
+    if (value.status !== "no_further_send" || !exactKeys(value, ["basis", "fenced_at", "status"]))
+        throw new ValidationError("delivery send fence is invalid");
+    if (!isRfc3339Utc(value.fenced_at)) throw new ValidationError("delivery fenced_at is invalid");
+    validateOpaque(value.basis, "delivery fence basis");
 }
 
 function validateLegacyDeliveryRecord(value: unknown) {

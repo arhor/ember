@@ -10,11 +10,12 @@ import type { MemoryProposalGenerator } from "../../memory/memory-proposal-gener
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
+import { ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
 import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
 import { ValidationError } from "../../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
 import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
 import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
 import { ObjectiveActionCoordinator } from "../../objectives/objective-action.ts";
@@ -385,7 +386,12 @@ export async function reconcileTelegramDeliveries(
         const results = [];
         for (const delivery of ledger.deliveries) {
             if (signal?.aborted) break;
-            if (delivery.surface_id !== TELEGRAM_SURFACE_ID || !pendingCognitionIds.has(delivery.cognitionId)) continue;
+            if (
+                delivery.origin.kind !== "ordinary_cognition" ||
+                delivery.surface_id !== TELEGRAM_SURFACE_ID ||
+                !pendingCognitionIds.has(delivery.cognitionId)
+            )
+                continue;
             const destination = parseTelegramDestination(delivery.destination_id);
             if (destination.chatId !== config.chat_id)
                 throw new ValidationError("Telegram delivery destination no longer matches configured private chat");
@@ -401,6 +407,105 @@ export async function reconcileTelegramDeliveries(
                     observedAt === undefined ? {} : { observedAt },
                 ),
             );
+        }
+        return results;
+    } finally {
+        await store.releaseWriteLease(lease);
+    }
+}
+
+export async function reconcileTelegramProactiveContacts(
+    config: TelegramSurfaceConfig,
+    api: TelegramDeliveryApi,
+    { signal, observedAt = nowUtc() }: { signal?: AbortSignal | undefined; observedAt?: string } = {},
+) {
+    validateTelegramSurfaceConfig(config);
+    const store = new StateStore(config.state_path);
+    const lease = await store.acquireWriteLease();
+    try {
+        const state = await store.load();
+        const contacts = new ProactiveContactStore(config.state_path);
+        const ledger = new InteractionLedgerStore(config.state_path);
+        const document = await contacts.load();
+        const results = [];
+        for (const intent of document.intents) {
+            if (signal?.aborted) break;
+            const admitted = intent.policy_decisions.findLast(
+                (decision) => decision.outcome === "admit" && decision.selected_surface_id === TELEGRAM_SURFACE_ID,
+            );
+            const selectedForTelegram =
+                intent.handoff?.surface_id === TELEGRAM_SURFACE_ID ||
+                (["pending", "deferred"].includes(intent.disposition) && admitted !== undefined);
+            if (!selectedForTelegram || intent.disposition === "satisfied") continue;
+            if (state.runtimeContract.localPrincipal !== config.principal)
+                throw new ValidationError("Telegram proactive principal differs from initialized local principal");
+            if (intent.principal !== config.principal)
+                throw new ValidationError("proactive contact principal does not match Telegram configuration");
+            if (intent.scope !== config.activeScope)
+                throw new ValidationError("proactive contact scope does not match Telegram configuration");
+            const assessmentId = intent.handoff?.assessment_id ?? admitted?.assessment_id;
+            if (assessmentId === undefined)
+                throw new ValidationError("Telegram proactive contact is missing its admitted assessment");
+            const destinationId = `telegram:chat:${config.chat_id}`;
+            const currentLedger = await ledger.load();
+            let delivery = currentLedger.deliveries.find(
+                (item) =>
+                    item.origin.kind === "proactive_contact" &&
+                    item.origin.contact_intent_id === intent.contact_intent_id,
+            );
+            if (intent.handoff !== null) {
+                if (delivery === undefined || delivery.delivery_id !== intent.handoff.delivery_id)
+                    throw new ValidationError("proactive contact handoff has no matching delivery correlation");
+            } else if (delivery === undefined) {
+                delivery = await ledger.createDeliveryIntent({
+                    cognitionId: intent.source.cognition_id,
+                    expressionEvidenceId: intent.source.expression_evidence_id,
+                    surfaceId: TELEGRAM_SURFACE_ID,
+                    destinationId,
+                    representationText: intent.representation.text,
+                    origin: {
+                        kind: "proactive_contact",
+                        contact_intent_id: intent.contact_intent_id,
+                        policy_assessment_id: assessmentId,
+                    },
+                });
+            }
+            if (delivery === undefined) throw new ValidationError("proactive contact delivery could not be resolved");
+            if (
+                delivery.origin.kind !== "proactive_contact" ||
+                delivery.origin.contact_intent_id !== intent.contact_intent_id ||
+                delivery.origin.policy_assessment_id !== assessmentId
+            )
+                throw new ValidationError("proactive delivery origin conflicts with the contact correlation");
+            if (delivery.surface_id !== TELEGRAM_SURFACE_ID)
+                throw new ValidationError("proactive delivery surface conflicts with Telegram selection");
+            if (delivery.destination_id !== destinationId)
+                throw new ValidationError("proactive delivery destination no longer matches configured private chat");
+            if (delivery.representation?.contentDigest !== intent.representation.digest)
+                throw new ValidationError("proactive delivery representation digest differs from the contact intent");
+            if (intent.handoff === null) {
+                await contacts.adoptHandoff({
+                    contactIntentId: intent.contact_intent_id,
+                    assessmentId,
+                    surfaceId: TELEGRAM_SURFACE_ID,
+                    deliveryId: delivery.delivery_id,
+                    representationDigest: intent.representation.digest,
+                    handedOffAt: observedAt,
+                });
+            }
+            const result = await reconcileSurfaceDelivery(
+                store,
+                delivery.delivery_id,
+                (text) => deliverTelegramMessage(api, config.chat_id, text, { signal }),
+                { observedAt },
+            );
+            await contacts.recordReconciliationOutcome(intent.contact_intent_id, {
+                delivery_id: delivery.delivery_id,
+                attempt_id: result.attemptId,
+                status: result.status,
+                observed_at: observedAt,
+            });
+            results.push(result);
         }
         return results;
     } finally {
@@ -437,6 +542,7 @@ export async function runTelegramPolling(
     let acceptedCount = 0;
     while (!signal?.aborted) {
         await reconcileTelegramDeliveries(config, api, { signal });
+        await reconcileTelegramProactiveContacts(config, api, { signal });
         if (signal?.aborted) return;
 
         let updates: TelegramUpdate[];

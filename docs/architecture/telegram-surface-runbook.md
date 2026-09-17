@@ -309,6 +309,21 @@ representation without new cognition, while `uncertain` remains blocked. The
 transport-neutral rules live in
 [Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
 
+The same pre-poll recovery pass also bridges admitted proactive contacts. It selects
+only intents whose policy chose logical surface `telegram_bot` and whose principal
+and scope exactly match the configured mapping. The bridge creates or adopts one
+ledger-v3 delivery with a proactive origin, binds it to
+`telegram:chat:<configured-chat-id>`, verifies the retained-representation digest,
+commits the intent-side handoff, and then calls the shared delivery reconciler. The
+semantic contact sidecar never stores the chat ID or returned Telegram message ID.
+
+This ordering recovers process loss after admission, delivery creation, handoff, or
+send start. A definite retryable failure reuses the same delivery and bytes; a
+non-retryable failure remains truthfully handed off; `started` becomes `uncertain` on
+restart; and uncertainty never causes automatic resend or cross-surface fallback.
+Confirmed transport evidence satisfies only an intent whose declared boundary is
+transport acceptance. No Telegram configuration-version change is required.
+
 Telegram currently limits ordinary `sendMessage` text. The current surface does not
 split one Ember expression into multiple Telegram messages because that would require
 multi-message delivery semantics not present in the current boundary. An oversized
@@ -363,6 +378,11 @@ Telegram exchange it can show logical surface `telegram_bot`,
 `configured_surface_mapping`, configured destination, stable update/message metadata,
 and confirmed/failed/uncertain delivery attempts including the outbound Telegram
 message ID when observed.
+
+The `proactiveContacts` section shows the semantic intent and its disposition,
+policy evidence, handoff correlation, and delivery observations. Retained text is
+redacted to availability and digest. Chat and Telegram message IDs appear only in
+the operational interaction records.
 
 This operator visibility does not move those values into canonical meanings or
 provider context. Inspection and cognition projection are deliberately different

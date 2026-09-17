@@ -4,17 +4,26 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
+import type { ContactAttentionDecisionRecord } from "../src/agency/proactive-contact-attention-policy.ts";
+import type { MeaningId } from "../src/core/model.ts";
 import type { ProviderInvoker } from "../src/providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
+import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
+import {
+    InteractionLedgerStore,
+    SurfaceDeliveryFailure,
+    runSurfaceInteraction,
+} from "../src/runtime/interaction-boundary.ts";
+import { startRuntime } from "../src/runtime/runtime.ts";
 import {
     createTelegramApi,
     deliverTelegramMessage,
     processTelegramUpdate,
     reconcileTelegramDeliveries,
+    reconcileTelegramProactiveContacts,
     runTelegramPolling,
 } from "../src/surfaces/telegram/index.ts";
 
@@ -92,6 +101,98 @@ function readyApi(overrides: Record<string, unknown> = {}) {
         sendMessage: async () => sentMessage(9999),
         ...overrides,
     } as Parameters<typeof runTelegramPolling>[1];
+}
+
+async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suffix = "release") {
+    const lease = await f.store.acquireWriteLease();
+    let interaction: Awaited<ReturnType<typeof runSurfaceInteraction>>;
+    try {
+        const loaded = await f.store.load();
+        const started = startRuntime(loaded, PRINCIPAL, "private");
+        const state = await f.store.commit(loaded.revision, started.state);
+        interaction = await runSurfaceInteraction(f.store, state, {
+            runtimeId: started.runtimeId,
+            principal: PRINCIPAL,
+            scope: "private",
+            text: "internal cognition source",
+            providerLabel: "fixture-provider",
+            timeoutSeconds: 1,
+            provider: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
+            surfaceId: "internal:test",
+            principalProvenance: "explicit_local_argument",
+            deliveryDestinationId: null,
+            deliver: () => ({ externalMessageId: "internal-display" }),
+        });
+    } finally {
+        await f.store.releaseWriteLease(lease);
+    }
+    const state = await f.store.load();
+    const cognition = state.operations.cognitionEpisodes.find((item) => item.cognitionId === interaction.cognitionId)!;
+    const contacts = new ProactiveContactStore(f.statePath);
+    const contactIntentId = `contact-intent-${suffix}` as const;
+    const assessmentId = `contact-policy-${suffix}` as const;
+    const groundingMeaningId = `meaning-${suffix}` as MeaningId;
+    const created = await contacts.createIntent({
+        contactIntentId,
+        purpose: "Notify the principal about the release",
+        principal: PRINCIPAL,
+        scope: "private",
+        source: {
+            cognition_id: cognition.cognitionId,
+            expression_evidence_id: cognition.expressionEvidenceId!,
+            opportunity_id: `opportunity-${suffix}`,
+            evidence_ids: [`evidence-source-${suffix}`],
+            grounding_meaning_ids: [groundingMeaningId],
+            source_revision: state.revision,
+        },
+        groundingCurrentness: {
+            status: "current",
+            evidence_ids: [`evidence-grounding-${suffix}`],
+            assessed_at: "2026-09-17T12:00:00Z",
+        },
+        representation: {
+            text: `proactive message ${suffix}`,
+            currentness: "current",
+            evidence_ids: [`evidence-representation-${suffix}`],
+            classification: "private",
+        },
+        urgency: "ordinary",
+        urgencyMeaningIds: [],
+        expiresAt: null,
+        satisfactionBoundary: "transport_acceptance",
+        createdAt: "2026-09-17T12:00:00Z",
+    });
+    const decision: ContactAttentionDecisionRecord = {
+        assessment_id: assessmentId,
+        contact_intent_id: contactIntentId,
+        considered_at: "2026-09-17T12:01:00Z",
+        source_revision: state.revision,
+        current_revision: state.revision,
+        outcome: "admit",
+        basis: "current_authorized_intent",
+        interruption: "interrupt",
+        selected_surface_id: "telegram_bot",
+        next_step_owner: null,
+        reconsideration: null,
+        evidence: {
+            grounding_meaning_ids: [groundingMeaningId],
+            representation_evidence_ids: [`evidence-representation-${suffix}`],
+            authority: { status: "authorized", evidence_ids: [`evidence-authority-${suffix}`] },
+            attention: { status: "available", evidence_ids: [`evidence-attention-${suffix}`] },
+            occurrence: { status: "distinct", related_intent_id: null, evidence_ids: [`evidence-distinct-${suffix}`] },
+            surfaces: [
+                {
+                    surface_id: "telegram_bot",
+                    preference_rank: 1,
+                    status: "eligible",
+                    evidence_ids: [`evidence-surface-${suffix}`],
+                },
+            ],
+            supersession_evidence_ids: [],
+        },
+    };
+    await contacts.recordPolicyDecision(decision);
+    return { contacts, created, assessmentId, cognition };
 }
 
 test("Telegram flood control exposes retry_after as a definite retryable delivery failure", async () => {
@@ -336,6 +437,124 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
         assert.equal(sends, 1);
         assert.equal(providerCalls.value, 1);
         assert.equal((await f.store.load()).operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
+    } finally {
+        await f.close();
+    }
+});
+
+test("an admitted proactive contact creates one Telegram delivery and becomes satisfied on confirmation", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f);
+        let sends = 0;
+        const results = await reconcileTelegramProactiveContacts(
+            f.config,
+            {
+                sendMessage: async ({ text }: { text: string }) => {
+                    sends += 1;
+                    assert.equal(text, "proactive message release");
+                    return sentMessage(7001);
+                },
+            } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:02:00Z" },
+        );
+        assert.equal(results[0]?.status, "confirmed");
+        assert.equal(sends, 1);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.disposition, "satisfied");
+        assert.equal(intent.handoff?.surface_id, "telegram_bot");
+        const proactive = (await new InteractionLedgerStore(f.statePath).load()).deliveries.filter(
+            (delivery) => delivery.origin.kind === "proactive_contact",
+        );
+        assert.equal(proactive.length, 1);
+        assert.equal(proactive[0]?.attempts[0]?.outcome, "confirmed");
+
+        const replay = await reconcileTelegramProactiveContacts(f.config, readyApi(), {
+            observedAt: "2026-09-17T12:03:00Z",
+        });
+        assert.deepEqual(replay, []);
+        assert.equal(sends, 1);
+    } finally {
+        await f.close();
+    }
+});
+
+test("proactive Telegram retry and uncertainty retain one handoff without new delivery", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "retry");
+        let sends = 0;
+        const failed = await reconcileTelegramProactiveContacts(
+            f.config,
+            {
+                sendMessage: async () => {
+                    sends += 1;
+                    throw new SurfaceDeliveryFailure("retryable", { outcome: "failed", retryable: true });
+                },
+            } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:02:00Z" },
+        );
+        assert.equal(failed[0]?.status, "retryable_failure");
+        assert.equal((await contact.contacts.load()).intents[0]?.disposition, "handed_off");
+
+        const confirmed = await reconcileTelegramProactiveContacts(
+            f.config,
+            {
+                sendMessage: async () => {
+                    sends += 1;
+                    return sentMessage(7002);
+                },
+            } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:03:00Z" },
+        );
+        assert.equal(confirmed[0]?.status, "confirmed");
+        assert.equal(sends, 2);
+        const ledger = await new InteractionLedgerStore(f.statePath).load();
+        const proactive = ledger.deliveries.filter((delivery) => delivery.origin.kind === "proactive_contact");
+        assert.equal(proactive.length, 1);
+        assert.deepEqual(
+            proactive[0]?.attempts.map((attempt) => attempt.outcome),
+            ["failed", "confirmed"],
+        );
+    } finally {
+        await f.close();
+    }
+});
+
+test("a proactive delivery created before intent-side handoff is adopted, and confirmed evidence is not resent", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "adopt");
+        const ledger = new InteractionLedgerStore(f.statePath);
+        const delivery = await ledger.createDeliveryIntent({
+            cognitionId: contact.created.source.cognition_id,
+            expressionEvidenceId: contact.created.source.expression_evidence_id,
+            surfaceId: "telegram_bot",
+            destinationId: `telegram:chat:${CHAT_ID}`,
+            representationText: contact.created.representation.text,
+            origin: {
+                kind: "proactive_contact",
+                contact_intent_id: contact.created.contact_intent_id,
+                policy_assessment_id: contact.assessmentId,
+            },
+        });
+        const attempt = await ledger.startDeliveryAttempt(delivery.delivery_id, "2026-09-17T12:02:00Z");
+        await ledger.finishDeliveryAttempt(attempt.attempt_id, "confirmed", {
+            externalMessageId: "7003",
+            observedAt: "2026-09-17T12:02:01Z",
+        });
+
+        let sends = 0;
+        const result = await reconcileTelegramProactiveContacts(
+            f.config,
+            { sendMessage: async () => (sends += 1) } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:03:00Z" },
+        );
+        assert.equal(result[0]?.status, "confirmed");
+        assert.equal(sends, 0);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.handoff?.delivery_id, delivery.delivery_id);
+        assert.equal(intent.disposition, "satisfied");
     } finally {
         await f.close();
     }

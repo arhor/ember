@@ -287,6 +287,32 @@ reconciles by stable identities rather than rerunning cognition:
 These invariants require crash-consistent correlation but do not prescribe a
 database, transaction mechanism, queue, event-sourcing model, or runtime topology.
 
+## Implemented persistence and inspection
+
+Issue #228 implements this lifecycle in the versioned
+`<state-path>.proactive-contacts.json` sidecar. `ProactiveContactStore` retains the
+surface-independent purpose, principal and scope, source cognition and evidence,
+grounding/currentness, immutable representation and digest, urgency/expiry,
+satisfaction boundary, disposition, policy decisions, handoff, and idempotent
+delivery observations. It contains no Telegram chat or message identifier.
+
+Policy `defer` and `suppress` decisions advance the disposition when recorded. An
+`admit` decision remains attached to the pending or deferred intent until a delivery
+record exists and the handoff commits. A crash in between is repaired by adopting
+the unique delivery whose proactive origin names the same contact intent and policy
+assessment. Digest or cross-intent correlation disagreement fails closed.
+
+The interaction ledger v3 owns the independent delivery occurrence. Its proactive
+origin records the contact-intent and assessment IDs, and its durable
+`no_further_send` fence prevents both first sends and retries. Reconciliation turns a
+fenced unattempted or definitely failed delivery into `withdrawn`; confirmed evidence
+remains confirmed, and a started or uncertain attempt remains blocked as possibly
+effectful.
+
+`ember inspect` loads both sidecars. It exposes policy evidence, handoff correlation,
+delivery state, attempts, and uncertainty while replacing retained representation
+text with availability/currentness/classification and its SHA-256 digest.
+
 ## Relationship to existing and later boundaries
 
 - The [endogenous cognition decision](endogenous-cognition-decision.md) decides
@@ -302,13 +328,14 @@ database, transaction mechanism, queue, event-sourcing model, or runtime topolog
   from issue #227 moves a live intent toward `deferred`, `suppressed`, or an
   eligible handoff using fresh currentness, authority, attention, duplicate, and
   generic surface evidence.
-- Issue #228 owns the Telegram bridge and correlated delivery implementation.
+- The issue #228 Telegram bridge maps an admitted `telegram_bot` intent into the
+  configured private-chat delivery while keeping that chat binding out of this store.
 - Issue #229 owns behavioral evaluation of helpful contact, unwanted interruption,
   deliberate silence, and duplicate suppression.
 
-This issue defines no persistence encoding, provider prompt, model-control schema,
-surface fallback order, quiet-hour configuration, Telegram operation, or generic
-notification framework.
+This contract defines no provider prompt, model-control schema, surface fallback
+order, quiet-hour configuration, or generic notification framework. The concrete
+sidecar encoding and first Telegram bridge are subordinate implementations of it.
 
 ## Acceptance mapping
 

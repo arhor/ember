@@ -141,9 +141,17 @@ For each pending delivery owned by the surface:
 6. if confirmed delivery exists while canonical status is still `pending`, reconcile
    canonical status to `displayed` without sending again.
 
-The current Telegram helper applies this procedure only to Telegram deliveries whose
-canonical cognition remains pending and whose destination still matches the configured
-private chat.
+The current Telegram worker runs two reconciliations under the same writer lease
+discipline before each long poll. Ordinary deliveries are selected only when their
+v3 origin is `ordinary_cognition`, canonical cognition remains pending, and the
+destination matches the configured private chat. Proactive deliveries are selected
+through the correlated contact store and must match its principal, scope, selected
+logical surface, policy assessment, representation digest, and configured-chat
+binding before this same reconciliation path may send.
+
+Interaction-ledger v1 and v2 documents migrate in memory to v3 as
+`ordinary_cognition` origins with open send fences. Migration does not invent
+proactive correlation. A proactive contact may have only one ledger delivery.
 
 ## Inspection
 
@@ -162,6 +170,10 @@ The payload itself stays out of operator inspection and provider cognition conte
 This keeps restart recovery possible without turning the interaction sidecar into a
 second user-visible transcript or canonical memory store.
 
+For proactive contacts, inspection additionally exposes the redacted semantic intent,
+policy evidence, handoff IDs, origin, send fence, and delivery observations. Telegram
+chat/message identifiers remain only in the interaction view.
+
 ## Failure and crash boundaries
 
 The following distinctions are deliberate:
@@ -176,6 +188,12 @@ The following distinctions are deliberate:
   when allowed by explicit retry evidence;
 - confirmed transport result before canonical `displayed` commit: reconcile canonical
   status from the confirmed ledger without sending again.
+- crash after proactive admission but before delivery creation: create one delivery
+  from the retained representation without rerunning cognition;
+- crash after proactive delivery creation but before intent-side handoff: adopt that
+  unique origin correlation before sending; and
+- confirmed proactive delivery before intent-side satisfaction: mark a
+  transport-acceptance boundary satisfied without sending again.
 
 These are at-least-once transport realities represented truthfully. Ember does not
 claim exactly-once delivery.
