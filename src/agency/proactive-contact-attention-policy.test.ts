@@ -4,6 +4,7 @@ import test from "node:test";
 import type { MeaningId } from "../core/model.ts";
 import type {
     ContactAttentionPolicyRequest,
+    ContactOccurrenceAssessment,
     ProactiveContactIntentSnapshot,
 } from "./proactive-contact-attention-policy.ts";
 
@@ -179,6 +180,64 @@ test("attention policy should suppress an intent when a successor has superseded
     // Then
     assert.deepEqual([decision.outcome, decision.basis], ["suppress", "superseded_intent"]);
     assert.deepEqual(decision.evidence.supersession_evidence_ids, ["evidence-successor-committed"]);
+});
+
+test("attention policy should prefer terminal suppression when temporary deferral evidence also exists", () => {
+    // Given
+    const f = fixture();
+    const staleRepresentation = intent(f.state.revision, f.commitmentId, {
+        representation: {
+            digest: DIGEST,
+            currentness: "stale",
+            evidence_ids: ["evidence-representation-stale"],
+        },
+    });
+    const unknownRepresentation = intent(f.state.revision, f.commitmentId, {
+        representation: {
+            digest: DIGEST,
+            currentness: "unknown",
+            evidence_ids: ["evidence-representation-currentness-unknown"],
+        },
+    });
+    const confirmedDuplicate: ContactOccurrenceAssessment = {
+        status: "confirmed_duplicate",
+        related_intent_id: "contact-intent-existing-release-reminder",
+        evidence_ids: ["evidence-domain-correlation"],
+    };
+
+    // When
+    const deniedWithStaleRepresentation = decideProactiveContactAttention(
+        f.state,
+        staleRepresentation,
+        request({ authority: { status: "denied", evidence_ids: ["evidence-authority-denied"] } }),
+    );
+    const duplicateWithUnknownRepresentation = decideProactiveContactAttention(
+        f.state,
+        unknownRepresentation,
+        request({ occurrence: confirmedDuplicate }),
+    );
+    const duplicateWithUnknownAuthority = decideProactiveContactAttention(
+        f.state,
+        intent(f.state.revision, f.commitmentId),
+        request({
+            authority: { status: "unknown", evidence_ids: ["evidence-authority-not-established"] },
+            occurrence: confirmedDuplicate,
+        }),
+    );
+
+    // Then
+    assert.deepEqual(
+        [deniedWithStaleRepresentation.outcome, deniedWithStaleRepresentation.basis],
+        ["suppress", "authority_denied"],
+    );
+    assert.deepEqual(
+        [duplicateWithUnknownRepresentation.outcome, duplicateWithUnknownRepresentation.basis],
+        ["suppress", "duplicate_intent"],
+    );
+    assert.deepEqual(
+        [duplicateWithUnknownAuthority.outcome, duplicateWithUnknownAuthority.basis],
+        ["suppress", "duplicate_intent"],
+    );
 });
 
 test("attention policy should suppress a stale intent when grounding changes before interruption", () => {

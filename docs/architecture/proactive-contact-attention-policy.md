@@ -97,11 +97,12 @@ The gate uses a conservative deterministic order:
 2. Suppress a predecessor when a named successor is already established.
 3. Suppress an expired intent or one whose semantic grounding is no longer current,
    applicable in scope, or live.
-4. Defer a stale representation until it is revalidated or a named successor is
-   established; defer unknown representation currentness until it is resolved.
-5. Suppress denied authority and defer unknown authority.
-6. Suppress a provenance-confirmed duplicate; defer when occurrence identity is
-   uncertain.
+4. Suppress denied authority.
+5. Suppress a provenance-confirmed duplicate.
+6. Only after every independent terminal check passes, defer a stale representation
+   until it is revalidated or a named successor is established; defer unknown
+   representation currentness, authority, or occurrence identity until the
+   corresponding evidence is resolved.
 7. Defer ordinary contact during a bounded quiet period. Explicitly grounded
    time-sensitive contact may continue through the remaining checks.
 8. Select the lowest-ranked eligible generic surface, with surface identity as a
@@ -109,7 +110,13 @@ The gate uses a conservative deterministic order:
    currently eligible.
 9. Admit only after every preceding check passes.
 
-This order ensures that a convenient surface or apparent urgency cannot rescue a
+All independent terminal suppression evidence precedes every temporary deferral.
+Therefore stale or unknown representation evidence cannot keep a denied occurrence
+live, and unknown representation or authority evidence cannot keep a
+provenance-confirmed duplicate live. When several terminal facts coexist, the basis
+uses the order above—supersession, expiry or stale grounding, denied authority, then
+confirmed duplicate—while the outcome remains terminal suppression in every case.
+This also ensures that a convenient surface or apparent urgency cannot rescue a
 stale, unauthorized, duplicated, or superseded contact occurrence.
 
 ## Currentness before interruption
@@ -217,14 +224,16 @@ across host locale and ICU configurations while leaving surface IDs opaque.
 2. ordinary-contact deferral through the end of a bounded quiet period;
 3. replay-stable suppression of a provenance-confirmed duplicate;
 4. suppression of an intent with a named successor;
-5. fresh grounding revalidation after the underlying commitment becomes fulfilled;
-6. stale-representation deferral until revalidation or successor establishment;
-7. typed reconsideration ownership for unresolved representation and occurrence
+5. terminal suppression precedence over unrelated representation or authority
+   deferral evidence;
+6. fresh grounding revalidation after the underlying commitment becomes fulfilled;
+7. stale-representation deferral until revalidation or successor establishment;
+8. typed reconsideration ownership for unresolved representation and occurrence
    evidence;
-8. deferral when all surfaces are unavailable;
-9. authority remaining unknown despite an eligible surface;
-10. locale-independent equal-rank surface selection; and
-11. grounded time-sensitive contact continuing through a quiet-period check.
+9. deferral when all surfaces are unavailable;
+10. authority remaining unknown despite an eligible surface;
+11. locale-independent equal-rank surface selection; and
+12. grounded time-sensitive contact continuing through a quiet-period check.
 
 The tests use no provider, network, Telegram identifier, wall-clock dependency, or
 transport implementation.

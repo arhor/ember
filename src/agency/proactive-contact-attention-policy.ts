@@ -168,6 +168,11 @@ export function decideProactiveContactAttention(
     if (!hasCurrentGrounding(state, intent, consideredAt)) {
         return suppressDecision(base, "stale_grounding");
     }
+    if (request.authority.status === "denied") return suppressDecision(base, "authority_denied");
+    if (request.occurrence.status === "confirmed_duplicate") {
+        return suppressDecision(base, "duplicate_intent");
+    }
+
     if (intent.representation.currentness === "stale") {
         return deferDecision(base, "representation_stale", "ember_intent_owner", {
             kind: "evidence_change",
@@ -180,15 +185,11 @@ export function decideProactiveContactAttention(
             signal: "representation_currentness",
         });
     }
-    if (request.authority.status === "denied") return suppressDecision(base, "authority_denied");
     if (request.authority.status === "unknown") {
         return deferDecision(base, "authority_unknown", "ember_attention_policy", {
             kind: "evidence_change",
             signal: "authority",
         });
-    }
-    if (request.occurrence.status === "confirmed_duplicate") {
-        return suppressDecision(base, "duplicate_intent");
     }
     if (request.occurrence.status === "identity_uncertain") {
         return deferDecision(base, "duplicate_identity_uncertain", "ember_attention_policy", {
