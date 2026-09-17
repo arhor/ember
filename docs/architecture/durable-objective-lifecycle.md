@@ -46,17 +46,27 @@ whose progress or resolution can matter beyond one bounded attempt. It is not ev
 user request: work that is fully handled within one interaction need not acquire a
 durable objective merely because persistence is available.
 
+For epic #235, an objective may be created only from explicit user intent: a
+user-requested purpose or work the user has explicitly authorized Ember to pursue
+across episodes. The creation evidence must establish that intent, the principal,
+and the authorized scope. An observation, model suggestion, remembered concern,
+standing capability, or Ember-originated motive may inform already-authorized work,
+but none is currently eligible to create a durable objective. The representation
+must retain typed creation provenance so a later endogenous-agency design can add
+other eligible roots deliberately without weakening or retroactively reinterpreting
+this boundary.
+
 An objective preserves at least these responsibilities:
 
-| Responsibility               | Meaning                                                                                                                                                                                                                                                                             |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stable identity              | One Ember-owned identity for this continuing purpose, independent of provider, process, thread, surface, episode, or display text. Similar wording does not merge two real objectives; a retry or resume does not create a new objective when the same purpose remains live.        |
-| Purpose and success boundary | Why the work exists, the intended outcome, governing constraints, acceptance conditions, and evidence sufficient for Ember to judge resolution.                                                                                                                                     |
-| Principal and semantic scope | On whose behalf the objective exists, whose interests are implicated, where its information may be used or disclosed, and which authority boundaries may constrain particular steps.                                                                                                |
-| Creation evidence            | The instruction, commitment, adopted concern, observation, or other attributable occurrence from which Ember established the objective, including occurrence and observation time where relevant. Creation records provenance; it does not manufacture authority beyond the source. |
-| Currentness basis            | Material assumptions, dependent canonical meaning, objective revision, relevant external facts, authority premises, and expiry or reconsideration conditions that must be checked before progress is relied upon or new action begins.                                              |
-| Lifecycle evidence           | Attributable transitions, reasons, actors, times, checkpoints, associated episodes, approvals, known or possible effects, and unresolved uncertainty. History is appended or superseded rather than rewritten to make the present look seamless.                                    |
-| Next-step responsibility     | Who currently has responsibility to decide or supply the next meaningful step, what condition can make progress possible, and whether that responsibility includes decision authority or only operational execution.                                                                |
+| Responsibility               | Meaning                                                                                                                                                                                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Stable identity              | One Ember-owned identity for this continuing purpose, independent of provider, process, thread, surface, episode, or display text. Similar wording does not merge two real objectives; a retry or resume does not create a new objective when the same purpose remains live.         |
+| Purpose and success boundary | Why the work exists, the intended outcome, governing constraints, acceptance conditions, and evidence sufficient for Ember to judge resolution.                                                                                                                                      |
+| Principal and semantic scope | On whose behalf the objective exists, whose interests are implicated, where its information may be used or disclosed, and which authority boundaries may constrain particular steps.                                                                                                 |
+| Creation evidence            | The explicit user request or authorization from which Ember established the objective, including principal, authorized scope, occurrence identity, and occurrence and observation time where relevant. Creation records provenance; it does not enlarge authority beyond the source. |
+| Currentness basis            | Material assumptions, dependent canonical meaning, objective revision, relevant external facts, authority premises, and expiry or reconsideration conditions that must be checked before progress is relied upon or new action begins.                                               |
+| Lifecycle evidence           | Attributable transitions, reasons, actors, times, checkpoints, associated episodes, approvals, known or possible effects, and unresolved uncertainty. History is appended or superseded rather than rewritten to make the present look seamless.                                     |
+| Next-step responsibility     | Who currently has responsibility to decide or supply the next meaningful step, what condition can make progress possible, and whether that responsibility includes decision authority or only operational execution.                                                                 |
 
 Objective identity is not derived from an initiating message, conversation,
 provider call, specialist task, action proposal, runtime job, or mutable title. A
@@ -85,10 +95,17 @@ The objective lifecycle records Ember's present disposition toward the purpose:
 
 `active`, `deferred`, and `blocked` are live states. `completed` and `abandoned` are
 terminal for that objective revision, but their historical evidence and external
-effects remain. New evidence can show that a completion claim was mistaken; Ember
-records a correction or creates/revises successor work rather than erasing the
-original decision. Reopening after abandonment likewise requires an attributable
-new decision and an explicit relation to the old objective.
+effects remain. A terminal revision never returns to a live state.
+
+If new evidence shows that completion was mistaken, Ember records an attributable
+correction to the completion claim and creates either a new current revision of the
+same objective or an explicitly related successor objective. That new revision or
+successor has its own lifecycle disposition, currentness basis, and success boundary;
+the prior revision remains terminal historical evidence and cannot represent resumed
+work. Reopening after abandonment follows the same rule and requires an attributable
+new user instruction or authorization. Whether continuity of purpose warrants a new
+revision or a successor is a semantic judgment, but resuming by mutating a terminal
+revision is invalid.
 
 **Uncertain is not a catch-all lifecycle state.** Uncertainty qualifies the claim it
 belongs to: progress may be uncertain, an episode outcome unknown, an effect
@@ -360,9 +377,9 @@ make a workflow framework the owner of objective meaning.
 
 ## Acceptance mapping
 
-| Issue #236 criterion                                                                                  | Design guarantee                                                                                                                                                   |
-| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Objective continuity is independent from provider/runtime session identity.                           | Stable objective identity is Ember-owned; episodes, provider threads, workers, surfaces, and workflow runtimes are bounded operational loci.                       |
-| Lifecycle and currentness/restart semantics are explicit.                                             | The five lifecycle states, orthogonal uncertainty, transition evidence, resume reconciliation, and correction/reopening rules define the required boundary.        |
-| Partial/failed/uncertain episode evidence can be associated without falsely completing the objective. | Checkpoints retain episode provenance and progress classification; only an Ember-owned completion decision against current acceptance conditions sets `completed`. |
-| Architecture docs and discovery validation pass.                                                      | This current design document carries discovery metadata and is linked from the architecture guide; repository validation supplies the executable check.            |
+| Issue #236 criterion                                                                                  | Design guarantee                                                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Objective continuity is independent from provider/runtime session identity.                           | Stable objective identity is Ember-owned; episodes, provider threads, workers, surfaces, and workflow runtimes are bounded operational loci.                                                  |
+| Lifecycle and currentness/restart semantics are explicit.                                             | The five lifecycle states, orthogonal uncertainty, transition evidence, resume reconciliation, and mandatory new-revision/successor rule for terminal reopening define the required boundary. |
+| Partial/failed/uncertain episode evidence can be associated without falsely completing the objective. | Checkpoints retain episode provenance and progress classification; only an Ember-owned completion decision against current acceptance conditions sets `completed`.                            |
+| Architecture docs and discovery validation pass.                                                      | This current design document carries discovery metadata and is linked from the architecture guide; repository validation supplies the executable check.                                       |
