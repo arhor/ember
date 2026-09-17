@@ -4,7 +4,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { tempDir } from "../../tests/support.ts";
-import { DurableObjectiveStore } from "./durable-objective.ts";
+import { DurableObjectiveStore, validateObjectiveDocument } from "./durable-objective.ts";
 
 async function createdObjective(store: DurableObjectiveStore) {
     return store.create({
@@ -243,8 +243,8 @@ test("concurrent episodes retain interleaved evidence and truthful state through
             episodeId: first.episode!.episode_id,
             recordedAt: "2026-09-17T08:08:00Z",
             acceptanceConditionIds: ["draft"],
-            progress: "partial",
-            summary: "The concurrent drafting episode produced an outline",
+            progress: "condition_satisfied",
+            summary: "The concurrent drafting episode produced the draft",
             evidenceIds: ["evidence-outline"],
             assumptions: [],
             uncertainty: null,
@@ -263,6 +263,43 @@ test("concurrent episodes retain interleaved evidence and truthful state through
             proposedNextStep: "Verify the completed draft",
         }),
     ]);
+    await store.checkpoint({
+        objectiveId: objective.objective_id,
+        episodeId: first.episode!.episode_id,
+        recordedAt: "2026-09-17T08:10:00Z",
+        acceptanceConditionIds: ["verified"],
+        progress: "condition_satisfied",
+        summary: "Delayed verification evidence from episode 1",
+        evidenceIds: ["evidence-delayed-verification"],
+        assumptions: [],
+        uncertainty: null,
+        proposedNextStep: null,
+    });
+    await assert.rejects(
+        store.resume({
+            objectiveId: objective.objective_id,
+            expectedRevision: 1,
+            assessedAt: "2026-09-17T08:16:00Z",
+            actor: "agent:ember",
+            decision: "complete",
+            reason: "evaluate out-of-order checkpoint evidence",
+            evidenceIds: ["evidence-delayed-verification", "evidence-input-check"],
+            priorEpisodeReconciliations: [
+                {
+                    episode_id: first.episode!.episode_id,
+                    outcome: "still_running",
+                    detail: "episode 1 remains observable",
+                },
+                {
+                    episode_id: second.episode!.episode_id,
+                    outcome: "still_running",
+                    detail: "episode 2 remains observable",
+                },
+            ],
+            nextStep: { owner: "unknown", description: "No further work remains" },
+        }),
+        /completion is not established for condition: verified/,
+    );
     await store.finishEpisode({
         objectiveId: objective.objective_id,
         episodeId: first.episode!.episode_id,
@@ -293,13 +330,29 @@ test("concurrent episodes retain interleaved evidence and truthful state through
     assert.equal(persisted?.episodes[0]?.status, "completed");
     assert.equal(persisted?.episodes[0]?.ended_at, "2026-09-17T08:10:00Z");
     assert.equal(persisted?.episodes[1]?.status, "running");
-    assert.equal(persisted?.checkpoints.length, 2);
+    assert.equal(persisted?.checkpoints.length, 3);
     assert.equal(persisted?.updated_at, "2026-09-17T08:16:00Z");
     assert.equal(abandoned.objective.lifecycle, "abandoned");
     assert.deepEqual(
         new Set(persisted?.checkpoints.map((checkpoint) => checkpoint.episode_id)),
         new Set([first.episode!.episode_id, second.episode!.episode_id]),
     );
+    await assert.rejects(
+        store.finishEpisode({
+            objectiveId: objective.objective_id,
+            episodeId: second.episode!.episode_id,
+            status: "completed",
+            endedAt: "2026-09-17T08:15:00Z",
+            detail: "late terminal report contradicts the later still-running assessment",
+        }),
+        /cannot predate evidence that it was still running/,
+    );
+    const forged = await store.load();
+    const forgedSecond = forged.objectives[0]!.episodes[1]!;
+    forgedSecond.status = "completed";
+    forgedSecond.ended_at = "2026-09-17T08:15:00Z";
+    forgedSecond.outcome_detail = "forged backdated terminal report";
+    assert.throws(() => validateObjectiveDocument(forged), /ends before evidence that it was still running/);
     await assert.rejects(
         store.resume({
             objectiveId: objective.objective_id,

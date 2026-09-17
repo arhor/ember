@@ -305,6 +305,12 @@ export class DurableObjectiveStore {
                 );
             if (latestCheckpoint !== null && Date.parse(input.endedAt) < Date.parse(latestCheckpoint))
                 throw new ValidationError("episode outcome cannot predate its latest checkpoint");
+            const latestStillRunningAssessment = latestStillRunningAssessmentAt(objective, episode.episode_id);
+            if (
+                latestStillRunningAssessment !== null &&
+                Date.parse(input.endedAt) < Date.parse(latestStillRunningAssessment)
+            )
+                throw new ValidationError("episode outcome cannot predate evidence that it was still running");
             episode.status = input.status;
             episode.ended_at = input.endedAt;
             episode.outcome_detail = input.detail;
@@ -578,10 +584,21 @@ function requireMutableRevision(objective: DurableObjective, revision: number) {
 }
 function requireSatisfiedConditions(objective: DurableObjective) {
     for (const condition of objective.success_conditions) {
-        const latest = objective.checkpoints.findLast((checkpoint) =>
+        const relevant = objective.checkpoints.filter((checkpoint) =>
             checkpoint.acceptance_condition_ids.includes(condition.condition_id),
         );
-        if (latest?.progress !== "condition_satisfied" || latest.uncertainty !== null)
+        const latestRecordedAt = relevant.reduce<string | null>(
+            (latest, checkpoint) =>
+                latest === null ? checkpoint.recorded_at : latestTimestamp(latest, checkpoint.recorded_at),
+            null,
+        );
+        const latest = relevant.filter((checkpoint) => checkpoint.recorded_at === latestRecordedAt);
+        if (
+            latest.length === 0 ||
+            latest.some(
+                (checkpoint) => checkpoint.progress !== "condition_satisfied" || checkpoint.uncertainty !== null,
+            )
+        )
             throw new ValidationError(
                 `objective completion is not established for condition: ${condition.condition_id}`,
             );
@@ -623,6 +640,20 @@ function requireMonotonicObjectiveTime(objective: DurableObjective, timestamp: s
 function latestTimestamp(left: string, right: string) {
     return Date.parse(left) >= Date.parse(right) ? left : right;
 }
+function latestStillRunningAssessmentAt(objective: DurableObjective, episodeId: string) {
+    return objective.assessments
+        .filter((assessment) =>
+            assessment.prior_episode_reconciliations.some(
+                (reconciliation) =>
+                    reconciliation.episode_id === episodeId && reconciliation.outcome === "still_running",
+            ),
+        )
+        .reduce<string | null>(
+            (latest, assessment) =>
+                latest === null ? assessment.assessed_at : latestTimestamp(latest, assessment.assessed_at),
+            null,
+        );
+}
 function validateObjectiveChronology(objective: DurableObjective) {
     if (Date.parse(objective.creation.observed_at) < Date.parse(objective.creation.occurred_at))
         throw new ValidationError("objective creation observation predates its occurrence");
@@ -656,6 +687,13 @@ function validateObjectiveChronology(objective: DurableObjective) {
             throw new ValidationError("objective episode start does not match its currentness assessment");
         if (episode.ended_at !== null && Date.parse(episode.ended_at) < Date.parse(episode.started_at))
             throw new ValidationError("objective episode ends before it starts");
+        const latestStillRunning = latestStillRunningAssessmentAt(objective, episode.episode_id);
+        if (
+            episode.ended_at !== null &&
+            latestStillRunning !== null &&
+            Date.parse(episode.ended_at) < Date.parse(latestStillRunning)
+        )
+            throw new ValidationError("objective episode ends before evidence that it was still running");
     }
     for (const checkpoint of objective.checkpoints) {
         const episode = objective.episodes.find((candidate) => candidate.episode_id === checkpoint.episode_id)!;

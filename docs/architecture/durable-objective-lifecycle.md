@@ -422,6 +422,15 @@ an episode cannot end before it starts or before its own checkpoints, and a chec
 must fall within its episode's observed interval. Late-arriving evidence may therefore
 carry an earlier valid occurrence time than another episode's already-recorded event;
 `updated_at` remains monotonic as the maximum timestamp in durable history.
+Completion selects relevant checkpoint evidence by maximum `recorded_at`, never by
+append order. If multiple relevant checkpoints share that latest timestamp, every
+tied checkpoint must establish the condition without uncertainty; conflicting tied
+evidence prevents completion rather than receiving an arbitrary ordering.
+
+Episode chronology also includes assessments that explicitly established the episode
+as `still_running`. A subsequently received terminal report cannot claim an
+`ended_at` earlier than such an assessment; it must be represented as corrected or
+uncertain evidence instead of making the durable history internally contradictory.
 
 ## Acceptance mapping
 
