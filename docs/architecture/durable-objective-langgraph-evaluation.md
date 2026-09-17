@@ -45,6 +45,9 @@ This evaluation was performed on **2026-09-17** against the merged implementatio
 - `src/objectives/objective-action.ts`: 158 lines binding proposals to an exact
   objective revision, source episode, and step, revalidating them, and reintegrating
   effect outcomes;
+- issue #238 also added 38 lines to `ActionProposalStore`, 10 lines to the Calendar
+  effect path, and changed 38 lines in each of the CLI and Telegram surfaces to carry
+  objective correlation and revalidation through their existing action paths;
 - 783 lines of focused tests in the adjacent objective test files, including true
   store reconstruction, fresh provider/session evidence, uncertain interruption,
   concurrent evidence, later approval, duplicate-effect prevention, and uncertain
@@ -53,27 +56,61 @@ This evaluation was performed on **2026-09-17** against the merged implementatio
   [Durable Action Proposal and Approval Correlation](durable-action-proposal-approval.md),
   and the accepted operational-continuity and authority decisions.
 
-Line counts describe current maintenance surface, not automatically replaceable
-framework boilerplate. Most of `durable-objective.ts` validates Ember meanings and
-causal evidence. LangGraph does not remove that responsibility.
+Across the six touched production files, issues #237/#238 added 983 lines and removed 28. The 887 lines under `src/objectives/` are the cohesive objective-store/coordinator
+core; the other changes extend the existing action and surface boundaries. Line counts
+describe maintenance surface, not automatically replaceable framework boilerplate.
+Most of the core validates Ember meanings and causal evidence, while the other paths
+preserve correlation at the effect boundary. LangGraph does not remove either
+responsibility. Without an adoption prototype, assigning a smaller exact replaceable
+line count would be false precision.
 
-The comparison uses stable `@langchain/langgraph@1.4.15` and current first-party
-documentation. No LangGraph package or production checkpointer was installed: the
-decision follows from the absence of a replacement target after tracing the current
-code. Consequently this evaluation makes no measured claim about Raspberry Pi RSS,
-cold start, disk use, or native-checkpointer compatibility.
+The comparison uses stable `@langchain/langgraph@1.4.15`,
+`@langchain/langgraph-checkpoint-sqlite@1.0.4`, and current first-party documentation.
+The operational evidence below comes from a pinned, disposable spike rather than an
+Ember dependency or adoption prototype.
 
 ## Concrete comparison
 
-| Requirement                            | Current Ember implementation                                                                                                                                                                                | LangGraph.js Functional API                                                                                                                                                   | Net result now                                                                                                                                                                            |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Durable checkpoints                    | One atomic, versioned objective sidecar records attributable checkpoints against acceptance conditions, assumptions, uncertainty, and source episodes.                                                      | A checkpointer persists task results, execution position, interrupts, and thread history with selectable durability.                                                          | LangGraph would add useful operational checkpoints but cannot replace the semantic ledger. Two stores or semantic duplication would result.                                               |
-| Suspend/resume and human approval      | An episode records a proposal and exits. A later process loads the same objective and proposal, verifies exact approval, rechecks currentness, and starts a new episode. No provider session remains alive. | `interrupt()` persists graph state and resumes with `Command({ resume })` under the same `thread_id`; the interrupted node/function executes again according to replay rules. | The framework shortens control-flow plumbing only if one workflow invocation must remain suspended. The implemented flow needs durable evidence, not a suspended invocation.              |
-| Replay/recovery                        | Resume reconciles every running episode, preserves unknown outcomes, and never repeats an effect whose durable attempt is already confirmed or uncertain.                                                   | Completed tasks can be reused; unfinished work may execute again. Time travel re-executes downstream model calls, API calls, and interrupts.                                  | LangGraph mechanical replay does not establish semantic retry safety and introduces another replay path that Ember must firewall.                                                         |
-| Progress/state handoff                 | Checkpoints carry observable progress and evidence; only a new currentness assessment selects a next step. Provider and runtime IDs remain episode evidence.                                                | Checkpointed task outputs and graph state pass operational data between invocations.                                                                                          | Existing handoff is intentionally semantic and provider-independent. Mirroring it into graph state creates duplication unless a future operation has substantial private execution state. |
-| Cancellation/termination observability | Objective abandonment blocks new pursuit while separately preserving running, failed, stopped, or unknown episode/effect evidence. It never equates a cancellation request with observed termination.       | Invocation cancellation or runtime drain can stop or preserve framework work, but cannot prove that remote work or an external effect stopped.                                | LangGraph may later improve local run control; it cannot replace the current truth model. There is no current objective-run cancellation loop for it to simplify.                         |
-| Testability                            | Node's built-in test runner exercises public stores/coordinators with temporary files and injected deterministic clocks/IDs; no service is required.                                                        | In-memory checkpointers and graph/node inspection support deterministic tests, while a production checkpointer adds an integration matrix.                                    | No present testability gap. Adoption adds framework replay and storage cases alongside the existing semantic oracle.                                                                      |
-| Target-host operation                  | Current code uses Node core APIs, the existing cooperating writer lease, and atomic file replacement under the systemd-supervised episodic topology.                                                        | Core adds another package/runtime vocabulary; durable production use also needs a supported persistent checkpointer. Hosted Agent Server is a materially larger topology.     | Current operation is smaller. A Pi measurement is warranted only after a workflow earns a spike; package capability alone is not a reason to install it.                                  |
+| Requirement                            | Current Ember implementation                                                                                                                                                                                | LangGraph.js Functional API                                                                                                                                                                       | Net result now                                                                                                                                                                            |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Durable checkpoints                    | One atomic, versioned objective sidecar records attributable checkpoints against acceptance conditions, assumptions, uncertainty, and source episodes.                                                      | A checkpointer persists task results, execution position, interrupts, and thread history with selectable durability.                                                                              | LangGraph would add useful operational checkpoints but cannot replace the semantic ledger. Two stores or semantic duplication would result.                                               |
+| Suspend/resume and human approval      | An episode records a proposal and exits. A later process loads the same objective and proposal, verifies exact approval, rechecks currentness, and starts a new episode. No provider session remains alive. | `interrupt()` persists graph state and resumes with `Command({ resume })` under the same `thread_id`; the interrupted node/function executes again according to replay rules.                     | The framework shortens control-flow plumbing only if one workflow invocation must remain suspended. The implemented flow needs durable evidence, not a suspended invocation.              |
+| Functional resume/recovery             | Resume reconciles every running episode, preserves unknown outcomes, and never repeats an effect whose durable attempt is already confirmed or uncertain.                                                   | Resume re-enters the entrypoint from its beginning, restores completed task/subgraph results, and may rerun unfinished tasks. Non-task code runs again and interrupt matching is order-sensitive. | The useful restoration works in the spike, but unfinished effects still need Ember idempotency/reconciliation and entrypoint evolution needs discipline.                                  |
+| Optional Graph API time travel         | Ember has no production requirement to fork or replay an objective from historical execution position.                                                                                                      | An intentionally selected historical checkpoint re-executes downstream nodes, including model calls, API requests, and interrupts.                                                                | This is a separate, optional capability and is not charged as a cost of the proposed Functional API seam. It should remain disabled for live effectful work unless separately earned.     |
+| Progress/state handoff                 | Checkpoints carry observable progress and evidence; only a new currentness assessment selects a next step. Provider and runtime IDs remain episode evidence.                                                | Checkpointed task outputs and graph state pass operational data between invocations.                                                                                                              | Existing handoff is intentionally semantic and provider-independent. Mirroring it into graph state creates duplication unless a future operation has substantial private execution state. |
+| Cancellation/termination observability | Objective abandonment blocks new pursuit while separately preserving running, failed, stopped, or unknown episode/effect evidence. It never equates a cancellation request with observed termination.       | Invocation cancellation or runtime drain can stop or preserve framework work, but cannot prove that remote work or an external effect stopped.                                                    | LangGraph may later improve local run control; it cannot replace the current truth model. There is no current objective-run cancellation loop for it to simplify.                         |
+| Testability                            | Node's built-in test runner exercises public stores/coordinators with temporary files and injected deterministic clocks/IDs; no service is required.                                                        | In-memory checkpointers and graph/node inspection support deterministic tests, while a production checkpointer adds an integration matrix.                                                        | No present testability gap. Adoption adds framework replay and storage cases alongside the existing semantic oracle.                                                                      |
+| Target-host operation                  | Current code adds no package or native dependency: it uses Node core APIs, the existing cooperating writer lease, and atomic file replacement under the systemd-supervised episodic topology.               | The measured Functional API plus local SQLite saver installs 60 packages/73.3 MiB and requires the native `better-sqlite3` addon.                                                                 | The candidate works on representative ARM, but its dependency, native-build, startup, and memory cost is disproportionate to the absent private-execution gap.                            |
+
+## Operational footprint spike
+
+The spike used the closest available representative environment, not the production
+Raspberry Pi: Apple ARM64 on Darwin 25.6.0, Node 26.8.1, and npm 12.0.2. Results must
+not be read as Linux/Pi performance numbers. They do answer whether the pinned local
+stack installs and functions on Node 26/ARM, and establish its order of magnitude:
+
+| Observation             | Result                                                                                                                                                                                                                                                                                                                |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Packages                | `@langchain/langgraph@1.4.15` plus `@langchain/langgraph-checkpoint-sqlite@1.0.4` installed 60 transitive packages (61 including the spike root).                                                                                                                                                                     |
+| Installed footprint     | `node_modules` used 75,052 KiB (73.3 MiB) and contained 5,620 files. The lockfile was 28 KiB.                                                                                                                                                                                                                         |
+| Native compatibility    | The SQLite saver selected `better-sqlite3@12.11.1`. npm 12 blocked its install script by default; after explicit approval, a separate rebuild produced a working Node 26/Darwin ARM64 binding. This is evidence of compatibility on the representative host and of native deployment work, not proof for Linux ARM64. |
+| Initial write/interrupt | A fresh process executed one task, persisted a SQLite checkpoint, and stopped at `interrupt()` in 16.654 ms measured inside the process (0.35 s wall clock); reported RSS was 197,705,728 bytes.                                                                                                                      |
+| Cross-process resume    | A second process reopened the same SQLite file, resumed the interrupt, restored the completed task result, and finished in 17.455 ms inside the process (0.24 s wall clock); reported RSS was 198,541,312 bytes.                                                                                                      |
+| Replay oracle           | The task appended one external marker before the interrupt. The marker count remained exactly one after resume, demonstrating completed-task restoration rather than re-execution.                                                                                                                                    |
+| Persistent files        | The SQLite database grew from 4,096 bytes at interruption to 20,480 bytes after resume for this minimal run.                                                                                                                                                                                                          |
+
+The timing and RSS values are single-run feasibility observations, not statistically
+stable benchmarks. They include the LangGraph/SQLite process but no model provider,
+Ember state, or production workload. The footprint conclusion relies primarily on the
+reproducible dependency/install surface and the demonstrated native requirement; the
+runtime observations guard against claiming the stack was assessed without executing
+its persistent path.
+
+The spike workflow was deliberately narrow: one Functional API `task`, one
+`interrupt`, a file-backed `SqliteSaver`, process exit, and `Command({ resume: true })`
+from a fresh process. That is the candidate seam proposed below. Agent Server, Graph
+API state, time travel, model/tool packages, and hosted services were not installed or
+measured.
 
 ## What remains Ember-owned in every apparent fit
 
@@ -108,33 +145,44 @@ known or possible effects, or why progress was accepted.
 
 ### State duplication is immediate
 
-The objective ledger already contains every durable item needed by the implemented
-flow. A LangGraph checkpoint would either repeat objective lifecycle/progress fields
-or contain only an objective reference plus private execution position. The first
-choice creates competing state and migration/currentness risks. The second provides
-little value because current episodes have no multi-step private execution position
-to recover.
+The current Ember objective and action ledgers already contain every durable item
+needed by the implemented flow. The action ledger owns proposal presentation,
+decision, attempt, and effect truth; the objective ledger owns lifecycle, episode,
+checkpoint, and reintegration evidence. A LangGraph checkpoint would either repeat
+some of those fields or contain only references plus private execution position. The
+first choice creates competing state and migration/currentness risks. The second
+provides little value because current episodes have no multi-step private execution
+position to recover.
 
 ### The apparent code saving is mostly semantic leakage
 
 The 887 production lines in `src/objectives/` are not a hand-built workflow engine.
 They encode schema validation, chronology, attribution, concurrency, stale-revision
 rejection, completion evidence, approval binding, and truthful effect reintegration.
-Replacing those checks with thread state, interrupts, or checkpoint completion would
-make framework state canonical Ember state and fail the acceptance contract.
+The remaining #238 production changes make proposal/objective identity and
+revalidation reach the action store, Calendar effect boundary, CLI, and Telegram;
+they likewise remain necessary with a framework executor. Replacing those checks with
+thread state, interrupts, or checkpoint completion would make framework state
+canonical Ember state and fail the acceptance contract.
 
 The genuinely mechanical subset—serialized mutation, writer lease use, atomic JSON
 replacement, and reconstruction—is already shared with Ember's local persistence
 model. Replacing it for objectives alone would create a second persistence mechanism
 rather than simplify the repository.
 
-### Replay behavior raises rather than removes effect work
+### Functional resume still requires effect discipline
 
-Functional and Graph API resume can rerun ordinary code, unfinished tasks, or an
-interrupted node. Explicit time travel re-executes downstream API requests and
-interrupts. Ember would need versioned workflows, stable task/interrupt ordering,
-idempotency keys, attempt-before-effect recording, and reconciliation guards in
-addition to the current duplicate-effect prevention.
+Functional resume starts the entrypoint again. Completed task and subgraph results are
+restored, as the spike confirms, but ordinary entrypoint code runs again and a task
+that started without finishing may run again. Multiple interrupt resume values are
+matched by order. Ember would therefore still need stable/versioned task and interrupt
+structure, idempotency keys, attempt-before-effect recording, and reconciliation
+guards in addition to the current duplicate-effect prevention.
+
+Graph API time travel is distinct. It can intentionally replay downstream model
+calls, API requests, and interrupts from a selected historical checkpoint, but the
+Functional API-only seam below neither needs nor assumes that capability. If a later
+proposal includes time travel, it requires its own effect-safety evaluation.
 
 ### Runtime coupling has no compensating capability yet
 
@@ -193,9 +241,9 @@ at least one measured pain point:
    custom machinery that a Functional API spike replaces a material amount of code;
 4. local cancellation/drain and run inspection cannot meet systemd recovery needs
    with the current episode evidence;
-5. operational measurements show that the chosen checkpointer works on the target
-   Node 26/ARM host within explicit cold-start, RSS, disk, write-amplification, and
-   recovery budgets; and
+5. the now-proven representative ARM path is repeated on the actual Linux/Raspberry Pi
+   target and satisfies explicit cold-start, RSS, disk, write-amplification, native
+   build/update, and recovery budgets; and
 6. a fixture-backed spike demonstrates fewer total production/test lines and no
    duplicate canonical state, hidden unsafe replay, or weakened acceptance scenario.
 
@@ -207,6 +255,7 @@ the current Ember/systemd mechanics remain the smaller and safer implementation.
 ## Sources
 
 - [LangGraph.js repository and release history](https://github.com/langchain-ai/langgraphjs)
+- [LangGraph Functional API](https://docs.langchain.com/oss/javascript/langgraph/functional-api)
 - [LangGraph interrupts](https://docs.langchain.com/oss/javascript/langgraph/interrupts)
 - [LangGraph time travel and replay](https://docs.langchain.com/oss/javascript/langgraph/use-time-travel)
 - [LangGraph testing](https://docs.langchain.com/oss/javascript/langgraph/test)
