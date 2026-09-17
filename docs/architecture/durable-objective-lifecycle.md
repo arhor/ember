@@ -397,10 +397,12 @@ evidence, a reason, and an account of prior-episode reconciliation. A `continue`
 decision creates a new bounded episode; `defer`, `block`, `complete`, and `abandon`
 update the objective disposition without launching work. Completion is accepted only
 when the latest relevant checkpoint establishes every named success condition without
-unresolved uncertainty. A running episode found during that
-reconciliation is durably changed to `outcome_unknown`, preserving the operational
-gap rather than fabricating failure, completion, or absence of effects. Terminal
-objectives cannot be resumed in place.
+unresolved uncertainty. Every running episode must receive an explicit reconciliation
+outcome: an episode established to remain observable stays `running`, while only an
+episode for which current evidence establishes loss is durably changed to
+`outcome_unknown`. This preserves legitimate concurrent work as well as operational
+gaps without fabricating liveness, loss, failure, completion, or absence of effects.
+Terminal objectives cannot be resumed in place.
 
 Checkpoints name the acceptance conditions they address and preserve progress
 classification, attributable evidence, assumptions, uncertainty, and any suggested
@@ -408,6 +410,13 @@ next step. Suggestions remain evidence: only a later Ember-owned resume assessme
 can make a next step operative. Episode completion likewise does not complete the
 objective. This slice deliberately leaves revision/successor creation, scheduling,
 and approval/effect composition to the later work identified above.
+
+Ledger mutations are serialized within each store instance in addition to using the
+cross-instance writer lease, so concurrent episode/checkpoint appends cannot share a
+re-entrant lease and overwrite one another. Mutation and load validation also enforce
+causal chronology: objective history cannot move `updated_at` backwards, an episode
+cannot end before it starts or before its checkpoints, and a checkpoint must fall
+within its episode's observed interval.
 
 ## Acceptance mapping
 

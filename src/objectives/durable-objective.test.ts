@@ -38,7 +38,7 @@ test("an objective advances through separate episodes and a fresh provider after
         decision: "continue",
         reason: "the requested release is still current",
         evidenceIds: ["evidence-repository-revision-1"],
-        priorEpisodeReconciliation: "no earlier episode exists",
+        priorEpisodeReconciliations: [],
         nextStep: { owner: "ember", description: "Draft the release note" },
         runtime: { kind: "cognition", runtime_id: "runtime-1", provider_label: "codex", session_id: "session-1" },
     });
@@ -72,7 +72,7 @@ test("an objective advances through separate episodes and a fresh provider after
         decision: "continue",
         reason: "the final revision still needs verification",
         evidenceIds: ["evidence-repository-revision-2"],
-        priorEpisodeReconciliation: "episode 1 ended cleanly with one durable checkpoint",
+        priorEpisodeReconciliations: [],
         nextStep: { owner: "ember", description: "Verify the draft against revision 2" },
         runtime: { kind: "cognition", runtime_id: "runtime-2", provider_label: "claude-code", session_id: null },
     });
@@ -97,7 +97,13 @@ test("an objective advances through separate episodes and a fresh provider after
             decision: "complete",
             reason: "attempted completion decision",
             evidenceIds: ["evidence-verification-2"],
-            priorEpisodeReconciliation: "episode 2 remains in progress",
+            priorEpisodeReconciliations: [
+                {
+                    episode_id: second.episode!.episode_id,
+                    outcome: "still_running",
+                    detail: "episode 2 remains observable and in progress",
+                },
+            ],
             nextStep: { owner: "unknown", description: "No further step" },
         }),
         /completion is not established for condition: verified/,
@@ -129,7 +135,7 @@ test("an objective advances through separate episodes and a fresh provider after
         decision: "complete",
         reason: "all named success conditions are established by current checkpoints",
         evidenceIds: ["evidence-final-verification"],
-        priorEpisodeReconciliation: "both bounded episodes ended cleanly",
+        priorEpisodeReconciliations: [],
         nextStep: { owner: "unknown", description: "No further work remains" },
     });
 
@@ -159,7 +165,7 @@ test("restart preserves an interrupted episode as uncertain rather than complete
         decision: "continue",
         reason: "drafting can begin",
         evidenceIds: ["evidence-repository-revision-1"],
-        priorEpisodeReconciliation: "no earlier episode exists",
+        priorEpisodeReconciliations: [],
         nextStep: { owner: "ember", description: "Draft the release note" },
         runtime: { kind: "specialist", runtime_id: "runtime-lost", provider_label: "codex", session_id: "thread-lost" },
     });
@@ -174,7 +180,13 @@ test("restart preserves an interrupted episode as uncertain rather than complete
         decision: "block",
         reason: "the prior write outcome is unknown and duplicate drafting is unsafe",
         evidenceIds: ["evidence-runtime-gap"],
-        priorEpisodeReconciliation: "the prior process disappeared without a terminal report or checkpoint",
+        priorEpisodeReconciliations: [
+            {
+                episode_id: interrupted.episode!.episode_id,
+                outcome: "outcome_unknown",
+                detail: "the prior process disappeared without a terminal report or checkpoint",
+            },
+        ],
         nextStep: { owner: "ember", description: "Inspect the draft target before retrying" },
     });
 
@@ -185,6 +197,149 @@ test("restart preserves an interrupted episode as uncertain rather than complete
     assert.equal(resumed.objective.episodes[0]?.status, "outcome_unknown");
     assert.match(resumed.objective.episodes[0]?.outcome_detail ?? "", /disappeared/);
     assert.equal(resumed.objective.checkpoints.length, 0);
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("a concurrent episode starts without fabricating loss of a still-running episode", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new DurableObjectiveStore(join(directory, "ember.json"));
+    const objective = await createdObjective(store);
+    const first = await store.resume({
+        objectiveId: objective.objective_id,
+        expectedRevision: 1,
+        assessedAt: "2026-09-17T08:05:00Z",
+        actor: "agent:ember",
+        decision: "continue",
+        reason: "drafting can begin",
+        evidenceIds: ["evidence-current-1"],
+        priorEpisodeReconciliations: [],
+        nextStep: { owner: "ember", description: "Draft the release note" },
+        runtime: { kind: "specialist", runtime_id: "runtime-1", provider_label: "codex", session_id: null },
+    });
+
+    // When
+    const second = await store.resume({
+        objectiveId: objective.objective_id,
+        expectedRevision: 1,
+        assessedAt: "2026-09-17T08:06:00Z",
+        actor: "agent:ember",
+        decision: "continue",
+        reason: "independent verification can run concurrently",
+        evidenceIds: ["evidence-current-2"],
+        priorEpisodeReconciliations: [
+            {
+                episode_id: first.episode!.episode_id,
+                outcome: "still_running",
+                detail: "the first runtime remains observable and responsive",
+            },
+        ],
+        nextStep: { owner: "ember", description: "Verify the release inputs" },
+        runtime: { kind: "cognition", runtime_id: "runtime-2", provider_label: "claude-code", session_id: null },
+    });
+    await Promise.all([
+        store.checkpoint({
+            objectiveId: objective.objective_id,
+            episodeId: first.episode!.episode_id,
+            recordedAt: "2026-09-17T08:07:00Z",
+            acceptanceConditionIds: ["draft"],
+            progress: "partial",
+            summary: "The concurrent drafting episode produced an outline",
+            evidenceIds: ["evidence-outline"],
+            assumptions: [],
+            uncertainty: null,
+            proposedNextStep: "Finish the draft",
+        }),
+        store.checkpoint({
+            objectiveId: objective.objective_id,
+            episodeId: second.episode!.episode_id,
+            recordedAt: "2026-09-17T08:07:00Z",
+            acceptanceConditionIds: ["verified"],
+            progress: "partial",
+            summary: "The concurrent verification episode checked the inputs",
+            evidenceIds: ["evidence-input-check"],
+            assumptions: [],
+            uncertainty: null,
+            proposedNextStep: "Verify the completed draft",
+        }),
+    ]);
+
+    // Then
+    const persisted = await store.get(objective.objective_id);
+    assert.equal(persisted?.episodes[0]?.status, "running");
+    assert.equal(persisted?.episodes[1]?.status, "running");
+    assert.equal(persisted?.checkpoints.length, 2);
+    assert.deepEqual(
+        new Set(persisted?.checkpoints.map((checkpoint) => checkpoint.episode_id)),
+        new Set([first.episode!.episode_id, second.episode!.episode_id]),
+    );
+    await rm(directory, { recursive: true, force: true });
+});
+
+test("objective history rejects backwards reconciliation and episode completion", async () => {
+    // Given
+    const directory = await tempDir();
+    const store = new DurableObjectiveStore(join(directory, "ember.json"));
+    const objective = await createdObjective(store);
+    const episode = await store.resume({
+        objectiveId: objective.objective_id,
+        expectedRevision: 1,
+        assessedAt: "2026-09-17T10:00:00Z",
+        actor: "agent:ember",
+        decision: "continue",
+        reason: "work can begin",
+        evidenceIds: ["evidence-current"],
+        priorEpisodeReconciliations: [],
+        nextStep: { owner: "ember", description: "Draft the release note" },
+        runtime: { kind: "cognition", runtime_id: "runtime-1", provider_label: "codex", session_id: null },
+    });
+    await store.checkpoint({
+        objectiveId: objective.objective_id,
+        episodeId: episode.episode!.episode_id,
+        recordedAt: "2026-09-17T12:00:00Z",
+        acceptanceConditionIds: ["draft"],
+        progress: "partial",
+        summary: "Drafting remains in progress",
+        evidenceIds: ["evidence-draft"],
+        assumptions: [],
+        uncertainty: null,
+        proposedNextStep: "Continue drafting",
+    });
+
+    // When / Then
+    await assert.rejects(
+        store.resume({
+            objectiveId: objective.objective_id,
+            expectedRevision: 1,
+            assessedAt: "2026-09-17T09:00:00Z",
+            actor: "agent:ember",
+            decision: "block",
+            reason: "invalid backwards reconciliation",
+            evidenceIds: ["evidence-gap"],
+            priorEpisodeReconciliations: [
+                {
+                    episode_id: episode.episode!.episode_id,
+                    outcome: "outcome_unknown",
+                    detail: "the runtime cannot be observed",
+                },
+            ],
+            nextStep: { owner: "ember", description: "Reconcile" },
+        }),
+        /cannot predate the objective's latest durable event/,
+    );
+    await assert.rejects(
+        store.finishEpisode({
+            objectiveId: objective.objective_id,
+            episodeId: episode.episode!.episode_id,
+            status: "completed",
+            endedAt: "2026-09-17T11:00:00Z",
+            detail: "invalid completion before the checkpoint",
+        }),
+        /cannot predate the objective's latest durable event/,
+    );
+    const persisted = await store.get(objective.objective_id);
+    assert.equal(persisted?.episodes[0]?.status, "running");
+    assert.equal(persisted?.updated_at, "2026-09-17T12:00:00Z");
     await rm(directory, { recursive: true, force: true });
 });
 
@@ -203,7 +358,7 @@ test("resume can defer or abandon when fresh currentness invalidates the old pla
         decision: "defer",
         reason: "the release candidate changed and needs a stable revision",
         evidenceIds: ["evidence-release-moving"],
-        priorEpisodeReconciliation: "there are no in-flight episodes",
+        priorEpisodeReconciliations: [],
         nextStep: { owner: "external", description: "Wait for a stable release revision" },
     });
     const abandoned = await store.resume({
@@ -214,7 +369,7 @@ test("resume can defer or abandon when fresh currentness invalidates the old pla
         decision: "abandon",
         reason: "the principal cancelled the release",
         evidenceIds: ["evidence-user-cancellation"],
-        priorEpisodeReconciliation: "there are no in-flight episodes or possible effects",
+        priorEpisodeReconciliations: [],
         nextStep: { owner: "unknown", description: "No further pursuit is authorized" },
     });
 
@@ -231,7 +386,7 @@ test("resume can defer or abandon when fresh currentness invalidates the old pla
             decision: "continue",
             reason: "try to reopen",
             evidenceIds: ["evidence-new"],
-            priorEpisodeReconciliation: "none",
+            priorEpisodeReconciliations: [],
             nextStep: { owner: "ember", description: "Resume" },
             runtime: { kind: "cognition", runtime_id: null, provider_label: null, session_id: null },
         }),

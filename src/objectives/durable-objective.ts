@@ -52,7 +52,11 @@ export interface ObjectiveCurrentnessAssessment {
     decision: ResumeDecision;
     reason: string;
     evidence_ids: string[];
-    prior_episode_reconciliation: string;
+    prior_episode_reconciliations: Array<{
+        episode_id: `objective-episode-${string}`;
+        outcome: "still_running" | "outcome_unknown";
+        detail: string;
+    }>;
 }
 
 export interface DurableObjective {
@@ -87,6 +91,7 @@ export interface ObjectiveDocument {
 export class DurableObjectiveStore {
     readonly path: string;
     private readonly lock: StateStore;
+    private mutationTail: Promise<void> = Promise.resolve();
 
     constructor(canonicalStatePath: string) {
         if (!canonicalStatePath.trim()) throw new ValidationError("objective store requires a state path");
@@ -161,7 +166,7 @@ export class DurableObjectiveStore {
         decision: ResumeDecision;
         reason: string;
         evidenceIds: string[];
-        priorEpisodeReconciliation: string;
+        priorEpisodeReconciliations: ObjectiveCurrentnessAssessment["prior_episode_reconciliations"];
         nextStep: DurableObjective["next_step"];
         runtime?: ObjectiveEpisode["runtime"];
     }): Promise<{ objective: DurableObjective; episode: ObjectiveEpisode | null }> {
@@ -169,15 +174,21 @@ export class DurableObjectiveStore {
             const objective = requiredObjective(document, input.objectiveId);
             requireMutableRevision(objective, input.expectedRevision);
             requireTimestamp(input.assessedAt);
-            requireText(input.actor, input.reason, input.priorEpisodeReconciliation);
+            requireText(input.actor, input.reason);
+            requireMonotonicObjectiveTime(objective, input.assessedAt, "objective assessment");
             if (!input.evidenceIds.length || !input.evidenceIds.every(isNotBlankString))
                 throw new ValidationError("objective resume requires attributable currentness evidence");
 
-            for (const episode of objective.episodes) {
-                if (episode.status === "running") {
+            const runningEpisodes = objective.episodes.filter((episode) => episode.status === "running");
+            validateRunningEpisodeReconciliations(runningEpisodes, input.priorEpisodeReconciliations);
+            for (const reconciliation of input.priorEpisodeReconciliations) {
+                if (reconciliation.outcome === "outcome_unknown") {
+                    const episode = runningEpisodes.find(
+                        (candidate) => candidate.episode_id === reconciliation.episode_id,
+                    )!;
                     episode.status = "outcome_unknown";
                     episode.ended_at = input.assessedAt;
-                    episode.outcome_detail = input.priorEpisodeReconciliation;
+                    episode.outcome_detail = reconciliation.detail;
                 }
             }
             const assessment: ObjectiveCurrentnessAssessment = {
@@ -188,7 +199,7 @@ export class DurableObjectiveStore {
                 decision: input.decision,
                 reason: input.reason,
                 evidence_ids: [...input.evidenceIds],
-                prior_episode_reconciliation: input.priorEpisodeReconciliation,
+                prior_episode_reconciliations: structuredClone(input.priorEpisodeReconciliations),
             };
             objective.assessments.push(assessment);
             objective.updated_at = input.assessedAt;
@@ -242,6 +253,7 @@ export class DurableObjectiveStore {
                 throw new ValidationError("checkpoint requires a running objective episode");
             requireTimestamp(input.recordedAt);
             requireText(input.summary);
+            requireMonotonicObjectiveTime(objective, input.recordedAt, "objective checkpoint");
             if (Date.parse(input.recordedAt) < Date.parse(episode.started_at))
                 throw new ValidationError("checkpoint cannot predate its episode");
             if (!input.evidenceIds.length || !input.evidenceIds.every(isNotBlankString))
@@ -283,6 +295,7 @@ export class DurableObjectiveStore {
             if (!episode || episode.status !== "running") throw new ValidationError("objective episode is not running");
             requireTimestamp(input.endedAt);
             requireText(input.detail);
+            requireMonotonicObjectiveTime(objective, input.endedAt, "objective episode outcome");
             if (Date.parse(input.endedAt) < Date.parse(episode.started_at))
                 throw new ValidationError("episode outcome cannot predate its start");
             episode.status = input.status;
@@ -299,8 +312,15 @@ export class DurableObjectiveStore {
     }
 
     private async mutate<T>(update: (document: ObjectiveDocument) => T): Promise<T> {
-        const lease = await this.lock.acquireWriteLease();
+        const precedingMutation = this.mutationTail;
+        let releaseMutation!: () => void;
+        this.mutationTail = new Promise<void>((resolve) => {
+            releaseMutation = resolve;
+        });
+        await precedingMutation;
+        let lease = null;
         try {
+            lease = await this.lock.acquireWriteLease();
             const document = await this.load();
             const result = update(document);
             validateObjectiveDocument(document);
@@ -310,7 +330,11 @@ export class DurableObjectiveStore {
             });
             return result;
         } finally {
-            await this.lock.releaseWriteLease(lease);
+            try {
+                if (lease !== null) await this.lock.releaseWriteLease(lease);
+            } finally {
+                releaseMutation();
+            }
         }
     }
 }
@@ -416,6 +440,7 @@ function validateObjective(value: unknown): asserts value is DurableObjective {
         value.episodes.some((episode) => episode.status === "running")
     )
         throw new ValidationError("terminal objective has a running episode");
+    validateObjectiveChronology(value as unknown as DurableObjective);
 }
 
 function validCreation(value: unknown) {
@@ -446,7 +471,7 @@ function validAssessment(value: unknown, revision: number) {
             "decision",
             "evidence_ids",
             "objective_revision",
-            "prior_episode_reconciliation",
+            "prior_episode_reconciliations",
             "reason",
         ]) &&
         isNotBlankString(value.assessment_id) &&
@@ -459,7 +484,8 @@ function validAssessment(value: unknown, revision: number) {
         Array.isArray(value.evidence_ids) &&
         value.evidence_ids.length > 0 &&
         value.evidence_ids.every(isNotBlankString) &&
-        isNotBlankString(value.prior_episode_reconciliation)
+        Array.isArray(value.prior_episode_reconciliations) &&
+        value.prior_episode_reconciliations.every(validEpisodeReconciliation)
     );
 }
 function validEpisode(value: unknown, revision: number, assessments: Set<string>) {
@@ -556,6 +582,90 @@ function requireSatisfiedConditions(objective: DurableObjective) {
                 `objective completion is not established for condition: ${condition.condition_id}`,
             );
     }
+}
+function validateRunningEpisodeReconciliations(
+    runningEpisodes: ObjectiveEpisode[],
+    reconciliations: ObjectiveCurrentnessAssessment["prior_episode_reconciliations"],
+) {
+    if (!Array.isArray(reconciliations)) throw new ValidationError("objective resume requires episode reconciliation");
+    const runningIds = new Set(runningEpisodes.map((episode) => episode.episode_id));
+    const reconciledIds = new Set<string>();
+    for (const reconciliation of reconciliations) {
+        if (
+            !validEpisodeReconciliation(reconciliation) ||
+            !runningIds.has(reconciliation.episode_id) ||
+            reconciledIds.has(reconciliation.episode_id)
+        )
+            throw new ValidationError("objective resume contains invalid episode reconciliation");
+        reconciledIds.add(reconciliation.episode_id);
+    }
+    if (reconciledIds.size !== runningIds.size)
+        throw new ValidationError("objective resume must reconcile every running episode");
+}
+function validEpisodeReconciliation(value: unknown) {
+    return (
+        isObject(value) &&
+        exactKeys(value, ["detail", "episode_id", "outcome"]) &&
+        isNotBlankString(value.episode_id) &&
+        value.episode_id.startsWith("objective-episode-") &&
+        (value.outcome === "still_running" || value.outcome === "outcome_unknown") &&
+        isNotBlankString(value.detail)
+    );
+}
+function requireMonotonicObjectiveTime(objective: DurableObjective, timestamp: string, event: string) {
+    if (Date.parse(timestamp) < Date.parse(objective.updated_at))
+        throw new ValidationError(`${event} cannot predate the objective's latest durable event`);
+}
+function validateObjectiveChronology(objective: DurableObjective) {
+    if (Date.parse(objective.creation.observed_at) < Date.parse(objective.creation.occurred_at))
+        throw new ValidationError("objective creation observation predates its occurrence");
+    let latest = Date.parse(objective.created_at);
+    for (const assessment of objective.assessments) {
+        const timestamp = Date.parse(assessment.assessed_at);
+        if (timestamp < latest) throw new ValidationError("objective assessments are not chronological");
+        latest = timestamp;
+    }
+    const episodeIds = new Set(objective.episodes.map((episode) => episode.episode_id));
+    for (const assessment of objective.assessments) {
+        const ids = new Set<string>();
+        for (const reconciliation of assessment.prior_episode_reconciliations) {
+            const episode = objective.episodes.find((candidate) => candidate.episode_id === reconciliation.episode_id);
+            if (
+                !episodeIds.has(reconciliation.episode_id) ||
+                ids.has(reconciliation.episode_id) ||
+                !episode ||
+                Date.parse(episode.started_at) > Date.parse(assessment.assessed_at) ||
+                (reconciliation.outcome === "outcome_unknown" && episode.ended_at !== assessment.assessed_at)
+            )
+                throw new ValidationError("objective assessment episode reconciliation is invalid");
+            ids.add(reconciliation.episode_id);
+        }
+    }
+    for (const episode of objective.episodes) {
+        const assessment = objective.assessments.find(
+            (candidate) => candidate.assessment_id === episode.currentness_assessment_id,
+        )!;
+        if (episode.started_at !== assessment.assessed_at)
+            throw new ValidationError("objective episode start does not match its currentness assessment");
+        if (episode.ended_at !== null && Date.parse(episode.ended_at) < Date.parse(episode.started_at))
+            throw new ValidationError("objective episode ends before it starts");
+    }
+    for (const checkpoint of objective.checkpoints) {
+        const episode = objective.episodes.find((candidate) => candidate.episode_id === checkpoint.episode_id)!;
+        if (
+            Date.parse(checkpoint.recorded_at) < Date.parse(episode.started_at) ||
+            (episode.ended_at !== null && Date.parse(checkpoint.recorded_at) > Date.parse(episode.ended_at))
+        )
+            throw new ValidationError("objective checkpoint falls outside its episode");
+    }
+    const allTimes = [
+        objective.created_at,
+        ...objective.assessments.map((item) => item.assessed_at),
+        ...objective.episodes.flatMap((item) => [item.started_at, ...(item.ended_at === null ? [] : [item.ended_at])]),
+        ...objective.checkpoints.map((item) => item.recorded_at),
+    ];
+    if (allTimes.some((timestamp) => Date.parse(timestamp) > Date.parse(objective.updated_at)))
+        throw new ValidationError("objective updated time predates durable history");
 }
 function requireText(...values: unknown[]) {
     if (!values.every(isNotBlankString)) throw new ValidationError("objective text fields must be non-empty");
