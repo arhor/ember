@@ -253,7 +253,6 @@ export class DurableObjectiveStore {
                 throw new ValidationError("checkpoint requires a running objective episode");
             requireTimestamp(input.recordedAt);
             requireText(input.summary);
-            requireMonotonicObjectiveTime(objective, input.recordedAt, "objective checkpoint");
             if (Date.parse(input.recordedAt) < Date.parse(episode.started_at))
                 throw new ValidationError("checkpoint cannot predate its episode");
             if (!input.evidenceIds.length || !input.evidenceIds.every(isNotBlankString))
@@ -277,7 +276,7 @@ export class DurableObjectiveStore {
                 recorded_at: input.recordedAt,
             };
             objective.checkpoints.push(checkpoint);
-            objective.updated_at = input.recordedAt;
+            objective.updated_at = latestTimestamp(objective.updated_at, input.recordedAt);
             return structuredClone(checkpoint);
         });
     }
@@ -295,13 +294,21 @@ export class DurableObjectiveStore {
             if (!episode || episode.status !== "running") throw new ValidationError("objective episode is not running");
             requireTimestamp(input.endedAt);
             requireText(input.detail);
-            requireMonotonicObjectiveTime(objective, input.endedAt, "objective episode outcome");
             if (Date.parse(input.endedAt) < Date.parse(episode.started_at))
                 throw new ValidationError("episode outcome cannot predate its start");
+            const latestCheckpoint = objective.checkpoints
+                .filter((checkpoint) => checkpoint.episode_id === episode.episode_id)
+                .reduce<string | null>(
+                    (latest, checkpoint) =>
+                        latest === null ? checkpoint.recorded_at : latestTimestamp(latest, checkpoint.recorded_at),
+                    null,
+                );
+            if (latestCheckpoint !== null && Date.parse(input.endedAt) < Date.parse(latestCheckpoint))
+                throw new ValidationError("episode outcome cannot predate its latest checkpoint");
             episode.status = input.status;
             episode.ended_at = input.endedAt;
             episode.outcome_detail = input.detail;
-            objective.updated_at = input.endedAt;
+            objective.updated_at = latestTimestamp(objective.updated_at, input.endedAt);
             return structuredClone(episode);
         });
     }
@@ -435,11 +442,8 @@ function validateObjective(value: unknown): asserts value is DurableObjective {
             throw new ValidationError("objective checkpoint is invalid");
         checkpoints.add(checkpoint.checkpoint_id);
     }
-    if (
-        (value.lifecycle === "completed" || value.lifecycle === "abandoned") &&
-        value.episodes.some((episode) => episode.status === "running")
-    )
-        throw new ValidationError("terminal objective has a running episode");
+    if (value.lifecycle === "completed" && value.episodes.some((episode) => episode.status === "running"))
+        throw new ValidationError("completed objective has a running episode");
     validateObjectiveChronology(value as unknown as DurableObjective);
 }
 
@@ -615,6 +619,9 @@ function validEpisodeReconciliation(value: unknown) {
 function requireMonotonicObjectiveTime(objective: DurableObjective, timestamp: string, event: string) {
     if (Date.parse(timestamp) < Date.parse(objective.updated_at))
         throw new ValidationError(`${event} cannot predate the objective's latest durable event`);
+}
+function latestTimestamp(left: string, right: string) {
+    return Date.parse(left) >= Date.parse(right) ? left : right;
 }
 function validateObjectiveChronology(objective: DurableObjective) {
     if (Date.parse(objective.creation.observed_at) < Date.parse(objective.creation.occurred_at))

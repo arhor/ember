@@ -200,7 +200,7 @@ test("restart preserves an interrupted episode as uncertain rather than complete
     await rm(directory, { recursive: true, force: true });
 });
 
-test("a concurrent episode starts without fabricating loss of a still-running episode", async () => {
+test("concurrent episodes retain interleaved evidence and truthful state through abandonment", async () => {
     // Given
     const directory = await tempDir();
     const store = new DurableObjectiveStore(join(directory, "ember.json"));
@@ -241,7 +241,7 @@ test("a concurrent episode starts without fabricating loss of a still-running ep
         store.checkpoint({
             objectiveId: objective.objective_id,
             episodeId: first.episode!.episode_id,
-            recordedAt: "2026-09-17T08:07:00Z",
+            recordedAt: "2026-09-17T08:08:00Z",
             acceptanceConditionIds: ["draft"],
             progress: "partial",
             summary: "The concurrent drafting episode produced an outline",
@@ -253,7 +253,7 @@ test("a concurrent episode starts without fabricating loss of a still-running ep
         store.checkpoint({
             objectiveId: objective.objective_id,
             episodeId: second.episode!.episode_id,
-            recordedAt: "2026-09-17T08:07:00Z",
+            recordedAt: "2026-09-17T08:15:00Z",
             acceptanceConditionIds: ["verified"],
             progress: "partial",
             summary: "The concurrent verification episode checked the inputs",
@@ -263,15 +263,63 @@ test("a concurrent episode starts without fabricating loss of a still-running ep
             proposedNextStep: "Verify the completed draft",
         }),
     ]);
+    await store.finishEpisode({
+        objectiveId: objective.objective_id,
+        episodeId: first.episode!.episode_id,
+        status: "completed",
+        endedAt: "2026-09-17T08:10:00Z",
+        detail: "the earlier terminal report arrived after episode 2's later checkpoint",
+    });
+    const abandoned = await store.resume({
+        objectiveId: objective.objective_id,
+        expectedRevision: 1,
+        assessedAt: "2026-09-17T08:16:00Z",
+        actor: "user:alice",
+        decision: "abandon",
+        reason: "the principal cancelled future pursuit",
+        evidenceIds: ["evidence-user-cancellation"],
+        priorEpisodeReconciliations: [
+            {
+                episode_id: second.episode!.episode_id,
+                outcome: "still_running",
+                detail: "the remote verification episode remains observable after cancellation",
+            },
+        ],
+        nextStep: { owner: "unknown", description: "Reconcile the observable remote episode only" },
+    });
 
     // Then
     const persisted = await store.get(objective.objective_id);
-    assert.equal(persisted?.episodes[0]?.status, "running");
+    assert.equal(persisted?.episodes[0]?.status, "completed");
+    assert.equal(persisted?.episodes[0]?.ended_at, "2026-09-17T08:10:00Z");
     assert.equal(persisted?.episodes[1]?.status, "running");
     assert.equal(persisted?.checkpoints.length, 2);
+    assert.equal(persisted?.updated_at, "2026-09-17T08:16:00Z");
+    assert.equal(abandoned.objective.lifecycle, "abandoned");
     assert.deepEqual(
         new Set(persisted?.checkpoints.map((checkpoint) => checkpoint.episode_id)),
         new Set([first.episode!.episode_id, second.episode!.episode_id]),
+    );
+    await assert.rejects(
+        store.resume({
+            objectiveId: objective.objective_id,
+            expectedRevision: 1,
+            assessedAt: "2026-09-17T08:17:00Z",
+            actor: "agent:ember",
+            decision: "continue",
+            reason: "invalid attempt to restart abandoned work",
+            evidenceIds: ["evidence-late"],
+            priorEpisodeReconciliations: [
+                {
+                    episode_id: second.episode!.episode_id,
+                    outcome: "still_running",
+                    detail: "the remote verification episode remains observable",
+                },
+            ],
+            nextStep: { owner: "ember", description: "Start forbidden work" },
+            runtime: { kind: "cognition", runtime_id: "runtime-3", provider_label: "codex", session_id: null },
+        }),
+        /terminal objective cannot resume/,
     );
     await rm(directory, { recursive: true, force: true });
 });
@@ -335,7 +383,7 @@ test("objective history rejects backwards reconciliation and episode completion"
             endedAt: "2026-09-17T11:00:00Z",
             detail: "invalid completion before the checkpoint",
         }),
-        /cannot predate the objective's latest durable event/,
+        /cannot predate its latest checkpoint/,
     );
     const persisted = await store.get(objective.objective_id);
     assert.equal(persisted?.episodes[0]?.status, "running");

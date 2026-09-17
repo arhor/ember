@@ -402,7 +402,10 @@ outcome: an episode established to remain observable stays `running`, while only
 episode for which current evidence establishes loss is durably changed to
 `outcome_unknown`. This preserves legitimate concurrent work as well as operational
 gaps without fabricating liveness, loss, failure, completion, or absence of effects.
-Terminal objectives cannot be resumed in place.
+Abandonment may therefore preserve a truthfully `running` remote episode: it prevents
+new pursuit but does not claim that already-started execution stopped. Terminal
+objectives cannot be resumed in place, and late episode evidence remains part of their
+history.
 
 Checkpoints name the acceptance conditions they address and preserve progress
 classification, attributable evidence, assumptions, uncertainty, and any suggested
@@ -414,9 +417,11 @@ and approval/effect composition to the later work identified above.
 Ledger mutations are serialized within each store instance in addition to using the
 cross-instance writer lease, so concurrent episode/checkpoint appends cannot share a
 re-entrant lease and overwrite one another. Mutation and load validation also enforce
-causal chronology: objective history cannot move `updated_at` backwards, an episode
-cannot end before it starts or before its checkpoints, and a checkpoint must fall
-within its episode's observed interval.
+causal chronology without imposing a false total ordering across concurrent episodes:
+an episode cannot end before it starts or before its own checkpoints, and a checkpoint
+must fall within its episode's observed interval. Late-arriving evidence may therefore
+carry an earlier valid occurrence time than another episode's already-recorded event;
+`updated_at` remains monotonic as the maximum timestamp in durable history.
 
 ## Acceptance mapping
 
