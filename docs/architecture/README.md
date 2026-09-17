@@ -114,6 +114,10 @@ Current architecture material:
 - [Endogenous Concern Activation](endogenous-concern-activation.md) defines issue
   #76's live-but-dormant commitment semantics, topic-free reactivation controls,
   minimal attributable discharge transitions, and projection/inspection behavior.
+- [Durable Proactive-Contact Intent Semantics](proactive-contact-intent.md) defines
+  issue #226's Ember-owned, surface-independent contact occurrence, explicit source
+  and destination evidence, lifecycle, restart reconciliation, duplicate and
+  supersession rules, and separation from delivery truth.
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
