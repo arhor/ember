@@ -147,7 +147,12 @@ v3 origin is `ordinary_cognition`, canonical cognition remains pending, and the
 destination matches the configured private chat. Proactive deliveries are selected
 through the correlated contact store and must match its principal, scope, selected
 logical surface, policy assessment, representation digest, and configured-chat
-binding before this same reconciliation path may send.
+binding before this same reconciliation path may send. An intent without a committed
+handoff is eligible only when its latest decision admits Telegram and an
+agency-supplied fresh policy pass records another current Telegram admission
+immediately before creation or adoption. Without that revalidation, reconciliation
+leaves the intent untouched and sends nothing. Once a handoff exists, transport
+recovery follows its durable attempt evidence without reopening attention policy.
 
 Interaction-ledger v1 and v2 documents migrate in memory to v3 as
 `ordinary_cognition` origins with open send fences. Migration does not invent

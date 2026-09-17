@@ -310,8 +310,13 @@ transport-neutral rules live in
 [Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
 
 The same pre-poll recovery pass also bridges admitted proactive contacts. It selects
-only intents whose policy chose logical surface `telegram_bot` and whose principal
-and scope exactly match the configured mapping. The bridge creates or adopts one
+only intents whose latest policy decision chose logical surface `telegram_bot` and
+whose principal and scope exactly match the configured mapping. Before creating or
+adopting a new handoff, it invokes an agency-supplied revalidation callback and
+requires the resulting decision to use the current state revision, reconciliation
+time, intent identity, and Telegram selection. A missing callback or a fresh defer,
+suppress, or other-surface result leaves the intent unsent. Telegram does not derive
+the decision inputs itself. After admission, the bridge creates or adopts one
 ledger-v3 delivery with a proactive origin, binds it to
 `telegram:chat:<configured-chat-id>`, verifies the retained-representation digest,
 commits the intent-side handoff, and then calls the shared delivery reconciler. The

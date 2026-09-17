@@ -7,7 +7,11 @@ import test from "node:test";
 import type { ContactAttentionDecisionRecord } from "../src/agency/proactive-contact-attention-policy.ts";
 import type { MeaningId } from "../src/core/model.ts";
 import type { ProviderInvoker } from "../src/providers/contract.ts";
-import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
+import type {
+    ProactiveContactHandoffRevalidator,
+    TelegramSurfaceConfig,
+    TelegramUpdate,
+} from "../src/surfaces/telegram/index.ts";
 
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
 import { initialState } from "../src/core/model.ts";
@@ -192,7 +196,14 @@ async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suf
         },
     };
     await contacts.recordPolicyDecision(decision);
-    return { contacts, created, assessmentId, cognition };
+    const revalidate: ProactiveContactHandoffRevalidator = (currentState, currentIntent, consideredAt) => ({
+        ...decision,
+        assessment_id: `contact-policy-${suffix}-revalidated`,
+        contact_intent_id: currentIntent.contact_intent_id,
+        considered_at: consideredAt,
+        current_revision: currentState.revision,
+    });
+    return { contacts, created, assessmentId, cognition, decision, revalidate };
 }
 
 test("Telegram flood control exposes retry_after as a definite retryable delivery failure", async () => {
@@ -456,13 +467,14 @@ test("an admitted proactive contact creates one Telegram delivery and becomes sa
                     return sentMessage(7001);
                 },
             } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
-            { observedAt: "2026-09-17T12:02:00Z" },
+            { observedAt: "2026-09-17T12:02:00Z", revalidateBeforeHandoff: contact.revalidate },
         );
         assert.equal(results[0]?.status, "confirmed");
         assert.equal(sends, 1);
         const intent = (await contact.contacts.load()).intents[0]!;
         assert.equal(intent.disposition, "satisfied");
         assert.equal(intent.handoff?.surface_id, "telegram_bot");
+        assert.equal(intent.policy_decisions.at(-1)?.assessment_id, "contact-policy-release-revalidated");
         const proactive = (await new InteractionLedgerStore(f.statePath).load()).deliveries.filter(
             (delivery) => delivery.origin.kind === "proactive_contact",
         );
@@ -479,7 +491,127 @@ test("an admitted proactive contact creates one Telegram delivery and becomes sa
     }
 });
 
-test("proactive Telegram retry and uncertainty retain one handoff without new delivery", async () => {
+test("only the latest policy decision may nominate Telegram for a new handoff", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "latest-policy");
+        await contact.contacts.recordPolicyDecision({
+            ...contact.decision,
+            assessment_id: "contact-policy-latest-policy-deferred",
+            considered_at: "2026-09-17T12:01:30Z",
+            outcome: "defer",
+            basis: "quiet_period",
+            interruption: "remain_silent",
+            selected_surface_id: null,
+            next_step_owner: "ember_attention_policy",
+            reconsideration: { kind: "not_before", at: "2026-09-17T13:00:00Z" },
+        });
+        let revalidations = 0;
+        let sends = 0;
+        const deferred = await reconcileTelegramProactiveContacts(
+            f.config,
+            { sendMessage: async () => (sends += 1) } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            {
+                observedAt: "2026-09-17T12:02:00Z",
+                revalidateBeforeHandoff: (...args) => {
+                    revalidations += 1;
+                    return contact.revalidate(...args);
+                },
+            },
+        );
+        assert.deepEqual(deferred, []);
+
+        await contact.contacts.recordPolicyDecision({
+            ...contact.decision,
+            assessment_id: "contact-policy-latest-policy-other-surface",
+            considered_at: "2026-09-17T12:02:30Z",
+            selected_surface_id: "another_surface",
+        });
+        const otherSurface = await reconcileTelegramProactiveContacts(
+            f.config,
+            { sendMessage: async () => (sends += 1) } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            {
+                observedAt: "2026-09-17T12:03:00Z",
+                revalidateBeforeHandoff: (...args) => {
+                    revalidations += 1;
+                    return contact.revalidate(...args);
+                },
+            },
+        );
+        assert.deepEqual(otherSurface, []);
+        assert.equal(revalidations, 0);
+        assert.equal(sends, 0);
+        assert.equal(
+            (await new InteractionLedgerStore(f.statePath).load()).deliveries.some(
+                (delivery) => delivery.origin.kind === "proactive_contact",
+            ),
+            false,
+        );
+    } finally {
+        await f.close();
+    }
+});
+
+test("an admitted intent stays pending when no fresh pre-handoff policy decision is available", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "needs-revalidation");
+        let sends = 0;
+        const results = await reconcileTelegramProactiveContacts(
+            f.config,
+            { sendMessage: async () => (sends += 1) } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:02:00Z" },
+        );
+        assert.deepEqual(results, []);
+        assert.equal(sends, 0);
+        assert.equal((await contact.contacts.load()).intents[0]?.disposition, "pending");
+    } finally {
+        await f.close();
+    }
+});
+
+test("fresh pre-handoff policy may defer an old admission without creating a delivery", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "fresh-defer");
+        let sends = 0;
+        const results = await reconcileTelegramProactiveContacts(
+            f.config,
+            { sendMessage: async () => (sends += 1) } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            {
+                observedAt: "2026-09-17T12:02:00Z",
+                revalidateBeforeHandoff: (state, intent, consideredAt) => ({
+                    ...contact.decision,
+                    assessment_id: "contact-policy-fresh-defer-revalidated",
+                    contact_intent_id: intent.contact_intent_id,
+                    considered_at: consideredAt,
+                    current_revision: state.revision,
+                    outcome: "defer",
+                    basis: "quiet_period",
+                    interruption: "remain_silent",
+                    selected_surface_id: null,
+                    next_step_owner: "ember_attention_policy",
+                    reconsideration: { kind: "not_before", at: "2026-09-17T13:00:00Z" },
+                }),
+            },
+        );
+        assert.deepEqual(results, []);
+        assert.equal(sends, 0);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.disposition, "deferred");
+        assert.equal(intent.policy_decisions.at(-1)?.outcome, "defer");
+        assert.equal(
+            (await new InteractionLedgerStore(f.statePath).load()).deliveries.some(
+                (delivery) => delivery.origin.kind === "proactive_contact",
+            ),
+            false,
+        );
+    } finally {
+        await f.close();
+    }
+});
+
+test("proactive Telegram retry reuses one handoff and retained representation", async () => {
     const f = await fixture();
     try {
         const contact = await createAdmittedContact(f, "retry");
@@ -492,7 +624,7 @@ test("proactive Telegram retry and uncertainty retain one handoff without new de
                     throw new SurfaceDeliveryFailure("retryable", { outcome: "failed", retryable: true });
                 },
             } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
-            { observedAt: "2026-09-17T12:02:00Z" },
+            { observedAt: "2026-09-17T12:02:00Z", revalidateBeforeHandoff: contact.revalidate },
         );
         assert.equal(failed[0]?.status, "retryable_failure");
         assert.equal((await contact.contacts.load()).intents[0]?.disposition, "handed_off");
@@ -505,7 +637,7 @@ test("proactive Telegram retry and uncertainty retain one handoff without new de
                     return sentMessage(7002);
                 },
             } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
-            { observedAt: "2026-09-17T12:03:00Z" },
+            { observedAt: "2026-09-17T12:03:00Z", revalidateBeforeHandoff: contact.revalidate },
         );
         assert.equal(confirmed[0]?.status, "confirmed");
         assert.equal(sends, 2);
@@ -516,6 +648,50 @@ test("proactive Telegram retry and uncertainty retain one handoff without new de
             proactive[0]?.attempts.map((attempt) => attempt.outcome),
             ["failed", "confirmed"],
         );
+    } finally {
+        await f.close();
+    }
+});
+
+test("uncertain proactive Telegram delivery stays handed off and is never resent automatically", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "uncertain");
+        let sends = 0;
+        const uncertain = await reconcileTelegramProactiveContacts(
+            f.config,
+            {
+                sendMessage: async () => {
+                    sends += 1;
+                    throw new SurfaceDeliveryFailure("submission outcome is unknown", { outcome: "uncertain" });
+                },
+            } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:02:00Z", revalidateBeforeHandoff: contact.revalidate },
+        );
+        assert.equal(uncertain[0]?.status, "blocked_uncertain");
+        const handedOff = (await contact.contacts.load()).intents[0]!;
+        assert.equal(handedOff.disposition, "handed_off");
+        const deliveryId = handedOff.handoff?.delivery_id;
+
+        const recovered = await reconcileTelegramProactiveContacts(
+            f.config,
+            {
+                sendMessage: async () => {
+                    sends += 1;
+                    return sentMessage(7004);
+                },
+            } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
+            { observedAt: "2026-09-17T12:03:00Z" },
+        );
+        assert.equal(recovered[0]?.status, "blocked_uncertain");
+        assert.equal(sends, 1);
+        const proactive = (await new InteractionLedgerStore(f.statePath).load()).deliveries.filter(
+            (delivery) => delivery.origin.kind === "proactive_contact",
+        );
+        assert.equal(proactive.length, 1);
+        assert.equal(proactive[0]?.delivery_id, deliveryId);
+        assert.equal(proactive[0]?.attempts.length, 1);
+        assert.equal(proactive[0]?.attempts[0]?.outcome, "uncertain");
     } finally {
         await f.close();
     }
@@ -548,7 +724,7 @@ test("a proactive delivery created before intent-side handoff is adopted, and co
         const result = await reconcileTelegramProactiveContacts(
             f.config,
             { sendMessage: async () => (sends += 1) } as Parameters<typeof reconcileTelegramProactiveContacts>[1],
-            { observedAt: "2026-09-17T12:03:00Z" },
+            { observedAt: "2026-09-17T12:03:00Z", revalidateBeforeHandoff: contact.revalidate },
         );
         assert.equal(result[0]?.status, "confirmed");
         assert.equal(sends, 0);
