@@ -64,6 +64,13 @@ The function does not mutate canonical state, create a commitment, create author
 or attempt delivery. `deliver` only permits a later delivery layer to try contact;
 it is not evidence that contact happened.
 
+Issue #226 subsequently defines the durable
+[proactive-contact intent](proactive-contact-intent.md) between completed cognition
+and eventual delivery. In that flow, a non-null interruption candidate warrants one
+durable intent before attention-policy disposition; this issue's `deliver`, `defer`,
+and `suppress` outcomes remain the pure policy vocabulary rather than persistence or
+delivery truth. `no_delivery` maps to successful `no_contact` and creates no intent.
+
 ### Completed-internal-cognition handoff
 
 Issue #74's `CognitionOpportunityRecord` is deliberately **not** accepted as an
