@@ -535,7 +535,7 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     assert.deepEqual(selectedCounts, [3, 0]);
 });
 
-test("CLI action command should durably approve an exact pending calendar proposal", async (t) => {
+test("CLI action command should durably approve an exact pending calendar proposal when it was shown in the same scope", async (t) => {
     // Given
     const f = await fixture(t);
     const state = initialState("user-secret-marker");
@@ -555,8 +555,8 @@ test("CLI action command should durably approve an exact pending calendar propos
         },
         target: { label: "Personal", fingerprint: `sha256:${"a".repeat(64)}` },
         sourceIds: ["cognition-test-proposal"],
-        createdAt: "2026-09-16T00:00:00Z",
-        expiresAt: "2026-09-17T00:00:00Z",
+        createdAt: "2020-01-01T00:00:00Z",
+        expiresAt: "2099-01-01T00:00:00Z",
     });
     const io = capture(
         `:show-action ${proposal.proposal_id}\n:approve-action ${proposal.proposal_id} ${proposal.payload_digest} ${JSON.stringify(actionProposalConfirmation(proposal))}\n:quit\n`,
