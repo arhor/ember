@@ -107,6 +107,7 @@ test("attention policy should admit the preferred eligible surface when the inte
     );
     assert.equal(decision.current_revision, f.state.revision);
     assert.deepEqual(decision.evidence.grounding_meaning_ids, [f.commitmentId]);
+    assert.equal(decision.reconsideration, null);
     assert.deepEqual(f.state, before);
 });
 
@@ -129,9 +130,10 @@ test("attention policy should defer ordinary contact until the quiet period ends
 
     // Then
     assert.deepEqual(
-        [decision.outcome, decision.basis, decision.interruption, decision.reconsider_after],
-        ["defer", "quiet_period", "remain_silent", "2026-09-18T07:00:00Z"],
+        [decision.outcome, decision.basis, decision.interruption, decision.next_step_owner],
+        ["defer", "quiet_period", "remain_silent", "ember_attention_policy"],
     );
+    assert.deepEqual(decision.reconsideration, { kind: "not_before", at: "2026-09-18T07:00:00Z" });
     assert.deepEqual(decision.evidence.attention, policyRequest.attention);
 });
 
@@ -157,6 +159,7 @@ test("attention policy should suppress a confirmed duplicate when occurrence evi
         [first.outcome, first.basis, first.interruption, first.selected_surface_id],
         ["suppress", "duplicate_intent", "remain_silent", null],
     );
+    assert.equal(first.reconsideration, null);
     assert.deepEqual(first.evidence.occurrence, policyRequest.occurrence);
 });
 
@@ -198,6 +201,72 @@ test("attention policy should suppress a stale intent when grounding changes bef
     assert.equal(decision.current_revision, f.state.revision);
 });
 
+test("attention policy should defer stale representation until a successor or revalidation exists", () => {
+    // Given
+    const f = fixture();
+    const contactIntent = intent(f.state.revision, f.commitmentId, {
+        representation: {
+            digest: DIGEST,
+            currentness: "stale",
+            evidence_ids: ["evidence-representation-stale"],
+        },
+    });
+
+    // When
+    const decision = decideProactiveContactAttention(f.state, contactIntent, request());
+
+    // Then
+    assert.deepEqual(
+        [decision.outcome, decision.basis, decision.next_step_owner],
+        ["defer", "representation_stale", "ember_intent_owner"],
+    );
+    assert.deepEqual(decision.reconsideration, {
+        kind: "evidence_change",
+        signal: "successor_established_or_representation_revalidated",
+    });
+});
+
+test("attention policy should record reconsideration ownership when blocking evidence is unresolved", () => {
+    // Given
+    const f = fixture();
+    const unknownRepresentation = intent(f.state.revision, f.commitmentId, {
+        representation: {
+            digest: DIGEST,
+            currentness: "unknown",
+            evidence_ids: ["evidence-representation-currentness-unknown"],
+        },
+    });
+    const uncertainOccurrence = request({
+        occurrence: {
+            status: "identity_uncertain",
+            related_intent_id: "contact-intent-possibly-related",
+            evidence_ids: ["evidence-occurrence-identity-uncertain"],
+        },
+    });
+
+    // When
+    const representationDecision = decideProactiveContactAttention(f.state, unknownRepresentation, request());
+    const occurrenceDecision = decideProactiveContactAttention(
+        f.state,
+        intent(f.state.revision, f.commitmentId),
+        uncertainOccurrence,
+    );
+
+    // Then
+    assert.deepEqual(
+        [
+            representationDecision.outcome,
+            representationDecision.next_step_owner,
+            representationDecision.reconsideration,
+        ],
+        ["defer", "ember_intent_owner", { kind: "evidence_change", signal: "representation_currentness" }],
+    );
+    assert.deepEqual(
+        [occurrenceDecision.outcome, occurrenceDecision.next_step_owner, occurrenceDecision.reconsideration],
+        ["defer", "ember_attention_policy", { kind: "evidence_change", signal: "occurrence_identity" }],
+    );
+});
+
 test("attention policy should defer when no surface is currently eligible", () => {
     // Given
     const f = fixture();
@@ -218,9 +287,10 @@ test("attention policy should defer when no surface is currently eligible", () =
 
     // Then
     assert.deepEqual(
-        [decision.outcome, decision.basis, decision.interruption, decision.selected_surface_id],
-        ["defer", "no_eligible_surface", "remain_silent", null],
+        [decision.outcome, decision.basis, decision.interruption, decision.next_step_owner],
+        ["defer", "no_eligible_surface", "remain_silent", "ember_attention_policy"],
     );
+    assert.deepEqual(decision.reconsideration, { kind: "evidence_change", signal: "surface_eligibility" });
 });
 
 test("attention policy should not derive contact authority from an eligible surface", () => {
@@ -236,10 +306,39 @@ test("attention policy should not derive contact authority from an eligible surf
 
     // Then
     assert.deepEqual(
-        [decision.outcome, decision.basis, decision.selected_surface_id],
-        ["defer", "authority_unknown", null],
+        [decision.outcome, decision.basis, decision.next_step_owner],
+        ["defer", "authority_unknown", "ember_attention_policy"],
     );
+    assert.deepEqual(decision.reconsideration, { kind: "evidence_change", signal: "authority" });
     assert.equal(decision.evidence.surfaces[0]?.status, "eligible");
+});
+
+test("attention policy should use code-unit ordering when eligible surfaces have equal preference", () => {
+    // Given
+    const f = fixture();
+    const contactIntent = intent(f.state.revision, f.commitmentId);
+    const policyRequest = request({
+        surfaces: [
+            {
+                surface_id: "surface-ä",
+                preference_rank: 1,
+                status: "eligible",
+                evidence_ids: ["evidence-umlaut-surface-eligible"],
+            },
+            {
+                surface_id: "surface-z",
+                preference_rank: 1,
+                status: "eligible",
+                evidence_ids: ["evidence-ascii-surface-eligible"],
+            },
+        ],
+    });
+
+    // When
+    const decision = decideProactiveContactAttention(f.state, contactIntent, policyRequest);
+
+    // Then
+    assert.equal(decision.selected_surface_id, "surface-z");
 });
 
 test("attention policy should admit grounded time-sensitive contact when a quiet period is active", () => {

@@ -81,17 +81,24 @@ export interface ContactAttentionPolicyRequest {
     surfaces: ContactSurfaceCandidate[];
 }
 
-export interface ContactAttentionDecisionRecord {
+export type ContactReconsiderationCondition =
+    | { kind: "not_before"; at: string }
+    | {
+          kind: "evidence_change";
+          signal:
+              | "representation_currentness"
+              | "successor_established_or_representation_revalidated"
+              | "authority"
+              | "occurrence_identity"
+              | "surface_eligibility";
+      };
+
+interface ContactAttentionDecisionBase {
     assessment_id: `contact-policy-${string}`;
     contact_intent_id: `contact-intent-${string}`;
     considered_at: string;
     source_revision: number;
     current_revision: number;
-    outcome: ContactAttentionOutcome;
-    basis: ContactAttentionBasis;
-    interruption: "interrupt" | "remain_silent";
-    selected_surface_id: string | null;
-    reconsider_after: string | null;
     evidence: {
         grounding_meaning_ids: MeaningId[];
         representation_evidence_ids: string[];
@@ -103,6 +110,45 @@ export interface ContactAttentionDecisionRecord {
     };
 }
 
+export type ContactAttentionDecisionRecord = ContactAttentionDecisionBase &
+    (
+        | {
+              outcome: "admit";
+              basis: "current_authorized_intent";
+              interruption: "interrupt";
+              selected_surface_id: string;
+              next_step_owner: null;
+              reconsideration: null;
+          }
+        | {
+              outcome: "defer";
+              basis:
+                  | "quiet_period"
+                  | "no_eligible_surface"
+                  | "authority_unknown"
+                  | "representation_stale"
+                  | "representation_currentness_unknown"
+                  | "duplicate_identity_uncertain";
+              interruption: "remain_silent";
+              selected_surface_id: null;
+              next_step_owner: "ember_attention_policy" | "ember_intent_owner";
+              reconsideration: ContactReconsiderationCondition;
+          }
+        | {
+              outcome: "suppress";
+              basis:
+                  | "authority_denied"
+                  | "intent_expired"
+                  | "stale_grounding"
+                  | "duplicate_intent"
+                  | "superseded_intent";
+              interruption: "remain_silent";
+              selected_surface_id: null;
+              next_step_owner: null;
+              reconsideration: null;
+          }
+    );
+
 export function decideProactiveContactAttention(
     state: EmberState,
     intent: ProactiveContactIntentSnapshot,
@@ -113,40 +159,62 @@ export function decideProactiveContactAttention(
     validateRequest(intent, request);
 
     const base = decisionBase(state, intent, request);
-    if (intent.supersession !== null) return silentDecision(base, "suppress", "superseded_intent");
+    if (intent.supersession !== null) return suppressDecision(base, "superseded_intent");
 
     const consideredAt = Date.parse(request.considered_at);
     if (intent.expires_at !== null && Date.parse(intent.expires_at) <= consideredAt) {
-        return silentDecision(base, "suppress", "intent_expired");
+        return suppressDecision(base, "intent_expired");
     }
     if (!hasCurrentGrounding(state, intent, consideredAt)) {
-        return silentDecision(base, "suppress", "stale_grounding");
+        return suppressDecision(base, "stale_grounding");
     }
     if (intent.representation.currentness === "stale") {
-        return silentDecision(base, "suppress", "representation_stale");
+        return deferDecision(base, "representation_stale", "ember_intent_owner", {
+            kind: "evidence_change",
+            signal: "successor_established_or_representation_revalidated",
+        });
     }
     if (intent.representation.currentness === "unknown") {
-        return silentDecision(base, "defer", "representation_currentness_unknown");
+        return deferDecision(base, "representation_currentness_unknown", "ember_intent_owner", {
+            kind: "evidence_change",
+            signal: "representation_currentness",
+        });
     }
-    if (request.authority.status === "denied") return silentDecision(base, "suppress", "authority_denied");
-    if (request.authority.status === "unknown") return silentDecision(base, "defer", "authority_unknown");
+    if (request.authority.status === "denied") return suppressDecision(base, "authority_denied");
+    if (request.authority.status === "unknown") {
+        return deferDecision(base, "authority_unknown", "ember_attention_policy", {
+            kind: "evidence_change",
+            signal: "authority",
+        });
+    }
     if (request.occurrence.status === "confirmed_duplicate") {
-        return silentDecision(base, "suppress", "duplicate_intent");
+        return suppressDecision(base, "duplicate_intent");
     }
     if (request.occurrence.status === "identity_uncertain") {
-        return silentDecision(base, "defer", "duplicate_identity_uncertain");
+        return deferDecision(base, "duplicate_identity_uncertain", "ember_attention_policy", {
+            kind: "evidence_change",
+            signal: "occurrence_identity",
+        });
     }
     if (request.attention.status === "quiet_period" && intent.urgency === "ordinary") {
-        return silentDecision(base, "defer", "quiet_period", request.attention.ends_at);
+        return deferDecision(base, "quiet_period", "ember_attention_policy", {
+            kind: "not_before",
+            at: request.attention.ends_at,
+        });
     }
 
     const selectedSurface = request.surfaces
         .filter((surface) => surface.status === "eligible")
         .toSorted(
             (left, right) =>
-                left.preference_rank - right.preference_rank || left.surface_id.localeCompare(right.surface_id),
+                left.preference_rank - right.preference_rank || compareCodeUnits(left.surface_id, right.surface_id),
         )[0];
-    if (selectedSurface === undefined) return silentDecision(base, "defer", "no_eligible_surface");
+    if (selectedSurface === undefined) {
+        return deferDecision(base, "no_eligible_surface", "ember_attention_policy", {
+            kind: "evidence_change",
+            signal: "surface_eligibility",
+        });
+    }
 
     return {
         ...base,
@@ -154,7 +222,8 @@ export function decideProactiveContactAttention(
         basis: "current_authorized_intent",
         interruption: "interrupt",
         selected_surface_id: selectedSurface.surface_id,
-        reconsider_after: null,
+        next_step_owner: null,
+        reconsideration: null,
     };
 }
 
@@ -162,10 +231,7 @@ function decisionBase(
     state: EmberState,
     intent: ProactiveContactIntentSnapshot,
     request: ContactAttentionPolicyRequest,
-): Omit<
-    ContactAttentionDecisionRecord,
-    "outcome" | "basis" | "interruption" | "selected_surface_id" | "reconsider_after"
-> {
+): ContactAttentionDecisionBase {
     return {
         assessment_id: request.assessment_id,
         contact_intent_id: intent.contact_intent_id,
@@ -184,20 +250,42 @@ function decisionBase(
     };
 }
 
-function silentDecision(
+function deferDecision(
     base: ReturnType<typeof decisionBase>,
-    outcome: "defer" | "suppress",
-    basis: ContactAttentionBasis,
-    reconsiderAfter: string | null = null,
+    basis: Extract<ContactAttentionDecisionRecord, { outcome: "defer" }>["basis"],
+    nextStepOwner: Extract<ContactAttentionDecisionRecord, { outcome: "defer" }>["next_step_owner"],
+    reconsideration: ContactReconsiderationCondition,
 ): ContactAttentionDecisionRecord {
     return {
         ...base,
-        outcome,
+        outcome: "defer",
         basis,
         interruption: "remain_silent",
         selected_surface_id: null,
-        reconsider_after: reconsiderAfter,
+        next_step_owner: nextStepOwner,
+        reconsideration,
     };
+}
+
+function suppressDecision(
+    base: ReturnType<typeof decisionBase>,
+    basis: Extract<ContactAttentionDecisionRecord, { outcome: "suppress" }>["basis"],
+): ContactAttentionDecisionRecord {
+    return {
+        ...base,
+        outcome: "suppress",
+        basis,
+        interruption: "remain_silent",
+        selected_surface_id: null,
+        next_step_owner: null,
+        reconsideration: null,
+    };
+}
+
+function compareCodeUnits(left: string, right: string): number {
+    if (left < right) return -1;
+    if (left > right) return 1;
+    return 0;
 }
 
 function hasCurrentGrounding(state: EmberState, intent: ProactiveContactIntentSnapshot, consideredAt: number): boolean {

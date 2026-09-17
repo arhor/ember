@@ -77,7 +77,8 @@ Every result preserves:
 - one enumerated `outcome` and `basis` rather than generated rationale prose;
 - whether the present result is `interrupt` or `remain_silent`;
 - a selected generic surface only for `admit`;
-- the quiet-window end as `reconsider_after` when quiet time caused deferral; and
+- a typed next-step owner and bounded time or evidence-change condition for every
+  `defer`; and
 - snapshots of grounding, representation, authority, attention, occurrence,
   surface, and supersession evidence used by the decision.
 
@@ -96,15 +97,16 @@ The gate uses a conservative deterministic order:
 2. Suppress a predecessor when a named successor is already established.
 3. Suppress an expired intent or one whose semantic grounding is no longer current,
    applicable in scope, or live.
-4. Suppress a representation known to be stale; defer when representation
-   currentness is unknown.
+4. Defer a stale representation until it is revalidated or a named successor is
+   established; defer unknown representation currentness until it is resolved.
 5. Suppress denied authority and defer unknown authority.
 6. Suppress a provenance-confirmed duplicate; defer when occurrence identity is
    uncertain.
 7. Defer ordinary contact during a bounded quiet period. Explicitly grounded
    time-sensitive contact may continue through the remaining checks.
 8. Select the lowest-ranked eligible generic surface, with surface identity as a
-   deterministic tie-breaker. Defer if no surface is currently eligible.
+   locale-independent UTF-16 code-unit tie-breaker. Defer if no surface is
+   currently eligible.
 9. Admit only after every preceding check passes.
 
 This order ensures that a convenient surface or apparent urgency cannot rescue a
@@ -125,10 +127,32 @@ Instead, all grounding meanings must still:
 - remain `live` when the grounding is a commitment.
 
 The policy also checks explicit expiry and representation currentness. Known stale
-grounding, expiry, or representation suppresses the exact intent. Unknown
-representation currentness defers instead of inventing confidence. The decision
-records both source and current revisions so inspection can establish that a fresh
-assessment occurred after time or state changed.
+grounding or expiry suppresses the exact intent. A stale representation does not by
+itself prove that the contact purpose ended: it defers to the intent owner until the
+representation is revalidated or a successor with a new identity and digest is
+established. Unknown representation currentness likewise defers instead of
+inventing confidence. The decision records both source and current revisions so
+inspection can establish that a fresh assessment occurred after time or state
+changed.
+
+## Deferral and reconsideration
+
+Every `defer` result carries both a typed next-step owner and one bounded
+reconsideration condition:
+
+| Basis                                | Next-step owner          | Reconsideration condition                           |
+| ------------------------------------ | ------------------------ | --------------------------------------------------- |
+| `quiet_period`                       | `ember_attention_policy` | `not_before` the quiet-window end                   |
+| `representation_stale`               | `ember_intent_owner`     | successor established or representation revalidated |
+| `representation_currentness_unknown` | `ember_intent_owner`     | representation-currentness evidence changes         |
+| `authority_unknown`                  | `ember_attention_policy` | authority evidence changes                          |
+| `duplicate_identity_uncertain`       | `ember_attention_policy` | occurrence-identity evidence changes                |
+| `no_eligible_surface`                | `ember_attention_policy` | surface-eligibility evidence changes                |
+
+The durable intent owner records this contract with the `deferred` disposition. It
+does not invent scheduling, polling, or principal obligations downstream. Evidence
+change means a new attributable assessment input exists; it is not permission to
+spin or retry unchanged policy inputs.
 
 ## Quiet periods and attention windows
 
@@ -181,6 +205,10 @@ The selected surface ID is routing evidence for the later handoff. It is not a
 recipient identity, privacy grant, Telegram chat ID, availability promise, or proof
 that a delivery owner accepted responsibility.
 
+Equal-rank eligible surfaces are ordered by JavaScript's locale-independent UTF-16
+code-unit string relation, not `localeCompare`. This keeps replay selection stable
+across host locale and ICU configurations while leaving surface IDs opaque.
+
 ## Executable scenarios
 
 `src/agency/proactive-contact-attention-policy.test.ts` deterministically covers:
@@ -190,9 +218,13 @@ that a delivery owner accepted responsibility.
 3. replay-stable suppression of a provenance-confirmed duplicate;
 4. suppression of an intent with a named successor;
 5. fresh grounding revalidation after the underlying commitment becomes fulfilled;
-6. deferral when all surfaces are unavailable;
-7. authority remaining unknown despite an eligible surface; and
-8. grounded time-sensitive contact continuing through a quiet-period check.
+6. stale-representation deferral until revalidation or successor establishment;
+7. typed reconsideration ownership for unresolved representation and occurrence
+   evidence;
+8. deferral when all surfaces are unavailable;
+9. authority remaining unknown despite an eligible surface;
+10. locale-independent equal-rank surface selection; and
+11. grounded time-sensitive contact continuing through a quiet-period check.
 
 The tests use no provider, network, Telegram identifier, wall-clock dependency, or
 transport implementation.
@@ -216,10 +248,10 @@ delivery scheduling.
 
 ## Acceptance mapping
 
-| Issue #227 criterion                     | Implemented evidence                                                                                                                                                          |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Admit, defer, or suppress with rationale | Typed outcomes and enumerated bases return a complete assessment record with copied currentness, authority, attention, occurrence, surface, and supersession evidence.        |
-| Deterministic quiet and duplicate cases  | Bounded quiet windows, provenance-classified occurrence inputs, deterministic evaluation order, and replay assertions are covered by the focused unit suite.                  |
-| Re-evaluate stale intents                | Every assessment checks current meanings, applicability, live commitments, expiry, and representation currentness while recording source and assessment revisions.            |
-| Telegram does not own policy             | The module is under `src/agency/`, accepts opaque surface IDs, imports no surface or transport module, and only returns permission for a later handoff.                       |
-| Silence remains first-class              | Every `defer` and `suppress` record explicitly returns `remain_silent`; quiet deferral additionally records a bounded reconsideration time instead of losing the live intent. |
+| Issue #227 criterion                     | Implemented evidence                                                                                                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admit, defer, or suppress with rationale | Typed outcomes and enumerated bases return a complete assessment record with copied currentness, authority, attention, occurrence, surface, and supersession evidence. |
+| Deterministic quiet and duplicate cases  | Bounded quiet windows, provenance-classified occurrence inputs, deterministic evaluation order, and replay assertions are covered by the focused unit suite.           |
+| Re-evaluate stale intents                | Every assessment checks current meanings, applicability, live commitments, expiry, and representation currentness while recording source and assessment revisions.     |
+| Telegram does not own policy             | The module is under `src/agency/`, accepts opaque surface IDs, imports no surface or transport module, and only returns permission for a later handoff.                |
+| Silence remains first-class              | Every `defer` and `suppress` record explicitly returns `remain_silent`; every defer also records a typed next-step owner and bounded reconsideration condition.        |
