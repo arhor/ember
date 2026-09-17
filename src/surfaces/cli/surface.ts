@@ -26,6 +26,8 @@ import {
     withholdDetail,
 } from "../../core/semantics.ts";
 import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
+import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
+import { ObjectiveActionCoordinator } from "../../objectives/objective-action.ts";
 import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
@@ -348,24 +350,32 @@ function configuredCognitionProvider(config: CliSurfaceConfig) {
             ...(config.providerModel ? { model: config.providerModel } : {}),
             ...(googleCalendarConfig
                 ? {
-                      selectCapabilities: (selectedRequest) => [
-                          ...selectGoogleCalendarCapability(googleCalendarConfig, {
-                              principal: selectedRequest.projection.principal,
-                              lineageId: selectedRequest.projection.lineage.lineageId,
-                              scope: selectedRequest.projection.activeScope,
-                              surface: selectedRequest.projection.surface,
-                          }),
-                          ...selectApprovedGoogleCalendarEventCapability(
-                              googleCalendarConfig,
-                              new ActionProposalStore(config.statePath),
-                              {
+                      selectCapabilities: (selectedRequest) => {
+                          const actions = new ActionProposalStore(config.statePath);
+                          const objectiveActions = new ObjectiveActionCoordinator(
+                              new DurableObjectiveStore(config.statePath),
+                              actions,
+                          );
+                          return [
+                              ...selectGoogleCalendarCapability(googleCalendarConfig, {
                                   principal: selectedRequest.projection.principal,
                                   lineageId: selectedRequest.projection.lineage.lineageId,
                                   scope: selectedRequest.projection.activeScope,
                                   surface: selectedRequest.projection.surface,
-                              },
-                          ),
-                      ],
+                              }),
+                              ...selectApprovedGoogleCalendarEventCapability(
+                                  googleCalendarConfig,
+                                  actions,
+                                  {
+                                      principal: selectedRequest.projection.principal,
+                                      lineageId: selectedRequest.projection.lineage.lineageId,
+                                      scope: selectedRequest.projection.activeScope,
+                                      surface: selectedRequest.projection.surface,
+                                  },
+                                  { revalidateObjective: (proposalId) => objectiveActions.revalidate(proposalId) },
+                              ),
+                          ];
+                      },
                   }
                 : {}),
         })(request, options);

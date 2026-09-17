@@ -136,6 +136,7 @@ interface Dependencies {
     readSecret: (path: string) => Promise<string>;
     apiOrigin: string;
     tokenEndpoint: string;
+    revalidateObjective: (proposalId: string) => Promise<{ status: "current" } | { status: "stale"; reason: string }>;
 }
 
 export function createApprovedGoogleCalendarEventCapability(
@@ -149,6 +150,10 @@ export function createApprovedGoogleCalendarEventCapability(
         readSecret: async (path) => (await readFile(path, "utf8")).trim(),
         apiOrigin: GOOGLE_CALENDAR_API_ORIGIN,
         tokenEndpoint: GOOGLE_OAUTH_TOKEN_ENDPOINT,
+        revalidateObjective: async () => ({
+            status: "stale",
+            reason: "objective currentness revalidation is unavailable",
+        }),
         ...overrides,
     };
     return {
@@ -194,6 +199,11 @@ export function createApprovedGoogleCalendarEventCapability(
             }
             if (existing?.status !== "executing" && existing?.target.fingerprint !== calendarTargetFingerprint(config))
                 return { status: "denied", reason: "calendar target configuration changed after proposal creation" };
+            if (existing?.objective_step) {
+                const currentness = await dependencies.revalidateObjective(existing.proposal_id);
+                if (currentness.status === "stale")
+                    return { status: "denied", reason: `objective action is stale: ${currentness.reason}` };
+            }
             return store.authorize(
                 input.proposalId,
                 "googleCalendarCreateEvent",

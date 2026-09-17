@@ -32,6 +32,13 @@ export interface ActionProposalRecord {
     payload_digest: `sha256:${string}`;
     target: { label: string; fingerprint: `sha256:${string}` };
     source_ids: string[];
+    objective_step: null | {
+        objective_id: `objective-${string}`;
+        objective_revision: number;
+        episode_id: `objective-episode-${string}`;
+        step_id: string;
+        acceptance_condition_ids: string[];
+    };
     created_at: string;
     expires_at: string;
     status: ActionProposalStatus;
@@ -93,6 +100,7 @@ export class ActionProposalStore {
     async load(): Promise<ActionProposalDocument> {
         try {
             const value: unknown = JSON.parse(await readFile(this.path, "utf8"));
+            migrateObjectiveStep(value);
             validateDocument(value);
             return value;
         } catch (error) {
@@ -111,6 +119,7 @@ export class ActionProposalStore {
         payload: CapabilityJsonValue;
         target: { label: string; fingerprint: `sha256:${string}` };
         sourceIds: readonly string[];
+        objectiveStep?: NonNullable<ActionProposalRecord["objective_step"]>;
         createdAt: string;
         expiresAt: string;
     }): Promise<ActionProposalRecord> {
@@ -144,6 +153,7 @@ export class ActionProposalStore {
             payload_digest: boundPayloadDigest(input.payload, input.target.fingerprint),
             target: structuredClone(input.target),
             source_ids: [...input.sourceIds],
+            objective_step: input.objectiveStep ? structuredClone(input.objectiveStep) : null,
             created_at: input.createdAt,
             expires_at: input.expiresAt,
             status: "pending",
@@ -448,6 +458,13 @@ function validateDocument(value: unknown): asserts value is ActionProposalDocume
     }
 }
 
+function migrateObjectiveStep(value: unknown) {
+    if (!isObject(value) || value.action_proposal_version !== 1 || !Array.isArray(value.proposals)) return;
+    for (const proposal of value.proposals) {
+        if (isObject(proposal) && !("objective_step" in proposal)) proposal.objective_step = null;
+    }
+}
+
 function validProposal(value: unknown): value is ActionProposalRecord {
     if (
         !isObject(value) ||
@@ -459,6 +476,7 @@ function validProposal(value: unknown): value is ActionProposalRecord {
             "decision",
             "expires_at",
             "invalidation",
+            "objective_step",
             "payload",
             "payload_digest",
             "presentations",
@@ -498,6 +516,7 @@ function validProposal(value: unknown): value is ActionProposalRecord {
         value.payload_digest !== boundPayloadDigest(value.payload as CapabilityJsonValue, value.target.fingerprint)
     )
         return false;
+    if (!validObjectiveStep(value.objective_step)) return false;
     if (!validDecision(value.decision, value) || !validInvalidation(value.invalidation, value)) return false;
     if (!validAttempt(value.attempt, value)) return false;
     if (value.status === "pending")
@@ -516,6 +535,25 @@ function validProposal(value: unknown): value is ActionProposalRecord {
         value.decision?.decision === "approved" &&
         value.invalidation === null &&
         value.attempt?.outcome === value.status
+    );
+}
+
+function validObjectiveStep(value: unknown) {
+    if (value === null) return true;
+    return (
+        isObject(value) &&
+        exactKeys(value, ["acceptance_condition_ids", "episode_id", "objective_id", "objective_revision", "step_id"]) &&
+        isNotBlankString(value.objective_id) &&
+        value.objective_id.startsWith("objective-") &&
+        Number.isInteger(value.objective_revision) &&
+        (value.objective_revision as number) > 0 &&
+        isNotBlankString(value.episode_id) &&
+        value.episode_id.startsWith("objective-episode-") &&
+        isNotBlankString(value.step_id) &&
+        Array.isArray(value.acceptance_condition_ids) &&
+        value.acceptance_condition_ids.length > 0 &&
+        value.acceptance_condition_ids.every(isNotBlankString) &&
+        new Set(value.acceptance_condition_ids).size === value.acceptance_condition_ids.length
     );
 }
 

@@ -16,6 +16,8 @@ import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
 import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
+import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
+import { ObjectiveActionCoordinator } from "../../objectives/objective-action.ts";
 import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
@@ -592,24 +594,32 @@ function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
                 ...(config.provider?.model ? { model: config.provider.model } : {}),
                 ...(calendar
                     ? {
-                          selectCapabilities: (selectedRequest) => [
-                              ...selectGoogleCalendarCapability(calendar, {
-                                  principal: selectedRequest.projection.principal,
-                                  lineageId: selectedRequest.projection.lineage.lineageId,
-                                  scope: selectedRequest.projection.activeScope,
-                                  surface: selectedRequest.projection.surface,
-                              }),
-                              ...selectApprovedGoogleCalendarEventCapability(
-                                  calendar,
-                                  new ActionProposalStore(config.state_path),
-                                  {
+                          selectCapabilities: (selectedRequest) => {
+                              const actions = new ActionProposalStore(config.state_path);
+                              const objectiveActions = new ObjectiveActionCoordinator(
+                                  new DurableObjectiveStore(config.state_path),
+                                  actions,
+                              );
+                              return [
+                                  ...selectGoogleCalendarCapability(calendar, {
                                       principal: selectedRequest.projection.principal,
                                       lineageId: selectedRequest.projection.lineage.lineageId,
                                       scope: selectedRequest.projection.activeScope,
                                       surface: selectedRequest.projection.surface,
-                                  },
-                              ),
-                          ],
+                                  }),
+                                  ...selectApprovedGoogleCalendarEventCapability(
+                                      calendar,
+                                      actions,
+                                      {
+                                          principal: selectedRequest.projection.principal,
+                                          lineageId: selectedRequest.projection.lineage.lineageId,
+                                          scope: selectedRequest.projection.activeScope,
+                                          surface: selectedRequest.projection.surface,
+                                      },
+                                      { revalidateObjective: (proposalId) => objectiveActions.revalidate(proposalId) },
+                                  ),
+                              ];
+                          },
                       }
                     : {}),
             })(request, options);

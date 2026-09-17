@@ -17,7 +17,9 @@ semantic boundary for an objective that can outlive a runtime episode, provider
 invocation, interaction surface, or process. It is the design foundation for the
 multi-episode objective epic [#235](https://github.com/arhor/ember/issues/235). Issue
 #237 now selects the minimal persistence schema described below without selecting a
-scheduler or workflow engine.
+scheduler or workflow engine. Issue
+[#238](https://github.com/arhor/ember/issues/238) composes that schema with the
+durable action ledger through `src/objectives/objective-action.ts`.
 
 This design specializes existing architecture and, as of issue
 [#237](https://github.com/arhor/ember/issues/237), has a minimal executable
@@ -309,6 +311,21 @@ effect succeeded, failed, or is uncertain. Objective completion may depend on th
 evidence, but it must not rewrite it. Cancelling or abandoning an objective blocks
 unused proposal authority where applicable; it does not prove an already-started
 effect absent or reversed.
+
+The executable composition binds each objective-originated proposal to the exact
+`objective_id`, revision, source episode, concrete `step_id`, and affected acceptance
+conditions. `ObjectiveActionCoordinator` validates that binding when the proposal is
+created, and the approved Google Calendar write revalidates it immediately before
+the effect boundary. A terminal or revision-mismatched objective therefore makes the
+proposal stale even when its historical human approval remains valid evidence.
+
+After execution, the action ledger remains authoritative for the attempt and effect
+outcome. Reintegration cites the proposal and attempt identities in a new objective
+checkpoint: confirmed success still requires an Ember progress judgment, confirmed
+failure becomes a failed attempt, and `outcome_unknown` becomes uncertain progress
+that explicitly forbids consequential retry before reconciliation. Replaying the
+same proposal cannot create another effect because the consumed or uncertain attempt
+remains durable across process and provider replacement.
 
 ## Representative scenarios
 
