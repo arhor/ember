@@ -298,8 +298,10 @@ database, transaction mechanism, queue, event-sourcing model, or runtime topolog
   intent disposition. Its `no_delivery` result establishes `no_contact` only for a
   validated completed cognition with `candidate: null`; missing or unfinished
   cognition remains not evaluated.
-- Issue #227 owns the concrete attention policy that moves a live intent among
-  `pending`, `deferred`, `suppressed`, and eligible handoff.
+- The implemented [proactive-contact attention policy](proactive-contact-attention-policy.md)
+  from issue #227 moves a live intent toward `deferred`, `suppressed`, or an
+  eligible handoff using fresh currentness, authority, attention, duplicate, and
+  generic surface evidence.
 - Issue #228 owns the Telegram bridge and correlated delivery implementation.
 - Issue #229 owns behavioral evaluation of helpful contact, unwanted interruption,
   deliberate silence, and duplicate suppression.
