@@ -55,6 +55,10 @@ Current architecture material:
   defines issue #232's provider-independent proposal identity, exact-parameter human
   decisions, cross-turn/surface/restart correlation, fail-closed ambiguity handling,
   and currentness revalidation before consequential execution.
+- [Durable Objective Lifecycle and Ownership Semantics](durable-objective-lifecycle.md)
+  defines issue #236's Ember-owned objective identity, lifecycle and currentness,
+  multi-episode checkpoint evidence, restart-safe next-step ownership, and
+  cancellation without false stop or rollback claims.
 - [Authority, Approval, and Effects Evaluation](authority-approval-effects-evaluation.md)
   records issue #234's deterministic Calendar capability proof and separately
   attributable opt-in live integration evidence for approval, restart, duplicate, and
