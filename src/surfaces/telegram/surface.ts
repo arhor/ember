@@ -12,6 +12,7 @@ import type { MemoryProposalGenerator } from "../../memory/memory-proposal-gener
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
+import { revalidateProactiveContactForHandoff } from "../../agency/proactive-contact-revalidation.ts";
 import { ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
 import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
@@ -583,13 +584,18 @@ export async function runTelegramPolling(
 
     let offset: number | undefined;
     let acceptedCount = 0;
+    const proactiveRevalidator: ProactiveContactHandoffRevalidator =
+        revalidateProactiveContact ??
+        ((state, intent, consideredAt) =>
+            revalidateProactiveContactForHandoff(state, intent, consideredAt, {
+                surface_id: TELEGRAM_SURFACE_ID,
+                evidence_ids: ["telegram-configured-private-surface"],
+            }));
     while (!signal?.aborted) {
         await reconcileTelegramDeliveries(config, api, { signal });
         await reconcileTelegramProactiveContacts(config, api, {
             signal,
-            ...(revalidateProactiveContact === undefined
-                ? {}
-                : { revalidateBeforeHandoff: revalidateProactiveContact }),
+            revalidateBeforeHandoff: proactiveRevalidator,
         });
         if (signal?.aborted) return;
 

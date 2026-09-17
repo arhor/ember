@@ -302,11 +302,14 @@ record exists and the handoff commits. Only the latest policy decision may nomin
 a surface; a historical Telegram admission cannot override a newer defer or another
 surface selection. Before creating a delivery or adopting an uncommitted delivery,
 the bridge requires a fresh agency-owned policy decision at the current state
-revision and observation time. Missing revalidation, or a fresh defer, suppress, or
-different surface selection, produces no send. A crash in between is repaired only
-after that revalidation by adopting the unique delivery whose proactive origin names
-the same contact intent and an admitted policy assessment. Digest or cross-intent
-correlation disagreement fails closed.
+revision and observation time. Production Telegram polling constructs that
+revalidator from current canonical state, the latest admission's preserved authority
+and occurrence evidence, the current attention window, and the configured logical
+surface. A lower-level reconciliation call with no revalidator, or a fresh defer,
+suppress, or different surface selection, produces no send. A crash in between is
+repaired only after that revalidation by adopting the unique delivery whose proactive
+origin names the same contact intent and an admitted policy assessment. Digest or
+cross-intent correlation disagreement fails closed.
 
 The interaction ledger v3 owns the independent delivery occurrence. Its proactive
 origin records the contact-intent and assessment IDs, and its durable

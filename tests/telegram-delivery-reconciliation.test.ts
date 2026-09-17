@@ -5,7 +5,6 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 import type { ContactAttentionDecisionRecord } from "../src/agency/proactive-contact-attention-policy.ts";
-import type { MeaningId } from "../src/core/model.ts";
 import type { ProviderInvoker } from "../src/providers/contract.ts";
 import type {
     ProactiveContactHandoffRevalidator,
@@ -15,6 +14,7 @@ import type {
 
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
 import { initialState } from "../src/core/model.ts";
+import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
     InteractionLedgerStore,
@@ -110,8 +110,17 @@ function readyApi(overrides: Record<string, unknown> = {}) {
 async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suffix = "release") {
     const lease = await f.store.acquireWriteLease();
     let interaction: Awaited<ReturnType<typeof runSurfaceInteraction>>;
+    let groundingMeaningId: ReturnType<typeof rememberFact>;
     try {
         const loaded = await f.store.load();
+        groundingMeaningId = rememberFact(
+            loaded,
+            PRINCIPAL,
+            `user:${PRINCIPAL}`,
+            `proactive-grounding-${suffix}`,
+            "private",
+            `Current grounding for ${suffix}`,
+        );
         const started = startRuntime(loaded, PRINCIPAL, "private");
         const state = await f.store.commit(loaded.revision, started.state);
         interaction = await runSurfaceInteraction(f.store, state, {
@@ -135,7 +144,6 @@ async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suf
     const contacts = new ProactiveContactStore(f.statePath);
     const contactIntentId = `contact-intent-${suffix}` as const;
     const assessmentId = `contact-policy-${suffix}` as const;
-    const groundingMeaningId = `meaning-${suffix}` as MeaningId;
     const created = await contacts.createIntent({
         contactIntentId,
         purpose: "Notify the principal about the release",
@@ -486,6 +494,36 @@ test("an admitted proactive contact creates one Telegram delivery and becomes sa
         });
         assert.deepEqual(replay, []);
         assert.equal(sends, 1);
+    } finally {
+        await f.close();
+    }
+});
+
+test("production polling constructs the agency revalidator and hands an admitted contact to Telegram", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "production-worker");
+        let polls = 0;
+        let sends = 0;
+        const api = readyApi({
+            getUpdates: async () => {
+                polls += 1;
+                throw new Error("stop-after-proactive-handoff");
+            },
+            sendMessage: async ({ text }: { text: string }) => {
+                sends += 1;
+                assert.equal(text, "proactive message production-worker");
+                return sentMessage(7010);
+            },
+        });
+
+        await assert.rejects(runTelegramPolling(f.config, api), /stop-after-proactive-handoff/);
+        assert.equal(polls, 1);
+        assert.equal(sends, 1);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.disposition, "satisfied");
+        assert.notEqual(intent.policy_decisions.at(-1)?.assessment_id, contact.assessmentId);
+        assert.equal(intent.handoff?.assessment_id, intent.policy_decisions.at(-1)?.assessment_id);
     } finally {
         await f.close();
     }

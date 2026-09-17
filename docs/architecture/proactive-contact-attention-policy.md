@@ -249,10 +249,13 @@ transport implementation.
 - Issue #228 persists each complete decision in `ProactiveContactStore`. `defer` and
   `suppress` advance lifecycle immediately; `admit` remains recorded on the live
   intent until the Telegram bridge creates or adopts the unique correlated delivery
-  and commits handoff. The bridge considers only the latest decision and requests a
-  new decision through an agency-owned revalidation callback before any new handoff;
-  Telegram consumes that record but does not derive currentness, attention,
-  authority, duplicate, or surface evidence itself.
+  and commits handoff. The bridge considers only the latest decision. Production
+  Telegram polling constructs the agency revalidator that records a new decision
+  before any new handoff, using current canonical state, the latest admission's
+  preserved authority and occurrence evidence, temporal attention evidence, and a
+  current configured-surface observation. Telegram consumes that record but does not
+  derive the policy result itself. The callback remains an explicit seam for alternate
+  workers and deterministic tests; lower-level reconciliation without one fails safe.
 - The [delivery reconciliation runbook](delivery-reconciliation-runbook.md) owns
   delivery uncertainty, retries, acknowledgement, and recovery after handoff.
 
