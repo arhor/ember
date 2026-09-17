@@ -85,6 +85,15 @@ The decision order is:
 A retry that itself becomes uncertain is blocked exactly like any other uncertain
 attempt. There is no retry loop that converts repeated ambiguity into confidence.
 
+For a delivery correlated to a durable proactive-contact intent, reconciliation
+first checks the owning intent and any no-further-send fence. A superseded or
+cancelled owner with an unattempted or definitely failed delivery withdraws that
+delivery instead of entering the ordinary retry path. A `started` or `uncertain`
+predecessor remains blocked and also prevents a successor contact from being handed
+off while duplicate contact is possible. A confirmed predecessor is retained as an
+external effect that successor policy must consider. See
+[Durable Proactive-Contact Intent Semantics](proactive-contact-intent.md#fencing-delivery-before-supersession-or-cancellation).
+
 ## Inbound acknowledgement and replay
 
 Inbound acknowledgement and outbound delivery are intentionally decoupled after

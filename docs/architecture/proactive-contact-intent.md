@@ -30,41 +30,60 @@ external effect, and current applicability. It also preserves the existing
 cognition may conclude that no contact is appropriate, and even a warranted contact
 must pass later authority, attention, and currentness policy before handoff.
 
-## Boundary and decision result
+## Boundary and durable decision result
 
 The contact-decision boundary consumes completed cognition rather than a wake-up or
-an opportunity's preliminary `cognition` decision. Its result is exactly one of:
+an opportunity's preliminary `cognition` decision. A missing, unfinished, or invalid
+cognition source cannot produce a contact decision. If such an invocation is
+inspected, it is `not_evaluated / invalid_source`, not deliberate silence.
+
+For a valid completed source, Ember assigns one stable `contact_decision_id` and
+durably records the evaluation before it may establish exactly one result:
 
 - `no_contact`: a successful decision that the cognition should remain private or
   that contact is not currently warranted; or
 - `create_intent`: one validated proactive-contact intent is committed before any
   surface or delivery operation begins.
 
-`no_contact` creates no empty, closed, or synthetic intent. When inspection or
-evaluation needs durable evidence of deliberate silence, the source cognition's
-decision record may retain `no_contact`, its currentness basis, and a bounded
-enumerated basis such as `private_only`, `insufficient_value`, `already_satisfied`,
-or `not_current`. Absence of an intent alone does not establish deliberate silence:
-it could also mean that contact evaluation never ran, failed, or was interrupted.
+The durable contact-decision occurrence preserves its stable identity, completed
+source cognition and grounding, stable replay correlation, principal and scope,
+source/currentness revision, lifecycle observations, and eventual result.
+`no_contact` additionally preserves a bounded enumerated basis such as `private_only`,
+`insufficient_value`, `already_satisfied`, or `not_current`. `create_intent` records
+the resulting `contact_intent_id`.
 
-The two positive commits are ordered:
+An occurrence still `evaluating` across a runtime discontinuity becomes
+`outcome_unknown`; evaluator failure and cancellation remain distinct operational
+outcomes. None can be converted into `no_contact`. Replay of the same source decision
+correlation resolves to this occurrence and its established result rather than
+evaluating again.
+
+`no_contact` creates no empty, closed, or synthetic intent, but its durable decision
+occurrence is required. Absence of both an intent and a decided `no_contact`
+occurrence does not establish deliberate silence: evaluation may never have run,
+failed, been cancelled, or ended with an unknown outcome.
+
+The durable decision sequence is:
 
 ```text
 completed endogenous cognition
           |
           v
- contact decision: no_contact -----------------> successful silence
+ durable contact-decision occurrence (evaluating)
           |
-          v
- durable proactive-contact intent (pending)
+          +------> decided: no_contact ----------> successful silence
           |
-          v
- attention + authority + currentness policy
-      /           |                 \
- deferred     suppressed        eligible handoff
-                                      |
-                                      v
-                         surface delivery intent + attempts
+          +------> decided: create_intent
+                          +
+                  durable proactive-contact intent (pending)
+                          |
+                          v
+              attention + authority + currentness policy
+                  /           |                 \
+             deferred     suppressed        eligible handoff
+                                                  |
+                                                  v
+                                     surface delivery intent + attempts
 ```
 
 Creating the semantic intent does not choose Telegram, prove interruption authority,
@@ -147,6 +166,10 @@ creates a successor with a new identity and representation digest, then marks th
 predecessor `superseded`. This preserves what Ember previously intended without
 allowing old evidence or an old policy decision to authorize changed content.
 
+If the predecessor is already `handed_off`, supersession also requires the delivery
+fence defined below. A successor cannot become eligible for handoff merely because
+the semantic predecessor was marked terminal.
+
 Suppression closes the exact occurrence. It does not erase the source cognition or
 grounding, and it does not assert that the underlying meaning is false. A future
 contact may be valid only as a new occurrence with fresh provenance and currentness.
@@ -155,8 +178,9 @@ contact may be valid only as a new occurrence with fresh provenance and currentn
 
 Duplicate control follows provenance, never content equality alone:
 
-- replay or retry of one contact-decision occurrence resolves to its existing
-  `contact_intent_id` and cannot create a second intent;
+- replay or retry of one `contact_decision_id` resolves to its durable outcome and,
+  for `create_intent`, its existing `contact_intent_id`; it cannot create a second
+  decision or intent;
 - one live or handed-off intent cannot acquire a second live delivery intent for the
   same representation revision;
 - a stable domain correlation or explicit predecessor/successor relation may prove
@@ -195,12 +219,48 @@ Changing surfaces must therefore reconcile the existing delivery occurrence firs
 A more reachable or less private surface is not permission to create a second
 delivery, weaken disclosure scope, or treat an uncertain first send as absent.
 
+### Fencing delivery before supersession or cancellation
+
+Marking a handed-off intent `superseded` or `cancelled` is not by itself a delivery
+instruction. Before that terminal transition can make a successor eligible, Ember
+must commit a correlated delivery fence that the delivery reconciler checks before
+every first attempt and retry. The fence forbids further sends of the predecessor's
+representation while preserving all attempt evidence.
+
+The latest delivery evidence determines whether the transition can finish safely:
+
+- **Unattempted or definitely failed:** because there is definite evidence that no
+  external send succeeded, commit the no-further-send fence, withdraw any scheduled
+  retry, and then complete the predecessor transition. The successor may be assessed
+  independently after that durable fence exists.
+- **`started` without a terminal observation:** stop new work and reconcile it as a
+  potentially crossed external boundary. After process loss it becomes `uncertain`
+  under the delivery contract. Do not complete a transition that would make the
+  successor sendable while the outcome remains unresolved.
+- **`uncertain`:** retain the predecessor delivery and its possible effect, fence all
+  retries, and keep the successor blocked from handoff. Only stronger external
+  evidence or an attributable policy decision that explicitly accounts for possible
+  duplicate contact may resolve that block; supersession alone cannot.
+- **`confirmed`:** retain the confirmed predecessor delivery as historical effect
+  evidence and prohibit further retries. A successor is not a retry: attention and
+  currentness policy must explicitly account for the fact that the principal may
+  already have received the old representation, for example when deciding whether a
+  correction is warranted.
+
+If the intent-side terminal transition and delivery fence cannot be committed
+crash-consistently, the predecessor remains effectively `handed_off` and the
+successor remains ineligible until recovery establishes both sides. Cancellation,
+like supersession, never asserts recall, non-delivery, or reversal of an external
+effect.
+
 ## Restart and reconciliation invariants
 
 The durable ordering is:
 
-1. validate completed cognition and the contact decision;
-2. commit the `pending` proactive-contact intent;
+1. validate completed cognition and commit the contact-decision occurrence as
+   `evaluating`;
+2. commit either durable `decided / no_contact`, or crash-consistently commit
+   `decided / create_intent` with its `pending` proactive-contact intent;
 3. apply current attention, authority, and currentness policy;
 4. durably create the correlated delivery intent and handoff link before any
    external send boundary; and
@@ -209,6 +269,10 @@ The durable ordering is:
 After restart, a recovery owner holding the normal cooperating writer lease
 reconciles by stable identities rather than rerunning cognition:
 
+- decided contact occurrences survive with their exact result, while an unfinished
+  `evaluating` occurrence becomes `outcome_unknown` and cannot manufacture silence;
+- `decided / create_intent` without its correlated intent is a blocked inconsistent
+  commit, not permission to recreate the decision or invent a second intent;
 - `pending` and `deferred` intents are revalidated before any new handoff;
 - a delivery record already correlated to the intent is adopted as the unique
   handoff even if the intent-side disposition was not advanced before process loss;
@@ -231,7 +295,9 @@ database, transaction mechanism, queue, event-sourcing model, or runtime topolog
   supplies the current transport-independent policy vocabulary for deciding whether
   completed cognition may surface. A non-null candidate can feed intent creation;
   its `deliver`, `defer`, and `suppress` results are the pure precursor to later
-  intent disposition, while `no_delivery` remains successful `no_contact`.
+  intent disposition. Its `no_delivery` result establishes `no_contact` only for a
+  validated completed cognition with `candidate: null`; missing or unfinished
+  cognition remains not evaluated.
 - Issue #227 owns the concrete attention policy that moves a live intent among
   `pending`, `deferred`, `suppressed`, and eligible handoff.
 - Issue #228 owns the Telegram bridge and correlated delivery implementation.
@@ -244,10 +310,10 @@ notification framework.
 
 ## Acceptance mapping
 
-| Issue #226 criterion                   | Contract evidence                                                                                                                                          |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SDK/surface-independent intent         | Ember-owned identity and semantic destination contain no SDK, provider, surface, or transport identity; those appear only in correlated delivery evidence. |
-| Explicit source and destination        | Required responsibilities include completed source cognition, grounding evidence, intended principal, disclosure scope, purpose, and representation.       |
-| Delivery attempt is not delivery truth | Intent disposition and delivery lifecycle are separate; `handed_off`, `started`, `confirmed`, awareness, and satisfaction make different claims.           |
-| Restart and supersession semantics     | Durable ordering, identity-based reconciliation, terminal-state rules, changed-representation successors, and uncertain-send blocking are explicit.        |
-| Deliberate silence remains successful  | `no_contact` is a positive contact-decision result and creates no synthetic intent; absence alone does not falsely prove silence.                          |
+| Issue #226 criterion                   | Contract evidence                                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SDK/surface-independent intent         | Ember-owned identity and semantic destination contain no SDK, provider, surface, or transport identity; those appear only in correlated delivery evidence.                     |
+| Explicit source and destination        | Required responsibilities include completed source cognition, grounding evidence, intended principal, disclosure scope, purpose, and representation.                           |
+| Delivery attempt is not delivery truth | Intent disposition and delivery lifecycle are separate; `handed_off`, `started`, `confirmed`, awareness, and satisfaction make different claims.                               |
+| Restart and supersession semantics     | Durable decision ordering, identity-based reconciliation, terminal-state rules, delivery fencing, changed-representation successors, and uncertain-send blocking are explicit. |
+| Deliberate silence remains successful  | Durable `decided / no_contact` is a positive contact-decision result and creates no synthetic intent; invalid, missing, failed, and unknown evaluations cannot impersonate it. |
