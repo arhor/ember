@@ -15,10 +15,13 @@ discovery_status: current
 Issue [#236](https://github.com/arhor/ember/issues/236) defines the Ember-owned
 semantic boundary for an objective that can outlive a runtime episode, provider
 invocation, interaction surface, or process. It is the design foundation for the
-multi-episode objective epic [#235](https://github.com/arhor/ember/issues/235); it
-does not yet select a persistence schema, scheduler, or workflow engine.
+multi-episode objective epic [#235](https://github.com/arhor/ember/issues/235). Issue
+#237 now selects the minimal persistence schema described below without selecting a
+scheduler or workflow engine.
 
-This design specializes existing architecture:
+This design specializes existing architecture and, as of issue
+[#237](https://github.com/arhor/ember/issues/237), has a minimal executable
+implementation in `src/objectives/durable-objective.ts`:
 
 - [ADR 0001](decisions/0001-continuity-belongs-to-ember.md) makes continuity
   independent of operational loci;
@@ -354,11 +357,10 @@ and starts a new execution episode. The old provider session is irrelevant.
 
 ## Deliberately unresolved representation questions
 
-This design does not choose:
+This design and the issue #237 implementation do not choose:
 
-- an objective, episode, checkpoint, dependency, or revision storage schema;
-- whether objectives share a store with canonical meaning, conversations,
-  specialist records, or action proposals;
+- a generalized dependency or successor-revision storage schema beyond the
+  objective, episode, assessment, and checkpoint records described below;
 - a scheduler, queue, DAG, workflow engine, LangGraph adoption, resident daemon, or
   provider-native continuation mechanism;
 - universal decomposition, prioritization, progress scoring, retry, expiry, or
@@ -369,11 +371,66 @@ This design does not choose:
 - how much episode-local state a particular runtime may need for efficient local
   continuation.
 
-Issue #237 should choose the smallest durable representation that can implement
-these semantics. Issue #238 should compose later-episode approvals and effects with
+Issue #237 chooses the smallest durable representation described below. Issue #238
+should compose later-episode approvals and effects with
 the existing proposal contract. Issue #239 may recommend durable-execution
 infrastructure only from concrete missing capability evidence; this design does not
 make a workflow framework the owner of objective meaning.
+
+## Minimal durable implementation
+
+Issue #237 resolves the representation needed for the first executable slice with a
+versioned objective ledger stored beside canonical Ember state as
+`<state-path>.objectives.json`. The sidecar is an Ember-owned semantic record, not a
+provider or workflow checkpoint. Its replacement uses the same cooperating
+single-writer and durable-file-replacement mechanics as other semantic sidecars.
+
+Each objective record keeps its stable identity and revision, explicit creation
+provenance, purpose and named success conditions, principal and scope, currentness
+basis, lifecycle disposition, next-step ownership, currentness assessments,
+episodes, and checkpoints. Runtime IDs, provider labels, and provider session IDs
+are retained only inside episode evidence and never contribute to objective
+identity.
+
+Starting any later episode requires an explicit `resume` assessment with fresh
+evidence, a reason, and an account of prior-episode reconciliation. A `continue`
+decision creates a new bounded episode; `defer`, `block`, `complete`, and `abandon`
+update the objective disposition without launching work. Completion is accepted only
+when the latest relevant checkpoint establishes every named success condition without
+unresolved uncertainty. Every running episode must receive an explicit reconciliation
+outcome: an episode established to remain observable stays `running`, while only an
+episode for which current evidence establishes loss is durably changed to
+`outcome_unknown`. This preserves legitimate concurrent work as well as operational
+gaps without fabricating liveness, loss, failure, completion, or absence of effects.
+Abandonment may therefore preserve a truthfully `running` remote episode: it prevents
+new pursuit but does not claim that already-started execution stopped. Terminal
+objectives cannot be resumed in place, and late episode evidence remains part of their
+history.
+
+Checkpoints name the acceptance conditions they address and preserve progress
+classification, attributable evidence, assumptions, uncertainty, and any suggested
+next step. Suggestions remain evidence: only a later Ember-owned resume assessment
+can make a next step operative. Episode completion likewise does not complete the
+objective. This slice deliberately leaves revision/successor creation, scheduling,
+and approval/effect composition to the later work identified above.
+
+Ledger mutations are serialized within each store instance in addition to using the
+cross-instance writer lease, so concurrent episode/checkpoint appends cannot share a
+re-entrant lease and overwrite one another. Mutation and load validation also enforce
+causal chronology without imposing a false total ordering across concurrent episodes:
+an episode cannot end before it starts or before its own checkpoints, and a checkpoint
+must fall within its episode's observed interval. Late-arriving evidence may therefore
+carry an earlier valid occurrence time than another episode's already-recorded event;
+`updated_at` remains monotonic as the maximum timestamp in durable history.
+Completion selects relevant checkpoint evidence by maximum `recorded_at`, never by
+append order. If multiple relevant checkpoints share that latest timestamp, every
+tied checkpoint must establish the condition without uncertainty; conflicting tied
+evidence prevents completion rather than receiving an arbitrary ordering.
+
+Episode chronology also includes assessments that explicitly established the episode
+as `still_running`. A subsequently received terminal report cannot claim an
+`ended_at` earlier than such an assessment; it must be represented as corrected or
+uncertain evidence instead of making the durable history internally contradictory.
 
 ## Acceptance mapping
 
