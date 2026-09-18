@@ -246,14 +246,22 @@ transport implementation.
 - The [proactive-contact intent contract](proactive-contact-intent.md) owns stable
   intent identity, lifecycle, restart reconciliation, satisfaction, supersession,
   and separation from delivery truth.
-- Issue #228 owns committing an admitted handoff into a correlated Telegram
-  delivery occurrence and reconciling its attempts and outcomes.
+- Issue #228 persists each complete decision in `ProactiveContactStore`. `defer` and
+  `suppress` advance lifecycle immediately; `admit` remains recorded on the live
+  intent until the Telegram bridge creates or adopts the unique correlated delivery
+  and commits handoff. The bridge considers only the latest decision and requires an
+  explicit agency-owned revalidator to record a new decision before any new handoff.
+  That dependency must obtain current authority, attention, occurrence, and surface
+  observations rather than reconstructing them from the previous admission. Telegram
+  consumes the returned record but does not derive the policy result itself. Until a
+  production worker has such a current observation source, polling and lower-level
+  reconciliation fail safe without a first handoff.
 - The [delivery reconciliation runbook](delivery-reconciliation-runbook.md) owns
   delivery uncertainty, retries, acknowledgement, and recovery after handoff.
 
-This issue does not define quiet-hour configuration UX, a notification budget,
-Telegram reachability, intent-ledger persistence, transport retry, or generic
-delivery scheduling.
+This policy does not define quiet-hour configuration UX, a notification budget,
+Telegram reachability, transport retry, or generic delivery scheduling. Persistence
+and Telegram mapping consume its decision record without re-deciding policy.
 
 ## Acceptance mapping
 
