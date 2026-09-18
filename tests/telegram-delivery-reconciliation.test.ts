@@ -499,7 +499,7 @@ test("an admitted proactive contact creates one Telegram delivery and becomes sa
     }
 });
 
-test("production polling constructs the agency revalidator and hands an admitted contact to Telegram", async () => {
+test("polling hands an admitted contact to Telegram when supplied an agency revalidator", async () => {
     const f = await fixture();
     try {
         const contact = await createAdmittedContact(f, "production-worker");
@@ -517,13 +517,114 @@ test("production polling constructs the agency revalidator and hands an admitted
             },
         });
 
-        await assert.rejects(runTelegramPolling(f.config, api), /stop-after-proactive-handoff/);
+        await assert.rejects(
+            runTelegramPolling(f.config, api, { revalidateProactiveContact: contact.revalidate }),
+            /stop-after-proactive-handoff/,
+        );
         assert.equal(polls, 1);
         assert.equal(sends, 1);
         const intent = (await contact.contacts.load()).intents[0]!;
         assert.equal(intent.disposition, "satisfied");
         assert.notEqual(intent.policy_decisions.at(-1)?.assessment_id, contact.assessmentId);
         assert.equal(intent.handoff?.assessment_id, intent.policy_decisions.at(-1)?.assessment_id);
+    } finally {
+        await f.close();
+    }
+});
+
+test("production polling keeps an admitted contact pending without a current agency observation", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "production-fail-safe");
+        let polls = 0;
+        let sends = 0;
+        const api = readyApi({
+            getUpdates: async () => {
+                polls += 1;
+                throw new Error("stop-after-fail-safe-pass");
+            },
+            sendMessage: async () => {
+                sends += 1;
+                return sentMessage(7011);
+            },
+        });
+
+        await assert.rejects(runTelegramPolling(f.config, api), /stop-after-fail-safe-pass/);
+        assert.equal(polls, 1);
+        assert.equal(sends, 0);
+        assert.equal((await contact.contacts.load()).intents[0]?.disposition, "pending");
+        assert.equal(
+            (await new InteractionLedgerStore(f.statePath).load()).deliveries.some(
+                (delivery) => delivery.origin.kind === "proactive_contact",
+            ),
+            false,
+        );
+    } finally {
+        await f.close();
+    }
+});
+
+test("a quiet period that begins during downtime blocks polling recovery from an old admission", async () => {
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "new-quiet-period");
+        assert.equal(contact.decision.evidence.attention.status, "available");
+        let polls = 0;
+        let sends = 0;
+        const api = readyApi({
+            getUpdates: async () => {
+                polls += 1;
+                throw new Error("stop-after-quiet-period-pass");
+            },
+            sendMessage: async () => {
+                sends += 1;
+                return sentMessage(7012);
+            },
+        });
+
+        await assert.rejects(
+            runTelegramPolling(f.config, api, {
+                revalidateProactiveContact: (state, intent, consideredAt) => ({
+                    ...contact.decision,
+                    assessment_id: "contact-policy-new-quiet-period-revalidated",
+                    contact_intent_id: intent.contact_intent_id,
+                    considered_at: consideredAt,
+                    current_revision: state.revision,
+                    outcome: "defer",
+                    basis: "quiet_period",
+                    interruption: "remain_silent",
+                    selected_surface_id: null,
+                    next_step_owner: "ember_attention_policy",
+                    reconsideration: {
+                        kind: "not_before",
+                        at: new Date(Date.parse(consideredAt) + 60 * 60 * 1000).toISOString(),
+                    },
+                    evidence: {
+                        ...contact.decision.evidence,
+                        attention: {
+                            status: "quiet_period",
+                            window_id: "quiet-window-began-during-downtime",
+                            starts_at: new Date(Date.parse(consideredAt) - 60 * 1000).toISOString(),
+                            ends_at: new Date(Date.parse(consideredAt) + 60 * 60 * 1000).toISOString(),
+                            evidence_ids: ["evidence-current-quiet-period"],
+                        },
+                    },
+                }),
+            }),
+            /stop-after-quiet-period-pass/,
+        );
+        assert.equal(polls, 1);
+        assert.equal(sends, 0);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.disposition, "deferred");
+        assert.equal(intent.policy_decisions.at(-1)?.basis, "quiet_period");
+        assert.equal(intent.policy_decisions.at(-1)?.evidence.attention.status, "quiet_period");
+        assert.equal(
+            (await new InteractionLedgerStore(f.statePath).load()).deliveries.some(
+                (delivery) => delivery.origin.kind === "proactive_contact",
+            ),
+            false,
+        );
     } finally {
         await f.close();
     }

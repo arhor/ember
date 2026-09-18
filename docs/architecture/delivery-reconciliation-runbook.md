@@ -150,10 +150,13 @@ logical surface, policy assessment, representation digest, and configured-chat
 binding before this same reconciliation path may send. An intent without a committed
 handoff is eligible only when its latest decision admits Telegram and an
 agency-owned fresh policy pass records another current Telegram admission immediately
-before creation or adoption. The production polling worker constructs this
-revalidator; direct lower-level reconciliation without one leaves the intent untouched
-and sends nothing. Once a handoff exists, transport recovery follows its durable
-attempt evidence without reopening attention policy.
+before creation or adoption. The revalidator must be supplied by an agency owner that
+can observe current attention, authority, occurrence, and surface evidence; neither
+the prior admission nor Telegram transport state can substitute for those
+observations. Production polling and direct lower-level reconciliation without that
+dependency leave the intent untouched and send nothing. Once a handoff exists,
+transport recovery follows its durable attempt evidence without reopening attention
+policy.
 
 Interaction-ledger v1 and v2 documents migrate in memory to v3 as
 `ordinary_cognition` origins with open send fences. Migration does not invent

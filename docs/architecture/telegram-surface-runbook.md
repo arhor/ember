@@ -312,15 +312,14 @@ transport-neutral rules live in
 The same pre-poll recovery pass also bridges admitted proactive contacts. It selects
 only intents whose latest policy decision chose logical surface `telegram_bot` and
 whose principal and scope exactly match the configured mapping. Before creating or
-adopting a new handoff, the production polling worker constructs an agency-owned
-revalidator from current canonical state, the latest admission's preserved authority
-and occurrence evidence, temporal attention evidence, and a current observation of
-the configured logical surface. It requires the resulting decision to use the current
-state revision, reconciliation time, intent identity, and Telegram selection. A fresh
-defer, suppress, or other-surface result leaves the intent unsent. The injectable
-callback remains a worker/test seam, while a direct lower-level reconciliation call
-without one fails safe. Telegram does not decide the policy result itself. After
-admission, the bridge creates or adopts one
+adopting a new handoff, the worker requires an explicit agency-owned revalidator with
+current attention, authority, occurrence, and logical-surface observations. It must
+not synthesize those inputs from the previous admission. The bridge requires the
+resulting decision to use the current state revision, reconciliation time, intent
+identity, and Telegram selection. A missing revalidator, fresh defer or suppress, or
+other-surface result leaves the intent unsent. Production polling therefore remains
+fail-safe until its owner supplies this current-observation dependency; Telegram does
+not decide the policy result itself. After admission, the bridge creates or adopts one
 ledger-v3 delivery with a proactive origin, binds it to
 `telegram:chat:<configured-chat-id>`, verifies the retained-representation digest,
 commits the intent-side handoff, and then calls the shared delivery reconciler. The
