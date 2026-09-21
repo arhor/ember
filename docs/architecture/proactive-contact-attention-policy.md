@@ -246,14 +246,27 @@ transport implementation.
 - The [proactive-contact intent contract](proactive-contact-intent.md) owns stable
   intent identity, lifecycle, restart reconciliation, satisfaction, supersession,
   and separation from delivery truth.
-- Issue #228 owns committing an admitted handoff into a correlated Telegram
-  delivery occurrence and reconciling its attempts and outcomes.
+- Issue #228 persists each complete decision in `ProactiveContactStore`. `defer` and
+  `suppress` advance lifecycle immediately; `admit` remains recorded on the live
+  intent until the Telegram bridge creates or adopts the unique correlated delivery
+  and commits handoff. The bridge considers only the latest decision and requires an
+  explicit agency-owned revalidator to record a new decision before any new handoff.
+  That dependency must obtain current authority, attention, occurrence, and surface
+  observations rather than reconstructing them from the previous admission. Telegram
+  consumes the returned record but does not derive the policy result itself. Production
+  polling constructs that dependency only when the local version-2/3 surface
+  configuration references an explicit `proactive_contact_policy_path`. The
+  agency-owned observer rereads that separate policy document for every first-handoff
+  assessment and evaluates its current standing-authority setting, recurring UTC quiet
+  window, durable occurrence identity, canonical grounding, and successfully
+  preflighted logical surface. An absent policy remains fail-safe, and direct
+  lower-level reconciliation still requires an explicit revalidator.
 - The [delivery reconciliation runbook](delivery-reconciliation-runbook.md) owns
   delivery uncertainty, retries, acknowledgement, and recovery after handoff.
 
-This issue does not define quiet-hour configuration UX, a notification budget,
-Telegram reachability, intent-ledger persistence, transport retry, or generic
-delivery scheduling.
+This policy does not define setup UX for the opt-in policy document, a notification
+budget, transport retry, or generic delivery scheduling. Persistence and Telegram
+mapping consume its decision record without re-deciding policy.
 
 ## Acceptance mapping
 

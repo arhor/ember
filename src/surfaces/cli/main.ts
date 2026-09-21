@@ -14,6 +14,7 @@ import type {
     SetupGoogleCalendarArgs,
 } from "./model.ts";
 
+import { proactiveContactInspectionView, ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
 import { initialState } from "../../core/model.ts";
@@ -115,6 +116,7 @@ async function onInspect(args: InspectArgs, io: CliIo) {
     const view = {
         ...inspectionView(state),
         interactions: interactionLedgerInspectionView(await new InteractionLedgerStore(store.path).load()),
+        proactiveContacts: proactiveContactInspectionView(await new ProactiveContactStore(store.path).load()),
         memoryProposalGenerations: (await new MemoryProposalGenerationStore(store.path).load()).generations,
     };
     io.output.write(args.json ? `${JSON.stringify(view, null, 2)}\n` : renderInspection(view));
@@ -267,6 +269,7 @@ async function loadForPrincipal(store: StateStore, principal: string) {
 
 type InspectionView = ReturnType<typeof inspectionView> & {
     interactions: ReturnType<typeof interactionLedgerInspectionView>;
+    proactiveContacts: ReturnType<typeof proactiveContactInspectionView>;
     memoryProposalGenerations: Awaited<ReturnType<MemoryProposalGenerationStore["load"]>>["generations"];
 };
 
@@ -278,6 +281,7 @@ function renderInspection({
     interactions: { deliveries, inbound_occurrences },
     lineage: { constitutiveBoundaries, lineageId },
     memoryProposalGenerations,
+    proactiveContacts,
     revision,
     runtimeEpisodes,
 }: InspectionView) {
@@ -293,6 +297,7 @@ function renderInspection({
         ["Cognition episodes", cognitionEpisodes],
         ["Interaction occurrences", inbound_occurrences],
         ["Delivery records", deliveries],
+        ["Proactive contact intents", proactiveContacts.intents],
         ["Memory proposal generations", memoryProposalGenerations],
     ];
     for (const [label, items] of sections) {

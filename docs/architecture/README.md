@@ -121,6 +121,10 @@ Current architecture material:
 - [Proactive-Contact Attention Policy](proactive-contact-attention-policy.md)
   defines issue #227's executable Ember-owned currentness, authority, quiet-window,
   duplicate, and generic surface-eligibility gate before delivery handoff.
+- The proactive-contact intent, attention-policy, delivery-reconciliation, and
+  Telegram documents together record issue #228's versioned lifecycle store,
+  ledger-v3 correlation and send fence, restart adoption, configured private-chat
+  mapping, and redacted inspection behavior.
 - [Minimal Continuity Vertical Slice](minimal-continuity-slice.md) specifies the
   deliberately narrow first executable design derived from the accepted ADRs and
   minimal acceptance subset.
