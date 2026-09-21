@@ -10,13 +10,14 @@ discovery_status: current
 
 # Canonical Ember Application Flow
 
-Status: research proposal for [#304](https://github.com/arhor/ember/issues/304),
+Status: accepted migration proposal from [#304](https://github.com/arhor/ember/issues/304),
 under [epic #303](https://github.com/arhor/ember/issues/303). Investigated on
 2026-09-21 against commit `ea9d1757336162bcc4df4dbb110ad7aebb865964`.
 The current-flow sections describe that commit; target paths and contracts are
-proposed, not implemented. This document owns the cross-module migration proposal,
-not the individual semantic contracts linked below. Acceptance of this proposal
-does not claim that the epic is implemented.
+incremental migration targets. This document owns the cross-module migration proposal,
+not the individual semantic contracts linked below. The transport-neutral contract
+from #305 and production composition root from #306 are implemented; later coordinator,
+ownership, and host changes remain proposed until their child issues land.
 
 ## Recommendation and governing constraints
 
@@ -241,6 +242,15 @@ transaction, reconstruct missing replies, or claim exactly-once network effects.
 configuration. It opens repositories and configures inference, capabilities, optional
 memory/progress evaluators, and diagnostics. It passes a small application API into each
 surface. A resident worker and a foreground process use this same function and code.
+
+As implemented by #306, `composeEmberApplication` is the production construction
+boundary for ordinary CLI and Telegram instances. It derives all current sidecar
+repositories from the configured canonical state path, selects the cognition provider,
+wires Calendar capability/objective collaborators, and constructs post-turn memory and
+onboarding helpers. Its explicit overrides let tests supply deterministic providers,
+helpers, clocks, IDs, and store mechanics without reading process or global configuration.
+The surfaces still own orchestration until #307–#311 move those responsibilities behind
+the application API; this intermediate state does not create a second application path.
 
 ```mermaid
 flowchart TD

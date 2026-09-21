@@ -3,6 +3,7 @@ import type { Readable, Writable } from "node:stream";
 import { createInterface } from "node:readline";
 
 import type { CapabilityBinding } from "../../capabilities/execution.ts";
+import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
@@ -10,9 +11,8 @@ import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../capabilities/action-proposal.ts";
-import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
-import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
+import { actionProposalConfirmation } from "../../capabilities/action-proposal.ts";
+import { composeEmberApplication } from "../../composition/ember.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
 import {
@@ -25,16 +25,7 @@ import {
     undertake,
     withholdDetail,
 } from "../../core/semantics.ts";
-import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
-import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
-import { ObjectiveActionCoordinator } from "../../objectives/objective-action.ts";
-import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
-import { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
-import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
-import { createCodexProvider } from "../../providers/codex.ts";
-import { createCursorProvider } from "../../providers/cursor.ts";
-import { createProcessProvider, providerLabel } from "../../providers/process.ts";
 import { runSurfaceInteraction } from "../../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../../runtime/runtime.ts";
 import { cloneState } from "../../util.ts";
@@ -67,14 +58,14 @@ interface CliSurfaceIo {
 }
 
 export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo): Promise<number> {
-    const store = new StateStore(config.statePath);
+    const dependencies = dependenciesForCli(config);
+    const store = dependencies.repositories.state;
     const initialLease = await store.acquireWriteLease();
     try {
         await loadConfiguredState(store, config);
     } finally {
         await store.releaseWriteLease(initialLease);
     }
-    const onboardingProvider = configuredCognitionProvider(config).provider;
     const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     for await (const line of lines) {
         if (!line.trim()) continue;
@@ -92,19 +83,20 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
             try {
                 if (line.startsWith(":")) {
                     if (line === ":new-conversation") {
-                        const conversationId = await new ConversationContextStore(
-                            config.statePath,
-                        ).startFreshConversation(config.principal, config.scope);
+                        const conversationId = await dependencies.repositories.conversation.startFreshConversation(
+                            config.principal,
+                            config.scope,
+                        );
                         io.output.write(`${conversationId}\n`);
                     } else if (line.startsWith(":ask ")) {
                         const result = await withSigintCancellation((signal) =>
-                            ask(config, store, state, runtimeId, line, io.output, signal),
+                            ask(config, dependencies, store, state, runtimeId, line, io.output, signal),
                         );
                         if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
                     } else if (line.startsWith(":show-action ")) {
                         const [command, proposalId, ...extra] = splitCommand(line);
                         if (!proposalId || extra.length) throw new ValidationError(`${command} requires PROPOSAL_ID`);
-                        const proposal = await new ActionProposalStore(config.statePath).present({
+                        const proposal = await dependencies.repositories.actions.present({
                             proposalId,
                             principal: config.principal,
                             scope: config.scope,
@@ -131,7 +123,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             throw new ValidationError(
                                 `${command} requires PROPOSAL_ID PAYLOAD_DIGEST QUOTED_MATERIAL_CONFIRMATION`,
                             );
-                        const actions = new ActionProposalStore(config.statePath);
+                        const actions = dependencies.repositories.actions;
                         const pending = await actions.get(proposalId);
                         const presentation = pending?.presentations
                             .filter(
@@ -160,7 +152,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         const [command, proposalId, ...reason] = splitCommand(line);
                         if (!proposalId || !reason.length)
                             throw new ValidationError(`${command} requires PROPOSAL_ID REASON`);
-                        const proposal = await new ActionProposalStore(config.statePath).invalidate({
+                        const proposal = await dependencies.repositories.actions.invalidate({
                             proposalId,
                             kind: command === ":withdraw-action" ? "withdrawn" : "superseded",
                             principal: config.principal,
@@ -180,7 +172,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         );
                         io.output.write(`${result.id}\n`);
                     }
-                } else await runOrdinaryCliInteraction(config, store, state, runtimeId, onboardingProvider, line, io);
+                } else await runOrdinaryCliInteraction(config, dependencies, store, state, runtimeId, line, io);
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
@@ -220,33 +212,30 @@ async function withCliLease(
 
 async function runOrdinaryCliInteraction(
     config: CliSurfaceConfig,
+    dependencies: EmberApplicationDependencies,
     store: StateStore,
     state: EmberState,
     runtimeId: RuntimeId,
-    onboardingProvider: ProviderInvoker,
     line: string,
     io: CliSurfaceIo,
 ) {
-    const onboardingWork = await new OnboardingWorkStore(config.statePath).load();
+    const onboardingWork = await dependencies.repositories.onboarding.load();
     const onboardingIsActive = onboardingWork?.status === "active" && onboardingWork.scope === config.scope;
     const onboardingProgressEvaluator =
         config.onboardingProgressEvaluator ??
-        (onboardingIsActive
-            ? createProviderOnboardingProgressEvaluator(onboardingProvider, config.providerTimeoutSeconds)
-            : undefined);
+        (onboardingIsActive ? dependencies.postTurn.onboardingProgressEvaluator : undefined);
     const memoryProposalGenerator =
         config.memoryProposalGenerator ??
-        (onboardingIsActive
-            ? createProviderMemoryProposalGenerator(onboardingProvider, config.providerTimeoutSeconds)
-            : undefined);
+        (onboardingIsActive ? dependencies.postTurn.memoryProposalGenerator : undefined);
     const result = await withSigintCancellation((signal) =>
         runSurfaceInteraction(store, state, {
             runtimeId,
             principal: config.principal,
             scope: config.scope,
             text: line,
-            ...configuredCognitionProvider(config),
-            timeoutSeconds: config.providerTimeoutSeconds,
+            provider: dependencies.cognition.provider,
+            providerLabel: dependencies.cognition.providerLabel,
+            timeoutSeconds: dependencies.cognition.timeoutSeconds,
             ...(memoryProposalGenerator === undefined
                 ? {}
                 : { memoryProposalGenerator, memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
@@ -311,6 +300,7 @@ async function semanticCommand(
 
 async function ask(
     config: CliSurfaceConfig,
+    dependencies: EmberApplicationDependencies,
     store: StateStore,
     state: EmberState,
     runtimeId: RuntimeId,
@@ -328,8 +318,9 @@ async function ask(
         principal: config.principal,
         scope: config.scope,
         text: parts.slice(3).join(" "),
-        ...configuredCognitionProvider(config),
-        timeoutSeconds: config.providerTimeoutSeconds,
+        provider: dependencies.cognition.provider,
+        providerLabel: dependencies.cognition.providerLabel,
+        timeoutSeconds: dependencies.cognition.timeoutSeconds,
         signal,
         purpose: "explain",
         explainIds: ids,
@@ -339,58 +330,33 @@ async function ask(
     });
 }
 
-function configuredCognitionProvider(config: CliSurfaceConfig) {
-    const adapter = { command: config.providerCommand, arguments_: config.providerArgs };
-    const claude: ProviderInvoker = async (request, options) => {
-        const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
-        const googleCalendarConfig = config.googleCalendarConfigPath
-            ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath)
-            : undefined;
-        return await (config.claudeProviderFactory ?? createClaudeCodeProvider)({
-            ...(config.providerModel ? { model: config.providerModel } : {}),
-            ...(googleCalendarConfig
-                ? {
-                      selectCapabilities: (selectedRequest) => {
-                          const actions = new ActionProposalStore(config.statePath);
-                          const objectiveActions = new ObjectiveActionCoordinator(
-                              new DurableObjectiveStore(config.statePath),
-                              actions,
-                          );
-                          return [
-                              ...selectGoogleCalendarCapability(googleCalendarConfig, {
-                                  principal: selectedRequest.projection.principal,
-                                  lineageId: selectedRequest.projection.lineage.lineageId,
-                                  scope: selectedRequest.projection.activeScope,
-                                  surface: selectedRequest.projection.surface,
-                              }),
-                              ...selectApprovedGoogleCalendarEventCapability(
-                                  googleCalendarConfig,
-                                  actions,
-                                  {
-                                      principal: selectedRequest.projection.principal,
-                                      lineageId: selectedRequest.projection.lineage.lineageId,
-                                      scope: selectedRequest.projection.activeScope,
-                                      surface: selectedRequest.projection.surface,
-                                  },
-                                  { revalidateObjective: (proposalId) => objectiveActions.revalidate(proposalId) },
-                              ),
-                          ];
-                      },
-                  }
-                : {}),
-        })(request, options);
-    };
-    return {
-        providerLabel: providerLabel(config.providerCommand),
-        provider:
-            config.providerKind === "claude-code"
-                ? claude
-                : config.providerKind === "codex"
-                  ? createCodexProvider(adapter)
-                  : config.providerKind === "cursor"
-                    ? createCursorProvider(adapter)
-                    : createProcessProvider(adapter),
-    };
+function dependenciesForCli(config: CliSurfaceConfig) {
+    return composeEmberApplication(
+        {
+            statePath: config.statePath,
+            provider: {
+                kind: config.providerKind,
+                command: config.providerCommand,
+                arguments: config.providerArgs,
+                timeoutSeconds: config.providerTimeoutSeconds,
+                ...(config.providerModel === undefined ? {} : { model: config.providerModel }),
+            },
+            ...(config.googleCalendarConfigPath === undefined
+                ? {}
+                : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
+        },
+        {
+            ...(config.memoryProposalGenerator === undefined
+                ? {}
+                : { memoryProposalGenerator: config.memoryProposalGenerator }),
+            ...(config.onboardingProgressEvaluator === undefined
+                ? {}
+                : { onboardingProgressEvaluator: config.onboardingProgressEvaluator }),
+            ...(config.claudeProviderFactory === undefined
+                ? {}
+                : { claudeProviderFactory: config.claudeProviderFactory }),
+        },
+    );
 }
 
 async function loadForPrincipal(store: StateStore, principal: string) {
