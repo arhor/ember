@@ -1,0 +1,17 @@
+{
+  "scenario_version": 1,
+  "id": "issue-229-proactive-contact",
+  "description": "Helpful contact, deliberate silence, currentness, restart, duplication, and delivery truth.",
+  "cases": [
+    { "id": "useful-contact", "expect_contact": true },
+    { "id": "low-value-silence", "expect_contact": false },
+    { "id": "quiet-period-deferral", "expect_contact": false },
+    { "id": "duplicate-intent", "expect_contact": false },
+    { "id": "superseded-intent", "expect_contact": false },
+    { "id": "stale-before-delivery", "expect_contact": false },
+    { "id": "restart-before-delivery", "expect_contact": true },
+    { "id": "confirmed-vs-uncertain-delivery", "expect_contact": true },
+    { "id": "repeated-opportunity", "expect_contact": false },
+    { "id": "remembered-currentness-change", "expect_contact": true }
+  ]
+}
