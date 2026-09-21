@@ -16,8 +16,8 @@ under [epic #303](https://github.com/arhor/ember/issues/303). Investigated on
 The current-flow sections describe that commit; target paths and contracts are
 incremental migration targets. This document owns the cross-module migration proposal,
 not the individual semantic contracts linked below. The transport-neutral contract
-from #305 and production composition root from #306 are implemented; later coordinator,
-ownership, and host changes remain proposed until their child issues land.
+from #305, production composition root from #306, and coordinator facade from #307 are
+implemented; later ownership and host changes remain proposed until their child issues land.
 
 ## Recommendation and governing constraints
 
