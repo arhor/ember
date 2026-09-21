@@ -66,7 +66,6 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
     } finally {
         await store.releaseWriteLease(initialLease);
     }
-    const onboardingProvider = dependencies.cognition.provider;
     const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     for await (const line of lines) {
         if (!line.trim()) continue;
@@ -173,17 +172,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         );
                         io.output.write(`${result.id}\n`);
                     }
-                } else
-                    await runOrdinaryCliInteraction(
-                        config,
-                        dependencies,
-                        store,
-                        state,
-                        runtimeId,
-                        onboardingProvider,
-                        line,
-                        io,
-                    );
+                } else await runOrdinaryCliInteraction(config, dependencies, store, state, runtimeId, line, io);
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
@@ -227,7 +216,6 @@ async function runOrdinaryCliInteraction(
     store: StateStore,
     state: EmberState,
     runtimeId: RuntimeId,
-    onboardingProvider: ProviderInvoker,
     line: string,
     io: CliSurfaceIo,
 ) {
@@ -247,7 +235,7 @@ async function runOrdinaryCliInteraction(
             text: line,
             provider: dependencies.cognition.provider,
             providerLabel: dependencies.cognition.providerLabel,
-            timeoutSeconds: config.providerTimeoutSeconds,
+            timeoutSeconds: dependencies.cognition.timeoutSeconds,
             ...(memoryProposalGenerator === undefined
                 ? {}
                 : { memoryProposalGenerator, memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
@@ -332,7 +320,7 @@ async function ask(
         text: parts.slice(3).join(" "),
         provider: dependencies.cognition.provider,
         providerLabel: dependencies.cognition.providerLabel,
-        timeoutSeconds: config.providerTimeoutSeconds,
+        timeoutSeconds: dependencies.cognition.timeoutSeconds,
         signal,
         purpose: "explain",
         explainIds: ids,

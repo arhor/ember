@@ -20,7 +20,6 @@ import { composeEmberApplication } from "../../composition/ember.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
-import { providerLabel } from "../../providers/process.ts";
 import {
     SurfaceDeliveryFailure,
     reconcileSurfaceDelivery,
@@ -305,9 +304,9 @@ export async function processTelegramUpdate(
                 principal: config.principal,
                 scope: config.activeScope,
                 text: inbound.text,
-                providerLabel: providerLabel(config.provider_command),
+                providerLabel: dependencies.cognition.providerLabel,
                 provider: selectedProvider,
-                timeoutSeconds: config.provider_timeout_seconds,
+                timeoutSeconds: dependencies.cognition.timeoutSeconds,
                 ...(selectedMemoryGenerator === undefined
                     ? {}
                     : {

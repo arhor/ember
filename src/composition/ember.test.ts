@@ -4,8 +4,10 @@ import test from "node:test";
 
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
+import type { ClaudeCodeProviderOptions } from "../providers/claude-code.ts";
 import type { ProviderInvoker } from "../providers/contract.ts";
 
+import { emptyRequest } from "../../tests/support.ts";
 import { composeEmberApplication } from "./ember.ts";
 
 const statePath = join("/tmp", "ember-composition-test", "state.json");
@@ -72,6 +74,35 @@ test("tests can supply deterministic application collaborators without process c
     assert.equal(dependencies.postTurn.onboardingProgressEvaluator, onboardingProgressEvaluator);
     assert.equal(dependencies.repositories.state.host, "test-host");
     assert.equal(dependencies.repositories.state.pid, 42);
+});
+
+test("an empty configured Claude model invokes the provider factory with its default model", async () => {
+    let options: ClaudeCodeProviderOptions | null = null;
+    const dependencies = composeEmberApplication(
+        {
+            statePath,
+            provider: {
+                kind: "claude-code",
+                command: "claude-code",
+                arguments: [],
+                model: "",
+                timeoutSeconds: 60,
+            },
+        },
+        {
+            claudeProviderFactory: (received) => {
+                options = received;
+                return providerStub;
+            },
+        },
+    );
+
+    assert.deepEqual(await dependencies.cognition.provider(emptyRequest(), { timeoutSeconds: 60 }), {
+        contractVersion: 1,
+        reply: "unused",
+        usedMeaningIds: [],
+    });
+    assert.deepEqual(options, {});
 });
 
 const providerStub: ProviderInvoker = async () => ({

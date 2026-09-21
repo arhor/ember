@@ -126,7 +126,7 @@ function createConfiguredProvider(
             ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath)
             : undefined;
         return (overrides.claudeProviderFactory ?? createClaudeCodeProvider)({
-            ...(config.provider.model === undefined ? {} : { model: config.provider.model }),
+            ...(config.provider.model ? { model: config.provider.model } : {}),
             ...(calendar === undefined
                 ? {}
                 : {
