@@ -4,6 +4,7 @@ import type { MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
 import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
@@ -112,7 +113,7 @@ export async function runConversationScenario(
             let providerThreadId: string | null = null;
             const injectedDeliveryUncertainty = new Error(`fixture delivery uncertain: ${episode.id}`);
             try {
-                const result = await runCognition(store, currentState, {
+                const result = await runCognition(createFileBackedRepositoriesForState(store), currentState, {
                     runtimeId: runtimeId!,
                     principal: scenario.ember.principal,
                     scope: scenario.ember.scope,

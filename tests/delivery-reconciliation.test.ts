@@ -6,6 +6,7 @@ import test from "node:test";
 
 import type { ProviderInvoker } from "../src/providers/contract.ts";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
@@ -76,7 +77,7 @@ async function createRetryableFailure(
 ) {
     const providerCalls = { value: 0 };
     await assert.rejects(
-        runSurfaceInteraction(f.store, f.state, {
+        runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             runtimeId: f.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -114,11 +115,15 @@ test("definite retryable delivery failure survives restart and retries the same 
         assert.equal(failed.attempts[0]?.retryable, true);
 
         await withRestartedWriter(f, async (restartedStore) => {
-            const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, (text) => {
-                calls.delivery += 1;
-                assert.equal(text, "durable reply\n");
-                return { externalMessageId: "message-retry-ok" };
-            });
+            const result = await reconcileSurfaceDelivery(
+                createFileBackedRepositoriesForState(restartedStore),
+                failed.delivery_id,
+                (text) => {
+                    calls.delivery += 1;
+                    assert.equal(text, "durable reply\n");
+                    return { externalMessageId: "message-retry-ok" };
+                },
+            );
 
             assert.equal(result.status, "confirmed");
             const state = await restartedStore.load();
@@ -150,9 +155,13 @@ test("restart turns an unresolved started send into uncertainty instead of blind
 
         await withRestartedWriter(f, async (restartedStore) => {
             let resendCalls = 0;
-            const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, () => {
-                resendCalls += 1;
-            });
+            const result = await reconcileSurfaceDelivery(
+                createFileBackedRepositoriesForState(restartedStore),
+                failed.delivery_id,
+                () => {
+                    resendCalls += 1;
+                },
+            );
 
             assert.equal(result.status, "blocked_uncertain");
             assert.equal(result.attemptId, started.attempt_id);
@@ -181,9 +190,13 @@ test("confirmed delivery evidence reconciles canonical pending status without se
 
         await withRestartedWriter(f, async (restartedStore) => {
             let resendCalls = 0;
-            const result = await reconcileSurfaceDelivery(restartedStore, failed.delivery_id, () => {
-                resendCalls += 1;
-            });
+            const result = await reconcileSurfaceDelivery(
+                createFileBackedRepositoriesForState(restartedStore),
+                failed.delivery_id,
+                () => {
+                    resendCalls += 1;
+                },
+            );
 
             assert.equal(result.status, "confirmed");
             assert.equal(resendCalls, 0);
@@ -270,7 +283,7 @@ test("a proactive no-further-send fence withdraws an unattempted delivery", asyn
         await ledger.fenceDelivery(proactive.delivery_id, "intent_cancelled", "2026-09-17T15:00:00Z");
         let sends = 0;
         const result = await reconcileSurfaceDelivery(
-            f.store,
+            createFileBackedRepositoriesForState(f.store),
             proactive.delivery_id,
             () => {
                 sends += 1;

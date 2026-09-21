@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -10,6 +10,10 @@ import type { InteractionEvent } from "./contract.ts";
 import { composeEmberApplication } from "../composition/ember.ts";
 import { ValidationError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
+import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
+import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
 import { createEmberApplication } from "./application.ts";
 
 const PRINCIPAL = "max";
@@ -73,6 +77,45 @@ test("CLI- and Telegram-shaped requests follow the same application coordinator 
         assert.equal(state.operations.cognitionEpisodes.length, 2);
         assert.equal(state.operations.runtimeEpisodes.length, 2);
         assert.ok(state.operations.runtimeEpisodes.every((runtime) => runtime.cleanStopAt !== null));
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test("the coordinator uses independently supplied persistence collaborators", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-application-repositories-"));
+    try {
+        const statePath = join(directory, "state.json");
+        const dependencies = composeEmberApplication(
+            {
+                statePath,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            { provider: async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] }) },
+        );
+        dependencies.repositories.conversation = new ConversationContextStore(join(directory, "dialogue"));
+        dependencies.repositories.interactions = new InteractionLedgerStore(join(directory, "delivery"));
+        dependencies.repositories.onboarding = new OnboardingWorkStore(join(directory, "onboarding"));
+        dependencies.repositories.memoryProposalGenerations = new MemoryProposalGenerationStore(
+            join(directory, "memory"),
+        );
+        await dependencies.repositories.state.create(initialState(PRINCIPAL));
+
+        const result = await createEmberApplication(dependencies).interact(
+            event("local_cli", "explicit_local_argument"),
+            async () => ({ outcome: "confirmed", externalMessageId: null }),
+        );
+
+        assert.equal(result.cognitionStatus, "completed");
+        assert.equal((await dependencies.repositories.conversation.load()).exchanges.length, 1);
+        assert.equal((await dependencies.repositories.interactions.load()).deliveries.length, 1);
+        await assert.rejects(access(`${statePath}.conversation.json`));
+        await assert.rejects(access(`${statePath}.interactions.json`));
+        assert.equal(dependencies.repositories.onboarding.path, join(directory, "onboarding.onboarding.json"));
+        assert.equal(
+            dependencies.repositories.memoryProposalGenerations.path,
+            join(directory, "memory.memory-proposals.json"),
+        );
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

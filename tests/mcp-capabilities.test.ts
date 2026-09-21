@@ -10,6 +10,7 @@ import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/capabiliti
 
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/capabilities/mcp-ai-sdk.ts";
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { newId } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
@@ -202,19 +203,23 @@ test("MCP discovery should remain mechanical while only Ember-mapped selected ca
             },
         });
 
-        const result = await runCognition(runtimeFixture.store, runtimeFixture.state, {
-            runtimeId: runtimeFixture.runtimeId,
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            text: "look up the timezone",
-            providerLabel: "ai-sdk-mcp",
-            timeoutSeconds: 1,
-            output: () => {},
-            provider: createAiSdkProvider(model, {
-                selectCapabilities: () => [capability],
-                capabilityLedger: ledger,
-            }),
-        });
+        const result = await runCognition(
+            createFileBackedRepositoriesForState(runtimeFixture.store),
+            runtimeFixture.state,
+            {
+                runtimeId: runtimeFixture.runtimeId,
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                text: "look up the timezone",
+                providerLabel: "ai-sdk-mcp",
+                timeoutSeconds: 1,
+                output: () => {},
+                provider: createAiSdkProvider(model, {
+                    selectCapabilities: () => [capability],
+                    capabilityLedger: ledger,
+                }),
+            },
+        );
 
         assert.equal(result.providerFailure, null);
         assert.equal(findCognition(result.state, result.cognitionId).status, "completed");

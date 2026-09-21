@@ -299,7 +299,7 @@ export async function processTelegramUpdate(
                 ? dependencies.postTurn.onboardingProgressEvaluator
                 : undefined);
         try {
-            const result = await runSurfaceInteraction(store, state, {
+            const result = await runSurfaceInteraction(dependencies.repositories, state, {
                 runtimeId,
                 principal: config.principal,
                 scope: config.activeScope,
@@ -415,7 +415,7 @@ export async function reconcileTelegramDeliveries(
                 throw new ValidationError("Telegram delivery destination no longer matches configured private chat");
             results.push(
                 await reconcileSurfaceDelivery(
-                    store,
+                    dependencies.repositories,
                     delivery.delivery_id,
                     (text) =>
                         deliverTelegramMessage(api, destination.chatId, text, {
@@ -548,7 +548,7 @@ export async function reconcileTelegramProactiveContacts(
                 });
             }
             const result = await reconcileSurfaceDelivery(
-                store,
+                dependencies.repositories,
                 delivery.delivery_id,
                 (text) => deliverTelegramMessage(api, config.chat_id, text, { signal }),
                 { observedAt },

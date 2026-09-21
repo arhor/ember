@@ -4,6 +4,7 @@ import { isAbsolute } from "node:path";
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type { SetupConfig } from "../../src/surfaces/cli/setup.ts";
 
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";
@@ -255,7 +256,11 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     state = await store.commit(state.revision, runtime.state);
     const defer = scenarioEpisode(s, "defer");
     state = (
-        await runCognition(store, state, cognition(runtime.runtimeId, s, defer, projections, { onboarding: "defer" }))
+        await runCognition(
+            createFileBackedRepositoriesForState(store),
+            state,
+            cognition(runtime.runtimeId, s, defer, projections, { onboarding: "defer" }),
+        )
     ).state;
     state = await store.commit(state.revision, stopRuntime(state, runtime.runtimeId, { reason: "evaluation_restart" }));
     await store.releaseWriteLease(lease);
@@ -270,12 +275,21 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         work?.topics.map((topic) => topic.status).join(",") ?? "missing",
     );
     const learn = scenarioEpisode(s, "learn");
-    state = (await runCognition(store, state, cognition(runtime.runtimeId, s, learn, projections, { memory: true })))
-        .state;
+    state = (
+        await runCognition(
+            createFileBackedRepositoriesForState(store),
+            state,
+            cognition(runtime.runtimeId, s, learn, projections, { memory: true }),
+        )
+    ).state;
     const meaning = state.meanings.find((item) => item.slot === "response-style");
     const close = scenarioEpisode(s, "close");
     state = (
-        await runCognition(store, state, cognition(runtime.runtimeId, s, close, projections, { onboarding: "close" }))
+        await runCognition(
+            createFileBackedRepositoriesForState(store),
+            state,
+            cognition(runtime.runtimeId, s, close, projections, { onboarding: "close" }),
+        )
     ).state;
     await store.releaseWriteLease(lease);
     const observedMeaning = meaning ? structuredClone(meaning) : undefined;
@@ -470,7 +484,7 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
     const started = startRuntime(state, s.principal, s.scope);
     state = await store.commit(state.revision, started.state);
     state = (
-        await runCognition(store, state, {
+        await runCognition(createFileBackedRepositoriesForState(store), state, {
             runtimeId: started.runtimeId,
             principal: s.principal,
             scope: s.scope,
@@ -538,7 +552,7 @@ async function establishedBundle(s: SetupOnboardingScenario, path: string): Prom
     const started = startRuntime(state, s.principal, s.scope);
     state = await store.commit(state.revision, started.state);
     state = (
-        await runCognition(store, state, {
+        await runCognition(createFileBackedRepositoriesForState(store), state, {
             runtimeId: started.runtimeId,
             principal: s.principal,
             scope: s.scope,

@@ -228,7 +228,7 @@ async function runOrdinaryCliInteraction(
         config.memoryProposalGenerator ??
         (onboardingIsActive ? dependencies.postTurn.memoryProposalGenerator : undefined);
     const result = await withSigintCancellation((signal) =>
-        runSurfaceInteraction(store, state, {
+        runSurfaceInteraction(dependencies.repositories, state, {
             runtimeId,
             principal: config.principal,
             scope: config.scope,
@@ -313,7 +313,7 @@ async function ask(
         throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
     const ids = parts[2]!.split(",").filter(Boolean);
     if (!ids.length) throw new ValidationError("at least one explanation ID is required");
-    return runSurfaceInteraction(store, state, {
+    return runSurfaceInteraction(dependencies.repositories, state, {
         runtimeId,
         principal: config.principal,
         scope: config.scope,

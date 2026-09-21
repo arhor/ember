@@ -8,6 +8,7 @@ import type {
     MemoryProposalGenerationRequest,
 } from "../../src/memory/memory-proposal-generation.ts";
 
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
@@ -101,7 +102,7 @@ export async function runMemoryFormationScenario(
             let projectedEvidenceIds: string[] = [];
             let memoryGeneratorInvoked = false;
             const beforeLedgerCount = (await new MemoryProposalGenerationStore(store.path).load()).generations.length;
-            const result = await runCognition(store, state, {
+            const result = await runCognition(createFileBackedRepositoriesForState(store), state, {
                 runtimeId,
                 principal: scenario.ember.principal,
                 scope: scenario.ember.scope,

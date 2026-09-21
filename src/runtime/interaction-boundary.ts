@@ -11,7 +11,7 @@ import type {
 } from "../core/interaction-contract.ts";
 import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
 import type { StateStore } from "../persistence/state-store.ts";
-import type { RunCognitionOptions } from "./runtime.ts";
+import type { CognitionRepositories, RunCognitionOptions } from "./runtime.ts";
 
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
@@ -102,6 +102,10 @@ export interface SurfaceInteractionResult {
     occurrenceId: string;
     deliveryId: string | null;
     replayed: boolean;
+}
+
+export interface InteractionRepositories extends CognitionRepositories {
+    interactions: InteractionLedgerStore;
 }
 
 export interface InboundOccurrenceRecord {
@@ -493,10 +497,11 @@ export class InteractionLedgerStore {
 }
 
 export async function runSurfaceInteraction(
-    store: StateStore,
+    repositories: InteractionRepositories,
     state: EmberState,
     options: SurfaceInteractionOptions,
 ): Promise<SurfaceInteractionResult> {
+    const store = repositories.state;
     const {
         surfaceId,
         principalProvenance,
@@ -508,7 +513,7 @@ export async function runSurfaceInteraction(
     requirePrincipal(state, cognitionOptions.principal);
     findRuntime(state, cognitionOptions.runtimeId);
 
-    const ledger = new InteractionLedgerStore(store.path);
+    const ledger = repositories.interactions;
     const plannedCognitionId = newId("cognition");
     const accepted = await ledger.acceptInbound(
         {
@@ -579,7 +584,7 @@ export async function runSurfaceInteraction(
         await ledger.finishDeliveryAttempt(attempt.attempt_id, "confirmed", { externalMessageId });
     };
 
-    const result = await runCognition(store, accepted.replayed ? current : state, {
+    const result = await runCognition(repositories, accepted.replayed ? current : state, {
         ...cognitionOptions,
         surface: surfaceId,
         cognitionId,
@@ -614,13 +619,14 @@ export async function runSurfaceInteraction(
 }
 
 export async function reconcileSurfaceDelivery(
-    store: StateStore,
+    repositories: Pick<InteractionRepositories, "state" | "interactions">,
     deliveryId: string,
     deliver: SurfaceDelivery,
     { observedAt = nowUtc() }: { observedAt?: string } = {},
 ): Promise<DeliveryReconciliationResult> {
+    const store = repositories.state;
     if (!isRfc3339Utc(observedAt)) throw new ValidationError("delivery reconciliation time must be RFC 3339 UTC");
-    const ledger = new InteractionLedgerStore(store.path);
+    const ledger = repositories.interactions;
     let document = await ledger.load();
     let delivery = requireDelivery(document, deliveryId);
     const state = await store.load();

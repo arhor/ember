@@ -15,6 +15,7 @@ import type {
 
 import { decideConfiguredProactiveContactHandoff } from "../src/agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -154,7 +155,7 @@ async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suf
         );
         const started = startRuntime(loaded, PRINCIPAL, "private");
         const state = await f.store.commit(loaded.revision, started.state);
-        interaction = await runSurfaceInteraction(f.store, state, {
+        interaction = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), state, {
             runtimeId: started.runtimeId,
             principal: PRINCIPAL,
             scope: "private",

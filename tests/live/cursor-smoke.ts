@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
@@ -35,7 +35,7 @@ try {
     const loaded = await store.load();
     const started = startRuntime(loaded, principal, scope);
     const running = await store.commit(loaded.revision, started.state);
-    const result = await runCognition(store, running, {
+    const result = await runCognition(createFileBackedRepositoriesForState(store), running, {
         runtimeId: started.runtimeId,
         principal,
         scope,

@@ -16,8 +16,9 @@ under [epic #303](https://github.com/arhor/ember/issues/303). Investigated on
 The current-flow sections describe that commit; target paths and contracts are
 incremental migration targets. This document owns the cross-module migration proposal,
 not the individual semantic contracts linked below. The transport-neutral contract
-from #305, production composition root from #306, and coordinator facade from #307 are
-implemented; later ownership and host changes remain proposed until their child issues land.
+from #305, production composition root from #306, coordinator facade from #307, and
+explicit ordinary-flow persistence injection from #308 are implemented; later ownership
+and host changes remain proposed until their child issues land.
 
 ## Recommendation and governing constraints
 
@@ -249,8 +250,12 @@ repositories from the configured canonical state path, selects the cognition pro
 wires Calendar capability/objective collaborators, and constructs post-turn memory and
 onboarding helpers. Its explicit overrides let tests supply deterministic providers,
 helpers, clocks, IDs, and store mechanics without reading process or global configuration.
-The surfaces still own orchestration until #307–#311 move those responsibilities behind
-the application API; this intermediate state does not create a second application path.
+As implemented by #308, the resulting state, conversation, interaction/delivery,
+onboarding, and memory-generation repositories are passed explicitly through the
+application, interaction, cognition, and post-turn calls; those deeper modules no longer
+reconstruct sibling stores from `StateStore.path`. The surfaces still own orchestration
+until #309–#311 move those responsibilities behind the application API; this intermediate
+state does not create a second application path.
 
 ```mermaid
 flowchart TD

@@ -95,17 +95,30 @@ export function composeEmberApplication(
 }
 
 function createRepositories(statePath: string, stateStoreOptions?: StateStoreOptions) {
+    const interactionRepositories = createFileBackedRepositories(statePath, stateStoreOptions);
     const actions = new ActionProposalStore(statePath);
     const objectives = new DurableObjectiveStore(statePath);
     return {
-        state: new StateStore(statePath, stateStoreOptions),
-        conversation: new ConversationContextStore(statePath),
-        interactions: new InteractionLedgerStore(statePath),
-        onboarding: new OnboardingWorkStore(statePath),
-        memoryProposalGenerations: new MemoryProposalGenerationStore(statePath),
+        ...interactionRepositories,
         actions,
         objectives,
         proactiveContacts: new ProactiveContactStore(statePath),
+    };
+}
+
+/** File-backed ordinary-flow collaborators sharing the existing canonical-state path. */
+export function createFileBackedRepositories(statePath: string, stateStoreOptions?: StateStoreOptions) {
+    return createFileBackedRepositoriesForState(new StateStore(statePath, stateStoreOptions));
+}
+
+/** Compose the sidecars around an already configured canonical state collaborator. */
+export function createFileBackedRepositoriesForState(state: StateStore) {
+    return {
+        state,
+        conversation: new ConversationContextStore(state.path),
+        interactions: new InteractionLedgerStore(state.path),
+        onboarding: new OnboardingWorkStore(state.path),
+        memoryProposalGenerations: new MemoryProposalGenerationStore(state.path),
     };
 }
 

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../src/runtime/interaction-boundary.ts";
@@ -27,7 +28,7 @@ test("restart sends a retained delivery intent that never crossed the external s
         const ledger = new InteractionLedgerStore(statePath);
 
         await assert.rejects(
-            runCognition(store, state, {
+            runCognition(createFileBackedRepositoriesForState(store), state, {
                 runtimeId: started.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
@@ -77,11 +78,15 @@ test("restart sends a retained delivery intent that never crossed the external s
             const delivery = ledger.deliveries[0];
             assert.ok(delivery);
             let sends = 0;
-            const result = await reconcileSurfaceDelivery(restartedStore, delivery.delivery_id, (text) => {
-                sends += 1;
-                assert.equal(text, "reply retained before send\n");
-                return { externalMessageId: "message-after-restart" };
-            });
+            const result = await reconcileSurfaceDelivery(
+                createFileBackedRepositoriesForState(restartedStore),
+                delivery.delivery_id,
+                (text) => {
+                    sends += 1;
+                    assert.equal(text, "reply retained before send\n");
+                    return { externalMessageId: "message-after-restart" };
+                },
+            );
 
             assert.equal(result.status, "confirmed");
             assert.equal(sends, 1);

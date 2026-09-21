@@ -15,12 +15,12 @@ import {
 import type { ConversationId, ProjectedConversationContext } from "../core/conversation-context.ts";
 import type { MemoryProposal, MemoryProposalAssessment } from "../core/memory-proposal.ts";
 import type { AgentActor, EmberState, EvidenceId, MeaningId } from "../core/model.ts";
+import type { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../core/memory-proposal.ts";
 import { agentActor, isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
-import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { contentDigest, exactKeys, isObject } from "../util.ts";
 
@@ -145,6 +145,7 @@ export function buildMemoryProposalGenerationProjection(
 
 export async function generateAndAdoptConversationMemories(
     store: StateStore,
+    ledger: MemoryProposalGenerationStore,
     state: EmberState,
     conversation: ProjectedConversationContext,
     {
@@ -164,7 +165,6 @@ export async function generateAndAdoptConversationMemories(
     if (!isRfc3339Utc(timestamp)) throw new ValidationError("proposal generation time must be RFC 3339 UTC");
     const projection = buildMemoryProposalGenerationProjection(state, conversation, { principal, scope });
     const generationId = deterministicGenerationId(state, projection, timestamp);
-    const ledger = new MemoryProposalGenerationStore(store.path);
     await ledger.append({
         generation_id: generationId,
         proposed_at: timestamp,

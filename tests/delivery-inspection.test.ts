@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
@@ -26,7 +27,7 @@ test("CLI inspection redacts retained delivery representation while exposing rec
         const started = startRuntime(loaded, PRINCIPAL, SCOPE);
         const state = await store.commit(loaded.revision, started.state);
         await assert.rejects(
-            runSurfaceInteraction(store, state, {
+            runSurfaceInteraction(createFileBackedRepositoriesForState(store), state, {
                 runtimeId: started.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
