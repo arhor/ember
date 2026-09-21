@@ -15,7 +15,7 @@ import {
     SurfaceDeliveryFailure,
 } from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
-import { validateInteractionEvent } from "./contract.ts";
+import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
 
 /**
  * The transport-neutral ordinary-interaction facade. During the strangler migration it
@@ -51,35 +51,42 @@ async function interact(
         const onboarding = await dependencies.repositories.onboarding.load();
         const onboardingActive = onboarding?.status === "active" && onboarding.scope === event.scope;
         const address = addressFor(event);
-        const result = await runSurfaceInteraction(store, state, {
-            runtimeId,
-            principal: event.principal,
-            scope: event.scope,
-            text: event.text,
-            surfaceId: event.surfaceId,
-            principalProvenance: event.principalProvenance,
-            ...(event.externalOccurrence === undefined ? {} : { externalOccurrence: event.externalOccurrence }),
-            ...(event.deliveryDestinationId === undefined
-                ? {}
-                : { deliveryDestinationId: event.deliveryDestinationId }),
-            ...(event.conversationMembership === undefined
-                ? {}
-                : { conversationMembership: event.conversationMembership }),
-            provider: dependencies.cognition.provider,
-            providerLabel: dependencies.cognition.providerLabel,
-            timeoutSeconds: dependencies.cognition.timeoutSeconds,
-            ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
-                ? { memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator }
-                : {}),
-            ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
-                ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
-                : {}),
-            ...(options.signal === undefined ? {} : { signal: options.signal }),
-            deliver: async (text) => {
-                const deliveryId = await deliveryIdForText(dependencies, resultAddressKey(address), text);
-                return observeDelivery(transport, deliveryId, address, text, options.signal);
-            },
-        });
+        let result;
+        try {
+            result = await runSurfaceInteraction(store, state, {
+                runtimeId,
+                principal: event.principal,
+                scope: event.scope,
+                text: event.text,
+                surfaceId: event.surfaceId,
+                principalProvenance: event.principalProvenance,
+                ...(event.externalOccurrence === undefined ? {} : { externalOccurrence: event.externalOccurrence }),
+                ...(event.deliveryDestinationId === undefined
+                    ? {}
+                    : { deliveryDestinationId: event.deliveryDestinationId }),
+                ...(event.conversationMembership === undefined
+                    ? {}
+                    : { conversationMembership: event.conversationMembership }),
+                provider: dependencies.cognition.provider,
+                providerLabel: dependencies.cognition.providerLabel,
+                timeoutSeconds: dependencies.cognition.timeoutSeconds,
+                ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
+                    ? { memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator }
+                    : {}),
+                ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
+                    ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
+                    : {}),
+                ...(options.signal === undefined ? {} : { signal: options.signal }),
+                deliver: async (text) => {
+                    const deliveryId = await deliveryIdForText(dependencies, resultAddressKey(address), text);
+                    return observeDelivery(transport, deliveryId, address, text, options.signal);
+                },
+            });
+        } catch (error) {
+            if (!(error instanceof SurfaceDeliveryFailure)) throw error;
+            stopReason = "application_delivery_failure";
+            return await resultForDeliveryFailure(dependencies, event, error);
+        }
         stopReason =
             result.providerFailure === null ? "application_interaction_complete" : "application_provider_failure";
         return {
@@ -99,14 +106,57 @@ async function interact(
             },
         };
     } finally {
-        if (runtimeId !== null) {
-            const current = await store.load();
-            const runtime = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
-            if (runtime?.cleanStopAt === null)
-                await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: stopReason }));
+        try {
+            if (runtimeId !== null) {
+                const current = await store.load();
+                const runtime = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
+                if (runtime?.cleanStopAt === null)
+                    await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: stopReason }));
+            }
+        } finally {
+            await store.releaseWriteLease(lease);
         }
-        await store.releaseWriteLease(lease);
     }
+}
+
+async function resultForDeliveryFailure(
+    dependencies: EmberApplicationDependencies,
+    event: InteractionEvent,
+    failure: SurfaceDeliveryFailure,
+): Promise<InteractionResult> {
+    const ledger = await dependencies.repositories.interactions.load();
+    const occurrence = ledger.inbound_occurrences.findLast(
+        (record) =>
+            record.assertedPrincipal === event.principal &&
+            record.scope === event.scope &&
+            record.surface_id === event.surfaceId &&
+            record.delivery_destination_id === (event.deliveryDestinationId ?? null) &&
+            (event.externalOccurrence === undefined ||
+                record.external_occurrence_id === event.externalOccurrence.occurrenceId),
+    );
+    if (!occurrence) throw new ValidationError("delivery failure has no correlated inbound occurrence");
+    const delivery = ledger.deliveries.findLast(
+        (record) => record.origin.kind === "ordinary_cognition" && record.cognitionId === occurrence.cognitionId,
+    );
+    if (!delivery) throw new ValidationError("delivery failure has no correlated delivery intent");
+    const state = await dependencies.repositories.state.load();
+    const cognition = state.operations.cognitionEpisodes.find(
+        (candidate) => candidate.cognitionId === occurrence.cognitionId,
+    );
+    if (!cognition) throw new ValidationError("delivery failure has no correlated cognition");
+    return {
+        occurrenceId: occurrence.occurrence_id,
+        cognitionId: cognition.cognitionId,
+        cognitionStatus: cognition.status,
+        replayed: occurrence.receive_count > 1,
+        deliveryId: delivery.delivery_id,
+        delivery: await deliveryResult(dependencies, delivery.delivery_id),
+        diagnostics: {
+            providerFailure: null,
+            memoryProposalFailure: failure.memoryProposalFailure,
+            onboardingProgressFailure: failure.onboardingProgressFailure,
+        },
+    };
 }
 
 async function pendingDeliveries(dependencies: EmberApplicationDependencies, address: DeliveryAddress) {
@@ -126,6 +176,7 @@ async function pendingDeliveries(dependencies: EmberApplicationDependencies, add
         .filter(
             (record) =>
                 occurrenceCognitionIds.has(record.cognitionId) &&
+                record.origin.kind === "ordinary_cognition" &&
                 record.surface_id === address.surfaceId &&
                 record.destination_id === address.destinationId &&
                 record.send_fence.status === "open" &&
@@ -197,6 +248,7 @@ async function observeDelivery(
     signal?: AbortSignal,
 ) {
     const observation = await transport({ deliveryId, address, text }, signal === undefined ? {} : { signal });
+    validateDeliveryObservation(observation);
     if (observation.outcome === "confirmed") return { externalMessageId: observation.externalMessageId };
     throw new SurfaceDeliveryFailure(`transport reported ${observation.outcome} delivery`, {
         outcome: observation.outcome,
