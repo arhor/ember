@@ -1,14 +1,36 @@
 ---
-summary: "Issue #92 decision, updated by #188, that Ember's ProviderRequest/ProviderResult and semantic ProviderInvoker seam are the earned common cognition-backend contract while process launch and lifecycle mechanics remain adapter-local."
+summary: "Current Ember-owned cognition contract from #92/#188, with a forward pointer to #304's proposed SDK V4 execution consolidation and its provider-specific parity gates."
 read_when:
   - "Changing the shared cognition provider contract or adding another production cognition backend"
   - "Considering deduplication or a common process runner across Codex and Cursor adapters"
   - "Reviewing which cognition-backend semantics are genuinely shared versus runtime-specific"
+  - "Reconciling the current adapter-local design with epic #303's proposed common AI SDK execution boundary"
 role: design
 discovery_status: current
 ---
 
 # Cognition Adapter Contract Decision
+
+## Proposed evolution under #303
+
+[Canonical Ember Application Flow](canonical-application-flow.md#6-ai-sdk-extraction-audit)
+records #304's proposed change to the execution placement described here: new Codex
+and Cursor `LanguageModelV4` bridges would sit beneath one AI SDK executor while
+`ProviderRequest` / `ProviderResult` and their validation remain Ember-owned.
+That is a proposed revision to the adapter-local execution direction, not an
+implemented replacement or a new generic provider base class.
+
+The new evidence is #303's concrete duplicated composition and split application
+orchestration, together with the SDK execution already adopted for Claude. Claude's
+presence alone does not prove that Codex/Cursor process semantics became identical.
+Their isolation, authentication, parsing, continuation and termination differences
+listed below remain required constraints of the proposed bridges.
+
+This document remains current for the implemented seam until #315's backend parity
+gates pass. Each backend migration must update the corresponding current implementation
+guidance here, and #321 must reconcile the remaining decision/consequences sections
+with the final implemented architecture. The proposal's forward and backward links
+make that pending revision discoverable without declaring full supersession early.
 
 ## Decision
 
