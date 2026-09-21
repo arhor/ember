@@ -7,6 +7,7 @@ import test from "node:test";
 
 import type { InferenceEvidence } from "../src/providers/ai-sdk.ts";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
@@ -66,7 +67,7 @@ async function closeFixture(fixture) {
 }
 
 async function runWithModel(fixture, model, options = {}, providerOptions = {}) {
-    return runCognition(fixture.store, fixture.state, {
+    return runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,

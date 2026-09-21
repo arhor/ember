@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { createAiSdkMemoryProposalGenerator } from "../../src/memory/memory-proposal-generation.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
@@ -44,7 +44,7 @@ try {
         streamingInput: "off",
         logger: false,
     });
-    const result = await runCognition(store, state, {
+    const result = await runCognition(createFileBackedRepositoriesForState(store), state, {
         runtimeId: started.runtimeId,
         principal,
         scope,

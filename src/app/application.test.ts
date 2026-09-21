@@ -1,15 +1,21 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { ProviderRequest } from "../providers/contract.ts";
 import type { InteractionEvent } from "./contract.ts";
 
 import { composeEmberApplication } from "../composition/ember.ts";
 import { ValidationError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
+import { createOnboardingWork } from "../core/onboarding-work.ts";
+import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
+import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
 import { createEmberApplication } from "./application.ts";
 
 const PRINCIPAL = "max";
@@ -73,6 +79,82 @@ test("CLI- and Telegram-shaped requests follow the same application coordinator 
         assert.equal(state.operations.cognitionEpisodes.length, 2);
         assert.equal(state.operations.runtimeEpisodes.length, 2);
         assert.ok(state.operations.runtimeEpisodes.every((runtime) => runtime.cleanStopAt !== null));
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test("the coordinator uses independently supplied persistence collaborators", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-application-repositories-"));
+    try {
+        const statePath = join(directory, "state.json");
+        const state = initialState(PRINCIPAL, "2026-09-21T20:00:00Z");
+        const composed = composeEmberApplication(
+            {
+                statePath,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            {
+                provider: async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] }),
+                memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
+                onboardingProgressEvaluator: async () => ({
+                    decision_version: 1,
+                    updates: [{ topic: "forms_of_address", action: "resolve", basis: "same" }],
+                }),
+            },
+        );
+        const conversation = new ConversationContextStore(join(directory, "dialogue"));
+        const interactions = new InteractionLedgerStore(join(directory, "delivery"));
+        const onboarding = new OnboardingWorkStore(join(directory, "onboarding"));
+        const memoryProposalGenerations = new MemoryProposalGenerationStore(join(directory, "memory"));
+        const dependencies: EmberApplicationDependencies = {
+            ...composed,
+            repositories: {
+                ...composed.repositories,
+                conversation: {
+                    load: conversation.load.bind(conversation),
+                    activeConversation: conversation.activeConversation.bind(conversation),
+                    startFreshConversation: conversation.startFreshConversation.bind(conversation),
+                    recordAcceptedInput: conversation.recordAcceptedInput.bind(conversation),
+                    recordCommittedExpression: conversation.recordCommittedExpression.bind(conversation),
+                },
+                interactions: {
+                    load: interactions.load.bind(interactions),
+                    acceptInbound: interactions.acceptInbound.bind(interactions),
+                    createDeliveryIntent: interactions.createDeliveryIntent.bind(interactions),
+                    fenceDelivery: interactions.fenceDelivery.bind(interactions),
+                    startDeliveryAttempt: interactions.startDeliveryAttempt.bind(interactions),
+                    finishDeliveryAttempt: interactions.finishDeliveryAttempt.bind(interactions),
+                },
+                onboarding: {
+                    load: onboarding.load.bind(onboarding),
+                    save: onboarding.save.bind(onboarding),
+                },
+                memoryProposalGenerations: {
+                    append: memoryProposalGenerations.append.bind(memoryProposalGenerations),
+                    complete: memoryProposalGenerations.complete.bind(memoryProposalGenerations),
+                },
+            },
+        };
+        await dependencies.repositories.state.create(state);
+        await dependencies.repositories.onboarding.save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, SCOPE, "2026-09-21T20:00:00Z"),
+        );
+
+        const result = await createEmberApplication(dependencies).interact(
+            event("local_cli", "explicit_local_argument"),
+            async () => ({ outcome: "confirmed", externalMessageId: null }),
+        );
+
+        assert.equal(result.cognitionStatus, "completed");
+        assert.equal((await conversation.load()).exchanges.length, 1);
+        assert.equal((await interactions.load()).deliveries.length, 1);
+        assert.equal((await onboarding.load())?.topics[0]?.status, "resolved");
+        assert.equal((await memoryProposalGenerations.load()).generations.length, 1);
+        await assert.rejects(access(`${statePath}.conversation.json`));
+        await assert.rejects(access(`${statePath}.interactions.json`));
+        await assert.rejects(access(`${statePath}.onboarding.json`));
+        await assert.rejects(access(`${statePath}.memory-proposals.json`));
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

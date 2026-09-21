@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
@@ -450,7 +451,7 @@ describe("runCognition", () => {
         });
 
         // When
-        const result = await runCognition(store, loaded, {
+        const result = await runCognition(createFileBackedRepositoriesForState(store), loaded, {
             runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -492,7 +493,7 @@ describe("runCognition", () => {
         };
 
         // When
-        const result = await runCognition(store, loaded, {
+        const result = await runCognition(createFileBackedRepositoriesForState(store), loaded, {
             runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

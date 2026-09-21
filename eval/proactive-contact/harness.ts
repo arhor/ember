@@ -12,6 +12,7 @@ import type { TelegramSurfaceConfig } from "../../src/surfaces/telegram/index.ts
 import { decideUserInterruption } from "../../src/agency/interruption-decision.ts";
 import { decideProactiveContactAttention } from "../../src/agency/proactive-contact-attention-policy.ts";
 import { ProactiveContactStore } from "../../src/agency/proactive-contact-store.ts";
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
@@ -515,7 +516,7 @@ async function prepareBridgeState(path: string, state: ReturnType<typeof initial
         const loaded = await store.load();
         const started = startRuntime(loaded, "alice", "private");
         const running = await store.commit(loaded.revision, started.state);
-        const result = await runCognition(store, running, {
+        const result = await runCognition(createFileBackedRepositoriesForState(store), running, {
             runtimeId: started.runtimeId,
             principal: "alice",
             scope: "private",

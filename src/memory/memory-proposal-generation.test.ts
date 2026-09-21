@@ -9,6 +9,7 @@ import test from "node:test";
 import type { ProjectedConversationContext } from "../core/conversation-context.ts";
 import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
 
+import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { ProviderError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
 import { userEvidence } from "../core/semantics.ts";
@@ -96,17 +97,23 @@ async function cleanup(f: Awaited<ReturnType<typeof fixture>>) {
 test("ordinary conversation should generate, validate, adopt, and persist a grounded memory proposal", async () => {
     const f = await fixture();
     try {
-        const result = await generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            timestamp: AT,
-            providerLabel: "fixture",
-            generator: async (request) => {
-                assert.deepEqual(request.projection.selection.source_evidence_ids, [f.evidence.evidenceId]);
-                assert.equal(request.projection.turns[0]?.content, "I prefer concise answers");
-                return { contractVersion: 1, candidates: [proposal(f.evidence.evidenceId)] };
+        const result = await generateAndAdoptConversationMemories(
+            f.store,
+            createFileBackedRepositoriesForState(f.store).memoryProposalGenerations,
+            f.state,
+            f.conversation,
+            {
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                timestamp: AT,
+                providerLabel: "fixture",
+                generator: async (request) => {
+                    assert.deepEqual(request.projection.selection.source_evidence_ids, [f.evidence.evidenceId]);
+                    assert.equal(request.projection.turns[0]?.content, "I prefer concise answers");
+                    return { contractVersion: 1, candidates: [proposal(f.evidence.evidenceId)] };
+                },
             },
-        });
+        );
 
         assert.equal(result.outcomes[0]?.status, "adopted");
         assert.equal(result.state.meanings.length, 1);
@@ -123,12 +130,18 @@ test("ordinary conversation should generate, validate, adopt, and persist a grou
 test("an empty structured result should persist as completion rather than provider failure", async () => {
     const f = await fixture();
     try {
-        const result = await generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            timestamp: AT,
-            generator: async () => ({ contractVersion: 1, candidates: [] }),
-        });
+        const result = await generateAndAdoptConversationMemories(
+            f.store,
+            createFileBackedRepositoriesForState(f.store).memoryProposalGenerations,
+            f.state,
+            f.conversation,
+            {
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                timestamp: AT,
+                generator: async () => ({ contractVersion: 1, candidates: [] }),
+            },
+        );
         assert.deepEqual(result.outcomes, []);
         assert.equal(result.state.meanings.length, 0);
         const ledger = await new MemoryProposalGenerationStore(f.store.path).load();
@@ -156,12 +169,18 @@ test("AI SDK provider failure should remain distinct from no proposal and avoid 
     });
     try {
         await assert.rejects(
-            generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                timestamp: AT,
-                generator: createAiSdkMemoryProposalGenerator(model),
-            }),
+            generateAndAdoptConversationMemories(
+                f.store,
+                createFileBackedRepositoriesForState(f.store).memoryProposalGenerations,
+                f.state,
+                f.conversation,
+                {
+                    principal: PRINCIPAL,
+                    scope: SCOPE,
+                    timestamp: AT,
+                    generator: createAiSdkMemoryProposalGenerator(model),
+                },
+            ),
             (error) => error instanceof ProviderError && /HTTP 503/.test(error.message),
         );
         assert.equal(calls, 1);
@@ -176,12 +195,18 @@ test("AI SDK provider failure should remain distinct from no proposal and avoid 
 test("malformed SDK-independent candidates should persist as invalid instead of stranding generation", async () => {
     const f = await fixture();
     try {
-        const result = await generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            timestamp: AT,
-            generator: async () => ({ contractVersion: 1, candidates: [{ content: "missing fields" }] }),
-        });
+        const result = await generateAndAdoptConversationMemories(
+            f.store,
+            createFileBackedRepositoriesForState(f.store).memoryProposalGenerations,
+            f.state,
+            f.conversation,
+            {
+                principal: PRINCIPAL,
+                scope: SCOPE,
+                timestamp: AT,
+                generator: async () => ({ contractVersion: 1, candidates: [{ content: "missing fields" }] }),
+            },
+        );
         assert.equal(result.outcomes[0]?.status, "invalid");
         const ledger = await new MemoryProposalGenerationStore(f.store.path).load();
         assert.deepEqual(
@@ -210,15 +235,21 @@ test("post-generation stale revision should terminalize with established earlier
     const second = { ...proposal(f.evidence.evidenceId), slot: "response-format", content: "Prefers plain text" };
     try {
         await assert.rejects(
-            generateAndAdoptConversationMemories(f.store, f.state, f.conversation, {
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                timestamp: AT,
-                generator: async () => ({
-                    contractVersion: 1,
-                    candidates: [proposal(f.evidence.evidenceId), second],
-                }),
-            }),
+            generateAndAdoptConversationMemories(
+                f.store,
+                createFileBackedRepositoriesForState(f.store).memoryProposalGenerations,
+                f.state,
+                f.conversation,
+                {
+                    principal: PRINCIPAL,
+                    scope: SCOPE,
+                    timestamp: AT,
+                    generator: async () => ({
+                        contractVersion: 1,
+                        candidates: [proposal(f.evidence.evidenceId), second],
+                    }),
+                },
+            ),
             /canonical revision changed/,
         );
         const ledger = await new MemoryProposalGenerationStore(f.store.path).load();
@@ -240,7 +271,7 @@ test("ordinary runCognition should invoke configured reflection after persisting
     try {
         const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-11T09:30:00Z" });
         state = await store.commit(state.revision, started.state);
-        const result = await runCognition(store, state, {
+        const result = await runCognition(createFileBackedRepositoriesForState(store), state, {
             runtimeId: started.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

@@ -3,6 +3,7 @@ import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluat
 import type { StateStoreOptions } from "../persistence/state-store.ts";
 import type { ClaudeCodeProviderOptions } from "../providers/claude-code.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
+import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
 import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
@@ -45,15 +46,14 @@ export interface EmberCompositionOverrides {
 
 /** Concrete production dependencies for one Ember application instance. */
 export interface EmberApplicationDependencies {
-    repositories: {
-        state: StateStore;
-        conversation: ConversationContextStore;
-        interactions: InteractionLedgerStore;
-        onboarding: OnboardingWorkStore;
-        memoryProposalGenerations: MemoryProposalGenerationStore;
-        actions: ActionProposalStore;
-        objectives: DurableObjectiveStore;
-        proactiveContacts: ProactiveContactStore;
+    repositories: InteractionRepositories & {
+        state: InteractionRepositories["state"] & Pick<StateStore, "acquireWriteLease" | "releaseWriteLease">;
+        interactions: InteractionRepositories["interactions"] & Pick<InteractionLedgerStore, "fenceDelivery">;
+        actions: Pick<ActionProposalStore, "present" | "get" | "decide" | "invalidate">;
+        proactiveContacts: Pick<
+            ProactiveContactStore,
+            "load" | "recordPolicyDecision" | "adoptHandoff" | "recordReconciliationOutcome"
+        >;
     };
     cognition: {
         provider: ProviderInvoker;
@@ -66,6 +66,10 @@ export interface EmberApplicationDependencies {
     };
 }
 
+export type ComposedEmberApplicationDependencies = EmberApplicationDependencies & {
+    repositories: ReturnType<typeof createRepositories>;
+};
+
 /**
  * The production composition root. Configuration is parsed by the executable or
  * setup boundary; this function only turns validated values into collaborators.
@@ -73,7 +77,7 @@ export interface EmberApplicationDependencies {
 export function composeEmberApplication(
     config: EmberCompositionConfig,
     overrides: EmberCompositionOverrides = {},
-): EmberApplicationDependencies {
+): ComposedEmberApplicationDependencies {
     const repositories = createRepositories(config.statePath, overrides.stateStoreOptions);
     const provider = overrides.provider ?? createConfiguredProvider(config, repositories, overrides);
     return {
@@ -95,17 +99,30 @@ export function composeEmberApplication(
 }
 
 function createRepositories(statePath: string, stateStoreOptions?: StateStoreOptions) {
+    const interactionRepositories = createFileBackedRepositories(statePath, stateStoreOptions);
     const actions = new ActionProposalStore(statePath);
     const objectives = new DurableObjectiveStore(statePath);
     return {
-        state: new StateStore(statePath, stateStoreOptions),
-        conversation: new ConversationContextStore(statePath),
-        interactions: new InteractionLedgerStore(statePath),
-        onboarding: new OnboardingWorkStore(statePath),
-        memoryProposalGenerations: new MemoryProposalGenerationStore(statePath),
+        ...interactionRepositories,
         actions,
         objectives,
         proactiveContacts: new ProactiveContactStore(statePath),
+    };
+}
+
+/** File-backed ordinary-flow collaborators sharing the existing canonical-state path. */
+export function createFileBackedRepositories(statePath: string, stateStoreOptions?: StateStoreOptions) {
+    return createFileBackedRepositoriesForState(new StateStore(statePath, stateStoreOptions));
+}
+
+/** Compose the sidecars around an already configured canonical state collaborator. */
+export function createFileBackedRepositoriesForState(state: StateStore) {
+    return {
+        state,
+        conversation: new ConversationContextStore(state.path),
+        interactions: new InteractionLedgerStore(state.path),
+        onboarding: new OnboardingWorkStore(state.path),
+        memoryProposalGenerations: new MemoryProposalGenerationStore(state.path),
     };
 }
 

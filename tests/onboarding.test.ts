@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import {
     applyOnboardingProgressDecision,
@@ -93,7 +94,7 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
     const lease = await store.acquireWriteLease();
     const started = startRuntime(await store.load(), "user", "test");
     let current = await store.commit(0, started.state);
-    const result = await runCognition(store, current, {
+    const result = await runCognition(createFileBackedRepositoriesForState(store), current, {
         runtimeId: started.runtimeId,
         principal: "user",
         scope: "test",
@@ -126,7 +127,7 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
     const restarted = startRuntime(await restartedStore.load(), "user", "test");
     const restartedState = await restartedStore.commit(current.revision, restarted.state);
     let restartedWork: unknown;
-    await runCognition(restartedStore, restartedState, {
+    await runCognition(createFileBackedRepositoriesForState(restartedStore), restartedState, {
         runtimeId: restarted.runtimeId,
         principal: "user",
         scope: "test",
@@ -159,7 +160,7 @@ test("onboarding is isolated to ordinary cognition in its bound scope", async (t
     let state = await store.load();
     const projectRuntime = startRuntime(state, "user", "project:ember");
     state = await store.commit(state.revision, projectRuntime.state);
-    const projectResult = await runCognition(store, state, {
+    const projectResult = await runCognition(createFileBackedRepositoriesForState(store), state, {
         runtimeId: projectRuntime.runtimeId,
         principal: "user",
         scope: "project:ember",
@@ -180,7 +181,7 @@ test("onboarding is isolated to ordinary cognition in its bound scope", async (t
     );
     const relationshipRuntime = startRuntime(state, "user", "relationship:user");
     state = await store.commit(state.revision, relationshipRuntime.state);
-    await runCognition(store, state, {
+    await runCognition(createFileBackedRepositoriesForState(store), state, {
         runtimeId: relationshipRuntime.runtimeId,
         principal: "user",
         scope: "relationship:user",
@@ -213,7 +214,7 @@ test("completion closes temporary work while adopted meaning remains available",
     const started = startRuntime(await store.load(), "user", "test");
     let state = await store.commit(0, started.state);
     let secondProjection: unknown;
-    const first = await runCognition(store, state, {
+    const first = await runCognition(createFileBackedRepositoriesForState(store), state, {
         runtimeId: started.runtimeId,
         principal: "user",
         scope: "test",
@@ -257,7 +258,7 @@ test("completion closes temporary work while adopted meaning remains available",
     assert.equal((await new OnboardingWorkStore(statePath).load())?.status, "closed");
     assert.equal(first.state.meanings[0]?.content, "The user prefers to be called Sam");
     state = first.state;
-    await runCognition(store, state, {
+    await runCognition(createFileBackedRepositoriesForState(store), state, {
         runtimeId: started.runtimeId,
         principal: "user",
         scope: "test",

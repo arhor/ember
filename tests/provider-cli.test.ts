@@ -5,6 +5,7 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough, Writable } from "node:stream";
 import test from "node:test";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -261,7 +262,7 @@ test("runtime should preserve semantic state and inspection when provider fails"
     const fixture = await startedStore(),
         before = cloneState(fixture.state.meanings);
     // When
-    const result = await runCognition(fixture.store, fixture.state, {
+    const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -292,7 +293,7 @@ test("runtime should preserve pending delivery when output fails after expressio
     const fixture = await startedStore();
     // When
     const error = await captureError(() =>
-            runCognition(fixture.store, fixture.state, {
+            runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
                 runtimeId: fixture.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
@@ -323,7 +324,7 @@ test("runtime should preserve pending delivery when stdout fails asynchronously 
         });
     // When
     const error = await captureError(() =>
-            runCognition(fixture.store, fixture.state, {
+            runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
                 runtimeId: fixture.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
@@ -353,7 +354,7 @@ test("runtime should commit displayed only when stdout write callback completes"
         },
     });
     // When
-    const result = await runCognition(fixture.store, fixture.state, {
+    const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,
@@ -378,7 +379,7 @@ test("runtime should keep delivery unknown when crash follows display before sta
     let output = "";
     // When
     const error = await captureError(() =>
-            runCognition(fixture.store, fixture.state, {
+            runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
                 runtimeId: fixture.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
@@ -407,7 +408,7 @@ test("runtime should keep delivery unknown when crash follows display before sta
 test("state validator should reject orphan expression when second descriptor targets one cognition", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(fixture.store, fixture.state, {
+        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -429,7 +430,7 @@ test("state validator should reject orphan expression when second descriptor tar
 test("state validator should reject cognition when scope differs from owning runtime", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(fixture.store, fixture.state, {
+        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -449,7 +450,7 @@ test("state validator should reject cognition when scope differs from owning run
 test("state validator should reject provider termination when status contradicts it", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(fixture.store, fixture.state, {
+        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -486,7 +487,7 @@ test("state validator should reject provider termination when status contradicts
 test("state validator should accept cancellation when invocation ends before child exit is observable", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(fixture.store, fixture.state, {
+        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

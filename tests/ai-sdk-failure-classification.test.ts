@@ -7,6 +7,7 @@ import test from "node:test";
 
 import type { InferenceEvidence } from "../src/providers/ai-sdk.ts";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
@@ -61,7 +62,7 @@ test("AI SDK provider failure should not be overwritten by a later caller cancel
     });
 
     try {
-        const result = await runCognition(fixture.store, fixture.state, {
+        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

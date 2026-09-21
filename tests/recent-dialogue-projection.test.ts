@@ -7,6 +7,7 @@ import type { ConversationMembershipIntent } from "../src/core/interaction-contr
 import type { EmberState } from "../src/core/model.ts";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
@@ -63,7 +64,7 @@ async function runTurn(
         conversationMembership,
     }: { surface?: string; conversationMembership?: ConversationMembershipIntent } = {},
 ) {
-    const result = await runCognition(fixture.store, fixture.state, {
+    const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,

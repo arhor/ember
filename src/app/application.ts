@@ -53,7 +53,7 @@ async function interact(
         const address = addressFor(event);
         let result;
         try {
-            result = await runSurfaceInteraction(store, state, {
+            result = await runSurfaceInteraction(dependencies.repositories, state, {
                 runtimeId,
                 principal: event.principal,
                 scope: event.scope,
@@ -198,7 +198,7 @@ async function deliver(
     const store = dependencies.repositories.state;
     const lease = await store.acquireWriteLease();
     try {
-        return await reconcileSurfaceDelivery(store, deliveryId, async (text) =>
+        return await reconcileSurfaceDelivery(dependencies.repositories, deliveryId, async (text) =>
             observeDelivery(transport, deliveryId, address, text, options.signal),
         );
     } finally {

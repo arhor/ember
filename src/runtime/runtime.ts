@@ -12,8 +12,13 @@ import type {
     RuntimeEpisode,
     RuntimeId,
 } from "../core/model.ts";
-import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
+import type {
+    MemoryProposalGenerationRepository,
+    MemoryProposalGenerator,
+} from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
+import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
+import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
@@ -24,8 +29,6 @@ import { applyOnboardingProgressDecision, projectOnboardingWork } from "../core/
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
-import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
-import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { cloneState } from "../util.ts";
 
@@ -161,8 +164,18 @@ export interface RunCognitionOptions {
     };
 }
 
+export interface CognitionRepositories {
+    state: Pick<StateStore, "load" | "commit">;
+    conversation: Pick<
+        ConversationContextStore,
+        "load" | "activeConversation" | "startFreshConversation" | "recordAcceptedInput" | "recordCommittedExpression"
+    >;
+    onboarding: Pick<OnboardingWorkStore, "load" | "save">;
+    memoryProposalGenerations: MemoryProposalGenerationRepository;
+}
+
 async function resolveConversationMembership(
-    store: ConversationContextStore,
+    store: CognitionRepositories["conversation"],
     principal: string,
     scope: string,
     intent: ConversationMembershipIntent,
@@ -189,7 +202,7 @@ async function resolveConversationMembership(
 }
 
 export async function runCognition(
-    store: StateStore,
+    repositories: CognitionRepositories,
     state: EmberState,
     {
         runtimeId,
@@ -218,6 +231,7 @@ export async function runCognition(
     onboardingProgressFailure: string | null;
     cognitionId: CognitionId;
 }> {
+    const store = repositories.state;
     requirePrincipal(state, principal);
     if (typeof label !== "string" || !label.trim()) throw new ValidationError("provider label must be non-empty");
     const cognitionId = requestedCognitionId ?? newId("cognition");
@@ -225,7 +239,7 @@ export async function runCognition(
         throw new ValidationError(`cognition already exists: ${cognitionId}`);
     }
     const timestamp = nowUtc();
-    const conversationStore = new ConversationContextStore(store.path);
+    const conversationStore = repositories.conversation;
     const resolvedConversation = await resolveConversationMembership(
         conversationStore,
         principal,
@@ -240,7 +254,7 @@ export async function runCognition(
         conversationId,
         membership: resolvedConversation.membership,
     });
-    const loadedOnboardingDocument = purpose === "ordinary" ? await new OnboardingWorkStore(store.path).load() : null;
+    const loadedOnboardingDocument = purpose === "ordinary" ? await repositories.onboarding.load() : null;
     if (
         loadedOnboardingDocument !== null &&
         (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
@@ -387,7 +401,7 @@ export async function runCognition(
                 onboardingWork: onboardingWork!,
                 input: text,
             });
-            await new OnboardingWorkStore(store.path).save(
+            await repositories.onboarding.save(
                 applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
             );
         } catch (error) {
@@ -403,12 +417,20 @@ export async function runCognition(
                 conversationId,
                 membership: resolvedConversation.membership,
             });
-            const reflection = await generateAndAdoptConversationMemories(store, state, reflectionContext, {
-                principal,
-                scope,
-                generator: memoryProposalGenerator,
-                ...(memoryProposalProviderLabel === undefined ? {} : { providerLabel: memoryProposalProviderLabel }),
-            });
+            const reflection = await generateAndAdoptConversationMemories(
+                store,
+                repositories.memoryProposalGenerations,
+                state,
+                reflectionContext,
+                {
+                    principal,
+                    scope,
+                    generator: memoryProposalGenerator,
+                    ...(memoryProposalProviderLabel === undefined
+                        ? {}
+                        : { providerLabel: memoryProposalProviderLabel }),
+                },
+            );
             state = reflection.state;
         } catch (error) {
             memoryProposalFailure = error instanceof Error ? error.message : String(error);
