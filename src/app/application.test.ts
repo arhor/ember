@@ -9,7 +9,7 @@ import type { ProviderRequest } from "../providers/contract.ts";
 import type { InteractionEvent } from "./contract.ts";
 
 import { composeEmberApplication } from "../composition/ember.ts";
-import { ValidationError } from "../core/errors.ts";
+import { ProviderError, ValidationError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
 import { createOnboardingWork } from "../core/onboarding-work.ts";
 import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
@@ -79,6 +79,12 @@ test("CLI- and Telegram-shaped requests follow the same application coordinator 
         assert.equal(state.operations.cognitionEpisodes.length, 2);
         assert.equal(state.operations.runtimeEpisodes.length, 2);
         assert.ok(state.operations.runtimeEpisodes.every((runtime) => runtime.cleanStopAt !== null));
+        assert.ok(
+            state.operations.runtimeEpisodes.every(
+                (runtime) => runtime.stopReason === "application_interaction_complete",
+            ),
+        );
+        assert.equal(dependencies.repositories.state.lease, null);
     } finally {
         await rm(directory, { recursive: true, force: true });
     }
@@ -187,6 +193,9 @@ for (const expected of [
                 memoryProposalFailure: null,
                 onboardingProgressFailure: null,
             });
+            const state = await fixture.dependencies.repositories.state.load();
+            assert.equal(state.operations.runtimeEpisodes.at(-1)?.stopReason, "application_delivery_failure");
+            assert.equal(fixture.dependencies.repositories.state.lease, null);
         } finally {
             await fixture.close();
         }
@@ -204,6 +213,83 @@ test("malformed transport observations become uncertain and do not enter ledger 
         );
         const ledger = await fixture.dependencies.repositories.interactions.load();
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "uncertain");
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("provider failure is persisted before the runtime stops and releases its writer lease", async () => {
+    const fixture = await applicationFixture({
+        provider: async () => {
+            throw new ProviderError("fixture provider failed");
+        },
+    });
+    try {
+        const result = await fixture.application.interact(event("local_cli", "explicit_local_argument"), async () =>
+            assert.fail("failed cognition must not be delivered"),
+        );
+
+        assert.match(result.diagnostics.providerFailure ?? "", /fixture provider failed/);
+        assert.equal(result.cognitionStatus, "failed");
+        const state = await fixture.dependencies.repositories.state.load();
+        assert.equal(state.operations.cognitionEpisodes.at(-1)?.status, "failed");
+        assert.equal(state.operations.runtimeEpisodes.at(-1)?.stopReason, "application_provider_failure");
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("provider cancellation evidence survives application runtime cleanup", async () => {
+    const controller = new AbortController();
+    const fixture = await applicationFixture({
+        provider: async (_request, options) => {
+            controller.abort();
+            assert.equal(options.signal?.aborted, true);
+            throw new ProviderError("fixture cancellation requested", {
+                outcome: "cancellation_requested",
+                termination: { reason: "explicit_cancellation", directChildExitObserved: true },
+            });
+        },
+    });
+    try {
+        const result = await fixture.application.interact(
+            event("local_cli", "explicit_local_argument"),
+            async () => assert.fail("cancelled cognition must not be delivered"),
+            { signal: controller.signal },
+        );
+
+        assert.equal(result.cognitionStatus, "cancellation_requested");
+        const state = await fixture.dependencies.repositories.state.load();
+        const cognition = state.operations.cognitionEpisodes.at(-1);
+        assert.equal(cognition?.status, "cancellation_requested");
+        assert.deepEqual(cognition?.providerTermination, {
+            reason: "explicit_cancellation",
+            directChildExitObserved: true,
+        });
+        assert.equal(state.operations.runtimeEpisodes.at(-1)?.stopReason, "application_provider_failure");
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("a thrown application error records a failed runtime stop and releases its writer lease", async () => {
+    const fixture = await applicationFixture();
+    try {
+        fixture.dependencies.repositories.onboarding.load = async () => {
+            throw new Error("fixture application failure");
+        };
+
+        await assert.rejects(
+            fixture.application.interact(event("local_cli", "explicit_local_argument"), async () =>
+                assert.fail("application failure must not be delivered"),
+            ),
+            /fixture application failure/,
+        );
+        const state = await fixture.dependencies.repositories.state.load();
+        assert.equal(state.operations.runtimeEpisodes.at(-1)?.stopReason, "application_interaction_failed");
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
     } finally {
         await fixture.close();
     }
@@ -275,7 +361,7 @@ test("runtime-stop persistence failure still releases the writer lease", async (
     }
 });
 
-async function applicationFixture() {
+async function applicationFixture({ provider }: Pick<EmberApplicationDependencies["cognition"], "provider"> = {}) {
     const directory = await mkdtemp(join(tmpdir(), "ember-application-review-"));
     const dependencies = composeEmberApplication(
         {
@@ -283,7 +369,7 @@ async function applicationFixture() {
             provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
         },
         {
-            provider: async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] }),
+            provider: provider ?? (async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] })),
         },
     );
     await dependencies.repositories.state.create(initialState(PRINCIPAL));
