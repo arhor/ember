@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import { join } from "node:path";
+import test from "node:test";
+
+import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
+import type { ProviderInvoker } from "../providers/contract.ts";
+
+import { composeEmberApplication } from "./ember.ts";
+
+const statePath = join("/tmp", "ember-composition-test", "state.json");
+
+test("the composition root derives all application repositories from one state path", () => {
+    const dependencies = composeEmberApplication(
+        {
+            statePath,
+            provider: {
+                kind: "process",
+                command: "/not/invoked",
+                arguments: [],
+                timeoutSeconds: 30,
+            },
+        },
+        { provider: providerStub },
+    );
+
+    assert.equal(dependencies.repositories.state.path, statePath);
+    assert.equal(dependencies.repositories.conversation.path, `${statePath}.conversation.json`);
+    assert.equal(dependencies.repositories.interactions.path, `${statePath}.interactions.json`);
+    assert.equal(dependencies.repositories.onboarding.path, `${statePath}.onboarding.json`);
+    assert.equal(dependencies.repositories.memoryProposalGenerations.path, `${statePath}.memory-proposals.json`);
+    assert.equal(dependencies.repositories.actions.path, `${statePath}.actions.json`);
+    assert.equal(dependencies.repositories.objectives.path, `${statePath}.objectives.json`);
+    assert.equal(dependencies.repositories.proactiveContacts.path, `${statePath}.proactive-contacts.json`);
+});
+
+test("tests can supply deterministic application collaborators without process configuration", () => {
+    const memoryProposalGenerator: MemoryProposalGenerator = async () => ({ contractVersion: 1, candidates: [] });
+    const onboardingProgressEvaluator: OnboardingProgressEvaluator = async () => ({
+        contractVersion: 1,
+        outcomes: [],
+    });
+    const dependencies = composeEmberApplication(
+        {
+            statePath,
+            provider: {
+                kind: "claude-code",
+                command: "unused",
+                arguments: [],
+                timeoutSeconds: 17,
+            },
+        },
+        {
+            provider: providerStub,
+            memoryProposalGenerator,
+            onboardingProgressEvaluator,
+            stateStoreOptions: {
+                hostname: "test-host",
+                pid: 42,
+                now: () => "2026-09-21T00:00:00Z",
+                uuid: () => "deterministic-id",
+                kill: () => undefined,
+                directorySync: async () => undefined,
+            },
+        },
+    );
+
+    assert.equal(dependencies.cognition.provider, providerStub);
+    assert.equal(dependencies.cognition.providerLabel, "unused");
+    assert.equal(dependencies.cognition.timeoutSeconds, 17);
+    assert.equal(dependencies.postTurn.memoryProposalGenerator, memoryProposalGenerator);
+    assert.equal(dependencies.postTurn.onboardingProgressEvaluator, onboardingProgressEvaluator);
+    assert.equal(dependencies.repositories.state.host, "test-host");
+    assert.equal(dependencies.repositories.state.pid, 42);
+});
+
+const providerStub: ProviderInvoker = async () => ({
+    contractVersion: 1,
+    reply: "unused",
+    usedMeaningIds: [],
+});

@@ -6,7 +6,7 @@ import { isAbsolute } from "node:path";
 
 import type { ContactAttentionDecisionRecord } from "../../agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "../../agency/proactive-contact-store.ts";
-import type { GoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
+import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
@@ -16,24 +16,12 @@ import {
     decideConfiguredProactiveContactHandoff,
     loadConfiguredProactiveContactPolicy,
 } from "../../agency/configured-proactive-contact-policy.ts";
-import { ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
-import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
-import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
-import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../capabilities/google-calendar.ts";
+import { composeEmberApplication } from "../../composition/ember.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
-import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
-import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
-import { ObjectiveActionCoordinator } from "../../objectives/objective-action.ts";
-import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
-import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
-import { StateStore } from "../../persistence/state-store.ts";
-import { createCodexProvider } from "../../providers/codex.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
-import { createCursorProvider } from "../../providers/cursor.ts";
-import { createProcessProvider, providerLabel } from "../../providers/process.ts";
+import { providerLabel } from "../../providers/process.ts";
 import {
-    InteractionLedgerStore,
     SurfaceDeliveryFailure,
     reconcileSurfaceDelivery,
     runSurfaceInteraction,
@@ -265,19 +253,28 @@ export async function processTelegramUpdate(
         memoryProposalProviderLabel,
         onboardingProgressEvaluator,
         signal,
+        dependencies: suppliedDependencies,
     }: {
         provider?: ProviderInvoker | undefined;
         memoryProposalGenerator?: MemoryProposalGenerator | undefined;
         memoryProposalProviderLabel?: string | undefined;
         onboardingProgressEvaluator?: OnboardingProgressEvaluator | undefined;
         signal?: AbortSignal | undefined;
+        dependencies?: EmberApplicationDependencies | undefined;
     } = {},
 ): Promise<TelegramUpdateOutcome> {
     validateTelegramSurfaceConfig(config);
     const inbound = selectTelegramInbound(update, config);
     if (inbound === null) return { kind: "ignored", updateId: update.update_id };
 
-    const store = new StateStore(config.state_path);
+    const dependencies =
+        suppliedDependencies ??
+        dependenciesForTelegram(config, {
+            ...(provider === undefined ? {} : { provider }),
+            ...(memoryProposalGenerator === undefined ? {} : { memoryProposalGenerator }),
+            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
+        });
+    const store = dependencies.repositories.state;
     const lease = await store.acquireWriteLease();
     let runtimeId: ReturnType<typeof startRuntime>["runtimeId"] | null = null;
     let stopReason = "telegram_update_failed";
@@ -286,21 +283,21 @@ export async function processTelegramUpdate(
         const started = startRuntime(state, config.principal, config.activeScope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
-        const selectedProvider = provider ?? providerForConfig(config);
-        const onboardingWork = await new OnboardingWorkStore(config.state_path).load();
+        const selectedProvider = dependencies.cognition.provider;
+        const onboardingWork = await dependencies.repositories.onboarding.load();
         const selectedMemoryGenerator =
             memoryProposalGenerator ??
             (provider === undefined &&
             onboardingWork?.status === "active" &&
             onboardingWork.scope === config.activeScope
-                ? createProviderMemoryProposalGenerator(selectedProvider, config.provider_timeout_seconds)
+                ? dependencies.postTurn.memoryProposalGenerator
                 : undefined);
         const selectedOnboardingEvaluator =
             onboardingProgressEvaluator ??
             (provider === undefined &&
             onboardingWork?.status === "active" &&
             onboardingWork.scope === config.activeScope
-                ? createProviderOnboardingProgressEvaluator(selectedProvider, config.provider_timeout_seconds)
+                ? dependencies.postTurn.onboardingProgressEvaluator
                 : undefined);
         try {
             const result = await runSurfaceInteraction(store, state, {
@@ -343,7 +340,7 @@ export async function processTelegramUpdate(
             };
         } catch (error) {
             if (!(error instanceof SurfaceDeliveryFailure)) throw error;
-            const ledger = await new InteractionLedgerStore(config.state_path).load();
+            const ledger = await dependencies.repositories.interactions.load();
             const occurrence = ledger.inbound_occurrences.find(
                 (record) =>
                     record.surface_id === TELEGRAM_SURFACE_ID &&
@@ -383,14 +380,23 @@ export async function processTelegramUpdate(
 export async function reconcileTelegramDeliveries(
     config: TelegramSurfaceConfig,
     api: TelegramDeliveryApi,
-    { signal, observedAt }: { signal?: AbortSignal | undefined; observedAt?: string } = {},
+    {
+        signal,
+        observedAt,
+        dependencies: suppliedDependencies,
+    }: {
+        signal?: AbortSignal | undefined;
+        observedAt?: string;
+        dependencies?: EmberApplicationDependencies;
+    } = {},
 ) {
     validateTelegramSurfaceConfig(config);
-    const store = new StateStore(config.state_path);
+    const dependencies = suppliedDependencies ?? dependenciesForTelegram(config);
+    const store = dependencies.repositories.state;
     const lease = await store.acquireWriteLease();
     try {
         const state = await store.load();
-        const ledger = await new InteractionLedgerStore(config.state_path).load();
+        const ledger = await dependencies.repositories.interactions.load();
         const pendingCognitionIds = new Set(
             state.operations.cognitionEpisodes
                 .filter((cognition) => cognition.status === "completed" && cognition.deliveryStatus !== "displayed")
@@ -434,19 +440,22 @@ export async function reconcileTelegramProactiveContacts(
         signal,
         observedAt = nowUtc(),
         revalidateBeforeHandoff,
+        dependencies: suppliedDependencies,
     }: {
         signal?: AbortSignal | undefined;
         observedAt?: string;
         revalidateBeforeHandoff?: ProactiveContactHandoffRevalidator;
+        dependencies?: EmberApplicationDependencies;
     } = {},
 ) {
     validateTelegramSurfaceConfig(config);
-    const store = new StateStore(config.state_path);
+    const dependencies = suppliedDependencies ?? dependenciesForTelegram(config);
+    const store = dependencies.repositories.state;
     const lease = await store.acquireWriteLease();
     try {
         const state = await store.load();
-        const contacts = new ProactiveContactStore(config.state_path);
-        const ledger = new InteractionLedgerStore(config.state_path);
+        const contacts = dependencies.repositories.proactiveContacts;
+        const ledger = dependencies.repositories.interactions;
         const document = await contacts.load();
         const results = [];
         for (const intent of document.intents) {
@@ -579,6 +588,7 @@ export async function runTelegramPolling(
     validateTelegramSurfaceConfig(config);
     if (maxAcceptedUpdates !== undefined && (!Number.isSafeInteger(maxAcceptedUpdates) || maxAcceptedUpdates < 1))
         throw new ValidationError("max accepted Telegram updates must be a positive safe integer");
+    const dependencies = dependenciesForTelegram(config, provider === undefined ? {} : { provider });
     try {
         await verifyTelegramLongPollingReady(api, signal);
     } catch (error) {
@@ -601,9 +611,10 @@ export async function runTelegramPolling(
         : undefined;
     const proactiveRevalidator = revalidateProactiveContact ?? configuredRevalidator;
     while (!signal?.aborted) {
-        await reconcileTelegramDeliveries(config, api, { signal });
+        await reconcileTelegramDeliveries(config, api, { signal, dependencies });
         await reconcileTelegramProactiveContacts(config, api, {
             signal,
+            dependencies,
             ...(proactiveRevalidator === undefined ? {} : { revalidateBeforeHandoff: proactiveRevalidator }),
         });
         if (signal?.aborted) return;
@@ -627,7 +638,7 @@ export async function runTelegramPolling(
 
         for (const update of updates) {
             if (signal?.aborted) return;
-            const outcome = await processTelegramUpdate(config, api, update, { provider });
+            const outcome = await processTelegramUpdate(config, api, update, { provider, dependencies });
             onOutcome?.(outcome);
             if (outcome.kind !== "ignored") acceptedCount += 1;
             offset = update.update_id + 1;
@@ -760,51 +771,30 @@ function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): Telegram
     };
 }
 
-function providerForConfig(config: TelegramSurfaceConfig): ProviderInvoker {
-    const adapter = { command: config.provider_command, arguments_: config.provider_arguments };
-    if (config.provider_kind === "codex") return createCodexProvider(adapter);
-    if (config.provider_kind === "cursor") return createCursorProvider(adapter);
-    if (config.provider_kind === "claude-code")
-        return async (request, options) => {
-            const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
-            const calendar: GoogleCalendarConfig | undefined = config.google_calendar_config_path
-                ? await loadGoogleCalendarConfig(config.google_calendar_config_path)
-                : undefined;
-            return createClaudeCodeProvider({
-                ...(config.provider?.model ? { model: config.provider.model } : {}),
-                ...(calendar
-                    ? {
-                          selectCapabilities: (selectedRequest) => {
-                              const actions = new ActionProposalStore(config.state_path);
-                              const objectiveActions = new ObjectiveActionCoordinator(
-                                  new DurableObjectiveStore(config.state_path),
-                                  actions,
-                              );
-                              return [
-                                  ...selectGoogleCalendarCapability(calendar, {
-                                      principal: selectedRequest.projection.principal,
-                                      lineageId: selectedRequest.projection.lineage.lineageId,
-                                      scope: selectedRequest.projection.activeScope,
-                                      surface: selectedRequest.projection.surface,
-                                  }),
-                                  ...selectApprovedGoogleCalendarEventCapability(
-                                      calendar,
-                                      actions,
-                                      {
-                                          principal: selectedRequest.projection.principal,
-                                          lineageId: selectedRequest.projection.lineage.lineageId,
-                                          scope: selectedRequest.projection.activeScope,
-                                          surface: selectedRequest.projection.surface,
-                                      },
-                                      { revalidateObjective: (proposalId) => objectiveActions.revalidate(proposalId) },
-                                  ),
-                              ];
-                          },
-                      }
-                    : {}),
-            })(request, options);
-        };
-    return createProcessProvider(adapter);
+function dependenciesForTelegram(
+    config: TelegramSurfaceConfig,
+    overrides: {
+        provider?: ProviderInvoker;
+        memoryProposalGenerator?: MemoryProposalGenerator;
+        onboardingProgressEvaluator?: OnboardingProgressEvaluator;
+    } = {},
+) {
+    return composeEmberApplication(
+        {
+            statePath: config.state_path,
+            provider: {
+                kind: config.provider_kind,
+                command: config.provider_command,
+                arguments: config.provider_arguments,
+                timeoutSeconds: config.provider_timeout_seconds,
+                ...(config.provider?.model === undefined ? {} : { model: config.provider.model }),
+            },
+            ...(config.google_calendar_config_path === undefined
+                ? {}
+                : { googleCalendarConfigPath: config.google_calendar_config_path }),
+        },
+        overrides,
+    );
 }
 
 function validateTelegramUpdates(value: unknown): asserts value is TelegramUpdate[] {
