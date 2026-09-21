@@ -153,10 +153,15 @@ agency-owned fresh policy pass records another current Telegram admission immedi
 before creation or adoption. The revalidator must be supplied by an agency owner that
 can observe current attention, authority, occurrence, and surface evidence; neither
 the prior admission nor Telegram transport state can substitute for those
-observations. Production polling and direct lower-level reconciliation without that
-dependency leave the intent untouched and send nothing. Once a handoff exists,
-transport recovery follows its durable attempt evidence without reopening attention
-policy.
+observations. Production polling supplies this owner when the validated version-2/3
+surface configuration references an explicit `proactive_contact_policy_path`: the
+configured agency observer rereads the separate policy document before every first
+handoff and evaluates its standing authority and UTC quiet-hours rule together with
+current canonical grounding, durable occurrence identity, and the preflighted logical
+surface. Without that opt-in policy,
+or in direct lower-level reconciliation without an explicit revalidator, the intent
+is untouched and nothing is sent. Once a handoff exists, transport recovery follows
+its durable attempt evidence without reopening attention policy.
 
 Interaction-ledger v1 and v2 documents migrate in memory to v3 as
 `ordinary_cognition` origins with open send fences. Migration does not invent

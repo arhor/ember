@@ -12,6 +12,10 @@ import type { MemoryProposalGenerator } from "../../memory/memory-proposal-gener
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 
+import {
+    decideConfiguredProactiveContactHandoff,
+    loadConfiguredProactiveContactPolicy,
+} from "../../agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
 import { ActionProposalStore } from "../../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../../capabilities/google-calendar-create.ts";
@@ -59,6 +63,7 @@ export interface TelegramSurfaceConfig {
     provider_arguments: string[];
     provider_timeout_seconds: number;
     provider?: TelegramProviderConfig;
+    proactive_contact_policy_path?: string;
     working_directory: string;
     node_path: string;
     surface_entrypoint: string;
@@ -583,13 +588,23 @@ export async function runTelegramPolling(
 
     let offset: number | undefined;
     let acceptedCount = 0;
+    const configuredRevalidator = config.proactive_contact_policy_path
+        ? async (state: EmberState, intent: ProactiveContactIntentRecord, consideredAt: string) =>
+              decideConfiguredProactiveContactHandoff({
+                  state,
+                  statePath: config.state_path,
+                  intent,
+                  consideredAt,
+                  surfaceId: TELEGRAM_SURFACE_ID,
+                  policy: await loadConfiguredProactiveContactPolicy(config.proactive_contact_policy_path!),
+              })
+        : undefined;
+    const proactiveRevalidator = revalidateProactiveContact ?? configuredRevalidator;
     while (!signal?.aborted) {
         await reconcileTelegramDeliveries(config, api, { signal });
         await reconcileTelegramProactiveContacts(config, api, {
             signal,
-            ...(revalidateProactiveContact === undefined
-                ? {}
-                : { revalidateBeforeHandoff: revalidateProactiveContact }),
+            ...(proactiveRevalidator === undefined ? {} : { revalidateBeforeHandoff: proactiveRevalidator }),
         });
         if (signal?.aborted) return;
 
@@ -649,12 +664,21 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
     ];
     const v2Fields = legacyFields.filter((field) => !field.startsWith("provider_")).concat("provider");
     const structuredFields = value.config_version === 3 ? [...v2Fields, "google_calendar_config_path"] : v2Fields;
+    const optionalPolicyFields = [...structuredFields, "proactive_contact_policy_path"];
     if (
         (value.config_version !== 1 || !exactKeys(value, legacyFields)) &&
         ((value.config_version !== 2 && value.config_version !== 3) ||
             (!exactKeys(value, structuredFields) &&
+                !exactKeys(value, optionalPolicyFields) &&
                 !exactKeys(value, [
                     ...structuredFields,
+                    "provider_kind",
+                    "provider_command",
+                    "provider_arguments",
+                    "provider_timeout_seconds",
+                ]) &&
+                !exactKeys(value, [
+                    ...optionalPolicyFields,
                     "provider_kind",
                     "provider_command",
                     "provider_arguments",
@@ -672,6 +696,8 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
     requireAbsolutePath(value.surface_entrypoint, "Telegram surface entrypoint");
     if (value.config_version === 3)
         requireAbsolutePath(value.google_calendar_config_path, "Google Calendar config path");
+    if (value.proactive_contact_policy_path !== undefined)
+        requireAbsolutePath(value.proactive_contact_policy_path, "proactive contact policy path");
     if (value.config_version === 1) validateLegacyProvider(value);
     else validateStructuredProvider(value.provider);
     validatePollTimeout(value.poll_timeout_seconds);

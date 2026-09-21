@@ -305,9 +305,14 @@ the bridge requires a fresh agency-owned policy decision at the current state
 revision and observation time. The revalidator is an explicit agency-owned worker
 dependency because current attention, authority, occurrence, and surface observations
 cannot be reconstructed from the previous admission. Production Telegram polling
-without that dependency remains fail-safe and creates no first handoff. A missing
-revalidator, fresh defer or suppress, or different surface selection produces no
-send. A crash in between is repaired only after that revalidation by adopting the
+constructs this dependency when a validated version-2/3 surface configuration names an
+explicit local `proactive_contact_policy_path`. That observer rereads the separate
+agency policy before each first handoff and combines its current standing authority and
+UTC quiet hours with current canonical grounding, durable occurrence identity, and the
+preflighted logical surface. Without the opt-in policy,
+production remains fail-safe and creates no first handoff. A missing revalidator,
+fresh defer or suppress, or different surface selection produces no send. A crash in
+between is repaired only after that revalidation by adopting the
 unique delivery whose proactive origin names the same contact intent and an admitted
 policy assessment. Digest or cross-intent correlation disagreement fails closed.
 

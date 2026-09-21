@@ -253,15 +253,20 @@ transport implementation.
   explicit agency-owned revalidator to record a new decision before any new handoff.
   That dependency must obtain current authority, attention, occurrence, and surface
   observations rather than reconstructing them from the previous admission. Telegram
-  consumes the returned record but does not derive the policy result itself. Until a
-  production worker has such a current observation source, polling and lower-level
-  reconciliation fail safe without a first handoff.
+  consumes the returned record but does not derive the policy result itself. Production
+  polling constructs that dependency only when the local version-2/3 surface
+  configuration references an explicit `proactive_contact_policy_path`. The
+  agency-owned observer rereads that separate policy document for every first-handoff
+  assessment and evaluates its current standing-authority setting, recurring UTC quiet
+  window, durable occurrence identity, canonical grounding, and successfully
+  preflighted logical surface. An absent policy remains fail-safe, and direct
+  lower-level reconciliation still requires an explicit revalidator.
 - The [delivery reconciliation runbook](delivery-reconciliation-runbook.md) owns
   delivery uncertainty, retries, acknowledgement, and recovery after handoff.
 
-This policy does not define quiet-hour configuration UX, a notification budget,
-Telegram reachability, transport retry, or generic delivery scheduling. Persistence
-and Telegram mapping consume its decision record without re-deciding policy.
+This policy does not define setup UX for the opt-in policy document, a notification
+budget, transport retry, or generic delivery scheduling. Persistence and Telegram
+mapping consume its decision record without re-deciding policy.
 
 ## Acceptance mapping
 

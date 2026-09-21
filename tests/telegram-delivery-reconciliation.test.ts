@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
+import type { ConfiguredProactiveContactPolicy } from "../src/agency/configured-proactive-contact-policy.ts";
 import type { ContactAttentionDecisionRecord } from "../src/agency/proactive-contact-attention-policy.ts";
 import type { ProviderInvoker } from "../src/providers/contract.ts";
 import type {
@@ -12,6 +13,7 @@ import type {
     TelegramUpdate,
 } from "../src/surfaces/telegram/index.ts";
 
+import { decideConfiguredProactiveContactHandoff } from "../src/agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
 import { initialState } from "../src/core/model.ts";
 import { rememberFact } from "../src/core/semantics.ts";
@@ -25,6 +27,7 @@ import { startRuntime } from "../src/runtime/runtime.ts";
 import {
     createTelegramApi,
     deliverTelegramMessage,
+    loadTelegramSurfaceConfig,
     processTelegramUpdate,
     reconcileTelegramDeliveries,
     reconcileTelegramProactiveContacts,
@@ -105,6 +108,34 @@ function readyApi(overrides: Record<string, unknown> = {}) {
         sendMessage: async () => sentMessage(9999),
         ...overrides,
     } as Parameters<typeof runTelegramPolling>[1];
+}
+
+function configuredPolicy(
+    attention: ConfiguredProactiveContactPolicy["attention"] = {
+        kind: "always_available",
+        source_id: "configured-policy:attention",
+    },
+): ConfiguredProactiveContactPolicy {
+    return {
+        policy_version: 1,
+        authority: { status: "authorized", source_id: "configured-policy:standing-authority" },
+        attention,
+        surface: { preference_rank: 0, source_id: "configured-policy:telegram-ready" },
+    };
+}
+
+function withConfiguredPolicy(config: TelegramSurfaceConfig, policyPath: string): TelegramSurfaceConfig {
+    return {
+        ...config,
+        config_version: 2,
+        provider: {
+            kind: "codex",
+            command: config.provider_command,
+            model: "",
+            timeout_seconds: config.provider_timeout_seconds,
+        },
+        proactive_contact_policy_path: policyPath,
+    };
 }
 
 async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suffix = "release") {
@@ -527,6 +558,135 @@ test("polling hands an admitted contact to Telegram when supplied an agency reva
         assert.equal(intent.disposition, "satisfied");
         assert.notEqual(intent.policy_decisions.at(-1)?.assessment_id, contact.assessmentId);
         assert.equal(intent.handoff?.assessment_id, intent.policy_decisions.at(-1)?.assessment_id);
+    } finally {
+        await f.close();
+    }
+});
+
+test("production polling should hand an admitted contact to Telegram when configured policy is current", async () => {
+    // Given
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "configured-production-worker");
+        const policyPath = join(f.directory, "proactive-contact-policy.json");
+        const surfaceConfigPath = join(f.directory, "telegram.json");
+        await writeFile(policyPath, JSON.stringify(configuredPolicy()), "utf8");
+        await writeFile(surfaceConfigPath, JSON.stringify(withConfiguredPolicy(f.config, policyPath)), "utf8");
+        const productionConfig = await loadTelegramSurfaceConfig(surfaceConfigPath);
+        let polls = 0;
+        let sends = 0;
+        const api = readyApi({
+            getUpdates: async () => {
+                polls += 1;
+                throw new Error("stop-after-configured-proactive-handoff");
+            },
+            sendMessage: async ({ text }: { text: string }) => {
+                sends += 1;
+                assert.equal(text, "proactive message configured-production-worker");
+                return sentMessage(7013);
+            },
+        });
+
+        // When
+        await assert.rejects(runTelegramPolling(productionConfig, api), /stop-after-configured-proactive-handoff/);
+
+        // Then
+        assert.equal(polls, 1);
+        assert.equal(sends, 1);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.disposition, "satisfied");
+        assert.equal(
+            intent.policy_decisions.at(-1)?.evidence.authority.evidence_ids[0],
+            "configured-policy:standing-authority",
+        );
+        assert.equal(intent.handoff?.assessment_id, intent.policy_decisions.at(-1)?.assessment_id);
+    } finally {
+        await f.close();
+    }
+});
+
+test("production polling should suppress an admitted contact when configured authority is revoked", async () => {
+    // Given
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "configured-authority-revoked");
+        const policyPath = join(f.directory, "proactive-contact-policy.json");
+        const surfaceConfigPath = join(f.directory, "telegram.json");
+        await writeFile(policyPath, JSON.stringify(configuredPolicy()), "utf8");
+        await writeFile(surfaceConfigPath, JSON.stringify(withConfiguredPolicy(f.config, policyPath)), "utf8");
+        const productionConfig = await loadTelegramSurfaceConfig(surfaceConfigPath);
+        await writeFile(
+            policyPath,
+            JSON.stringify({
+                ...configuredPolicy(),
+                authority: { status: "denied", source_id: "configured-policy:authority-revoked" },
+            }),
+            "utf8",
+        );
+        let sends = 0;
+        const api = readyApi({
+            getUpdates: async () => {
+                throw new Error("stop-after-authority-revalidation");
+            },
+            sendMessage: async () => {
+                sends += 1;
+                return sentMessage(7014);
+            },
+        });
+
+        // When
+        await assert.rejects(runTelegramPolling(productionConfig, api), /stop-after-authority-revalidation/);
+
+        // Then
+        assert.equal(sends, 0);
+        const intent = (await contact.contacts.load()).intents[0]!;
+        assert.equal(intent.disposition, "suppressed");
+        assert.equal(intent.policy_decisions.at(-1)?.basis, "authority_denied");
+        assert.equal(
+            (await new InteractionLedgerStore(f.statePath).load()).deliveries.some(
+                (delivery) => delivery.origin.kind === "proactive_contact",
+            ),
+            false,
+        );
+    } finally {
+        await f.close();
+    }
+});
+
+test("configured handoff policy should defer ordinary contact when current UTC time is quiet", async () => {
+    // Given
+    const f = await fixture();
+    try {
+        const contact = await createAdmittedContact(f, "configured-quiet-hours");
+        const state = await f.store.load();
+        const intent = (await contact.contacts.load()).intents[0]!;
+
+        // When
+        const decision = await decideConfiguredProactiveContactHandoff({
+            state,
+            statePath: f.statePath,
+            intent,
+            consideredAt: "2026-09-21T23:30:00Z",
+            surfaceId: "telegram_bot",
+            policy: configuredPolicy({
+                kind: "daily_quiet_hours_utc",
+                source_id: "configured-policy:quiet-hours",
+                window_id: "principal-night-utc",
+                starts_at: "22:00",
+                ends_at: "07:00",
+            }),
+        });
+
+        // Then
+        assert.equal(decision.outcome, "defer");
+        assert.equal(decision.basis, "quiet_period");
+        assert.deepEqual(decision.evidence.attention, {
+            status: "quiet_period",
+            window_id: "principal-night-utc",
+            starts_at: "2026-09-21T22:00:00.000Z",
+            ends_at: "2026-09-22T07:00:00.000Z",
+            evidence_ids: ["configured-policy:quiet-hours"],
+        });
     } finally {
         await f.close();
     }

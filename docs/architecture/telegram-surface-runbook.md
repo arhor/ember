@@ -216,6 +216,49 @@ remain in the uncommitted configuration file rather than code, test fixtures tie
 real person, or canonical state. A repository checkout can therefore describe the
 mapping mechanism without embedding a personal Telegram identifier.
 
+That mapping does not authorize proactive interruption. Version-2/3 configurations
+may opt in to the production proactive-contact handoff by referencing a separate
+agency-owned policy document:
+
+```json
+{
+  "proactive_contact_policy_path": "/home/USER/.config/ember/proactive-contact-policy.json"
+}
+```
+
+The referenced private local file has this shape:
+
+```json
+{
+  "policy_version": 1,
+  "authority": {
+    "status": "authorized",
+    "source_id": "local-policy:proactive-telegram-authority"
+  },
+  "attention": {
+    "kind": "daily_quiet_hours_utc",
+    "source_id": "local-policy:principal-quiet-hours",
+    "window_id": "principal-night-utc",
+    "starts_at": "22:00",
+    "ends_at": "07:00"
+  },
+  "surface": {
+    "preference_rank": 0,
+    "source_id": "local-policy:telegram-enabled"
+  }
+}
+```
+
+`authority.status` is an explicit standing policy observation, not a consequence of
+the bot token or chat mapping. `unknown` defers and `denied` suppresses. Attention may
+instead use `{ "kind": "always_available", "source_id": "..." }`; otherwise the
+daily window is interpreted in UTC with an inclusive start and exclusive end. The
+worker rereads the separate policy document before every first-handoff assessment, so
+authority revocation and attention-policy changes do not require replaying the old
+admission or restarting the worker. Guided Telegram setup does not create or reference
+the opt-in policy automatically. Without it, production polling deliberately leaves an
+uncommitted proactive intent pending.
+
 Supported `provider_kind` values are `codex`, `cursor`, and `process`; this mirrors the
 existing cognition boundary rather than defining a Telegram-specific cognition
 backend.
@@ -317,9 +360,15 @@ current attention, authority, occurrence, and logical-surface observations. It m
 not synthesize those inputs from the previous admission. The bridge requires the
 resulting decision to use the current state revision, reconciliation time, intent
 identity, and Telegram selection. A missing revalidator, fresh defer or suppress, or
-other-surface result leaves the intent unsent. Production polling therefore remains
-fail-safe until its owner supplies this current-observation dependency; Telegram does
-not decide the policy result itself. After admission, the bridge creates or adopts one
+other-surface result leaves the intent unsent. When an explicit
+`proactive_contact_policy_path` is present in a validated version-2/3 local
+configuration, production polling constructs that agency observer and rereads the
+separate policy document before every first-handoff assessment. It combines the current
+configured standing authority and recurring UTC quiet-hours rule, current canonical
+grounding and durable occurrence identity, and the logical Telegram surface whose
+preflight has succeeded. The Telegram adapter supplies transport reachability but does
+not infer authority or replay the prior admission. Without the opt-in policy path,
+production remains fail-safe. After fresh admission, the bridge creates or adopts one
 ledger-v3 delivery with a proactive origin, binds it to
 `telegram:chat:<configured-chat-id>`, verifies the retained-representation digest,
 commits the intent-side handoff, and then calls the shared delivery reconciler. The
@@ -330,7 +379,8 @@ send start. A definite retryable failure reuses the same delivery and bytes; a
 non-retryable failure remains truthfully handed off; `started` becomes `uncertain` on
 restart; and uncertainty never causes automatic resend or cross-surface fallback.
 Confirmed transport evidence satisfies only an intent whose declared boundary is
-transport acceptance. No Telegram configuration-version change is required.
+transport acceptance. Existing version-2/3 configurations may add the optional policy
+path without another configuration-version change.
 
 Telegram currently limits ordinary `sendMessage` text. The current surface does not
 split one Ember expression into multiple Telegram messages because that would require
