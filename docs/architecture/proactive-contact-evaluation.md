@@ -50,9 +50,16 @@ The live path does not send a real message.
 
 The version-1 fixture covers useful contact, low-value silence, quiet-period
 deferral, duplicate and superseded intents, staleness before delivery, restart
-between decision and delivery with fresh revalidation and one durable handoff,
-uncertain then confirmed delivery, repeated opportunities, and suppression of an
-old grounding followed by contact from its current remembered successor.
+between decision and delivery through the Telegram bridge with fresh revalidation
+and one durable ledger handoff, confirmed and uncertain delivery reconciliation,
+repeated opportunities, and suppression of a predecessor followed by contact from
+a distinctly identified current remembered successor.
+
+Low-value silence runs through the production interruption-decision boundary with
+a completed cognition and no interruption candidate. Delivery cases create a real
+completed cognition source, then use the production Telegram proactive-contact
+bridge, interaction ledger, and delivery reconciler; they do not inject handoff or
+reconciliation outcomes into the contact store.
 
 `contact_precision` penalizes unwanted contact and `contact_recall` penalizes missed
 useful contact. The report also exposes unwanted interruption, deliberate silence,

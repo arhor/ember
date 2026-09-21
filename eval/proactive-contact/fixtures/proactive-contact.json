@@ -11,7 +11,7 @@
     {
       "id": "low-value-silence",
       "expect_contact": false,
-      "expected_policy": { "outcome": "no_contact", "basis": "insufficient_value" }
+      "expected_policy": { "outcome": "no_delivery", "basis": "no_interruption_candidate" }
     },
     {
       "id": "quiet-period-deferral",

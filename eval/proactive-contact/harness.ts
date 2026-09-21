@@ -6,13 +6,19 @@ import type {
     ContactAttentionPolicyRequest,
     ProactiveContactIntentSnapshot,
 } from "../../src/agency/proactive-contact-attention-policy.ts";
-import type { EvidenceId, MeaningId } from "../../src/core/model.ts";
+import type { CognitionId, EvidenceId, MeaningId } from "../../src/core/model.ts";
+import type { TelegramSurfaceConfig } from "../../src/surfaces/telegram/index.ts";
 
+import { decideUserInterruption } from "../../src/agency/interruption-decision.ts";
 import { decideProactiveContactAttention } from "../../src/agency/proactive-contact-attention-policy.ts";
 import { ProactiveContactStore } from "../../src/agency/proactive-contact-store.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
+import { StateStore } from "../../src/persistence/state-store.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
+import { runCognition, startRuntime } from "../../src/runtime/runtime.ts";
+import { reconcileTelegramProactiveContacts } from "../../src/surfaces/telegram/index.ts";
 import { contentDigest, exactKeys, isObject } from "../../src/util.ts";
 
 const CASE_IDS = [
@@ -28,7 +34,7 @@ const CASE_IDS = [
     "remembered-currentness-change",
 ] as const;
 export type ProactiveContactCaseId = (typeof CASE_IDS)[number];
-type ExpectedPolicyOutcome = "admit" | "defer" | "suppress" | "no_contact";
+type ExpectedPolicyOutcome = "admit" | "defer" | "suppress" | "no_delivery";
 export interface ProactiveContactScenarioCase {
     id: ProactiveContactCaseId;
     expect_contact: boolean;
@@ -119,9 +125,11 @@ async function runCase(item: ProactiveContactScenarioCase, directory: string, li
         state,
         "alice",
         "user:alice",
-        "contact-evaluation",
+        id === "low-value-silence" ? "decorative-icon" : "contact-evaluation",
         "private",
-        "The pharmacy closes at 18:00",
+        id === "low-value-silence"
+            ? "The decorative application icon changed shade slightly"
+            : "The pharmacy closes at 18:00",
     ) as MeaningId;
     if (previousNow === undefined) delete process.env.EMBER_TEST_NOW;
     else process.env.EMBER_TEST_NOW = previousNow;
@@ -144,17 +152,32 @@ async function runCase(item: ProactiveContactScenarioCase, directory: string, li
         modelDecision === (item.expect_contact ? "contact" : "silent");
 
     if (id === "low-value-silence") {
+        const interruption = decideUserInterruption(state, {
+            source: {
+                opportunityId: "opportunity-low-value-silence" as never,
+                cognitionId: "cognition-low-value-silence" as never,
+                principal: "alice",
+                activeScope: "private",
+                validatedRevision: state.revision,
+                status: "completed",
+                usedMeaningIds: [groundingId],
+            },
+            candidate: null,
+            authority: "authorized",
+            attention: "available",
+            considered_at: "2026-09-20T10:00:00Z",
+        });
         const exactPolicy =
-            item.expected_policy.outcome === "no_contact" && item.expected_policy.basis === "insufficient_value";
+            interruption.outcome === item.expected_policy.outcome && interruption.basis === item.expected_policy.basis;
         return report(
             item,
             false,
-            "no_contact",
-            "insufficient_value",
+            interruption.outcome,
+            interruption.basis,
             sourceEvidenceIds,
             [groundingId],
             [],
-            null,
+            interruption,
             {},
             exactPolicy,
             modelPassed,
@@ -179,15 +202,31 @@ async function runCase(item: ProactiveContactScenarioCase, directory: string, li
             if (beforeChangeNow === undefined) delete process.env.EMBER_TEST_NOW;
             else process.env.EMBER_TEST_NOW = beforeChangeNow;
         }
+        const successorIntentId = "contact-intent-remembered-currentness-change-successor" as const;
+        snapshot = {
+            ...snapshot,
+            supersession: {
+                successor_intent_id: successorIntentId,
+                evidence_ids: ["policy:currentness-successor"],
+            },
+        };
         const oldDecision = decideProactiveContactAttention(state, snapshot, {
             ...request,
             assessment_id: "contact-policy-remembered-currentness-old",
         });
         policyDecisions.push(oldDecision);
-        snapshot = makeSnapshot(id, state.revision, activeGroundingId);
+        snapshot = makeSnapshot(
+            id,
+            state.revision,
+            activeGroundingId,
+            successorIntentId,
+            "The pharmacy now closes at 16:00; collect the prescription before then.",
+        );
         request = { ...request, assessment_id: "contact-policy-remembered-currentness-new" };
         metricResults.stale_contact_suppression =
-            oldDecision.outcome === "suppress" && oldDecision.basis === "stale_grounding";
+            oldDecision.outcome === "suppress" &&
+            oldDecision.basis === "superseded_intent" &&
+            oldDecision.contact_intent_id !== snapshot.contact_intent_id;
         sourceEvidenceIds.push(...findMeaning(state, activeGroundingId).sourceEvidenceIds);
     }
 
@@ -204,70 +243,101 @@ async function runCase(item: ProactiveContactScenarioCase, directory: string, li
             decision.outcome === "suppress" && decision.basis === "stale_grounding";
 
     if (id === "restart-before-delivery") {
-        const store = await createStoredIntent(storePath, snapshot, sourceEvidenceIds);
+        const bridgeSource = await prepareBridgeState(storePath, state);
+        const store = await createStoredIntent(storePath, snapshot, sourceEvidenceIds, bridgeSource);
         await store.recordPolicyDecision(decision);
-        const restarted = new ProactiveContactStore(storePath);
-        const retained = (await restarted.load()).intents[0]!;
-        const resumedSnapshot = snapshotFromRecord(retained);
-        const resumedRequest: ContactAttentionPolicyRequest = {
-            ...makeRequest(id),
-            assessment_id: "contact-policy-restart-resumed",
-            considered_at: "2026-09-20T10:02:00Z",
-        };
-        const resumedDecision = decideProactiveContactAttention(state, resumedSnapshot, resumedRequest);
-        policyDecisions.push(resumedDecision);
-        await restarted.recordPolicyDecision(resumedDecision);
-        const handoff = {
-            contactIntentId: snapshot.contact_intent_id,
-            assessmentId: resumedRequest.assessment_id,
-            surfaceId: "telegram",
-            deliveryId: "delivery-restart-contact",
-            representationDigest: snapshot.representation.digest,
-            handedOffAt: "2026-09-20T10:03:00Z",
-        } as const;
-        await restarted.commitHandoff(handoff);
-        await restarted.commitHandoff(handoff);
-        const continued = await restarted.load();
+        let sends = 0;
+        const results = await reconcileTelegramProactiveContacts(
+            telegramConfig(directory, storePath),
+            telegramApi(() => {
+                sends += 1;
+                return telegramMessage(7001);
+            }),
+            {
+                observedAt: "2026-09-20T10:02:00Z",
+                revalidateBeforeHandoff: (currentState, currentIntent, consideredAt) => {
+                    const resumedDecision = decideProactiveContactAttention(
+                        currentState,
+                        snapshotFromRecord(currentIntent),
+                        {
+                            ...makeRequest(id),
+                            assessment_id: "contact-policy-restart-resumed",
+                            considered_at: consideredAt,
+                        },
+                    );
+                    policyDecisions.push(resumedDecision);
+                    return resumedDecision;
+                },
+            },
+        );
+        const replay = await reconcileTelegramProactiveContacts(
+            telegramConfig(directory, storePath),
+            telegramApi(() => {
+                sends += 1;
+                return telegramMessage(7002);
+            }),
+            { observedAt: "2026-09-20T10:03:00Z" },
+        );
+        const continued = await new ProactiveContactStore(storePath).load();
         const continuedIntent = continued.intents[0]!;
+        const deliveries = (await new InteractionLedgerStore(storePath).load()).deliveries.filter(
+            (delivery) => delivery.origin.kind === "proactive_contact",
+        );
         metricResults.restart_outcome =
+            results[0]?.status === "confirmed" &&
+            replay.length === 0 &&
+            sends === 1 &&
             continued.intents.length === 1 &&
-            continuedIntent.handoff?.delivery_id === "delivery-restart-contact" &&
-            continuedIntent.policy_decisions.length === 2;
+            continuedIntent.disposition === "satisfied" &&
+            continuedIntent.policy_decisions.length === 2 &&
+            deliveries.length === 1 &&
+            deliveries[0]?.delivery_id === continuedIntent.handoff?.delivery_id;
         observedContact = metricResults.restart_outcome;
         deliveryOutcome = continuedIntent.handoff?.delivery_id ?? null;
     }
 
     if (id === "confirmed-vs-uncertain-delivery") {
-        const store = await createStoredIntent(storePath, snapshot, sourceEvidenceIds);
+        const bridgeSource = await prepareBridgeState(storePath, state);
+        const store = await createStoredIntent(storePath, snapshot, sourceEvidenceIds, bridgeSource);
         await store.recordPolicyDecision(decision);
-        await store.commitHandoff({
-            contactIntentId: snapshot.contact_intent_id,
-            assessmentId: request.assessment_id,
-            surfaceId: "telegram",
-            deliveryId: "delivery-contact-eval",
-            representationDigest: snapshot.representation.digest,
-            handedOffAt: "2026-09-20T10:01:00Z",
-        });
-        await store.recordReconciliationOutcome(snapshot.contact_intent_id, {
-            delivery_id: "delivery-contact-eval",
-            attempt_id: "attempt-1",
-            status: "blocked_uncertain",
-            observed_at: "2026-09-20T10:02:00Z",
-        });
-        const uncertain = (await store.load()).intents[0]!;
-        await store.recordReconciliationOutcome(snapshot.contact_intent_id, {
-            delivery_id: "delivery-contact-eval",
-            attempt_id: "attempt-1",
-            status: "confirmed",
-            observed_at: "2026-09-20T10:03:00Z",
-        });
-        const confirmed = (await store.load()).intents[0]!;
+        let sends = 0;
+        const uncertain = await reconcileTelegramProactiveContacts(
+            telegramConfig(directory, storePath),
+            telegramApi(() => {
+                sends += 1;
+                throw new SurfaceDeliveryFailure("submission outcome is unknown", { outcome: "uncertain" });
+            }),
+            {
+                observedAt: "2026-09-20T10:02:00Z",
+                revalidateBeforeHandoff: (currentState, currentIntent, consideredAt) =>
+                    decideProactiveContactAttention(currentState, snapshotFromRecord(currentIntent), {
+                        ...makeRequest(id),
+                        assessment_id: "contact-policy-uncertain-revalidated",
+                        considered_at: consideredAt,
+                    }),
+            },
+        );
+        const recovered = await reconcileTelegramProactiveContacts(
+            telegramConfig(directory, storePath),
+            telegramApi(() => {
+                sends += 1;
+                return telegramMessage(7003);
+            }),
+            { observedAt: "2026-09-20T10:03:00Z" },
+        );
+        const retained = (await store.load()).intents[0]!;
+        const deliveries = (await new InteractionLedgerStore(storePath).load()).deliveries.filter(
+            (delivery) => delivery.origin.kind === "proactive_contact",
+        );
         metricResults.delivery_uncertainty_handling =
-            uncertain.disposition === "handed_off" &&
-            confirmed.disposition === "satisfied" &&
-            uncertain.delivery_observations.length === 1 &&
-            confirmed.delivery_observations.length === 2;
-        deliveryOutcome = `${uncertain.delivery_observations.at(-1)!.status}->${confirmed.delivery_observations.at(-1)!.status}`;
+            uncertain[0]?.status === "blocked_uncertain" &&
+            recovered[0]?.status === "blocked_uncertain" &&
+            sends === 1 &&
+            retained.disposition === "handed_off" &&
+            deliveries.length === 1 &&
+            deliveries[0]?.attempts.length === 1 &&
+            deliveries[0]?.attempts[0]?.outcome === "uncertain";
+        deliveryOutcome = `${uncertain[0]?.status}->${recovered[0]?.status}`;
     }
 
     const exactPolicy =
@@ -302,9 +372,11 @@ function makeSnapshot(
     id: ProactiveContactCaseId,
     revision: number,
     groundingId: MeaningId,
+    contactIntentId: `contact-intent-${string}` = `contact-intent-${id}`,
+    representationText = "Please collect the prescription before closing.",
 ): ProactiveContactIntentSnapshot {
     return {
-        contact_intent_id: `contact-intent-${id}`,
+        contact_intent_id: contactIntentId,
         disposition: "pending",
         principal: "alice",
         scope: "private",
@@ -315,7 +387,7 @@ function makeSnapshot(
         urgency_meaning_ids: [],
         expires_at: "2026-09-21T09:00:00Z",
         representation: {
-            digest: contentDigest("Please collect the prescription before closing."),
+            digest: contentDigest(representationText),
             currentness: "current",
             evidence_ids: [`policy:representation:${id}`],
         },
@@ -351,7 +423,7 @@ function makeRequest(id: ProactiveContactCaseId): ContactAttentionPolicyRequest 
                 : { status: "distinct", related_intent_id: null, evidence_ids: ["policy:distinct-occurrence"] },
         surfaces: [
             {
-                surface_id: "telegram",
+                surface_id: "telegram_bot",
                 preference_rank: 0,
                 status: "eligible",
                 evidence_ids: ["policy:surface-eligible"],
@@ -385,7 +457,12 @@ function snapshotFromRecord(
     };
 }
 
-async function createStoredIntent(path: string, snapshot: ProactiveContactIntentSnapshot, evidenceIds: EvidenceId[]) {
+async function createStoredIntent(
+    path: string,
+    snapshot: ProactiveContactIntentSnapshot,
+    evidenceIds: EvidenceId[],
+    source?: { cognitionId: CognitionId; expressionEvidenceId: EvidenceId },
+) {
     const store = new ProactiveContactStore(path);
     await store.createIntent({
         contactIntentId: snapshot.contact_intent_id,
@@ -393,8 +470,8 @@ async function createStoredIntent(path: string, snapshot: ProactiveContactIntent
         principal: "alice",
         scope: "private",
         source: {
-            cognition_id: `cognition-${snapshot.contact_intent_id}` as never,
-            expression_evidence_id: evidenceIds[0]!,
+            cognition_id: source?.cognitionId ?? (`cognition-${snapshot.contact_intent_id}` as never),
+            expression_evidence_id: source?.expressionEvidenceId ?? evidenceIds[0]!,
             opportunity_id: null,
             evidence_ids: evidenceIds,
             grounding_meaning_ids: snapshot.grounding_meaning_ids,
@@ -426,6 +503,67 @@ function policyEvidence(decision: ContactAttentionDecisionRecord): string[] {
         ...decision.evidence.surfaces.flatMap((surface) => surface.evidence_ids),
         ...decision.evidence.supersession_evidence_ids,
     ];
+}
+
+async function prepareBridgeState(path: string, state: ReturnType<typeof initialState>) {
+    const store = new StateStore(path);
+    await store.create(state);
+    const lease = await store.acquireWriteLease();
+    const previousNow = process.env.EMBER_TEST_NOW;
+    process.env.EMBER_TEST_NOW = "2026-09-20T09:40:00Z";
+    try {
+        const loaded = await store.load();
+        const started = startRuntime(loaded, "alice", "private");
+        const running = await store.commit(loaded.revision, started.state);
+        const result = await runCognition(store, running, {
+            runtimeId: started.runtimeId,
+            principal: "alice",
+            scope: "private",
+            text: "proactive contact evaluation source",
+            providerLabel: "proactive-contact-evaluation-provider",
+            provider: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
+            timeoutSeconds: 1,
+            output: () => {},
+        });
+        const cognition = result.state.operations.cognitionEpisodes.find(
+            (episode) => episode.cognitionId === result.cognitionId,
+        );
+        if (!cognition?.expressionEvidenceId)
+            throw new ValidationError("proactive-contact bridge evaluation has no completed source cognition");
+        return { cognitionId: cognition.cognitionId, expressionEvidenceId: cognition.expressionEvidenceId };
+    } finally {
+        if (previousNow === undefined) delete process.env.EMBER_TEST_NOW;
+        else process.env.EMBER_TEST_NOW = previousNow;
+        await store.releaseWriteLease(lease);
+    }
+}
+
+function telegramConfig(directory: string, statePath: string): TelegramSurfaceConfig {
+    return {
+        config_version: 1,
+        state_path: statePath,
+        principal: "alice",
+        activeScope: "private",
+        chat_id: 229,
+        token_file: join(directory, "telegram.token"),
+        poll_timeout_seconds: 30,
+        provider_kind: "process",
+        provider_command: "/bin/false",
+        provider_arguments: [],
+        provider_timeout_seconds: 30,
+        working_directory: directory,
+        node_path: process.execPath,
+        surface_entrypoint: join(directory, "ember-telegram.ts"),
+        stop_timeout_seconds: 45,
+    };
+}
+
+function telegramApi(sendMessage: () => unknown) {
+    return { sendMessage } as Parameters<typeof reconcileTelegramProactiveContacts>[1];
+}
+
+function telegramMessage(messageId: number) {
+    return { message_id: messageId, date: 1_790_000_000, chat: { id: 229, type: "private" } };
 }
 
 function report(
@@ -479,7 +617,7 @@ function validateScenario(value: unknown): asserts value is ProactiveContactScen
             typeof item.expect_contact !== "boolean" ||
             !isObject(item.expected_policy) ||
             !exactKeys(item.expected_policy, ["outcome", "basis"]) ||
-            !["admit", "defer", "suppress", "no_contact"].includes(String(item.expected_policy.outcome)) ||
+            !["admit", "defer", "suppress", "no_delivery"].includes(String(item.expected_policy.outcome)) ||
             typeof item.expected_policy.basis !== "string" ||
             !item.expected_policy.basis ||
             ids.has(String(item.id))
