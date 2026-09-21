@@ -82,8 +82,10 @@ function validateOpaque(value: unknown, label: string): asserts value is string 
     if (ASCII_CONTROL_CHARACTER_PATTERN.test(value)) throw new ValidationError(`${label} contains control characters`);
 }
 
+// The repo uses exactOptionalPropertyTypes, so a key present with an explicit `undefined` value is not
+// the same as the key being absent; only `null` stands for "no value" here — undefined must still fail.
 function validateNullableOpaque(value: unknown, label: string): void {
-    if (value !== null && value !== undefined) validateOpaque(value, label);
+    if (value !== null) validateOpaque(value, label);
 }
 
 // Shape only — principal authorization and continuity binding are the application coordinator's, not this contract's.
@@ -108,11 +110,20 @@ export function validateInteractionEvent(event: unknown): asserts event is Inter
         if (!Object.keys(externalOccurrence).every((key) => EXTERNAL_OCCURRENCE_FIELDS.has(key)))
             throw new ValidationError("interaction event externalOccurrence contains unsupported fields");
         validateOpaque(externalOccurrence.occurrenceId, "interaction event externalOccurrence.occurrenceId");
-        validateNullableOpaque(externalOccurrence.messageId, "interaction event externalOccurrence.messageId");
-        validateNullableOpaque(externalOccurrence.threadId, "interaction event externalOccurrence.threadId");
-        validateNullableOpaque(externalOccurrence.correlationId, "interaction event externalOccurrence.correlationId");
-        if (externalOccurrence.occurredAt != null && !isRfc3339Utc(externalOccurrence.occurredAt))
-            throw new ValidationError("interaction event externalOccurrence.occurredAt must be RFC 3339 UTC");
+        if ("messageId" in externalOccurrence)
+            validateNullableOpaque(externalOccurrence.messageId, "interaction event externalOccurrence.messageId");
+        if ("threadId" in externalOccurrence)
+            validateNullableOpaque(externalOccurrence.threadId, "interaction event externalOccurrence.threadId");
+        if ("correlationId" in externalOccurrence)
+            validateNullableOpaque(
+                externalOccurrence.correlationId,
+                "interaction event externalOccurrence.correlationId",
+            );
+        if ("occurredAt" in externalOccurrence) {
+            const occurredAt = externalOccurrence.occurredAt;
+            if (occurredAt !== null && !isRfc3339Utc(occurredAt))
+                throw new ValidationError("interaction event externalOccurrence.occurredAt must be RFC 3339 UTC");
+        }
     }
     if ("deliveryDestinationId" in event) {
         if (typeof event.deliveryDestinationId !== "string" || !event.deliveryDestinationId.trim())

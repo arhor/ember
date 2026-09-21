@@ -101,11 +101,53 @@ test("Telegram correlation metadata beyond occurrenceId is fully validated, not 
     assert.doesNotThrow(() => validateInteractionEvent(withFullCorrelationMetadata));
 });
 
+test("an explicit undefined on an optional nested externalOccurrence field is rejected, not treated as absent", () => {
+    assert.throws(
+        () =>
+            validateInteractionEvent({
+                ...telegramEvent,
+                externalOccurrence: { occurrenceId: "12345", messageId: undefined },
+            }),
+        ValidationError,
+    );
+    assert.throws(
+        () =>
+            validateInteractionEvent({
+                ...telegramEvent,
+                externalOccurrence: { occurrenceId: "12345", occurredAt: undefined },
+            }),
+        ValidationError,
+    );
+    assert.doesNotThrow(() =>
+        validateInteractionEvent({
+            ...telegramEvent,
+            externalOccurrence: { occurrenceId: "12345" },
+        }),
+    );
+});
+
 test("a confirmed or uncertain delivery observation may carry an external message ID", () => {
     const confirmed: DeliveryObservation = { outcome: "confirmed", externalMessageId: "msg-1" };
     const uncertain: DeliveryObservation = { outcome: "uncertain", externalMessageId: null };
     assert.doesNotThrow(() => validateDeliveryObservation(confirmed));
     assert.doesNotThrow(() => validateDeliveryObservation(uncertain));
+});
+
+test("an explicit undefined externalMessageId on a delivery observation is rejected, since the field is required", () => {
+    assert.throws(
+        () => validateDeliveryObservation({ outcome: "confirmed", externalMessageId: undefined }),
+        ValidationError,
+    );
+    assert.throws(
+        () =>
+            validateDeliveryObservation({
+                outcome: "failed",
+                retryable: false,
+                retryAfterSeconds: null,
+                externalMessageId: undefined,
+            }),
+        ValidationError,
+    );
 });
 
 test("a failed delivery observation preserves external message evidence alongside retry metadata", () => {
