@@ -1,6 +1,7 @@
 import type { Writable } from "node:stream";
 
 import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
+import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
     CognitionEpisode,
     CognitionId,
@@ -131,10 +132,6 @@ export function stopRuntime(
     validateState(candidate);
     return candidate;
 }
-
-export type ConversationMembershipIntent =
-    | { action: "continue"; basis: "ordinary_adjacency" }
-    | { action: "fresh"; basis: "explicit_boundary" | "ambiguous_discourse" };
 
 export interface RunCognitionOptions {
     runtimeId: RuntimeId;

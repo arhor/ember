@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
+import type { DeliveryReconciliationStatus } from "../core/interaction-contract.ts";
 import type { CognitionId, EvidenceId, MeaningId } from "../core/model.ts";
-import type { DeliveryReconciliationStatus } from "../runtime/interaction-boundary.ts";
 import type {
     ContactAttentionDecisionRecord,
     ContactReconsiderationCondition,

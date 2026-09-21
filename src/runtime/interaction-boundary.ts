@@ -3,11 +3,18 @@ import type { Writable } from "node:stream";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
+import type {
+    DeliveryReconciliationResult,
+    DeliveryReconciliationStatus,
+    ExternalOccurrenceMetadata,
+    PrincipalAssertionProvenance,
+} from "../core/interaction-contract.ts";
 import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { RunCognitionOptions } from "./runtime.ts";
 
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
+import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
@@ -15,18 +22,7 @@ import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
 import { findCognition, runCognition } from "./runtime.ts";
 
-export const PRINCIPAL_ASSERTION_PROVENANCE = ["explicit_local_argument", "configured_surface_mapping"] as const;
-export type PrincipalAssertionProvenance = (typeof PRINCIPAL_ASSERTION_PROVENANCE)[number];
-
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
-
-export interface ExternalOccurrenceMetadata {
-    occurrenceId: string;
-    messageId?: string | null;
-    threadId?: string | null;
-    correlationId?: string | null;
-    occurredAt?: string | null;
-}
 
 export interface SurfaceDeliveryReceipt {
     externalMessageId?: string | null;
@@ -222,22 +218,6 @@ interface InboundAcceptance {
     text: string;
     externalOccurrence: ExternalOccurrenceMetadata | null;
     deliveryDestinationId: string | null;
-}
-
-export type DeliveryReconciliationStatus =
-    | "confirmed"
-    | "retry_later"
-    | "retryable_failure"
-    | "failed_non_retryable"
-    | "blocked_uncertain"
-    | "blocked_missing_representation"
-    | "withdrawn";
-
-export interface DeliveryReconciliationResult {
-    deliveryId: string;
-    status: DeliveryReconciliationStatus;
-    attemptId: string | null;
-    retryAt: string | null;
 }
 
 export class InteractionLedgerStore {

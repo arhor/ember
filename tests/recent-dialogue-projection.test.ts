@@ -3,9 +3,9 @@ import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { ConversationMembershipIntent } from "../src/core/interaction-contract.ts";
 import type { EmberState } from "../src/core/model.ts";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
-import type { ConversationMembershipIntent } from "../src/runtime/runtime.ts";
 
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";

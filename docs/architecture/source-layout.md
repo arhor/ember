@@ -106,4 +106,20 @@ Issue #105 correctly separated the then-flat implementation into core, runtime, 
 
 The current layout is the next architectural step rather than a reversal of that decision. The shared interaction semantics added later revealed CLI conversation and Telegram as sibling concrete surfaces. The general CLI remains a real executable interface, but its CLI-specific parsing and administrative composition now live beside its conversational adapter under `src/surfaces/cli/` instead of requiring a second top-level CLI namespace.
 
-Ember remains one npm package. This source organization does not create independently versioned packages, a generic channel framework, an application/use-case layer, or a new semantic ownership layer.
+Ember remains one npm package. This source organization does not create independently versioned packages or a generic channel framework.
+
+## Application contract layer (#303/#304/#305)
+
+The [accepted canonical application flow proposal](canonical-application-flow.md) amends the
+preceding statement that no application/use-case layer would be introduced: `src/app/`
+now exists as that layer, starting from `src/app/contract.ts`, the transport-neutral
+request/result contract a coordinator will expose to surfaces. It contains no Telegram,
+CLI, provider, AI SDK, filesystem, or concrete store types; those stay in `surfaces/`,
+`providers/`, `persistence/`, and `runtime/`. `core/interaction-contract.ts` holds the
+handful of pure Ember types the contract reuses (`PrincipalAssertionProvenance`,
+`ExternalOccurrenceMetadata`, `ConversationMembershipIntent`,
+`DeliveryReconciliationResult`) so `src/app/` and `src/runtime/` share one definition
+instead of each declaring their own. The import restrictions proposed for the wider
+`src/app/`, `src/ai/`, `src/persistence/`, `src/integrations/`, and `src/host/` split take
+effect incrementally with #319, not retroactively; this module does not yet change the
+dependency direction described above for surfaces, runtime, persistence, or providers.
