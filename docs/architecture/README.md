@@ -24,6 +24,10 @@ Project foundations:
 
 Current architecture material:
 
+- [Canonical Ember Application Flow](canonical-application-flow.md) records issue
+  #304's production CLI/Telegram trace and proposed application, AI SDK, persistence,
+  host, and bootstrap ownership for epic #303, with a file-level migration sequence.
+  It is a research proposal; its target structure is not yet implemented.
 - [Cross-Cutting Research Synthesis and Ember Design Directions](design-directions.md)
   is the canonical synthesis of the completed concern-driven research programme.
 - [Ember Architecture Decisions](decisions/README.md) records the accepted
