@@ -6,7 +6,7 @@ Before running Node.js, npm, npx, or other repository tooling, run `nvm use` fro
 
 - Treat `.nvmrc` as the source of truth for the Node.js version.
 - Do not guess or select a Node.js version from `package.json`, CI configuration, the system default, or installed versions before trying `nvm use`.
-- If `nvm use` fails, report the failure and then investigate the environment instead of silently switching to another Node.js version.
+- If `nvm use` fails, stop immediately and report the failure to the user. Do not investigate, switch Node.js versions, or attempt workarounds unless the user explicitly asks you to.
 
 ## Documentation
 
