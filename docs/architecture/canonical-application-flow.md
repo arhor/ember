@@ -381,7 +381,7 @@ or implementation after callers migrate; it does not retain a permanent facade.
 | `providers/codex.ts`                                                                                                        | Prompt/result protocol, CLI flags, JSONL, thread/exit evidence             | `ai/providers/codex.ts` bounded model bridge + host process helper                                                            | SPLIT       | `LanguageModelV4` bridge                              | #315b; delete direct ordinary invocation after parity                                 |
 | `providers/cursor.ts`                                                                                                       | Prompt/JSON result, isolated CLI/session, exit evidence                    | `ai/providers/cursor.ts` bounded model bridge + host process helper                                                           | SPLIT       | `LanguageModelV4` bridge                              | #315c; preserve unsupported-tool behavior                                             |
 | `providers/process.ts`                                                                                                      | Generic process protocol and provider label                                | `ai/providers/process.ts` explicit compatibility/fixture model bridge; `composition/provider-label.ts`                        | SPLIT       | SDK model bridge; SDK test models for new fixtures    | #315, #318; preserve explicit process configuration, no automatic production fallback |
-| `providers/evidence.ts`                                                                                                     | Sanitized Codex argument/model-selection evidence                          | `integrations/codex/argument-evidence.ts`                                                                                     | MOVE        | —                                                     | #315; pure evidence helper shared by adapter/evaluation consumers                     |
+| `providers/evidence.ts`                                                                                                     | Evaluation-only sanitized Codex argument/model-selection evidence          | `eval/longitudinal/codex-argument-evidence.ts`                                                                                | MOVE        | —                                                     | #319; keep outside production and forbid production imports                           |
 | `memory/memory-proposal-generation.ts`                                                                                      | Projection, contracts, generation/adoption orchestration, SDK adapter      | `memory/` semantics; `app/post-turn.ts`; `ai/memory-proposals.ts`                                                             | SPLIT       | `generateText` + `Output.object` already present      | #308, #314, #315d                                                                     |
 | `memory/provider-memory-proposal-generator.ts`                                                                              | Synthetic state and JSON-in-reply control adapter                          | Shared typed `ai/memory-proposals.ts`                                                                                         | COLLAPSE    | `Output.object`                                       | #315d; DELETE wrapper after all production backends support typed calls               |
 | `onboarding/progress-evaluator.ts`                                                                                          | Control contract, prompt, JSON-in-reply parsing                            | `core/onboarding-work.ts` contract + `ai/onboarding-progress.ts`                                                              | SPLIT       | `Output.object`                                       | #314, #315d; delete reply parsing                                                     |
@@ -617,13 +617,29 @@ implement thin `LanguageModelV4` bridges in #315b/#315c:
 3. Implement `doGenerate(LanguageModelV4CallOptions)` with a
    `LanguageModelV4GenerateResult`: ordered `content` (JSON as a text part),
    `finishReason: { unified, raw }`, nested `usage.inputTokens`/`usage.outputTokens`,
-   and `warnings`. Unknown usage fields remain `undefined`, not invented zeroes.
+   and `warnings`. The two usage objects are required even when Codex/Cursor report no
+   usage; represent that case without invented zeroes:
+   ```ts
+   usage: {
+       inputTokens: {
+           total: undefined,
+           noCache: undefined,
+           cacheRead: undefined,
+           cacheWrite: undefined,
+       },
+       outputTokens: {
+           total: undefined,
+           text: undefined,
+           reasoning: undefined,
+       },
+   }
+   ```
    Required `doStream` returns `LanguageModelV4StreamResult` containing a
    `ReadableStream<LanguageModelV4StreamPart>`. A buffered adapter can emit
-   `stream-start`, `text-start`, one final `text-delta`, `text-end`, and `finish`
-   with usage/finish reason after the bounded process finishes; this does not claim
-   live token streaming. Do not expose raw response bodies or arbitrary provider
-   metadata through the Ember result.
+   `stream-start` with `warnings`, then `text-start`, one final `text-delta`,
+   `text-end`, and `finish` with usage and finish reason after the bounded process
+   finishes; this does not claim live token streaming. Do not expose raw response
+   bodies or arbitrary provider metadata through the Ember result.
 4. Preserve today's backend capability profile: ordinary Codex/Cursor do not expose
    Ember tool dispatch. Reject nonempty SDK tool requests and unsupported media/settings
    explicitly; do not silently drop tools or grant native runtime tools as substitutes.
@@ -693,13 +709,14 @@ composition -> app + persistence + ai + integrations + host
 surfaces -> app public contracts + transport libraries
 app -> core/semantic modules + app ports (type-only infrastructure contracts)
 ai -> core cognition contracts + capability contracts + AI SDK
-ai/providers -> host process helpers + external provider libraries + integrations/codex environment/evidence helpers
+ai/providers -> host process helpers + external provider libraries + integrations/codex environment helper
 integrations -> capability/semantic contracts + external libraries + host process helpers
 integrations/codex/specialist.ts -> delegation contracts + injected observation port + host/process-lifecycle.ts
 delegation/** -> core/semantic modules + pure utilities (no process or repository implementation)
 persistence -> core/semantic data contracts + filesystem mechanics
 host -> host contracts + Node/OS mechanics
 core/semantic modules -> other pure semantic modules + pure utilities
+eval/** -> production public contracts + evaluation-only helpers (production never imports eval)
 ```
 
 The composition root sits outside `app` precisely so these rules do not need an
