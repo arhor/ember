@@ -418,7 +418,10 @@ or implementation after callers migrate; it does not retain a permanent facade.
 Proposed types below are design notation. Reuse/move existing Ember types for
 `PrincipalAssertionProvenance`, `ExternalOccurrenceMetadata`, `CognitionStatus`,
 `ConversationMembershipIntent`, and `DeliveryReconciliationResult`; do not import
-their definitions from runtime implementations or from the SDK.
+their definitions from runtime implementations or from the SDK. #305 found that
+`DeliveryObservation`'s `failed` variant needs `externalMessageId` too, to keep
+representing the evidence a definite rejected-message failure already carries
+today; the snippet below reflects that correction rather than the original notation.
 
 ```ts
 interface InteractionEvent {
@@ -456,7 +459,7 @@ interface DeliveryAddress {
 
 type DeliveryObservation =
   | { outcome: "confirmed"; externalMessageId: string | null }
-  | { outcome: "failed"; retryable: boolean; retryAfterSeconds: number | null }
+  | { outcome: "failed"; retryable: boolean; retryAfterSeconds: number | null; externalMessageId: string | null }
   | { outcome: "uncertain"; externalMessageId: string | null };
 
 type TransportSend = (
