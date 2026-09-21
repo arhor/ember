@@ -1,5 +1,13 @@
 # Ember agent instructions
 
+## Node.js environment
+
+Before running Node.js, npm, npx, or other repository tooling, run `nvm use` from the repository root.
+
+- Treat `.nvmrc` as the source of truth for the Node.js version.
+- Do not guess or select a Node.js version from `package.json`, CI configuration, the system default, or installed versions before trying `nvm use`.
+- If `nvm use` fails, report the failure and then investigate the environment instead of silently switching to another Node.js version.
+
 ## Documentation
 
 Ember keeps durable repository knowledge under `docs/` with explicit discovery metadata.
