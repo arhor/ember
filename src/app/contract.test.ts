@@ -4,11 +4,11 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import type { InteractionEvent, InteractionResult } from "./contract.ts";
+import type { DeliveryObservation, InteractionEvent, InteractionResult } from "./contract.ts";
 
 import { ValidationError } from "../core/errors.ts";
 import { newId } from "../core/model.ts";
-import { validateInteractionEvent } from "./contract.ts";
+import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
 
 const cliEvent: InteractionEvent = {
     kind: "message",
@@ -66,6 +66,86 @@ test("an event with a malformed conversationMembership intent is rejected", () =
                 conversationMembership: { action: "continue", basis: "ambiguous_discourse" },
             }),
         ValidationError,
+    );
+});
+
+test("Telegram correlation metadata beyond occurrenceId is fully validated, not just passed through", () => {
+    const withMalformedThreadId = {
+        ...telegramEvent,
+        externalOccurrence: { occurrenceId: "12345", threadId: "\u0000" },
+    };
+    assert.throws(() => validateInteractionEvent(withMalformedThreadId), ValidationError);
+
+    const withMalformedOccurredAt = {
+        ...telegramEvent,
+        externalOccurrence: { occurrenceId: "12345", occurredAt: "not-a-timestamp" },
+    };
+    assert.throws(() => validateInteractionEvent(withMalformedOccurredAt), ValidationError);
+
+    const withUnsupportedNestedField = {
+        ...telegramEvent,
+        externalOccurrence: { occurrenceId: "12345", chatTitle: "General" },
+    };
+    assert.throws(() => validateInteractionEvent(withUnsupportedNestedField), ValidationError);
+
+    const withFullCorrelationMetadata = {
+        ...telegramEvent,
+        externalOccurrence: {
+            occurrenceId: "12345",
+            messageId: "msg-1",
+            threadId: "thread-1",
+            correlationId: "corr-1",
+            occurredAt: "2026-09-21T00:00:00Z",
+        },
+    };
+    assert.doesNotThrow(() => validateInteractionEvent(withFullCorrelationMetadata));
+});
+
+test("a confirmed or uncertain delivery observation may carry an external message ID", () => {
+    const confirmed: DeliveryObservation = { outcome: "confirmed", externalMessageId: "msg-1" };
+    const uncertain: DeliveryObservation = { outcome: "uncertain", externalMessageId: null };
+    assert.doesNotThrow(() => validateDeliveryObservation(confirmed));
+    assert.doesNotThrow(() => validateDeliveryObservation(uncertain));
+});
+
+test("a failed delivery observation preserves external message evidence alongside retry metadata", () => {
+    const failed: DeliveryObservation = {
+        outcome: "failed",
+        retryable: true,
+        retryAfterSeconds: 30,
+        externalMessageId: "rejected-message-1",
+    };
+    assert.doesNotThrow(() => validateDeliveryObservation(failed));
+});
+
+test("retryAfterSeconds is only valid for a retryable definite failure", () => {
+    assert.throws(
+        () =>
+            validateDeliveryObservation({
+                outcome: "failed",
+                retryable: false,
+                retryAfterSeconds: 30,
+                externalMessageId: null,
+            }),
+        ValidationError,
+    );
+    assert.throws(
+        () =>
+            validateDeliveryObservation({
+                outcome: "failed",
+                retryable: true,
+                retryAfterSeconds: -1,
+                externalMessageId: null,
+            }),
+        ValidationError,
+    );
+    assert.doesNotThrow(() =>
+        validateDeliveryObservation({
+            outcome: "failed",
+            retryable: false,
+            retryAfterSeconds: null,
+            externalMessageId: null,
+        }),
     );
 });
 
