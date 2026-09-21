@@ -1,0 +1,57 @@
+{
+  "scenario_version": 1,
+  "id": "issue-229-proactive-contact",
+  "description": "Helpful contact, deliberate silence, currentness, restart, duplication, and delivery truth.",
+  "cases": [
+    {
+      "id": "useful-contact",
+      "expect_contact": true,
+      "expected_policy": { "outcome": "admit", "basis": "current_authorized_intent" }
+    },
+    {
+      "id": "low-value-silence",
+      "expect_contact": false,
+      "expected_policy": { "outcome": "no_delivery", "basis": "no_interruption_candidate" }
+    },
+    {
+      "id": "quiet-period-deferral",
+      "expect_contact": false,
+      "expected_policy": { "outcome": "defer", "basis": "quiet_period" }
+    },
+    {
+      "id": "duplicate-intent",
+      "expect_contact": false,
+      "expected_policy": { "outcome": "suppress", "basis": "duplicate_intent" }
+    },
+    {
+      "id": "superseded-intent",
+      "expect_contact": false,
+      "expected_policy": { "outcome": "suppress", "basis": "superseded_intent" }
+    },
+    {
+      "id": "stale-before-delivery",
+      "expect_contact": false,
+      "expected_policy": { "outcome": "suppress", "basis": "stale_grounding" }
+    },
+    {
+      "id": "restart-before-delivery",
+      "expect_contact": true,
+      "expected_policy": { "outcome": "admit", "basis": "current_authorized_intent" }
+    },
+    {
+      "id": "confirmed-vs-uncertain-delivery",
+      "expect_contact": true,
+      "expected_policy": { "outcome": "admit", "basis": "current_authorized_intent" }
+    },
+    {
+      "id": "repeated-opportunity",
+      "expect_contact": false,
+      "expected_policy": { "outcome": "suppress", "basis": "duplicate_intent" }
+    },
+    {
+      "id": "remembered-currentness-change",
+      "expect_contact": true,
+      "expected_policy": { "outcome": "admit", "basis": "current_authorized_intent" }
+    }
+  ]
+}

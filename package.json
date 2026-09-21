@@ -33,6 +33,8 @@
     "eval:memory-formation:live": "EMBER_RUN_LIVE_MEMORY_FORMATION=1 node eval/memory-formation/run.ts --generator claude-code",
     "eval:action-effects": "node eval/action-effects/run.ts",
     "eval:action-effects:live": "EMBER_RUN_LIVE_ACTION_EFFECTS=1 node eval/action-effects/run.ts --mode live",
+    "eval:proactive-contact": "node eval/proactive-contact/run.ts",
+    "eval:proactive-contact:live": "EMBER_RUN_LIVE_PROACTIVE_CONTACT=1 node eval/proactive-contact/run.ts --mode live",
     "eval:endogenous": "node eval/endogenous/run.ts",
     "eval:endogenous:baseline": "node eval/endogenous/run.ts --attention-control disabled",
     "eval:continuity:live": "EMBER_RUN_LIVE_LONGITUDINAL=1 node eval/longitudinal/run.ts --provider codex",
