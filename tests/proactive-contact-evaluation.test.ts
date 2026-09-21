@@ -20,21 +20,42 @@ test("proactive-contact evaluation covers contact, silence, restart, duplication
     assert.equal(report.metrics.delivery_uncertainty_handling.accuracy, 1);
     assert.equal(report.metrics.restart_outcome.accuracy, 1);
     assert.ok(report.cases.every((item) => item.source_evidence_ids.length > 0));
+    assert.ok(report.cases.every((item) => item.source_evidence_ids.every((id) => id.startsWith("evidence-"))));
+    assert.ok(report.cases.every((item) => item.grounding_meaning_ids.every((id) => id.startsWith("meaning-"))));
+    assert.deepEqual(
+        report.cases.map((item) => [item.contact_policy_outcome, item.contact_policy_basis]),
+        report.cases.map((item) => [item.expected_policy.outcome, item.expected_policy.basis]),
+    );
+    const currentness = report.cases.find((item) => item.id === "remembered-currentness-change");
+    assert.equal(currentness?.grounding_meaning_ids.length, 2);
+    assert.deepEqual(
+        Array.isArray(currentness?.policy_decision)
+            ? currentness.policy_decision.map((decision) => [decision.outcome, decision.basis])
+            : null,
+        [
+            ["suppress", "stale_grounding"],
+            ["admit", "current_authorized_intent"],
+        ],
+    );
+    const restart = report.cases.find((item) => item.id === "restart-before-delivery");
+    assert.equal(restart?.delivery_outcome, "delivery-restart-contact");
+    assert.equal(Array.isArray(restart?.policy_decision) ? restart.policy_decision.length : 0, 2);
     assert.equal(
         report.cases.find((item) => item.id === "confirmed-vs-uncertain-delivery")?.delivery_outcome,
         "blocked_uncertain->confirmed",
     );
 });
 
-test("live evaluation separates model contact observations from Ember policy assertions", async () => {
+test("a wrong low-value live observation fails only model assertions", async () => {
     const report = await runProactiveContactScenario(
         await loadProactiveContactScenario(SCENARIO),
         await tempDir(),
-        async ({ id }) => (id === "useful-contact" ? "silent" : "contact"),
+        async ({ id }) => (id === "useful-contact" ? "contact" : "contact"),
     );
     assert.equal(report.execution_mode, "live");
-    assert.equal(report.ember_assertions_passed, false);
+    assert.equal(report.ember_assertions_passed, true);
     assert.equal(report.model_observations_passed, false);
+    assert.equal(report.cases.find((item) => item.id === "low-value-silence")?.ember_assertions_passed, true);
 });
 
 test("proactive-contact fixture rejects a missing required case", async () => {
