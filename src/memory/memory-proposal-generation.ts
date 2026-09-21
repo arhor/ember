@@ -83,6 +83,9 @@ export interface MemoryProposalGenerationRun {
     state: EmberState;
 }
 
+export type MemoryStateRepository = Pick<StateStore, "load" | "commit">;
+export type MemoryProposalGenerationRepository = Pick<MemoryProposalGenerationStore, "append" | "complete">;
+
 export function buildMemoryProposalGenerationProjection(
     state: EmberState,
     conversation: ProjectedConversationContext,
@@ -144,8 +147,8 @@ export function buildMemoryProposalGenerationProjection(
 }
 
 export async function generateAndAdoptConversationMemories(
-    store: StateStore,
-    ledger: MemoryProposalGenerationStore,
+    store: MemoryStateRepository,
+    ledger: MemoryProposalGenerationRepository,
     state: EmberState,
     conversation: ProjectedConversationContext,
     {

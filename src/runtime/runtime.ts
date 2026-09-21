@@ -12,10 +12,12 @@ import type {
     RuntimeEpisode,
     RuntimeId,
 } from "../core/model.ts";
-import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
+import type {
+    MemoryProposalGenerationRepository,
+    MemoryProposalGenerator,
+} from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
-import type { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
@@ -163,14 +165,17 @@ export interface RunCognitionOptions {
 }
 
 export interface CognitionRepositories {
-    state: StateStore;
-    conversation: ConversationContextStore;
-    onboarding: OnboardingWorkStore;
-    memoryProposalGenerations: MemoryProposalGenerationStore;
+    state: Pick<StateStore, "load" | "commit">;
+    conversation: Pick<
+        ConversationContextStore,
+        "load" | "activeConversation" | "startFreshConversation" | "recordAcceptedInput" | "recordCommittedExpression"
+    >;
+    onboarding: Pick<OnboardingWorkStore, "load" | "save">;
+    memoryProposalGenerations: MemoryProposalGenerationRepository;
 }
 
 async function resolveConversationMembership(
-    store: ConversationContextStore,
+    store: CognitionRepositories["conversation"],
     principal: string,
     scope: string,
     intent: ConversationMembershipIntent,

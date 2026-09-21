@@ -10,7 +10,6 @@ import type {
     PrincipalAssertionProvenance,
 } from "../core/interaction-contract.ts";
 import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
-import type { StateStore } from "../persistence/state-store.ts";
 import type { CognitionRepositories, RunCognitionOptions } from "./runtime.ts";
 
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
@@ -105,7 +104,10 @@ export interface SurfaceInteractionResult {
 }
 
 export interface InteractionRepositories extends CognitionRepositories {
-    interactions: InteractionLedgerStore;
+    interactions: Pick<
+        InteractionLedgerStore,
+        "load" | "acceptInbound" | "createDeliveryIntent" | "startDeliveryAttempt" | "finishDeliveryAttempt"
+    >;
 }
 
 export interface InboundOccurrenceRecord {
@@ -747,7 +749,7 @@ async function writeDeliveryOutput(output: Writable, text: string) {
     });
 }
 
-async function markCanonicalDeliveryDisplayed(store: StateStore, cognitionId: CognitionId) {
+async function markCanonicalDeliveryDisplayed(store: InteractionRepositories["state"], cognitionId: CognitionId) {
     const current = await store.load();
     const cognition = findCognition(current, cognitionId);
     if (cognition.deliveryStatus === "displayed") return current;

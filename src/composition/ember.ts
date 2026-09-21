@@ -3,6 +3,7 @@ import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluat
 import type { StateStoreOptions } from "../persistence/state-store.ts";
 import type { ClaudeCodeProviderOptions } from "../providers/claude-code.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
+import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
 import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
@@ -45,15 +46,14 @@ export interface EmberCompositionOverrides {
 
 /** Concrete production dependencies for one Ember application instance. */
 export interface EmberApplicationDependencies {
-    repositories: {
-        state: StateStore;
-        conversation: ConversationContextStore;
-        interactions: InteractionLedgerStore;
-        onboarding: OnboardingWorkStore;
-        memoryProposalGenerations: MemoryProposalGenerationStore;
-        actions: ActionProposalStore;
-        objectives: DurableObjectiveStore;
-        proactiveContacts: ProactiveContactStore;
+    repositories: InteractionRepositories & {
+        state: InteractionRepositories["state"] & Pick<StateStore, "acquireWriteLease" | "releaseWriteLease">;
+        interactions: InteractionRepositories["interactions"] & Pick<InteractionLedgerStore, "fenceDelivery">;
+        actions: Pick<ActionProposalStore, "present" | "get" | "decide" | "invalidate">;
+        proactiveContacts: Pick<
+            ProactiveContactStore,
+            "load" | "recordPolicyDecision" | "adoptHandoff" | "recordReconciliationOutcome"
+        >;
     };
     cognition: {
         provider: ProviderInvoker;
@@ -66,6 +66,10 @@ export interface EmberApplicationDependencies {
     };
 }
 
+export type ComposedEmberApplicationDependencies = EmberApplicationDependencies & {
+    repositories: ReturnType<typeof createRepositories>;
+};
+
 /**
  * The production composition root. Configuration is parsed by the executable or
  * setup boundary; this function only turns validated values into collaborators.
@@ -73,7 +77,7 @@ export interface EmberApplicationDependencies {
 export function composeEmberApplication(
     config: EmberCompositionConfig,
     overrides: EmberCompositionOverrides = {},
-): EmberApplicationDependencies {
+): ComposedEmberApplicationDependencies {
     const repositories = createRepositories(config.statePath, overrides.stateStoreOptions);
     const provider = overrides.provider ?? createConfiguredProvider(config, repositories, overrides);
     return {
