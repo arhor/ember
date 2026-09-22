@@ -50,7 +50,7 @@ try {
         scope: SCOPE,
         text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
         providerLabel: "codex",
-        provider: createCodexProvider({
+        executor: createCodexProvider({
             environment: { ...process.env, HOME: probeHome, ...(codexHome ? { CODEX_HOME: codexHome } : {}) },
         }),
         timeoutSeconds: 120,
@@ -72,7 +72,7 @@ try {
     process.stdout.write(
         `${JSON.stringify(
             {
-                provider: "codex exec",
+                executor: "codex exec",
                 selected_meaning_count: cognition.selectedMeaningIds.length,
                 used_meaning_count: cognition.usedMeaningIds.length,
                 external_thread_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null,

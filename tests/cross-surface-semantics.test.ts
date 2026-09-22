@@ -111,7 +111,7 @@ async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
             text: "hello from CLI",
             providerLabel: "fixture-provider",
             timeoutSeconds: 1,
-            provider,
+            executor: provider,
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
             deliver: () => {},
@@ -164,7 +164,7 @@ test("CLI and Telegram preserve conversation, principal, and least-sufficient sc
                 },
             } as Parameters<typeof processTelegramUpdate>[1],
             telegramUpdate(42, disclosureAttempt),
-            { provider: captureProvider(telegramRequests) },
+            { executor: captureProvider(telegramRequests) },
         );
 
         assert.equal(outcome.kind, "processed");
@@ -279,7 +279,7 @@ test("matching Telegram chat identity cannot manufacture a different Ember princ
                 } as Parameters<typeof processTelegramUpdate>[1],
                 telegramUpdate(51),
                 {
-                    provider: async () => {
+                    executor: async () => {
                         providerCalls += 1;
                         return { contractVersion: 1, reply: "must not happen", usedMeaningIds: [] };
                     },

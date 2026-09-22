@@ -25,11 +25,11 @@ import {
 
 import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { CognitionId } from "../core/model.ts";
-import type { ProviderInvoker, ProviderRequest, ProviderStreamObserver } from "./contract.ts";
+import type { AiExecutor, AiExecutionRequest, AiStreamObserver } from "./contract.ts";
 
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
-import { CONTRACT_VERSION, MAX_PROVIDER_TIMEOUT_SECONDS, validateProviderResult } from "./contract.ts";
+import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS, validateAiExecutionResult } from "./contract.ts";
 
 interface AiSdkProviderOutput {
     contractVersion: 1;
@@ -121,7 +121,7 @@ export interface InferenceEvidenceSink {
 }
 
 export interface AiSdkProviderOptions {
-    selectCapabilities?: (request: ProviderRequest) => readonly CapabilityBinding[];
+    selectCapabilities?: (request: AiExecutionRequest) => readonly CapabilityBinding[];
     capabilityLedger?: CapabilityExecutionLedger;
     inferenceEvidence?: InferenceEvidenceSink;
 }
@@ -130,7 +130,7 @@ const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
     type: "object",
     additionalProperties: false,
     properties: {
-        contractVersion: { type: "integer", const: CONTRACT_VERSION },
+        contractVersion: { type: "integer", const: AI_EXECUTION_CONTRACT_VERSION },
         reply: { type: "string", minLength: 1 },
         usedMeaningIds: {
             type: "array",
@@ -160,7 +160,7 @@ const INSTRUCTIONS = [
 const MAX_TOOL_LOOP_STEPS = 4;
 const MAX_AI_SDK_RETRIES = 0;
 
-export function createAiSdkProvider(model: LanguageModel, options: AiSdkProviderOptions = {}): ProviderInvoker {
+export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSdkProviderOptions = {}): AiExecutor {
     return async (request, { timeoutSeconds, signal, stream }) => {
         validateTimeout(timeoutSeconds);
         if (signal?.aborted) {
@@ -264,7 +264,7 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
             } else {
                 candidate = await invokeStreaming(invocation, stream, signal);
             }
-            validateProviderResult(candidate, new Set(request.projection.selection.meaning_ids));
+            validateAiExecutionResult(candidate, new Set(request.projection.selection.meaning_ids));
             return candidate;
         } catch (error) {
             if (error instanceof ProviderError) {
@@ -286,7 +286,7 @@ export function createAiSdkProvider(model: LanguageModel, options: AiSdkProvider
 
 async function invokeStreaming(
     invocation: Parameters<typeof generateText>[0],
-    observer: ProviderStreamObserver,
+    observer: AiStreamObserver,
     signal?: AbortSignal,
 ): Promise<unknown> {
     let streamFailure: unknown;
@@ -307,7 +307,7 @@ async function invokeStreaming(
             continue;
         }
         previousText = text;
-        await recordProviderStreamObservation(observer, text);
+        await recordAiStreamObservation(observer, text);
     }
     if (streamAborted && signal?.aborted) {
         throw signal.reason ?? new DOMException("provider invocation aborted", "AbortError");
@@ -321,8 +321,8 @@ async function invokeStreaming(
 function validateTimeout(timeoutSeconds: number) {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
         throw new ProviderError("provider timeout must be a positive finite number");
-    if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
-        throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`provider timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
 }
 
 function translateAiSdkFailure(
@@ -505,7 +505,7 @@ async function recordInferenceEvidence(sink: InferenceEvidenceSink | undefined, 
     }
 }
 
-async function recordProviderStreamObservation(observer: ProviderStreamObserver, text: string) {
+async function recordAiStreamObservation(observer: AiStreamObserver, text: string) {
     try {
         await observer.observe({ kind: "provisional_text_snapshot", text });
     } catch {

@@ -8,11 +8,11 @@ import test from "node:test";
 import type { CapabilityBinding } from "../src/capabilities/execution.ts";
 import type { ProviderInvoker, ProviderStreamObservation, ProviderStreamObserver } from "../src/providers/contract.ts";
 
+import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
@@ -121,7 +121,7 @@ async function closeFixture(fixture) {
 }
 
 async function runStreaming(fixture, model, stream: ProviderStreamObserver, options = {}, providerOptions = {}) {
-    const provider = withStreaming(createAiSdkProvider(model, providerOptions), stream);
+    const provider = withStreaming(createAiSdkCognitionExecutor(model, providerOptions), stream);
     return runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
@@ -130,7 +130,7 @@ async function runStreaming(fixture, model, stream: ProviderStreamObserver, opti
         providerLabel: "ai-sdk-streaming",
         timeoutSeconds: 1,
         output: () => {},
-        provider,
+        executor: provider,
         ...options,
     });
 }

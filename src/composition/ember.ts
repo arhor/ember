@@ -1,8 +1,8 @@
+import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
+import type { AiExecutionRequest, AiExecutor } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { StateStoreOptions } from "../persistence/state-store.ts";
-import type { ClaudeCodeProviderOptions } from "../providers/claude-code.ts";
-import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
 import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
@@ -38,12 +38,12 @@ export interface EmberCompositionConfig {
 }
 
 export interface EmberCompositionOverrides {
-    provider?: ProviderInvoker;
+    executor?: AiExecutor;
     memoryProposalGenerator?: MemoryProposalGenerator;
     memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     stateStoreOptions?: StateStoreOptions;
-    claudeProviderFactory?: (options: ClaudeCodeProviderOptions) => ProviderInvoker;
+    claudeProviderFactory?: (options: ClaudeCodeProviderOptions) => AiExecutor;
 }
 
 /** Concrete production dependencies for one Ember application instance. */
@@ -63,7 +63,7 @@ export interface EmberApplicationDependencies {
         >;
     };
     cognition: {
-        provider: ProviderInvoker;
+        executor: AiExecutor;
         providerLabel: string;
         timeoutSeconds: number;
     };
@@ -87,7 +87,7 @@ export function composeEmberApplication(
     overrides: EmberCompositionOverrides = {},
 ): ComposedEmberApplicationDependencies {
     const repositories = createRepositories(config.statePath, overrides.stateStoreOptions);
-    const provider = overrides.provider ?? createConfiguredProvider(config, repositories, overrides);
+    const executor = overrides.executor ?? createConfiguredExecutor(config, repositories, overrides);
     return {
         admission: {
             ...(config.expectedContinuityBinding === undefined
@@ -96,20 +96,20 @@ export function composeEmberApplication(
         },
         repositories,
         cognition: {
-            provider,
+            executor,
             providerLabel: providerLabel(config.provider.command),
             timeoutSeconds: config.provider.timeoutSeconds,
         },
         postTurn: {
             memoryProposalGenerator:
                 overrides.memoryProposalGenerator ??
-                createProviderMemoryProposalGenerator(provider, config.provider.timeoutSeconds),
+                createProviderMemoryProposalGenerator(executor, config.provider.timeoutSeconds),
             ...(overrides.memoryProposalProviderLabel === undefined
                 ? {}
                 : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
             onboardingProgressEvaluator:
                 overrides.onboardingProgressEvaluator ??
-                createProviderOnboardingProgressEvaluator(provider, config.provider.timeoutSeconds),
+                createProviderOnboardingProgressEvaluator(executor, config.provider.timeoutSeconds),
         },
     };
 }
@@ -142,11 +142,11 @@ export function createFileBackedRepositoriesForState(state: StateStore) {
     };
 }
 
-function createConfiguredProvider(
+function createConfiguredExecutor(
     config: EmberCompositionConfig,
     repositories: ReturnType<typeof createRepositories>,
     overrides: EmberCompositionOverrides,
-): ProviderInvoker {
+): AiExecutor {
     const adapter = { command: config.provider.command, arguments_: config.provider.arguments };
     if (config.provider.kind === "codex") return createCodexProvider(adapter);
     if (config.provider.kind === "cursor") return createCursorProvider(adapter);
@@ -154,16 +154,16 @@ function createConfiguredProvider(
 
     const objectiveActions = new ObjectiveActionCoordinator(repositories.objectives, repositories.actions);
     return async (request, options) => {
-        const { createClaudeCodeProvider } = await import("../providers/claude-code.ts");
+        const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");
         const calendar = config.googleCalendarConfigPath
             ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath)
             : undefined;
-        return (overrides.claudeProviderFactory ?? createClaudeCodeProvider)({
+        return (overrides.claudeProviderFactory ?? createClaudeCodeExecutor)({
             ...(config.provider.model ? { model: config.provider.model } : {}),
             ...(calendar === undefined
                 ? {}
                 : {
-                      selectCapabilities: (selectedRequest: ProviderRequest) => [
+                      selectCapabilities: (selectedRequest: AiExecutionRequest) => [
                           ...selectGoogleCalendarCapability(calendar, capabilityContext(selectedRequest)),
                           ...selectApprovedGoogleCalendarEventCapability(
                               calendar,
@@ -177,7 +177,7 @@ function createConfiguredProvider(
     };
 }
 
-function capabilityContext(request: ProviderRequest) {
+function capabilityContext(request: AiExecutionRequest) {
     return {
         principal: request.projection.principal,
         lineageId: request.projection.lineage.lineageId,

@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { AiExecutionRequest } from "../ai/contract.ts";
 import type { EmberApplicationDependencies } from "../composition/ember.ts";
-import type { ProviderRequest } from "../providers/contract.ts";
 import type { InteractionEvent } from "./contract.ts";
 
 import { composeEmberApplication } from "../composition/ember.ts";
@@ -24,14 +24,14 @@ const SCOPE = "private";
 test("CLI- and Telegram-shaped requests follow the same application coordinator path", async () => {
     const directory = await mkdtemp(join(tmpdir(), "ember-application-"));
     try {
-        const requests: ProviderRequest[] = [];
+        const requests: AiExecutionRequest[] = [];
         const dependencies = composeEmberApplication(
             {
                 statePath: join(directory, "state.json"),
                 provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
             },
             {
-                provider: async (request) => {
+                executor: async (request) => {
                     requests.push(request);
                     return { contractVersion: 1, reply: "same reply", usedMeaningIds: [] };
                 },
@@ -133,7 +133,7 @@ test("the coordinator uses independently supplied persistence collaborators", as
                 provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
             },
             {
-                provider: async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] }),
+                executor: async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] }),
                 memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
                 onboardingProgressEvaluator: async () => ({
                     decision_version: 1,
@@ -250,7 +250,7 @@ test("malformed transport observations become uncertain delivery evidence", asyn
 
 test("provider failure is persisted before the runtime stops and releases its writer lease", async () => {
     const fixture = await applicationFixture({
-        provider: async () => {
+        executor: async () => {
             throw new ProviderError("fixture provider failed");
         },
     });
@@ -312,7 +312,7 @@ test("application interaction should preserve successful cognition when post-tur
 test("provider cancellation evidence survives application runtime cleanup", async () => {
     const controller = new AbortController();
     const fixture = await applicationFixture({
-        provider: async (_request, options) => {
+        executor: async (_request, options) => {
             controller.abort();
             assert.equal(options.signal?.aborted, true);
             throw new ProviderError("fixture cancellation requested", {
@@ -454,13 +454,13 @@ test("one interaction lease excludes cross-surface mutation and recovery until d
     const allowAttempt = Promise.withResolvers<void>();
     const transportStarted = Promise.withResolvers<void>();
     const allowTransport = Promise.withResolvers<void>();
-    const laterRequests: ProviderRequest[] = [];
+    const laterRequests: AiExecutionRequest[] = [];
     const first = composeEmberApplication(config, {
-        provider: async () => ({ contractVersion: 1, reply: "first reply", usedMeaningIds: [] }),
+        executor: async () => ({ contractVersion: 1, reply: "first reply", usedMeaningIds: [] }),
         memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
     });
     const second = composeEmberApplication(config, {
-        provider: async (request) => {
+        executor: async (request) => {
             laterRequests.push(request);
             return { contractVersion: 1, reply: "second reply", usedMeaningIds: [] };
         },
@@ -550,7 +550,7 @@ test("one interaction lease excludes cross-surface mutation and recovery until d
     }
 });
 
-async function applicationFixture({ provider }: Pick<EmberApplicationDependencies["cognition"], "provider"> = {}) {
+async function applicationFixture({ executor }: Pick<EmberApplicationDependencies["cognition"], "executor"> = {}) {
     const directory = await mkdtemp(join(tmpdir(), "ember-application-review-"));
     const dependencies = composeEmberApplication(
         {
@@ -558,7 +558,7 @@ async function applicationFixture({ provider }: Pick<EmberApplicationDependencie
             provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
         },
         {
-            provider: provider ?? (async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] })),
+            executor: executor ?? (async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] })),
             memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
         },
     );

@@ -4,14 +4,14 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { InferenceEvidence } from "../src/ai/cognition.ts";
 import type { CapabilityBinding } from "../src/capabilities/execution.ts";
-import type { InferenceEvidence } from "../src/providers/ai-sdk.ts";
 
+import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
@@ -107,7 +107,7 @@ async function runWithCapabilities(
         providerLabel: "ai-sdk",
         timeoutSeconds: 1,
         output: () => {},
-        provider: createAiSdkProvider(model, {
+        executor: createAiSdkCognitionExecutor(model, {
             selectCapabilities: () => capabilities,
             capabilityLedger: ledger,
             inferenceEvidence,

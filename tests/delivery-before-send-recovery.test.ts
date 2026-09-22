@@ -44,7 +44,7 @@ test("restart sends a retained delivery intent that never crossed the external s
                 text: "prepare one durable reply",
                 providerLabel: "fixture-provider",
                 timeoutSeconds: 1,
-                provider: async () => {
+                executor: async () => {
                     providerCalls += 1;
                     return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
                 },

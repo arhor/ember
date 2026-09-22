@@ -288,7 +288,7 @@ test("ordinary runCognition should invoke configured reflection after persisting
             scope: SCOPE,
             text,
             providerLabel: "scripted-cognition",
-            provider: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
+            executor: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
             timeoutSeconds: 10,
             preparation,
         });

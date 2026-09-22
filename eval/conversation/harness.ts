@@ -63,7 +63,7 @@ export async function loadConversationScenario(path: string): Promise<Conversati
 export async function runConversationScenario(
     scenario: ConversationScenario,
     statePath: string,
-    provider: ConversationProvider,
+    executor: ConversationProvider,
     providerControl: ConversationProviderControl,
 ) {
     validateScenario(scenario);
@@ -125,7 +125,7 @@ export async function runConversationScenario(
                 conversationMembership: episode.fresh_conversation
                     ? { action: "fresh", basis: "explicit_boundary" }
                     : { action: "continue", basis: "ordinary_adjacency" },
-                provider: async (request) => {
+                executor: async (request) => {
                     projection = request.projection;
                     if (episode.provider_outcome) {
                         throw new ProviderError(`fixture ${episode.provider_outcome}`, {
@@ -133,7 +133,7 @@ export async function runConversationScenario(
                             terminationConfirmed: episode.provider_outcome === "failed",
                         });
                     }
-                    const result = await provider({
+                    const result = await executor({
                         scenarioId: scenario.id,
                         episode,
                         request,

@@ -162,7 +162,7 @@ async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suf
             text: "internal cognition source",
             providerLabel: "fixture-provider",
             timeoutSeconds: 1,
-            provider: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
+            executor: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
             surfaceId: "internal:test",
             principalProvenance: "explicit_local_argument",
             deliveryDestinationId: null,
@@ -292,7 +292,7 @@ test("durable Telegram cognition survives definite outbound failure and can ackn
                 },
             } as Parameters<typeof processTelegramUpdate>[1],
             update(70),
-            { provider: provider(providerCalls) },
+            { executor: provider(providerCalls) },
         );
 
         assert.equal(outcome.kind, "processed");
@@ -341,7 +341,7 @@ test("long polling advances update offset after durable cognition even when repl
         });
 
         await assert.rejects(
-            runTelegramPolling(f.config, api, { provider: provider(providerCalls) }),
+            runTelegramPolling(f.config, api, { executor: provider(providerCalls) }),
             /offset-proof-complete/,
         );
         assert.equal(polls, 2);
@@ -371,7 +371,7 @@ test("reconciliation runs before every idle poll", async () => {
                 },
             } as Parameters<typeof processTelegramUpdate>[1],
             update(85),
-            { provider: provider(providerCalls) },
+            { executor: provider(providerCalls) },
         );
 
         let polls = 0;
@@ -419,7 +419,7 @@ test("uncertain Telegram send remains blocked across reconciliation instead of b
                 },
             } as Parameters<typeof processTelegramUpdate>[1],
             update(90),
-            { provider: provider(providerCalls) },
+            { executor: provider(providerCalls) },
         );
         assert.equal(outcome.kind, "processed");
         if (outcome.kind === "ignored") assert.fail("mapped Telegram update was ignored");
@@ -462,7 +462,7 @@ test("Telegram retry_after gates redelivery and later retries the retained repre
                 },
             } as Parameters<typeof processTelegramUpdate>[1],
             update(100),
-            { provider: provider(providerCalls) },
+            { executor: provider(providerCalls) },
         );
         const ledger = await new InteractionLedgerStore(f.statePath).load();
         const failed = ledger.deliveries[0]!.attempts[0]!;

@@ -7,12 +7,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
-import type { InferenceEvidenceSink } from "./ai-sdk.ts";
-import type { ProviderRequest } from "./contract.ts";
-import type { ProviderInvoker } from "./contract.ts";
+import type { InferenceEvidenceSink } from "./cognition.ts";
+import type { AiExecutionRequest, AiExecutor } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { createAiSdkProvider } from "./ai-sdk.ts";
+import { createAiSdkCognitionExecutor } from "./cognition.ts";
 
 const DEFAULT_MODEL = "sonnet";
 const ALLOWED_OPTION_KEYS = new Set(["model", "inferenceEvidence", "selectCapabilities", "capabilityLedger"]);
@@ -20,7 +19,7 @@ const ALLOWED_OPTION_KEYS = new Set(["model", "inferenceEvidence", "selectCapabi
 export interface ClaudeCodeProviderOptions {
     model?: string;
     inferenceEvidence?: InferenceEvidenceSink;
-    selectCapabilities?: (request: ProviderRequest) => readonly CapabilityBinding[];
+    selectCapabilities?: (request: AiExecutionRequest) => readonly CapabilityBinding[];
     capabilityLedger?: CapabilityExecutionLedger;
 }
 
@@ -38,15 +37,15 @@ const productionDependencies: ClaudeCodeProviderDependencies = {
     environment: process.env,
 };
 
-export function createClaudeCodeProvider(options: ClaudeCodeProviderOptions = {}): ProviderInvoker {
-    return createClaudeCodeProviderWithDependencies(options, productionDependencies);
+export function createClaudeCodeExecutor(options: ClaudeCodeProviderOptions = {}): AiExecutor {
+    return createClaudeCodeExecutorWithDependencies(options, productionDependencies);
 }
 
 /** @internal Deterministic adapter seam for contract tests. */
-export function createClaudeCodeProviderWithDependencies(
+export function createClaudeCodeExecutorWithDependencies(
     options: ClaudeCodeProviderOptions,
     dependencies: ClaudeCodeProviderDependencies,
-): ProviderInvoker {
+): AiExecutor {
     validateOptions(options);
     const modelId = options.model ?? DEFAULT_MODEL;
 
@@ -54,13 +53,13 @@ export function createClaudeCodeProviderWithDependencies(
         const directory = await dependencies.createTemporaryDirectory();
         try {
             const model = dependencies.createModel(modelId, claudeCodeSettings(directory, dependencies.environment));
-            const provider = createAiSdkProvider(model, {
+            const executor = createAiSdkCognitionExecutor(model, {
                 ...(options.inferenceEvidence === undefined ? {} : { inferenceEvidence: options.inferenceEvidence }),
                 ...(options.selectCapabilities === undefined ? {} : { selectCapabilities: options.selectCapabilities }),
                 ...(options.capabilityLedger === undefined ? {} : { capabilityLedger: options.capabilityLedger }),
             });
             try {
-                return await provider(request, invocationOptions);
+                return await executor(request, invocationOptions);
             } catch (error) {
                 if (error instanceof ProviderError && error.cause !== undefined && isAuthenticationError(error.cause)) {
                     throw new ProviderError(

@@ -8,12 +8,12 @@ import { fileURLToPath } from "node:url";
 import type { CapabilityContext } from "../src/capabilities/execution.ts";
 import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/capabilities/mcp-ai-sdk.ts";
 
+import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/capabilities/mcp-ai-sdk.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { newId } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
@@ -214,7 +214,7 @@ test("MCP discovery should remain mechanical while only Ember-mapped selected ca
                 providerLabel: "ai-sdk-mcp",
                 timeoutSeconds: 1,
                 output: () => {},
-                provider: createAiSdkProvider(model, {
+                executor: createAiSdkCognitionExecutor(model, {
                     selectCapabilities: () => [capability],
                     capabilityLedger: ledger,
                 }),

@@ -522,7 +522,7 @@ async function prepareBridgeState(path: string, state: ReturnType<typeof initial
             scope: "private",
             text: "proactive contact evaluation source",
             providerLabel: "proactive-contact-evaluation-provider",
-            provider: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
+            executor: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
             timeoutSeconds: 1,
         });
         const cognition = result.state.operations.cognitionEpisodes.find(

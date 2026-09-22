@@ -79,7 +79,7 @@ own failures.
 
 ## AI SDK implementation
 
-`createAiSdkProvider` keeps its existing buffered behavior when no stream observer is
+`createAiSdkCognitionExecutor` keeps its existing buffered behavior when no stream observer is
 supplied. That path still uses `generateText`.
 
 When a caller supplies `ProviderInvocationOptions.stream`, the same adapter uses AI SDK

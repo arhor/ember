@@ -112,7 +112,7 @@ export async function runMemoryFormationScenario(
                 scope: scenario.ember.scope,
                 text: episode.input,
                 providerLabel: "memory-formation-evaluation-provider",
-                provider: async (request: ProviderRequest) => ({
+                executor: async (request: ProviderRequest) => ({
                     contractVersion: 1 as const,
                     reply: "Acknowledged.",
                     usedMeaningIds: request.projection.selection.meaning_ids,

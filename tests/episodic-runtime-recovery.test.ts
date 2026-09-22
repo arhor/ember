@@ -232,7 +232,7 @@ test("process restart should classify in-flight cognition and opportunity as out
                 providerLabel: "/unused/provider",
                 timeoutSeconds: 1,
                 output: () => {},
-                provider: async () => {
+                executor: async () => {
                     throw new Error("simulated abrupt cognition process loss");
                 },
             }),
@@ -298,7 +298,7 @@ test("restart should preserve completed cognition with pending delivery instead 
             text: "render once",
             providerLabel: "/unused/provider",
             timeoutSeconds: 1,
-            provider: async () => ({
+            executor: async () => ({
                 contractVersion: 1,
                 reply: "recovery-boundary reply",
                 usedMeaningIds: [],

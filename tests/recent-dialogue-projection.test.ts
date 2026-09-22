@@ -71,7 +71,7 @@ async function runTurn(
         surface,
         text,
         providerLabel: "fixture",
-        provider,
+        executor: provider,
         timeoutSeconds: 1,
         ...(conversationMembership === undefined ? {} : { conversationMembership }),
         output: () => {},

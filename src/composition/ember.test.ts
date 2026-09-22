@@ -23,7 +23,7 @@ test("the composition root derives all application repositories from one state p
                 timeoutSeconds: 30,
             },
         },
-        { provider: providerStub },
+        { executor: providerStub },
     );
 
     assert.equal(dependencies.repositories.state.path, statePath);
@@ -54,7 +54,7 @@ test("tests can supply deterministic application collaborators without process c
             },
         },
         {
-            provider: providerStub,
+            executor: providerStub,
             memoryProposalGenerator,
             memoryProposalProviderLabel: "fixture-memory-provider",
             onboardingProgressEvaluator,
@@ -69,7 +69,7 @@ test("tests can supply deterministic application collaborators without process c
         },
     );
 
-    assert.equal(dependencies.cognition.provider, providerStub);
+    assert.equal(dependencies.cognition.executor, providerStub);
     assert.equal(dependencies.cognition.providerLabel, "unused");
     assert.equal(dependencies.cognition.timeoutSeconds, 17);
     assert.equal(dependencies.postTurn.memoryProposalGenerator, memoryProposalGenerator);
@@ -104,7 +104,7 @@ test("an empty configured Claude model invokes the provider factory with its def
         },
     );
 
-    assert.deepEqual(await dependencies.cognition.provider(emptyRequest(), { timeoutSeconds: 60 }), {
+    assert.deepEqual(await dependencies.cognition.executor(emptyRequest(), { timeoutSeconds: 60 }), {
         contractVersion: 1,
         reply: "unused",
         usedMeaningIds: [],

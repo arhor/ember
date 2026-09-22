@@ -31,7 +31,7 @@ Ember builds least-sufficient Projection
 ProviderRequest
         |
         v
-createAiSdkProvider(LanguageModel)
+createAiSdkCognitionExecutor(LanguageModel)
         |
         +-> Ember selects capability bindings for this cognition
         +-> adapter maps selected bindings to AI SDK tools
@@ -50,7 +50,7 @@ ProviderResult
 canonical cognition episode / expression evidence
 ```
 
-The adapter lives in `src/providers/ai-sdk.ts`. It accepts an injected AI SDK
+The executor lives in `src/ai/cognition.ts`. It accepts an injected AI SDK
 `LanguageModel`, so Ember still does not choose a paid API provider, authentication
 scheme, gateway, or vendor at this boundary. The production dependency remains pinned
 to `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from `ai/test` and
@@ -111,7 +111,7 @@ continuation mechanics stay inside concrete provider adapters. The AI SDK adapte
 the same semantic seam without fake command placeholders.
 
 Capability bindings are deliberately not added to `ProviderRequest` or
-`ProviderInvoker`. `createAiSdkProvider` accepts adapter-local capability and evidence
+`AiExecutor`. `createAiSdkCognitionExecutor` accepts infrastructure-local capability and evidence
 options that receive or describe only the already-bounded cognition attempt. This
 preserves the provider contract for Codex, Cursor, deterministic process providers,
 and any later model toolkit while keeping tool and diagnostic mechanics optional.
@@ -124,7 +124,7 @@ request/response metadata, tool-call details, and arbitrary provider metadata. I
 #197 keeps useful diagnostics without promoting that foreign result shape into Ember's
 semantic contract.
 
-`createAiSdkProvider` therefore accepts an optional `InferenceEvidenceSink`. The sink
+`createAiSdkCognitionExecutor` therefore accepts an optional `InferenceEvidenceSink`. The sink
 receives only Ember-owned plain-data observations:
 
 - inference start with provider/model identity and the effective retry limit;
@@ -215,7 +215,7 @@ existing provider contract.
 ## Replacement path
 
 Vercel AI SDK is replaceable at this boundary. A different toolkit or custom direct
-provider implementation can replace `createAiSdkProvider` if it can:
+provider implementation can replace `createAiSdkCognitionExecutor` if it can:
 
 1. accept the already-selected `ProviderRequest` without reaching into canonical
    state;

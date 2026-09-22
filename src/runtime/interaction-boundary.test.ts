@@ -65,7 +65,7 @@ function options(
         text: "same text",
         providerLabel: "fixture-provider",
         timeoutSeconds: 1,
-        provider,
+        executor: provider,
         deliver,
     } as const;
 }

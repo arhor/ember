@@ -5,8 +5,8 @@ import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { createClaudeCodeExecutor, createClaudeCodeExecutorWithDependencies } from "../src/ai/claude-code.ts";
 import { ProviderError } from "../src/core/errors.ts";
-import { createClaudeCodeProvider, createClaudeCodeProviderWithDependencies } from "../src/providers/claude-code.ts";
 import { captureError, emptyRequest } from "./support.ts";
 
 function generated(value: unknown) {
@@ -23,7 +23,7 @@ function generated(value: unknown) {
 
 function testProvider(model: MockLanguageModelV3, capture: (settings: ClaudeCodeSettings) => void = () => {}) {
     const removed: string[] = [];
-    const provider = createClaudeCodeProviderWithDependencies(
+    const provider = createClaudeCodeExecutorWithDependencies(
         {},
         {
             createModel: (_modelId, settings) => {
@@ -157,8 +157,8 @@ test("Claude Code adapter preserves timeout semantics from the shared AI SDK bou
 
 test("Claude Code adapter rejects provider-specific escape hatches", () => {
     assert.throws(
-        () => createClaudeCodeProvider({ sdkOptions: { resume: "unsafe" } } as never),
+        () => createClaudeCodeExecutor({ sdkOptions: { resume: "unsafe" } } as never),
         /unsupported Claude Code provider option: sdkOptions/,
     );
-    assert.throws(() => createClaudeCodeProvider({ model: "" }), /model must be a non-empty string/);
+    assert.throws(() => createClaudeCodeExecutor({ model: "" }), /model must be a non-empty string/);
 });
