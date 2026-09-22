@@ -1,4 +1,6 @@
-import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
+import { isDeepStrictEqual } from "node:util";
+
+import type { PreparedCognition } from "../app/cognition-preparation.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
     CognitionEpisode,
@@ -20,6 +22,7 @@ import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.t
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
+import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
@@ -151,6 +154,7 @@ export interface RunCognitionOptions {
     memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     cognitionId?: CognitionId;
+    preparation?: PreparedCognition;
 }
 
 export interface CognitionRepositories {
@@ -163,39 +167,27 @@ export interface CognitionRepositories {
     memoryProposalGenerations: MemoryProposalGenerationRepository;
 }
 
-async function resolveConversationMembership(
-    store: CognitionRepositories["conversation"],
-    principal: string,
-    scope: string,
-    intent: ConversationMembershipIntent,
-    startedAt: string,
-): Promise<{ conversationId: ConversationId; membership: ConversationMembershipResolution }> {
-    if (intent.action === "fresh") {
-        return {
-            conversationId: await store.startFreshConversation(principal, scope, startedAt),
-            membership: { action: "started", basis: intent.basis },
-        };
-    }
-
-    const active = await store.activeConversation(principal, scope);
-    if (active) {
-        return {
-            conversationId: active.conversation_id,
-            membership: { action: "continued", basis: intent.basis },
-        };
-    }
-    return {
-        conversationId: await store.startFreshConversation(principal, scope, startedAt),
-        membership: { action: "started", basis: "initial_interaction" },
-    };
-}
-
 export async function runCognition(
     repositories: CognitionRepositories,
     state: EmberState,
     options: RunCognitionOptions,
 ): Promise<CognitionResult> {
-    const committed = await runCognitionUntilExpressionCommit(repositories, state, options);
+    validateCognitionInvocation(state, options);
+    const preparation =
+        options.preparation ??
+        (await prepareCognition(repositories, state, {
+            runtimeId: options.runtimeId,
+            principal: options.principal,
+            scope: options.scope,
+            surface: options.surface ?? "local_cli",
+            text: options.text,
+            ...(options.purpose === undefined ? {} : { purpose: options.purpose }),
+            ...(options.explainIds === undefined ? {} : { explainIds: options.explainIds }),
+            ...(options.conversationMembership === undefined
+                ? {}
+                : { conversationMembership: options.conversationMembership }),
+        }));
+    const committed = await runCognitionUntilExpressionCommit(repositories, state, { ...options, preparation });
     if (committed.finishPostTurn === null) return committed;
     return committed.finishPostTurn();
 }
@@ -228,58 +220,55 @@ export async function runCognitionUntilExpressionCommit(
         signal,
         purpose = "ordinary",
         explainIds = [],
-        conversationMembership = { action: "continue", basis: "ordinary_adjacency" },
+        conversationMembership,
         memoryProposalGenerator,
         memoryProposalProviderLabel,
         onboardingProgressEvaluator,
         cognitionId: requestedCognitionId,
+        preparation: suppliedPreparation,
     }: RunCognitionOptions,
 ): Promise<CommittedCognitionResult> {
     const store = repositories.state;
-    requirePrincipal(state, principal);
-    if (typeof label !== "string" || !label.trim()) throw new ValidationError("provider label must be non-empty");
-    const cognitionId = requestedCognitionId ?? newId("cognition");
-    if (state.operations.cognitionEpisodes.some((episode) => episode.cognitionId === cognitionId)) {
-        throw new ValidationError(`cognition already exists: ${cognitionId}`);
-    }
-    const timestamp = nowUtc();
-    const conversationStore = repositories.conversation;
-    const resolvedConversation = await resolveConversationMembership(
-        conversationStore,
-        principal,
-        scope,
-        conversationMembership,
-        timestamp,
-    );
-    const conversationId = resolvedConversation.conversationId;
-    const conversationContext = selectRecentConversationContext(state, await conversationStore.load(), {
-        principal,
-        scope,
-        conversationId,
-        membership: resolvedConversation.membership,
-    });
-    const loadedOnboardingDocument = purpose === "ordinary" ? await repositories.onboarding.load() : null;
-    if (
-        loadedOnboardingDocument !== null &&
-        (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
-            loadedOnboardingDocument.principal !== principal)
-    ) {
-        throw new ValidationError("onboarding work does not match current continuity and principal");
-    }
-    const onboardingDocument = loadedOnboardingDocument?.scope === scope ? loadedOnboardingDocument : null;
-    const onboardingWork = projectOnboardingWork(onboardingDocument);
-    const projection = buildProjection(state, {
+    validateCognitionInvocation(state, {
+        runtimeId,
         principal,
         scope,
         surface,
-        currentInput: text,
-        currentTime: timestamp,
-        runtimeId,
-        purpose,
-        explainIds,
-        conversationContext,
-        ...(onboardingWork === undefined ? {} : { onboardingWork }),
+        text,
+        providerLabel: label,
+        provider,
+        timeoutSeconds,
+        ...(requestedCognitionId === undefined ? {} : { cognitionId: requestedCognitionId }),
     });
+    const cognitionId = requestedCognitionId ?? newId("cognition");
+    const conversationStore = repositories.conversation;
+    if (suppliedPreparation === undefined) {
+        throw new ValidationError("cognition execution requires an already-built Ember projection");
+    }
+    const preparation = suppliedPreparation;
+    await validatePreparation(
+        preparation,
+        state,
+        {
+            runtimeId,
+            principal,
+            scope,
+            surface,
+            text,
+            purpose,
+            explainIds,
+            ...(conversationMembership === undefined ? {} : { conversationMembership }),
+        },
+        repositories,
+    );
+    const {
+        projection,
+        conversationId,
+        conversationMembership: resolvedConversationMembership,
+        onboardingDocument,
+        onboardingWork,
+        startedAt: timestamp,
+    } = preparation;
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
     findRuntime(started, runtimeId).lastDurableObservationAt = timestamp;
@@ -428,7 +417,7 @@ export async function runCognitionUntilExpressionCommit(
                         principal,
                         scope,
                         conversationId,
-                        membership: resolvedConversation.membership,
+                        membership: resolvedConversationMembership,
                     });
                     const reflection = await generateAndAdoptConversationMemories(
                         store,
@@ -460,6 +449,118 @@ export async function runCognitionUntilExpressionCommit(
             };
         },
     };
+}
+
+export function validateCognitionInvocation(state: EmberState, options: RunCognitionOptions) {
+    requirePrincipal(state, options.principal);
+    if (typeof options.providerLabel !== "string" || !options.providerLabel.trim())
+        throw new ValidationError("provider label must be non-empty");
+    if (
+        options.cognitionId !== undefined &&
+        state.operations.cognitionEpisodes.some((episode) => episode.cognitionId === options.cognitionId)
+    ) {
+        throw new ValidationError(`cognition already exists: ${options.cognitionId}`);
+    }
+}
+
+async function validatePreparation(
+    preparation: PreparedCognition,
+    state: EmberState,
+    expected: Pick<
+        RunCognitionOptions,
+        "runtimeId" | "principal" | "scope" | "surface" | "text" | "purpose" | "explainIds" | "conversationMembership"
+    >,
+    repositories: Pick<CognitionRepositories, "conversation" | "onboarding">,
+) {
+    const projection = preparation.projection;
+    const runtime = findRuntime(state, expected.runtimeId);
+    const surface = expected.surface ?? "local_cli";
+    const purpose = expected.purpose ?? "ordinary";
+    const conversationMembership = expected.conversationMembership ?? {
+        action: "continue",
+        basis: "ordinary_adjacency",
+    };
+    const conversationContext = projection.conversation_context;
+    if (conversationContext === undefined) {
+        throw new ValidationError("prepared cognition is missing conversation context");
+    }
+    if (
+        conversationContext.conversation_id !== preparation.conversationId ||
+        !isDeepStrictEqual(conversationContext.selection.membership, preparation.conversationMembership)
+    ) {
+        throw new ValidationError("prepared cognition conversation binding is inconsistent");
+    }
+    if (
+        conversationMembership.action === "fresh"
+            ? preparation.conversationMembership.action !== "started" ||
+              preparation.conversationMembership.basis !== conversationMembership.basis
+            : !(
+                  (preparation.conversationMembership.action === "continued" &&
+                      preparation.conversationMembership.basis === conversationMembership.basis) ||
+                  (preparation.conversationMembership.action === "started" &&
+                      preparation.conversationMembership.basis === "initial_interaction")
+              )
+    ) {
+        throw new ValidationError("prepared cognition does not match the requested conversation membership");
+    }
+    const selectedConversationContext = selectRecentConversationContext(state, await repositories.conversation.load(), {
+        principal: expected.principal,
+        scope: expected.scope,
+        conversationId: preparation.conversationId,
+        membership: preparation.conversationMembership,
+    });
+    const loadedOnboardingDocument = purpose === "ordinary" ? await repositories.onboarding.load() : null;
+    if (
+        loadedOnboardingDocument !== null &&
+        (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
+            loadedOnboardingDocument.principal !== expected.principal)
+    ) {
+        throw new ValidationError("current onboarding work does not match the current continuity and principal");
+    }
+    const selectedOnboardingDocument =
+        loadedOnboardingDocument?.scope === expected.scope ? loadedOnboardingDocument : null;
+    if (
+        purpose !== "ordinary"
+            ? preparation.onboardingDocument !== null || preparation.onboardingWork !== undefined
+            : preparation.onboardingDocument !== null &&
+              (preparation.onboardingDocument.lineage_id !== state.lineage.lineageId ||
+                  preparation.onboardingDocument.principal !== expected.principal ||
+                  preparation.onboardingDocument.scope !== expected.scope)
+    ) {
+        throw new ValidationError("prepared cognition onboarding document does not match the current interaction");
+    }
+    if (!isDeepStrictEqual(preparation.onboardingDocument, selectedOnboardingDocument)) {
+        throw new ValidationError("prepared cognition onboarding document is not the current repository snapshot");
+    }
+    const expectedOnboardingWork = projectOnboardingWork(preparation.onboardingDocument);
+    const rebuilt = buildProjection(state, {
+        principal: expected.principal,
+        scope: expected.scope,
+        surface,
+        currentInput: expected.text,
+        currentTime: preparation.startedAt,
+        runtimeId: expected.runtimeId,
+        purpose,
+        explainIds: expected.explainIds ?? [],
+        conversationContext: conversationContext,
+        ...(expectedOnboardingWork === undefined ? {} : { onboardingWork: expectedOnboardingWork }),
+    });
+    if (
+        preparation.onboardingWork === undefined
+            ? expectedOnboardingWork !== undefined
+            : !isDeepStrictEqual(preparation.onboardingWork, expectedOnboardingWork)
+    ) {
+        throw new ValidationError("prepared cognition onboarding work does not match its document");
+    }
+    if (
+        !isDeepStrictEqual(conversationContext, selectedConversationContext) ||
+        projection.current_time !== preparation.startedAt ||
+        !isDeepStrictEqual(projection, rebuilt) ||
+        !isDeepStrictEqual(projection.lineage, state.lineage) ||
+        !isDeepStrictEqual(projection.recoveryAccount, runtime.recoveryAccount)
+    ) {
+        throw new ValidationError("prepared cognition does not match the current interaction");
+    }
 }
 
 export function findCognition(state: EmberState, id: CognitionId | string): CognitionEpisode {

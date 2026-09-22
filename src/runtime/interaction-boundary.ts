@@ -3,6 +3,7 @@ import type { Writable } from "node:stream";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
+import type { PreparedCognition } from "../app/cognition-preparation.ts";
 import type {
     DeliveryReconciliationResult,
     DeliveryReconciliationStatus,
@@ -12,6 +13,7 @@ import type {
 import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
 import type { CognitionRepositories, CognitionResult, RunCognitionOptions } from "./runtime.ts";
 
+import { prepareCognition } from "../app/cognition-preparation.ts";
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
@@ -19,7 +21,7 @@ import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
-import { findCognition, runCognitionUntilExpressionCommit } from "./runtime.ts";
+import { findCognition, runCognitionUntilExpressionCommit, validateCognitionInvocation } from "./runtime.ts";
 
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
 
@@ -80,12 +82,16 @@ export class SurfaceDeliveryFailure extends Error {
     }
 }
 
-export interface SurfaceInteractionOptions extends Omit<RunCognitionOptions, "cognitionId" | "surface"> {
+export interface SurfaceInteractionOptions extends Omit<
+    RunCognitionOptions,
+    "cognitionId" | "surface" | "preparation"
+> {
     surfaceId: string;
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
     deliveryDestinationId?: string | null;
     deliver?: SurfaceDelivery;
+    prepareCognition?: (state: EmberState, surface: string) => Promise<PreparedCognition>;
 }
 
 export interface SurfaceInteractionResult {
@@ -559,10 +565,31 @@ export async function runSurfaceInteraction(
     }
 
     let deliveryId: string | null = null;
-    const committed = await runCognitionUntilExpressionCommit(repositories, accepted.replayed ? current : state, {
+    const cognitionState = accepted.replayed ? current : state;
+    validateCognitionInvocation(cognitionState, {
         ...cognitionOptions,
         surface: surfaceId,
         cognitionId,
+    });
+    const preparation = cognitionOptions.prepareCognition
+        ? await cognitionOptions.prepareCognition(cognitionState, surfaceId)
+        : await prepareCognition(repositories, cognitionState, {
+              runtimeId: cognitionOptions.runtimeId,
+              principal: cognitionOptions.principal,
+              scope: cognitionOptions.scope,
+              surface: surfaceId,
+              text: cognitionOptions.text,
+              ...(cognitionOptions.purpose === undefined ? {} : { purpose: cognitionOptions.purpose }),
+              ...(cognitionOptions.explainIds === undefined ? {} : { explainIds: cognitionOptions.explainIds }),
+              ...(cognitionOptions.conversationMembership === undefined
+                  ? {}
+                  : { conversationMembership: cognitionOptions.conversationMembership }),
+          });
+    const committed = await runCognitionUntilExpressionCommit(repositories, cognitionState, {
+        ...cognitionOptions,
+        surface: surfaceId,
+        cognitionId,
+        preparation,
     });
     let delivery: DeliveryReconciliationResult | null = null;
     let result: CognitionResult = committed;

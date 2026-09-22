@@ -23,7 +23,9 @@ host changes remain proposed until their child issues land. The CLI and Telegram
 ordinary-conversation adapter migrations from #310 and #311 are also implemented; CLI
 administrative commands retain their local command handling, while Telegram polling and
 ordinary/proactive delivery reconciliation remain transport-local pending their assigned
-migrations.
+migrations. Cognition completion/delivery separation from #312 and application-owned
+conversation resolution/projection preparation from #313 are implemented; post-turn
+memory/onboarding orchestration and the common AI execution boundary remain later steps.
 
 ## Recommendation and governing constraints
 
@@ -187,10 +189,10 @@ and [runCognition](../../src/runtime/runtime.ts).
 | ----- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1     | `runSurfaceInteraction` validates principal/runtime, constructs `InteractionLedgerStore(store.path)`, calls `acceptInbound` | `.interactions.json` records stable occurrence, input digest, provenance, destination and planned cognition ID                                                                 |
 | 2     | Same function reloads canonical state and looks for that cognition                                                          | Existing cognition suppresses rerun; completed expression without intent produces a representation-less intent, never an invented reply                                        |
-| 3     | `runCognition` constructs `ConversationContextStore(store.path)` and resolves continue/fresh membership                     | `.conversation.json` active Ember trajectory, independent of Telegram chat or provider session                                                                                 |
-| 4     | `selectRecentConversationContext`; load `OnboardingWorkStore(store.path)`; `buildProjection`                                | Scope/currentness/bounds enforced by `core`; onboarding lineage/principal validated; canonical selection remains independent of dialogue                                       |
+| 3     | Application-owned `prepareCognition` resolves continue/fresh membership through the injected conversation repository        | `.conversation.json` active Ember trajectory, independent of Telegram chat or provider session                                                                                 |
+| 4     | The same explicit preparation step selects recent context, loads onboarding work, and calls `buildProjection`               | Scope/currentness/bounds enforced by `core`; onboarding lineage/principal validated; canonical selection remains independent of dialogue                                       |
 | 5     | `userEvidence`, cognition `started`, runtime observation, then state commit                                                 | Canonical input evidence exists before `recordAcceptedInput` writes the conversation sidecar                                                                                   |
-| 6     | `ProviderInvoker(request, timeout/signal)`                                                                                  | Claude → `createAiSdkProvider` → SDK; Codex/Cursor/process currently bypass SDK. Only selected projection and current input cross the seam                                     |
+| 6     | Cognition execution validates the prepared projection, then calls `ProviderInvoker(request, timeout/signal)`                | Claude → `createAiSdkProvider` → SDK; Codex/Cursor/process currently bypass SDK. Only the already-built Ember projection and current input cross the seam                      |
 | 7     | SDK path: select bindings → `tool` schemas → `createCapabilityExecutionFirewall` → integration                              | SDK loops; Ember authorizes, validates semantic arguments, fences repeated capability attempts, and classifies effects. Calendar action ledger persists consequential attempts |
 | 8     | Adapter validates final `ProviderResult`; runtime reloads and requires unchanged revision                                   | Provider failure records failed/timed-out/cancellation evidence; no expression is fabricated                                                                                   |
 | 9     | Runtime commits `agent_expression_via_provider` descriptor, completed cognition, `usedMeaningIds`, and delivery `pending`   | Canonical expression evidence is separate from reply text; external thread ID is operational only                                                                              |
