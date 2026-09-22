@@ -80,10 +80,7 @@ export class SurfaceDeliveryFailure extends Error {
     }
 }
 
-export interface SurfaceInteractionOptions extends Omit<
-    RunCognitionOptions,
-    "cognitionId" | "hooks" | "output" | "surface"
-> {
+export interface SurfaceInteractionOptions extends Omit<RunCognitionOptions, "cognitionId" | "surface"> {
     surfaceId: string;
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
@@ -100,6 +97,7 @@ export interface SurfaceInteractionResult {
     cognitionStatus: CognitionStatus;
     occurrenceId: string;
     deliveryId: string | null;
+    delivery: DeliveryReconciliationResult | null;
     replayed: boolean;
 }
 
@@ -555,67 +553,41 @@ export async function runSurfaceInteraction(
             cognitionStatus: existing.status,
             occurrenceId: accepted.record.occurrence_id,
             deliveryId: delivery?.delivery_id ?? null,
+            delivery: null,
             replayed: true,
         };
     }
 
     let deliveryId: string | null = null;
-    let cognitionDiagnostics: {
-        memoryProposalFailure: string | null;
-        onboardingProgressFailure: string | null;
-    } = { memoryProposalFailure: null, onboardingProgressFailure: null };
-    const deliveryOutput = async (text: string) => {
-        if (deliveryId === null) throw new ValidationError("delivery output has no durable delivery intent");
-        const attempt = await ledger.startDeliveryAttempt(deliveryId);
-        let externalMessageId: string | null = null;
-        try {
-            externalMessageId = await performSurfaceDelivery(deliver, text);
-        } catch (error) {
-            const failure = error instanceof SurfaceDeliveryFailure ? error : null;
-            try {
-                await ledger.finishDeliveryAttempt(attempt.attempt_id, failure?.outcome ?? "uncertain", {
-                    externalMessageId: failure?.externalMessageId ?? externalMessageId,
-                    retryable: failure?.retryable ?? false,
-                    retryAfterSeconds: failure?.retryAfterSeconds ?? null,
-                });
-            } catch (ledgerError) {
-                throw new AggregateError([error, ledgerError], "delivery failed and its outcome could not be recorded");
-            }
-            throw failure === null ? error : failure.withCognitionDiagnostics(cognitionDiagnostics);
-        }
-        await ledger.finishDeliveryAttempt(attempt.attempt_id, "confirmed", { externalMessageId });
-    };
-
     const result = await runCognition(repositories, accepted.replayed ? current : state, {
         ...cognitionOptions,
         surface: surfaceId,
         cognitionId,
-        output: deliveryOutput,
-        hooks: {
-            afterExpressionCommit: async (committed, outputText) => {
-                const cognition = findCognition(committed, cognitionId);
-                if (cognition.expressionEvidenceId === null)
-                    throw new ValidationError("completed cognition is missing expression evidence");
-                const intent = await ledger.createDeliveryIntent({
-                    cognitionId,
-                    expressionEvidenceId: cognition.expressionEvidenceId,
-                    surfaceId: accepted.record.surface_id,
-                    destinationId: accepted.record.delivery_destination_id,
-                    representationText: outputText,
-                });
-                deliveryId = intent.delivery_id;
-            },
-            beforeDisplay: (failures) => {
-                cognitionDiagnostics = failures;
-            },
-        },
     });
-    const cognition = findCognition(result.state, cognitionId);
+    let delivery: DeliveryReconciliationResult | null = null;
+    if (result.expressionText !== null) {
+        const cognition = findCognition(result.state, cognitionId);
+        if (cognition.expressionEvidenceId === null)
+            throw new ValidationError("completed cognition is missing expression evidence");
+        const intent = await ledger.createDeliveryIntent({
+            cognitionId,
+            expressionEvidenceId: cognition.expressionEvidenceId,
+            surfaceId: accepted.record.surface_id,
+            destinationId: accepted.record.delivery_destination_id,
+            representationText: result.expressionText,
+        });
+        deliveryId = intent.delivery_id;
+        delivery = await reconcileSurfaceDelivery(repositories, deliveryId, deliver);
+    }
+    const latestState = await store.load();
+    const cognition = findCognition(latestState, cognitionId);
     return {
         ...result,
+        state: latestState,
         cognitionStatus: cognition.status,
         occurrenceId: accepted.record.occurrence_id,
         deliveryId,
+        delivery,
         replayed: accepted.replayed,
     };
 }

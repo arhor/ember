@@ -279,7 +279,6 @@ test("ordinary runCognition should invoke configured reflection after persisting
             providerLabel: "scripted-cognition",
             provider: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
             timeoutSeconds: 10,
-            output: () => {},
             memoryProposalProviderLabel: "scripted-reflection",
             memoryProposalGenerator: async (request) => {
                 const input = request.projection.turns.find((turn) => turn.role === "user")!;
@@ -289,7 +288,7 @@ test("ordinary runCognition should invoke configured reflection after persisting
         });
         assert.equal(result.memoryProposalFailure, null);
         assert.equal(result.state.meanings[0]?.content, "Prefers concise answers");
-        assert.equal(result.state.operations.cognitionEpisodes[0]?.deliveryStatus, "displayed");
+        assert.equal(result.state.operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
     } finally {
         await store.releaseWriteLease(lease).catch(() => {});
         await rm(directory, { recursive: true, force: true });

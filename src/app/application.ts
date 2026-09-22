@@ -1,5 +1,4 @@
 import type { EmberApplicationDependencies } from "../composition/ember.ts";
-import type { DeliveryReconciliationResult } from "../core/interaction-contract.ts";
 import type {
     DeliveryAddress,
     EmberApplication,
@@ -58,59 +57,53 @@ async function interact(
         const onboarding = await dependencies.repositories.onboarding.load();
         const onboardingActive = onboarding?.status === "active" && onboarding.scope === event.scope;
         const address = addressFor(event);
-        let result;
-        try {
-            result = await runSurfaceInteraction(dependencies.repositories, state, {
-                runtimeId,
-                principal: event.principal,
-                scope: event.scope,
-                text: event.text,
-                surfaceId: event.surfaceId,
-                principalProvenance: event.principalProvenance,
-                ...(event.externalOccurrence === undefined ? {} : { externalOccurrence: event.externalOccurrence }),
-                ...(event.deliveryDestinationId === undefined
-                    ? {}
-                    : { deliveryDestinationId: event.deliveryDestinationId }),
-                ...(event.conversationMembership === undefined
-                    ? {}
-                    : { conversationMembership: event.conversationMembership }),
-                provider: dependencies.cognition.provider,
-                providerLabel: dependencies.cognition.providerLabel,
-                timeoutSeconds: dependencies.cognition.timeoutSeconds,
-                ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
-                    ? {
-                          memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator,
-                          ...(dependencies.postTurn.memoryProposalProviderLabel === undefined
-                              ? {}
-                              : { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }),
-                      }
-                    : {}),
-                ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
-                    ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
-                    : {}),
-                ...(options.signal === undefined ? {} : { signal: options.signal }),
-                deliver: async (text) => {
-                    const deliveryId = await deliveryIdForText(dependencies, resultAddressKey(address), text);
-                    return observeDelivery(transport, deliveryId, address, text, options.signal);
-                },
-            });
-        } catch (error) {
-            if (!(error instanceof SurfaceDeliveryFailure)) throw error;
-            stopReason = "application_delivery_failure";
-            return await resultForDeliveryFailure(dependencies, event, error);
-        }
+        const result = await runSurfaceInteraction(dependencies.repositories, state, {
+            runtimeId,
+            principal: event.principal,
+            scope: event.scope,
+            text: event.text,
+            surfaceId: event.surfaceId,
+            principalProvenance: event.principalProvenance,
+            ...(event.externalOccurrence === undefined ? {} : { externalOccurrence: event.externalOccurrence }),
+            ...(event.deliveryDestinationId === undefined
+                ? {}
+                : { deliveryDestinationId: event.deliveryDestinationId }),
+            ...(event.conversationMembership === undefined
+                ? {}
+                : { conversationMembership: event.conversationMembership }),
+            provider: dependencies.cognition.provider,
+            providerLabel: dependencies.cognition.providerLabel,
+            timeoutSeconds: dependencies.cognition.timeoutSeconds,
+            ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
+                ? {
+                      memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator,
+                      ...(dependencies.postTurn.memoryProposalProviderLabel === undefined
+                          ? {}
+                          : { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }),
+                  }
+                : {}),
+            ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
+                ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
+                : {}),
+            ...(options.signal === undefined ? {} : { signal: options.signal }),
+            deliver: async (text) => {
+                const deliveryId = await deliveryIdForText(dependencies, resultAddressKey(address), text);
+                return observeDelivery(transport, deliveryId, address, text, options.signal);
+            },
+        });
         stopReason =
-            result.providerFailure === null ? "application_interaction_complete" : "application_provider_failure";
+            result.providerFailure !== null
+                ? "application_provider_failure"
+                : result.delivery !== null && result.delivery.status !== "confirmed"
+                  ? "application_delivery_failure"
+                  : "application_interaction_complete";
         return {
             occurrenceId: result.occurrenceId,
             cognitionId: result.cognitionId,
             cognitionStatus: result.cognitionStatus,
             replayed: result.replayed,
             deliveryId: result.deliveryId,
-            delivery:
-                result.replayed || result.deliveryId === null
-                    ? null
-                    : await deliveryResult(dependencies, result.deliveryId),
+            delivery: result.replayed ? null : result.delivery,
             diagnostics: {
                 providerFailure: result.providerFailure,
                 memoryProposalFailure: result.memoryProposalFailure,
@@ -142,46 +135,6 @@ async function interact(
             await store.releaseWriteLease(lease);
         }
     }
-}
-
-async function resultForDeliveryFailure(
-    dependencies: EmberApplicationDependencies,
-    event: InteractionEvent,
-    failure: SurfaceDeliveryFailure,
-): Promise<InteractionResult> {
-    const ledger = await dependencies.repositories.interactions.load();
-    const occurrence = ledger.inbound_occurrences.findLast(
-        (record) =>
-            record.assertedPrincipal === event.principal &&
-            record.scope === event.scope &&
-            record.surface_id === event.surfaceId &&
-            record.delivery_destination_id === (event.deliveryDestinationId ?? null) &&
-            (event.externalOccurrence === undefined ||
-                record.external_occurrence_id === event.externalOccurrence.occurrenceId),
-    );
-    if (!occurrence) throw new ValidationError("delivery failure has no correlated inbound occurrence");
-    const delivery = ledger.deliveries.findLast(
-        (record) => record.origin.kind === "ordinary_cognition" && record.cognitionId === occurrence.cognitionId,
-    );
-    if (!delivery) throw new ValidationError("delivery failure has no correlated delivery intent");
-    const state = await dependencies.repositories.state.load();
-    const cognition = state.operations.cognitionEpisodes.find(
-        (candidate) => candidate.cognitionId === occurrence.cognitionId,
-    );
-    if (!cognition) throw new ValidationError("delivery failure has no correlated cognition");
-    return {
-        occurrenceId: occurrence.occurrence_id,
-        cognitionId: cognition.cognitionId,
-        cognitionStatus: cognition.status,
-        replayed: occurrence.receive_count > 1,
-        deliveryId: delivery.delivery_id,
-        delivery: await deliveryResult(dependencies, delivery.delivery_id),
-        diagnostics: {
-            providerFailure: null,
-            memoryProposalFailure: failure.memoryProposalFailure,
-            onboardingProgressFailure: failure.onboardingProgressFailure,
-        },
-    };
 }
 
 async function pendingDeliveries(dependencies: EmberApplicationDependencies, address: DeliveryAddress) {
@@ -281,26 +234,4 @@ async function observeDelivery(
         retryable: observation.outcome === "failed" ? observation.retryable : false,
         retryAfterSeconds: observation.outcome === "failed" ? observation.retryAfterSeconds : null,
     });
-}
-
-async function deliveryResult(
-    dependencies: EmberApplicationDependencies,
-    deliveryId: string,
-): Promise<DeliveryReconciliationResult> {
-    const ledger = await dependencies.repositories.interactions.load();
-    const delivery = ledger.deliveries.find((record) => record.delivery_id === deliveryId);
-    if (!delivery) throw new ValidationError(`delivery does not exist: ${deliveryId}`);
-    const attempt = delivery.attempts.at(-1);
-    if (!attempt) throw new ValidationError("initial delivery handling did not record an attempt");
-    if (attempt.outcome === "confirmed")
-        return { deliveryId, status: "confirmed", attemptId: attempt.attempt_id, retryAt: null };
-    if (attempt.outcome === "uncertain")
-        return { deliveryId, status: "blocked_uncertain", attemptId: attempt.attempt_id, retryAt: null };
-    if (attempt.outcome === "failed" && !attempt.retryable)
-        return { deliveryId, status: "failed_non_retryable", attemptId: attempt.attempt_id, retryAt: null };
-    const retryAt =
-        attempt.outcome === "failed" && attempt.observedAt !== null && attempt.retry_after_seconds !== null
-            ? new Date(Date.parse(attempt.observedAt) + attempt.retry_after_seconds * 1000).toISOString()
-            : null;
-    return { deliveryId, status: "retryable_failure", attemptId: attempt.attempt_id, retryAt };
 }

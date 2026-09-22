@@ -30,7 +30,6 @@ rememberPreference(state, principal, `user:${principal}`, "unrelated-preference"
 const store = new StateStore(statePath);
 await store.create(state);
 const lease = await store.acquireWriteLease();
-let reply = "";
 try {
     const loaded = await store.load();
     const started = startRuntime(loaded, principal, scope);
@@ -43,11 +42,9 @@ try {
         providerLabel: "cursor-agent",
         provider: createCursorProvider(),
         timeoutSeconds: 120,
-        output: (text) => {
-            reply += text;
-        },
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
+    const reply = result.expressionText ?? "";
     const cognition = result.state.operations.cognitionEpisodes.find(
         (item) => item.cognitionId === result.cognitionId,
     )!;

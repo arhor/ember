@@ -289,33 +289,21 @@ test("restart should preserve completed cognition with pending delivery instead 
     let state = await store.load();
     const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-04T16:01:00Z" });
     state = await store.commit(state.revision, started.state);
-    let displayed = "";
-
     // When
-    const crash = await withFixedTime("2026-09-04T17:00:00Z", () =>
-        captureError(() =>
-            runCognition(createFileBackedRepositoriesForState(store), state, {
-                runtimeId: started.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "render once",
-                providerLabel: "/unused/provider",
-                timeoutSeconds: 1,
-                provider: async () => ({
-                    contractVersion: 1,
-                    reply: "recovery-boundary reply",
-                    usedMeaningIds: [],
-                }),
-                output: (text) => {
-                    displayed += text;
-                },
-                hooks: {
-                    afterDisplay: () => {
-                        throw new Error("simulated process loss after display");
-                    },
-                },
+    const cognitionResult = await withFixedTime("2026-09-04T17:00:00Z", () =>
+        runCognition(createFileBackedRepositoriesForState(store), state, {
+            runtimeId: started.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "render once",
+            providerLabel: "/unused/provider",
+            timeoutSeconds: 1,
+            provider: async () => ({
+                contractVersion: 1,
+                reply: "recovery-boundary reply",
+                usedMeaningIds: [],
             }),
-        ),
+        }),
     );
     await store.releaseWriteLease(lease);
     const beforeRestart = await store.load();
@@ -327,8 +315,7 @@ test("restart should preserve completed cognition with pending delivery instead 
     await restartedStore.releaseWriteLease(restartLease);
 
     // Then
-    assert.match(crash.message, /simulated process loss after display/);
-    assert.match(displayed, /recovery-boundary reply/);
+    assert.match(cognitionResult.expressionText ?? "", /recovery-boundary reply/);
     assert.equal(beforeRestart.operations.cognitionEpisodes.length, 1);
     assert.equal(beforeRestart.operations.cognitionEpisodes[0]!.status, "completed");
     assert.equal(beforeRestart.operations.cognitionEpisodes[0]!.deliveryStatus, "pending");

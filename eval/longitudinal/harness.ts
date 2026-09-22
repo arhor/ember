@@ -260,7 +260,6 @@ export async function runLongitudinalScenario(
             let observedRequest: ProviderRequest | null = null;
             let observedResult: ProviderResult | null = null;
             let observedBackendMetadata: BackendMetadata | null = null;
-            let reply = "";
             const result = await withFixedTime(episode.at, () =>
                 runCognition(createFileBackedRepositoriesForState(store), state, {
                     runtimeId: runtimeId as RuntimeId,
@@ -285,9 +284,6 @@ export async function runLongitudinalScenario(
                         observedResult = output.result;
                         return output.result;
                     },
-                    output: (text) => {
-                        reply += text;
-                    },
                 }),
             );
             if (
@@ -301,6 +297,7 @@ export async function runLongitudinalScenario(
                 );
             }
             state = result.state;
+            const reply = result.expressionText ?? "";
             const providerResult = observedResult as ProviderResult;
             const request = observedRequest as ProviderRequest;
             const backendMetadata = observedBackendMetadata as BackendMetadata;

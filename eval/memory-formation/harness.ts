@@ -114,7 +114,6 @@ export async function runMemoryFormationScenario(
                     usedMeaningIds: request.projection.selection.meaning_ids,
                 }),
                 timeoutSeconds: 300,
-                output: () => {},
                 memoryProposalProviderLabel: generator
                     ? "live-memory-formation-generator"
                     : "scripted-memory-formation-generator",

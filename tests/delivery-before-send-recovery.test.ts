@@ -27,38 +27,27 @@ test("restart sends a retained delivery intent that never crossed the external s
         const state = await store.commit(loaded.revision, started.state);
         const ledger = new InteractionLedgerStore(statePath);
 
-        await assert.rejects(
-            runCognition(createFileBackedRepositoriesForState(store), state, {
-                runtimeId: started.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "prepare one durable reply",
-                providerLabel: "fixture-provider",
-                timeoutSeconds: 1,
-                provider: async () => {
-                    providerCalls += 1;
-                    return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
-                },
-                output: () => {
-                    outputCalls += 1;
-                },
-                hooks: {
-                    afterExpressionCommit: async (committed, outputText) => {
-                        const cognition = committed.operations.cognitionEpisodes.at(-1);
-                        assert.ok(cognition?.expressionEvidenceId);
-                        await ledger.createDeliveryIntent({
-                            cognitionId: cognition.cognitionId,
-                            expressionEvidenceId: cognition.expressionEvidenceId,
-                            surfaceId: "messaging:test",
-                            destinationId: "chat-before-send",
-                            representationText: outputText,
-                        });
-                        throw new Error("simulated process loss before external send");
-                    },
-                },
-            }),
-            /simulated process loss before external send/,
-        );
+        const cognitionResult = await runCognition(createFileBackedRepositoriesForState(store), state, {
+            runtimeId: started.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "prepare one durable reply",
+            providerLabel: "fixture-provider",
+            timeoutSeconds: 1,
+            provider: async () => {
+                providerCalls += 1;
+                return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
+            },
+        });
+        const cognition = cognitionResult.state.operations.cognitionEpisodes.at(-1);
+        assert.ok(cognition?.expressionEvidenceId);
+        await ledger.createDeliveryIntent({
+            cognitionId: cognition.cognitionId,
+            expressionEvidenceId: cognition.expressionEvidenceId,
+            surfaceId: "messaging:test",
+            destinationId: "chat-before-send",
+            representationText: cognitionResult.expressionText,
+        });
 
         assert.equal(providerCalls, 1);
         assert.equal(outputCalls, 0);

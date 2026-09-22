@@ -105,7 +105,7 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
     }
 });
 
-test("surface delivery representation should be durable before memory reflection starts", async () => {
+test("surface delivery representation is retained before transport starts", async () => {
     const f = await fixture();
     try {
         let reflected = false;
@@ -117,10 +117,6 @@ test("surface delivery representation should be durable before memory reflection
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
             memoryProposalGenerator: async () => {
-                const ledger = await new InteractionLedgerStore(f.store.path).load();
-                assert.equal(ledger.deliveries.length, 1);
-                assert.equal(ledger.deliveries[0]?.representation?.text, "reply\n");
-                assert.deepEqual(ledger.deliveries[0]?.attempts, []);
                 reflected = true;
                 return { contractVersion: 1, candidates: [] };
             },
@@ -295,18 +291,16 @@ test("completed cognition remains separate from an uncertain delivery attempt", 
         const calls = { value: 0 };
         const provider = countingProvider(calls);
 
-        await assert.rejects(
-            runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
-                ...options(f.runtimeId, provider, () => {
-                    throw new Error("transport write failed");
-                }),
-                surfaceId: "messaging:test",
-                principalProvenance: "configured_surface_mapping",
-                externalOccurrence: { occurrenceId: "update-failure" },
-                deliveryDestinationId: "chat-failure",
+        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+            ...options(f.runtimeId, provider, () => {
+                throw new Error("transport write failed");
             }),
-            /transport write failed/,
-        );
+            surfaceId: "messaging:test",
+            principalProvenance: "configured_surface_mapping",
+            externalOccurrence: { occurrenceId: "update-failure" },
+            deliveryDestinationId: "chat-failure",
+        });
+        assert.equal(result.delivery?.status, "blocked_uncertain");
 
         const state = await f.store.load();
         const ledger = await new InteractionLedgerStore(f.store.path).load();
@@ -328,21 +322,19 @@ test("surface adapter can record a definite failed delivery attempt", async () =
         const calls = { value: 0 };
         const provider = countingProvider(calls);
 
-        await assert.rejects(
-            runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
-                ...options(f.runtimeId, provider, () => {
-                    throw new SurfaceDeliveryFailure("transport rejected send", {
-                        outcome: "failed",
-                        externalMessageId: "rejected-message-1",
-                    });
-                }),
-                surfaceId: "messaging:test",
-                principalProvenance: "configured_surface_mapping",
-                externalOccurrence: { occurrenceId: "update-definite-failure" },
-                deliveryDestinationId: "chat-definite-failure",
+        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+            ...options(f.runtimeId, provider, () => {
+                throw new SurfaceDeliveryFailure("transport rejected send", {
+                    outcome: "failed",
+                    externalMessageId: "rejected-message-1",
+                });
             }),
-            /transport rejected send/,
-        );
+            surfaceId: "messaging:test",
+            principalProvenance: "configured_surface_mapping",
+            externalOccurrence: { occurrenceId: "update-definite-failure" },
+            deliveryDestinationId: "chat-definite-failure",
+        });
+        assert.equal(result.delivery?.status, "failed_non_retryable");
 
         const state = await f.store.load();
         const ledger = await new InteractionLedgerStore(f.store.path).load();

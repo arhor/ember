@@ -524,7 +524,6 @@ async function prepareBridgeState(path: string, state: ReturnType<typeof initial
             providerLabel: "proactive-contact-evaluation-provider",
             provider: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
             timeoutSeconds: 1,
-            output: () => {},
         });
         const cognition = result.state.operations.cognitionEpisodes.find(
             (episode) => episode.cognitionId === result.cognitionId,

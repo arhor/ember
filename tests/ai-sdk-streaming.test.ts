@@ -138,7 +138,6 @@ async function runStreaming(fixture, model, stream: ProviderStreamObserver, opti
 test("AI SDK streaming should emit ordered provisional reply snapshots before authoritative completion", async () => {
     const fixture = await startedFixture();
     const observations = observationSink();
-    const finalOutput: string[] = [];
     const model = new MockLanguageModelV3({
         doStream: async (options) => {
             const disclosed = disclosedPayload(options);
@@ -154,9 +153,7 @@ test("AI SDK streaming should emit ordered provisional reply snapshots before au
     });
 
     try {
-        const result = await runStreaming(fixture, model, observations.observer, {
-            output: (text) => finalOutput.push(text),
-        });
+        const result = await runStreaming(fixture, model, observations.observer);
 
         assert.equal(result.providerFailure, null);
         const cognition = findCognition(result.state, result.cognitionId);
@@ -169,7 +166,7 @@ test("AI SDK streaming should emit ordered provisional reply snapshots before au
         for (let index = 1; index < snapshots.length; index += 1) {
             assert.ok(snapshots[index].startsWith(snapshots[index - 1]));
         }
-        assert.deepEqual(finalOutput, ["STREAM-SENTINEL grows into final\n"]);
+        assert.equal(result.expressionText, "STREAM-SENTINEL grows into final\n");
         assert.equal(JSON.stringify(result.state).includes("STREAM-SENTINEL"), false);
     } finally {
         await closeFixture(fixture);

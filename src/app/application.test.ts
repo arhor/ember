@@ -9,7 +9,7 @@ import type { ProviderRequest } from "../providers/contract.ts";
 import type { InteractionEvent } from "./contract.ts";
 
 import { composeEmberApplication } from "../composition/ember.ts";
-import { ProviderError, ValidationError } from "../core/errors.ts";
+import { ProviderError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
 import { createOnboardingWork } from "../core/onboarding-work.ts";
 import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
@@ -202,15 +202,13 @@ for (const expected of [
     });
 }
 
-test("malformed transport observations become uncertain and do not enter ledger validation", async () => {
+test("malformed transport observations become uncertain delivery evidence", async () => {
     const fixture = await applicationFixture();
     try {
-        await assert.rejects(
-            fixture.application.interact(event("telegram", "configured_surface_mapping"), async () => {
-                return { outcome: "garbage", externalMessageId: null } as never;
-            }),
-            ValidationError,
-        );
+        const result = await fixture.application.interact(event("telegram", "configured_surface_mapping"), async () => {
+            return { outcome: "garbage", externalMessageId: null } as never;
+        });
+        assert.equal(result.delivery?.status, "blocked_uncertain");
         const ledger = await fixture.dependencies.repositories.interactions.load();
         assert.equal(ledger.deliveries[0]?.attempts[0]?.outcome, "uncertain");
     } finally {

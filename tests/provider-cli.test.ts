@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
 import { join, matchesGlob } from "node:path";
-import { PassThrough, Writable } from "node:stream";
+import { PassThrough } from "node:stream";
 import test from "node:test";
 
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
@@ -288,121 +288,30 @@ test("runtime should preserve semantic state and inspection when provider fails"
         [before, "failed", false, true],
     );
 });
-test("runtime should preserve pending delivery when output fails after expression commit", async () => {
+test("runtime returns a committed expression without invoking transport", async () => {
     // Given
     const fixture = await startedStore();
-    // When
-    const error = await captureError(() =>
-            runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
-                runtimeId: fixture.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "render",
-                providerLabel: process.execPath,
-                provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
-                timeoutSeconds: 1,
-                output: () => {
-                    throw new Error("display failed");
-                },
-            }),
-        ),
-        persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
-    await fixture.store.releaseWriteLease(fixture.lease);
-    // Then
-    assert.deepEqual(
-        [error.message, persisted.status, persisted.deliveryStatus, Boolean(persisted.expressionEvidenceId)],
-        ["display failed", "completed", "pending", true],
-    );
-});
-test("runtime should preserve pending delivery when stdout fails asynchronously after accepting write", async () => {
-    // Given
-    const fixture = await startedStore(),
-        output = new Writable({
-            write(_chunk, _encoding, callback) {
-                setImmediate(() => callback(new Error("async display failed")));
-            },
-        });
-    // When
-    const error = await captureError(() =>
-            runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
-                runtimeId: fixture.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "render",
-                providerLabel: process.execPath,
-                provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
-                timeoutSeconds: 1,
-                output,
-            }),
-        ),
-        persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
-    await fixture.store.releaseWriteLease(fixture.lease);
-    // Then
-    assert.deepEqual([error.message, persisted.deliveryStatus], ["async display failed", "pending"]);
-});
-test("runtime should commit displayed only when stdout write callback completes", async () => {
-    // Given
-    const fixture = await startedStore();
-    let flushed = false,
-        observed = false;
-    const output = new Writable({
-        write(_chunk, _encoding, callback) {
-            setTimeout(() => {
-                flushed = true;
-                callback();
-            }, 5);
-        },
-    });
     // When
     const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
-        runtimeId: fixture.runtimeId,
-        principal: PRINCIPAL,
-        scope: SCOPE,
-        text: "render",
-        providerLabel: process.execPath,
-        provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
-        timeoutSeconds: 1,
-        output,
-        hooks: {
-            afterDisplay: () => {
-                observed = flushed;
-            },
-        },
-    });
-    await fixture.store.releaseWriteLease(fixture.lease);
-    // Then
-    assert.deepEqual([observed, result.state.operations.cognitionEpisodes.at(-1).deliveryStatus], [true, "displayed"]);
-});
-test("runtime should keep delivery unknown when crash follows display before status commit", async () => {
-    // Given
-    const fixture = await startedStore();
-    let output = "";
-    // When
-    const error = await captureError(() =>
-            runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
-                runtimeId: fixture.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "display",
-                providerLabel: process.execPath,
-                provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
-                timeoutSeconds: 1,
-                output: (text) => {
-                    output += text;
-                },
-                hooks: {
-                    afterDisplay: () => {
-                        throw new Error("simulated crash");
-                    },
-                },
-            }),
-        ),
+            runtimeId: fixture.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "render",
+            providerLabel: process.execPath,
+            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
+            timeoutSeconds: 1,
+        }),
         persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
     await fixture.store.releaseWriteLease(fixture.lease);
     // Then
     assert.deepEqual(
-        [error.message, output.includes("CONTINUITY_RESPONSE"), persisted.deliveryStatus],
-        ["simulated crash", true, "pending"],
+        [
+            result.expressionText?.includes("CONTINUITY_RESPONSE"),
+            persisted.status,
+            persisted.deliveryStatus,
+            Boolean(persisted.expressionEvidenceId),
+        ],
+        [true, "completed", "pending", true],
     );
 });
 test("state validator should reject orphan expression when second descriptor targets one cognition", async () => {
