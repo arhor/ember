@@ -193,6 +193,29 @@ async function resolveConversationMembership(
 export async function runCognition(
     repositories: CognitionRepositories,
     state: EmberState,
+    options: RunCognitionOptions,
+): Promise<CognitionResult> {
+    const committed = await runCognitionUntilExpressionCommit(repositories, state, options);
+    if (committed.finishPostTurn === null) return committed;
+    return committed.finishPostTurn();
+}
+
+export interface CognitionResult {
+    state: EmberState;
+    providerFailure: string | null;
+    memoryProposalFailure: string | null;
+    onboardingProgressFailure: string | null;
+    cognitionId: CognitionId;
+    expressionText: string | null;
+}
+
+export interface CommittedCognitionResult extends CognitionResult {
+    finishPostTurn: (() => Promise<CognitionResult>) | null;
+}
+
+export async function runCognitionUntilExpressionCommit(
+    repositories: CognitionRepositories,
+    state: EmberState,
     {
         runtimeId,
         principal,
@@ -211,14 +234,7 @@ export async function runCognition(
         onboardingProgressEvaluator,
         cognitionId: requestedCognitionId,
     }: RunCognitionOptions,
-): Promise<{
-    state: EmberState;
-    providerFailure: string | null;
-    memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
-    cognitionId: CognitionId;
-    expressionText: string | null;
-}> {
+): Promise<CommittedCognitionResult> {
     const store = repositories.state;
     requirePrincipal(state, principal);
     if (typeof label !== "string" || !label.trim()) throw new ValidationError("provider label must be non-empty");
@@ -335,6 +351,7 @@ export async function runCognition(
             onboardingProgressFailure: null,
             cognitionId,
             expressionText: null,
+            finishPostTurn: null,
         };
     }
 
@@ -377,61 +394,71 @@ export async function runCognition(
         expression_content: result.reply,
     });
     const outputText = `${result.reply}\n`;
-    let onboardingProgressFailure: string | null = null;
-    if (
-        purpose === "ordinary" &&
-        onboardingDocument?.status === "active" &&
-        onboardingProgressEvaluator !== undefined
-    ) {
-        try {
-            const decision = await onboardingProgressEvaluator({
-                projection,
-                onboardingWork: onboardingWork!,
-                input: text,
-            });
-            await repositories.onboarding.save(
-                applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
-            );
-        } catch (error) {
-            onboardingProgressFailure = error instanceof Error ? error.message : String(error);
-        }
-    }
-    let memoryProposalFailure: string | null = null;
-    if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
-        try {
-            const reflectionContext = selectRecentConversationContext(state, await conversationStore.load(), {
-                principal,
-                scope,
-                conversationId,
-                membership: resolvedConversation.membership,
-            });
-            const reflection = await generateAndAdoptConversationMemories(
-                store,
-                repositories.memoryProposalGenerations,
-                state,
-                reflectionContext,
-                {
-                    principal,
-                    scope,
-                    generator: memoryProposalGenerator,
-                    ...(memoryProposalProviderLabel === undefined
-                        ? {}
-                        : { providerLabel: memoryProposalProviderLabel }),
-                },
-            );
-            state = reflection.state;
-        } catch (error) {
-            memoryProposalFailure = error instanceof Error ? error.message : String(error);
-            state = await store.load();
-        }
-    }
     return {
         state,
         providerFailure: null,
-        memoryProposalFailure,
-        onboardingProgressFailure,
+        memoryProposalFailure: null,
+        onboardingProgressFailure: null,
         cognitionId,
         expressionText: outputText,
+        finishPostTurn: async () => {
+            let onboardingProgressFailure: string | null = null;
+            if (
+                purpose === "ordinary" &&
+                onboardingDocument?.status === "active" &&
+                onboardingProgressEvaluator !== undefined
+            ) {
+                try {
+                    const decision = await onboardingProgressEvaluator({
+                        projection,
+                        onboardingWork: onboardingWork!,
+                        input: text,
+                    });
+                    await repositories.onboarding.save(
+                        applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
+                    );
+                } catch (error) {
+                    onboardingProgressFailure = error instanceof Error ? error.message : String(error);
+                }
+            }
+            let memoryProposalFailure: string | null = null;
+            if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
+                try {
+                    const reflectionContext = selectRecentConversationContext(state, await conversationStore.load(), {
+                        principal,
+                        scope,
+                        conversationId,
+                        membership: resolvedConversation.membership,
+                    });
+                    const reflection = await generateAndAdoptConversationMemories(
+                        store,
+                        repositories.memoryProposalGenerations,
+                        state,
+                        reflectionContext,
+                        {
+                            principal,
+                            scope,
+                            generator: memoryProposalGenerator,
+                            ...(memoryProposalProviderLabel === undefined
+                                ? {}
+                                : { providerLabel: memoryProposalProviderLabel }),
+                        },
+                    );
+                    state = reflection.state;
+                } catch (error) {
+                    memoryProposalFailure = error instanceof Error ? error.message : String(error);
+                    state = await store.load();
+                }
+            }
+            return {
+                state,
+                providerFailure: null,
+                memoryProposalFailure,
+                onboardingProgressFailure,
+                cognitionId,
+                expressionText: outputText,
+            };
+        },
     };
 }
 

@@ -10,7 +10,7 @@ import type {
     PrincipalAssertionProvenance,
 } from "../core/interaction-contract.ts";
 import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
-import type { CognitionRepositories, RunCognitionOptions } from "./runtime.ts";
+import type { CognitionRepositories, CognitionResult, RunCognitionOptions } from "./runtime.ts";
 
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
@@ -19,7 +19,7 @@ import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
-import { findCognition, runCognition } from "./runtime.ts";
+import { findCognition, runCognitionUntilExpressionCommit } from "./runtime.ts";
 
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
 
@@ -559,14 +559,15 @@ export async function runSurfaceInteraction(
     }
 
     let deliveryId: string | null = null;
-    const result = await runCognition(repositories, accepted.replayed ? current : state, {
+    const committed = await runCognitionUntilExpressionCommit(repositories, accepted.replayed ? current : state, {
         ...cognitionOptions,
         surface: surfaceId,
         cognitionId,
     });
     let delivery: DeliveryReconciliationResult | null = null;
-    if (result.expressionText !== null) {
-        const cognition = findCognition(result.state, cognitionId);
+    let result: CognitionResult = committed;
+    if (committed.expressionText !== null) {
+        const cognition = findCognition(committed.state, cognitionId);
         if (cognition.expressionEvidenceId === null)
             throw new ValidationError("completed cognition is missing expression evidence");
         const intent = await ledger.createDeliveryIntent({
@@ -574,9 +575,10 @@ export async function runSurfaceInteraction(
             expressionEvidenceId: cognition.expressionEvidenceId,
             surfaceId: accepted.record.surface_id,
             destinationId: accepted.record.delivery_destination_id,
-            representationText: result.expressionText,
+            representationText: committed.expressionText,
         });
         deliveryId = intent.delivery_id;
+        result = await committed.finishPostTurn!();
         delivery = await reconcileSurfaceDelivery(repositories, deliveryId, deliver);
     }
     const latestState = await store.load();

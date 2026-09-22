@@ -76,29 +76,27 @@ async function createRetryableFailure(
     calls: { provider: number; delivery: number },
 ) {
     const providerCalls = { value: 0 };
-    await assert.rejects(
-        runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
-            runtimeId: f.runtimeId,
-            principal: PRINCIPAL,
-            scope: SCOPE,
-            text: "send this once",
-            providerLabel: "fixture-provider",
-            timeoutSeconds: 1,
-            provider: provider(providerCalls),
-            surfaceId: "messaging:test",
-            principalProvenance: "configured_surface_mapping",
-            externalOccurrence: { occurrenceId: "update-retry" },
-            deliveryDestinationId: "chat-retry",
-            deliver: () => {
-                calls.delivery += 1;
-                throw new SurfaceDeliveryFailure("transport was unavailable before acceptance", {
-                    outcome: "failed",
-                    retryable: true,
-                });
-            },
-        }),
-        /transport was unavailable before acceptance/,
-    );
+    const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        runtimeId: f.runtimeId,
+        principal: PRINCIPAL,
+        scope: SCOPE,
+        text: "send this once",
+        providerLabel: "fixture-provider",
+        timeoutSeconds: 1,
+        provider: provider(providerCalls),
+        surfaceId: "messaging:test",
+        principalProvenance: "configured_surface_mapping",
+        externalOccurrence: { occurrenceId: "update-retry" },
+        deliveryDestinationId: "chat-retry",
+        deliver: () => {
+            calls.delivery += 1;
+            throw new SurfaceDeliveryFailure("transport was unavailable before acceptance", {
+                outcome: "failed",
+                retryable: true,
+            });
+        },
+    });
+    assert.equal(result.delivery?.status, "retryable_failure");
     calls.provider = providerCalls.value;
     const ledger = await new InteractionLedgerStore(f.statePath).load();
     assert.equal(ledger.deliveries.length, 1);

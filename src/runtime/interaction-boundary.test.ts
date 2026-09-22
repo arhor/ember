@@ -105,7 +105,7 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
     }
 });
 
-test("surface delivery representation is retained before transport starts", async () => {
+test("surface delivery representation is durable before memory reflection starts", async () => {
     const f = await fixture();
     try {
         let reflected = false;
@@ -117,6 +117,10 @@ test("surface delivery representation is retained before transport starts", asyn
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
             memoryProposalGenerator: async () => {
+                const ledger = await new InteractionLedgerStore(f.store.path).load();
+                assert.equal(ledger.deliveries.length, 1);
+                assert.equal(ledger.deliveries[0]?.representation?.text, "reply\n");
+                assert.deepEqual(ledger.deliveries[0]?.attempts, []);
                 reflected = true;
                 return { contractVersion: 1, candidates: [] };
             },

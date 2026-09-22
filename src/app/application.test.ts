@@ -372,6 +372,111 @@ test("runtime-stop persistence failure still releases the writer lease", async (
     }
 });
 
+test("one interaction lease excludes cross-surface mutation and recovery until delivery finishes", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-application-interleaving-"));
+    const statePath = join(directory, "state.json");
+    const config = {
+        statePath,
+        provider: { kind: "process" as const, command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+    };
+    const intentCommitted = Promise.withResolvers<void>();
+    const allowAttempt = Promise.withResolvers<void>();
+    const transportStarted = Promise.withResolvers<void>();
+    const allowTransport = Promise.withResolvers<void>();
+    const laterRequests: ProviderRequest[] = [];
+    const first = composeEmberApplication(config, {
+        provider: async () => ({ contractVersion: 1, reply: "first reply", usedMeaningIds: [] }),
+    });
+    const second = composeEmberApplication(config, {
+        provider: async (request) => {
+            laterRequests.push(request);
+            return { contractVersion: 1, reply: "second reply", usedMeaningIds: [] };
+        },
+    });
+    await first.repositories.state.create(initialState(PRINCIPAL));
+    const createIntent = first.repositories.interactions.createDeliveryIntent.bind(first.repositories.interactions);
+    first.repositories.interactions.createDeliveryIntent = async (...arguments_) => {
+        const intent = await createIntent(...arguments_);
+        intentCommitted.resolve();
+        await allowAttempt.promise;
+        return intent;
+    };
+    const firstApplication = createEmberApplication(first);
+    const secondApplication = createEmberApplication(second);
+    const address = { principal: PRINCIPAL, scope: SCOPE, surfaceId: "local_cli", destinationId: null };
+
+    try {
+        const firstInteraction = firstApplication.interact(event("local_cli", "explicit_local_argument"), async () => {
+            transportStarted.resolve();
+            await allowTransport.promise;
+            return { outcome: "confirmed", externalMessageId: null };
+        });
+        await intentCommitted.promise;
+        const retained = (await first.repositories.interactions.load()).deliveries[0];
+        assert.ok(retained);
+        assert.equal(retained.representation?.text, "first reply\n");
+        assert.deepEqual(retained.attempts, []);
+
+        await assert.rejects(
+            secondApplication.interact(
+                {
+                    ...event("telegram", "configured_surface_mapping"),
+                    externalOccurrence: { occurrenceId: "update-blocked" },
+                    deliveryDestinationId: "chat-1",
+                },
+                async () => assert.fail("blocked turn must not send"),
+            ),
+            /continuity store lock is/,
+        );
+        await assert.rejects(
+            secondApplication.deliver({ deliveryId: retained.delivery_id, address }, async () =>
+                assert.fail("blocked recovery must not send"),
+            ),
+            /continuity store lock is/,
+        );
+
+        allowAttempt.resolve();
+        await transportStarted.promise;
+        const inFlight = await first.repositories.interactions.load();
+        assert.equal(inFlight.deliveries[0]?.attempts[0]?.outcome, "started");
+        await assert.rejects(
+            secondApplication.interact(
+                {
+                    ...event("telegram", "configured_surface_mapping"),
+                    externalOccurrence: { occurrenceId: "update-in-flight" },
+                    deliveryDestinationId: "chat-1",
+                },
+                async () => assert.fail("in-flight competing turn must not send"),
+            ),
+            /continuity store lock is/,
+        );
+        await assert.rejects(
+            secondApplication.deliver({ deliveryId: retained.delivery_id, address }, async () =>
+                assert.fail("in-flight recovery must not send"),
+            ),
+            /continuity store lock is/,
+        );
+
+        allowTransport.resolve();
+        const completed = await firstInteraction;
+        assert.equal(completed.delivery?.status, "confirmed");
+        await secondApplication.interact(
+            {
+                ...event("telegram", "configured_surface_mapping"),
+                externalOccurrence: { occurrenceId: "update-after-release" },
+                deliveryDestinationId: "chat-1",
+            },
+            async () => ({ outcome: "confirmed", externalMessageId: null }),
+        );
+        assert.equal(laterRequests.length, 1);
+        assert.equal(laterRequests[0]?.projection.conversation_context?.turns[1]?.delivery_status, "displayed");
+    } finally {
+        allowAttempt.resolve();
+        allowTransport.resolve();
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
 async function applicationFixture({ provider }: Pick<EmberApplicationDependencies["cognition"], "provider"> = {}) {
     const directory = await mkdtemp(join(tmpdir(), "ember-application-review-"));
     const dependencies = composeEmberApplication(

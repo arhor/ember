@@ -26,32 +26,30 @@ test("CLI inspection redacts retained delivery representation while exposing rec
         const loaded = await store.load();
         const started = startRuntime(loaded, PRINCIPAL, SCOPE);
         const state = await store.commit(loaded.revision, started.state);
-        await assert.rejects(
-            runSurfaceInteraction(createFileBackedRepositoriesForState(store), state, {
-                runtimeId: started.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "please answer",
-                providerLabel: "fixture-provider",
-                timeoutSeconds: 1,
-                provider: async () => ({
-                    contractVersion: 1,
-                    reply: RETAINED_REPLY,
-                    usedMeaningIds: [],
-                }),
-                surfaceId: "messaging:test",
-                principalProvenance: "configured_surface_mapping",
-                externalOccurrence: { occurrenceId: "update-inspection" },
-                deliveryDestinationId: "chat-inspection",
-                deliver: () => {
-                    throw new SurfaceDeliveryFailure("definite retryable transport failure", {
-                        outcome: "failed",
-                        retryable: true,
-                    });
-                },
+        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(store), state, {
+            runtimeId: started.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "please answer",
+            providerLabel: "fixture-provider",
+            timeoutSeconds: 1,
+            provider: async () => ({
+                contractVersion: 1,
+                reply: RETAINED_REPLY,
+                usedMeaningIds: [],
             }),
-            /definite retryable transport failure/,
-        );
+            surfaceId: "messaging:test",
+            principalProvenance: "configured_surface_mapping",
+            externalOccurrence: { occurrenceId: "update-inspection" },
+            deliveryDestinationId: "chat-inspection",
+            deliver: () => {
+                throw new SurfaceDeliveryFailure("definite retryable transport failure", {
+                    outcome: "failed",
+                    retryable: true,
+                });
+            },
+        });
+        assert.equal(result.delivery?.status, "retryable_failure");
     } finally {
         await store.releaseWriteLease(lease);
     }
