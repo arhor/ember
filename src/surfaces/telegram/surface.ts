@@ -540,8 +540,13 @@ export async function runTelegramPolling(
     validateTelegramSurfaceConfig(config);
     if (maxAcceptedUpdates !== undefined && (!Number.isSafeInteger(maxAcceptedUpdates) || maxAcceptedUpdates < 1))
         throw new ValidationError("max accepted Telegram updates must be a positive safe integer");
-    const dependencies =
-        suppliedDependencies ?? dependenciesForTelegram(config, provider === undefined ? {} : { provider });
+    const dependencies = dependenciesForTelegramInteraction(config, {
+        provider,
+        memoryProposalGenerator: undefined,
+        memoryProposalProviderLabel: undefined,
+        onboardingProgressEvaluator: undefined,
+        suppliedDependencies,
+    });
     const application = createEmberApplication(dependencies);
     try {
         await verifyTelegramLongPollingReady(api, signal);
