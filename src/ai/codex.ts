@@ -98,10 +98,7 @@ export function createCodexLanguageModel({
     }
 }
 
-function generateResult(invocation: {
-    result: unknown;
-    externalThreadId?: string;
-}): LanguageModelV4GenerateResult {
+function generateResult(invocation: { result: unknown; externalThreadId?: string }): LanguageModelV4GenerateResult {
     return {
         content: [{ type: "text", text: JSON.stringify(invocation.result) }],
         finishReason: FINISH_REASON,
