@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
+import type { EmberApplication } from "../../app/contract.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "./surface.ts";
 
@@ -184,6 +185,71 @@ test("configured private Telegram message maps to the shared surface boundary", 
     assert.equal(inbound.externalOccurrence.occurrenceId, "update:42");
     assert.equal(inbound.externalOccurrence.messageId, "1042");
     assert.equal(inbound.deliveryDestinationId, `telegram:chat:${CHAT_ID}`);
+});
+
+test("ordinary Telegram messages use the Ember application coordinator", async () => {
+    const config = telegramConfig("/tmp", "/tmp/ember.json");
+    let interaction: Parameters<EmberApplication["interact"]>[0] | undefined;
+    const application: EmberApplication = {
+        interact: async (event, transport) => {
+            interaction = event;
+            const observation = await transport(
+                {
+                    deliveryId: "delivery:test",
+                    address: {
+                        principal: PRINCIPAL,
+                        scope: config.activeScope,
+                        surfaceId: TELEGRAM_SURFACE_ID,
+                        destinationId: `telegram:chat:${CHAT_ID}`,
+                    },
+                    text: "coordinated reply",
+                },
+                {},
+            );
+            assert.equal(observation.outcome, "confirmed");
+            return {
+                occurrenceId: "occurrence:test",
+                cognitionId: "cognition:test",
+                cognitionStatus: "completed",
+                replayed: false,
+                deliveryId: "delivery:test",
+                delivery: {
+                    deliveryId: "delivery:test",
+                    status: "confirmed",
+                    attemptId: "attempt:test",
+                    retryAt: null,
+                },
+                diagnostics: {
+                    providerFailure: null,
+                    memoryProposalFailure: null,
+                    onboardingProgressFailure: null,
+                },
+            };
+        },
+        pendingDeliveries: async () => [],
+        deliver: async () => {
+            throw new Error("unexpected delivery reconciliation");
+        },
+    };
+
+    const outcome = await processTelegramUpdate(config, readyApi(), update(43), { application });
+
+    assert.deepEqual(interaction, {
+        kind: "message",
+        principal: PRINCIPAL,
+        scope: "private",
+        text: "hello",
+        surfaceId: TELEGRAM_SURFACE_ID,
+        principalProvenance: "configured_surface_mapping",
+        externalOccurrence: {
+            occurrenceId: "update:43",
+            messageId: "1043",
+            threadId: null,
+            occurredAt: "2026-09-05T11:33:20.000Z",
+        },
+        deliveryDestinationId: `telegram:chat:${CHAT_ID}`,
+    });
+    assert.equal(outcome.kind, "processed");
 });
 
 test("evidence-bearing Telegram fields remain runtime validated after adopting generated types", () => {
