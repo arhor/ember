@@ -355,6 +355,9 @@ function dependenciesForCli(config: CliSurfaceConfig) {
     return composeEmberApplication(
         {
             statePath: config.statePath,
+            ...(config.expectedContinuityBinding === undefined
+                ? {}
+                : { expectedContinuityBinding: config.expectedContinuityBinding }),
             provider: {
                 kind: config.providerKind,
                 command: config.providerCommand,
@@ -370,6 +373,9 @@ function dependenciesForCli(config: CliSurfaceConfig) {
             ...(config.memoryProposalGenerator === undefined
                 ? {}
                 : { memoryProposalGenerator: config.memoryProposalGenerator }),
+            ...(config.memoryProposalProviderLabel === undefined
+                ? {}
+                : { memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
             ...(config.onboardingProgressEvaluator === undefined
                 ? {}
                 : { onboardingProgressEvaluator: config.onboardingProgressEvaluator }),

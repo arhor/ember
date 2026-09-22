@@ -26,6 +26,7 @@ export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code";
 
 export interface EmberCompositionConfig {
     statePath: string;
+    expectedContinuityBinding?: { lineageId: string; establishedAt: string };
     provider: {
         kind: EmberProviderKind;
         command: string;
@@ -39,6 +40,7 @@ export interface EmberCompositionConfig {
 export interface EmberCompositionOverrides {
     provider?: ProviderInvoker;
     memoryProposalGenerator?: MemoryProposalGenerator;
+    memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     stateStoreOptions?: StateStoreOptions;
     claudeProviderFactory?: (options: ClaudeCodeProviderOptions) => ProviderInvoker;
@@ -46,6 +48,9 @@ export interface EmberCompositionOverrides {
 
 /** Concrete production dependencies for one Ember application instance. */
 export interface EmberApplicationDependencies {
+    admission: {
+        expectedContinuityBinding?: { lineageId: string; establishedAt: string };
+    };
     repositories: InteractionRepositories & {
         state: InteractionRepositories["state"] & Pick<StateStore, "acquireWriteLease" | "releaseWriteLease">;
         interactions: InteractionRepositories["interactions"] & Pick<InteractionLedgerStore, "fenceDelivery">;
@@ -62,6 +67,7 @@ export interface EmberApplicationDependencies {
     };
     postTurn: {
         memoryProposalGenerator?: MemoryProposalGenerator;
+        memoryProposalProviderLabel?: string;
         onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     };
 }
@@ -81,6 +87,11 @@ export function composeEmberApplication(
     const repositories = createRepositories(config.statePath, overrides.stateStoreOptions);
     const provider = overrides.provider ?? createConfiguredProvider(config, repositories, overrides);
     return {
+        admission: {
+            ...(config.expectedContinuityBinding === undefined
+                ? {}
+                : { expectedContinuityBinding: config.expectedContinuityBinding }),
+        },
         repositories,
         cognition: {
             provider,
@@ -91,6 +102,9 @@ export function composeEmberApplication(
             memoryProposalGenerator:
                 overrides.memoryProposalGenerator ??
                 createProviderMemoryProposalGenerator(provider, config.provider.timeoutSeconds),
+            ...(overrides.memoryProposalProviderLabel === undefined
+                ? {}
+                : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
             onboardingProgressEvaluator:
                 overrides.onboardingProgressEvaluator ??
                 createProviderOnboardingProgressEvaluator(provider, config.provider.timeoutSeconds),
