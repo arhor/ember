@@ -58,7 +58,8 @@ export interface CursorProviderConfig {
     finalTerminationMs?: number;
 }
 
-export function createCursorProvider({
+/** Transitional JSON-in-reply bootstrap adapter; ordinary cognition uses the AI SDK bridge. */
+export function createCursorControlProvider({
     command = "cursor-agent",
     arguments_: args = [],
     ...adapterOptions
