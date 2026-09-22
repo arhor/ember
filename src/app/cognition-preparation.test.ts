@@ -222,3 +222,50 @@ test("incoherent prepared cognition is rejected before provider or persistence s
         await rm(directory, { recursive: true, force: true });
     }
 });
+
+test("prepared cognition must resolve the invocation conversation membership intent", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-cognition-membership-"));
+    const store = new StateStore(join(directory, "state.json"));
+    await store.create(initialState("max", "2026-09-22T08:00:00Z"));
+    const lease = await store.acquireWriteLease();
+    try {
+        const loaded = await store.load();
+        const started = startRuntime(loaded, "max", "private", { timestamp: "2026-09-22T08:01:00Z" });
+        const state = await store.commit(loaded.revision, started.state);
+        const repositories = createFileBackedRepositoriesForState(store);
+        const preparation = await prepareCognition(repositories, state, {
+            runtimeId: started.runtimeId,
+            principal: "max",
+            scope: "private",
+            surface: "telegram",
+            text: "start over",
+        });
+        const beforeState = await store.load();
+        let providerCalled = false;
+
+        await assert.rejects(
+            runCognitionUntilExpressionCommit(repositories, state, {
+                runtimeId: started.runtimeId,
+                principal: "max",
+                scope: "private",
+                surface: "telegram",
+                text: "start over",
+                providerLabel: "fixture",
+                provider: async () => {
+                    providerCalled = true;
+                    return { contractVersion: 1, reply: "unexpected", usedMeaningIds: [] };
+                },
+                timeoutSeconds: 1,
+                conversationMembership: { action: "fresh", basis: "explicit_boundary" },
+                preparation,
+            }),
+            /requested conversation membership/,
+        );
+
+        assert.equal(providerCalled, false);
+        assert.deepEqual(await store.load(), beforeState);
+    } finally {
+        await store.releaseWriteLease(lease);
+        await rm(directory, { recursive: true, force: true });
+    }
+});

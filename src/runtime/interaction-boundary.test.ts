@@ -289,6 +289,38 @@ test("rejected principal assertion does not establish an accepted occurrence", a
     }
 });
 
+test("invalid surface cognition preflight does not advance a fresh conversation trajectory", async () => {
+    const f = await fixture();
+    try {
+        const repositories = createFileBackedRepositoriesForState(f.store);
+        const before = await repositories.conversation.load();
+        let providerCalled = false;
+
+        await assert.rejects(
+            runSurfaceInteraction(repositories, f.state, {
+                ...options(
+                    f.runtimeId,
+                    async () => {
+                        providerCalled = true;
+                        return { contractVersion: 1, reply: "unexpected", usedMeaningIds: [] };
+                    },
+                    () => {},
+                ),
+                providerLabel: "   ",
+                surfaceId: "local_cli",
+                principalProvenance: "explicit_local_argument",
+                conversationMembership: { action: "fresh", basis: "explicit_boundary" },
+            }),
+            /provider label must be non-empty/,
+        );
+
+        assert.equal(providerCalled, false);
+        assert.deepEqual(await repositories.conversation.load(), before);
+    } finally {
+        await f.close();
+    }
+});
+
 test("completed cognition remains separate from an uncertain delivery attempt", async () => {
     const f = await fixture();
     try {

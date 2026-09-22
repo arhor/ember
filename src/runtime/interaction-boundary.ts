@@ -21,7 +21,7 @@ import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
-import { findCognition, runCognitionUntilExpressionCommit } from "./runtime.ts";
+import { findCognition, runCognitionUntilExpressionCommit, validateCognitionInvocation } from "./runtime.ts";
 
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
 
@@ -566,6 +566,11 @@ export async function runSurfaceInteraction(
 
     let deliveryId: string | null = null;
     const cognitionState = accepted.replayed ? current : state;
+    validateCognitionInvocation(cognitionState, {
+        ...cognitionOptions,
+        surface: surfaceId,
+        cognitionId,
+    });
     const preparation = cognitionOptions.prepareCognition
         ? await cognitionOptions.prepareCognition(cognitionState, surfaceId)
         : await prepareCognition(repositories, cognitionState, {

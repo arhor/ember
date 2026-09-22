@@ -220,6 +220,7 @@ export async function runCognitionUntilExpressionCommit(
         signal,
         purpose = "ordinary",
         explainIds = [],
+        conversationMembership,
         memoryProposalGenerator,
         memoryProposalProviderLabel,
         onboardingProgressEvaluator,
@@ -248,7 +249,16 @@ export async function runCognitionUntilExpressionCommit(
     await validatePreparation(
         preparation,
         state,
-        { runtimeId, principal, scope, surface, text, purpose, explainIds },
+        {
+            runtimeId,
+            principal,
+            scope,
+            surface,
+            text,
+            purpose,
+            explainIds,
+            ...(conversationMembership === undefined ? {} : { conversationMembership }),
+        },
         repositories,
     );
     const {
@@ -441,7 +451,7 @@ export async function runCognitionUntilExpressionCommit(
     };
 }
 
-function validateCognitionInvocation(state: EmberState, options: RunCognitionOptions) {
+export function validateCognitionInvocation(state: EmberState, options: RunCognitionOptions) {
     requirePrincipal(state, options.principal);
     if (typeof options.providerLabel !== "string" || !options.providerLabel.trim())
         throw new ValidationError("provider label must be non-empty");
@@ -458,7 +468,7 @@ async function validatePreparation(
     state: EmberState,
     expected: Pick<
         RunCognitionOptions,
-        "runtimeId" | "principal" | "scope" | "surface" | "text" | "purpose" | "explainIds"
+        "runtimeId" | "principal" | "scope" | "surface" | "text" | "purpose" | "explainIds" | "conversationMembership"
     >,
     repositories: Pick<CognitionRepositories, "conversation" | "onboarding">,
 ) {
@@ -466,6 +476,10 @@ async function validatePreparation(
     const runtime = findRuntime(state, expected.runtimeId);
     const surface = expected.surface ?? "local_cli";
     const purpose = expected.purpose ?? "ordinary";
+    const conversationMembership = expected.conversationMembership ?? {
+        action: "continue",
+        basis: "ordinary_adjacency",
+    };
     const conversationContext = projection.conversation_context;
     if (conversationContext === undefined) {
         throw new ValidationError("prepared cognition is missing conversation context");
@@ -475,6 +489,19 @@ async function validatePreparation(
         !isDeepStrictEqual(conversationContext.selection.membership, preparation.conversationMembership)
     ) {
         throw new ValidationError("prepared cognition conversation binding is inconsistent");
+    }
+    if (
+        conversationMembership.action === "fresh"
+            ? preparation.conversationMembership.action !== "started" ||
+              preparation.conversationMembership.basis !== conversationMembership.basis
+            : !(
+                  (preparation.conversationMembership.action === "continued" &&
+                      preparation.conversationMembership.basis === conversationMembership.basis) ||
+                  (preparation.conversationMembership.action === "started" &&
+                      preparation.conversationMembership.basis === "initial_interaction")
+              )
+    ) {
+        throw new ValidationError("prepared cognition does not match the requested conversation membership");
     }
     const selectedConversationContext = selectRecentConversationContext(state, await repositories.conversation.load(), {
         principal: expected.principal,
