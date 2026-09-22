@@ -27,8 +27,10 @@ Their isolation, authentication, parsing, continuation and termination differenc
 listed below remain required constraints of the proposed bridges.
 
 Issue #315 slice 10a replaced the application/runtime-facing seam with the Ember-owned
-`AiExecutor` contract. `ProviderInvoker` is now a compatibility alias used only by
-backends awaiting their SDK bridge. Each remaining backend migration must update the corresponding current implementation
+`AiExecutor` contract. Slice 10b moves ordinary Codex cognition through the common SDK
+executor and a `LanguageModelV4` bridge. `ProviderInvoker` is now a compatibility alias
+used by Cursor, the generic process adapter, and transitional control calls awaiting their
+SDK migrations. Each remaining backend migration must update the corresponding current implementation
 guidance here, and #321 must reconcile the remaining decision/consequences sections
 with the final implemented architecture. The proposal's forward and backward links
 make that pending revision discoverable without declaring full supersession early.

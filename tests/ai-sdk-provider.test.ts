@@ -133,7 +133,9 @@ test("AI SDK adapter should disclose only the selected projection and current in
         const result = await runWithModel(fixture, model);
         const disclosed = disclosedPayload(model);
         // Then
-        assert.deepEqual(Object.keys(disclosed).sort(), ["input", "projection"]);
+        assert.deepEqual(Object.keys(disclosed).sort(), ["cognitionId", "contractVersion", "input", "projection"]);
+        assert.equal(disclosed.contractVersion, 1);
+        assert.equal(disclosed.cognitionId, result.cognitionId);
         assert.equal(disclosed.input.text, "current request");
         assert.equal(disclosed.projection.current_input, "current request");
         assert.ok(disclosed.projection.selection.meaning_ids.length > 0);
@@ -268,6 +270,31 @@ test("AI SDK structured output should still be rejected when it claims a meaning
         // Then
         assert.match(result.providerFailure, /outside its projection/);
         assert.equal(findCognition(result.state, result.cognitionId).status, "failed");
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("AI SDK structured output should reject model-authored operational thread evidence", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const model = new MockLanguageModelV3({
+        doGenerate: async () =>
+            generated({
+                contractVersion: 1,
+                reply: "fabricated operational evidence",
+                usedMeaningIds: [],
+                operational: { externalThreadId: "model-authored-thread" },
+            }),
+    });
+    try {
+        // When
+        const result = await runWithModel(fixture, model);
+
+        // Then
+        assert.match(result.providerFailure, /cannot contain operational evidence/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "failed");
+        assert.equal(JSON.stringify(result.state).includes("model-authored-thread"), false);
     } finally {
         await closeFixture(fixture);
     }

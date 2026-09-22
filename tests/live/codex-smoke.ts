@@ -4,11 +4,12 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createCodexLanguageModel } from "../../src/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../../src/ai/cognition.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { createCodexProvider } from "../../src/providers/codex.ts";
 import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 
 const PRINCIPAL = "user-1";
@@ -50,9 +51,12 @@ try {
         scope: SCOPE,
         text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
         providerLabel: "codex",
-        executor: createCodexProvider({
-            environment: { ...process.env, HOME: probeHome, ...(codexHome ? { CODEX_HOME: codexHome } : {}) },
-        }),
+        executor: createAiSdkCognitionExecutor(
+            createCodexLanguageModel({
+                timeoutSeconds: 120,
+                environment: { ...process.env, HOME: probeHome, ...(codexHome ? { CODEX_HOME: codexHome } : {}) },
+            }),
+        ),
         timeoutSeconds: 120,
     });
     if (result.providerFailure) throw new Error(result.providerFailure);

@@ -6,6 +6,8 @@ import type { StateStoreOptions } from "../persistence/state-store.ts";
 import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
 import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
+import { createCodexLanguageModel } from "../ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../capabilities/google-calendar.ts";
@@ -17,7 +19,6 @@ import { ConversationContextStore } from "../persistence/conversation-context-st
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { createCodexProvider } from "../providers/codex.ts";
 import { createCursorProvider } from "../providers/cursor.ts";
 import { createProcessProvider, providerLabel } from "../providers/process.ts";
 import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
@@ -148,7 +149,10 @@ function createConfiguredExecutor(
     overrides: EmberCompositionOverrides,
 ): AiExecutor {
     const adapter = { command: config.provider.command, arguments_: config.provider.arguments };
-    if (config.provider.kind === "codex") return createCodexProvider(adapter);
+    if (config.provider.kind === "codex")
+        return createAiSdkCognitionExecutor(
+            createCodexLanguageModel({ ...adapter, timeoutSeconds: config.provider.timeoutSeconds }),
+        );
     if (config.provider.kind === "cursor") return createCursorProvider(adapter);
     if (config.provider.kind === "process") return createProcessProvider(adapter);
 

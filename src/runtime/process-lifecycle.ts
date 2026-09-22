@@ -292,8 +292,12 @@ class ProcessExecutionImpl<TOptions> implements ProcessExecution {
     };
 
     private readonly onAbort = (): void => {
-        this.terminate("explicit_cancellation");
+        this.terminate(isTimeoutAbort(this.options.signal?.reason) ? "timeout" : "explicit_cancellation");
     };
+}
+
+export function isTimeoutAbort(reason: unknown): boolean {
+    return (reason instanceof Error || reason instanceof DOMException) && reason.name === "TimeoutError";
 }
 
 function asError(error: unknown): Error {
