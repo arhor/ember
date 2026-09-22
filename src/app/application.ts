@@ -56,8 +56,6 @@ async function interact(
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
 
-        const onboarding = await dependencies.repositories.onboarding.load();
-        const onboardingActive = onboarding?.status === "active" && onboarding.scope === event.scope;
         const address = addressFor(event);
         const result = await runSurfaceInteraction(dependencies.repositories, state, {
             runtimeId,
@@ -76,23 +74,13 @@ async function interact(
             provider: dependencies.cognition.provider,
             providerLabel: dependencies.cognition.providerLabel,
             timeoutSeconds: dependencies.cognition.timeoutSeconds,
-            ...(onboardingActive
-                ? {
-                      postTurn: (committedState, cognitionId, preparation) =>
-                          runPostTurnFollowUps(
-                              dependencies.repositories,
-                              dependencies.postTurn,
-                              committedState,
-                              preparation,
-                              {
-                                  cognitionId,
-                                  principal: event.principal,
-                                  scope: event.scope,
-                                  text: event.text,
-                              },
-                          ),
-                  }
-                : {}),
+            postTurn: (committedState, cognitionId, preparation) =>
+                runPostTurnFollowUps(dependencies.repositories, dependencies.postTurn, committedState, preparation, {
+                    cognitionId,
+                    principal: event.principal,
+                    scope: event.scope,
+                    text: event.text,
+                }),
             ...(options.signal === undefined ? {} : { signal: options.signal }),
             prepareCognition: (currentState, surface) =>
                 prepareCognition(dependencies.repositories, currentState, {

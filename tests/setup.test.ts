@@ -533,7 +533,7 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     );
 
     // Then
-    assert.deepEqual(selectedCounts, [3, 0]);
+    assert.deepEqual(selectedCounts, [3, 0, 0, 0]);
 });
 
 test("ordinary CLI conversation uses the shared application coordinator lifecycle", async (t) => {
@@ -552,6 +552,7 @@ test("ordinary CLI conversation uses the shared application coordinator lifecycl
                 providerArgs: [],
                 providerTimeoutSeconds: 30,
                 claudeProviderFactory: () => async () => success,
+                memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
             },
             io,
         ),
@@ -1180,7 +1181,8 @@ test(":setup telegram is local, keeps no runtime open, and resumes conversation"
     assert.match(io.text(), /Telegram setup: cancelled\. Resuming conversation\./);
 });
 
-test("CLI stops automatic onboarding reflection immediately after closure", async (t) => {
+test("CLI should continue automatic memory reflection when onboarding closes", async (t) => {
+    // Given
     const f = await fixture(t);
     const state = initialState("user");
     await new StateStore(f.state).create(state);
@@ -1189,6 +1191,8 @@ test("CLI stops automatic onboarding reflection immediately after closure", asyn
     );
     const counter = join(f.directory, "reflection-count.txt");
     const io = capture("Finish onboarding\nSecond ordinary turn\n:quit\n");
+
+    // When
     assert.equal(
         await runCliSurface(
             {
@@ -1208,8 +1212,10 @@ test("CLI stops automatic onboarding reflection immediately after closure", asyn
         ),
         0,
     );
+
+    // Then
     assert.equal((await new OnboardingWorkStore(f.state).load())?.status, "closed");
-    assert.equal(await readFile(counter, "utf8"), "1");
+    assert.equal(await readFile(counter, "utf8"), "2");
     assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
     const runtimes = (await new StateStore(f.state).load()).operations.runtimeEpisodes;
     assert.equal(runtimes.length, 2);

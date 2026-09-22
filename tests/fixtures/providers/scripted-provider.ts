@@ -23,8 +23,9 @@ else if (mode === "nonzero") {
     const chunks = [];
     for await (const chunk of process.stdin) chunks.push(chunk);
     const request = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    const isMemoryReflection = request.projection.surface === "memory_proposal_reflection";
     const capture = value("--capture");
-    if (capture) await writeFile(capture, JSON.stringify(request));
+    if (capture && !isMemoryReflection) await writeFile(capture, JSON.stringify(request));
     const counter = value("--counter");
     if (counter) {
         let count = 0;
@@ -32,6 +33,16 @@ else if (mode === "nonzero") {
             count = Number(await readFile(counter, "utf8"));
         } catch {}
         await writeFile(counter, String(count + 1));
+    }
+    if (isMemoryReflection) {
+        process.stdout.write(
+            JSON.stringify({
+                contractVersion: 1,
+                reply: JSON.stringify({ contractVersion: 1, candidates: [] }),
+                usedMeaningIds: [],
+            }),
+        );
+        process.exit(0);
     }
     const projection = request.projection,
         meanings = projection.meanings ?? [],

@@ -133,7 +133,7 @@ test("minimal continuity slice should preserve truthful meaning when complete pr
         ],
         [
             [0, 0, 0, 0, 0, 0],
-            "2",
+            "3",
             "Prefer detailed architectural rationale",
             "superseded",
             "user_testimony",

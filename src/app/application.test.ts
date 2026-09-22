@@ -35,6 +35,7 @@ test("CLI- and Telegram-shaped requests follow the same application coordinator 
                     requests.push(request);
                     return { contractVersion: 1, reply: "same reply", usedMeaningIds: [] };
                 },
+                memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
             },
         );
         await dependencies.repositories.state.create(initialState(PRINCIPAL));
@@ -87,6 +88,37 @@ test("CLI- and Telegram-shaped requests follow the same application coordinator 
         assert.equal(dependencies.repositories.state.lease, null);
     } finally {
         await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test("application interaction should form memory without evaluating onboarding when onboarding is absent", async () => {
+    // Given
+    const fixture = await applicationFixture();
+    let memoryGenerations = 0;
+    let onboardingEvaluations = 0;
+    fixture.dependencies.postTurn.memoryProposalGenerator = async () => {
+        memoryGenerations += 1;
+        return { contractVersion: 1, candidates: [] };
+    };
+    fixture.dependencies.postTurn.onboardingProgressEvaluator = async () => {
+        onboardingEvaluations += 1;
+        return { decision_version: 1, updates: [] };
+    };
+
+    try {
+        // When
+        const result = await fixture.application.interact(event("local_cli", "explicit_local_argument"), async () => ({
+            outcome: "confirmed",
+            externalMessageId: null,
+        }));
+
+        // Then
+        assert.equal(result.cognitionStatus, "completed");
+        assert.equal(memoryGenerations, 1);
+        assert.equal(onboardingEvaluations, 0);
+        assert.equal((await fixture.dependencies.repositories.memoryProposalGenerations.load()).generations.length, 1);
+    } finally {
+        await fixture.close();
     }
 });
 
@@ -425,12 +457,14 @@ test("one interaction lease excludes cross-surface mutation and recovery until d
     const laterRequests: ProviderRequest[] = [];
     const first = composeEmberApplication(config, {
         provider: async () => ({ contractVersion: 1, reply: "first reply", usedMeaningIds: [] }),
+        memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
     });
     const second = composeEmberApplication(config, {
         provider: async (request) => {
             laterRequests.push(request);
             return { contractVersion: 1, reply: "second reply", usedMeaningIds: [] };
         },
+        memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
     });
     await first.repositories.state.create(initialState(PRINCIPAL));
     const createIntent = first.repositories.interactions.createDeliveryIntent.bind(first.repositories.interactions);
@@ -525,6 +559,7 @@ async function applicationFixture({ provider }: Pick<EmberApplicationDependencie
         },
         {
             provider: provider ?? (async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] })),
+            memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
         },
     );
     await dependencies.repositories.state.create(initialState(PRINCIPAL));
