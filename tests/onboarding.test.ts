@@ -4,6 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { MemoryProposalGenerator } from "../src/memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
+import type { RunCognitionOptions } from "../src/runtime/runtime.ts";
+
+import { prepareCognition } from "../src/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import {
@@ -16,7 +22,45 @@ import { createProviderMemoryProposalGenerator } from "../src/memory/provider-me
 import { createProviderOnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+import { runCognition as runCoreCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+
+async function runCognition(
+    repositories: ReturnType<typeof createFileBackedRepositoriesForState>,
+    state: Parameters<typeof runCoreCognition>[1],
+    options: RunCognitionOptions & {
+        memoryProposalGenerator?: MemoryProposalGenerator;
+        memoryProposalProviderLabel?: string;
+        onboardingProgressEvaluator?: OnboardingProgressEvaluator;
+    },
+) {
+    const { memoryProposalGenerator, memoryProposalProviderLabel, onboardingProgressEvaluator, ...cognition } = options;
+    const preparation = await prepareCognition(repositories, state, {
+        runtimeId: cognition.runtimeId,
+        principal: cognition.principal,
+        scope: cognition.scope,
+        surface: cognition.surface ?? "local_cli",
+        text: cognition.text,
+        ...(cognition.purpose === undefined ? {} : { purpose: cognition.purpose }),
+        ...(cognition.explainIds === undefined ? {} : { explainIds: cognition.explainIds }),
+        ...(cognition.conversationMembership === undefined
+            ? {}
+            : { conversationMembership: cognition.conversationMembership }),
+    });
+    const result = await runCoreCognition(repositories, state, { ...cognition, preparation });
+    const diagnostics = await runPostTurnFollowUps(
+        repositories,
+        { memoryProposalGenerator, memoryProposalProviderLabel, onboardingProgressEvaluator },
+        result.state,
+        preparation,
+        {
+            cognitionId: result.cognitionId,
+            principal: cognition.principal,
+            scope: cognition.scope,
+            text: cognition.text,
+        },
+    );
+    return { ...result, ...diagnostics, state: await repositories.state.load() };
+}
 
 test("onboarding progress distinguishes defer, resume, decline, and closure", () => {
     let work = createOnboardingWork("lineage-test", "user", "relationship:user", "2026-01-01T00:00:00.000Z");

@@ -9,6 +9,8 @@ import test from "node:test";
 import type { ProjectedConversationContext } from "../core/conversation-context.ts";
 import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
 
+import { prepareCognition } from "../app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { ProviderError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
@@ -271,23 +273,42 @@ test("ordinary runCognition should invoke configured reflection after persisting
     try {
         const started = startRuntime(state, PRINCIPAL, SCOPE, { timestamp: "2026-09-11T09:30:00Z" });
         state = await store.commit(state.revision, started.state);
-        const result = await runCognition(createFileBackedRepositoriesForState(store), state, {
+        const repositories = createFileBackedRepositoriesForState(store);
+        const text = "I prefer concise answers";
+        const preparation = await prepareCognition(repositories, state, {
             runtimeId: started.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
-            text: "I prefer concise answers",
+            surface: "local_cli",
+            text,
+        });
+        const result = await runCognition(repositories, state, {
+            runtimeId: started.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text,
             providerLabel: "scripted-cognition",
             provider: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
             timeoutSeconds: 10,
-            memoryProposalProviderLabel: "scripted-reflection",
-            memoryProposalGenerator: async (request) => {
-                const input = request.projection.turns.find((turn) => turn.role === "user")!;
-                assert.equal(input.content, "I prefer concise answers");
-                return { contractVersion: 1, candidates: [proposal(input.evidence_id)] };
-            },
+            preparation,
         });
-        assert.equal(result.memoryProposalFailure, null);
-        assert.equal(result.state.meanings[0]?.content, "Prefers concise answers");
+        const diagnostics = await runPostTurnFollowUps(
+            repositories,
+            {
+                memoryProposalProviderLabel: "scripted-reflection",
+                memoryProposalGenerator: async (request) => {
+                    const input = request.projection.turns.find((turn) => turn.role === "user")!;
+                    assert.equal(input.content, text);
+                    return { contractVersion: 1, candidates: [proposal(input.evidence_id)] };
+                },
+            },
+            result.state,
+            preparation,
+            { cognitionId: result.cognitionId, principal: PRINCIPAL, scope: SCOPE, text },
+        );
+        const completedState = await store.load();
+        assert.equal(diagnostics.memoryProposalFailure, null);
+        assert.equal(completedState.meanings[0]?.content, "Prefers concise answers");
         assert.equal(result.state.operations.cognitionEpisodes[0]?.deliveryStatus, "pending");
     } finally {
         await store.releaseWriteLease(lease).catch(() => {});

@@ -16,6 +16,7 @@ import {
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
+import { runPostTurnFollowUps } from "./post-turn.ts";
 
 /**
  * The transport-neutral ordinary-interaction facade. During the strangler migration it
@@ -55,8 +56,6 @@ async function interact(
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
 
-        const onboarding = await dependencies.repositories.onboarding.load();
-        const onboardingActive = onboarding?.status === "active" && onboarding.scope === event.scope;
         const address = addressFor(event);
         const result = await runSurfaceInteraction(dependencies.repositories, state, {
             runtimeId,
@@ -75,17 +74,13 @@ async function interact(
             provider: dependencies.cognition.provider,
             providerLabel: dependencies.cognition.providerLabel,
             timeoutSeconds: dependencies.cognition.timeoutSeconds,
-            ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
-                ? {
-                      memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator,
-                      ...(dependencies.postTurn.memoryProposalProviderLabel === undefined
-                          ? {}
-                          : { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }),
-                  }
-                : {}),
-            ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
-                ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
-                : {}),
+            postTurn: (committedState, cognitionId, preparation) =>
+                runPostTurnFollowUps(dependencies.repositories, dependencies.postTurn, committedState, preparation, {
+                    cognitionId,
+                    principal: event.principal,
+                    scope: event.scope,
+                    text: event.text,
+                }),
             ...(options.signal === undefined ? {} : { signal: options.signal }),
             prepareCognition: (currentState, surface) =>
                 prepareCognition(dependencies.repositories, currentState, {

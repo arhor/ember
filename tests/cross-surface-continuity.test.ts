@@ -236,7 +236,7 @@ test("CLI -> Telegram -> CLI preserves one agent-owned conversation across proce
         const returnRequest = await readJson(cliReturnCapture);
         const requests = [openingRequest, confirmedRequest, uncertainRequest, returnRequest];
 
-        assert.equal(await readFile(counterPath, "utf8"), "4");
+        assert.equal(await readFile(counterPath, "utf8"), "8");
         assert.equal(finalView.lineage.lineageId, lineageId);
         assert.equal(new Set(requests.map((request) => request.projection.lineage.lineageId)).size, 1);
         assert.equal(

@@ -35,6 +35,11 @@ export type SurfaceDelivery =
     | Writable
     | ((text: string) => void | SurfaceDeliveryReceipt | Promise<void | SurfaceDeliveryReceipt>);
 
+export interface PostTurnDiagnostics {
+    memoryProposalFailure: string | null;
+    onboardingProgressFailure: string | null;
+}
+
 export class SurfaceDeliveryFailure extends Error {
     readonly outcome: Exclude<TerminalDeliveryAttemptOutcome, "confirmed">;
     readonly externalMessageId: string | null;
@@ -92,6 +97,11 @@ export interface SurfaceInteractionOptions extends Omit<
     deliveryDestinationId?: string | null;
     deliver?: SurfaceDelivery;
     prepareCognition?: (state: EmberState, surface: string) => Promise<PreparedCognition>;
+    postTurn?: (
+        state: EmberState,
+        cognitionId: CognitionId,
+        preparation: PreparedCognition,
+    ) => Promise<PostTurnDiagnostics>;
 }
 
 export interface SurfaceInteractionResult {
@@ -593,6 +603,10 @@ export async function runSurfaceInteraction(
     });
     let delivery: DeliveryReconciliationResult | null = null;
     let result: CognitionResult = committed;
+    let postTurnDiagnostics: PostTurnDiagnostics = {
+        memoryProposalFailure: null,
+        onboardingProgressFailure: null,
+    };
     if (committed.expressionText !== null) {
         const cognition = findCognition(committed.state, cognitionId);
         if (cognition.expressionEvidenceId === null)
@@ -605,13 +619,16 @@ export async function runSurfaceInteraction(
             representationText: committed.expressionText,
         });
         deliveryId = intent.delivery_id;
-        result = await committed.finishPostTurn!();
+        if (cognitionOptions.postTurn !== undefined) {
+            postTurnDiagnostics = await cognitionOptions.postTurn(committed.state, cognitionId, preparation);
+        }
         delivery = await reconcileSurfaceDelivery(repositories, deliveryId, deliver);
     }
     const latestState = await store.load();
     const cognition = findCognition(latestState, cognitionId);
     return {
         ...result,
+        ...postTurnDiagnostics,
         state: latestState,
         cognitionStatus: cognition.status,
         occurrenceId: accepted.record.occurrence_id,

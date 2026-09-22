@@ -54,6 +54,8 @@ export interface EmberApplicationDependencies {
     repositories: InteractionRepositories & {
         state: InteractionRepositories["state"] & Pick<StateStore, "acquireWriteLease" | "releaseWriteLease">;
         interactions: InteractionRepositories["interactions"] & Pick<InteractionLedgerStore, "fenceDelivery">;
+        onboarding: InteractionRepositories["onboarding"] & Pick<OnboardingWorkStore, "save">;
+        memoryProposalGenerations: MemoryProposalGenerationStore;
         actions: Pick<ActionProposalStore, "present" | "get" | "decide" | "invalidate">;
         proactiveContacts: Pick<
             ProactiveContactStore,

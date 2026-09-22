@@ -5,6 +5,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { prepareCognition } from "../../src/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { createAiSdkMemoryProposalGenerator } from "../../src/memory/memory-proposal-generation.ts";
@@ -44,28 +46,47 @@ try {
         streamingInput: "off",
         logger: false,
     });
-    const result = await runCognition(createFileBackedRepositoriesForState(store), state, {
+    const repositories = createFileBackedRepositoriesForState(store);
+    const text = "Please remember that I prefer concise answers without decorative headings.";
+    const preparation = await prepareCognition(repositories, state, {
         runtimeId: started.runtimeId,
         principal,
         scope,
-        text: "Please remember that I prefer concise answers without decorative headings.",
+        surface: "local_cli",
+        text,
+    });
+    const result = await runCognition(repositories, state, {
+        runtimeId: started.runtimeId,
+        principal,
+        scope,
+        text,
         providerLabel: "scripted-live-memory-smoke",
         provider: async () => ({ contractVersion: 1, reply: "I’ll keep that in mind.", usedMeaningIds: [] }),
         timeoutSeconds: 120,
-        memoryProposalProviderLabel: "claude-code-ai-sdk",
-        memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds: 120 }),
+        preparation,
     });
-    if (result.memoryProposalFailure) throw new Error(result.memoryProposalFailure);
+    const diagnostics = await runPostTurnFollowUps(
+        repositories,
+        {
+            memoryProposalProviderLabel: "claude-code-ai-sdk",
+            memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds: 120 }),
+        },
+        result.state,
+        preparation,
+        { cognitionId: result.cognitionId, principal, scope, text },
+    );
+    if (diagnostics.memoryProposalFailure) throw new Error(diagnostics.memoryProposalFailure);
     const ledger = await new MemoryProposalGenerationStore(store.path).load();
     assert.equal(ledger.generations.length, 1);
     assert.equal(ledger.generations[0]?.status, "completed");
     assert.ok(ledger.generations[0]!.outcomes.some((outcome) => outcome.status === "adopted"));
-    assert.ok(result.state.meanings.some((meaning) => meaning.content.toLowerCase().includes("concise")));
+    const completedState = await store.load();
+    assert.ok(completedState.meanings.some((meaning) => meaning.content.toLowerCase().includes("concise")));
     process.stdout.write(
         `${JSON.stringify({
             generation_status: ledger.generations[0]?.status,
             proposal_outcomes: ledger.generations[0]?.outcomes.map((outcome) => outcome.status),
-            adopted_meaning_count: result.state.meanings.length,
+            adopted_meaning_count: completedState.meanings.length,
         })}\n`,
     );
 } finally {

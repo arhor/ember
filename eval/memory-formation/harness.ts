@@ -7,7 +7,10 @@ import type {
     MemoryProposalGenerator,
     MemoryProposalGenerationRequest,
 } from "../../src/memory/memory-proposal-generation.ts";
+import type { ProviderRequest } from "../../src/providers/contract.ts";
 
+import { prepareCognition } from "../../src/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
@@ -102,33 +105,55 @@ export async function runMemoryFormationScenario(
             let projectedEvidenceIds: string[] = [];
             let memoryGeneratorInvoked = false;
             const beforeLedgerCount = (await new MemoryProposalGenerationStore(store.path).load()).generations.length;
-            const result = await runCognition(createFileBackedRepositoriesForState(store), state, {
+            const repositories = createFileBackedRepositoriesForState(store);
+            const cognitionOptions = {
                 runtimeId,
                 principal: scenario.ember.principal,
                 scope: scenario.ember.scope,
                 text: episode.input,
                 providerLabel: "memory-formation-evaluation-provider",
-                provider: async (request) => ({
-                    contractVersion: 1,
+                provider: async (request: ProviderRequest) => ({
+                    contractVersion: 1 as const,
                     reply: "Acknowledged.",
                     usedMeaningIds: request.projection.selection.meaning_ids,
                 }),
                 timeoutSeconds: 300,
-                memoryProposalProviderLabel: generator
-                    ? "live-memory-formation-generator"
-                    : "scripted-memory-formation-generator",
-                memoryProposalGenerator: async (request) => {
-                    memoryGeneratorInvoked = true;
-                    projectedBytes = Buffer.byteLength(JSON.stringify(request.projection), "utf8");
-                    projectedEvidenceIds = request.projection.selection.source_evidence_ids.map(String);
-                    const scriptedResult = scriptedGenerationResult(scenario, episode, request, adoptedByEpisode);
-                    return generator
-                        ? generator({ scenarioId: scenario.id, episode, request, scriptedResult })
-                        : scriptedResult;
-                },
+            };
+            const preparation = await prepareCognition(repositories, state, {
+                runtimeId,
+                principal: scenario.ember.principal,
+                scope: scenario.ember.scope,
+                surface: "local_cli",
+                text: episode.input,
             });
-            state = result.state;
-            if (result.memoryProposalFailure) throw new Error(result.memoryProposalFailure);
+            const result = await runCognition(repositories, state, { ...cognitionOptions, preparation });
+            const diagnostics = await runPostTurnFollowUps(
+                repositories,
+                {
+                    memoryProposalProviderLabel: generator
+                        ? "live-memory-formation-generator"
+                        : "scripted-memory-formation-generator",
+                    memoryProposalGenerator: async (request) => {
+                        memoryGeneratorInvoked = true;
+                        projectedBytes = Buffer.byteLength(JSON.stringify(request.projection), "utf8");
+                        projectedEvidenceIds = request.projection.selection.source_evidence_ids.map(String);
+                        const scriptedResult = scriptedGenerationResult(scenario, episode, request, adoptedByEpisode);
+                        return generator
+                            ? generator({ scenarioId: scenario.id, episode, request, scriptedResult })
+                            : scriptedResult;
+                    },
+                },
+                result.state,
+                preparation,
+                {
+                    cognitionId: result.cognitionId,
+                    principal: scenario.ember.principal,
+                    scope: scenario.ember.scope,
+                    text: episode.input,
+                },
+            );
+            state = await store.load();
+            if (diagnostics.memoryProposalFailure) throw new Error(diagnostics.memoryProposalFailure);
 
             const ledger = await new MemoryProposalGenerationStore(store.path).load();
             const record = ledger.generations[beforeLedgerCount];

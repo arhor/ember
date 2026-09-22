@@ -12,11 +12,6 @@ import type {
     RuntimeEpisode,
     RuntimeId,
 } from "../core/model.ts";
-import type {
-    MemoryProposalGenerationRepository,
-    MemoryProposalGenerator,
-} from "../memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
@@ -26,10 +21,9 @@ import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
-import { applyOnboardingProgressDecision, projectOnboardingWork } from "../core/onboarding-work.ts";
+import { projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
-import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { cloneState } from "../util.ts";
 
@@ -150,9 +144,6 @@ export interface RunCognitionOptions {
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
     conversationMembership?: ConversationMembershipIntent;
-    memoryProposalGenerator?: MemoryProposalGenerator;
-    memoryProposalProviderLabel?: string;
-    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     cognitionId?: CognitionId;
     preparation?: PreparedCognition;
 }
@@ -163,8 +154,7 @@ export interface CognitionRepositories {
         ConversationContextStore,
         "load" | "activeConversation" | "startFreshConversation" | "recordAcceptedInput" | "recordCommittedExpression"
     >;
-    onboarding: Pick<OnboardingWorkStore, "load" | "save">;
-    memoryProposalGenerations: MemoryProposalGenerationRepository;
+    onboarding: Pick<OnboardingWorkStore, "load">;
 }
 
 export async function runCognition(
@@ -187,23 +177,17 @@ export async function runCognition(
                 ? {}
                 : { conversationMembership: options.conversationMembership }),
         }));
-    const committed = await runCognitionUntilExpressionCommit(repositories, state, { ...options, preparation });
-    if (committed.finishPostTurn === null) return committed;
-    return committed.finishPostTurn();
+    return runCognitionUntilExpressionCommit(repositories, state, { ...options, preparation });
 }
 
 export interface CognitionResult {
     state: EmberState;
     providerFailure: string | null;
-    memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
     cognitionId: CognitionId;
     expressionText: string | null;
 }
 
-export interface CommittedCognitionResult extends CognitionResult {
-    finishPostTurn: (() => Promise<CognitionResult>) | null;
-}
+export type CommittedCognitionResult = CognitionResult;
 
 export async function runCognitionUntilExpressionCommit(
     repositories: CognitionRepositories,
@@ -221,9 +205,6 @@ export async function runCognitionUntilExpressionCommit(
         purpose = "ordinary",
         explainIds = [],
         conversationMembership,
-        memoryProposalGenerator,
-        memoryProposalProviderLabel,
-        onboardingProgressEvaluator,
         cognitionId: requestedCognitionId,
         preparation: suppliedPreparation,
     }: RunCognitionOptions,
@@ -261,14 +242,7 @@ export async function runCognitionUntilExpressionCommit(
         },
         repositories,
     );
-    const {
-        projection,
-        conversationId,
-        conversationMembership: resolvedConversationMembership,
-        onboardingDocument,
-        onboardingWork,
-        startedAt: timestamp,
-    } = preparation;
+    const { projection, conversationId, startedAt: timestamp } = preparation;
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
     findRuntime(started, runtimeId).lastDurableObservationAt = timestamp;
@@ -336,11 +310,8 @@ export async function runCognitionUntilExpressionCommit(
         return {
             state,
             providerFailure: error.message,
-            memoryProposalFailure: null,
-            onboardingProgressFailure: null,
             cognitionId,
             expressionText: null,
-            finishPostTurn: null,
         };
     }
 
@@ -386,68 +357,8 @@ export async function runCognitionUntilExpressionCommit(
     return {
         state,
         providerFailure: null,
-        memoryProposalFailure: null,
-        onboardingProgressFailure: null,
         cognitionId,
         expressionText: outputText,
-        finishPostTurn: async () => {
-            let onboardingProgressFailure: string | null = null;
-            if (
-                purpose === "ordinary" &&
-                onboardingDocument?.status === "active" &&
-                onboardingProgressEvaluator !== undefined
-            ) {
-                try {
-                    const decision = await onboardingProgressEvaluator({
-                        projection,
-                        onboardingWork: onboardingWork!,
-                        input: text,
-                    });
-                    await repositories.onboarding.save(
-                        applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
-                    );
-                } catch (error) {
-                    onboardingProgressFailure = error instanceof Error ? error.message : String(error);
-                }
-            }
-            let memoryProposalFailure: string | null = null;
-            if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
-                try {
-                    const reflectionContext = selectRecentConversationContext(state, await conversationStore.load(), {
-                        principal,
-                        scope,
-                        conversationId,
-                        membership: resolvedConversationMembership,
-                    });
-                    const reflection = await generateAndAdoptConversationMemories(
-                        store,
-                        repositories.memoryProposalGenerations,
-                        state,
-                        reflectionContext,
-                        {
-                            principal,
-                            scope,
-                            generator: memoryProposalGenerator,
-                            ...(memoryProposalProviderLabel === undefined
-                                ? {}
-                                : { providerLabel: memoryProposalProviderLabel }),
-                        },
-                    );
-                    state = reflection.state;
-                } catch (error) {
-                    memoryProposalFailure = error instanceof Error ? error.message : String(error);
-                    state = await store.load();
-                }
-            }
-            return {
-                state,
-                providerFailure: null,
-                memoryProposalFailure,
-                onboardingProgressFailure,
-                cognitionId,
-                expressionText: outputText,
-            };
-        },
     };
 }
 
