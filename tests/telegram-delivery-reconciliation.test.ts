@@ -661,13 +661,24 @@ test("configured handoff policy should defer ordinary contact when current UTC t
         const contact = await createAdmittedContact(f, "configured-quiet-hours");
         const state = await f.store.load();
         const intent = (await contact.contacts.load()).intents[0]!;
+        const grounding = state.meanings.find(
+            (meaning) => meaning.meaningId === intent.source.grounding_meaning_ids[0],
+        )!;
+        const quietStart = new Date(grounding.applicableFrom);
+        quietStart.setUTCDate(quietStart.getUTCDate() + 1);
+        quietStart.setUTCHours(22, 0, 0, 0);
+        const consideredAt = new Date(quietStart);
+        consideredAt.setUTCHours(23, 30, 0, 0);
+        const quietEnd = new Date(quietStart);
+        quietEnd.setUTCDate(quietEnd.getUTCDate() + 1);
+        quietEnd.setUTCHours(7, 0, 0, 0);
 
         // When
         const decision = await decideConfiguredProactiveContactHandoff({
             state,
             statePath: f.statePath,
             intent,
-            consideredAt: "2026-09-21T23:30:00Z",
+            consideredAt: consideredAt.toISOString(),
             surfaceId: "telegram_bot",
             policy: configuredPolicy({
                 kind: "daily_quiet_hours_utc",
@@ -684,8 +695,8 @@ test("configured handoff policy should defer ordinary contact when current UTC t
         assert.deepEqual(decision.evidence.attention, {
             status: "quiet_period",
             window_id: "principal-night-utc",
-            starts_at: "2026-09-21T22:00:00.000Z",
-            ends_at: "2026-09-22T07:00:00.000Z",
+            starts_at: quietStart.toISOString(),
+            ends_at: quietEnd.toISOString(),
             evidence_ids: ["configured-policy:quiet-hours"],
         });
     } finally {
