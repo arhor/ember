@@ -9,7 +9,8 @@ import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
+import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../../src/runtime/interaction-boundary.ts";
+import { startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 export interface ConversationEpisode {
@@ -111,48 +112,45 @@ export async function runConversationScenario(
             let providerFailure: string | null = null;
             let deliveryOutcome: "not_attempted" | "displayed" | "uncertain" = "not_attempted";
             let providerThreadId: string | null = null;
-            const injectedDeliveryUncertainty = new Error(`fixture delivery uncertain: ${episode.id}`);
-            try {
-                const result = await runCognition(createFileBackedRepositoriesForState(store), currentState, {
-                    runtimeId: runtimeId!,
-                    principal: scenario.ember.principal,
-                    scope: scenario.ember.scope,
-                    surface: episode.surface,
-                    text: episode.input,
-                    providerLabel: "conversation-evaluation-provider",
-                    timeoutSeconds: 300,
-                    conversationMembership: episode.fresh_conversation
-                        ? { action: "fresh", basis: "explicit_boundary" }
-                        : { action: "continue", basis: "ordinary_adjacency" },
-                    provider: async (request) => {
-                        projection = request.projection;
-                        if (episode.provider_outcome) {
-                            throw new ProviderError(`fixture ${episode.provider_outcome}`, {
-                                outcome: episode.provider_outcome,
-                                terminationConfirmed: episode.provider_outcome === "failed",
-                            });
-                        }
-                        const result = await provider({
-                            scenarioId: scenario.id,
-                            episode,
-                            request,
+            const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(store), currentState, {
+                runtimeId: runtimeId!,
+                principal: scenario.ember.principal,
+                scope: scenario.ember.scope,
+                surfaceId: episode.surface,
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: { occurrenceId: `conversation-evaluation:${scenario.id}:${episode.id}` },
+                text: episode.input,
+                providerLabel: "conversation-evaluation-provider",
+                timeoutSeconds: 300,
+                conversationMembership: episode.fresh_conversation
+                    ? { action: "fresh", basis: "explicit_boundary" }
+                    : { action: "continue", basis: "ordinary_adjacency" },
+                provider: async (request) => {
+                    projection = request.projection;
+                    if (episode.provider_outcome) {
+                        throw new ProviderError(`fixture ${episode.provider_outcome}`, {
+                            outcome: episode.provider_outcome,
+                            terminationConfirmed: episode.provider_outcome === "failed",
                         });
-                        reply = result.reply;
-                        providerThreadId = result.operational?.externalThreadId ?? null;
-                        return result;
-                    },
-                    output: () => {
-                        if (episode.delivery_outcome === "uncertain") throw injectedDeliveryUncertainty;
-                    },
-                });
-                currentState = result.state;
-                providerFailure = result.providerFailure;
-                if (result.providerFailure === null) deliveryOutcome = "displayed";
-            } catch (error) {
-                if (error !== injectedDeliveryUncertainty) throw error;
-                currentState = await store.load();
-                deliveryOutcome = "uncertain";
-            }
+                    }
+                    const result = await provider({
+                        scenarioId: scenario.id,
+                        episode,
+                        request,
+                    });
+                    reply = result.reply;
+                    providerThreadId = result.operational?.externalThreadId ?? null;
+                    return result;
+                },
+                deliver: () => {
+                    if (episode.delivery_outcome === "uncertain")
+                        throw new SurfaceDeliveryFailure(`fixture delivery uncertain: ${episode.id}`);
+                },
+            });
+            currentState = result.state;
+            providerFailure = result.providerFailure;
+            if (result.delivery?.status === "confirmed") deliveryOutcome = "displayed";
+            if (result.delivery?.status === "blocked_uncertain") deliveryOutcome = "uncertain";
             if (projection === null) throw new Error(`episode ${episode.id} did not expose a projection`);
 
             const evaluatedProjection = projection as unknown as Projection;

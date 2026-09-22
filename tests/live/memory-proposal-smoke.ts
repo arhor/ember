@@ -52,7 +52,6 @@ try {
         providerLabel: "scripted-live-memory-smoke",
         provider: async () => ({ contractVersion: 1, reply: "I’ll keep that in mind.", usedMeaningIds: [] }),
         timeoutSeconds: 120,
-        output: () => {},
         memoryProposalProviderLabel: "claude-code-ai-sdk",
         memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds: 120 }),
     });

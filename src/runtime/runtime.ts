@@ -1,5 +1,3 @@
-import type { Writable } from "node:stream";
-
 import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
@@ -146,7 +144,6 @@ export interface RunCognitionOptions {
     provider: ProviderInvoker;
     timeoutSeconds: number;
     signal?: AbortSignal | undefined;
-    output?: Writable | ((text: string) => void | Promise<void>);
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
     conversationMembership?: ConversationMembershipIntent;
@@ -154,14 +151,6 @@ export interface RunCognitionOptions {
     memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     cognitionId?: CognitionId;
-    hooks?: {
-        afterExpressionCommit?: (state: EmberState, outputText: string) => void | Promise<void>;
-        beforeDisplay?: (failures: {
-            memoryProposalFailure: string | null;
-            onboardingProgressFailure: string | null;
-        }) => void | Promise<void>;
-        afterDisplay?: (state: EmberState) => void | Promise<void>;
-    };
 }
 
 export interface CognitionRepositories {
@@ -204,6 +193,29 @@ async function resolveConversationMembership(
 export async function runCognition(
     repositories: CognitionRepositories,
     state: EmberState,
+    options: RunCognitionOptions,
+): Promise<CognitionResult> {
+    const committed = await runCognitionUntilExpressionCommit(repositories, state, options);
+    if (committed.finishPostTurn === null) return committed;
+    return committed.finishPostTurn();
+}
+
+export interface CognitionResult {
+    state: EmberState;
+    providerFailure: string | null;
+    memoryProposalFailure: string | null;
+    onboardingProgressFailure: string | null;
+    cognitionId: CognitionId;
+    expressionText: string | null;
+}
+
+export interface CommittedCognitionResult extends CognitionResult {
+    finishPostTurn: (() => Promise<CognitionResult>) | null;
+}
+
+export async function runCognitionUntilExpressionCommit(
+    repositories: CognitionRepositories,
+    state: EmberState,
     {
         runtimeId,
         principal,
@@ -214,7 +226,6 @@ export async function runCognition(
         provider,
         timeoutSeconds,
         signal,
-        output = process.stdout,
         purpose = "ordinary",
         explainIds = [],
         conversationMembership = { action: "continue", basis: "ordinary_adjacency" },
@@ -222,15 +233,8 @@ export async function runCognition(
         memoryProposalProviderLabel,
         onboardingProgressEvaluator,
         cognitionId: requestedCognitionId,
-        hooks = {},
     }: RunCognitionOptions,
-): Promise<{
-    state: EmberState;
-    providerFailure: string | null;
-    memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
-    cognitionId: CognitionId;
-}> {
+): Promise<CommittedCognitionResult> {
     const store = repositories.state;
     requirePrincipal(state, principal);
     if (typeof label !== "string" || !label.trim()) throw new ValidationError("provider label must be non-empty");
@@ -346,6 +350,8 @@ export async function runCognition(
             memoryProposalFailure: null,
             onboardingProgressFailure: null,
             cognitionId,
+            expressionText: null,
+            finishPostTurn: null,
         };
     }
 
@@ -388,66 +394,72 @@ export async function runCognition(
         expression_content: result.reply,
     });
     const outputText = `${result.reply}\n`;
-    await hooks.afterExpressionCommit?.(state, outputText);
-    let onboardingProgressFailure: string | null = null;
-    if (
-        purpose === "ordinary" &&
-        onboardingDocument?.status === "active" &&
-        onboardingProgressEvaluator !== undefined
-    ) {
-        try {
-            const decision = await onboardingProgressEvaluator({
-                projection,
-                onboardingWork: onboardingWork!,
-                input: text,
-            });
-            await repositories.onboarding.save(
-                applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
-            );
-        } catch (error) {
-            onboardingProgressFailure = error instanceof Error ? error.message : String(error);
-        }
-    }
-    let memoryProposalFailure: string | null = null;
-    if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
-        try {
-            const reflectionContext = selectRecentConversationContext(state, await conversationStore.load(), {
-                principal,
-                scope,
-                conversationId,
-                membership: resolvedConversation.membership,
-            });
-            const reflection = await generateAndAdoptConversationMemories(
-                store,
-                repositories.memoryProposalGenerations,
+    return {
+        state,
+        providerFailure: null,
+        memoryProposalFailure: null,
+        onboardingProgressFailure: null,
+        cognitionId,
+        expressionText: outputText,
+        finishPostTurn: async () => {
+            let onboardingProgressFailure: string | null = null;
+            if (
+                purpose === "ordinary" &&
+                onboardingDocument?.status === "active" &&
+                onboardingProgressEvaluator !== undefined
+            ) {
+                try {
+                    const decision = await onboardingProgressEvaluator({
+                        projection,
+                        onboardingWork: onboardingWork!,
+                        input: text,
+                    });
+                    await repositories.onboarding.save(
+                        applyOnboardingProgressDecision(onboardingDocument, decision, input.evidenceId, nowUtc()),
+                    );
+                } catch (error) {
+                    onboardingProgressFailure = error instanceof Error ? error.message : String(error);
+                }
+            }
+            let memoryProposalFailure: string | null = null;
+            if (purpose === "ordinary" && memoryProposalGenerator !== undefined) {
+                try {
+                    const reflectionContext = selectRecentConversationContext(state, await conversationStore.load(), {
+                        principal,
+                        scope,
+                        conversationId,
+                        membership: resolvedConversation.membership,
+                    });
+                    const reflection = await generateAndAdoptConversationMemories(
+                        store,
+                        repositories.memoryProposalGenerations,
+                        state,
+                        reflectionContext,
+                        {
+                            principal,
+                            scope,
+                            generator: memoryProposalGenerator,
+                            ...(memoryProposalProviderLabel === undefined
+                                ? {}
+                                : { providerLabel: memoryProposalProviderLabel }),
+                        },
+                    );
+                    state = reflection.state;
+                } catch (error) {
+                    memoryProposalFailure = error instanceof Error ? error.message : String(error);
+                    state = await store.load();
+                }
+            }
+            return {
                 state,
-                reflectionContext,
-                {
-                    principal,
-                    scope,
-                    generator: memoryProposalGenerator,
-                    ...(memoryProposalProviderLabel === undefined
-                        ? {}
-                        : { providerLabel: memoryProposalProviderLabel }),
-                },
-            );
-            state = reflection.state;
-        } catch (error) {
-            memoryProposalFailure = error instanceof Error ? error.message : String(error);
-            state = await store.load();
-        }
-    }
-    await hooks.beforeDisplay?.({ memoryProposalFailure, onboardingProgressFailure });
-    await writeOutput(output, outputText);
-    await hooks.afterDisplay?.(state);
-    const displayed = cloneState(state);
-    const displayedCognition = findCognition(displayed, cognitionId);
-    const displayedAt = nowUtc();
-    displayedCognition.deliveryStatus = "displayed";
-    displayedCognition.lastDurableObservationAt = displayedAt;
-    findRuntime(displayed, runtimeId).lastDurableObservationAt = displayedAt;
-    state = await store.commit(state.revision, displayed);
-    return { state, providerFailure: null, memoryProposalFailure, onboardingProgressFailure, cognitionId };
+                providerFailure: null,
+                memoryProposalFailure,
+                onboardingProgressFailure,
+                cognitionId,
+                expressionText: outputText,
+            };
+        },
+    };
 }
 
 export function findCognition(state: EmberState, id: CognitionId | string): CognitionEpisode {
@@ -471,34 +483,4 @@ function latestRuntime(state: EmberState): RuntimeEpisode | null {
         throw new ValidationError("runtime recovery chain has no unique current tail");
     }
     return tails[0]!;
-}
-
-async function writeOutput(output: Writable | ((text: string) => void | Promise<void>), text: string) {
-    if (typeof output === "function") {
-        await output(text);
-        return;
-    }
-    await new Promise<void>((resolve, reject) => {
-        let settled = false;
-        const finish = (error?: Error | null) => {
-            if (settled) {
-                return;
-            }
-            settled = true;
-            if (error) {
-                setImmediate(() => output.off("error", onError));
-                reject(error);
-            } else {
-                output.off("error", onError);
-                resolve();
-            }
-        };
-        const onError = (error: Error) => finish(error);
-        output.once("error", onError);
-        try {
-            output.write(text, (error) => finish(error));
-        } catch (error) {
-            finish(error instanceof Error ? error : new Error(String(error)));
-        }
-    });
 }

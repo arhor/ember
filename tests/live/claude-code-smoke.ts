@@ -46,7 +46,6 @@ const previousEnvironment = {
     ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN,
     CLAUDE_CODE_OAUTH_TOKEN: process.env.CLAUDE_CODE_OAUTH_TOKEN,
 };
-let reply = "";
 try {
     process.chdir(projectDirectory);
     process.env.ANTHROPIC_API_KEY = "intentionally-invalid-ember-204";
@@ -64,11 +63,9 @@ try {
         providerLabel: "claude-code-ai-sdk",
         provider: createClaudeCodeProvider(),
         timeoutSeconds: 120,
-        output: (text) => {
-            reply += text;
-        },
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
+    const reply = result.expressionText ?? "";
     const cognition = result.state.operations.cognitionEpisodes.find(
         (item) => item.cognitionId === result.cognitionId,
     )!;

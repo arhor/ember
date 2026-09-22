@@ -45,9 +45,10 @@ Three observations constrain the migration:
 1. CLI and Telegram already converge at `runSurfaceInteraction`, but each constructs
    stores, providers, memory/onboarding helpers, and runtime episodes before entering
    it. This is the application work to consolidate.
-2. `runCognition` commits an expression, persists dialogue, invokes delivery hooks,
-   runs onboarding and memory follow-up, sends output, and marks delivery. Splitting
-   this function is more consequential than moving directories.
+2. Cognition commits an expression and persists dialogue without transport dependencies.
+   The interaction boundary then retains the representation in a durable delivery intent
+   before resuming onboarding/memory follow-up; delivery attempts and status updates remain
+   owned by the delivery boundary.
 3. Foreground `ember run` already works without systemd. Plain `ember` currently
    fails with “a command is required”; configured run requires prior setup. The
    portability work concerns bootstrap UX and optional service machinery, not removal
@@ -182,22 +183,22 @@ This expansion applies to both diagrams. Source anchors are
 [runSurfaceInteraction / reconcileSurfaceDelivery](../../src/runtime/interaction-boundary.ts)
 and [runCognition](../../src/runtime/runtime.ts).
 
-| Order | Current owner and concrete operation                                                                                            | Durable/effect boundary                                                                                                                                                        |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1     | `runSurfaceInteraction` validates principal/runtime, constructs `InteractionLedgerStore(store.path)`, calls `acceptInbound`     | `.interactions.json` records stable occurrence, input digest, provenance, destination and planned cognition ID                                                                 |
-| 2     | Same function reloads canonical state and looks for that cognition                                                              | Existing cognition suppresses rerun; completed expression without intent produces a representation-less intent, never an invented reply                                        |
-| 3     | `runCognition` constructs `ConversationContextStore(store.path)` and resolves continue/fresh membership                         | `.conversation.json` active Ember trajectory, independent of Telegram chat or provider session                                                                                 |
-| 4     | `selectRecentConversationContext`; load `OnboardingWorkStore(store.path)`; `buildProjection`                                    | Scope/currentness/bounds enforced by `core`; onboarding lineage/principal validated; canonical selection remains independent of dialogue                                       |
-| 5     | `userEvidence`, cognition `started`, runtime observation, then state commit                                                     | Canonical input evidence exists before `recordAcceptedInput` writes the conversation sidecar                                                                                   |
-| 6     | `ProviderInvoker(request, timeout/signal)`                                                                                      | Claude → `createAiSdkProvider` → SDK; Codex/Cursor/process currently bypass SDK. Only selected projection and current input cross the seam                                     |
-| 7     | SDK path: select bindings → `tool` schemas → `createCapabilityExecutionFirewall` → integration                                  | SDK loops; Ember authorizes, validates semantic arguments, fences repeated capability attempts, and classifies effects. Calendar action ledger persists consequential attempts |
-| 8     | Adapter validates final `ProviderResult`; runtime reloads and requires unchanged revision                                       | Provider failure records failed/timed-out/cancellation evidence; no expression is fabricated                                                                                   |
-| 9     | Runtime commits `agent_expression_via_provider` descriptor, completed cognition, `usedMeaningIds`, and delivery `pending`       | Canonical expression evidence is separate from reply text; external thread ID is operational only                                                                              |
-| 10    | Conversation store records committed reply text; `afterExpressionCommit` hook creates delivery intent with retained text/digest | Three sequential writes, not one transaction; the retained delivery representation exists before optional follow-up                                                            |
-| 11    | Runtime evaluates onboarding progress and saves its sidecar; then calls `generateAndAdoptConversationMemories`                  | Memory helper constructs `.memory-proposals.json`, records generation, assesses/adopts against current canonical revision, and records terminal outcomes                       |
-| 12    | `beforeDisplay` transfers follow-up diagnostics to boundary; runtime invokes output callback                                    | Callback records delivery attempt `started` before stdout/sendMessage; finishes `confirmed`, `failed`, or `uncertain`                                                          |
-| 13    | Runtime commits cognition delivery `displayed` after successful callback                                                        | Transport acceptance is not human awareness; an output error can leave completed cognition with delivery pending                                                               |
-| 14    | Concrete surface reloads/stops runtime and releases writer lease                                                                | Provider/delivery/follow-up waits currently occur within the per-interaction canonical lease                                                                                   |
+| Order | Current owner and concrete operation                                                                                        | Durable/effect boundary                                                                                                                                                        |
+| ----- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | `runSurfaceInteraction` validates principal/runtime, constructs `InteractionLedgerStore(store.path)`, calls `acceptInbound` | `.interactions.json` records stable occurrence, input digest, provenance, destination and planned cognition ID                                                                 |
+| 2     | Same function reloads canonical state and looks for that cognition                                                          | Existing cognition suppresses rerun; completed expression without intent produces a representation-less intent, never an invented reply                                        |
+| 3     | `runCognition` constructs `ConversationContextStore(store.path)` and resolves continue/fresh membership                     | `.conversation.json` active Ember trajectory, independent of Telegram chat or provider session                                                                                 |
+| 4     | `selectRecentConversationContext`; load `OnboardingWorkStore(store.path)`; `buildProjection`                                | Scope/currentness/bounds enforced by `core`; onboarding lineage/principal validated; canonical selection remains independent of dialogue                                       |
+| 5     | `userEvidence`, cognition `started`, runtime observation, then state commit                                                 | Canonical input evidence exists before `recordAcceptedInput` writes the conversation sidecar                                                                                   |
+| 6     | `ProviderInvoker(request, timeout/signal)`                                                                                  | Claude → `createAiSdkProvider` → SDK; Codex/Cursor/process currently bypass SDK. Only selected projection and current input cross the seam                                     |
+| 7     | SDK path: select bindings → `tool` schemas → `createCapabilityExecutionFirewall` → integration                              | SDK loops; Ember authorizes, validates semantic arguments, fences repeated capability attempts, and classifies effects. Calendar action ledger persists consequential attempts |
+| 8     | Adapter validates final `ProviderResult`; runtime reloads and requires unchanged revision                                   | Provider failure records failed/timed-out/cancellation evidence; no expression is fabricated                                                                                   |
+| 9     | Runtime commits `agent_expression_via_provider` descriptor, completed cognition, `usedMeaningIds`, and delivery `pending`   | Canonical expression evidence is separate from reply text; external thread ID is operational only                                                                              |
+| 10    | Conversation store records committed reply text; cognition returns that representation without a transport collaborator     | Canonical cognition completion and the retained reply exist independently of any concrete send                                                                                 |
+| 11    | Interaction boundary creates a delivery intent retaining the returned text/digest                                           | Intent is durable before fallible post-turn work or any transport attempt; replay can recover it without rerunning cognition                                                   |
+| 12    | Runtime evaluates onboarding progress and saves its sidecar; then calls `generateAndAdoptConversationMemories`              | Memory helper constructs `.memory-proposals.json`, records generation, assesses/adopts against current canonical revision, and records terminal outcomes                       |
+| 13    | Delivery reconciliation records `started`, invokes stdout/sendMessage, and finishes `confirmed`, `failed`, or `uncertain`   | Only confirmed delivery updates canonical status to `displayed`; uncertain delivery remains blocked                                                                            |
+| 14    | Application reloads/stops runtime and releases writer lease                                                                 | Provider/delivery/follow-up waits occur within the per-interaction canonical lease                                                                                             |
 
 Default provider-backed memory/progress wrappers make additional provider calls. Memory
 uses a synthetic in-memory bootstrap state/projection and JSON in `ProviderResult.reply`;
@@ -310,10 +311,9 @@ surface registry, framework session, or DI container is needed.
 4. AI execution receives a bounded `ProviderRequest` and returns a validated Ember result.
    Application checks the result at its trust boundary too, then revalidates the state
    revision. SDK output success alone cannot commit meaning or declare an effect.
-5. Commit expression evidence, conversation representation, and retained delivery intent
-   in the existing order. Only then run optional onboarding and memory work. Keep their
-   current order and diagnostic behavior; moving delivery earlier is a separate behavior
-   change. Control calls receive no action tools by default.
+5. Commit expression evidence and conversation representation. Cognition returns the committed
+   representation so the interaction boundary can durably create its delivery intent before
+   optional onboarding/memory work and transport. Control calls receive no action tools by default.
 6. Without stopping the runtime or releasing the lease, `app/application.ts` passes the
    committed intent to `app/delivery.ts`. The delivery helper validates its binding,
    persists `started`, invokes the transport callback supplied to `interact`, records

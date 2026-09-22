@@ -116,7 +116,7 @@ test("second turn receives prior user and Ember turns separately from canonical 
             projection.conversation_context.turns[1]?.in_reply_to_evidence_id,
             projection.conversation_context.turns[0]?.evidence_id,
         );
-        assert.equal(projection.conversation_context.turns[1]?.delivery_status, "displayed");
+        assert.equal(projection.conversation_context.turns[1]?.delivery_status, "pending");
         assert.equal(projection.conversation_context.turns[1]?.user_awareness, "unknown");
         assert.deepEqual(projection.selection.evidence_ids, []);
         assert.equal(projection.conversation_context.selection.selected_evidence_ids.length, 2);

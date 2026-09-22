@@ -499,7 +499,6 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
                 };
             },
             timeoutSeconds: 1,
-            output: () => {},
         })
     ).state;
     await store.releaseWriteLease(lease);
@@ -560,7 +559,6 @@ async function establishedBundle(s: SetupOnboardingScenario, path: string): Prom
             providerLabel: "bundle-builder",
             provider: async () => ({ contractVersion: 1, reply: "remembered", usedMeaningIds: [] }),
             timeoutSeconds: 1,
-            output: () => {},
             memoryProposalGenerator: async (request) => ({
                 contractVersion: 1,
                 candidates: [

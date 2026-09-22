@@ -7,8 +7,12 @@ import test from "node:test";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../src/runtime/interaction-boundary.ts";
-import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import {
+    InteractionLedgerStore,
+    reconcileSurfaceDelivery,
+    runSurfaceInteraction,
+} from "../src/runtime/interaction-boundary.ts";
+import { startRuntime } from "../src/runtime/runtime.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";
@@ -20,15 +24,20 @@ test("restart sends a retained delivery intent that never crossed the external s
     await store.create(initialState(PRINCIPAL));
     const lease = await store.acquireWriteLease();
     let providerCalls = 0;
-    let outputCalls = 0;
     try {
         const loaded = await store.load();
         const started = startRuntime(loaded, PRINCIPAL, SCOPE);
         const state = await store.commit(loaded.revision, started.state);
         const ledger = new InteractionLedgerStore(statePath);
+        const repositories = createFileBackedRepositoriesForState(store);
+        const createIntent = repositories.interactions.createDeliveryIntent.bind(repositories.interactions);
+        repositories.interactions.createDeliveryIntent = async (...arguments_) => {
+            await createIntent(...arguments_);
+            throw new Error("simulated process loss after durable intent");
+        };
 
         await assert.rejects(
-            runCognition(createFileBackedRepositoriesForState(store), state, {
+            runSurfaceInteraction(repositories, state, {
                 runtimeId: started.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
@@ -39,29 +48,16 @@ test("restart sends a retained delivery intent that never crossed the external s
                     providerCalls += 1;
                     return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
                 },
-                output: () => {
-                    outputCalls += 1;
-                },
-                hooks: {
-                    afterExpressionCommit: async (committed, outputText) => {
-                        const cognition = committed.operations.cognitionEpisodes.at(-1);
-                        assert.ok(cognition?.expressionEvidenceId);
-                        await ledger.createDeliveryIntent({
-                            cognitionId: cognition.cognitionId,
-                            expressionEvidenceId: cognition.expressionEvidenceId,
-                            surfaceId: "messaging:test",
-                            destinationId: "chat-before-send",
-                            representationText: outputText,
-                        });
-                        throw new Error("simulated process loss before external send");
-                    },
-                },
+                surfaceId: "messaging:test",
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: { occurrenceId: "update-before-send" },
+                deliveryDestinationId: "chat-before-send",
+                deliver: () => assert.fail("transport must not start before the injected process loss"),
             }),
-            /simulated process loss before external send/,
+            /simulated process loss after durable intent/,
         );
 
         assert.equal(providerCalls, 1);
-        assert.equal(outputCalls, 0);
         const beforeRestart = await ledger.load();
         assert.equal(beforeRestart.deliveries.length, 1);
         assert.equal(beforeRestart.deliveries[0]?.representation?.text, "reply retained before send\n");
