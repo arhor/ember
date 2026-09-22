@@ -133,6 +133,31 @@ test("Telegram uses the ordinary onboarding progress and memory seams", async ()
     }
 });
 
+test("a provider-only override suppresses composed onboarding follow-up calls", async () => {
+    const f = await fixture();
+    try {
+        const state = await f.store.load();
+        await new OnboardingWorkStore(f.statePath).save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, f.config.activeScope, "2026-09-01T00:00:00.000Z"),
+        );
+        let providerCalls = 0;
+        const outcome = await processTelegramUpdate(f.config, readyApi(), update(9), {
+            provider: async () => {
+                providerCalls += 1;
+                return { contractVersion: 1, reply: "One ordinary reply.", usedMeaningIds: [] };
+            },
+        });
+
+        assert.equal(outcome.kind, "processed");
+        assert.equal(providerCalls, 1);
+        assert.ok(
+            (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "open"),
+        );
+    } finally {
+        await f.close();
+    }
+});
+
 test("Telegram reports onboarding background failures even when delivery also fails", async () => {
     const f = await fixture();
     try {

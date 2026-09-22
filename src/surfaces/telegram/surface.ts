@@ -268,13 +268,13 @@ export async function processTelegramUpdate(
     const application =
         suppliedApplication ??
         createEmberApplication(
-            suppliedDependencies ??
-                dependenciesForTelegram(config, {
-                    ...(provider === undefined ? {} : { provider }),
-                    ...(memoryProposalGenerator === undefined ? {} : { memoryProposalGenerator }),
-                    ...(memoryProposalProviderLabel === undefined ? {} : { memoryProposalProviderLabel }),
-                    ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
-                }),
+            dependenciesForTelegramInteraction(config, {
+                provider,
+                memoryProposalGenerator,
+                memoryProposalProviderLabel,
+                onboardingProgressEvaluator,
+                suppliedDependencies,
+            }),
         );
     const result = await application.interact(
         {
@@ -750,6 +750,53 @@ function dependenciesForTelegram(
         },
         overrides,
     );
+}
+
+function dependenciesForTelegramInteraction(
+    config: TelegramSurfaceConfig,
+    overrides: {
+        provider: ProviderInvoker | undefined;
+        memoryProposalGenerator: MemoryProposalGenerator | undefined;
+        memoryProposalProviderLabel: string | undefined;
+        onboardingProgressEvaluator: OnboardingProgressEvaluator | undefined;
+        suppliedDependencies: EmberApplicationDependencies | undefined;
+    },
+): EmberApplicationDependencies {
+    const dependencies =
+        overrides.suppliedDependencies ??
+        dependenciesForTelegram(config, {
+            ...(overrides.provider === undefined ? {} : { provider: overrides.provider }),
+            ...(overrides.memoryProposalGenerator === undefined
+                ? {}
+                : { memoryProposalGenerator: overrides.memoryProposalGenerator }),
+            ...(overrides.memoryProposalProviderLabel === undefined
+                ? {}
+                : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
+            ...(overrides.onboardingProgressEvaluator === undefined
+                ? {}
+                : { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }),
+        });
+    const useComposedHelpers = overrides.provider === undefined;
+    return {
+        ...dependencies,
+        postTurn: {
+            ...(overrides.memoryProposalGenerator !== undefined
+                ? { memoryProposalGenerator: overrides.memoryProposalGenerator }
+                : useComposedHelpers && dependencies.postTurn.memoryProposalGenerator !== undefined
+                  ? { memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator }
+                  : {}),
+            ...(overrides.memoryProposalProviderLabel !== undefined
+                ? { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }
+                : useComposedHelpers && dependencies.postTurn.memoryProposalProviderLabel !== undefined
+                  ? { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }
+                  : {}),
+            ...(overrides.onboardingProgressEvaluator !== undefined
+                ? { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }
+                : useComposedHelpers && dependencies.postTurn.onboardingProgressEvaluator !== undefined
+                  ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
+                  : {}),
+        },
+    };
 }
 
 function validateTelegramUpdates(value: unknown): asserts value is TelegramUpdate[] {

@@ -22,7 +22,8 @@ interaction lease/runtime lifecycle from #309 are implemented; later ownership a
 host changes remain proposed until their child issues land. The CLI and Telegram
 ordinary-conversation adapter migrations from #310 and #311 are also implemented; CLI
 administrative commands retain their local command handling, while Telegram polling and
-proactive-delivery reconciliation remain transport-local pending their assigned migrations.
+ordinary/proactive delivery reconciliation remain transport-local pending their assigned
+migrations.
 
 ## Recommendation and governing constraints
 
