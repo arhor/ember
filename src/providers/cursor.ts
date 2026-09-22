@@ -8,7 +8,7 @@ import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, Provi
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
-import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
+import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
@@ -58,7 +58,8 @@ export interface CursorProviderConfig {
     finalTerminationMs?: number;
 }
 
-export function createCursorProvider({
+/** Transitional JSON-in-reply bootstrap adapter; ordinary cognition uses the AI SDK bridge. */
+export function createCursorControlProvider({
     command = "cursor-agent",
     arguments_: args = [],
     ...adapterOptions
@@ -153,11 +154,19 @@ export async function invokeCursorProvider(
         throw new ProviderError("provider timeout must be a positive finite number");
     if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
         throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
-    if (signal?.aborted)
-        throw new ProviderError("Cursor cancellation requested before invocation", {
-            outcome: "cancellation_requested",
-            termination: { reason: "explicit_cancellation", directChildExitObserved: false },
-        });
+    if (signal?.aborted) {
+        const timedOut = isTimeoutAbort(signal.reason);
+        throw new ProviderError(
+            timedOut ? "Cursor timed out before invocation" : "Cursor cancellation requested before invocation",
+            {
+                outcome: timedOut ? "timed_out" : "cancellation_requested",
+                termination: {
+                    reason: timedOut ? "timeout" : "explicit_cancellation",
+                    directChildExitObserved: false,
+                },
+            },
+        );
+    }
     const prompt = buildCursorPrompt(request);
     if (Buffer.byteLength(prompt, "utf8") > MAX_PROMPT_BYTES) throw new ProviderError("Cursor prompt exceeds 1 MiB");
 

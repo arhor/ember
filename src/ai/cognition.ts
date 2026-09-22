@@ -330,10 +330,11 @@ async function invokeStreaming(
 }
 
 function externalThreadIdFromProviderMetadata(metadata: unknown): string | undefined {
-    if (!isObject(metadata) || !isObject(metadata.codex)) return undefined;
-    const externalThreadId = metadata.codex.externalThreadId;
-    if (typeof externalThreadId !== "string") return undefined;
-    return externalThreadId;
+    if (!isObject(metadata)) return undefined;
+    for (const provider of [metadata.codex, metadata.cursor]) {
+        if (isObject(provider) && typeof provider.externalThreadId === "string") return provider.externalThreadId;
+    }
+    return undefined;
 }
 
 function validateTimeout(timeoutSeconds: number) {

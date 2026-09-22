@@ -16,7 +16,7 @@ import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts"
 import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexControlProvider } from "../../providers/codex.ts";
 import { validateProviderResult } from "../../providers/contract.ts";
-import { createCursorProvider } from "../../providers/cursor.ts";
+import { createCursorControlProvider } from "../../providers/cursor.ts";
 import { startRuntime } from "../../runtime/runtime.ts";
 import { exactKeys, isObject } from "../../util.ts";
 import { runTelegramSetup } from "../telegram/setup.ts";
@@ -72,7 +72,7 @@ export function setupProvider(config: SetupProvider): ProviderInvoker {
             return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
         };
     const options = { command: config.command, arguments_: config.model ? ["--model", config.model] : [] };
-    return config.kind === "codex" ? createCodexControlProvider(options) : createCursorProvider(options);
+    return config.kind === "codex" ? createCodexControlProvider(options) : createCursorControlProvider(options);
 }
 
 export async function loadSetupConfig(path: string): Promise<SetupConfig | null> {

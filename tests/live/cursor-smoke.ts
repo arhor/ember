@@ -4,11 +4,12 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createAiSdkCognitionExecutor } from "../../src/ai/cognition.ts";
+import { createCursorLanguageModel } from "../../src/ai/cursor.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { createCursorProvider } from "../../src/providers/cursor.ts";
 import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 
 const principal = "user-1";
@@ -40,7 +41,7 @@ try {
         scope,
         text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
         providerLabel: "cursor-agent",
-        executor: createCursorProvider(),
+        executor: createAiSdkCognitionExecutor(createCursorLanguageModel({ timeoutSeconds: 120 })),
         timeoutSeconds: 120,
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
