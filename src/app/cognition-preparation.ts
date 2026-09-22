@@ -1,10 +1,13 @@
-import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
+import type {
+    ActiveConversationTrajectory,
+    ConversationContextDocument,
+    ConversationId,
+    ConversationMembershipResolution,
+} from "../core/conversation-context.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type { CognitionPurpose, EmberState, MeaningId, RuntimeId } from "../core/model.ts";
 import type { OnboardingWorkDocument, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
 import type { Projection } from "../core/projection.ts";
-import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
-import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ValidationError } from "../core/errors.ts";
@@ -34,8 +37,14 @@ export interface PreparedCognition {
 
 /** Narrow application port for resolving conversation and onboarding context. */
 export interface CognitionPreparationRepositories {
-    conversation: Pick<ConversationContextStore, "load" | "activeConversation" | "startFreshConversation">;
-    onboarding: Pick<OnboardingWorkStore, "load">;
+    conversation: {
+        load(): Promise<ConversationContextDocument>;
+        activeConversation(principal: string, scope: string): Promise<ActiveConversationTrajectory | null>;
+        startFreshConversation(principal: string, scope: string, startedAt: string): Promise<ConversationId>;
+    };
+    onboarding: {
+        load(): Promise<OnboardingWorkDocument | null>;
+    };
 }
 
 /**
