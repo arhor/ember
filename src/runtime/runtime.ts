@@ -1,4 +1,4 @@
-import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
+import type { PreparedCognition } from "../app/cognition-preparation.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
     CognitionEpisode,
@@ -20,11 +20,12 @@ import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.t
 import type { StateStore } from "../persistence/state-store.ts";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
+import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
-import { applyOnboardingProgressDecision, projectOnboardingWork } from "../core/onboarding-work.ts";
-import { buildProjection, findRuntime } from "../core/projection.ts";
+import { applyOnboardingProgressDecision } from "../core/onboarding-work.ts";
+import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
 import { CONTRACT_VERSION } from "../providers/contract.ts";
@@ -151,6 +152,7 @@ export interface RunCognitionOptions {
     memoryProposalProviderLabel?: string;
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     cognitionId?: CognitionId;
+    preparation?: PreparedCognition;
 }
 
 export interface CognitionRepositories {
@@ -163,39 +165,26 @@ export interface CognitionRepositories {
     memoryProposalGenerations: MemoryProposalGenerationRepository;
 }
 
-async function resolveConversationMembership(
-    store: CognitionRepositories["conversation"],
-    principal: string,
-    scope: string,
-    intent: ConversationMembershipIntent,
-    startedAt: string,
-): Promise<{ conversationId: ConversationId; membership: ConversationMembershipResolution }> {
-    if (intent.action === "fresh") {
-        return {
-            conversationId: await store.startFreshConversation(principal, scope, startedAt),
-            membership: { action: "started", basis: intent.basis },
-        };
-    }
-
-    const active = await store.activeConversation(principal, scope);
-    if (active) {
-        return {
-            conversationId: active.conversation_id,
-            membership: { action: "continued", basis: intent.basis },
-        };
-    }
-    return {
-        conversationId: await store.startFreshConversation(principal, scope, startedAt),
-        membership: { action: "started", basis: "initial_interaction" },
-    };
-}
-
 export async function runCognition(
     repositories: CognitionRepositories,
     state: EmberState,
     options: RunCognitionOptions,
 ): Promise<CognitionResult> {
-    const committed = await runCognitionUntilExpressionCommit(repositories, state, options);
+    const preparation =
+        options.preparation ??
+        (await prepareCognition(repositories, state, {
+            runtimeId: options.runtimeId,
+            principal: options.principal,
+            scope: options.scope,
+            surface: options.surface ?? "local_cli",
+            text: options.text,
+            ...(options.purpose === undefined ? {} : { purpose: options.purpose }),
+            ...(options.explainIds === undefined ? {} : { explainIds: options.explainIds }),
+            ...(options.conversationMembership === undefined
+                ? {}
+                : { conversationMembership: options.conversationMembership }),
+        }));
+    const committed = await runCognitionUntilExpressionCommit(repositories, state, { ...options, preparation });
     if (committed.finishPostTurn === null) return committed;
     return committed.finishPostTurn();
 }
@@ -227,12 +216,11 @@ export async function runCognitionUntilExpressionCommit(
         timeoutSeconds,
         signal,
         purpose = "ordinary",
-        explainIds = [],
-        conversationMembership = { action: "continue", basis: "ordinary_adjacency" },
         memoryProposalGenerator,
         memoryProposalProviderLabel,
         onboardingProgressEvaluator,
         cognitionId: requestedCognitionId,
+        preparation: suppliedPreparation,
     }: RunCognitionOptions,
 ): Promise<CommittedCognitionResult> {
     const store = repositories.state;
@@ -242,44 +230,20 @@ export async function runCognitionUntilExpressionCommit(
     if (state.operations.cognitionEpisodes.some((episode) => episode.cognitionId === cognitionId)) {
         throw new ValidationError(`cognition already exists: ${cognitionId}`);
     }
-    const timestamp = nowUtc();
     const conversationStore = repositories.conversation;
-    const resolvedConversation = await resolveConversationMembership(
-        conversationStore,
-        principal,
-        scope,
-        conversationMembership,
-        timestamp,
-    );
-    const conversationId = resolvedConversation.conversationId;
-    const conversationContext = selectRecentConversationContext(state, await conversationStore.load(), {
-        principal,
-        scope,
-        conversationId,
-        membership: resolvedConversation.membership,
-    });
-    const loadedOnboardingDocument = purpose === "ordinary" ? await repositories.onboarding.load() : null;
-    if (
-        loadedOnboardingDocument !== null &&
-        (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
-            loadedOnboardingDocument.principal !== principal)
-    ) {
-        throw new ValidationError("onboarding work does not match current continuity and principal");
+    if (suppliedPreparation === undefined) {
+        throw new ValidationError("cognition execution requires an already-built Ember projection");
     }
-    const onboardingDocument = loadedOnboardingDocument?.scope === scope ? loadedOnboardingDocument : null;
-    const onboardingWork = projectOnboardingWork(onboardingDocument);
-    const projection = buildProjection(state, {
-        principal,
-        scope,
-        surface,
-        currentInput: text,
-        currentTime: timestamp,
-        runtimeId,
-        purpose,
-        explainIds,
-        conversationContext,
-        ...(onboardingWork === undefined ? {} : { onboardingWork }),
-    });
+    const preparation = suppliedPreparation;
+    validatePreparation(preparation, state, { runtimeId, principal, scope, surface, text, purpose });
+    const {
+        projection,
+        conversationId,
+        conversationMembership: resolvedConversationMembership,
+        onboardingDocument,
+        onboardingWork,
+        startedAt: timestamp,
+    } = preparation;
     const started = cloneState(state);
     const input = userEvidence(started, principal, scope, text, { timestamp });
     findRuntime(started, runtimeId).lastDurableObservationAt = timestamp;
@@ -428,7 +392,7 @@ export async function runCognitionUntilExpressionCommit(
                         principal,
                         scope,
                         conversationId,
-                        membership: resolvedConversation.membership,
+                        membership: resolvedConversationMembership,
                     });
                     const reflection = await generateAndAdoptConversationMemories(
                         store,
@@ -460,6 +424,25 @@ export async function runCognitionUntilExpressionCommit(
             };
         },
     };
+}
+
+function validatePreparation(
+    preparation: PreparedCognition,
+    state: EmberState,
+    expected: Pick<RunCognitionOptions, "runtimeId" | "principal" | "scope" | "surface" | "text" | "purpose">,
+) {
+    const projection = preparation.projection;
+    if (
+        projection.validatedRevision !== state.revision ||
+        projection.principal !== expected.principal ||
+        projection.activeScope !== expected.scope ||
+        projection.surface !== expected.surface ||
+        projection.current_input !== expected.text ||
+        projection.purpose !== expected.purpose
+    ) {
+        throw new ValidationError("prepared cognition does not match the current interaction");
+    }
+    findRuntime(state, expected.runtimeId);
 }
 
 export function findCognition(state: EmberState, id: CognitionId | string): CognitionEpisode {

@@ -14,6 +14,7 @@ import {
     SurfaceDeliveryFailure,
 } from "../runtime/interaction-boundary.ts";
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
+import { prepareCognition } from "./cognition-preparation.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
 
 /**
@@ -86,6 +87,17 @@ async function interact(
                 ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
                 : {}),
             ...(options.signal === undefined ? {} : { signal: options.signal }),
+            prepareCognition: (currentState, surface) =>
+                prepareCognition(dependencies.repositories, currentState, {
+                    runtimeId: started.runtimeId,
+                    principal: event.principal,
+                    scope: event.scope,
+                    surface,
+                    text: event.text,
+                    ...(event.conversationMembership === undefined
+                        ? {}
+                        : { conversationMembership: event.conversationMembership }),
+                }),
             deliver: async (text) => {
                 const deliveryId = await deliveryIdForText(dependencies, resultAddressKey(address), text);
                 return observeDelivery(transport, deliveryId, address, text, options.signal);
