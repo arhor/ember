@@ -1,9 +1,10 @@
 import type { ConversationId, ConversationMembershipResolution } from "../core/conversation-context.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type { CognitionPurpose, EmberState, MeaningId, RuntimeId } from "../core/model.ts";
-import type { ProjectedOnboardingWork } from "../core/onboarding-work.ts";
+import type { OnboardingWorkDocument, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
 import type { Projection } from "../core/projection.ts";
-import type { CognitionRepositories } from "../runtime/runtime.ts";
+import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
+import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ValidationError } from "../core/errors.ts";
@@ -26,9 +27,15 @@ export interface PreparedCognition {
     projection: Projection;
     conversationId: ConversationId;
     conversationMembership: ConversationMembershipResolution;
-    onboardingDocument: Awaited<ReturnType<CognitionRepositories["onboarding"]["load"]>>;
+    onboardingDocument: OnboardingWorkDocument | null;
     onboardingWork?: ProjectedOnboardingWork;
     startedAt: string;
+}
+
+/** Narrow application port for resolving conversation and onboarding context. */
+export interface CognitionPreparationRepositories {
+    conversation: Pick<ConversationContextStore, "load" | "activeConversation" | "startFreshConversation">;
+    onboarding: Pick<OnboardingWorkStore, "load">;
 }
 
 /**
@@ -36,7 +43,7 @@ export interface PreparedCognition {
  * projection before the model execution boundary is entered.
  */
 export async function prepareCognition(
-    repositories: Pick<CognitionRepositories, "conversation" | "onboarding">,
+    repositories: CognitionPreparationRepositories,
     state: EmberState,
     {
         runtimeId,
@@ -96,7 +103,7 @@ export async function prepareCognition(
 }
 
 async function resolveConversationMembership(
-    store: CognitionRepositories["conversation"],
+    store: CognitionPreparationRepositories["conversation"],
     principal: string,
     scope: string,
     intent: ConversationMembershipIntent,

@@ -82,7 +82,10 @@ export class SurfaceDeliveryFailure extends Error {
     }
 }
 
-export interface SurfaceInteractionOptions extends Omit<RunCognitionOptions, "cognitionId" | "surface"> {
+export interface SurfaceInteractionOptions extends Omit<
+    RunCognitionOptions,
+    "cognitionId" | "surface" | "preparation"
+> {
     surfaceId: string;
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
