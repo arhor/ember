@@ -10,7 +10,7 @@ import type { CursorProviderConfig } from "../providers/cursor.ts";
 import type { AiExecutionRequest } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { invokeCursorProvider } from "../providers/cursor.ts";
+import { buildCursorPrompt, invokeCursorStructured } from "../providers/cursor.ts";
 import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { validateAiExecutionResult } from "./contract.ts";
@@ -69,15 +69,19 @@ export function createCursorLanguageModel({
         const request = executionRequest(options);
         const invocationSignal = relayCallerCancellation(options.abortSignal);
         try {
-            const result = await invokeCursorProvider(command, args, request, {
-                ...adapterOptions,
-                timeoutSeconds,
-                ...(invocationSignal.signal === undefined ? {} : { signal: invocationSignal.signal }),
-            });
-            const { operational, ...modelResult } = result;
-            validateAiExecutionResult(modelResult, new Set(request.projection.selection.meaning_ids));
-            if (operational === undefined) throw new ProviderError("Cursor did not report an external session ID");
-            return { result: modelResult, externalThreadId: operational.externalThreadId };
+            const parsed = await invokeCursorStructured(
+                command,
+                args,
+                request === null ? structuredPrompt(options) : buildCursorPrompt(request),
+                {
+                    ...adapterOptions,
+                    timeoutSeconds,
+                    ...(invocationSignal.signal === undefined ? {} : { signal: invocationSignal.signal }),
+                },
+            );
+            if (request !== null)
+                validateAiExecutionResult(parsed.result, new Set(request.projection.selection.meaning_ids));
+            return { result: parsed.result, externalThreadId: parsed.externalSessionId };
         } finally {
             invocationSignal.dispose();
         }
@@ -98,7 +102,7 @@ function cursorMetadata(externalThreadId: string) {
     return { cursor: { externalThreadId } };
 }
 
-function executionRequest(options: LanguageModelV4CallOptions): AiExecutionRequest {
+function executionRequest(options: LanguageModelV4CallOptions): AiExecutionRequest | null {
     if (options.prompt.length !== 2) throw new ProviderError("Cursor AI bridge requires one instruction and one input");
     const [instruction, input] = options.prompt;
     if (instruction?.role !== "system" || typeof instruction.content !== "string" || !instruction.content.trim())
@@ -108,8 +112,8 @@ function executionRequest(options: LanguageModelV4CallOptions): AiExecutionReque
     let candidate: unknown;
     try {
         candidate = JSON.parse(input.content[0].text);
-    } catch (error) {
-        throw new ProviderError("Cursor AI bridge input must be valid JSON", { cause: error });
+    } catch {
+        return null;
     }
     if (
         !isObject(candidate) ||
@@ -119,9 +123,22 @@ function executionRequest(options: LanguageModelV4CallOptions): AiExecutionReque
         !isObject(candidate.input) ||
         typeof candidate.input.text !== "string"
     ) {
-        throw new ProviderError("Cursor AI bridge input does not match the Ember execution contract");
+        return null;
     }
     return candidate as unknown as AiExecutionRequest;
+}
+
+function structuredPrompt(options: LanguageModelV4CallOptions) {
+    const [instruction, input] = options.prompt;
+    if (instruction?.role !== "system" || input?.role !== "user" || input.content[0]?.type !== "text")
+        throw new ProviderError("Cursor AI bridge supports only text structured-control prompts");
+    const schema = options.responseFormat?.type === "json" ? options.responseFormat.schema : undefined;
+    return [
+        instruction.content,
+        "Return only one JSON value matching this output schema:",
+        JSON.stringify(schema),
+        input.content[0].text,
+    ].join("\n");
 }
 
 function validateCallOptions(options: LanguageModelV4CallOptions) {

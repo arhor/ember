@@ -12,6 +12,7 @@ import { createFileBackedRepositoriesForState } from "../src/composition/ember.t
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
@@ -101,7 +102,56 @@ function successfulJsonl(reply = "bounded answer", usedMeaningIds = [] as string
     ].join("\n");
 }
 
+function structuredJsonl(result: unknown) {
+    return [
+        JSON.stringify({ type: "thread.started", thread_id: "thread-operational-46" }),
+        JSON.stringify({ type: "turn.started" }),
+        JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: JSON.stringify(result) } }),
+        JSON.stringify({ type: "turn.completed", usage: { input_tokens: 1, output_tokens: 1 } }),
+        "",
+    ].join("\n");
+}
+
 describe("Codex provider", () => {
+    test("Codex AI SDK bridge should carry a typed onboarding decision through its supplied schema", async () => {
+        // Given
+        const { request } = requestFixture();
+        const decision = {
+            decision_version: 1 as const,
+            updates: [{ topic: "forms_of_address" as const, action: "resolve" as const, basis: "Call me Max" }],
+        };
+        const fixture = childDouble({ output: structuredJsonl(decision) });
+        let schema: any;
+        const evaluator = createAiSdkOnboardingProgressEvaluator(
+            createCodexLanguageModel({
+                timeoutSeconds: 1,
+                spawnImpl: (_command, arguments_) => {
+                    schema = JSON.parse(readFileSync(arguments_[arguments_.indexOf("--output-schema") + 1]!, "utf8"));
+                    fixture.complete();
+                    return fixture.child as never;
+                },
+            }),
+            1,
+        );
+
+        // When
+        const result = await evaluator({
+            projection: request.projection,
+            onboardingWork: {
+                work_version: 1,
+                status: "active",
+                guidance: "optional",
+                topics: [{ topic: "forms_of_address", status: "open" }],
+            },
+            input: "Call me Max",
+        });
+
+        // Then
+        assert.deepEqual(result, decision);
+        assert.equal(schema.properties.decision_version.const, 1);
+        assert.equal(schema.properties.reply, undefined);
+    });
+
     test("Codex AI SDK bridge should preserve structured result and thread evidence when generation succeeds", async () => {
         // Given
         const { request } = requestFixture();

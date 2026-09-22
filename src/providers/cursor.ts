@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
 import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
@@ -56,15 +56,6 @@ export interface CursorProviderConfig {
     session?: InvokeCursorOptions["session"];
     terminationGraceMs?: number;
     finalTerminationMs?: number;
-}
-
-/** Transitional JSON-in-reply bootstrap adapter; ordinary cognition uses the AI SDK bridge. */
-export function createCursorControlProvider({
-    command = "cursor-agent",
-    arguments_: args = [],
-    ...adapterOptions
-}: CursorProviderConfig = {}): ProviderInvoker {
-    return (request, options) => invokeCursorProvider(command, args, request, { ...adapterOptions, ...options });
 }
 
 export function buildCursorPrompt(request: ProviderRequest): string {
@@ -139,6 +130,17 @@ export async function invokeCursorProvider(
     command: string,
     argumentPrefix: string[],
     request: ProviderRequest,
+    options: InvokeCursorOptions,
+): Promise<ProviderResult> {
+    const parsed = await invokeCursorStructured(command, argumentPrefix, buildCursorPrompt(request), options);
+    validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
+    return { ...parsed.result, operational: { externalThreadId: parsed.externalSessionId } };
+}
+
+export async function invokeCursorStructured(
+    command: string,
+    argumentPrefix: string[],
+    prompt: string,
     {
         timeoutSeconds,
         signal,
@@ -149,7 +151,7 @@ export async function invokeCursorProvider(
         finalTerminationMs = 1_000,
         session = { mode: "fresh" },
     }: InvokeCursorOptions,
-): Promise<ProviderResult> {
+): Promise<{ result: unknown; externalSessionId: string }> {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
         throw new ProviderError("provider timeout must be a positive finite number");
     if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
@@ -167,7 +169,6 @@ export async function invokeCursorProvider(
             },
         );
     }
-    const prompt = buildCursorPrompt(request);
     if (Buffer.byteLength(prompt, "utf8") > MAX_PROMPT_BYTES) throw new ProviderError("Cursor prompt exceeds 1 MiB");
 
     const ownsCwd = cwd === undefined;
@@ -274,14 +275,13 @@ export async function invokeCursorProvider(
                 "Cursor resumed a different session than requested",
                 errorOptions("failed", true, parsed.externalSessionId),
             );
-        validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
-        return { ...parsed.result, operational: { externalThreadId: parsed.externalSessionId } };
+        return parsed;
     } finally {
         if (ownsCwd && !terminationUnconfirmed) await rm(runtimeCwd, { recursive: true, force: true }).catch(() => {});
     }
 }
 
-function parseCursorResult(output: string): { result: ProviderResult; externalSessionId: string } {
+function parseCursorResult(output: string): { result: unknown; externalSessionId: string } {
     let envelope: unknown;
     try {
         envelope = JSON.parse(output);
@@ -306,7 +306,7 @@ function parseCursorResult(output: string): { result: ProviderResult; externalSe
     } catch (error) {
         throw new ProviderError(`Cursor final result is not JSON: ${errorMessage(error)}`, { cause: error });
     }
-    return { result: result as ProviderResult, externalSessionId: envelope.session_id };
+    return { result, externalSessionId: envelope.session_id };
 }
 
 function validExternalId(value: unknown): value is string {

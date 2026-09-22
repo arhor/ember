@@ -1,3 +1,7 @@
+import type { LanguageModel } from "ai";
+
+import { generateText, jsonSchema, Output } from "ai";
+
 import type { OnboardingProgressDecision, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
 import type { Projection } from "../core/projection.ts";
 import type { ProviderInvoker } from "../providers/contract.ts";
@@ -57,5 +61,52 @@ export function createProviderOnboardingProgressEvaluator(
         }
         validateOnboardingProgressDecision(decision, input);
         return decision;
+    };
+}
+
+const onboardingProgressOutput = Output.object({
+    schema: jsonSchema<OnboardingProgressDecision>({
+        type: "object",
+        additionalProperties: false,
+        properties: {
+            decision_version: { type: "integer", const: 1 },
+            updates: {
+                type: "array",
+                items: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                        topic: {
+                            type: "string",
+                            enum: ["forms_of_address", "expectations", "optional_capabilities"],
+                        },
+                        action: { type: "string", enum: ["leave_open", "defer", "decline", "resolve", "resume"] },
+                        basis: { type: "string" },
+                    },
+                    required: ["topic", "action", "basis"],
+                },
+            },
+        },
+        required: ["decision_version", "updates"],
+    }),
+    name: "ember_onboarding_progress",
+    description: "An evidence-bounded interpretation of explicit onboarding progress in the current user input.",
+});
+
+export function createAiSdkOnboardingProgressEvaluator(
+    model: LanguageModel,
+    timeoutSeconds: number,
+): OnboardingProgressEvaluator {
+    return async ({ onboardingWork, input }) => {
+        const result = await generateText({
+            model,
+            instructions: ONBOARDING_PROGRESS_INSTRUCTION,
+            prompt: JSON.stringify({ onboarding_work: onboardingWork, current_user_input: input }),
+            output: onboardingProgressOutput,
+            maxRetries: 0,
+            timeout: Math.max(1, Math.ceil(timeoutSeconds * 1000)),
+        });
+        validateOnboardingProgressDecision(result.output, input);
+        return result.output;
     };
 }

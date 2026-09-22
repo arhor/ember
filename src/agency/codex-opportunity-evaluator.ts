@@ -1,79 +1,45 @@
-import type { Projection } from "../core/projection.ts";
-import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
-import type {
-    CognitionOpportunityEvaluation,
-    CognitionOpportunityEvaluator,
-    CognitionOpportunityRequest,
-} from "./cognition-opportunity.ts";
+import type { LanguageModel } from "ai";
 
-import { ValidationError } from "../core/errors.ts";
-import { newId } from "../core/model.ts";
-import { createCodexControlProvider } from "../providers/codex.ts";
-import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
+import type { CognitionOpportunityEvaluator, CognitionOpportunityRequest } from "./cognition-opportunity.ts";
 
-export const CODEX_OPPORTUNITY_INSTRUCTION = [
-    "Evaluate only whether the projected current agent state contains anything worth discretionary cognition now.",
-    "The opportunity itself supplies no topic or motive; select only from projected agent-owned meaning.",
-    "Do not use tools, files, prior threads, or outside context.",
-    "Reply with exactly one token: cognition, defer, or no_cognition.",
-    "For cognition or defer, set usedMeaningIds to at least one projected meaning that materially grounds the decision.",
-    "For no_cognition, set usedMeaningIds to an empty list.",
-].join(" ");
+import { createCodexLanguageModel } from "../ai/codex.ts";
+import {
+    AI_SDK_OPPORTUNITY_INSTRUCTION,
+    evaluateCognitionOpportunityWithAiSdk,
+} from "./ai-sdk-opportunity-evaluator.ts";
+
+export const CODEX_OPPORTUNITY_INSTRUCTION = AI_SDK_OPPORTUNITY_INSTRUCTION;
 
 export interface CodexOpportunityEvaluatorOptions {
     command?: string;
     arguments_?: string[];
     timeoutSeconds?: number;
     signal?: AbortSignal | undefined;
-    provider?: ProviderInvoker | undefined;
+    model?: LanguageModel | undefined;
+    observeExternalThreadId?: (externalThreadId: string) => void;
 }
 
-export function createCodexOpportunityEvaluator({
-    command = "codex",
-    arguments_: args = [],
-    timeoutSeconds = 60,
-    signal,
-    provider,
-}: CodexOpportunityEvaluatorOptions = {}): CognitionOpportunityEvaluator {
-    const configuredProvider = provider ?? createCodexControlProvider({ command, arguments_: args });
-    return (request) =>
-        evaluateCognitionOpportunityWithCodex(request, {
-            timeoutSeconds,
-            signal,
-            provider: configuredProvider,
-        });
+export function createCodexOpportunityEvaluator(
+    options: CodexOpportunityEvaluatorOptions = {},
+): CognitionOpportunityEvaluator {
+    return (request) => evaluateCognitionOpportunityWithCodex(request, options);
 }
 
-export async function evaluateCognitionOpportunityWithCodex(
+export function evaluateCognitionOpportunityWithCodex(
     request: CognitionOpportunityRequest,
     {
         command = "codex",
         arguments_: args = [],
         timeoutSeconds = 60,
         signal,
-        provider,
+        observeExternalThreadId,
+        model = createCodexLanguageModel({
+            command,
+            arguments_: args,
+            timeoutSeconds,
+            ...(observeExternalThreadId === undefined ? {} : { observeExternalThreadId }),
+        }),
     }: CodexOpportunityEvaluatorOptions = {},
-): Promise<CognitionOpportunityEvaluation> {
-    const projection: Projection = {
-        ...request.projection,
-        purpose: "ordinary",
-        current_input: CODEX_OPPORTUNITY_INSTRUCTION,
-    };
-    const providerRequest: ProviderRequest = {
-        contractVersion: 1,
-        cognitionId: newId("cognition"),
-        projection,
-        input: { text: CODEX_OPPORTUNITY_INSTRUCTION },
-    };
-    const configuredProvider = provider ?? createCodexControlProvider({ command, arguments_: args });
-    const result = await configuredProvider(providerRequest, { timeoutSeconds, signal });
-    const decision = result.reply.trim();
-    if (decision !== "cognition" && decision !== "defer" && decision !== "no_cognition") {
-        throw new ValidationError("Codex opportunity evaluator reply must be cognition, defer, or no_cognition");
-    }
-    return {
-        contractVersion: COGNITION_OPPORTUNITY_CONTRACT_VERSION,
-        decision,
-        selectedMeaningIds: [...result.usedMeaningIds],
-    };
+) {
+    return evaluateCognitionOpportunityWithAiSdk(request, model, { timeoutSeconds, signal });
 }

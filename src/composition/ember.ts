@@ -9,13 +9,18 @@ import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
+import { createProcessLanguageModel } from "../ai/process.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../capabilities/google-calendar.ts";
+import { createAiSdkMemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import { createProviderMemoryProposalGenerator } from "../memory/provider-memory-proposal-generator.ts";
 import { DurableObjectiveStore } from "../objectives/durable-objective.ts";
 import { ObjectiveActionCoordinator } from "../objectives/objective-action.ts";
-import { createProviderOnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
+import {
+    createAiSdkOnboardingProgressEvaluator,
+    createProviderOnboardingProgressEvaluator,
+} from "../onboarding/progress-evaluator.ts";
 import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
@@ -89,6 +94,10 @@ export function composeEmberApplication(
 ): ComposedEmberApplicationDependencies {
     const repositories = createRepositories(config.statePath, overrides.stateStoreOptions);
     const executor = overrides.executor ?? createConfiguredExecutor(config, repositories, overrides);
+    const controls: Partial<ReturnType<typeof createConfiguredControlHelpers>> =
+        overrides.executor === undefined ? createConfiguredControlHelpers(config) : {};
+    const memoryProposalGenerator = overrides.memoryProposalGenerator ?? controls.memoryProposalGenerator;
+    const onboardingProgressEvaluator = overrides.onboardingProgressEvaluator ?? controls.onboardingProgressEvaluator;
     return {
         admission: {
             ...(config.expectedContinuityBinding === undefined
@@ -102,16 +111,51 @@ export function composeEmberApplication(
             timeoutSeconds: config.provider.timeoutSeconds,
         },
         postTurn: {
-            memoryProposalGenerator:
-                overrides.memoryProposalGenerator ??
-                createProviderMemoryProposalGenerator(executor, config.provider.timeoutSeconds),
+            ...(memoryProposalGenerator === undefined ? {} : { memoryProposalGenerator }),
             ...(overrides.memoryProposalProviderLabel === undefined
                 ? {}
                 : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
-            onboardingProgressEvaluator:
-                overrides.onboardingProgressEvaluator ??
-                createProviderOnboardingProgressEvaluator(executor, config.provider.timeoutSeconds),
+            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
         },
+    };
+}
+
+function createConfiguredControlHelpers(config: EmberCompositionConfig): {
+    memoryProposalGenerator?: MemoryProposalGenerator;
+    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
+} {
+    const timeoutSeconds = config.provider.timeoutSeconds;
+    const adapter = { command: config.provider.command, arguments_: config.provider.arguments, timeoutSeconds };
+    if (config.provider.kind === "codex" || config.provider.kind === "cursor") {
+        const model =
+            config.provider.kind === "codex" ? createCodexLanguageModel(adapter) : createCursorLanguageModel(adapter);
+        return {
+            memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
+            onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
+        };
+    }
+    if (config.provider.kind === "claude-code") {
+        const options = config.provider.model ? { model: config.provider.model } : {};
+        return {
+            memoryProposalGenerator: async (request) => {
+                const { createClaudeCodeModelAccess } = await import("../ai/claude-code.ts");
+                return createClaudeCodeModelAccess(options)((model) =>
+                    createAiSdkMemoryProposalGenerator(model, { timeoutSeconds })(request),
+                );
+            },
+            onboardingProgressEvaluator: async (request) => {
+                const { createClaudeCodeModelAccess } = await import("../ai/claude-code.ts");
+                return createClaudeCodeModelAccess(options)((model) =>
+                    createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds)(request),
+                );
+            },
+        };
+    }
+
+    const executor = createProcessProvider({ command: config.provider.command, arguments_: config.provider.arguments });
+    return {
+        memoryProposalGenerator: createProviderMemoryProposalGenerator(executor, timeoutSeconds),
+        onboardingProgressEvaluator: createProviderOnboardingProgressEvaluator(executor, timeoutSeconds),
     };
 }
 
@@ -157,7 +201,10 @@ function createConfiguredExecutor(
         return createAiSdkCognitionExecutor(
             createCursorLanguageModel({ ...adapter, timeoutSeconds: config.provider.timeoutSeconds }),
         );
-    if (config.provider.kind === "process") return createProcessProvider(adapter);
+    if (config.provider.kind === "process")
+        return createAiSdkCognitionExecutor(
+            createProcessLanguageModel({ ...adapter, timeoutSeconds: config.provider.timeoutSeconds }),
+        );
 
     const objectiveActions = new ObjectiveActionCoordinator(repositories.objectives, repositories.actions);
     return async (request, options) => {

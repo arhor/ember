@@ -533,7 +533,7 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     );
 
     // Then
-    assert.deepEqual(selectedCounts, [3, 0, 0, 0]);
+    assert.deepEqual(selectedCounts, [3, 0]);
 });
 
 test("ordinary CLI conversation uses the shared application coordinator lifecycle", async (t) => {
