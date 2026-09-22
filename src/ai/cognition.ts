@@ -29,13 +29,13 @@ import type { AiExecutor, AiExecutionRequest, AiStreamObserver } from "./contrac
 
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
+import { isObject } from "../util.ts";
 import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS, validateAiExecutionResult } from "./contract.ts";
 
 interface AiSdkProviderOutput {
     contractVersion: 1;
     reply: string;
     usedMeaningIds: string[];
-    operational?: { externalThreadId: string };
 }
 
 export type InferenceFinishReason = "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other";
@@ -137,12 +137,6 @@ const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
             type: "array",
             items: { type: "string" },
             uniqueItems: true,
-        },
-        operational: {
-            type: "object",
-            additionalProperties: false,
-            properties: { externalThreadId: { type: "string", minLength: 1, maxLength: 512 } },
-            required: ["externalThreadId"],
         },
     },
     required: ["contractVersion", "reply", "usedMeaningIds"],
@@ -265,14 +259,24 @@ export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSd
             };
 
             let candidate: unknown;
+            let providerMetadata: unknown;
             if (stream === undefined) {
                 const result = await generateText(invocation);
                 candidate = result.output;
+                providerMetadata = result.providerMetadata;
             } else {
-                candidate = await invokeStreaming(invocation, stream, signal);
+                const result = await invokeStreaming(invocation, stream, signal);
+                candidate = result.candidate;
+                providerMetadata = result.providerMetadata;
             }
+            if (isObject(candidate) && "operational" in candidate)
+                throw new ProviderError("model-authored output cannot contain operational evidence");
             validateAiExecutionResult(candidate, new Set(request.projection.selection.meaning_ids));
-            return candidate;
+            const externalThreadId = externalThreadIdFromProviderMetadata(providerMetadata);
+            const executionResult =
+                externalThreadId === undefined ? candidate : { ...candidate, operational: { externalThreadId } };
+            validateAiExecutionResult(executionResult, new Set(request.projection.selection.meaning_ids));
+            return executionResult;
         } catch (error) {
             if (error instanceof ProviderError) {
                 throw error;
@@ -295,7 +299,7 @@ async function invokeStreaming(
     invocation: Parameters<typeof generateText>[0],
     observer: AiStreamObserver,
     signal?: AbortSignal,
-): Promise<unknown> {
+): Promise<{ candidate: unknown; providerMetadata: unknown }> {
     let streamFailure: unknown;
     let streamAborted = false;
     const result = streamText({
@@ -322,7 +326,14 @@ async function invokeStreaming(
     if (streamFailure !== undefined) {
         throw streamFailure;
     }
-    return result.output;
+    return { candidate: await result.output, providerMetadata: await result.providerMetadata };
+}
+
+function externalThreadIdFromProviderMetadata(metadata: unknown): string | undefined {
+    if (!isObject(metadata) || !isObject(metadata.codex)) return undefined;
+    const externalThreadId = metadata.codex.externalThreadId;
+    if (typeof externalThreadId !== "string") return undefined;
+    return externalThreadId;
 }
 
 function validateTimeout(timeoutSeconds: number) {

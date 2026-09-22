@@ -7,7 +7,7 @@ import type {
 } from "@ai-sdk/provider";
 
 import type { CodexProviderConfig } from "../providers/codex.ts";
-import type { AiExecutionRequest } from "./contract.ts";
+import type { AiExecutionRequest, AiExecutionResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { invokeCodexProvider } from "../providers/codex.ts";
@@ -37,12 +37,12 @@ export function createCodexLanguageModel({
         modelId: command,
         supportedUrls: {},
         async doGenerate(options) {
-            const result = await invoke(options);
-            return generateResult(result);
+            const invocation = await invoke(options);
+            return generateResult(invocation);
         },
         async doStream(options) {
-            const result = await invoke(options);
-            const text = JSON.stringify(result);
+            const invocation = await invoke(options);
+            const text = JSON.stringify(invocation.result);
             return {
                 stream: new ReadableStream<LanguageModelV4StreamPart>({
                     start(controller) {
@@ -50,7 +50,14 @@ export function createCodexLanguageModel({
                         controller.enqueue({ type: "text-start", id: "codex-result" });
                         controller.enqueue({ type: "text-delta", id: "codex-result", delta: text });
                         controller.enqueue({ type: "text-end", id: "codex-result" });
-                        controller.enqueue({ type: "finish", finishReason: FINISH_REASON, usage: EMPTY_USAGE });
+                        controller.enqueue({
+                            type: "finish",
+                            finishReason: FINISH_REASON,
+                            usage: EMPTY_USAGE,
+                            ...(invocation.externalThreadId === undefined
+                                ? {}
+                                : { providerMetadata: codexMetadata(invocation.externalThreadId) }),
+                        });
                         controller.close();
                     },
                 }),
@@ -68,8 +75,11 @@ export function createCodexLanguageModel({
                 timeoutSeconds,
                 ...(invocationSignal.signal === undefined ? {} : { signal: invocationSignal.signal }),
             });
-            validateAiExecutionResult(result, new Set(request.projection.selection.meaning_ids));
-            return result;
+            const { operational, ...modelResult } = result;
+            validateAiExecutionResult(modelResult, new Set(request.projection.selection.meaning_ids));
+            return operational === undefined
+                ? { result: modelResult }
+                : { result: modelResult, externalThreadId: operational.externalThreadId };
         } finally {
             invocationSignal.dispose();
         }
@@ -91,13 +101,23 @@ function relayCallerCancellation(source: AbortSignal | undefined): {
     };
 }
 
-function generateResult(result: Awaited<ReturnType<typeof invokeCodexProvider>>): LanguageModelV4GenerateResult {
+function generateResult(invocation: {
+    result: AiExecutionResult;
+    externalThreadId?: string;
+}): LanguageModelV4GenerateResult {
     return {
-        content: [{ type: "text", text: JSON.stringify(result) }],
+        content: [{ type: "text", text: JSON.stringify(invocation.result) }],
         finishReason: FINISH_REASON,
         usage: EMPTY_USAGE,
         warnings: [],
+        ...(invocation.externalThreadId === undefined
+            ? {}
+            : { providerMetadata: codexMetadata(invocation.externalThreadId) }),
     };
+}
+
+function codexMetadata(externalThreadId: string) {
+    return { codex: { externalThreadId } };
 }
 
 function executionRequest(options: LanguageModelV4CallOptions): AiExecutionRequest {

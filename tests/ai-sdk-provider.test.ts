@@ -275,6 +275,31 @@ test("AI SDK structured output should still be rejected when it claims a meaning
     }
 });
 
+test("AI SDK structured output should reject model-authored operational thread evidence", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const model = new MockLanguageModelV3({
+        doGenerate: async () =>
+            generated({
+                contractVersion: 1,
+                reply: "fabricated operational evidence",
+                usedMeaningIds: [],
+                operational: { externalThreadId: "model-authored-thread" },
+            }),
+    });
+    try {
+        // When
+        const result = await runWithModel(fixture, model);
+
+        // Then
+        assert.match(result.providerFailure, /cannot contain operational evidence/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "failed");
+        assert.equal(JSON.stringify(result.state).includes("model-authored-thread"), false);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
 test("AI SDK malformed structured output should map through supported SDK output errors", async () => {
     // Given
     const fixture = await startedFixture();
