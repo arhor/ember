@@ -38,10 +38,12 @@ export function createCursorLanguageModel({
         modelId: command,
         supportedUrls: {},
         async doGenerate(options) {
-            return generateResult(await invoke(options));
+            const invocation = await invoke(options);
+            return generateResult(invocation);
         },
         async doStream(options) {
-            const text = JSON.stringify(await invoke(options));
+            const invocation = await invoke(options);
+            const text = JSON.stringify(invocation.result);
             return {
                 stream: new ReadableStream<LanguageModelV4StreamPart>({
                     start(controller) {
@@ -49,7 +51,12 @@ export function createCursorLanguageModel({
                         controller.enqueue({ type: "text-start", id: "cursor-result" });
                         controller.enqueue({ type: "text-delta", id: "cursor-result", delta: text });
                         controller.enqueue({ type: "text-end", id: "cursor-result" });
-                        controller.enqueue({ type: "finish", finishReason: FINISH_REASON, usage: EMPTY_USAGE });
+                        controller.enqueue({
+                            type: "finish",
+                            finishReason: FINISH_REASON,
+                            usage: EMPTY_USAGE,
+                            providerMetadata: cursorMetadata(invocation.externalThreadId),
+                        });
                         controller.close();
                     },
                 }),
@@ -67,21 +74,28 @@ export function createCursorLanguageModel({
                 timeoutSeconds,
                 ...(invocationSignal.signal === undefined ? {} : { signal: invocationSignal.signal }),
             });
-            validateAiExecutionResult(result, new Set(request.projection.selection.meaning_ids));
-            return result;
+            const { operational, ...modelResult } = result;
+            validateAiExecutionResult(modelResult, new Set(request.projection.selection.meaning_ids));
+            if (operational === undefined) throw new ProviderError("Cursor did not report an external session ID");
+            return { result: modelResult, externalThreadId: operational.externalThreadId };
         } finally {
             invocationSignal.dispose();
         }
     }
 }
 
-function generateResult(result: Awaited<ReturnType<typeof invokeCursorProvider>>): LanguageModelV4GenerateResult {
+function generateResult(invocation: { result: unknown; externalThreadId: string }): LanguageModelV4GenerateResult {
     return {
-        content: [{ type: "text", text: JSON.stringify(result) }],
+        content: [{ type: "text", text: JSON.stringify(invocation.result) }],
         finishReason: FINISH_REASON,
         usage: EMPTY_USAGE,
         warnings: [],
+        providerMetadata: cursorMetadata(invocation.externalThreadId),
     };
+}
+
+function cursorMetadata(externalThreadId: string) {
+    return { cursor: { externalThreadId } };
 }
 
 function executionRequest(options: LanguageModelV4CallOptions): AiExecutionRequest {
