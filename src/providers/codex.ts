@@ -77,7 +77,8 @@ export interface CodexProviderConfig {
     thread?: InvokeCodexOptions["thread"];
 }
 
-export function createCodexProvider({
+/** Transitional JSON-in-reply control adapter; ordinary cognition uses the AI SDK bridge. */
+export function createCodexControlProvider({
     command = "codex",
     arguments_: args = [],
     ...adapterOptions

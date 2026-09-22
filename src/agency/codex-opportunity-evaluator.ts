@@ -8,7 +8,7 @@ import type {
 
 import { ValidationError } from "../core/errors.ts";
 import { newId } from "../core/model.ts";
-import { createCodexProvider } from "../providers/codex.ts";
+import { createCodexControlProvider } from "../providers/codex.ts";
 import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
 
 export const CODEX_OPPORTUNITY_INSTRUCTION = [
@@ -35,7 +35,7 @@ export function createCodexOpportunityEvaluator({
     signal,
     provider,
 }: CodexOpportunityEvaluatorOptions = {}): CognitionOpportunityEvaluator {
-    const configuredProvider = provider ?? createCodexProvider({ command, arguments_: args });
+    const configuredProvider = provider ?? createCodexControlProvider({ command, arguments_: args });
     return (request) =>
         evaluateCognitionOpportunityWithCodex(request, {
             timeoutSeconds,
@@ -65,7 +65,7 @@ export async function evaluateCognitionOpportunityWithCodex(
         projection,
         input: { text: CODEX_OPPORTUNITY_INSTRUCTION },
     };
-    const configuredProvider = provider ?? createCodexProvider({ command, arguments_: args });
+    const configuredProvider = provider ?? createCodexControlProvider({ command, arguments_: args });
     const result = await configuredProvider(providerRequest, { timeoutSeconds, signal });
     const decision = result.reply.trim();
     if (decision !== "cognition" && decision !== "defer" && decision !== "no_cognition") {

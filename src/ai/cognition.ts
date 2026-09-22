@@ -35,6 +35,7 @@ interface AiSdkProviderOutput {
     contractVersion: 1;
     reply: string;
     usedMeaningIds: string[];
+    operational?: { externalThreadId: string };
 }
 
 export type InferenceFinishReason = "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other";
@@ -137,6 +138,12 @@ const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
             items: { type: "string" },
             uniqueItems: true,
         },
+        operational: {
+            type: "object",
+            additionalProperties: false,
+            properties: { externalThreadId: { type: "string", minLength: 1, maxLength: 512 } },
+            required: ["externalThreadId"],
+        },
     },
     required: ["contractVersion", "reply", "usedMeaningIds"],
 });
@@ -201,7 +208,7 @@ export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSd
             const invocation: Parameters<typeof generateText>[0] = {
                 model,
                 instructions: INSTRUCTIONS,
-                prompt: JSON.stringify({ projection: request.projection, input: request.input }),
+                prompt: JSON.stringify(request),
                 output: providerOutput,
                 tools,
                 stopWhen: isStepCount(MAX_TOOL_LOOP_STEPS),

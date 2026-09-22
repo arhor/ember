@@ -133,7 +133,9 @@ test("AI SDK adapter should disclose only the selected projection and current in
         const result = await runWithModel(fixture, model);
         const disclosed = disclosedPayload(model);
         // Then
-        assert.deepEqual(Object.keys(disclosed).sort(), ["input", "projection"]);
+        assert.deepEqual(Object.keys(disclosed).sort(), ["cognitionId", "contractVersion", "input", "projection"]);
+        assert.equal(disclosed.contractVersion, 1);
+        assert.equal(disclosed.cognitionId, result.cognitionId);
         assert.equal(disclosed.input.text, "current request");
         assert.equal(disclosed.projection.current_input, "current request");
         assert.ok(disclosed.projection.selection.meaning_ids.length > 0);

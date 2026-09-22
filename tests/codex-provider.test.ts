@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
+import { createCodexLanguageModel } from "../src/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
@@ -100,6 +102,123 @@ function successfulJsonl(reply = "bounded answer", usedMeaningIds = [] as string
 }
 
 describe("Codex provider", () => {
+    test("Codex AI SDK bridge should preserve structured result and thread evidence when generation succeeds", async () => {
+        // Given
+        const { request } = requestFixture();
+        const used = request.projection.selection.meaning_ids[0];
+        const fixture = childDouble({ output: successfulJsonl("bounded bridge answer", [used]) });
+        let invocationArguments: string[] = [];
+        const executor = createAiSdkCognitionExecutor(
+            createCodexLanguageModel({
+                timeoutSeconds: 1,
+                spawnImpl: (_command, arguments_) => {
+                    invocationArguments = arguments_;
+                    fixture.complete();
+                    return fixture.child as never;
+                },
+            }),
+        );
+
+        // When
+        const result = await executor(request, { timeoutSeconds: 1 });
+
+        // Then
+        assert.deepEqual(result, {
+            contractVersion: 1,
+            reply: "bounded bridge answer",
+            usedMeaningIds: [used],
+            operational: { externalThreadId: "thread-operational-46" },
+        });
+        assert.equal(invocationArguments.includes("--ephemeral"), true);
+    });
+
+    test("Codex AI SDK bridge should reject tool dispatch when ordinary route has no tool protocol", async () => {
+        // Given
+        const { request } = requestFixture();
+        let spawned = false;
+        const executor = createAiSdkCognitionExecutor(
+            createCodexLanguageModel({
+                timeoutSeconds: 1,
+                spawnImpl: () => {
+                    spawned = true;
+                    throw new Error("must not spawn");
+                },
+            }),
+            {
+                selectCapabilities: () => [
+                    {
+                        name: "unsupported_tool",
+                        description: "must be rejected",
+                        inputSchema: { type: "object", additionalProperties: false },
+                        occurrencePolicy: "at_most_once_per_cognition",
+                        authorize: () => ({
+                            status: "authorized",
+                            basis: "current_instruction",
+                            sourceId: "fixture",
+                            current: true,
+                        }),
+                        execute: async () => ({}),
+                    },
+                ],
+            },
+        );
+
+        // When
+        const error = await captureError(() => executor(request, { timeoutSeconds: 1 }));
+
+        // Then
+        assert.match(error.message, /does not support tools/);
+        assert.equal(spawned, false);
+    });
+
+    test("Codex AI SDK bridge should preserve timeout classification when the child termination is observed", async () => {
+        // Given
+        const { request } = requestFixture();
+        const fixture = childDouble({ closeOnKill: true });
+        const executor = createAiSdkCognitionExecutor(
+            createCodexLanguageModel({
+                timeoutSeconds: 0.01,
+                terminationGraceMs: 5,
+                finalTerminationMs: 10,
+                spawnImpl: () => fixture.child as never,
+            }),
+        );
+
+        // When
+        const error = await captureError(() => executor(request, { timeoutSeconds: 0.01 }));
+
+        // Then
+        assert.ok(error instanceof ProviderError);
+        assert.equal(error.outcome, "timed_out");
+        assert.deepEqual(error.termination, { reason: "timeout", directChildExitObserved: true });
+    });
+
+    test("Codex AI SDK bridge should preserve explicit cancellation when the child termination is observed", async () => {
+        // Given
+        const { request } = requestFixture();
+        const fixture = childDouble({ closeOnKill: true });
+        const controller = new AbortController();
+        const executor = createAiSdkCognitionExecutor(
+            createCodexLanguageModel({
+                timeoutSeconds: 1,
+                terminationGraceMs: 5,
+                finalTerminationMs: 10,
+                spawnImpl: () => {
+                    queueMicrotask(() => controller.abort());
+                    return fixture.child as never;
+                },
+            }),
+        );
+
+        // When
+        const error = await captureError(() => executor(request, { timeoutSeconds: 1, signal: controller.signal }));
+
+        // Then
+        assert.ok(error instanceof ProviderError);
+        assert.equal(error.outcome, "cancellation_requested");
+        assert.deepEqual(error.termination, { reason: "explicit_cancellation", directChildExitObserved: true });
+    });
+
     test("should disclose only the bounded request when invoked with default isolation", async () => {
         // Given
         const { request } = requestFixture();
