@@ -296,7 +296,7 @@ class ProcessExecutionImpl<TOptions> implements ProcessExecution {
     };
 }
 
-function isTimeoutAbort(reason: unknown): boolean {
+export function isTimeoutAbort(reason: unknown): boolean {
     return (reason instanceof Error || reason instanceof DOMException) && reason.name === "TimeoutError";
 }
 

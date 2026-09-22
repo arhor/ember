@@ -217,6 +217,31 @@ describe("Codex provider", () => {
         assert.ok(performance.now() - startedAt < 1_000);
     });
 
+    test("Codex provider should preserve an already-fired timeout before spawning", async () => {
+        // Given
+        const { request } = requestFixture();
+        const signal = AbortSignal.abort(new DOMException("deadline elapsed", "TimeoutError"));
+        let spawned = false;
+
+        // When
+        const error = await captureError(() =>
+            invokeCodexProvider("codex", [], request, {
+                timeoutSeconds: 60,
+                signal,
+                spawnImpl: () => {
+                    spawned = true;
+                    throw new Error("must not spawn");
+                },
+            }),
+        );
+
+        // Then
+        assert.ok(error instanceof ProviderError);
+        assert.equal(error.outcome, "timed_out");
+        assert.deepEqual(error.termination, { reason: "timeout", directChildExitObserved: false });
+        assert.equal(spawned, false);
+    });
+
     test("Codex AI SDK bridge should preserve explicit cancellation when the child termination is observed", async () => {
         // Given
         const { request } = requestFixture();
