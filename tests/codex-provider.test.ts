@@ -193,6 +193,30 @@ describe("Codex provider", () => {
         assert.deepEqual(error.termination, { reason: "timeout", directChildExitObserved: true });
     });
 
+    test("Codex AI SDK bridge should honor the call timeout when model configuration is longer", async () => {
+        // Given
+        const { request } = requestFixture();
+        const fixture = childDouble({ closeOnKill: true });
+        const executor = createAiSdkCognitionExecutor(
+            createCodexLanguageModel({
+                timeoutSeconds: 60,
+                terminationGraceMs: 5,
+                finalTerminationMs: 10,
+                spawnImpl: () => fixture.child as never,
+            }),
+        );
+
+        // When
+        const startedAt = performance.now();
+        const error = await captureError(() => executor(request, { timeoutSeconds: 0.01 }));
+
+        // Then
+        assert.ok(error instanceof ProviderError);
+        assert.equal(error.outcome, "timed_out");
+        assert.deepEqual(error.termination, { reason: "timeout", directChildExitObserved: true });
+        assert.ok(performance.now() - startedAt < 1_000);
+    });
+
     test("Codex AI SDK bridge should preserve explicit cancellation when the child termination is observed", async () => {
         // Given
         const { request } = requestFixture();

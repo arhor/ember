@@ -82,19 +82,13 @@ function relayCallerCancellation(source: AbortSignal | undefined): {
 } {
     if (source === undefined) return { signal: undefined, dispose() {} };
     const controller = new AbortController();
-    const relay = () => {
-        if (!isSdkTimeout(source.reason)) controller.abort(source.reason);
-    };
+    const relay = () => controller.abort(source.reason);
     if (source.aborted) relay();
     else source.addEventListener("abort", relay, { once: true });
     return {
         signal: controller.signal,
         dispose: () => source.removeEventListener("abort", relay),
     };
-}
-
-function isSdkTimeout(reason: unknown) {
-    return (reason instanceof Error || reason instanceof DOMException) && reason.name === "TimeoutError";
 }
 
 function generateResult(result: Awaited<ReturnType<typeof invokeCodexProvider>>): LanguageModelV4GenerateResult {
