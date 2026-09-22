@@ -535,6 +535,34 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     assert.deepEqual(selectedCounts, [3, 0]);
 });
 
+test("ordinary CLI conversation uses the shared application coordinator lifecycle", async (t) => {
+    const f = await fixture(t);
+    await new StateStore(f.state).create(initialState("user"));
+    const io = capture("Hello\n:quit\n");
+
+    assert.equal(
+        await runCliSurface(
+            {
+                statePath: f.state,
+                principal: "user",
+                scope: "relationship:user",
+                providerKind: "claude-code",
+                providerCommand: "claude-code",
+                providerArgs: [],
+                providerTimeoutSeconds: 30,
+                claudeProviderFactory: () => async () => success,
+            },
+            io,
+        ),
+        0,
+    );
+
+    const state = await new StateStore(f.state).load();
+    assert.equal(io.text(), "PROBE_REPLY_NOT_RETAINED\n");
+    assert.equal(state.operations.runtimeEpisodes.length, 1);
+    assert.equal(state.operations.runtimeEpisodes[0]?.stopReason, "application_interaction_complete");
+});
+
 test("CLI action command should durably approve an exact pending calendar proposal when it was shown in the same scope", async (t) => {
     // Given
     const f = await fixture(t);
@@ -1110,7 +1138,7 @@ test("CLI stops automatic onboarding reflection immediately after closure", asyn
     assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
     const runtimes = (await new StateStore(f.state).load()).operations.runtimeEpisodes;
     assert.equal(runtimes.length, 2);
-    assert.ok(runtimes.every((runtime) => runtime.stopReason === "cli_interaction_complete"));
+    assert.ok(runtimes.every((runtime) => runtime.stopReason === "application_interaction_complete"));
 });
 
 test("missing previously available or possibly created state is never silently recreated", async (t) => {
