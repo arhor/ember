@@ -6,6 +6,7 @@ import { isAbsolute } from "node:path";
 
 import type { ContactAttentionDecisionRecord } from "../../agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "../../agency/proactive-contact-store.ts";
+import type { EmberApplication } from "../../app/contract.ts";
 import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
@@ -16,16 +17,12 @@ import {
     decideConfiguredProactiveContactHandoff,
     loadConfiguredProactiveContactPolicy,
 } from "../../agency/configured-proactive-contact-policy.ts";
+import { createEmberApplication } from "../../app/application.ts";
 import { composeEmberApplication } from "../../composition/ember.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
-import {
-    SurfaceDeliveryFailure,
-    reconcileSurfaceDelivery,
-    runSurfaceInteraction,
-} from "../../runtime/interaction-boundary.ts";
-import { startRuntime, stopRuntime } from "../../runtime/runtime.ts";
+import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
 import { exactKeys, isObject } from "../../util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
@@ -253,6 +250,7 @@ export async function processTelegramUpdate(
         onboardingProgressEvaluator,
         signal,
         dependencies: suppliedDependencies,
+        application: suppliedApplication,
     }: {
         provider?: ProviderInvoker | undefined;
         memoryProposalGenerator?: MemoryProposalGenerator | undefined;
@@ -260,120 +258,73 @@ export async function processTelegramUpdate(
         onboardingProgressEvaluator?: OnboardingProgressEvaluator | undefined;
         signal?: AbortSignal | undefined;
         dependencies?: EmberApplicationDependencies | undefined;
+        application?: EmberApplication | undefined;
     } = {},
 ): Promise<TelegramUpdateOutcome> {
     validateTelegramSurfaceConfig(config);
     const inbound = selectTelegramInbound(update, config);
     if (inbound === null) return { kind: "ignored", updateId: update.update_id };
 
-    const dependencies =
-        suppliedDependencies ??
-        dependenciesForTelegram(config, {
-            ...(provider === undefined ? {} : { provider }),
-            ...(memoryProposalGenerator === undefined ? {} : { memoryProposalGenerator }),
-            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
-        });
-    const store = dependencies.repositories.state;
-    const lease = await store.acquireWriteLease();
-    let runtimeId: ReturnType<typeof startRuntime>["runtimeId"] | null = null;
-    let stopReason = "telegram_update_failed";
-    try {
-        let state = await store.load();
-        const started = startRuntime(state, config.principal, config.activeScope);
-        runtimeId = started.runtimeId;
-        state = await store.commit(state.revision, started.state);
-        const selectedProvider = dependencies.cognition.provider;
-        const onboardingWork = await dependencies.repositories.onboarding.load();
-        const selectedMemoryGenerator =
-            memoryProposalGenerator ??
-            (provider === undefined &&
-            onboardingWork?.status === "active" &&
-            onboardingWork.scope === config.activeScope
-                ? dependencies.postTurn.memoryProposalGenerator
-                : undefined);
-        const selectedOnboardingEvaluator =
-            onboardingProgressEvaluator ??
-            (provider === undefined &&
-            onboardingWork?.status === "active" &&
-            onboardingWork.scope === config.activeScope
-                ? dependencies.postTurn.onboardingProgressEvaluator
-                : undefined);
-        try {
-            const result = await runSurfaceInteraction(dependencies.repositories, state, {
-                runtimeId,
-                principal: config.principal,
-                scope: config.activeScope,
-                text: inbound.text,
-                providerLabel: dependencies.cognition.providerLabel,
-                provider: selectedProvider,
-                timeoutSeconds: dependencies.cognition.timeoutSeconds,
-                ...(selectedMemoryGenerator === undefined
-                    ? {}
-                    : {
-                          memoryProposalGenerator: selectedMemoryGenerator,
-                          ...(memoryProposalProviderLabel === undefined ? {} : { memoryProposalProviderLabel }),
-                      }),
-                ...(selectedOnboardingEvaluator === undefined
-                    ? {}
-                    : { onboardingProgressEvaluator: selectedOnboardingEvaluator }),
-                signal,
-                surfaceId: TELEGRAM_SURFACE_ID,
-                principalProvenance: "configured_surface_mapping",
-                externalOccurrence: inbound.externalOccurrence,
-                deliveryDestinationId: inbound.deliveryDestinationId,
-                deliver: (text) =>
-                    deliverTelegramMessage(api, inbound.chatId, text, {
-                        messageThreadId: inbound.messageThreadId,
-                        signal,
-                    }),
-            });
-            stopReason = result.providerFailure === null ? "telegram_update_complete" : "telegram_provider_failure";
-            return {
-                kind: result.replayed ? "replayed" : "processed",
-                updateId: update.update_id,
-                cognitionId: result.cognitionId,
-                providerFailure: result.providerFailure,
-                memoryProposalFailure: result.memoryProposalFailure,
-                onboardingProgressFailure: result.onboardingProgressFailure,
-                deliveryFailure: null,
-            };
-        } catch (error) {
-            if (!(error instanceof SurfaceDeliveryFailure)) throw error;
-            const ledger = await dependencies.repositories.interactions.load();
-            const occurrence = ledger.inbound_occurrences.find(
-                (record) =>
-                    record.surface_id === TELEGRAM_SURFACE_ID &&
-                    record.external_occurrence_id === inbound.externalOccurrence.occurrenceId,
-            );
-            if (!occurrence)
-                throw new AggregateError([error], "Telegram delivery failed after its inbound occurrence was lost");
-            stopReason = "telegram_delivery_failure";
-            return {
-                kind: "processed",
-                updateId: update.update_id,
-                cognitionId: occurrence.cognitionId,
-                providerFailure: null,
-                memoryProposalFailure: error.memoryProposalFailure,
-                onboardingProgressFailure: error.onboardingProgressFailure,
-                deliveryFailure: error.outcome,
-            };
-        }
-    } finally {
-        try {
-            if (runtimeId !== null) {
-                const current = await store.load();
-                const runtime = current.operations.runtimeEpisodes.find((episode) => episode.runtimeId === runtimeId);
-                if (runtime?.cleanStopAt === null) {
-                    const stopped = stopRuntime(current, runtimeId, {
-                        reason: signal?.aborted ? "telegram_surface_shutdown" : stopReason,
-                    });
-                    await store.commit(current.revision, stopped);
-                }
+    const application =
+        suppliedApplication ??
+        createEmberApplication(
+            dependenciesForTelegramInteraction(config, {
+                provider,
+                memoryProposalGenerator,
+                memoryProposalProviderLabel,
+                onboardingProgressEvaluator,
+                suppliedDependencies,
+            }),
+        );
+    const result = await application.interact(
+        {
+            kind: "message",
+            principal: config.principal,
+            scope: config.activeScope,
+            text: inbound.text,
+            surfaceId: TELEGRAM_SURFACE_ID,
+            principalProvenance: "configured_surface_mapping",
+            externalOccurrence: inbound.externalOccurrence,
+            deliveryDestinationId: inbound.deliveryDestinationId,
+        },
+        async ({ address, text }, options) => {
+            const destination = parseTelegramDestination(address.destinationId);
+            if (destination.chatId !== inbound.chatId || destination.messageThreadId !== inbound.messageThreadId)
+                throw new ValidationError("application delivery address differs from the accepted Telegram message");
+            try {
+                const receipt = await deliverTelegramMessage(api, destination.chatId, text, {
+                    messageThreadId: destination.messageThreadId,
+                    ...(options.signal === undefined ? {} : { signal: options.signal }),
+                });
+                return { outcome: "confirmed", externalMessageId: receipt.externalMessageId };
+            } catch (error) {
+                if (!(error instanceof SurfaceDeliveryFailure)) throw error;
+                return error.outcome === "failed"
+                    ? {
+                          outcome: "failed",
+                          externalMessageId: error.externalMessageId,
+                          retryable: error.retryable,
+                          retryAfterSeconds: error.retryAfterSeconds,
+                      }
+                    : { outcome: "uncertain", externalMessageId: error.externalMessageId };
             }
-        } finally {
-            await store.releaseWriteLease(lease);
-        }
-    }
+        },
+        signal === undefined ? {} : { signal },
+    );
+    return {
+        kind: result.replayed ? "replayed" : "processed",
+        updateId: update.update_id,
+        cognitionId: result.cognitionId,
+        providerFailure: result.diagnostics.providerFailure,
+        memoryProposalFailure: result.diagnostics.memoryProposalFailure,
+        onboardingProgressFailure: result.diagnostics.onboardingProgressFailure,
+        deliveryFailure:
+            result.delivery?.status === "blocked_uncertain"
+                ? "uncertain"
+                : result.delivery?.status === "failed_non_retryable" || result.delivery?.status === "retryable_failure"
+                  ? "failed"
+                  : null,
+    };
 }
 
 export async function reconcileTelegramDeliveries(
@@ -576,18 +527,27 @@ export async function runTelegramPolling(
         onOutcome,
         maxAcceptedUpdates,
         revalidateProactiveContact,
+        dependencies: suppliedDependencies,
     }: {
         provider?: ProviderInvoker;
         signal?: AbortSignal;
         onOutcome?: (outcome: TelegramUpdateOutcome) => void;
         maxAcceptedUpdates?: number;
         revalidateProactiveContact?: ProactiveContactHandoffRevalidator;
+        dependencies?: EmberApplicationDependencies;
     } = {},
 ) {
     validateTelegramSurfaceConfig(config);
     if (maxAcceptedUpdates !== undefined && (!Number.isSafeInteger(maxAcceptedUpdates) || maxAcceptedUpdates < 1))
         throw new ValidationError("max accepted Telegram updates must be a positive safe integer");
-    const dependencies = dependenciesForTelegram(config, provider === undefined ? {} : { provider });
+    const dependencies = dependenciesForTelegramInteraction(config, {
+        provider,
+        memoryProposalGenerator: undefined,
+        memoryProposalProviderLabel: undefined,
+        onboardingProgressEvaluator: undefined,
+        suppliedDependencies,
+    });
+    const application = createEmberApplication(dependencies);
     try {
         await verifyTelegramLongPollingReady(api, signal);
     } catch (error) {
@@ -637,7 +597,7 @@ export async function runTelegramPolling(
 
         for (const update of updates) {
             if (signal?.aborted) return;
-            const outcome = await processTelegramUpdate(config, api, update, { provider, dependencies });
+            const outcome = await processTelegramUpdate(config, api, update, { application });
             onOutcome?.(outcome);
             if (outcome.kind !== "ignored") acceptedCount += 1;
             offset = update.update_id + 1;
@@ -775,6 +735,7 @@ function dependenciesForTelegram(
     overrides: {
         provider?: ProviderInvoker;
         memoryProposalGenerator?: MemoryProposalGenerator;
+        memoryProposalProviderLabel?: string;
         onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     } = {},
 ) {
@@ -794,6 +755,53 @@ function dependenciesForTelegram(
         },
         overrides,
     );
+}
+
+function dependenciesForTelegramInteraction(
+    config: TelegramSurfaceConfig,
+    overrides: {
+        provider: ProviderInvoker | undefined;
+        memoryProposalGenerator: MemoryProposalGenerator | undefined;
+        memoryProposalProviderLabel: string | undefined;
+        onboardingProgressEvaluator: OnboardingProgressEvaluator | undefined;
+        suppliedDependencies: EmberApplicationDependencies | undefined;
+    },
+): EmberApplicationDependencies {
+    const dependencies =
+        overrides.suppliedDependencies ??
+        dependenciesForTelegram(config, {
+            ...(overrides.provider === undefined ? {} : { provider: overrides.provider }),
+            ...(overrides.memoryProposalGenerator === undefined
+                ? {}
+                : { memoryProposalGenerator: overrides.memoryProposalGenerator }),
+            ...(overrides.memoryProposalProviderLabel === undefined
+                ? {}
+                : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
+            ...(overrides.onboardingProgressEvaluator === undefined
+                ? {}
+                : { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }),
+        });
+    const useComposedHelpers = overrides.provider === undefined;
+    return {
+        ...dependencies,
+        postTurn: {
+            ...(overrides.memoryProposalGenerator !== undefined
+                ? { memoryProposalGenerator: overrides.memoryProposalGenerator }
+                : useComposedHelpers && dependencies.postTurn.memoryProposalGenerator !== undefined
+                  ? { memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator }
+                  : {}),
+            ...(overrides.memoryProposalProviderLabel !== undefined
+                ? { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }
+                : useComposedHelpers && dependencies.postTurn.memoryProposalProviderLabel !== undefined
+                  ? { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }
+                  : {}),
+            ...(overrides.onboardingProgressEvaluator !== undefined
+                ? { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }
+                : useComposedHelpers && dependencies.postTurn.onboardingProgressEvaluator !== undefined
+                  ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
+                  : {}),
+        },
+    };
 }
 
 function validateTelegramUpdates(value: unknown): asserts value is TelegramUpdate[] {

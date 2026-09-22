@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
+import type { EmberApplication } from "../../app/contract.ts";
 import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "./surface.ts";
 
@@ -132,6 +133,56 @@ test("Telegram uses the ordinary onboarding progress and memory seams", async ()
     }
 });
 
+test("a provider-only override suppresses composed onboarding follow-up calls", async () => {
+    const f = await fixture();
+    try {
+        const state = await f.store.load();
+        await new OnboardingWorkStore(f.statePath).save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, f.config.activeScope, "2026-09-01T00:00:00.000Z"),
+        );
+        let providerCalls = 0;
+        const outcome = await processTelegramUpdate(f.config, readyApi(), update(9), {
+            provider: async () => {
+                providerCalls += 1;
+                return { contractVersion: 1, reply: "One ordinary reply.", usedMeaningIds: [] };
+            },
+        });
+
+        assert.equal(outcome.kind, "processed");
+        assert.equal(providerCalls, 1);
+        assert.ok(
+            (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "open"),
+        );
+    } finally {
+        await f.close();
+    }
+});
+
+test("polling preserves provider-only override suppression for active onboarding", async () => {
+    const f = await fixture();
+    try {
+        const state = await f.store.load();
+        await new OnboardingWorkStore(f.statePath).save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, f.config.activeScope, "2026-09-01T00:00:00.000Z"),
+        );
+        let providerCalls = 0;
+        await runTelegramPolling(f.config, readyApi({ getUpdates: async () => [update(10)] }), {
+            provider: async () => {
+                providerCalls += 1;
+                return { contractVersion: 1, reply: "One polled reply.", usedMeaningIds: [] };
+            },
+            maxAcceptedUpdates: 1,
+        });
+
+        assert.equal(providerCalls, 1);
+        assert.ok(
+            (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "open"),
+        );
+    } finally {
+        await f.close();
+    }
+});
+
 test("Telegram reports onboarding background failures even when delivery also fails", async () => {
     const f = await fixture();
     try {
@@ -184,6 +235,71 @@ test("configured private Telegram message maps to the shared surface boundary", 
     assert.equal(inbound.externalOccurrence.occurrenceId, "update:42");
     assert.equal(inbound.externalOccurrence.messageId, "1042");
     assert.equal(inbound.deliveryDestinationId, `telegram:chat:${CHAT_ID}`);
+});
+
+test("ordinary Telegram messages use the Ember application coordinator", async () => {
+    const config = telegramConfig("/tmp", "/tmp/ember.json");
+    let interaction: Parameters<EmberApplication["interact"]>[0] | undefined;
+    const application: EmberApplication = {
+        interact: async (event, transport) => {
+            interaction = event;
+            const observation = await transport(
+                {
+                    deliveryId: "delivery:test",
+                    address: {
+                        principal: PRINCIPAL,
+                        scope: config.activeScope,
+                        surfaceId: TELEGRAM_SURFACE_ID,
+                        destinationId: `telegram:chat:${CHAT_ID}`,
+                    },
+                    text: "coordinated reply",
+                },
+                {},
+            );
+            assert.equal(observation.outcome, "confirmed");
+            return {
+                occurrenceId: "occurrence:test",
+                cognitionId: "cognition:test",
+                cognitionStatus: "completed",
+                replayed: false,
+                deliveryId: "delivery:test",
+                delivery: {
+                    deliveryId: "delivery:test",
+                    status: "confirmed",
+                    attemptId: "attempt:test",
+                    retryAt: null,
+                },
+                diagnostics: {
+                    providerFailure: null,
+                    memoryProposalFailure: null,
+                    onboardingProgressFailure: null,
+                },
+            };
+        },
+        pendingDeliveries: async () => [],
+        deliver: async () => {
+            throw new Error("unexpected delivery reconciliation");
+        },
+    };
+
+    const outcome = await processTelegramUpdate(config, readyApi(), update(43), { application });
+
+    assert.deepEqual(interaction, {
+        kind: "message",
+        principal: PRINCIPAL,
+        scope: "private",
+        text: "hello",
+        surfaceId: TELEGRAM_SURFACE_ID,
+        principalProvenance: "configured_surface_mapping",
+        externalOccurrence: {
+            occurrenceId: "update:43",
+            messageId: "1043",
+            threadId: null,
+            occurredAt: "2026-09-05T11:33:20.000Z",
+        },
+        deliveryDestinationId: `telegram:chat:${CHAT_ID}`,
+    });
+    assert.equal(outcome.kind, "processed");
 });
 
 test("evidence-bearing Telegram fields remain runtime validated after adopting generated types", () => {
