@@ -2,15 +2,20 @@ import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
+import type { MemoryProposalGenerator } from "../../src/memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-evaluator.ts";
+import type { RunCognitionOptions } from "../../src/runtime/runtime.ts";
 import type { SetupConfig } from "../../src/surfaces/cli/setup.ts";
 
+import { prepareCognition } from "../../src/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";
 import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
+import { runCognition as runCoreCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 import { setupMain } from "../../src/surfaces/cli/setup.ts";
 import { runTelegramSetup } from "../../src/surfaces/telegram/setup.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
@@ -33,6 +38,48 @@ export interface AssertionRecord {
     expected: string;
     observed: string;
     passed: boolean;
+}
+
+async function runCognition(
+    repositories: ReturnType<typeof createFileBackedRepositoriesForState>,
+    state: EmberState,
+    options: RunCognitionOptions & {
+        memoryProposalGenerator?: MemoryProposalGenerator;
+        memoryProposalProviderLabel?: string;
+        onboardingProgressEvaluator?: OnboardingProgressEvaluator;
+    },
+) {
+    const { memoryProposalGenerator, memoryProposalProviderLabel, onboardingProgressEvaluator, ...cognition } = options;
+    const preparation = await prepareCognition(repositories, state, {
+        runtimeId: cognition.runtimeId,
+        principal: cognition.principal,
+        scope: cognition.scope,
+        surface: cognition.surface ?? "local_cli",
+        text: cognition.text,
+        ...(cognition.purpose === undefined ? {} : { purpose: cognition.purpose }),
+        ...(cognition.explainIds === undefined ? {} : { explainIds: cognition.explainIds }),
+        ...(cognition.conversationMembership === undefined
+            ? {}
+            : { conversationMembership: cognition.conversationMembership }),
+    });
+    const result = await runCoreCognition(repositories, state, { ...cognition, preparation });
+    const diagnostics = await runPostTurnFollowUps(
+        repositories,
+        {
+            ...(memoryProposalGenerator === undefined ? {} : { memoryProposalGenerator }),
+            ...(memoryProposalProviderLabel === undefined ? {} : { memoryProposalProviderLabel }),
+            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
+        },
+        result.state,
+        preparation,
+        {
+            cognitionId: result.cognitionId,
+            principal: cognition.principal,
+            scope: cognition.scope,
+            text: cognition.text,
+        },
+    );
+    return { ...result, ...diagnostics, state: await repositories.state.load() };
 }
 
 const SECRET = "123456:Issue256SecretSentinel_abcdef";
@@ -550,15 +597,28 @@ async function establishedBundle(s: SetupOnboardingScenario, path: string): Prom
     let state = await store.load();
     const started = startRuntime(state, s.principal, s.scope);
     state = await store.commit(state.revision, started.state);
-    state = (
-        await runCognition(createFileBackedRepositoriesForState(store), state, {
-            runtimeId: started.runtimeId,
-            principal: s.principal,
-            scope: s.scope,
-            text: "I prefer concise replies.",
-            providerLabel: "bundle-builder",
-            provider: async () => ({ contractVersion: 1, reply: "remembered", usedMeaningIds: [] }),
-            timeoutSeconds: 1,
+    const repositories = createFileBackedRepositoriesForState(store);
+    const text = "I prefer concise replies.";
+    const preparation = await prepareCognition(repositories, state, {
+        runtimeId: started.runtimeId,
+        principal: s.principal,
+        scope: s.scope,
+        surface: "local_cli",
+        text,
+    });
+    const result = await runCognition(repositories, state, {
+        runtimeId: started.runtimeId,
+        principal: s.principal,
+        scope: s.scope,
+        text,
+        providerLabel: "bundle-builder",
+        provider: async () => ({ contractVersion: 1, reply: "remembered", usedMeaningIds: [] }),
+        timeoutSeconds: 1,
+        preparation,
+    });
+    await runPostTurnFollowUps(
+        repositories,
+        {
             memoryProposalGenerator: async (request) => ({
                 contractVersion: 1,
                 candidates: [
@@ -582,8 +642,12 @@ async function establishedBundle(s: SetupOnboardingScenario, path: string): Prom
                     },
                 ],
             }),
-        })
-    ).state;
+        },
+        result.state,
+        preparation,
+        { cognitionId: result.cognitionId, principal: s.principal, scope: s.scope, text: "I prefer concise replies." },
+    );
+    state = await store.load();
     await store.releaseWriteLease(lease);
     return state;
 }

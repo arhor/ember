@@ -16,6 +16,7 @@ import {
 import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
+import { runPostTurnFollowUps } from "./post-turn.ts";
 
 /**
  * The transport-neutral ordinary-interaction facade. During the strangler migration it
@@ -75,16 +76,22 @@ async function interact(
             provider: dependencies.cognition.provider,
             providerLabel: dependencies.cognition.providerLabel,
             timeoutSeconds: dependencies.cognition.timeoutSeconds,
-            ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
+            ...(onboardingActive
                 ? {
-                      memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator,
-                      ...(dependencies.postTurn.memoryProposalProviderLabel === undefined
-                          ? {}
-                          : { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }),
+                      postTurn: (committedState, cognitionId, preparation) =>
+                          runPostTurnFollowUps(
+                              dependencies.repositories,
+                              dependencies.postTurn,
+                              committedState,
+                              preparation,
+                              {
+                                  cognitionId,
+                                  principal: event.principal,
+                                  scope: event.scope,
+                                  text: event.text,
+                              },
+                          ),
                   }
-                : {}),
-            ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
-                ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
                 : {}),
             ...(options.signal === undefined ? {} : { signal: options.signal }),
             prepareCognition: (currentState, surface) =>

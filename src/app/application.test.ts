@@ -238,6 +238,45 @@ test("provider failure is persisted before the runtime stops and releases its wr
     }
 });
 
+test("application interaction should preserve successful cognition when post-turn follow-ups fail", async () => {
+    // Given
+    const fixture = await applicationFixture();
+    try {
+        fixture.dependencies.postTurn.onboardingProgressEvaluator = async () => {
+            throw new Error("progress unavailable");
+        };
+        fixture.dependencies.postTurn.memoryProposalGenerator = async () => {
+            throw new Error("reflection unavailable");
+        };
+        const state = await fixture.dependencies.repositories.state.load();
+        await fixture.dependencies.repositories.onboarding.save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, SCOPE, "2026-09-22T10:00:00Z"),
+        );
+        let delivered = false;
+
+        // When
+        const result = await fixture.application.interact(event("local_cli", "explicit_local_argument"), async () => {
+            delivered = true;
+            return { outcome: "confirmed", externalMessageId: null };
+        });
+
+        // Then
+        assert.equal(result.cognitionStatus, "completed");
+        assert.equal(result.delivery?.status, "confirmed");
+        assert.equal(delivered, true);
+        assert.deepEqual(result.diagnostics, {
+            providerFailure: null,
+            memoryProposalFailure: "reflection unavailable",
+            onboardingProgressFailure: "progress unavailable",
+        });
+        const completed = await fixture.dependencies.repositories.state.load();
+        assert.equal(completed.operations.cognitionEpisodes.at(-1)?.status, "completed");
+        assert.equal(completed.operations.runtimeEpisodes.at(-1)?.stopReason, "application_interaction_complete");
+    } finally {
+        await fixture.close();
+    }
+});
+
 test("provider cancellation evidence survives application runtime cleanup", async () => {
     const controller = new AbortController();
     const fixture = await applicationFixture({
