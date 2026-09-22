@@ -26,8 +26,9 @@ presence alone does not prove that Codex/Cursor process semantics became identic
 Their isolation, authentication, parsing, continuation and termination differences
 listed below remain required constraints of the proposed bridges.
 
-This document remains current for the implemented seam until #315's backend parity
-gates pass. Each backend migration must update the corresponding current implementation
+Issue #315 slice 10a replaced the application/runtime-facing seam with the Ember-owned
+`AiExecutor` contract. `ProviderInvoker` is now a compatibility alias used only by
+backends awaiting their SDK bridge. Each remaining backend migration must update the corresponding current implementation
 guidance here, and #321 must reconcile the remaining decision/consequences sections
 with the final implemented architecture. The proposal's forward and backward links
 make that pending revision discoverable without declaring full supersession early.

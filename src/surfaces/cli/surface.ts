@@ -2,14 +2,13 @@ import type { Readable, Writable } from "node:stream";
 
 import { createInterface } from "node:readline";
 
+import type { AiExecutionRequest, AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
 import type { CapabilityBinding } from "../../capabilities/execution.ts";
 import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
-import type { ProviderInvoker } from "../../providers/contract.ts";
-import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
 import { createEmberApplication } from "../../app/application.ts";
@@ -49,8 +48,8 @@ export interface CliSurfaceConfig {
     googleCalendarConfigPath?: string;
     claudeProviderFactory?: (options: {
         model?: string;
-        selectCapabilities?: (request: ProviderRequest) => readonly CapabilityBinding[];
-    }) => ProviderInvoker;
+        selectCapabilities?: (request: AiExecutionRequest) => readonly CapabilityBinding[];
+    }) => AiExecutor;
 }
 
 interface CliSurfaceIo {
@@ -339,7 +338,7 @@ async function ask(
         principal: config.principal,
         scope: config.scope,
         text: parts.slice(3).join(" "),
-        provider: dependencies.cognition.provider,
+        executor: dependencies.cognition.executor,
         providerLabel: dependencies.cognition.providerLabel,
         timeoutSeconds: dependencies.cognition.timeoutSeconds,
         signal,

@@ -537,7 +537,7 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
             scope: s.scope,
             text: scenarioEpisode(s, "resume").input,
             providerLabel: "restore-fixture",
-            provider: async (request) => {
+            executor: async (request) => {
                 projections.push(request.projection);
                 return {
                     contractVersion: 1,
@@ -612,7 +612,7 @@ async function establishedBundle(s: SetupOnboardingScenario, path: string): Prom
         scope: s.scope,
         text,
         providerLabel: "bundle-builder",
-        provider: async () => ({ contractVersion: 1, reply: "remembered", usedMeaningIds: [] }),
+        executor: async () => ({ contractVersion: 1, reply: "remembered", usedMeaningIds: [] }),
         timeoutSeconds: 1,
         preparation,
     });
@@ -665,7 +665,7 @@ function cognition(
         scope: s.scope,
         text: episode.input,
         providerLabel: "fixture-provider",
-        provider: async (request: any) => {
+        executor: async (request: any) => {
             projections.push(request.projection);
             return {
                 contractVersion: 1 as const,

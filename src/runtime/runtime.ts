@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 
+import type { AiExecutionRequest, AiExecutor } from "../ai/contract.ts";
 import type { PreparedCognition } from "../app/cognition-preparation.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
@@ -15,8 +16,8 @@ import type {
 import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
-import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 
+import { AI_EXECUTION_CONTRACT_VERSION } from "../ai/contract.ts";
 import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
@@ -24,7 +25,6 @@ import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
 import { projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
-import { CONTRACT_VERSION } from "../providers/contract.ts";
 import { cloneState } from "../util.ts";
 
 export function startRuntime(
@@ -138,7 +138,7 @@ export interface RunCognitionOptions {
     surface?: string;
     text: string;
     providerLabel: string;
-    provider: ProviderInvoker;
+    executor: AiExecutor;
     timeoutSeconds: number;
     signal?: AbortSignal | undefined;
     purpose?: CognitionPurpose;
@@ -199,7 +199,7 @@ export async function runCognitionUntilExpressionCommit(
         surface = "local_cli",
         text,
         providerLabel: label,
-        provider,
+        executor,
         timeoutSeconds,
         signal,
         purpose = "ordinary",
@@ -217,7 +217,7 @@ export async function runCognitionUntilExpressionCommit(
         surface,
         text,
         providerLabel: label,
-        provider,
+        executor,
         timeoutSeconds,
         ...(requestedCognitionId === undefined ? {} : { cognitionId: requestedCognitionId }),
     });
@@ -275,15 +275,15 @@ export async function runCognitionUntilExpressionCommit(
         input_evidence_id: input.evidenceId,
         started_at: timestamp,
     });
-    const request: ProviderRequest = {
-        contractVersion: CONTRACT_VERSION,
+    const request: AiExecutionRequest = {
+        contractVersion: AI_EXECUTION_CONTRACT_VERSION,
         cognitionId: cognitionId,
         projection,
         input: { text },
     };
     let result;
     try {
-        result = await provider(request, { timeoutSeconds, signal });
+        result = await executor(request, { timeoutSeconds, signal });
     } catch (error) {
         if (!(error instanceof ProviderError)) {
             throw error;

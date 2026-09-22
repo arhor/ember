@@ -48,7 +48,7 @@ Ember validateProviderResult
 ```
 
 `src/capabilities/execution.ts` owns the capability contract and firewall.
-`src/providers/ai-sdk.ts` is only an adapter from that contract to AI SDK `tool` and
+`src/ai/cognition.ts` is only an adapter from that contract to AI SDK `tool` and
 `generateText` mechanics. AI SDK `Tool`, tool-call, message, step, approval, and
 result types are not domain contracts and are not stored in canonical Ember state.
 
@@ -163,7 +163,7 @@ small: the purpose is to exercise the real execution firewall without adding she
 filesystem, network, MCP, or product behavior.
 
 `tests/ai-sdk-capabilities.test.ts` uses AI SDK's `MockLanguageModelV3` through the
-production `createAiSdkProvider` and `runCognition` path. It proves that:
+production `createAiSdkCognitionExecutor` and `runCognition` path. It proves that:
 
 - only Ember-selected capabilities are model-visible;
 - a selected capability can still be denied by Ember authority without executing;

@@ -219,7 +219,7 @@ export async function loadLongitudinalScenario(path: string): Promise<Longitudin
 export async function runLongitudinalScenario(
     scenario: LongitudinalScenario,
     statePath: string,
-    provider: HarnessProvider,
+    executor: HarnessProvider,
 ): Promise<LongitudinalReport> {
     validateScenario(scenario);
     const history = expandHistory(scenario.history ?? []);
@@ -270,9 +270,9 @@ export async function runLongitudinalScenario(
                     timeoutSeconds: 300,
                     purpose: episode.purpose ?? "ordinary",
                     explainIds: (episode.explain ?? []).map((alias) => requireAlias(aliases, alias)),
-                    provider: async (request) => {
+                    executor: async (request) => {
                         observedRequest = request;
-                        const output = await provider({
+                        const output = await executor({
                             scenarioId: scenario.id,
                             episodeId: episode.id,
                             cognitionBackend: episode.cognition_backend,

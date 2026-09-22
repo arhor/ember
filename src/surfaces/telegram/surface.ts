@@ -6,12 +6,12 @@ import { isAbsolute } from "node:path";
 
 import type { ContactAttentionDecisionRecord } from "../../agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "../../agency/proactive-contact-store.ts";
+import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
 import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
-import type { ProviderInvoker } from "../../providers/contract.ts";
 
 import {
     decideConfiguredProactiveContactHandoff,
@@ -244,7 +244,7 @@ export async function processTelegramUpdate(
     api: TelegramDeliveryApi,
     update: TelegramUpdate,
     {
-        provider,
+        executor,
         memoryProposalGenerator,
         memoryProposalProviderLabel,
         onboardingProgressEvaluator,
@@ -252,7 +252,7 @@ export async function processTelegramUpdate(
         dependencies: suppliedDependencies,
         application: suppliedApplication,
     }: {
-        provider?: ProviderInvoker | undefined;
+        executor?: AiExecutor | undefined;
         memoryProposalGenerator?: MemoryProposalGenerator | undefined;
         memoryProposalProviderLabel?: string | undefined;
         onboardingProgressEvaluator?: OnboardingProgressEvaluator | undefined;
@@ -269,7 +269,7 @@ export async function processTelegramUpdate(
         suppliedApplication ??
         createEmberApplication(
             dependenciesForTelegramInteraction(config, {
-                provider,
+                executor,
                 memoryProposalGenerator,
                 memoryProposalProviderLabel,
                 onboardingProgressEvaluator,
@@ -522,14 +522,14 @@ export async function runTelegramPolling(
     config: TelegramSurfaceConfig,
     api: TelegramPollingApi,
     {
-        provider,
+        executor,
         signal,
         onOutcome,
         maxAcceptedUpdates,
         revalidateProactiveContact,
         dependencies: suppliedDependencies,
     }: {
-        provider?: ProviderInvoker;
+        executor?: AiExecutor;
         signal?: AbortSignal;
         onOutcome?: (outcome: TelegramUpdateOutcome) => void;
         maxAcceptedUpdates?: number;
@@ -541,7 +541,7 @@ export async function runTelegramPolling(
     if (maxAcceptedUpdates !== undefined && (!Number.isSafeInteger(maxAcceptedUpdates) || maxAcceptedUpdates < 1))
         throw new ValidationError("max accepted Telegram updates must be a positive safe integer");
     const dependencies = dependenciesForTelegramInteraction(config, {
-        provider,
+        executor,
         memoryProposalGenerator: undefined,
         memoryProposalProviderLabel: undefined,
         onboardingProgressEvaluator: undefined,
@@ -733,7 +733,7 @@ function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): Telegram
 function dependenciesForTelegram(
     config: TelegramSurfaceConfig,
     overrides: {
-        provider?: ProviderInvoker;
+        executor?: AiExecutor;
         memoryProposalGenerator?: MemoryProposalGenerator;
         memoryProposalProviderLabel?: string;
         onboardingProgressEvaluator?: OnboardingProgressEvaluator;
@@ -760,7 +760,7 @@ function dependenciesForTelegram(
 function dependenciesForTelegramInteraction(
     config: TelegramSurfaceConfig,
     overrides: {
-        provider: ProviderInvoker | undefined;
+        executor: AiExecutor | undefined;
         memoryProposalGenerator: MemoryProposalGenerator | undefined;
         memoryProposalProviderLabel: string | undefined;
         onboardingProgressEvaluator: OnboardingProgressEvaluator | undefined;
@@ -770,7 +770,7 @@ function dependenciesForTelegramInteraction(
     const dependencies =
         overrides.suppliedDependencies ??
         dependenciesForTelegram(config, {
-            ...(overrides.provider === undefined ? {} : { provider: overrides.provider }),
+            ...(overrides.executor === undefined ? {} : { executor: overrides.executor }),
             ...(overrides.memoryProposalGenerator === undefined
                 ? {}
                 : { memoryProposalGenerator: overrides.memoryProposalGenerator }),
@@ -781,7 +781,7 @@ function dependenciesForTelegramInteraction(
                 ? {}
                 : { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }),
         });
-    const useComposedHelpers = overrides.provider === undefined;
+    const useComposedHelpers = overrides.executor === undefined;
     return {
         ...dependencies,
         postTurn: {

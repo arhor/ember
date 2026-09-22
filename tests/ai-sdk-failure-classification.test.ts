@@ -5,11 +5,11 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { InferenceEvidence } from "../src/providers/ai-sdk.ts";
+import type { InferenceEvidence } from "../src/ai/cognition.ts";
 
+import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { createAiSdkProvider } from "../src/providers/ai-sdk.ts";
 import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
@@ -71,7 +71,7 @@ test("AI SDK provider failure should not be overwritten by a later caller cancel
             timeoutSeconds: 1,
             signal: controller.signal,
             output: () => {},
-            provider: createAiSdkProvider(model, { inferenceEvidence: evidence }),
+            executor: createAiSdkCognitionExecutor(model, { inferenceEvidence: evidence }),
         });
 
         assert.equal(controller.signal.aborted, true);

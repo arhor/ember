@@ -458,7 +458,7 @@ describe("runCognition", () => {
             text: "hello",
             providerLabel: "codex",
             timeoutSeconds: 1,
-            provider,
+            executor: provider,
             output: () => {},
         });
         const serialized = JSON.stringify(result.state);
@@ -500,7 +500,7 @@ describe("runCognition", () => {
             text: "cancel this turn",
             providerLabel: "codex",
             timeoutSeconds: 1,
-            provider,
+            executor: provider,
             output: () => {},
         });
         await store.releaseWriteLease(lease);

@@ -268,7 +268,7 @@ test("runtime should preserve semantic state and inspection when provider fails"
             scope: SCOPE,
             text: "fail safely",
             providerLabel: process.execPath,
-            provider: createTestProcessProvider({
+            executor: createTestProcessProvider({
                 command: process.execPath,
                 arguments_: [PROVIDER, "--mode", "nonzero"],
             }),
@@ -298,7 +298,7 @@ test("runtime returns a committed expression without invoking transport", async 
             scope: SCOPE,
             text: "render",
             providerLabel: process.execPath,
-            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
+            executor: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
         }),
         persisted = (await fixture.store.load()).operations.cognitionEpisodes.at(-1);
@@ -323,7 +323,7 @@ test("state validator should reject orphan expression when second descriptor tar
             scope: SCOPE,
             text: "one",
             providerLabel: process.execPath,
-            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
+            executor: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         }),
@@ -345,7 +345,7 @@ test("state validator should reject cognition when scope differs from owning run
             scope: SCOPE,
             text: "scope",
             providerLabel: process.execPath,
-            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
+            executor: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         });
@@ -365,7 +365,7 @@ test("state validator should reject provider termination when status contradicts
             scope: SCOPE,
             text: "one",
             providerLabel: process.execPath,
-            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
+            executor: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         });
@@ -402,7 +402,7 @@ test("state validator should accept cancellation when invocation ends before chi
             scope: SCOPE,
             text: "one",
             providerLabel: process.execPath,
-            provider: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
+            executor: createTestProcessProvider({ command: process.execPath, arguments_: [PROVIDER] }),
             timeoutSeconds: 1,
             output: () => {},
         }),

@@ -42,7 +42,7 @@ test("application preparation builds the provider projection before cognition ex
             surface: "telegram",
             text: "continue here",
             providerLabel: "fixture",
-            provider: async (request) => {
+            executor: async (request) => {
                 receivedProjection = request.projection;
                 return { contractVersion: 1, reply: "continued", usedMeaningIds: [] };
             },
@@ -76,7 +76,7 @@ test("low-level cognition execution rejects an unprepared invocation without cal
                 scope: "private",
                 text: "not prepared",
                 providerLabel: "fixture",
-                provider: async () => {
+                executor: async () => {
                     providerCalled = true;
                     return { contractVersion: 1, reply: "unexpected", usedMeaningIds: [] };
                 },
@@ -111,7 +111,7 @@ test("rejected preflight does not advance a fresh conversation trajectory", asyn
             scope: "private",
             text: "first",
             providerLabel: "fixture",
-            provider: async () => ({ contractVersion: 1 as const, reply: "first", usedMeaningIds: [] }),
+            executor: async () => ({ contractVersion: 1 as const, reply: "first", usedMeaningIds: [] }),
             timeoutSeconds: 1,
             cognitionId: "cognition-duplicate" as const,
         };
@@ -203,7 +203,7 @@ test("incoherent prepared cognition is rejected before provider or persistence s
                     surface: "telegram",
                     text: "continue here",
                     providerLabel: "fixture",
-                    provider: async () => {
+                    executor: async () => {
                         providerCalled = true;
                         return { contractVersion: 1, reply: "unexpected", usedMeaningIds: [] };
                     },
@@ -251,7 +251,7 @@ test("prepared cognition must resolve the invocation conversation membership int
                 surface: "telegram",
                 text: "start over",
                 providerLabel: "fixture",
-                provider: async () => {
+                executor: async () => {
                     providerCalled = true;
                     return { contractVersion: 1, reply: "unexpected", usedMeaningIds: [] };
                 },

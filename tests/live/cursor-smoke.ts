@@ -40,7 +40,7 @@ try {
         scope,
         text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
         providerLabel: "cursor-agent",
-        provider: createCursorProvider(),
+        executor: createCursorProvider(),
         timeoutSeconds: 120,
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
@@ -58,7 +58,7 @@ try {
         stopRuntime(result.state, started.runtimeId, { reason: "live_smoke_complete" }),
     );
     process.stdout.write(
-        `${JSON.stringify({ provider: "Cursor Agent CLI", selected_meaning_count: cognition.selectedMeaningIds.length, used_meaning_count: cognition.usedMeaningIds.length, external_session_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null, out_of_scope_marker_disclosed: false, reply_retained_in_canonical_state: false, cognition_status: cognition.status, deliveryStatus: cognition.deliveryStatus, reply: reply.trim() }, null, 2)}\n`,
+        `${JSON.stringify({ executor: "Cursor Agent CLI", selected_meaning_count: cognition.selectedMeaningIds.length, used_meaning_count: cognition.usedMeaningIds.length, external_session_recorded_as_operational_evidence: cognition.externalProviderThreadId !== null, out_of_scope_marker_disclosed: false, reply_retained_in_canonical_state: false, cognition_status: cognition.status, deliveryStatus: cognition.deliveryStatus, reply: reply.trim() }, null, 2)}\n`,
     );
 } finally {
     try {

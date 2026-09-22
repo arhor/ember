@@ -144,7 +144,7 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
         scope: "test",
         text: "Let's defer onboarding until later",
         providerLabel: "scripted",
-        provider,
+        executor: provider,
         timeoutSeconds: 1,
         output: () => {},
         onboardingProgressEvaluator: async () => ({
@@ -177,7 +177,7 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
         scope: "test",
         text: "Please summarize this document",
         providerLabel: "replacement-provider",
-        provider: async (request) => {
+        executor: async (request) => {
             restartedWork = request.projection.onboarding_work;
             return { contractVersion: 1, reply: "Summary.", usedMeaningIds: [] };
         },
@@ -210,7 +210,7 @@ test("onboarding is isolated to ordinary cognition in its bound scope", async (t
         scope: "project:ember",
         text: "Call me Sam",
         providerLabel: "scripted",
-        provider: async (request) => {
+        executor: async (request) => {
             assert.equal("onboarding_work" in request.projection, false);
             return { contractVersion: 1, reply: "Hello.", usedMeaningIds: [] };
         },
@@ -233,7 +233,7 @@ test("onboarding is isolated to ordinary cognition in its bound scope", async (t
         purpose: "explain",
         explainIds: [],
         providerLabel: "scripted",
-        provider: async (request) => {
+        executor: async (request) => {
             assert.equal("onboarding_work" in request.projection, false);
             return { contractVersion: 1, reply: "Explanation.", usedMeaningIds: [] };
         },
@@ -264,7 +264,7 @@ test("completion closes temporary work while adopted meaning remains available",
         scope: "test",
         text: "Call me Sam; concise replies, and no integrations.",
         providerLabel: "scripted",
-        provider: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
+        executor: async () => ({ contractVersion: 1, reply: "Understood.", usedMeaningIds: [] }),
         timeoutSeconds: 1,
         output: () => {},
         onboardingProgressEvaluator: async () => ({
@@ -308,7 +308,7 @@ test("completion closes temporary work while adopted meaning remains available",
         scope: "test",
         text: "What should you call me?",
         providerLabel: "scripted",
-        provider: async (request) => {
+        executor: async (request) => {
             secondProjection = request.projection;
             return { contractVersion: 1, reply: "Sam.", usedMeaningIds: request.projection.selection.meaning_ids };
         },

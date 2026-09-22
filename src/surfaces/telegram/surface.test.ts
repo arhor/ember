@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
+import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
-import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "./surface.ts";
 
 import { initialState } from "../../core/model.ts";
@@ -113,7 +113,7 @@ test("Telegram uses the ordinary onboarding progress and memory seams", async ()
             createOnboardingWork(state.lineage.lineageId, PRINCIPAL, f.config.activeScope, "2026-09-01T00:00:00.000Z"),
         );
         const outcome = await processTelegramUpdate(f.config, readyApi(), update(7, "Let's do introductions later."), {
-            provider: async () => ({ contractVersion: 1, reply: "Of course.", usedMeaningIds: [] }),
+            executor: async () => ({ contractVersion: 1, reply: "Of course.", usedMeaningIds: [] }),
             onboardingProgressEvaluator: async () => ({
                 decision_version: 1,
                 updates: [
@@ -142,7 +142,7 @@ test("a provider-only override suppresses composed onboarding follow-up calls", 
         );
         let providerCalls = 0;
         const outcome = await processTelegramUpdate(f.config, readyApi(), update(9), {
-            provider: async () => {
+            executor: async () => {
                 providerCalls += 1;
                 return { contractVersion: 1, reply: "One ordinary reply.", usedMeaningIds: [] };
             },
@@ -167,7 +167,7 @@ test("polling preserves provider-only override suppression for active onboarding
         );
         let providerCalls = 0;
         await runTelegramPolling(f.config, readyApi({ getUpdates: async () => [update(10)] }), {
-            provider: async () => {
+            executor: async () => {
                 providerCalls += 1;
                 return { contractVersion: 1, reply: "One polled reply.", usedMeaningIds: [] };
             },
@@ -199,7 +199,7 @@ test("Telegram reports onboarding background failures even when delivery also fa
             }),
             update(8, "Hello"),
             {
-                provider: async () => ({ contractVersion: 1, reply: "Hello.", usedMeaningIds: [] }),
+                executor: async () => ({ contractVersion: 1, reply: "Hello.", usedMeaningIds: [] }),
                 onboardingProgressEvaluator: async () => {
                     throw new Error("progress unavailable");
                 },
@@ -334,7 +334,7 @@ test("replayed Telegram update reuses cognition and does not send a second respo
     const f = await fixture();
     try {
         const calls = { provider: 0, send: 0 };
-        const provider: ProviderInvoker = async (request) => {
+        const provider: AiExecutor = async (request) => {
             calls.provider += 1;
             assert.equal(request.projection.surface, TELEGRAM_SURFACE_ID);
             const projection = JSON.stringify(request.projection);
@@ -350,8 +350,8 @@ test("replayed Telegram update reuses cognition and does not send a second respo
             },
         } as Parameters<typeof processTelegramUpdate>[1];
 
-        const first = await processTelegramUpdate(f.config, api, update(77), { provider });
-        const second = await processTelegramUpdate(f.config, api, update(77), { provider });
+        const first = await processTelegramUpdate(f.config, api, update(77), { executor: provider });
+        const second = await processTelegramUpdate(f.config, api, update(77), { executor: provider });
         assert.equal(first.kind, "processed");
         assert.equal(second.kind, "replayed");
         assert.equal(calls.provider, 1);
@@ -398,7 +398,7 @@ test("polling advances acknowledgement offset only after durable processing", as
         let polls = 0;
         let providerCalls = 0;
         let sends = 0;
-        const provider: ProviderInvoker = async () => {
+        const provider: AiExecutor = async () => {
             providerCalls += 1;
             return { contractVersion: 1, reply: "ack reply", usedMeaningIds: [] };
         };
@@ -420,7 +420,7 @@ test("polling advances acknowledgement offset only after durable processing", as
             },
         });
 
-        await assert.rejects(runTelegramPolling(f.config, api, { provider }), /stop-after-offset-proof/);
+        await assert.rejects(runTelegramPolling(f.config, api, { executor: provider }), /stop-after-offset-proof/);
         assert.equal(polls, 2);
         assert.equal(providerCalls, 1);
         assert.equal(sends, 1);
@@ -675,7 +675,7 @@ test("shutdown drains an admitted handler and never acknowledges it with a later
         let providerCalls = 0;
         let sends = 0;
         let polls = 0;
-        const provider: ProviderInvoker = async (_request, options) => {
+        const provider: AiExecutor = async (_request, options) => {
             providerCalls += 1;
             assert.equal(options.signal, undefined);
             providerEntered();
@@ -694,7 +694,7 @@ test("shutdown drains an admitted handler and never acknowledges it with a later
             },
         });
 
-        const running = runTelegramPolling(f.config, api, { provider, signal: controller.signal });
+        const running = runTelegramPolling(f.config, api, { executor: provider, signal: controller.signal });
         await entered;
         controller.abort(new DOMException("shutdown", "AbortError"));
         releaseProvider();

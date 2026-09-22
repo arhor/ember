@@ -68,8 +68,8 @@ function defaultSetupStatePath(): string {
 export function setupProvider(config: SetupProvider): ProviderInvoker {
     if (config.kind === "claude-code")
         return async (request, options) => {
-            const { createClaudeCodeProvider } = await import("../../providers/claude-code.ts");
-            return await createClaudeCodeProvider(config.model ? { model: config.model } : {})(request, options);
+            const { createClaudeCodeExecutor } = await import("../../ai/claude-code.ts");
+            return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
         };
     const options = { command: config.command, arguments_: config.model ? ["--model", config.model] : [] };
     return config.kind === "codex" ? createCodexProvider(options) : createCursorProvider(options);

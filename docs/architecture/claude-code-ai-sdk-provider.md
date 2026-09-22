@@ -13,7 +13,7 @@ discovery_status: current
 ## Decision
 
 Issue [#204](https://github.com/arhor/ember/issues/204) implements Claude Code as a
-production `ProviderInvoker` through **Vercel AI SDK 7** and the community
+production `AiExecutor` through **Vercel AI SDK 7** and the community
 `ai-sdk-provider-claude-code` package. Ember does not own a Claude-specific process
 runner, CLI parser, JSONL protocol, retry loop, or structured-output transport.
 
@@ -36,7 +36,7 @@ existing `ProviderResult`:
 ```text
 ProviderRequest
   -> Claude-specific isolation/model construction
-  -> createAiSdkProvider(LanguageModel)
+  -> createAiSdkCognitionExecutor(LanguageModel)
   -> AI SDK Output.object structured generation
   -> validateProviderResult
   -> ProviderResult
@@ -97,7 +97,7 @@ provider is constructed with this fixed policy:
 
 The adapter does not opt into a Claude Code preset system prompt, filesystem settings,
 provider hooks, extra directories, or SDK escape hatches. Ember's bounded projection
-and current input are still supplied by `createAiSdkProvider` as the request context.
+and current input are still supplied by `createAiSdkCognitionExecutor` as the request context.
 
 This is the strongest isolation claim the implementation currently earns. It proves
 that Ember does not request user/project/local filesystem settings, tools, MCP servers,
@@ -107,7 +107,7 @@ runtime, nor does it claim that an external service has no provider-owned framin
 
 ## Structured output
 
-`createAiSdkProvider` uses AI SDK `generateText` / `streamText` with `Output.object`
+`createAiSdkCognitionExecutor` uses AI SDK `generateText` / `streamText` with `Output.object`
 and Ember's strict JSON schema for:
 
 - `contractVersion`;

@@ -4,11 +4,11 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createClaudeCodeExecutor } from "../../src/ai/claude-code.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { createClaudeCodeProvider } from "../../src/providers/claude-code.ts";
 import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 
 const PRINCIPAL = "user-1";
@@ -61,7 +61,7 @@ try {
         scope: SCOPE,
         text: "According to the permitted projection, what hardware does the synthetic fixture server use? Answer in one sentence.",
         providerLabel: "claude-code-ai-sdk",
-        provider: createClaudeCodeProvider(),
+        executor: createClaudeCodeExecutor(),
         timeoutSeconds: 120,
     });
     if (result.providerFailure) throw new Error(result.providerFailure);
@@ -82,7 +82,7 @@ try {
     process.stdout.write(
         `${JSON.stringify(
             {
-                provider: "ai-sdk-provider-claude-code",
+                executor: "ai-sdk-provider-claude-code",
                 selected_meaning_count: cognition.selectedMeaningIds.length,
                 used_meaning_count: cognition.usedMeaningIds.length,
                 external_session_recorded_as_operational_evidence: false,

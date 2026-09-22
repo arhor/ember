@@ -33,7 +33,7 @@ test("CLI inspection redacts retained delivery representation while exposing rec
             text: "please answer",
             providerLabel: "fixture-provider",
             timeoutSeconds: 1,
-            provider: async () => ({
+            executor: async () => ({
                 contractVersion: 1,
                 reply: RETAINED_REPLY,
                 usedMeaningIds: [],

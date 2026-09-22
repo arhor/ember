@@ -83,7 +83,7 @@ async function createRetryableFailure(
         text: "send this once",
         providerLabel: "fixture-provider",
         timeoutSeconds: 1,
-        provider: provider(providerCalls),
+        executor: provider(providerCalls),
         surfaceId: "messaging:test",
         principalProvenance: "configured_surface_mapping",
         externalOccurrence: { occurrenceId: "update-retry" },
