@@ -44,6 +44,13 @@ async function interact(
     let stopReason = "application_interaction_failed";
     try {
         let state = await store.load();
+        const expectedContinuity = dependencies.admission.expectedContinuityBinding;
+        if (
+            expectedContinuity !== undefined &&
+            (state.lineage.lineageId !== expectedContinuity.lineageId ||
+                state.lineage.establishedAt !== expectedContinuity.establishedAt)
+        )
+            throw new ValidationError("continuity no longer matches setup binding");
         const started = startRuntime(state, event.principal, event.scope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);
@@ -71,7 +78,12 @@ async function interact(
                 providerLabel: dependencies.cognition.providerLabel,
                 timeoutSeconds: dependencies.cognition.timeoutSeconds,
                 ...(onboardingActive && dependencies.postTurn.memoryProposalGenerator !== undefined
-                    ? { memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator }
+                    ? {
+                          memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator,
+                          ...(dependencies.postTurn.memoryProposalProviderLabel === undefined
+                              ? {}
+                              : { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }),
+                      }
                     : {}),
                 ...(onboardingActive && dependencies.postTurn.onboardingProgressEvaluator !== undefined
                     ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }

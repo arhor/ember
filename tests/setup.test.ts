@@ -10,6 +10,7 @@ import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
+import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
@@ -535,6 +536,63 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
     assert.deepEqual(selectedCounts, [3, 0]);
 });
 
+test("ordinary CLI conversation uses the shared application coordinator lifecycle", async (t) => {
+    const f = await fixture(t);
+    await new StateStore(f.state).create(initialState("user"));
+    const io = capture("Hello\n:quit\n");
+
+    assert.equal(
+        await runCliSurface(
+            {
+                statePath: f.state,
+                principal: "user",
+                scope: "relationship:user",
+                providerKind: "claude-code",
+                providerCommand: "claude-code",
+                providerArgs: [],
+                providerTimeoutSeconds: 30,
+                claudeProviderFactory: () => async () => success,
+            },
+            io,
+        ),
+        0,
+    );
+
+    const state = await new StateStore(f.state).load();
+    assert.equal(io.text(), "PROBE_REPLY_NOT_RETAINED\n");
+    assert.equal(state.operations.runtimeEpisodes.length, 1);
+    assert.equal(state.operations.runtimeEpisodes[0]?.stopReason, "application_interaction_complete");
+});
+
+test("ordinary CLI conversation preserves the configured memory proposal provider label", async (t) => {
+    const f = await fixture(t);
+    const state = initialState("user");
+    await new StateStore(f.state).create(state);
+    await new OnboardingWorkStore(f.state).save(
+        createOnboardingWork(state.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
+    );
+
+    await runCliSurface(
+        {
+            statePath: f.state,
+            principal: "user",
+            scope: "relationship:user",
+            providerKind: "claude-code",
+            providerCommand: "claude-code",
+            providerArgs: [],
+            providerTimeoutSeconds: 30,
+            claudeProviderFactory: () => async () => success,
+            memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
+            memoryProposalProviderLabel: "configured-memory-provider",
+        },
+        capture("Hello\n:quit\n"),
+    );
+
+    const ledger = await new MemoryProposalGenerationStore(f.state).load();
+    assert.equal(ledger.generations.length, 1);
+    assert.equal(ledger.generations[0]?.provider_label, "configured-memory-provider");
+});
+
 test("CLI action command should durably approve an exact pending calendar proposal when it was shown in the same scope", async (t) => {
     // Given
     const f = await fixture(t);
@@ -999,6 +1057,51 @@ test("configured run checks lineage establishment under the acquired state lease
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
+test("configured CLI rejects a replacement lineage inside the application-owned interaction lease", async (t) => {
+    const f = await fixture(t);
+    const original = initialState("user");
+    const replacement = initialState("user");
+    const store = new StateStore(f.state);
+    await store.create(original);
+    let providerCalls = 0;
+    const io = capture();
+    io.input = Readable.from(
+        (async function* () {
+            await writeFile(f.state, `${JSON.stringify(replacement)}\n`);
+            yield "Hello\n";
+        })(),
+    );
+
+    assert.equal(
+        await runCliSurface(
+            {
+                statePath: f.state,
+                principal: "user",
+                scope: "relationship:user",
+                expectedContinuityBinding: {
+                    lineageId: original.lineage.lineageId,
+                    establishedAt: original.lineage.establishedAt,
+                },
+                providerKind: "claude-code",
+                providerCommand: "claude-code",
+                providerArgs: [],
+                providerTimeoutSeconds: 30,
+                claudeProviderFactory: () => async () => {
+                    providerCalls++;
+                    return success;
+                },
+            },
+            io,
+        ),
+        0,
+    );
+
+    assert.match(io.text(), /continuity no longer matches setup binding/);
+    assert.equal(providerCalls, 0);
+    assert.deepEqual(await store.load(), replacement);
+    assert.deepEqual(await store.lockStatus(), { status: "absent" });
+});
+
 test(":setup telegram is local, keeps no runtime open, and resumes conversation", async (t) => {
     const f = await fixture(t);
     const state = initialState("user");
@@ -1110,7 +1213,7 @@ test("CLI stops automatic onboarding reflection immediately after closure", asyn
     assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
     const runtimes = (await new StateStore(f.state).load()).operations.runtimeEpisodes;
     assert.equal(runtimes.length, 2);
-    assert.ok(runtimes.every((runtime) => runtime.stopReason === "cli_interaction_complete"));
+    assert.ok(runtimes.every((runtime) => runtime.stopReason === "application_interaction_complete"));
 });
 
 test("missing previously available or possibly created state is never silently recreated", async (t) => {

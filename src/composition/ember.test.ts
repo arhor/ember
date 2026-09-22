@@ -45,6 +45,7 @@ test("tests can supply deterministic application collaborators without process c
     const dependencies = composeEmberApplication(
         {
             statePath,
+            expectedContinuityBinding: { lineageId: "lineage-1", establishedAt: "2026-09-21T00:00:00Z" },
             provider: {
                 kind: "claude-code",
                 command: "unused",
@@ -55,6 +56,7 @@ test("tests can supply deterministic application collaborators without process c
         {
             provider: providerStub,
             memoryProposalGenerator,
+            memoryProposalProviderLabel: "fixture-memory-provider",
             onboardingProgressEvaluator,
             stateStoreOptions: {
                 hostname: "test-host",
@@ -71,7 +73,12 @@ test("tests can supply deterministic application collaborators without process c
     assert.equal(dependencies.cognition.providerLabel, "unused");
     assert.equal(dependencies.cognition.timeoutSeconds, 17);
     assert.equal(dependencies.postTurn.memoryProposalGenerator, memoryProposalGenerator);
+    assert.equal(dependencies.postTurn.memoryProposalProviderLabel, "fixture-memory-provider");
     assert.equal(dependencies.postTurn.onboardingProgressEvaluator, onboardingProgressEvaluator);
+    assert.deepEqual(dependencies.admission.expectedContinuityBinding, {
+        lineageId: "lineage-1",
+        establishedAt: "2026-09-21T00:00:00Z",
+    });
     assert.equal(dependencies.repositories.state.host, "test-host");
     assert.equal(dependencies.repositories.state.pid, 42);
 });

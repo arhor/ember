@@ -2,6 +2,7 @@ import type { Readable, Writable } from "node:stream";
 
 import { createInterface } from "node:readline";
 
+import type { EmberApplication } from "../../app/contract.ts";
 import type { CapabilityBinding } from "../../capabilities/execution.ts";
 import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
@@ -11,6 +12,7 @@ import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { ProviderRequest } from "../../providers/contract.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
+import { createEmberApplication } from "../../app/application.ts";
 import { actionProposalConfirmation } from "../../capabilities/action-proposal.ts";
 import { composeEmberApplication } from "../../composition/ember.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
@@ -59,6 +61,7 @@ interface CliSurfaceIo {
 
 export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo): Promise<number> {
     const dependencies = dependenciesForCli(config);
+    const application = createEmberApplication(dependencies);
     const store = dependencies.repositories.state;
     const initialLease = await store.acquireWriteLease();
     try {
@@ -76,6 +79,15 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                 io.output.write(`Telegram setup: ${setup.status}. Resuming conversation.\n`);
             } catch {
                 io.error.write("Telegram setup failed at the trusted-host boundary. Resuming conversation.\n");
+            }
+            continue;
+        }
+        if (!line.startsWith(":")) {
+            try {
+                await runOrdinaryCliInteraction(config, application, line, io);
+            } catch (error) {
+                if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
+                else throw error;
             }
             continue;
         }
@@ -172,7 +184,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                         );
                         io.output.write(`${result.id}\n`);
                     }
-                } else await runOrdinaryCliInteraction(config, dependencies, store, state, runtimeId, line, io);
+                }
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
@@ -212,43 +224,52 @@ async function withCliLease(
 
 async function runOrdinaryCliInteraction(
     config: CliSurfaceConfig,
-    dependencies: EmberApplicationDependencies,
-    store: StateStore,
-    state: EmberState,
-    runtimeId: RuntimeId,
+    application: EmberApplication,
     line: string,
     io: CliSurfaceIo,
 ) {
-    const onboardingWork = await dependencies.repositories.onboarding.load();
-    const onboardingIsActive = onboardingWork?.status === "active" && onboardingWork.scope === config.scope;
-    const onboardingProgressEvaluator =
-        config.onboardingProgressEvaluator ??
-        (onboardingIsActive ? dependencies.postTurn.onboardingProgressEvaluator : undefined);
-    const memoryProposalGenerator =
-        config.memoryProposalGenerator ??
-        (onboardingIsActive ? dependencies.postTurn.memoryProposalGenerator : undefined);
     const result = await withSigintCancellation((signal) =>
-        runSurfaceInteraction(dependencies.repositories, state, {
-            runtimeId,
-            principal: config.principal,
-            scope: config.scope,
-            text: line,
-            provider: dependencies.cognition.provider,
-            providerLabel: dependencies.cognition.providerLabel,
-            timeoutSeconds: dependencies.cognition.timeoutSeconds,
-            ...(memoryProposalGenerator === undefined
-                ? {}
-                : { memoryProposalGenerator, memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
-            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
-            signal,
-            surfaceId: "local_cli",
-            principalProvenance: "explicit_local_argument",
-            deliver: io.output,
-        }),
+        application.interact(
+            {
+                kind: "message",
+                principal: config.principal,
+                scope: config.scope,
+                text: line,
+                surfaceId: "local_cli",
+                principalProvenance: "explicit_local_argument",
+            },
+            async ({ text }) => {
+                await writeCliOutput(io.output, text);
+                return { outcome: "confirmed", externalMessageId: null };
+            },
+            { signal },
+        ),
     );
-    if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
-    if (result.memoryProposalFailure) io.error.write(`memory proposal: ${result.memoryProposalFailure}\n`);
-    if (result.onboardingProgressFailure) io.error.write(`onboarding progress: ${result.onboardingProgressFailure}\n`);
+    if (result.diagnostics.providerFailure) io.error.write(`provider: ${result.diagnostics.providerFailure}\n`);
+    if (result.diagnostics.memoryProposalFailure)
+        io.error.write(`memory proposal: ${result.diagnostics.memoryProposalFailure}\n`);
+    if (result.diagnostics.onboardingProgressFailure)
+        io.error.write(`onboarding progress: ${result.diagnostics.onboardingProgressFailure}\n`);
+}
+
+async function writeCliOutput(output: Writable, text: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const finish = (error?: Error | null) => {
+            if (settled) return;
+            settled = true;
+            output.off("error", onError);
+            if (error) reject(error);
+            else resolve();
+        };
+        const onError = (error: Error) => finish(error);
+        output.once("error", onError);
+        try {
+            output.write(text, (error) => finish(error));
+        } catch (error) {
+            finish(error instanceof Error ? error : new Error(String(error)));
+        }
+    });
 }
 
 async function loadConfiguredState(store: StateStore, config: CliSurfaceConfig) {
@@ -334,6 +355,9 @@ function dependenciesForCli(config: CliSurfaceConfig) {
     return composeEmberApplication(
         {
             statePath: config.statePath,
+            ...(config.expectedContinuityBinding === undefined
+                ? {}
+                : { expectedContinuityBinding: config.expectedContinuityBinding }),
             provider: {
                 kind: config.providerKind,
                 command: config.providerCommand,
@@ -349,6 +373,9 @@ function dependenciesForCli(config: CliSurfaceConfig) {
             ...(config.memoryProposalGenerator === undefined
                 ? {}
                 : { memoryProposalGenerator: config.memoryProposalGenerator }),
+            ...(config.memoryProposalProviderLabel === undefined
+                ? {}
+                : { memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
             ...(config.onboardingProgressEvaluator === undefined
                 ? {}
                 : { onboardingProgressEvaluator: config.onboardingProgressEvaluator }),

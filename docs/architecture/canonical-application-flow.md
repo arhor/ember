@@ -19,7 +19,9 @@ not the individual semantic contracts linked below. The transport-neutral contra
 from #305, production composition root from #306, coordinator facade from #307,
 explicit ordinary-flow persistence injection from #308, and application-owned
 interaction lease/runtime lifecycle from #309 are implemented; later ownership and
-host changes remain proposed until their child issues land.
+host changes remain proposed until their child issues land. The CLI ordinary-conversation
+adapter migration from #310 is also implemented; CLI administrative commands retain their
+local command handling.
 
 ## Recommendation and governing constraints
 
@@ -258,9 +260,10 @@ reconstruct sibling stores from `StateStore.path`. As hardened by #309,
 `EmberApplication.interact()` owns its writer lease and ordinary runtime episode through
 provider execution and initial delivery, persists the existing success/failure stop
 reasons, records an in-flight cognition as outcome-unknown when application work throws,
-and releases the lease even when runtime-stop persistence fails. The concrete surfaces
-retain their legacy orchestration until #310 and #311 migrate them onto this
-application-owned path; this intermediate state does not create a second application path.
+and releases the lease even when runtime-stop persistence fails. The CLI ordinary-message
+path now enters through this application-owned coordinator; Telegram retains its legacy
+orchestration until #311 migrates it. CLI administrative commands remain local and do not
+form an alternative ordinary-interaction path.
 
 ```mermaid
 flowchart TD
