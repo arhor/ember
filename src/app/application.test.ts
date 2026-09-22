@@ -274,20 +274,21 @@ test("provider cancellation evidence survives application runtime cleanup", asyn
     }
 });
 
-test("a thrown application error records a failed runtime stop and releases its writer lease", async () => {
+test("a post-start application error records unknown cognition and a failed runtime stop", async () => {
     const fixture = await applicationFixture();
     try {
-        fixture.dependencies.repositories.onboarding.load = async () => {
-            throw new Error("fixture application failure");
+        fixture.dependencies.repositories.conversation.recordAcceptedInput = async () => {
+            throw new Error("fixture post-start application failure");
         };
 
         await assert.rejects(
             fixture.application.interact(event("local_cli", "explicit_local_argument"), async () =>
                 assert.fail("application failure must not be delivered"),
             ),
-            /fixture application failure/,
+            /fixture post-start application failure/,
         );
         const state = await fixture.dependencies.repositories.state.load();
+        assert.equal(state.operations.cognitionEpisodes.at(-1)?.status, "outcome_unknown");
         assert.equal(state.operations.runtimeEpisodes.at(-1)?.stopReason, "application_interaction_failed");
         assert.equal(fixture.dependencies.repositories.state.lease, null);
     } finally {
@@ -354,8 +355,20 @@ test("runtime-stop persistence failure still releases the writer lease", async (
             /fixture stop write failure/,
         );
         assert.equal(store.lease, null);
-        const lease = await store.acquireWriteLease();
-        await store.releaseWriteLease(lease);
+        const interrupted = await store.load();
+        assert.equal(interrupted.operations.runtimeEpisodes.at(-1)?.cleanStopAt, null);
+        assert.equal(interrupted.operations.runtimeEpisodes.at(-1)?.stopReason, null);
+
+        store.commit = commit;
+        await fixture.application.interact(event("local_cli", "explicit_local_argument"), async () => ({
+            outcome: "confirmed",
+            externalMessageId: null,
+        }));
+        const recovered = await store.load();
+        const recovery = recovered.operations.runtimeEpisodes.at(-1)?.recoveryAccount;
+        assert.equal(recovery?.gapKind, "uncertain_interruption_boundary");
+        assert.equal(recovery?.previousRuntime, interrupted.operations.runtimeEpisodes.at(-1)?.runtimeId);
+        assert.equal(store.lease, null);
     } finally {
         await fixture.close();
     }

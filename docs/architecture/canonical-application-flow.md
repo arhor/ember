@@ -257,8 +257,9 @@ application, interaction, cognition, and post-turn calls; those deeper modules n
 reconstruct sibling stores from `StateStore.path`. As hardened by #309,
 `EmberApplication.interact()` owns its writer lease and ordinary runtime episode through
 provider execution and initial delivery, persists the existing success/failure stop
-reasons, and releases the lease even when runtime-stop persistence fails. The concrete
-surfaces retain their legacy orchestration until #310 and #311 migrate them onto this
+reasons, records an in-flight cognition as outcome-unknown when application work throws,
+and releases the lease even when runtime-stop persistence fails. The concrete surfaces
+retain their legacy orchestration until #310 and #311 migrate them onto this
 application-owned path; this intermediate state does not create a second application path.
 
 ```mermaid
