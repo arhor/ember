@@ -110,8 +110,21 @@ async function interact(
             if (runtimeId !== null) {
                 const current = await store.load();
                 const runtime = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
-                if (runtime?.cleanStopAt === null)
-                    await store.commit(current.revision, stopRuntime(current, runtimeId, { reason: stopReason }));
+                if (runtime?.cleanStopAt === null) {
+                    const stopped = stopRuntime(current, runtimeId, { reason: stopReason });
+                    if (stopReason === "application_interaction_failed") {
+                        const stoppedAt = stopped.operations.runtimeEpisodes.find(
+                            (item) => item.runtimeId === runtimeId,
+                        )?.cleanStopAt;
+                        for (const cognition of stopped.operations.cognitionEpisodes) {
+                            if (cognition.runtimeId === runtimeId && cognition.status === "started") {
+                                cognition.status = "outcome_unknown";
+                                cognition.lastDurableObservationAt = stoppedAt!;
+                            }
+                        }
+                    }
+                    await store.commit(current.revision, stopped);
+                }
             }
         } finally {
             await store.releaseWriteLease(lease);

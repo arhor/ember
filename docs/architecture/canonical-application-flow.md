@@ -16,9 +16,10 @@ under [epic #303](https://github.com/arhor/ember/issues/303). Investigated on
 The current-flow sections describe that commit; target paths and contracts are
 incremental migration targets. This document owns the cross-module migration proposal,
 not the individual semantic contracts linked below. The transport-neutral contract
-from #305, production composition root from #306, coordinator facade from #307, and
-explicit ordinary-flow persistence injection from #308 are implemented; later ownership
-and host changes remain proposed until their child issues land.
+from #305, production composition root from #306, coordinator facade from #307,
+explicit ordinary-flow persistence injection from #308, and application-owned
+interaction lease/runtime lifecycle from #309 are implemented; later ownership and
+host changes remain proposed until their child issues land.
 
 ## Recommendation and governing constraints
 
@@ -253,9 +254,13 @@ helpers, clocks, IDs, and store mechanics without reading process or global conf
 As implemented by #308, the resulting state, conversation, interaction/delivery,
 onboarding, and memory-generation repositories are passed explicitly through the
 application, interaction, cognition, and post-turn calls; those deeper modules no longer
-reconstruct sibling stores from `StateStore.path`. The surfaces still own orchestration
-until #309–#311 move those responsibilities behind the application API; this intermediate
-state does not create a second application path.
+reconstruct sibling stores from `StateStore.path`. As hardened by #309,
+`EmberApplication.interact()` owns its writer lease and ordinary runtime episode through
+provider execution and initial delivery, persists the existing success/failure stop
+reasons, records an in-flight cognition as outcome-unknown when application work throws,
+and releases the lease even when runtime-stop persistence fails. The concrete surfaces
+retain their legacy orchestration until #310 and #311 migrate them onto this
+application-owned path; this intermediate state does not create a second application path.
 
 ```mermaid
 flowchart TD
