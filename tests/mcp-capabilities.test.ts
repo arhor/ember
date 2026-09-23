@@ -214,10 +214,9 @@ test("MCP discovery should remain mechanical while only Ember-mapped selected ca
                 providerLabel: "ai-sdk-mcp",
                 timeoutSeconds: 1,
                 output: () => {},
-                executor: createAiSdkCognitionExecutor(model, {
-                    selectCapabilities: () => [capability],
-                    capabilityLedger: ledger,
-                }),
+                executor: createAiSdkCognitionExecutor(model),
+                selectCapabilities: () => [capability],
+                capabilityLedger: ledger,
             },
         );
 

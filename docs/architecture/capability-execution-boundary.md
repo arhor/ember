@@ -47,10 +47,12 @@ model produces final ProviderResult
 Ember validateProviderResult
 ```
 
-`src/capabilities/execution.ts` owns the capability contract and firewall.
-`src/ai/cognition.ts` is only an adapter from that contract to AI SDK `tool` and
-`generateText` mechanics. AI SDK `Tool`, tool-call, message, step, approval, and
-result types are not domain contracts and are not stored in canonical Ember state.
+`src/capabilities/execution.ts` owns the capability contract and firewall. Application
+composition owns the selection policy, and runtime resolves that policy before invoking
+AI execution. `src/ai/cognition.ts` receives only the selected bindings for that call and
+adapts them to AI SDK `tool` and `generateText` mechanics. AI SDK `Tool`, tool-call,
+message, step, approval, and result types are not domain contracts and are not stored in
+canonical Ember state.
 
 This preserves the governing rule:
 
@@ -60,8 +62,9 @@ This preserves the governing rule:
 ## Capability selection is not authority
 
 A `CapabilityBinding` is technical reachability plus the model-visible description
-and input schema required to call it. The adapter exposes only bindings returned by
-`selectCapabilities(request)` for the current cognition.
+and input schema required to call it. The adapter exposes only the bindings supplied in
+that cognition's `AiExecutionOptions`; it cannot discover or select additional
+capabilities.
 
 Selection does not authorize execution. Every requested call still enters the Ember
 firewall and receives an independent `CapabilityAuthorityDecision`:

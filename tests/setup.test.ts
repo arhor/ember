@@ -522,8 +522,8 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
             providerArgs: [],
             providerTimeoutSeconds: 30,
             googleCalendarConfigPath: configPath,
-            claudeProviderFactory: (options) => async (request) => {
-                selectedCounts.push(options.selectCapabilities?.(request).length ?? 0);
+            claudeProviderFactory: () => async (_request, options) => {
+                selectedCounts.push(options.capabilities?.length ?? 0);
                 if (selectedCounts.length === 1)
                     await writeFile(configPath, `${JSON.stringify({ ...calendar, enabled: false })}\n`);
                 return success;
@@ -534,6 +534,50 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
 
     // Then
     assert.deepEqual(selectedCounts, [3, 0]);
+});
+
+test("CLI explain cognition should retain configured capabilities when selection is application-owned", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const populated = populatedState();
+    await new StateStore(f.state).create(populated.state);
+    const configPath = join(f.directory, "calendar.json");
+    await writeFile(
+        configPath,
+        `${JSON.stringify({
+            ...calendarConfig(populated.state.lineage.lineageId, "user-1", f.directory),
+            scope: "project:ember/docs",
+        })}\n`,
+    );
+    let selectedCapabilityCount = -1;
+    const io = capture(`:ask --explain ${populated.ids.preference} Explain this preference\n:quit\n`);
+
+    // When
+    await runCliSurface(
+        {
+            statePath: f.state,
+            principal: "user-1",
+            scope: "project:ember/docs",
+            providerKind: "claude-code",
+            providerCommand: "claude-code",
+            providerArgs: [],
+            providerTimeoutSeconds: 30,
+            googleCalendarConfigPath: configPath,
+            claudeProviderFactory: () => async (request, options) => {
+                selectedCapabilityCount = options.capabilities?.length ?? 0;
+                return {
+                    contractVersion: 1,
+                    reply: "explain capability reply",
+                    usedMeaningIds: request.projection.selection.meaning_ids,
+                };
+            },
+        },
+        io,
+    );
+
+    // Then
+    assert.equal(selectedCapabilityCount, 3);
+    assert.equal(io.text(), "explain capability reply\n");
 });
 
 test("ordinary CLI conversation uses the shared application coordinator lifecycle", async (t) => {

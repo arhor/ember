@@ -1,7 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { AiExecutionRequest, AiExecutor } from "../ai/contract.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
 import type { PreparedCognition } from "../app/cognition-preparation.ts";
+import type { CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
     CognitionEpisode,
@@ -17,7 +18,7 @@ import type { ConversationContextStore } from "../persistence/conversation-conte
 import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 
-import { AI_EXECUTION_CONTRACT_VERSION } from "../ai/contract.ts";
+import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../ai/contract.ts";
 import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
@@ -139,6 +140,8 @@ export interface RunCognitionOptions {
     text: string;
     providerLabel: string;
     executor: AiExecutor;
+    selectCapabilities?: CapabilitySelector | undefined;
+    capabilityLedger?: CapabilityExecutionLedger | undefined;
     timeoutSeconds: number;
     signal?: AbortSignal | undefined;
     purpose?: CognitionPurpose;
@@ -200,6 +203,8 @@ export async function runCognitionUntilExpressionCommit(
         text,
         providerLabel: label,
         executor,
+        selectCapabilities,
+        capabilityLedger,
         timeoutSeconds,
         signal,
         purpose = "ordinary",
@@ -283,7 +288,8 @@ export async function runCognitionUntilExpressionCommit(
     };
     let result;
     try {
-        result = await executor(request, { timeoutSeconds, signal });
+        const capabilities = await resolveCapabilities(selectCapabilities, request, timeoutSeconds, signal);
+        result = await executor(request, { timeoutSeconds, signal, capabilities, capabilityLedger });
     } catch (error) {
         if (!(error instanceof ProviderError)) {
             throw error;
@@ -360,6 +366,48 @@ export async function runCognitionUntilExpressionCommit(
         cognitionId,
         expressionText: outputText,
     };
+}
+
+async function resolveCapabilities(
+    selectCapabilities: CapabilitySelector | undefined,
+    request: AiExecutionRequest,
+    timeoutSeconds: number,
+    callerSignal?: AbortSignal,
+) {
+    if (selectCapabilities === undefined) return [];
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
+        throw new ProviderError("provider timeout must be a positive finite number");
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`provider timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
+    if (callerSignal?.aborted) throw capabilitySelectionCancellation();
+
+    const timeoutMilliseconds = Math.max(1, Math.ceil(timeoutSeconds * 1000));
+    const timeoutSignal = AbortSignal.timeout(timeoutMilliseconds);
+    const selectionSignal = callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal;
+    let onAbort: (() => void) | undefined;
+    const aborted = new Promise<never>((_resolve, reject) => {
+        onAbort = () => reject(selectionSignal.reason);
+        selectionSignal.addEventListener("abort", onAbort, { once: true });
+    });
+
+    try {
+        return await Promise.race([selectCapabilities(request, { signal: selectionSignal }), aborted]);
+    } catch (error) {
+        if (callerSignal?.aborted) throw capabilitySelectionCancellation();
+        if (timeoutSignal.aborted)
+            throw new ProviderError("capability selection timed out before AI invocation", { outcome: "timed_out" });
+        if (error instanceof ProviderError) throw error;
+        throw new ProviderError("capability selection failed before AI invocation", { cause: error });
+    } finally {
+        if (onAbort !== undefined) selectionSignal.removeEventListener("abort", onAbort);
+    }
+}
+
+function capabilitySelectionCancellation() {
+    return new ProviderError("capability selection was cancelled before AI invocation", {
+        outcome: "cancellation_requested",
+        terminationConfirmed: false,
+    });
 }
 
 export function validateCognitionInvocation(state: EmberState, options: RunCognitionOptions) {

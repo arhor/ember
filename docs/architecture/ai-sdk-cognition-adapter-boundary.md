@@ -28,13 +28,15 @@ The current path is:
 Ember builds least-sufficient Projection
         |
         v
-ProviderRequest
+Application resolves capability bindings for this cognition
+        |
+        v
+ProviderRequest + AiExecutionOptions(selected bindings)
         |
         v
 createAiSdkCognitionExecutor(LanguageModel)
         |
-        +-> Ember selects capability bindings for this cognition
-        +-> adapter maps selected bindings to AI SDK tools
+        +-> adapter maps the supplied bindings to AI SDK tools
         +-> generateText runs a bounded tool loop
         +-> Ember capability firewall decides whether each call may execute
         +-> AI SDK lifecycle callbacks emit bounded inference evidence
@@ -71,8 +73,10 @@ For capability semantics, see
 
 The SDK call remains enclosed by Ember-owned boundaries.
 
-Before invocation, `runCognition` builds the projection. The adapter receives only the
-already-bounded `ProviderRequest` and sends the model only:
+Before invocation, `runCognition` builds the projection and resolves the
+application-composed capability selector. The adapter receives the already-bounded
+`ProviderRequest` plus only those selected bindings in `AiExecutionOptions`, and sends
+the model only:
 
 - that selected `Projection`;
 - the current input object; and
@@ -110,11 +114,12 @@ Executable commands, argument prefixes, workspaces, environments, and provider-s
 continuation mechanics stay inside concrete provider adapters. The AI SDK adapter uses
 the same semantic seam without fake command placeholders.
 
-Capability bindings are deliberately not added to `ProviderRequest` or
-`AiExecutor`. `createAiSdkCognitionExecutor` accepts infrastructure-local capability and evidence
-options that receive or describe only the already-bounded cognition attempt. This
-preserves the provider contract for Codex, Cursor, deterministic process providers,
-and any later model toolkit while keeping tool and diagnostic mechanics optional.
+Capability bindings are deliberately not added to `ProviderRequest`. They cross the
+execution seam as per-call `AiExecutionOptions`, after application policy has selected
+them and before the SDK adapter maps them to tool definitions. Provider construction no
+longer owns or invokes a selector. This preserves one request/result contract for Codex,
+Cursor, deterministic process providers, and any later model toolkit while keeping tool
+mechanics optional.
 
 ## Inference evidence and continuation evidence
 
@@ -180,6 +185,10 @@ remains `timed_out` even if an external cancellation follows it.
 
 Provider-level behavior remains:
 
+- a capability-selector rejection is a definite `failed` cognition before model or
+  tool execution;
+- caller cancellation or the configured timeout while capability selection is pending
+  becomes `cancellation_requested` or `timed_out` before model or tool execution;
 - an already-aborted caller signal is `cancellation_requested` before model work;
 - an abort during generation is `cancellation_requested`;
 - an AI SDK timeout is `timed_out`;
@@ -217,8 +226,8 @@ existing provider contract.
 Vercel AI SDK is replaceable at this boundary. A different toolkit or custom direct
 provider implementation can replace `createAiSdkCognitionExecutor` if it can:
 
-1. accept the already-selected `ProviderRequest` without reaching into canonical
-   state;
+1. accept the already-selected `ProviderRequest` and per-call capability bindings
+   without reaching into canonical state;
 2. map explicitly selected Ember capabilities to its tool-call mechanics without
    becoming the authority oracle;
 3. honor Ember timeout/cancellation semantics and avoid unsafe implicit retries;

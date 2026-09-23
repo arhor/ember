@@ -1,5 +1,5 @@
 import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
-import type { AiExecutionRequest, AiExecutor } from "../ai/contract.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { StateStoreOptions } from "../persistence/state-store.ts";
@@ -48,6 +48,7 @@ export interface EmberCompositionOverrides {
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     stateStoreOptions?: StateStoreOptions;
     claudeProviderFactory?: (options: ClaudeCodeProviderOptions) => AiExecutor;
+    selectCapabilities?: CapabilitySelector;
 }
 
 /** Concrete production dependencies for one Ember application instance. */
@@ -70,6 +71,7 @@ export interface EmberApplicationDependencies {
         executor: AiExecutor;
         providerLabel: string;
         timeoutSeconds: number;
+        selectCapabilities?: CapabilitySelector | undefined;
     };
     postTurn: {
         memoryProposalGenerator?: MemoryProposalGenerator;
@@ -91,7 +93,7 @@ export function composeEmberApplication(
     overrides: EmberCompositionOverrides = {},
 ): ComposedEmberApplicationDependencies {
     const repositories = createRepositories(config.statePath, overrides.stateStoreOptions);
-    const executor = overrides.executor ?? createConfiguredExecutor(config, repositories, overrides);
+    const executor = overrides.executor ?? createConfiguredExecutor(config, overrides);
     const controls: Partial<ReturnType<typeof createConfiguredControlHelpers>> =
         overrides.executor === undefined ? createConfiguredControlHelpers(config) : {};
     const memoryProposalGenerator = overrides.memoryProposalGenerator ?? controls.memoryProposalGenerator;
@@ -107,6 +109,7 @@ export function composeEmberApplication(
             executor,
             providerLabel: providerLabel(config.provider.command),
             timeoutSeconds: config.provider.timeoutSeconds,
+            ...createCapabilitySelector(config, repositories, overrides),
         },
         postTurn: {
             ...(memoryProposalGenerator === undefined ? {} : { memoryProposalGenerator }),
@@ -185,11 +188,7 @@ export function createFileBackedRepositoriesForState(state: StateStore) {
     };
 }
 
-function createConfiguredExecutor(
-    config: EmberCompositionConfig,
-    repositories: ReturnType<typeof createRepositories>,
-    overrides: EmberCompositionOverrides,
-): AiExecutor {
+function createConfiguredExecutor(config: EmberCompositionConfig, overrides: EmberCompositionOverrides): AiExecutor {
     const adapter = { command: config.provider.command, arguments_: config.provider.arguments };
     if (config.provider.kind === "codex")
         return createAiSdkCognitionExecutor(
@@ -204,28 +203,36 @@ function createConfiguredExecutor(
             createProcessLanguageModel({ ...adapter, timeoutSeconds: config.provider.timeoutSeconds }),
         );
 
-    const objectiveActions = new ObjectiveActionCoordinator(repositories.objectives, repositories.actions);
     return async (request, options) => {
         const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");
-        const calendar = config.googleCalendarConfigPath
-            ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath)
-            : undefined;
         return (overrides.claudeProviderFactory ?? createClaudeCodeExecutor)({
             ...(config.provider.model ? { model: config.provider.model } : {}),
-            ...(calendar === undefined
-                ? {}
-                : {
-                      selectCapabilities: (selectedRequest: AiExecutionRequest) => [
-                          ...selectGoogleCalendarCapability(calendar, capabilityContext(selectedRequest)),
-                          ...selectApprovedGoogleCalendarEventCapability(
-                              calendar,
-                              repositories.actions,
-                              capabilityContext(selectedRequest),
-                              { revalidateObjective: (proposalId) => objectiveActions.revalidate(proposalId) },
-                          ),
-                      ],
-                  }),
         })(request, options);
+    };
+}
+
+function createCapabilitySelector(
+    config: EmberCompositionConfig,
+    repositories: ReturnType<typeof createRepositories>,
+    overrides: EmberCompositionOverrides,
+) {
+    if (overrides.selectCapabilities !== undefined) return { selectCapabilities: overrides.selectCapabilities };
+    if (config.provider.kind !== "claude-code" || config.googleCalendarConfigPath === undefined) return {};
+    const objectiveActions = new ObjectiveActionCoordinator(repositories.objectives, repositories.actions);
+    return {
+        selectCapabilities: async (request: AiExecutionRequest) => {
+            const calendar = await loadGoogleCalendarConfig(config.googleCalendarConfigPath!);
+            if (calendar === undefined) return [];
+            return [
+                ...selectGoogleCalendarCapability(calendar, capabilityContext(request)),
+                ...selectApprovedGoogleCalendarEventCapability(
+                    calendar,
+                    repositories.actions,
+                    capabilityContext(request),
+                    { revalidateObjective: (proposalId) => objectiveActions.revalidate(proposalId) },
+                ),
+            ];
+        },
     };
 }
 

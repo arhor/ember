@@ -23,9 +23,8 @@ import {
     TypeValidationError,
 } from "ai";
 
-import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { CognitionId } from "../core/model.ts";
-import type { AiExecutor, AiExecutionRequest, AiStreamObserver } from "./contract.ts";
+import type { AiExecutor, AiStreamObserver } from "./contract.ts";
 
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../core/errors.ts";
@@ -122,8 +121,6 @@ export interface InferenceEvidenceSink {
 }
 
 export interface AiSdkProviderOptions {
-    selectCapabilities?: (request: AiExecutionRequest) => readonly CapabilityBinding[];
-    capabilityLedger?: CapabilityExecutionLedger;
     inferenceEvidence?: InferenceEvidenceSink;
 }
 
@@ -162,7 +159,7 @@ const MAX_TOOL_LOOP_STEPS = 4;
 const MAX_AI_SDK_RETRIES = 0;
 
 export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSdkProviderOptions = {}): AiExecutor {
-    return async (request, { timeoutSeconds, signal, stream }) => {
+    return async (request, { timeoutSeconds, signal, stream, capabilities = [], capabilityLedger }) => {
         validateTimeout(timeoutSeconds);
         if (signal?.aborted) {
             await recordInferenceEvidence(options.inferenceEvidence, {
@@ -175,7 +172,6 @@ export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSd
         }
 
         try {
-            const capabilities = options.selectCapabilities?.(request) ?? [];
             const firewall = createCapabilityExecutionFirewall(
                 capabilities,
                 {
@@ -185,7 +181,7 @@ export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSd
                     surface: request.projection.surface,
                     validatedRevision: request.projection.validatedRevision,
                 },
-                options.capabilityLedger,
+                capabilityLedger,
             );
             const tools = Object.fromEntries(
                 capabilities.map((capability) => [

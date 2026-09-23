@@ -1,3 +1,4 @@
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { CognitionId, MeaningId } from "../core/model.ts";
 import type { Projection } from "../core/projection.ts";
 
@@ -39,7 +40,14 @@ export interface AiExecutionOptions {
     timeoutSeconds: number;
     signal?: AbortSignal | undefined;
     stream?: AiStreamObserver | undefined;
+    capabilities?: readonly CapabilityBinding[] | undefined;
+    capabilityLedger?: CapabilityExecutionLedger | undefined;
 }
+
+export type CapabilitySelector = (
+    request: AiExecutionRequest,
+    options: { signal?: AbortSignal | undefined },
+) => readonly CapabilityBinding[] | Promise<readonly CapabilityBinding[]>;
 
 // Transport and process launch configuration belongs inside the concrete provider adapter, not this semantic seam.
 export type AiExecutor = (request: AiExecutionRequest, options: AiExecutionOptions) => Promise<AiExecutionResult>;
