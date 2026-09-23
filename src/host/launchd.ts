@@ -60,14 +60,8 @@ export class LaunchdTelegramResidentHost implements ResidentServiceHost {
         const [definition, service] = await Promise.all([this.readDefinition(), this.command(["print", this.target])]);
         return {
             installed: definition === null ? "no" : "yes",
-            active:
-                service.code === 0
-                    ? /\bstate = running\b/.test(service.stdout)
-                        ? "yes"
-                        : "no"
-                    : absent(service)
-                      ? "no"
-                      : "unknown",
+            // A loaded KeepAlive agent may be throttled now and restart during mapping discovery.
+            active: service.code === 0 ? "yes" : absent(service) ? "no" : "unknown",
         };
     }
 
@@ -114,15 +108,21 @@ export class LaunchdTelegramResidentHost implements ResidentServiceHost {
     }
 }
 
-export function renderLaunchAgent(launch: WorkerLaunch): string {
+export function renderLaunchAgent(launch: WorkerLaunch, label = LABEL): string {
+    if (!/^[A-Za-z0-9.-]{1,255}$/.test(label)) throw new ValidationError("launchd label is invalid");
     if (!isAbsolute(launch.executable) || launch.arguments.some(unsafe) || unsafe(launch.executable))
         throw new ValidationError("launchd executable and arguments must be safe");
     if (launch.workingDirectory && (!isAbsolute(launch.workingDirectory) || unsafe(launch.workingDirectory)))
         throw new ValidationError("launchd working directory must be a safe absolute path");
+    if (
+        launch.stopTimeoutSeconds !== undefined &&
+        (!Number.isSafeInteger(launch.stopTimeoutSeconds) || launch.stopTimeoutSeconds <= 0)
+    )
+        throw new ValidationError("launchd stop timeout must be a positive integer");
     const args = [launch.executable, ...launch.arguments]
         .map((value) => `        <string>${xml(value)}</string>`)
         .join("\n");
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>Label</key>\n    <string>${LABEL}</string>\n    <key>ProgramArguments</key>\n    <array>\n${args}\n    </array>\n${launch.workingDirectory ? `    <key>WorkingDirectory</key>\n    <string>${xml(launch.workingDirectory)}</string>\n` : ""}    <key>RunAtLoad</key>\n    <true/>\n    <key>KeepAlive</key>\n    <true/>\n    <key>ThrottleInterval</key>\n    <integer>5</integer>\n</dict>\n</plist>\n`;
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>Label</key>\n    <string>${label}</string>\n    <key>ProgramArguments</key>\n    <array>\n${args}\n    </array>\n${launch.workingDirectory ? `    <key>WorkingDirectory</key>\n    <string>${xml(launch.workingDirectory)}</string>\n` : ""}    <key>RunAtLoad</key>\n    <true/>\n    <key>KeepAlive</key>\n    <true/>\n    <key>ThrottleInterval</key>\n    <integer>5</integer>\n    <key>Umask</key>\n    <string>077</string>\n${launch.stopTimeoutSeconds === undefined ? "" : `    <key>ExitTimeOut</key>\n    <integer>${launch.stopTimeoutSeconds}</integer>\n`}</dict>\n</plist>\n`;
 }
 
 function unsafe(value: string) {

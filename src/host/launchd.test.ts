@@ -8,6 +8,7 @@ const launch = {
     executable: "/opt/node & tools/node",
     arguments: ["/opt/ember/bin/ember-telegram.ts", "serve", "--config", "/Users/me/telegram<local>.json"],
     workingDirectory: "/opt/ember",
+    stopTimeoutSeconds: 90,
 };
 
 test("renderLaunchAgent should produce a login-scoped transport plist when given a validated launch", () => {
@@ -21,6 +22,8 @@ test("renderLaunchAgent should produce a login-scoped transport plist when given
     assert.match(plist, /<key>Label<\/key>\s*<string>dev\.ember\.telegram<\/string>/);
     assert.match(plist, /<key>RunAtLoad<\/key>\s*<true\/>/);
     assert.match(plist, /<key>KeepAlive<\/key>\s*<true\/>/);
+    assert.match(plist, /<key>ExitTimeOut<\/key>\s*<integer>90<\/integer>/);
+    assert.match(plist, /<key>Umask<\/key>\s*<string>077<\/string>/);
     assert.match(plist, /\/opt\/node &amp; tools\/node/);
     assert.match(plist, /telegram&lt;local&gt;\.json/);
     assert.doesNotMatch(plist, /EnvironmentVariables|token_file|state_path/);
@@ -35,6 +38,17 @@ test("renderLaunchAgent should reject control characters when launch arguments a
 
     // Then
     assert.throws(render, /safe/);
+});
+
+test("renderLaunchAgent should reject invalid stop timeouts when launchd requires an integer", () => {
+    // Given
+    const input = { ...launch, stopTimeoutSeconds: 0.5 };
+
+    // When
+    const render = () => renderLaunchAgent(input);
+
+    // Then
+    assert.throws(render, /stop timeout/);
 });
 
 test("LaunchdTelegramResidentHost should install and activate a private per-user agent when service is absent", async () => {
@@ -110,4 +124,20 @@ test("LaunchdTelegramResidentHost should report unknown activity when launchctl 
 
     // Then
     assert.deepEqual(status, { installed: "yes", active: "unknown" });
+});
+
+test("LaunchdTelegramResidentHost should treat a loaded idle agent as active during setup", async () => {
+    // Given
+    const host = new LaunchdTelegramResidentHost({
+        home: "/Users/me",
+        uid: 501,
+        read: async () => "plist",
+        command: async () => ({ code: 0, stdout: "state = waiting\n", stderr: "" }),
+    });
+
+    // When
+    const status = await host.inspect();
+
+    // Then
+    assert.deepEqual(status, { installed: "yes", active: "yes" });
 });

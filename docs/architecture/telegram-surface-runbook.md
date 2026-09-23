@@ -440,6 +440,9 @@ after logout. It uses the same Telegram config path, state path, application
 coordinator, and writer lease as foreground use. The plist holds only the absolute
 Node executable, entry point, config path, and working directory. Keep the bot token
 in the protected `token_file` named by the Telegram config, outside the plist.
+The agent carries the configured stop timeout as `ExitTimeOut` so admitted updates
+can drain after SIGTERM, and `Umask=077` keeps files created by the worker and its
+subprocesses private by default.
 
 Run `ember`, then request Telegram setup to install and verify the service. For an
 existing validated Telegram config, the direct host commands are:
@@ -454,7 +457,9 @@ npm run surface:telegram -- service-uninstall --config "$HOME/.ember/config/tele
 
 `service-install` replaces the plist and bootstraps the login agent; repeat it after
 changing Node, the checkout location, or the Telegram config path. `service-status`
-reports file installation and observed process activity separately. A present plist
+reports file installation and whether launchd has loaded the agent separately. A
+loaded agent is treated as active even while throttled because `KeepAlive` can restart
+it during Telegram mapping discovery. A present plist
 or a successful launchctl command does not prove that Telegram delivery succeeded.
 Use `launchctl print "gui/$(id -u)/dev.ember.telegram"` for host diagnostics and
 Ember's interaction ledger for delivery truth.
@@ -472,6 +477,12 @@ unloaded. After cleanup, rerun setup or `service-install` if resident Telegram i
 still wanted. The foreground application needs no LaunchAgent. Timed background wake
 work is not installed by this adapter; host support for that separate capability
 remains unavailable on macOS.
+
+The isolated host smoke checks plist acceptance and the real bootstrap → print →
+bootout lifecycle without loading Telegram config or contacting its API. Run it in
+a macOS GUI login session with `npm run smoke:launchd:live`; it skips when the GUI
+domain is unavailable. It creates a uniquely labeled temporary agent and removes it
+after verification. Normal CI remains portable and uses deterministic adapter tests.
 
 ## Inspection
 

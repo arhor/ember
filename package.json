@@ -21,6 +21,7 @@
     "smoke:google-calendar-create:live": "EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE=1 node eval/action-effects/run.ts --mode live",
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node tests/live/codex-specialist.ts",
     "smoke:runtime:live": "EMBER_RUN_LIVE_EPISODIC=1 node tests/live/episodic-runtime-smoke.ts",
+    "smoke:launchd:live": "EMBER_RUN_LIVE_LAUNCHD=1 node tests/live/launchd-smoke.ts",
     "eval:runtime-resource": "node eval/runtime-resource/run.ts",
     "eval:runtime-resource:constrained": "node eval/runtime-resource/constrained-host.ts",
     "eval:continuity": "node eval/longitudinal/run.ts",
