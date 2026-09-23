@@ -73,10 +73,10 @@ For capability semantics, see
 
 The SDK call remains enclosed by Ember-owned boundaries.
 
-Before invocation, the application cognition-preparation boundary builds the projection
-and resolves the application-composed capability selector. The adapter receives the
-already-bounded `ProviderRequest` plus only those selected bindings in
-`AiExecutionOptions`, and sends the model only:
+Before invocation, the application cognition-preparation boundary builds the projection.
+Application cognition execution then resolves the application-composed capability
+selector. The adapter receives the already-bounded `ProviderRequest` plus only those
+selected bindings in `AiExecutionOptions`, and sends the model only:
 
 - that selected `Projection`;
 - the current input object; and

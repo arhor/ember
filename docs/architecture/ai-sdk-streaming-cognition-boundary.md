@@ -131,8 +131,8 @@ provider lifecycle metadata and cannot be interpreted as effect-completion evide
 
 The first consumer is deliberately a deterministic test/event sink rather than a UI
 transport. Tests wrap the production `ProviderInvoker` and add a
-`ProviderStreamObserver` for that invocation, then execute through the ordinary
-application interaction path.
+`ProviderStreamObserver` for that invocation, then execute through the focused
+application cognition execution path (`executeCognition`).
 
 This proves the seam end to end while keeping interaction surfaces unchanged. Telegram
 edit-in-place behavior remains outside this task until the Telegram transport/framework
