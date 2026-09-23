@@ -1,12 +1,14 @@
 import { spawn } from "node:child_process";
-import { mkdir } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import { mkdir, readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join } from "node:path";
 
 import type { BackgroundHost, HostObservation, WorkerLaunch } from "./background.ts";
+import type { ResidentServiceHost, ServiceActionResult, ServiceState } from "./resident-service.ts";
 
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
-import { replaceFileAtomically } from "../persistence/file-replacement.ts";
+import { replaceFileAtomically, replaceFileDurably } from "../persistence/file-replacement.ts";
 
 export interface SystemdHostConfig {
     systemd_run_command: string;
@@ -21,6 +23,109 @@ export interface CommandResult {
 }
 
 export type CommandRunner = (command: string, args: string[]) => Promise<CommandResult>;
+
+type ServiceCommand = (command: string, args: string[]) => Promise<{ code: number | null; signal: string | null }>;
+
+export class SystemdTelegramResidentHost implements ResidentServiceHost {
+    private readonly unitName = "ember-telegram.service";
+    private readonly definitionPath = join(homedir(), ".config", "systemd", "user", this.unitName);
+    private readonly command: ServiceCommand;
+    private readonly read: (path: string) => Promise<string | null>;
+    private readonly write: (path: string, content: string, mode: number) => Promise<void>;
+
+    constructor(
+        options: {
+            command?: ServiceCommand;
+            read?: (path: string) => Promise<string | null>;
+            write?: (path: string, content: string, mode: number) => Promise<void>;
+        } = {},
+    ) {
+        this.command = options.command ?? runServiceCommand;
+        this.read = options.read ?? readResidentUnit;
+        this.write = options.write ?? writeResidentUnit;
+    }
+
+    render(launch: WorkerLaunch) {
+        return renderSystemdService({
+            description: "Ember Telegram messaging surface",
+            launch,
+            restart: "on-failure",
+            after: ["network-online.target"],
+            wantedBy: "default.target",
+        });
+    }
+
+    async readDefinition() {
+        return this.read(this.definitionPath);
+    }
+
+    async inspect() {
+        const [installed, active] = await Promise.all([
+            this.command("systemctl", ["--user", "is-enabled", this.unitName]),
+            this.command("systemctl", ["--user", "is-active", this.unitName]),
+        ]);
+        return { installed: serviceState(installed.code), active: serviceState(active.code) };
+    }
+
+    async isActive(): Promise<ServiceActionResult> {
+        return actionResult(await this.command("systemctl", ["--user", "is-active", this.unitName]));
+    }
+
+    async stop(): Promise<ServiceActionResult> {
+        return actionResult(await this.command("systemctl", ["--user", "stop", this.unitName]));
+    }
+
+    async start(): Promise<ServiceActionResult> {
+        return actionResult(await this.command("systemctl", ["--user", "start", this.unitName]));
+    }
+
+    async install(content: string): Promise<void> {
+        await this.write(this.definitionPath, content, 0o600);
+    }
+
+    async activate(wasActive: boolean): Promise<ServiceActionResult> {
+        const reloaded = actionResult(await this.command("systemctl", ["--user", "daemon-reload"]));
+        if (reloaded !== "confirmed") return reloaded;
+        return actionResult(
+            await this.command(
+                "systemctl",
+                wasActive ? ["--user", "restart", this.unitName] : ["--user", "enable", "--now", this.unitName],
+            ),
+        );
+    }
+}
+
+async function readResidentUnit(path: string): Promise<string | null> {
+    try {
+        return await readFile(path, "utf8");
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+        throw error;
+    }
+}
+
+function serviceState(code: number | null): ServiceState {
+    return code === 0 ? "yes" : code === null ? "unknown" : "no";
+}
+
+function actionResult(result: { code: number | null }): ServiceActionResult {
+    return result.code === 0 ? "confirmed" : result.code === null ? "uncertain" : "failed";
+}
+
+async function runServiceCommand(command: string, args: string[]) {
+    return new Promise<{ code: number | null; signal: string | null }>((resolve, reject) => {
+        const child = spawn(command, args, { stdio: "ignore", shell: false });
+        child.once("error", reject);
+        child.once("close", (code, signal) => resolve({ code, signal }));
+    });
+}
+
+async function writeResidentUnit(path: string, content: string, mode: number) {
+    await replaceFileDurably(path, content, {
+        mode,
+        durabilityUncertainMessage: `durability is uncertain for ${dirname(path)}`,
+    });
+}
 
 export class SystemdUserBackgroundHost implements BackgroundHost {
     private readonly config: SystemdHostConfig;

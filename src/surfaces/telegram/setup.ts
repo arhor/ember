@@ -1,7 +1,6 @@
 import type { Api, Message, Update } from "node-telegram-bot-api";
 import type { Readable, Writable } from "node:stream";
 
-import { spawn } from "node:child_process";
 import { randomInt } from "node:crypto";
 import { openSync } from "node:fs";
 import { constants } from "node:fs";
@@ -12,6 +11,7 @@ import { createInterface } from "node:readline/promises";
 import { ReadStream, WriteStream } from "node:tty";
 import { fileURLToPath } from "node:url";
 
+import type { ResidentServiceHost } from "../../host/resident-service.ts";
 import type { SetupConfig } from "../cli/setup.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./surface.ts";
 
@@ -20,7 +20,7 @@ import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import {
     createTelegramApi,
-    renderTelegramSurfaceUnit,
+    telegramResidentLaunch,
     validateTelegramToken,
     verifyTelegramLongPollingReady,
 } from "./surface.ts";
@@ -30,7 +30,7 @@ export type TelegramSetupStage =
     | "bot_preflight"
     | "mapping"
     | "configuration"
-    | "unit_installation"
+    | "service_installation"
     | "activation"
     | "round_trip";
 export type TelegramSetupTruth = "not_attempted" | "confirmed" | "declined" | "failed" | "uncertain";
@@ -45,7 +45,6 @@ export interface TelegramSetupBinding {
     scope: string;
     configPath?: string;
     tokenPath?: string;
-    unitPath?: string;
 }
 
 export interface TelegramSetupIo {
@@ -55,13 +54,13 @@ export interface TelegramSetupIo {
 }
 
 export interface TelegramSetupDependencies {
+    residentHost: ResidentServiceHost;
     secretPrompt?: (prompt: string) => Promise<string | null>;
     confirm?: (prompt: string) => Promise<boolean>;
     api?: (token: string) => Pick<Api, "getMe" | "getWebhookInfo" | "getUpdates">;
     read?: (path: string) => Promise<string | null>;
     write?: (path: string, value: string, mode: number) => Promise<void>;
     chmod?: (path: string, mode: number) => Promise<void>;
-    command?: (file: string, args: string[]) => Promise<{ code: number | null; signal: string | null }>;
     observeRoundTrip?: (statePath: string, updateId: number) => Promise<boolean>;
     resolveExecutable?: (command: string) => Promise<string>;
     delay?: (milliseconds: number) => Promise<void>;
@@ -79,7 +78,7 @@ const stageDefaults = (): Record<TelegramSetupStage, TelegramSetupTruth> => ({
     bot_preflight: "not_attempted",
     mapping: "not_attempted",
     configuration: "not_attempted",
-    unit_installation: "not_attempted",
+    service_installation: "not_attempted",
     activation: "not_attempted",
     round_trip: "not_attempted",
 });
@@ -87,16 +86,15 @@ const stageDefaults = (): Record<TelegramSetupStage, TelegramSetupTruth> => ({
 export async function runTelegramSetup(
     binding: TelegramSetupBinding,
     io: TelegramSetupIo,
-    dependencies: TelegramSetupDependencies = {},
+    dependencies: TelegramSetupDependencies,
 ): Promise<TelegramSetupResult> {
     const stages = stageDefaults();
     const configPath = binding.configPath ?? join(homedir(), ".ember", "config", "telegram.json");
     const tokenPath = binding.tokenPath ?? join(homedir(), ".ember", "secrets", "telegram.token");
-    const unitPath = binding.unitPath ?? join(homedir(), ".config", "systemd", "user", "ember-telegram.service");
     const read = dependencies.read ?? readOptional;
     const write = dependencies.write ?? writeSecretSafe;
     const confirm = dependencies.confirm ?? trustedConfirm;
-    const command = dependencies.command ?? runCommand;
+    const residentHost = dependencies.residentHost;
     let restoreActiveService = false;
 
     try {
@@ -123,25 +121,20 @@ export async function runTelegramSetup(
         await verifyTelegramLongPollingReady(api);
         stages.bot_preflight = "confirmed";
 
-        const [enabled, active] = await Promise.all([
-            command("systemctl", ["--user", "is-enabled", "ember-telegram.service"]),
-            command("systemctl", ["--user", "is-active", "ember-telegram.service"]),
-        ]);
-        const wasActive = active.code === 0;
-        io.output.write(
-            `Existing Telegram service: installed ${enabled.code === 0 ? "yes" : enabled.code === null ? "unknown" : "no"}; active ${wasActive ? "yes" : active.code === null ? "unknown" : "no"}.\n`,
-        );
-        if (active.code === null) {
+        const { installed, active } = await residentHost.inspect();
+        const wasActive = active === "yes";
+        io.output.write(`Existing Telegram service: installed ${installed}; active ${active}.\n`);
+        if (active === "unknown") {
             stages.mapping = "uncertain";
             return { status: "uncertain", stages };
         }
         if (wasActive) {
             if (!(await confirm("Temporarily stop the active Telegram service for exclusive mapping discovery?")))
                 return { status: "cancelled", stages: { ...stages, mapping: "declined" } };
-            const stopped = await command("systemctl", ["--user", "stop", "ember-telegram.service"]);
-            if (stopped.code !== 0) {
-                stages.mapping = stopped.code === null ? "uncertain" : "failed";
-                return { status: stopped.code === null ? "uncertain" : "failed", stages };
+            const stopped = await residentHost.stop();
+            if (stopped !== "confirmed") {
+                stages.mapping = stopped;
+                return { status: stopped, stages };
             }
             restoreActiveService = true;
         }
@@ -181,41 +174,39 @@ export async function runTelegramSetup(
         if (existingConfig !== serialized) await write(configPath, serialized, 0o600);
         stages.configuration = "confirmed";
 
-        const unit = renderTelegramSurfaceUnit(config, configPath);
-        const existingUnit = await read(unitPath);
+        const renderedService = residentHost.render(telegramResidentLaunch(config, configPath));
+        const existingService = await residentHost.readDefinition();
         if (!(await confirm("Install and start the Telegram user service?"))) {
             restoreActiveService = false;
             return {
                 status: "configured_inactive",
-                stages: { ...stages, unit_installation: "declined", activation: "declined" },
+                stages: { ...stages, service_installation: "declined", activation: "declined" },
             };
         }
         if (
-            existingUnit !== null &&
-            existingUnit !== unit &&
-            !(await confirm("Replace the drifted Telegram systemd unit?"))
+            existingService !== null &&
+            existingService !== renderedService &&
+            !(await confirm("Replace the drifted Telegram resident service configuration?"))
         ) {
             restoreActiveService = false;
-            return { status: "configured_inactive", stages: { ...stages, unit_installation: "declined" } };
+            return { status: "configured_inactive", stages: { ...stages, service_installation: "declined" } };
         }
-        if (existingUnit !== unit) await write(unitPath, unit, 0o600);
-        stages.unit_installation = "confirmed";
+        if (existingService !== renderedService) await residentHost.install(renderedService);
+        stages.service_installation = "confirmed";
 
-        for (const args of [
-            ["--user", "daemon-reload"],
-            wasActive
-                ? ["--user", "restart", "ember-telegram.service"]
-                : ["--user", "enable", "--now", "ember-telegram.service"],
-        ]) {
-            const outcome = await command("systemctl", args);
-            if (outcome.code !== 0) {
-                stages.activation = outcome.code === null ? "uncertain" : "failed";
-                return { status: outcome.code === null ? "uncertain" : "failed", stages };
-            }
+        const activated = await residentHost.activate(wasActive);
+        if (activated !== "confirmed") {
+            stages.activation = activated;
+            return { status: activated, stages };
         }
         stages.activation = "confirmed";
         restoreActiveService = false;
-        stages.round_trip = await waitForRoundTrip(binding.setup.statePath, selected.update_id, command, dependencies);
+        stages.round_trip = await waitForRoundTrip(
+            binding.setup.statePath,
+            selected.update_id,
+            residentHost,
+            dependencies,
+        );
         return {
             status:
                 stages.round_trip === "confirmed"
@@ -235,8 +226,8 @@ export async function runTelegramSetup(
     } finally {
         if (restoreActiveService) {
             try {
-                const restored = await command("systemctl", ["--user", "start", "ember-telegram.service"]);
-                if (restored.code !== 0)
+                const restored = await residentHost.start();
+                if (restored !== "confirmed")
                     io.error.write("Previously active Telegram service could not be restored; reconcile it locally.\n");
             } catch {
                 io.error.write("Previously active Telegram service restoration is unknown; reconcile it locally.\n");
@@ -351,7 +342,7 @@ async function observeConfirmedRoundTrip(statePath: string, updateId: number) {
 async function waitForRoundTrip(
     statePath: string,
     updateId: number,
-    command: NonNullable<TelegramSetupDependencies["command"]>,
+    residentHost: ResidentServiceHost,
     dependencies: TelegramSetupDependencies,
 ): Promise<TelegramSetupTruth> {
     const observe = dependencies.observeRoundTrip ?? observeConfirmedRoundTrip;
@@ -363,8 +354,8 @@ async function waitForRoundTrip(
         if (await observe(statePath, updateId)) return "confirmed";
         if (now() >= deadline) return "uncertain";
         await delay(500);
-        const active = await command("systemctl", ["--user", "is-active", "ember-telegram.service"]);
-        if (active.code !== 0) return active.code === null ? "uncertain" : "failed";
+        const active = await residentHost.isActive();
+        if (active !== "confirmed") return active;
     }
 }
 
@@ -401,14 +392,6 @@ async function writeSecretSafe(path: string, value: string, mode: number) {
     await replaceFileDurably(path, value, {
         mode,
         durabilityUncertainMessage: `durability is uncertain for ${dirname(path)}`,
-    });
-}
-
-async function runCommand(file: string, args: string[]) {
-    return await new Promise<{ code: number | null; signal: string | null }>((resolveResult, reject) => {
-        const child = spawn(file, args, { stdio: "ignore", shell: false });
-        child.once("error", reject);
-        child.once("close", (code, signal) => resolveResult({ code, signal }));
     });
 }
 

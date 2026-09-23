@@ -1,12 +1,41 @@
 import type { Update } from "node-telegram-bot-api";
 
 import { strict as assert } from "node:assert";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { test } from "node:test";
 
 import type { SetupConfig } from "../cli/setup.ts";
+import type { TelegramSetupBinding, TelegramSetupDependencies, TelegramSetupIo } from "./setup.ts";
 
-import { runTelegramSetup } from "./setup.ts";
+import { SystemdTelegramResidentHost } from "../../host/systemd.ts";
+import { runTelegramSetup as runTelegramSetupWithResident } from "./setup.ts";
+
+const SERVICE_DEFINITION_PATH = join(homedir(), ".config", "systemd", "user", "ember-telegram.service");
+
+function runTelegramSetup(
+    binding: TelegramSetupBinding,
+    io: TelegramSetupIo,
+    dependencies: Omit<TelegramSetupDependencies, "residentHost"> & {
+        command: (file: string, args: string[]) => Promise<{ code: number | null; signal: string | null }>;
+    },
+) {
+    const { command, read, write, ...rest } = dependencies;
+    return runTelegramSetupWithResident(binding, io, {
+        ...rest,
+        read,
+        write,
+        residentHost: new SystemdTelegramResidentHost({
+            command,
+            read: async (path) => (await read?.(path)) ?? null,
+            write: async (path, content, mode) => {
+                if (!write) throw new Error("test resident definition writer is missing");
+                await write(path, content, mode);
+            },
+        }),
+    });
+}
 
 const setup: SetupConfig = {
     version: 1,
@@ -57,7 +86,6 @@ test("guided Telegram setup keeps the token out of v2 config and preserves inact
             scope: "relationship:user",
             configPath: "/tmp/telegram.json",
             tokenPath: "/tmp/telegram.token",
-            unitPath: "/tmp/telegram.service",
         },
         { input: new PassThrough(), output, error: new PassThrough() },
         {
@@ -94,7 +122,7 @@ test("mapping discovery tolerates an earlier pending message without acknowledgi
     const files = new Map<string, string>();
     let polls = 0;
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/mpc", tokenPath: "/tmp/mpt", unitPath: "/tmp/mpu" },
+        { setup, scope: "relationship:user", configPath: "/tmp/mpc", tokenPath: "/tmp/mpt" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -128,7 +156,7 @@ test("declining activation after stopping an active service leaves it inactive",
     const files = new Map<string, string>();
     const serviceActions: string[] = [];
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/ac", tokenPath: "/tmp/at", unitPath: "/tmp/au" },
+        { setup, scope: "relationship:user", configPath: "/tmp/ac", tokenPath: "/tmp/at" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -159,7 +187,7 @@ test("declining activation after stopping an active service leaves it inactive",
 test("unknown active-service state fails closed before mapping discovery", async () => {
     let getUpdatesCalled = false;
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/uc", tokenPath: "/tmp/ut", unitPath: "/tmp/uu" },
+        { setup, scope: "relationship:user", configPath: "/tmp/uc", tokenPath: "/tmp/ut" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -188,13 +216,13 @@ test("unknown active-service state fails closed before mapping discovery", async
 test("round-trip verification polls correlated delivery while the service stays active", async () => {
     const files = new Map<string, string>([
         ["/tmp/c2", "drifted config"],
-        ["/tmp/u2", "drifted unit"],
+        [SERVICE_DEFINITION_PATH, "drifted unit"],
     ]);
     let observations = 0;
     let activeChecks = 0;
     const serviceActions: string[] = [];
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/c2", tokenPath: "/tmp/t2", unitPath: "/tmp/u2" },
+        { setup, scope: "relationship:user", configPath: "/tmp/c2", tokenPath: "/tmp/t2" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -236,7 +264,6 @@ test("Claude Code v2 setup does not resolve or persist a process executable", as
             scope: "relationship:user",
             configPath: "/tmp/cc",
             tokenPath: "/tmp/ct",
-            unitPath: "/tmp/cu",
         },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
@@ -266,7 +293,7 @@ test("guided Telegram setup executes fixed systemctl arrays and confirms observe
     const files = new Map<string, string>();
     const commands: Array<[string, string[]]> = [];
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/c", tokenPath: "/tmp/t", unitPath: "/tmp/u" },
+        { setup, scope: "relationship:user", configPath: "/tmp/c", tokenPath: "/tmp/t" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -297,4 +324,46 @@ test("guided Telegram setup executes fixed systemctl arrays and confirms observe
         ["systemctl", ["--user", "daemon-reload"]],
         ["systemctl", ["--user", "enable", "--now", "ember-telegram.service"]],
     ]);
+});
+
+test("Telegram setup should use an injected resident host when installing the transport", async () => {
+    // Given
+    const files = new Map<string, string>();
+    const installed: string[] = [];
+    const residentHost = {
+        render: () => "portable resident definition",
+        readDefinition: async () => null,
+        inspect: async () => ({ installed: "no" as const, active: "no" as const }),
+        isActive: async () => "confirmed" as const,
+        stop: async () => "confirmed" as const,
+        start: async () => "confirmed" as const,
+        install: async (content: string) => void installed.push(content),
+        activate: async () => "confirmed" as const,
+    };
+
+    // When
+    const result = await runTelegramSetupWithResident(
+        { setup, scope: "relationship:user", configPath: "/tmp/portable-config", tokenPath: "/tmp/portable-token" },
+        { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
+        {
+            residentHost,
+            secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
+            verificationCode: () => "654321",
+            resolveExecutable: async () => "/opt/ember/bin/codex",
+            read: async (path) => files.get(path) ?? null,
+            write: async (path, value) => void files.set(path, value),
+            confirm: async () => true,
+            api: () => ({
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember" }),
+                getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
+                getUpdates: async () => [candidate()],
+            }),
+            observeRoundTrip: async () => true,
+        },
+    );
+
+    // Then
+    assert.equal(result.status, "complete");
+    assert.equal(result.stages.service_installation, "confirmed");
+    assert.deepEqual(installed, ["portable resident definition"]);
 });

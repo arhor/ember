@@ -15,6 +15,7 @@ import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
+import { SystemdTelegramResidentHost } from "../../src/host/systemd.ts";
 import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { setupMain } from "../../src/surfaces/cli/setup.ts";
@@ -385,23 +386,33 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     const files = new Map<string, string>();
     const modes = new Map<string, number>();
     const commands: string[] = [];
+    const read = async (path: string) => files.get(path) ?? null;
+    const write = async (path: string, value: string, mode: number) => {
+        files.set(path, value);
+        modes.set(path, mode);
+    };
+    const residentHost = new SystemdTelegramResidentHost({
+        read,
+        write,
+        command: async (file, args) => {
+            commands.push(`${file} ${args.join(" ")}`);
+            return { code: args.includes("is-active") || args.includes("is-enabled") ? 1 : 0, signal: null };
+        },
+    });
     const telegram = await runTelegramSetup(
         {
             setup: JSON.parse(await readFile(configPath, "utf8")),
             scope: s.scope,
             configPath: `${directory}/config/telegram.json`,
             tokenPath: `${directory}/secrets/telegram.token`,
-            unitPath: `${directory}/systemd/ember-telegram.service`,
         },
         io,
         {
             secretPrompt: async () => SECRET,
             confirm: async () => true,
-            read: async (path) => files.get(path) ?? null,
-            write: async (path, value, mode) => {
-                files.set(path, value);
-                modes.set(path, mode);
-            },
+            read,
+            write,
+            residentHost,
             chmod: async () => {},
             api: () =>
                 ({
@@ -420,10 +431,6 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
                         },
                     ],
                 }) as any,
-            command: async (file, args) => {
-                commands.push(`${file} ${args.join(" ")}`);
-                return { code: args.includes("is-active") || args.includes("is-enabled") ? 1 : 0, signal: null };
-            },
             verificationCode: () => "256256",
             observeRoundTrip: async () => true,
             resolveExecutable: async (value) => value,

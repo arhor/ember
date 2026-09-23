@@ -18,7 +18,6 @@ import {
     createTelegramApi,
     deliverTelegramMessage,
     processTelegramUpdate,
-    renderTelegramSurfaceUnit,
     runTelegramPolling,
     selectTelegramInbound,
     verifyTelegramLongPollingReady,
@@ -732,15 +731,4 @@ test("writer lease remains released while the worker waits in getUpdates", async
     } finally {
         await f.close();
     }
-});
-
-test("systemd unit keeps token and chat identifiers out of process arguments", () => {
-    const config = telegramConfig("/var/lib/ember", "/var/lib/ember/ember.json");
-    const unit = renderTelegramSurfaceUnit(config, "/var/lib/ember/telegram.json");
-    assert.match(unit, /Type=exec/);
-    assert.match(unit, /Restart=on-failure/);
-    assert.match(unit, /KillMode=mixed/);
-    assert.match(unit, /ember-telegram\.ts" serve --config/);
-    assert.equal(unit.includes(TOKEN), false);
-    assert.equal(unit.includes(String(CHAT_ID)), false);
 });
