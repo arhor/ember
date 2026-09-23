@@ -11,6 +11,7 @@ import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
+import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
@@ -111,6 +112,124 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     ]);
     assert.equal(explicit.mode, "explicit");
     assert.deepEqual(explicit.providerArgs, ["--config"]);
+});
+
+test("CLI should select the default foreground run when no command is supplied", () => {
+    // Given
+    const argv: string[] = [];
+
+    // When
+    const parsed = parseArgs(argv);
+
+    // Then
+    assert.deepEqual(parsed, { command: "run", mode: "default" });
+});
+
+test("foreground ember should require verified setup when no configuration exists", async (t) => {
+    // Given
+    const f = await fixture(t);
+
+    // When
+    const run = await command([], { env: { HOME: f.directory }, stdin: ":quit\n" });
+
+    // Then
+    assert.equal(run.code, 2);
+    assert.match(run.stderr, /setup has not verified cognition and continuity/);
+    await assert.rejects(stat(join(f.directory, ".ember", "state", "continuity.json")), { code: "ENOENT" });
+});
+
+test("foreground ember should continue one conversation across clean process exits without a service manager", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    const env = { HOME: f.directory, PATH: dirname(process.execPath) };
+    const setup = await command(
+        [
+            "setup",
+            "--intent",
+            "create-new",
+            "--principal",
+            "user",
+            "--provider",
+            "codex",
+            "--provider-command",
+            executable,
+        ],
+        { env },
+    );
+    const statePath = join(f.directory, ".ember", "state", "continuity.json");
+
+    // When
+    const first = await command([], { env, stdin: "hello\n:quit\n" });
+    const second = await command([], { env, stdin: "continue\n:quit\n" });
+
+    // Then
+    assert.equal(setup.code, 0, JSON.stringify(setup));
+    assert.match(setup.stdout, /Run: ember\n/);
+    assert.equal(first.code, 0, JSON.stringify(first));
+    assert.equal(second.code, 0, JSON.stringify(second));
+    assert.match(first.stdout, /CODEX_CLI_RESPONSE/);
+    assert.match(second.stdout, /CODEX_CLI_RESPONSE/);
+    const state = await new StateStore(statePath).load();
+    const conversation = await new ConversationContextStore(statePath).load();
+    assert.equal(
+        state.lineage.lineageId,
+        (await loadSetupConfig(join(f.directory, ".ember", "config", "setup.json")))?.lineageId,
+    );
+    assert.equal(conversation.exchanges.length, 2);
+    assert.equal(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
+    assert.equal(conversation.exchanges[0]?.scope, "relationship:user");
+    assert.equal(state.operations.runtimeEpisodes.length, 2);
+    assert.ok(state.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
+    assert.equal(state.operations.runtimeEpisodes[1]?.recoveryAccount.gapKind, "known_clean_stop_interval");
+    assert.deepEqual(await new StateStore(statePath).lockStatus(), { status: "absent" });
+});
+
+test("foreground ember should record an uncertain gap when the previous process exited during an interaction", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    const env = { HOME: f.directory, PATH: dirname(process.execPath) };
+    const setup = await command(
+        [
+            "setup",
+            "--intent",
+            "create-new",
+            "--principal",
+            "user",
+            "--provider",
+            "codex",
+            "--provider-command",
+            executable,
+        ],
+        { env },
+    );
+    const statePath = join(f.directory, ".ember", "state", "continuity.json");
+    const store = new StateStore(statePath);
+    const lease = await store.acquireWriteLease();
+    const before = await store.load();
+    await store.commit(
+        before.revision,
+        startRuntime(before, "user", "relationship:user", { timestamp: "2026-08-29T10:00:00Z" }).state,
+    );
+    await store.releaseWriteLease(lease);
+
+    // When
+    const resumed = await command([], { env, stdin: "hello again\n:quit\n" });
+
+    // Then
+    assert.equal(setup.code, 0, JSON.stringify(setup));
+    assert.equal(resumed.code, 0, JSON.stringify(resumed));
+    const runtimes = (await store.load()).operations.runtimeEpisodes;
+    assert.equal(runtimes.length, 2, JSON.stringify(resumed));
+    assert.equal(runtimes[0]?.cleanStopAt, null);
+    assert.equal(runtimes[1]?.recoveryAccount.gapKind, "uncertain_interruption_boundary");
+    assert.notEqual(runtimes[1]?.cleanStopAt, null);
+    assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
 test("CLI parser should route Google Calendar setup when typed options are supplied", () => {

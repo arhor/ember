@@ -1,8 +1,9 @@
 ---
-summary: "Current source-layout rules for interaction surfaces, unified typed CLI routing, machine-local setup, and inward dependency boundaries."
+summary: "Current source-layout rules for interaction surfaces, default and explicit typed CLI routing, machine-local setup, and inward dependency boundaries."
 read_when:
   - "Adding or reorganizing an interaction surface under src/surfaces/"
   - "Deciding whether CLI code belongs to conversational surface mechanics or CLI-local command plumbing"
+  - "Changing zero-argument CLI startup or configured and explicit conversation routing"
   - "Changing source organization or dependency direction around surfaces, runtime, core, providers, or persistence"
 role: design
 discovery_status: current
@@ -51,7 +52,8 @@ Everything that is specifically CLI-facing stays inside `src/surfaces/cli/`. The
 
 Every command passes through `parseArgs()` once and the same dispatch switch.
 `model.ts` defines `Commands`, `CommandSpecs`, and the typed command arguments, including
-`SetupArgs` and `RunArgs` with `mode: "explicit" | "configured"`. Setup and configured
+`SetupArgs` and `RunArgs` with `mode: "explicit" | "configured" | "default"`. The
+zero-argument default selects verified setup and its relationship scope. Setup and configured
 run handlers receive those typed arguments; they do not parse their own option grammar
 or bypass dispatch based on the presence of a flag.
 

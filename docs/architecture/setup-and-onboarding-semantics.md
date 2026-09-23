@@ -1,10 +1,10 @@
 ---
-summary: "Setup semantics and typed bootstrap CLI with an application home separating config/state, explicit restore/create, provider verification, recovery, and a separate conversational onboarding boundary."
+summary: "Setup semantics and typed bootstrap CLI with separate config/state, explicit restore/create, provider verification, recovery, and verified foreground conversation entry."
 read_when:
   - "Implementing or changing ember setup, machine provisioning, restore/create behavior, provider bootstrap, onboarding, or setup recovery"
   - "Deciding whether setup state belongs to the host, Ember continuity, ordinary memory, or temporary operational work"
   - "Changing secret entry, typed host mutations, rerunnable setup sections, or behavior on an already configured machine"
-  - "Running ember setup or configured conversation, selecting a cognition provider, or recovering an interrupted machine bootstrap"
+  - "Running ember setup, plain foreground ember, or configured conversation; selecting a cognition provider or recovering interrupted bootstrap"
 role: design
 discovery_status: current
 ---
@@ -696,7 +696,8 @@ The selected lineage ID and establishment time are recorded as pending machine-l
 intent first so a retry does not generate a different candidate. No name, biography,
 relationship, learned memory, probe reply, or probe cognition episode is adopted.
 
-Setup prints a command of the form:
+Setup prints `ember` for the default configuration, or a command of the form below
+when `--config` selects another setup record:
 
 ```sh
 ember run --config /path/to/setup.json --scope relationship:user-1
@@ -707,6 +708,10 @@ reloads the state, checks its principal/lineage binding, and then uses the ordin
 conversation surface. It uses the exact configured provider/model/timeout; provider
 overrides cannot be mixed into this invocation. The explicit config selects the locally
 asserted principal. The original explicit `run --state ...` interface remains available.
+Plain `ember` reads the default setup record and selects `relationship:<principal>` as
+its conversation scope. Each invocation uses the same application composition and
+interaction lifecycle as configured `run`, and the persisted conversation continues
+after a clean process exit. Missing or incomplete setup remains an explicit error.
 Conversational onboarding prompts and memory formation are the separate #254 task;
 setup establishes readiness and does not start or claim completion of that journey.
 

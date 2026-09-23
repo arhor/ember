@@ -95,7 +95,7 @@ async function onInit(args: InitArgs, io: CliIo) {
 }
 
 async function onRun(args: RunArgs, io: CliIo) {
-    if (args.mode === "configured") return await setupRunMain(args, io);
+    if (args.mode !== "explicit") return await setupRunMain(args, io);
     return await runCliSurface(
         {
             statePath: args.state,
@@ -313,7 +313,7 @@ type RawValue = string | string[] | boolean | undefined;
 
 export function parseArgs(argv: string[]): CliCommandArgs {
     if (!argv.length) {
-        throw new ValidationError("a command is required");
+        return { command: Commands.RUN, mode: "default" };
     }
     const command = argv[0]!;
     const spec = CommandSpecs[command];

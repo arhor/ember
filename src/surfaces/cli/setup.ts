@@ -4,7 +4,7 @@ import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberState } from "../../core/model.ts";
-import type { CliIo, ConfiguredRunArgs, SetupArgs, SetupIntent } from "./model.ts";
+import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs, SetupIntent } from "./model.ts";
 
 import { createCodexLanguageModel } from "../../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../../ai/cognition.ts";
@@ -20,7 +20,6 @@ import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { exactKeys, isObject } from "../../util.ts";
-import { runTelegramSetup } from "../telegram/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export interface SetupProvider {
@@ -453,7 +452,9 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
         );
         const onboardingScope = `relationship:${principal}`;
         io.output.write(
-            `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${onboardingScope.replaceAll("'", "'\\''")}'\n`,
+            configPath === (await physicalPath(defaultSetupConfigPath()))
+                ? "Run: ember\n"
+                : `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${onboardingScope.replaceAll("'", "'\\''")}'\n`,
         );
         if (controller.signal.aborted) {
             io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
@@ -476,12 +477,13 @@ export function assertBinding(config: SetupConfig, state: EmberState): void {
         throw new ValidationError("continuity no longer matches setup binding; explicit recovery is required");
 }
 
-export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<number> {
-    if (!args.config || !safeText(args.scope))
+export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io: CliIo): Promise<number> {
+    if (args.mode === "configured" && (!args.config || !safeText(args.scope)))
         throw new ValidationError("configured run requires --config PATH and --scope SCOPE");
-    const config = await loadSetupConfig(resolve(args.config));
+    const config = await loadSetupConfig(resolve(args.mode === "default" ? defaultSetupConfigPath() : args.config));
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
+    const scope = args.mode === "default" ? `relationship:${config.principal}` : args.scope;
     if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
         throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
     const googleCalendarConfig =
@@ -492,7 +494,7 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
         {
             statePath: config.statePath,
             principal: config.principal,
-            scope: args.scope,
+            scope,
             expectedContinuityBinding: {
                 lineageId: config.lineageId,
                 establishedAt: config.establishedAt,
@@ -505,7 +507,10 @@ export async function setupRunMain(args: ConfiguredRunArgs, io: CliIo): Promise<
             ...(googleCalendarConfig === undefined
                 ? {}
                 : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
-            configuredSetupHandoff: () => runTelegramSetup({ setup: config, scope: args.scope }, io),
+            configuredSetupHandoff: async () => {
+                const { runTelegramSetup } = await import("../telegram/setup.ts");
+                return await runTelegramSetup({ setup: config, scope }, io);
+            },
         },
         io,
     );
