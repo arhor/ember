@@ -8,12 +8,12 @@ import type {
 } from "./contract.ts";
 
 import { ValidationError } from "../core/errors.ts";
+import { startRuntime, stopRuntime } from "../core/runtime-episode.ts";
 import {
     reconcileSurfaceDelivery,
     runSurfaceInteraction,
     SurfaceDeliveryFailure,
 } from "../runtime/interaction-boundary.ts";
-import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
 import { runPostTurnFollowUps } from "./post-turn.ts";

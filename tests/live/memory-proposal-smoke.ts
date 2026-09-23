@@ -10,9 +10,10 @@ import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
+import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition, startRuntime } from "../../src/runtime/runtime.ts";
+import { runCognition } from "../../src/runtime/runtime.ts";
 
 if (process.env.EMBER_RUN_LIVE_MEMORY_PROPOSAL !== "1") {
     process.stdout.write("skipped: set EMBER_RUN_LIVE_MEMORY_PROPOSAL=1 to run the live memory-proposal smoke\n");

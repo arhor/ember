@@ -18,8 +18,8 @@ import type {
 
 import { ValidationError } from "../core/errors.ts";
 import { initialState, isRfc3339Utc, newId } from "../core/model.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
-import { startRuntime } from "../runtime/runtime.ts";
 import { buildCognitionOpportunityProjection, evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 import { decideUserInterruption } from "./interruption-decision.ts";

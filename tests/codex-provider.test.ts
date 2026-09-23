@@ -12,10 +12,11 @@ import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-pro
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
-import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { runCognition } from "../src/runtime/runtime.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 

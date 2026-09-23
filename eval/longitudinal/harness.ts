@@ -7,6 +7,7 @@ import type { ProviderRequest, ProviderResult } from "../../src/providers/contra
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState, validateState } from "../../src/core/model.ts";
 import { inspectionView } from "../../src/core/projection.ts";
+import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import {
     attachDetail,
     rememberDelegatedReport,
@@ -22,7 +23,7 @@ import {
     withholdDetail,
 } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
+import { runCognition } from "../../src/runtime/runtime.ts";
 
 type ThreadControl = { mode: "fresh" } | { mode: "reuse"; episode: string };
 

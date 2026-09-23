@@ -14,9 +14,10 @@ import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
+import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
+import { runCognition } from "../../src/runtime/runtime.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 export type ExpectedDecision = "adopted" | "rejected" | "invalid" | "no_proposal";

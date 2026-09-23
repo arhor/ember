@@ -8,9 +8,9 @@ import type { CognitionOpportunityOccurrence, EvidenceId, MeaningId, RuntimeId }
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
 import { initialState, newId } from "../core/model.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { rememberFact, undertake } from "../core/semantics.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { startRuntime } from "../runtime/runtime.ts";
 import { runCognitionOpportunity } from "./cognition-opportunity.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 

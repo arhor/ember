@@ -17,6 +17,7 @@ import { decideConfiguredProactiveContactHandoff } from "../src/agency/configure
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
@@ -24,7 +25,6 @@ import {
     SurfaceDeliveryFailure,
     runSurfaceInteraction,
 } from "../src/runtime/interaction-boundary.ts";
-import { startRuntime } from "../src/runtime/runtime.ts";
 import {
     createTelegramApi,
     deliverTelegramMessage,

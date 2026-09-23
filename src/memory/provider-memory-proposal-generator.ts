@@ -4,7 +4,7 @@ import type { MemoryProposalGenerationResult, MemoryProposalGenerator } from "./
 import { ProviderError } from "../core/errors.ts";
 import { initialState, newId } from "../core/model.ts";
 import { buildProjection } from "../core/projection.ts";
-import { startRuntime } from "../runtime/runtime.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 
 export function createProviderMemoryProposalGenerator(
     provider: ProviderInvoker,

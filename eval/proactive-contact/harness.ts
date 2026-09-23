@@ -15,10 +15,11 @@ import { ProactiveContactStore } from "../../src/agency/proactive-contact-store.
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
+import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
-import { runCognition, startRuntime } from "../../src/runtime/runtime.ts";
+import { runCognition } from "../../src/runtime/runtime.ts";
 import { reconcileTelegramProactiveContacts } from "../../src/surfaces/telegram/index.ts";
 import { contentDigest, exactKeys, isObject } from "../../src/util.ts";
 

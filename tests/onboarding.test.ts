@@ -18,11 +18,12 @@ import {
     validateOnboardingProgressDecision,
     validateOnboardingWork,
 } from "../src/core/onboarding-work.ts";
+import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { createProviderMemoryProposalGenerator } from "../src/memory/provider-memory-proposal-generator.ts";
 import { createProviderOnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { runCognition as runCoreCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+import { runCognition as runCoreCognition } from "../src/runtime/runtime.ts";
 
 async function runCognition(
     repositories: ReturnType<typeof createFileBackedRepositoriesForState>,

@@ -20,8 +20,8 @@ import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "..
 import { findRuntime } from "../core/projection.ts";
 import { requirePrincipal } from "../core/semantics.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
+import { findCognition, runCognitionUntilExpressionCommit, validateCognitionInvocation } from "../runtime/runtime.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
-import { findCognition, runCognitionUntilExpressionCommit, validateCognitionInvocation } from "./runtime.ts";
 
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { populatedState, PRINCIPAL, SCOPE } from "../../tests/support.ts";
-import { startRuntime } from "../runtime/runtime.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { buildProjection } from "./projection.ts";
 
 test("ordinary projection should not resolve unused explain IDs", () => {

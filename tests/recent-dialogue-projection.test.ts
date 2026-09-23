@@ -11,10 +11,11 @@ import { createFileBackedRepositoriesForState } from "../src/composition/ember.t
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
+import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../src/runtime/runtime.ts";
+import { runCognition } from "../src/runtime/runtime.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 interface Fixture {

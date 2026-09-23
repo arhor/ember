@@ -5,8 +5,8 @@ import type { EmberState, MeaningId } from "../core/model.ts";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
 import { initialState } from "../core/model.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
-import { startRuntime } from "../runtime/runtime.ts";
 import { cloneState } from "../util.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 

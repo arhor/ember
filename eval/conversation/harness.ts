@@ -7,10 +7,10 @@ import type { ProviderRequest, ProviderResult } from "../../src/providers/contra
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
+import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../../src/runtime/interaction-boundary.ts";
-import { startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 export interface ConversationEpisode {

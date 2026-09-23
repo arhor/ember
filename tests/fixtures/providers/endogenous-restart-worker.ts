@@ -7,9 +7,9 @@ import { runCognitionOpportunity } from "../../../src/agency/cognition-opportuni
 import { createCodexOpportunityEvaluator } from "../../../src/ai/codex-opportunity.ts";
 import { initialState } from "../../../src/core/model.ts";
 import { inspectionView } from "../../../src/core/projection.ts";
+import { startRuntime, stopRuntime } from "../../../src/core/runtime-episode.ts";
 import { rememberFact, supersede, transitionCommitment, undertake } from "../../../src/core/semantics.ts";
 import { StateStore } from "../../../src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../../src/runtime/runtime.ts";
 
 const [
     phase,

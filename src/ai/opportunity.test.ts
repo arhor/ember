@@ -8,8 +8,8 @@ import type { CognitionOpportunityDecision } from "../core/model.ts";
 import { evaluateCognitionOpportunity } from "../agency/cognition-opportunity.ts";
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { undertake } from "../core/semantics.ts";
-import { startRuntime } from "../runtime/runtime.ts";
 import { AI_SDK_OPPORTUNITY_INSTRUCTION, createAiSdkOpportunityEvaluator } from "./opportunity.ts";
 
 const PRINCIPAL = "user-1";

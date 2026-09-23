@@ -13,8 +13,9 @@ import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } fr
 import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/capabilities/mcp-ai-sdk.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { newId } from "../src/core/model.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const MCP_FIXTURE = fileURLToPath(new URL("./fixtures/mcp-server.ts", import.meta.url));
