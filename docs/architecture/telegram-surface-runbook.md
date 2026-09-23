@@ -64,6 +64,14 @@ not itself a cognition retry. Telegram may replay an unacknowledged `update_id`,
 the issue #85 correlation boundary suppresses duplicate cognition and duplicate
 response delivery for that established occurrence.
 
+The Linux resident installation is owned by `src/host/systemd.ts`. Telegram setup
+supplies a host-neutral process launch and calls the resident host boundary to render,
+inspect, install, stop, restore, and activate the user service. The adapter retains
+the `~/.config/systemd/user/ember-telegram.service` path, network-online ordering,
+`Restart=on-failure`, `KillMode=mixed`, bounded stop timeout, and private unit-file
+mode. The Telegram worker still enters the same application coordinator as foreground
+CLI interaction; the service manager has no role in canonical state or delivery truth.
+
 ## Current principal/privacy envelope
 
 The current implementation deliberately supports one narrow deployment mapping:

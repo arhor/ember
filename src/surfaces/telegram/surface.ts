@@ -9,6 +9,7 @@ import type { ProactiveContactIntentRecord } from "../../agency/proactive-contac
 import type { EmberApplication } from "../../app/contract.ts";
 import type { EmberApplicationDependencies, EmberCompositionOverrides } from "../../composition/ember.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
+import type { WorkerLaunch } from "../../host/background.ts";
 
 type SurfaceExecutor = NonNullable<EmberCompositionOverrides["executor"]>;
 type SurfaceMemoryProposalGenerator = NonNullable<EmberCompositionOverrides["memoryProposalGenerator"]>;
@@ -608,10 +609,16 @@ export async function runTelegramPolling(
     }
 }
 
-export function renderTelegramSurfaceUnit(config: TelegramSurfaceConfig, configPath: string) {
+export function telegramResidentLaunch(config: TelegramSurfaceConfig, configPath: string): WorkerLaunch {
     validateTelegramSurfaceConfig(config);
     requireAbsolutePath(configPath, "Telegram surface config path");
-    return `[Unit]\nDescription=Ember Telegram messaging surface\nWants=network-online.target\nAfter=network-online.target\n\n[Service]\nType=exec\nWorkingDirectory=${systemdQuote(config.working_directory)}\nExecStart=${systemdQuote(config.node_path)} ${systemdQuote(config.surface_entrypoint)} serve --config ${systemdQuote(configPath)}\nRestart=on-failure\nRestartSec=5s\nKillMode=mixed\nTimeoutStopSec=${config.stop_timeout_seconds}s\nUMask=0077\n\n[Install]\nWantedBy=default.target\n`;
+    return {
+        jobId: "ember-telegram",
+        executable: config.node_path,
+        arguments: [config.surface_entrypoint, "serve", "--config", configPath],
+        workingDirectory: config.working_directory,
+        stopTimeoutSeconds: config.stop_timeout_seconds,
+    };
 }
 
 export function validateTelegramSurfaceConfig(value: unknown): asserts value is TelegramSurfaceConfig {
@@ -914,8 +921,4 @@ function requireAbsolutePath(value: unknown, field: string): asserts value is st
 function requireProtocolRecord(value: unknown, field: string): Record<string, unknown> {
     if (!isObject(value)) throw new ValidationError(`${field} must be an object`);
     return value;
-}
-
-function systemdQuote(value: string) {
-    return `"${value.replaceAll("%", "%%").replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }

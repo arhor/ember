@@ -1308,7 +1308,7 @@ test(":setup telegram is local, keeps no runtime open, and resumes conversation"
                         bot_preflight: "not_attempted",
                         mapping: "not_attempted",
                         configuration: "not_attempted",
-                        unit_installation: "not_attempted",
+                        service_installation: "not_attempted",
                         activation: "not_attempted",
                         round_trip: "not_attempted",
                     },

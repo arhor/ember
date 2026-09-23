@@ -391,7 +391,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
             scope: s.scope,
             configPath: `${directory}/config/telegram.json`,
             tokenPath: `${directory}/secrets/telegram.token`,
-            unitPath: `${directory}/systemd/ember-telegram.service`,
+            servicePath: `${directory}/systemd/ember-telegram.service`,
         },
         io,
         {

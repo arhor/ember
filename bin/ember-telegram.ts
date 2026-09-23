@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { ValidationError } from "../src/core/errors.ts";
+import { SystemdTelegramResidentHost } from "../src/host/systemd.ts";
 import {
     createTelegramApi,
     deleteTelegramWebhook,
     loadTelegramSurfaceConfig,
     readTelegramBotToken,
-    renderTelegramSurfaceUnit,
     runTelegramPolling,
+    telegramResidentLaunch,
     verifyTelegramLongPollingReady,
 } from "../src/surfaces/telegram/index.ts";
 
@@ -20,7 +21,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
         const args = parseArgs(argv);
         const config = await loadTelegramSurfaceConfig(args.config);
         if (args.command === "render-unit") {
-            process.stdout.write(renderTelegramSurfaceUnit(config, args.config));
+            process.stdout.write(new SystemdTelegramResidentHost().render(telegramResidentLaunch(config, args.config)));
             return 0;
         }
 

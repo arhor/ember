@@ -57,7 +57,7 @@ test("guided Telegram setup keeps the token out of v2 config and preserves inact
             scope: "relationship:user",
             configPath: "/tmp/telegram.json",
             tokenPath: "/tmp/telegram.token",
-            unitPath: "/tmp/telegram.service",
+            servicePath: "/tmp/telegram.service",
         },
         { input: new PassThrough(), output, error: new PassThrough() },
         {
@@ -94,7 +94,7 @@ test("mapping discovery tolerates an earlier pending message without acknowledgi
     const files = new Map<string, string>();
     let polls = 0;
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/mpc", tokenPath: "/tmp/mpt", unitPath: "/tmp/mpu" },
+        { setup, scope: "relationship:user", configPath: "/tmp/mpc", tokenPath: "/tmp/mpt", servicePath: "/tmp/mpu" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -128,7 +128,7 @@ test("declining activation after stopping an active service leaves it inactive",
     const files = new Map<string, string>();
     const serviceActions: string[] = [];
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/ac", tokenPath: "/tmp/at", unitPath: "/tmp/au" },
+        { setup, scope: "relationship:user", configPath: "/tmp/ac", tokenPath: "/tmp/at", servicePath: "/tmp/au" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -159,7 +159,7 @@ test("declining activation after stopping an active service leaves it inactive",
 test("unknown active-service state fails closed before mapping discovery", async () => {
     let getUpdatesCalled = false;
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/uc", tokenPath: "/tmp/ut", unitPath: "/tmp/uu" },
+        { setup, scope: "relationship:user", configPath: "/tmp/uc", tokenPath: "/tmp/ut", servicePath: "/tmp/uu" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -194,7 +194,7 @@ test("round-trip verification polls correlated delivery while the service stays 
     let activeChecks = 0;
     const serviceActions: string[] = [];
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/c2", tokenPath: "/tmp/t2", unitPath: "/tmp/u2" },
+        { setup, scope: "relationship:user", configPath: "/tmp/c2", tokenPath: "/tmp/t2", servicePath: "/tmp/u2" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
@@ -236,7 +236,7 @@ test("Claude Code v2 setup does not resolve or persist a process executable", as
             scope: "relationship:user",
             configPath: "/tmp/cc",
             tokenPath: "/tmp/ct",
-            unitPath: "/tmp/cu",
+            servicePath: "/tmp/cu",
         },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
@@ -266,7 +266,7 @@ test("guided Telegram setup executes fixed systemctl arrays and confirms observe
     const files = new Map<string, string>();
     const commands: Array<[string, string[]]> = [];
     const result = await runTelegramSetup(
-        { setup, scope: "relationship:user", configPath: "/tmp/c", tokenPath: "/tmp/t", unitPath: "/tmp/u" },
+        { setup, scope: "relationship:user", configPath: "/tmp/c", tokenPath: "/tmp/t", servicePath: "/tmp/u" },
         { input: new PassThrough(), output: new PassThrough(), error: new PassThrough() },
         {
             secretPrompt: async () => "12345:abcdefghijklmnopqrstuvwxyz",
