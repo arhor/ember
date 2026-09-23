@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createScanner, SyntaxKind } from "typescript/unstable/ast";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = resolve(root, "src");
@@ -14,7 +15,12 @@ const surfacePersistenceExceptions = new Set([
 
 export function dependencyViolations(owner: string, source: string): string[] {
     const violations: string[] = [];
-    for (const specifier of importSpecifiers(source)) {
+    for (const reference of importReferences(source)) {
+        if (reference.specifier === null) {
+            reject("<dynamic>", "non-static dynamic imports cannot be verified by the dependency checker");
+            continue;
+        }
+        const specifier = reference.specifier;
         const target = resolvedOwner(owner, specifier);
         if (owner.startsWith("core/") && target?.startsWith("surfaces/"))
             reject(specifier, "core must not import a concrete surface");
@@ -75,14 +81,103 @@ function resolvedOwner(owner: string, specifier: string) {
     return target.startsWith("../") ? null : target;
 }
 
-function importSpecifiers(source: string) {
-    const specifiers: string[] = [];
-    const declarationPattern = /\b(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?(["'])([^"'\r\n]+)\1/g;
-    const importCallPattern =
-        /\b(?:import|require)\s*\(\s*(?:(?:\/\*[\s\S]*?\*\/|\/\/[^\r\n]*(?:\r?\n|$))\s*)*(["'])([^"'\r\n]+)\1/g;
-    for (const pattern of [declarationPattern, importCallPattern])
-        for (const match of source.matchAll(pattern)) specifiers.push(match[2]!);
-    return specifiers;
+function importReferences(source: string) {
+    const tokens = scanTokens(source);
+
+    const references: Array<{ specifier: string | null }> = [];
+    for (let index = 0; index < tokens.length; index += 1) {
+        const token = tokens[index]!;
+        if (token.kind === SyntaxKind.ImportKeyword) {
+            const next = tokens[index + 1];
+            if (next?.kind === SyntaxKind.OpenParenToken) {
+                references.push({ specifier: staticModuleSpecifier(tokens[index + 2]) });
+                continue;
+            }
+            if (next?.kind === SyntaxKind.StringLiteral) {
+                references.push({ specifier: next.value });
+                continue;
+            }
+            addFromClause(index);
+        } else if (token.kind === SyntaxKind.ExportKeyword) addFromClause(index);
+        else if (token.kind === SyntaxKind.Identifier && token.value === "require") {
+            if (tokens[index + 1]?.kind === SyntaxKind.OpenParenToken)
+                references.push({ specifier: staticModuleSpecifier(tokens[index + 2]) });
+        }
+    }
+    return references;
+
+    function addFromClause(start: number) {
+        for (let index = start + 1; index < tokens.length; index += 1) {
+            const token = tokens[index]!;
+            if (token.kind === SyntaxKind.SemicolonToken) return;
+            if (token.kind === SyntaxKind.FromKeyword) {
+                const specifier = tokens[index + 1];
+                if (specifier?.kind === SyntaxKind.StringLiteral) references.push({ specifier: specifier.value });
+                return;
+            }
+        }
+    }
+}
+
+function scanTokens(source: string) {
+    const scanner = createScanner(true, undefined, source);
+    const tokens: Array<{ kind: SyntaxKind; value: string }> = [];
+    const templateBraceDepths: number[] = [];
+    let previousEnd = -1;
+    for (let kind = scanner.scan(); kind !== SyntaxKind.EndOfFile; kind = scanner.scan()) {
+        const previousKind = tokens.at(-1)?.kind;
+        if (kind === SyntaxKind.SlashToken && canPrecedeRegularExpression(previousKind))
+            kind = scanner.reScanSlashToken();
+        if (kind === SyntaxKind.CloseBraceToken && templateBraceDepths.length) {
+            const templateIndex = templateBraceDepths.length - 1;
+            if (templateBraceDepths[templateIndex]! === 0) {
+                kind = scanner.reScanTemplateToken(false);
+                if (kind === SyntaxKind.TemplateTail) templateBraceDepths.pop();
+            } else templateBraceDepths[templateIndex] = templateBraceDepths[templateIndex]! - 1;
+        } else if (kind === SyntaxKind.TemplateHead) templateBraceDepths.push(0);
+        else if (kind === SyntaxKind.OpenBraceToken && templateBraceDepths.length)
+            templateBraceDepths[templateBraceDepths.length - 1] = templateBraceDepths.at(-1)! + 1;
+
+        const tokenEnd = scanner.getTokenEnd();
+        if (tokenEnd <= previousEnd) throw new Error(`dependency scanner did not advance at byte ${tokenEnd}`);
+        previousEnd = tokenEnd;
+        tokens.push({
+            kind,
+            value:
+                kind === SyntaxKind.Identifier ||
+                kind === SyntaxKind.StringLiteral ||
+                kind === SyntaxKind.NoSubstitutionTemplateLiteral
+                    ? scanner.getTokenValue()
+                    : "",
+        });
+    }
+    return tokens;
+}
+
+function canPrecedeRegularExpression(kind: SyntaxKind | undefined) {
+    return (
+        kind === SyntaxKind.EqualsToken ||
+        kind === SyntaxKind.OpenParenToken ||
+        kind === SyntaxKind.OpenBracketToken ||
+        kind === SyntaxKind.OpenBraceToken ||
+        kind === SyntaxKind.CommaToken ||
+        kind === SyntaxKind.ColonToken ||
+        kind === SyntaxKind.SemicolonToken ||
+        kind === SyntaxKind.ReturnKeyword ||
+        kind === SyntaxKind.ThrowKeyword ||
+        kind === SyntaxKind.CaseKeyword ||
+        kind === SyntaxKind.EqualsGreaterThanToken ||
+        kind === SyntaxKind.QuestionToken ||
+        kind === SyntaxKind.QuestionQuestionToken ||
+        kind === SyntaxKind.BarBarToken ||
+        kind === SyntaxKind.AmpersandAmpersandToken
+    );
+}
+
+function staticModuleSpecifier(token: { kind: SyntaxKind; value: string } | undefined) {
+    if (token?.kind === SyntaxKind.StringLiteral || token?.kind === SyntaxKind.NoSubstitutionTemplateLiteral)
+        return token.value;
+    return null;
 }
 
 async function sourceFiles(directory: string): Promise<string[]> {

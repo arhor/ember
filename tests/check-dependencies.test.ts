@@ -40,6 +40,43 @@ test("dependency checker should reject dynamic AI imports when comments and whit
     assert.match(violations[0]!, /must not import AI SDK infrastructure/);
 });
 
+test("dependency checker should reject dynamic AI imports when a comment separates import from the parenthesis", () => {
+    // Given
+    const source = 'const executor = await import/* lazy */("../../ai/cognition.ts");';
+
+    // When
+    const violations = dependencyViolations("surfaces/telegram/lazy-executor.ts", source);
+
+    // Then
+    assert.equal(violations.length, 1);
+    assert.match(violations[0]!, /must not import AI SDK infrastructure/);
+});
+
+test("dependency checker should reject static template-literal dynamic AI imports", () => {
+    // Given
+    const source = "const executor = await import(`../../ai/cognition.ts`);";
+
+    // When
+    const violations = dependencyViolations("surfaces/telegram/lazy-executor.ts", source);
+
+    // Then
+    assert.equal(violations.length, 1);
+    assert.match(violations[0]!, /must not import AI SDK infrastructure/);
+});
+
+test("dependency checker should reject non-static dynamic imports when ownership cannot be resolved", () => {
+    // Given
+    const source = "const executor = await import(`../../ai/${moduleName}.ts`);";
+
+    // When
+    const violations = dependencyViolations("surfaces/telegram/lazy-executor.ts", source);
+
+    // Then
+    assert.deepEqual(violations, [
+        'surfaces/telegram/lazy-executor.ts imports "<dynamic>": non-static dynamic imports cannot be verified by the dependency checker',
+    ]);
+});
+
 test("dependency checker should preserve explicit machine-setup infrastructure exceptions", () => {
     // Given
     const source = [
