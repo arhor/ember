@@ -51,15 +51,36 @@ export class SystemdUserBackgroundHost implements BackgroundHost {
             "--property=Restart=no",
             ...jobCommand(job),
         ]);
-        return observation(job.jobId, "running");
+        return observation(job.jobId, "scheduled");
     }
 
     async inspect(jobId: string): Promise<HostObservation> {
         validateJobId(jobId);
+        const [service, timer] = await Promise.all([
+            this.inspectUnit(`${jobId}.service`),
+            this.inspectUnit(`${jobId}.timer`),
+        ]);
+        if (service === "running") return observation(jobId, "running");
+        if (timer === "running") return observation(jobId, "scheduled");
+        if (service === "failed" || timer === "failed") return observation(jobId, "failed");
+        if (service === "unknown" || timer === "unknown") return observation(jobId, "unknown");
+        if (service === "absent" && timer === "absent") return observation(jobId, "absent");
+        return observation(jobId, "stopped");
+    }
+
+    async stop(jobId: string) {
+        validateJobId(jobId);
+        await this.run(this.config.systemctl_command, ["--user", "stop", `${jobId}.timer`, `${jobId}.service`]);
+        return observation(jobId, "stopped");
+    }
+
+    private async inspectUnit(
+        unitName: string,
+    ): Promise<Exclude<HostObservation["state"], "scheduled" | "unsupported">> {
         const result = await this.runner(this.config.systemctl_command, [
             "--user",
             "show",
-            jobId,
+            unitName,
             "--property=LoadState",
             "--property=ActiveState",
             "--value",
@@ -69,18 +90,11 @@ export class SystemdUserBackgroundHost implements BackgroundHost {
             values.includes("not-found") ||
             (result.code !== 0 && /not found|not-found|could not be found/i.test(result.stderr))
         )
-            return observation(jobId, "absent");
-        if (values.includes("failed")) return observation(jobId, "failed");
-        if (values.some((value) => ["active", "activating", "reloading"].includes(value)))
-            return observation(jobId, "running");
-        if (values.some((value) => ["inactive", "deactivating"].includes(value))) return observation(jobId, "stopped");
-        return observation(jobId, "unknown");
-    }
-
-    async stop(jobId: string) {
-        validateJobId(jobId);
-        await this.run(this.config.systemctl_command, ["--user", "stop", jobId]);
-        return observation(jobId, "stopped");
+            return "absent";
+        if (values.includes("failed")) return "failed";
+        if (values.some((value) => ["active", "activating", "reloading"].includes(value))) return "running";
+        if (values.some((value) => ["inactive", "deactivating"].includes(value))) return "stopped";
+        return "unknown";
     }
 
     async reloadAndEnable(unitName: string) {

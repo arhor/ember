@@ -87,8 +87,8 @@ async function main() {
         const wake = await scheduleWake(config, configPath, dueAt, supervisor);
         wakeId = wake.wake_id;
         const wakeBase = wakeJobId(wakeId);
-        const initialTimerState = (await supervisor.inspect(`${wakeBase}.timer`)).state;
-        assert.equal(initialTimerState, "running", `expected ${wakeBase}.timer to become active before the due time`);
+        const initialTimerState = (await supervisor.inspect(wakeBase)).state;
+        assert.equal(initialTimerState, "scheduled", `expected ${wakeBase} to become scheduled before the due time`);
 
         const wakeTerminal = await waitForWake(records, wakeId, WAKE_TIMEOUT_MS);
         assert.equal(
@@ -105,8 +105,7 @@ async function main() {
             await records.wakeObservation(wakeId, "dispatching"),
             "wake never crossed the durable dispatching boundary",
         );
-        await requireNonActive(supervisor, `${wakeBase}.service`);
-        await requireNonActive(supervisor, `${wakeBase}.timer`);
+        await requireNonActive(supervisor, wakeBase);
 
         const spec = createSpecialistEpisode({
             objective: "Create smoke.txt containing exactly: ember episodic runtime live smoke",
@@ -195,7 +194,7 @@ async function main() {
             await records.specialistObservation(specialistId, "worker_completed"),
             "specialist worker never established worker_completed",
         );
-        await requireNonActive(supervisor, `${specialistJobId(specialistId)}.service`);
+        await requireNonActive(supervisor, specialistJobId(specialistId));
 
         succeeded = true;
         process.stdout.write(

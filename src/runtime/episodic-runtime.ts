@@ -62,15 +62,13 @@ export interface RuntimeStatus {
         decision: string | null;
         evaluator_failure: string | null;
         failure_detail: string | null;
-        timer_job: string;
-        timer_state: HostJobState;
-        service_job: string;
-        service_state: HostJobState;
+        host_job: string;
+        host_state: HostJobState;
     }>;
     specialists: Array<{
         episode_id: string;
         status: "prepared" | "launching" | "launch_failed" | "launched" | "running" | "completed" | "failed" | "lost";
-        service_job: string;
+        host_job: string;
         host_state: HostJobState;
         runtime_state: string | null;
         report_state: string | null;
@@ -365,17 +363,17 @@ export async function reconcileEpisodicRuntime(
         }
         const intent = await records.readWake(wakeId);
         if (Date.parse(intent.due_at) <= Date.parse(observedAt)) {
-            const serviceState = (await host.inspect(wakeServiceJobId(wakeId))).state;
-            if (serviceState === "absent") {
+            const hostState = (await host.inspect(wakeJobId(wakeId))).state;
+            if (hostState === "absent") {
                 await requireHostAccepted(await host.start(wakeLaunch(config, configPath, wakeId)));
                 startedDueWakes.push(wakeId);
-            } else if (serviceState !== "running") {
+            } else if (hostState !== "running") {
                 ambiguousWakes.push(wakeId);
             }
             continue;
         }
-        const timerState = (await host.inspect(wakeTimerJobId(wakeId))).state;
-        if (timerState === "absent") {
+        const hostState = (await host.inspect(wakeJobId(wakeId))).state;
+        if (hostState === "absent") {
             await requireHostAccepted(await host.scheduleWake(wakeLaunch(config, configPath, wakeId), intent.due_at));
             repairedWakes.push(wakeId);
         }
@@ -414,8 +412,7 @@ export async function inspectEpisodicRuntime(
         const status = await wakeStatus(records, wakeId);
         const completed = await records.wakeObservation(wakeId, "completed");
         const failed = await records.wakeObservation(wakeId, "failed");
-        const timerJob = wakeTimerJobId(wakeId);
-        const serviceJob = wakeServiceJobId(wakeId);
+        const hostJob = wakeJobId(wakeId);
         wakes.push({
             wake_id: wakeId,
             due_at: intent.due_at,
@@ -423,22 +420,20 @@ export async function inspectEpisodicRuntime(
             decision: completed?.decision ?? null,
             evaluator_failure: completed?.evaluator_failure ?? null,
             failure_detail: failed?.detail ?? null,
-            timer_job: timerJob,
-            timer_state: (await host.inspect(timerJob)).state,
-            service_job: serviceJob,
-            service_state: (await host.inspect(serviceJob)).state,
+            host_job: hostJob,
+            host_state: (await host.inspect(hostJob)).state,
         });
     }
 
     const specialists: RuntimeStatus["specialists"] = [];
     for (const episodeId of await records.listSpecialistIds()) {
         const record = await readOptionalSpecialist(records.specialistRecordPath(episodeId));
-        const serviceJob = specialistJobId(episodeId);
+        const hostJob = specialistJobId(episodeId);
         specialists.push({
             episode_id: episodeId,
             status: await specialistStatus(records, episodeId, record),
-            service_job: serviceJob,
-            host_state: (await host.inspect(serviceJob)).state,
+            host_job: hostJob,
+            host_state: (await host.inspect(hostJob)).state,
             runtime_state: record?.runtime_state ?? null,
             report_state: record?.report_state ?? null,
             retry_state: record?.recovery.retry_state ?? null,
@@ -456,14 +451,6 @@ export function wakeJobId(wakeId: string) {
 export function specialistJobId(episodeId: string) {
     validateOpaqueId(episodeId, "specialist episode id");
     return `ember-specialist-${episodeId}`;
-}
-
-function wakeTimerJobId(wakeId: string) {
-    return `${wakeJobId(wakeId)}.timer`;
-}
-
-function wakeServiceJobId(wakeId: string) {
-    return `${wakeJobId(wakeId)}.service`;
 }
 
 function wakeLaunch(config: EpisodicRuntimeConfig, configPath: string, wakeId: string): WorkerLaunch {

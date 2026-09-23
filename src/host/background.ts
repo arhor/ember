@@ -6,7 +6,7 @@ export interface WorkerLaunch {
     stopTimeoutSeconds?: number;
 }
 
-export type HostJobState = "running" | "stopped" | "absent" | "failed" | "unknown" | "unsupported";
+export type HostJobState = "scheduled" | "running" | "stopped" | "absent" | "failed" | "unknown" | "unsupported";
 
 export interface HostObservation {
     jobId: string;
