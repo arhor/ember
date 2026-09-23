@@ -550,6 +550,221 @@ test("one interaction lease excludes cross-surface mutation and recovery until d
     }
 });
 
+test("application interaction should create distinct occurrences when local inputs have identical text", async () => {
+    // Given
+    const fixture = await applicationFixture();
+    try {
+        const deliveries: string[] = [];
+        const transport = async ({ text }: { text: string }) => {
+            deliveries.push(text);
+            return { outcome: "confirmed" as const, externalMessageId: null };
+        };
+
+        // When
+        const first = await fixture.application.interact(event("local_cli", "explicit_local_argument"), transport);
+        const second = await fixture.application.interact(event("local_cli", "explicit_local_argument"), transport);
+
+        // Then
+        assert.notEqual(first.occurrenceId, second.occurrenceId);
+        assert.notEqual(first.cognitionId, second.cognitionId);
+        assert.deepEqual(deliveries, ["reply\n", "reply\n"]);
+        const ledger = await fixture.dependencies.repositories.interactions.load();
+        assert.equal(ledger.inbound_occurrences.length, 2);
+        assert.equal(ledger.deliveries.length, 2);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("application interaction should suppress repeated cognition when external occurrence is replayed", async () => {
+    // Given
+    let providerCalls = 0;
+    const fixture = await applicationFixture({
+        executor: async () => {
+            providerCalls += 1;
+            return { contractVersion: 1, reply: "reply", usedMeaningIds: [] };
+        },
+    });
+    try {
+        const telegramEvent = {
+            ...event("telegram", "configured_surface_mapping"),
+            externalOccurrence: { occurrenceId: "update-42", messageId: "message-7", threadId: "chat-1" },
+            deliveryDestinationId: "chat-1",
+        };
+        let deliveries = 0;
+        const transport = async () => {
+            deliveries += 1;
+            return { outcome: "confirmed" as const, externalMessageId: "outbound-message-7" };
+        };
+
+        // When
+        const first = await fixture.application.interact(telegramEvent, transport);
+        const replay = await fixture.application.interact(telegramEvent, transport);
+
+        // Then
+        assert.equal(providerCalls, 1);
+        assert.equal(deliveries, 1);
+        assert.equal(replay.replayed, true);
+        assert.equal(replay.occurrenceId, first.occurrenceId);
+        assert.equal(replay.cognitionId, first.cognitionId);
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("application interaction should create distinct cognition when transport occurrence IDs differ", async () => {
+    // Given
+    let providerCalls = 0;
+    const fixture = await applicationFixture({
+        executor: async () => {
+            providerCalls += 1;
+            return { contractVersion: 1, reply: "reply", usedMeaningIds: [] };
+        },
+    });
+    try {
+        const transport = async () => ({ outcome: "confirmed" as const, externalMessageId: null });
+        const base = {
+            ...event("telegram", "configured_surface_mapping"),
+            deliveryDestinationId: "chat-1",
+        };
+
+        // When
+        const first = await fixture.application.interact(
+            { ...base, externalOccurrence: { occurrenceId: "update-1" } },
+            transport,
+        );
+        const second = await fixture.application.interact(
+            { ...base, externalOccurrence: { occurrenceId: "update-2" } },
+            transport,
+        );
+
+        // Then
+        assert.equal(providerCalls, 2);
+        assert.notEqual(first.occurrenceId, second.occurrenceId);
+        assert.notEqual(first.cognitionId, second.cognitionId);
+        const ledger = await fixture.dependencies.repositories.interactions.load();
+        assert.equal(ledger.inbound_occurrences.length, 2);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("application interaction should reject conflicting metadata when external occurrence is replayed", async () => {
+    // Given
+    const fixture = await applicationFixture();
+    try {
+        const original = {
+            ...event("telegram", "configured_surface_mapping"),
+            externalOccurrence: { occurrenceId: "update-9", messageId: "message-9" },
+            deliveryDestinationId: "chat-9",
+        };
+        await fixture.application.interact(original, async () => ({
+            outcome: "confirmed",
+            externalMessageId: null,
+        }));
+
+        // When
+        const replay = fixture.application.interact({ ...original, text: "changed payload" }, async () => ({
+            outcome: "confirmed",
+            externalMessageId: null,
+        }));
+
+        // Then
+        await assert.rejects(replay, /replay conflicts with the established occurrence metadata/);
+        const ledger = await fixture.dependencies.repositories.interactions.load();
+        assert.equal(ledger.inbound_occurrences.length, 1);
+        assert.equal(ledger.inbound_occurrences[0]?.receive_count, 1);
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("application interaction should preserve conversation when cognition preflight is invalid", async () => {
+    // Given
+    const fixture = await applicationFixture();
+    try {
+        fixture.dependencies.cognition.providerLabel = "   ";
+        const before = await fixture.dependencies.repositories.conversation.load();
+
+        // When
+        const interaction = fixture.application.interact(
+            {
+                ...event("local_cli", "explicit_local_argument"),
+                conversationMembership: { action: "fresh", basis: "explicit_boundary" },
+            },
+            async () => assert.fail("invalid cognition must not be delivered"),
+        );
+
+        // Then
+        await assert.rejects(interaction, /provider label must be non-empty/);
+        assert.deepEqual(await fixture.dependencies.repositories.conversation.load(), before);
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("application interaction should reject principal before accepting occurrence when assertion mismatches", async () => {
+    // Given
+    let providerCalls = 0;
+    const fixture = await applicationFixture({
+        executor: async () => {
+            providerCalls += 1;
+            return { contractVersion: 1, reply: "unexpected", usedMeaningIds: [] };
+        },
+    });
+    try {
+        const invalidEvent = {
+            ...event("telegram", "configured_surface_mapping"),
+            principal: "intruder",
+            externalOccurrence: { occurrenceId: "unauthorized-update" },
+        };
+
+        // When
+        const interaction = fixture.application.interact(invalidEvent, async () =>
+            assert.fail("unauthorized interaction must not be delivered"),
+        );
+
+        // Then
+        await assert.rejects(interaction, /principal/);
+        assert.equal(providerCalls, 0);
+        assert.equal((await fixture.dependencies.repositories.interactions.load()).inbound_occurrences.length, 0);
+        assert.equal(fixture.dependencies.repositories.state.lease, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
+test("application interaction should retain delivery representation before post-turn work begins", async () => {
+    // Given
+    const fixture = await applicationFixture();
+    let inspected = false;
+    try {
+        fixture.dependencies.postTurn.memoryProposalGenerator = async () => {
+            const ledger = await fixture.dependencies.repositories.interactions.load();
+            assert.equal(ledger.deliveries[0]?.representation?.text, "reply\n");
+            assert.deepEqual(ledger.deliveries[0]?.attempts, []);
+            inspected = true;
+            return { contractVersion: 1, candidates: [] };
+        };
+
+        // When
+        const result = await fixture.application.interact(event("local_cli", "explicit_local_argument"), async () => ({
+            outcome: "confirmed",
+            externalMessageId: null,
+        }));
+
+        // Then
+        assert.equal(inspected, true);
+        assert.equal(result.delivery?.status, "confirmed");
+        assert.equal(result.diagnostics.memoryProposalFailure, null);
+    } finally {
+        await fixture.close();
+    }
+});
+
 async function applicationFixture({ executor }: Pick<EmberApplicationDependencies["cognition"], "executor"> = {}) {
     const directory = await mkdtemp(join(tmpdir(), "ember-application-review-"));
     const dependencies = composeEmberApplication(

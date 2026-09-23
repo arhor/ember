@@ -15,10 +15,9 @@ import type {
 
 import { decideConfiguredProactiveContactHandoff } from "../src/agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
-import { executeInteraction } from "../src/app/application.ts";
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/app/application.ts";
+import { composeEmberApplication } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
@@ -138,7 +137,6 @@ function withConfiguredPolicy(config: TelegramSurfaceConfig, policyPath: string)
 
 async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suffix = "release") {
     const lease = await f.store.acquireWriteLease();
-    let interaction: Awaited<ReturnType<typeof executeInteraction>>;
     let groundingMeaningId: ReturnType<typeof rememberFact>;
     try {
         const loaded = await f.store.load();
@@ -150,24 +148,32 @@ async function createAdmittedContact(f: Awaited<ReturnType<typeof fixture>>, suf
             "private",
             `Current grounding for ${suffix}`,
         );
-        const started = startRuntime(loaded, PRINCIPAL, "private");
-        const state = await f.store.commit(loaded.revision, started.state);
-        interaction = await executeInteraction(createFileBackedRepositoriesForState(f.store), state, {
-            runtimeId: started.runtimeId,
-            principal: PRINCIPAL,
-            scope: "private",
-            text: "internal cognition source",
-            providerLabel: "fixture-provider",
-            timeoutSeconds: 1,
-            executor: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
-            surfaceId: "internal:test",
-            principalProvenance: "explicit_local_argument",
-            deliveryDestinationId: null,
-            deliver: () => ({ externalMessageId: "internal-display" }),
-        });
+        await f.store.commit(loaded.revision, loaded);
     } finally {
         await f.store.releaseWriteLease(lease);
     }
+    const application = createEmberApplication(
+        composeEmberApplication(
+            {
+                statePath: f.statePath,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            {
+                executor: async () => ({ contractVersion: 1, reply: "source expression", usedMeaningIds: [] }),
+            },
+        ),
+    );
+    const interaction = await application.interact(
+        {
+            kind: "message",
+            principal: PRINCIPAL,
+            scope: "private",
+            text: "internal cognition source",
+            surfaceId: "internal:test",
+            principalProvenance: "explicit_local_argument",
+        },
+        async () => ({ outcome: "confirmed", externalMessageId: "internal-display" }),
+    );
     const state = await f.store.load();
     const cognition = state.operations.cognitionEpisodes.find((item) => item.cognitionId === interaction.cognitionId)!;
     const contacts = new ProactiveContactStore(f.statePath);

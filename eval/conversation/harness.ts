@@ -90,42 +90,45 @@ export async function runConversationScenario(
     const previousNow = process.env.EMBER_TEST_NOW;
     const providerThreadIds = new Set<string>();
     let activeEpisode: ConversationEpisode | null = null;
-    const application = createEmberApplication(
-        composeEmberApplication(
-            {
-                statePath,
-                provider: {
-                    kind: "process",
-                    command: "conversation-evaluation-provider",
-                    arguments: [],
-                    timeoutSeconds: 300,
-                },
-            },
-            {
-                executor: async (request) => {
-                    const episode = activeEpisode;
-                    if (episode === null) throw new Error("conversation evaluation has no active episode");
-                    projection = request.projection;
-                    if (episode.provider_outcome) {
-                        throw new ProviderError(`fixture ${episode.provider_outcome}`, {
-                            outcome: episode.provider_outcome,
-                            terminationConfirmed: episode.provider_outcome === "failed",
-                        });
-                    }
-                    const result = await executor({ scenarioId: scenario.id, episode, request });
-                    reply = result.reply;
-                    providerThreadId = result.operational?.externalThreadId ?? null;
-                    return result;
-                },
-            },
-        ),
-    );
     let projection: Projection | null = null;
     let reply: string | null = null;
     let providerThreadId: string | null = null;
+    const composeApplication = () =>
+        createEmberApplication(
+            composeEmberApplication(
+                {
+                    statePath,
+                    provider: {
+                        kind: "process",
+                        command: "conversation-evaluation-provider",
+                        arguments: [],
+                        timeoutSeconds: 300,
+                    },
+                },
+                {
+                    executor: async (request) => {
+                        const episode = activeEpisode;
+                        if (episode === null) throw new Error("conversation evaluation has no active episode");
+                        projection = request.projection;
+                        if (episode.provider_outcome) {
+                            throw new ProviderError(`fixture ${episode.provider_outcome}`, {
+                                outcome: episode.provider_outcome,
+                                terminationConfirmed: episode.provider_outcome === "failed",
+                            });
+                        }
+                        const result = await executor({ scenarioId: scenario.id, episode, request });
+                        reply = result.reply;
+                        providerThreadId = result.operational?.externalThreadId ?? null;
+                        return result;
+                    },
+                },
+            ),
+        );
+    let application = composeApplication();
     try {
         for (const episode of scenario.episodes) {
             process.env.EMBER_TEST_NOW = episode.at;
+            if (episode.restart) application = composeApplication();
             activeEpisode = episode;
             projection = null;
             reply = null;

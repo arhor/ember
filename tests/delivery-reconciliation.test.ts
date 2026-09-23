@@ -6,14 +6,12 @@ import test from "node:test";
 
 import type { ProviderInvoker } from "../src/providers/contract.ts";
 
-import { executeInteraction } from "../src/app/application.ts";
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/app/application.ts";
+import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
     InteractionLedgerStore,
-    SurfaceDeliveryFailure,
     interactionLedgerInspectionView,
     reconcileSurfaceDelivery,
 } from "../src/runtime/interaction-boundary.ts";
@@ -26,27 +24,11 @@ async function fixture() {
     const statePath = join(directory, "ember.json");
     const store = new StateStore(statePath);
     await store.create(initialState(PRINCIPAL));
-    const lease = await store.acquireWriteLease();
-    let leaseHeld = true;
-    const releaseWriter = async () => {
-        if (!leaseHeld) return;
-        await store.releaseWriteLease(lease);
-        leaseHeld = false;
-    };
-    const loaded = await store.load();
-    const started = startRuntime(loaded, PRINCIPAL, SCOPE);
-    const state = await store.commit(loaded.revision, started.state);
     return {
         directory,
         statePath,
         store,
-        state,
-        runtimeId: started.runtimeId,
-        releaseWriter,
-        close: async () => {
-            await releaseWriter();
-            await rm(directory, { recursive: true, force: true });
-        },
+        close: () => rm(directory, { recursive: true, force: true }),
     };
 }
 
@@ -54,7 +36,6 @@ async function withRestartedWriter<T>(
     f: Awaited<ReturnType<typeof fixture>>,
     operation: (store: StateStore) => Promise<T>,
 ) {
-    await f.releaseWriter();
     const restartedStore = new StateStore(f.statePath);
     const lease = await restartedStore.acquireWriteLease();
     try {
@@ -76,26 +57,36 @@ async function createRetryableFailure(
     calls: { provider: number; delivery: number },
 ) {
     const providerCalls = { value: 0 };
-    const result = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
-        runtimeId: f.runtimeId,
-        principal: PRINCIPAL,
-        scope: SCOPE,
-        text: "send this once",
-        providerLabel: "fixture-provider",
-        timeoutSeconds: 1,
-        executor: provider(providerCalls),
-        surfaceId: "messaging:test",
-        principalProvenance: "configured_surface_mapping",
-        externalOccurrence: { occurrenceId: "update-retry" },
-        deliveryDestinationId: "chat-retry",
-        deliver: () => {
+    const application = createEmberApplication(
+        composeEmberApplication(
+            {
+                statePath: f.statePath,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            { executor: provider(providerCalls) },
+        ),
+    );
+    const result = await application.interact(
+        {
+            kind: "message",
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "send this once",
+            surfaceId: "messaging:test",
+            principalProvenance: "configured_surface_mapping",
+            externalOccurrence: { occurrenceId: "update-retry" },
+            deliveryDestinationId: "chat-retry",
+        },
+        async () => {
             calls.delivery += 1;
-            throw new SurfaceDeliveryFailure("transport was unavailable before acceptance", {
+            return {
                 outcome: "failed",
                 retryable: true,
-            });
+                retryAfterSeconds: null,
+                externalMessageId: null,
+            };
         },
-    });
+    );
     assert.equal(result.delivery?.status, "retryable_failure");
     calls.provider = providerCalls.value;
     const ledger = await new InteractionLedgerStore(f.statePath).load();

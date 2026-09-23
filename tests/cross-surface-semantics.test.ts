@@ -8,10 +8,9 @@ import test from "node:test";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
-import { executeInteraction } from "../src/app/application.ts";
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/app/application.ts";
+import { composeEmberApplication } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
-import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
@@ -98,39 +97,26 @@ async function fixture() {
 }
 
 async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
-    const lease = await store.acquireWriteLease();
-    let runtimeId: ReturnType<typeof startRuntime>["runtimeId"] | null = null;
-    try {
-        const loaded = await store.load();
-        const started = startRuntime(loaded, PRINCIPAL, SHARED_SCOPE);
-        runtimeId = started.runtimeId;
-        const state = await store.commit(loaded.revision, started.state);
-        return await executeInteraction(createFileBackedRepositoriesForState(store), state, {
-            runtimeId,
+    const application = createEmberApplication(
+        composeEmberApplication(
+            {
+                statePath: store.path,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            { executor: provider },
+        ),
+    );
+    return application.interact(
+        {
+            kind: "message",
             principal: PRINCIPAL,
             scope: SHARED_SCOPE,
             text: "hello from CLI",
-            providerLabel: "fixture-provider",
-            timeoutSeconds: 1,
-            executor: provider,
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
-            deliver: () => {},
-        });
-    } finally {
-        try {
-            if (runtimeId !== null) {
-                const current = await store.load();
-                const runtime = current.operations.runtimeEpisodes.find((episode) => episode.runtimeId === runtimeId);
-                if (runtime?.cleanStopAt === null) {
-                    const stopped = stopRuntime(current, runtimeId, { reason: "cross_surface_test_complete" });
-                    await store.commit(current.revision, stopped);
-                }
-            }
-        } finally {
-            await store.releaseWriteLease(lease);
-        }
-    }
+        },
+        async () => ({ outcome: "confirmed", externalMessageId: null }),
+    );
 }
 
 function memoryOutput(chunks: string[]) {

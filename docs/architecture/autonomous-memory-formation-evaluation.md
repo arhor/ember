@@ -12,10 +12,11 @@ discovery_status: current
 
 Issue [#224](https://github.com/arhor/ember/issues/224) adds a repository-owned
 longitudinal evaluation of the proposal, adoption, and persistence boundaries from
-issues #221 through #223. The harness drives production `runCognition`, conversation
-projection, canonical state persistence, restart, deterministic adoption policy, and
-the durable proposal-generation ledger. It is evaluation infrastructure, not a second
-memory policy.
+issues #221 through #223. The harness drives application-layer cognition preparation
+and execution, the production post-turn memory seam, canonical state persistence,
+restart, deterministic adoption policy, and the durable proposal-generation ledger.
+It is evaluation infrastructure, not a second memory policy or ordinary-interaction
+entry point.
 
 ## Run it
 

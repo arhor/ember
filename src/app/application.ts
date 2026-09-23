@@ -157,10 +157,7 @@ async function interact(
     }
 }
 
-export interface InteractionExecutionOptions extends Omit<
-    RunCognitionOptions,
-    "cognitionId" | "surface" | "preparation"
-> {
+interface InteractionExecutionOptions extends Omit<RunCognitionOptions, "cognitionId" | "surface" | "preparation"> {
     surfaceId: string;
     principalProvenance: PrincipalAssertionProvenance;
     externalOccurrence?: ExternalOccurrenceMetadata | null;
@@ -174,7 +171,7 @@ export interface InteractionExecutionOptions extends Omit<
     ) => Promise<{ memoryProposalFailure: string | null; onboardingProgressFailure: string | null }>;
 }
 
-export interface InteractionExecutionResult {
+interface InteractionExecutionResult {
     state: EmberState;
     providerFailure: string | null;
     memoryProposalFailure: string | null;
@@ -187,7 +184,7 @@ export interface InteractionExecutionResult {
     replayed: boolean;
 }
 
-export async function executeInteraction(
+async function executeInteraction(
     repositories: InteractionRepositories,
     state: EmberState,
     options: InteractionExecutionOptions,
