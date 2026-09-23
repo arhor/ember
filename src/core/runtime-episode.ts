@@ -110,6 +110,23 @@ export function stopRuntime(
     return candidate;
 }
 
+export function stopRuntimeAfterFailure(
+    state: EmberState,
+    runtimeId: RuntimeId | string,
+    options: { reason: string; timestamp?: string },
+): EmberState {
+    const stopped = stopRuntime(state, runtimeId, options);
+    const stoppedRuntime = findRuntime(stopped, runtimeId);
+    for (const cognition of stopped.operations.cognitionEpisodes) {
+        if (cognition.runtimeId === stoppedRuntime.runtimeId && cognition.status === "started") {
+            cognition.status = "outcome_unknown";
+            cognition.lastDurableObservationAt = stoppedRuntime.cleanStopAt!;
+        }
+    }
+    validateState(stopped);
+    return stopped;
+}
+
 function latestRuntime(state: EmberState): RuntimeEpisode | null {
     const runtimes = state.operations.runtimeEpisodes;
     if (!runtimes.length) {
