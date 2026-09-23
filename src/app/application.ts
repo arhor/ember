@@ -8,12 +8,12 @@ import type {
 } from "./contract.ts";
 
 import { ValidationError } from "../core/errors.ts";
+import { startRuntime, stopRuntime, stopRuntimeAfterFailure } from "../core/runtime-episode.ts";
 import {
     reconcileSurfaceDelivery,
     runSurfaceInteraction,
     SurfaceDeliveryFailure,
 } from "../runtime/interaction-boundary.ts";
-import { startRuntime, stopRuntime } from "../runtime/runtime.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
 import { runPostTurnFollowUps } from "./post-turn.ts";
@@ -126,18 +126,9 @@ async function interact(
                 const current = await store.load();
                 const runtime = current.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
                 if (runtime?.cleanStopAt === null) {
-                    const stopped = stopRuntime(current, runtimeId, { reason: stopReason });
-                    if (stopReason === "application_interaction_failed") {
-                        const stoppedAt = stopped.operations.runtimeEpisodes.find(
-                            (item) => item.runtimeId === runtimeId,
-                        )?.cleanStopAt;
-                        for (const cognition of stopped.operations.cognitionEpisodes) {
-                            if (cognition.runtimeId === runtimeId && cognition.status === "started") {
-                                cognition.status = "outcome_unknown";
-                                cognition.lastDurableObservationAt = stoppedAt!;
-                            }
-                        }
-                    }
+                    const stop =
+                        stopReason === "application_interaction_failed" ? stopRuntimeAfterFailure : stopRuntime;
+                    const stopped = stop(current, runtimeId, { reason: stopReason });
                     await store.commit(current.revision, stopped);
                 }
             }

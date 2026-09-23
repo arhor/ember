@@ -15,6 +15,7 @@ import { actionProposalConfirmation } from "../../capabilities/action-proposal.t
 import { composeEmberApplication } from "../../composition/ember.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
+import { startRuntime, stopRuntime } from "../../core/runtime-episode.ts";
 import {
     attachDetail,
     rememberEpisode,
@@ -27,7 +28,6 @@ import {
 } from "../../core/semantics.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { runSurfaceInteraction } from "../../runtime/interaction-boundary.ts";
-import { startRuntime, stopRuntime } from "../../runtime/runtime.ts";
 import { cloneState } from "../../util.ts";
 
 export interface CliSurfaceConfig {

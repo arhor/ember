@@ -36,7 +36,9 @@ protocol, including its post-turn wrappers, until its separate migration in #318
 Issue #316 moves per-cognition capability selection out of AI provider configuration:
 application composition owns the selector, runtime resolves it before AI execution, and
 the AI boundary receives only the selected bindings for SDK tool mapping and
-firewall-routed dispatch.
+firewall-routed dispatch. Issue #317 moves portable runtime start, clean-stop, and
+interruption-recovery bookkeeping into `core/runtime-episode.ts`; cognition orchestration
+remains temporarily in `runtime/runtime.ts` for the #318 compatibility cleanup.
 
 ## Recommendation and governing constraints
 
@@ -106,7 +108,7 @@ sequenceDiagram
     participant CLI as cli/main.ts + setup.ts
     participant S as cli/surface.ts
     participant P as persistence stores
-    participant R as runtime/runtime.ts
+    participant R as core/runtime-episode.ts
     participant I as runtime/interaction-boundary.ts
     CLI->>S: runCliSurface(config, io)
     S->>P: new StateStore; initial lease; load + validate binding; release
@@ -151,7 +153,7 @@ sequenceDiagram
     participant T as telegram/surface.ts polling
     participant API as Telegram Bot API
     participant P as persistence stores
-    participant R as runtime/runtime.ts
+    participant R as core/runtime-episode.ts
     participant I as runtime/interaction-boundary.ts
     T->>API: preflight bot/webhook, then getUpdates
     Note over T,P: Each polling iteration first reconciles ordinary deliveries and proactive contacts
@@ -193,8 +195,9 @@ or semantic responsibilities currently embedded in the transport file.
 ### Shared accepted-input → expression → delivery path
 
 This expansion applies to both diagrams. Source anchors are
-[runSurfaceInteraction / reconcileSurfaceDelivery](../../src/runtime/interaction-boundary.ts)
-and [runCognition](../../src/runtime/runtime.ts).
+[runSurfaceInteraction / reconcileSurfaceDelivery](../../src/runtime/interaction-boundary.ts),
+[runtime episode lifecycle](../../src/core/runtime-episode.ts), and
+[runCognition](../../src/runtime/runtime.ts).
 
 | Order | Current owner and concrete operation                                                                                                                | Durable/effect boundary                                                                                                                                                                           |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -412,7 +415,8 @@ or implementation after callers migrate; it does not retain a permanent facade.
 | `surfaces/cli/google-calendar-setup.ts`                                                                                     | Trusted OAuth/configuration CLI flow                                              | CLI prompts + `integrations/google-calendar/setup.ts`                                                                         | SPLIT       | —                                                     | #322, #327; preserve explicit mutations and secret isolation                          |
 | `surfaces/telegram/setup.ts`                                                                                                | Token/mapping/config/service installation/round-trip verification                 | Telegram setup prompts + `host/setup.ts` + host service adapter                                                               | SPLIT       | —                                                     | #322, #324, #325, #327                                                                |
 | `runtime/interaction-boundary.ts`                                                                                           | Ledger schemas/storage, ordinary wrapper, output bridge, recovery                 | `core/interaction.ts`, `persistence/interaction-ledger-store.ts`, `app/interaction.ts`, `app/delivery.ts`                     | SPLIT       | —                                                     | #307, #308, #312; DELETE old `runSurfaceInteraction`/Writable bridge at #318          |
-| `runtime/runtime.ts`                                                                                                        | Runtime semantics plus all cognition orchestration/output                         | `core/runtime-episode.ts`; app interaction/conversation/post-turn/delivery                                                    | SPLIT       | —                                                     | #309, #312–#314, #317; DELETE `runCognition`/hook protocol at #318                    |
+| `core/runtime-episode.ts`                                                                                                   | Portable runtime start, clean-stop, and interruption-recovery semantics           | Implemented focused core lifecycle owner                                                                                      | MOVED       | —                                                     | #317 implemented                                                                      |
+| `runtime/runtime.ts`                                                                                                        | Remaining cognition execution and compatibility orchestration                     | App interaction/conversation/post-turn/delivery                                                                               | SPLIT       | —                                                     | #309, #312–#314/#317 implemented; DELETE `runCognition` compatibility at #318         |
 | `runtime/episodic-runtime.ts`                                                                                               | Wake/specialist records, workers, supervisor, unit/config helpers                 | App opportunity/work orchestration; persistence episode records; `host/systemd.ts`                                            | SPLIT       | —                                                     | #317, #322, #324                                                                      |
 | `runtime/process-lifecycle.ts`                                                                                              | Bounded subprocess IO, cancellation/termination observations                      | `host/process-lifecycle.ts`                                                                                                   | MOVE        | —                                                     | #315, #322; shared by inference and specialist execution                              |
 | `providers/contract.ts`                                                                                                     | Compatibility aliases for the explicit generic process protocol and older callers | Implemented Ember contract in `ai/contract.ts`; remove aliases with compatibility cleanup                                     | SPLIT       | —                                                     | #315 implemented; #318 cleanup                                                        |

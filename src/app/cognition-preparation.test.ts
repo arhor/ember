@@ -7,8 +7,9 @@ import test from "node:test";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { initialState } from "../core/model.ts";
 import { createOnboardingWork } from "../core/onboarding-work.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { runCognition, runCognitionUntilExpressionCommit, startRuntime } from "../runtime/runtime.ts";
+import { runCognition, runCognitionUntilExpressionCommit } from "../runtime/runtime.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 
 test("application preparation builds the provider projection before cognition execution", async () => {

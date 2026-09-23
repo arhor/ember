@@ -11,8 +11,9 @@ import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const AUTHORIZED = {

@@ -11,6 +11,7 @@ import { findCognitionOpportunity, runCognitionOpportunity } from "../agency/cog
 import { createCodexOpportunityEvaluator } from "../ai/codex-opportunity.ts";
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
+import { startRuntime, stopRuntime } from "../core/runtime-episode.ts";
 import {
     inspectSpecialistEpisode,
     recordSpecialistProcessLoss,
@@ -18,7 +19,6 @@ import {
 } from "../delegation/codex-specialist.ts";
 import { replaceFileAtomically } from "../persistence/file-replacement.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "./runtime.ts";
 
 export interface EpisodicRuntimeConfig {
     config_version: 1;

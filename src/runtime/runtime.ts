@@ -11,7 +11,6 @@ import type {
     AgentExpressionEvidence,
     EmberState,
     MeaningId,
-    RuntimeEpisode,
     RuntimeId,
 } from "../core/model.ts";
 import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
@@ -22,115 +21,11 @@ import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../ai/con
 import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import { agentActor, newId, nowUtc, validateState } from "../core/model.ts";
+import { agentActor, newId, nowUtc } from "../core/model.ts";
 import { projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { cloneState } from "../util.ts";
-
-export function startRuntime(
-    state: EmberState,
-    principal: string,
-    scope: string,
-    { timestamp = nowUtc() }: { timestamp?: string } = {},
-) {
-    requirePrincipal(state, principal);
-    if (typeof scope !== "string" || !scope.trim()) {
-        throw new ValidationError("active scope must be non-empty");
-    }
-    const candidate = cloneState(state);
-    const previous = latestRuntime(candidate);
-    const runtimeId = newId("runtime");
-    const recovery =
-        previous === null
-            ? {
-                  previousRuntime: null,
-                  currentRuntime: runtimeId,
-                  gapKind: "initial_start" as const,
-                  lastDurableObservationAt: null,
-                  cleanStopAt: null,
-                  restartAt: timestamp,
-                  agentCognitionDuringInterval: "not_applicable" as const,
-                  externalChangesDuringInterval: "unknown" as const,
-              }
-            : previous.cleanStopAt !== null
-              ? {
-                    previousRuntime: previous.runtimeId,
-                    currentRuntime: runtimeId,
-                    gapKind: "known_clean_stop_interval" as const,
-                    lastDurableObservationAt: previous.lastDurableObservationAt,
-                    cleanStopAt: previous.cleanStopAt,
-                    restartAt: timestamp,
-                    agentCognitionDuringInterval: "none_in_supported_runtime" as const,
-                    externalChangesDuringInterval: "unknown" as const,
-                }
-              : {
-                    previousRuntime: previous.runtimeId,
-                    currentRuntime: runtimeId,
-                    gapKind: "uncertain_interruption_boundary" as const,
-                    lastDurableObservationAt: previous.lastDurableObservationAt,
-                    cleanStopAt: null,
-                    restartAt: timestamp,
-                    agentCognitionDuringInterval: "unknown_after_last_durable_observation" as const,
-                    externalChangesDuringInterval: "unknown" as const,
-                };
-    if (previous?.cleanStopAt === null) {
-        for (const cognition of candidate.operations.cognitionEpisodes) {
-            if (cognition.runtimeId === previous.runtimeId && cognition.status === "started") {
-                cognition.status = "outcome_unknown";
-            }
-        }
-        for (const opportunity of candidate.operations.cognitionOpportunities ?? []) {
-            if (opportunity.runtimeId === previous.runtimeId && opportunity.status === "evaluating") {
-                opportunity.status = "outcome_unknown";
-                opportunity.lastDurableObservationAt = timestamp;
-                opportunity.providerTermination = null;
-            }
-        }
-    }
-    candidate.operations.runtimeEpisodes.push({
-        runtimeId: runtimeId,
-        principal,
-        activeScope: scope,
-        startedAt: timestamp,
-        lastDurableObservationAt: timestamp,
-        cleanStopAt: null,
-        stopReason: null,
-        recoveryAccount: recovery,
-    });
-    validateState(candidate);
-    return { state: candidate, runtimeId };
-}
-
-export function stopRuntime(
-    state: EmberState,
-    runtimeId: RuntimeId | string,
-    {
-        reason,
-        timestamp = nowUtc(),
-    }: {
-        reason: string;
-        timestamp?: string;
-    },
-): EmberState {
-    const candidate = cloneState(state);
-    const runtime = findRuntime(candidate, runtimeId);
-    if (runtime.cleanStopAt !== null) {
-        throw new ValidationError("runtime is already stopped");
-    }
-    for (const opportunity of candidate.operations.cognitionOpportunities ?? []) {
-        if (opportunity.runtimeId === runtime.runtimeId && opportunity.status === "evaluating") {
-            opportunity.status = "outcome_unknown";
-            opportunity.lastDurableObservationAt = timestamp;
-            opportunity.providerTermination = null;
-        }
-    }
-    runtime.lastDurableObservationAt = timestamp;
-    runtime.cleanStopAt = timestamp;
-    runtime.stopReason = reason;
-    validateState(candidate);
-    return candidate;
-}
 
 export interface RunCognitionOptions {
     runtimeId: RuntimeId;
@@ -528,19 +423,4 @@ export function findCognition(state: EmberState, id: CognitionId | string): Cogn
         throw new ValidationError(`cognition does not exist: ${id}`);
     }
     return value;
-}
-
-function latestRuntime(state: EmberState): RuntimeEpisode | null {
-    const runtimes = state.operations.runtimeEpisodes;
-    if (!runtimes.length) {
-        return null;
-    }
-    const referenced = new Set(
-        runtimes.map((r) => r.recoveryAccount.previousRuntime).filter((id): id is RuntimeId => id !== null),
-    );
-    const tails = runtimes.filter((r) => !referenced.has(r.runtimeId));
-    if (tails.length !== 1) {
-        throw new ValidationError("runtime recovery chain has no unique current tail");
-    }
-    return tails[0]!;
 }

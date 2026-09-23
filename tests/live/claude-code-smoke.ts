@@ -7,9 +7,10 @@ import { join } from "node:path";
 import { createClaudeCodeExecutor } from "../../src/ai/claude-code.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
+import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition, startRuntime, stopRuntime } from "../../src/runtime/runtime.ts";
+import { runCognition } from "../../src/runtime/runtime.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = `relationship:${PRINCIPAL}`;

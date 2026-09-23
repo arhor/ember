@@ -9,8 +9,9 @@ import type { InferenceEvidence } from "../src/ai/cognition.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 function generated(value, response = undefined, overrides = {}) {

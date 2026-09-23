@@ -10,6 +10,7 @@ import { runCognitionOpportunity } from "../src/agency/cognition-opportunity.ts"
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ConcurrentWriter } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { createSpecialistEpisode, inspectSpecialistEpisode } from "../src/delegation/codex-specialist.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
@@ -20,7 +21,7 @@ import {
     scheduleWake,
     startSpecialistEpisode,
 } from "../src/runtime/episodic-runtime.ts";
-import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
+import { runCognition } from "../src/runtime/runtime.ts";
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const OBSERVED_AT = "2026-09-04T16:00:00Z";

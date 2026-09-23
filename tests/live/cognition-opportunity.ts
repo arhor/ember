@@ -5,8 +5,8 @@ import assert from "node:assert/strict";
 import { evaluateCognitionOpportunity } from "../../src/agency/cognition-opportunity.ts";
 import { createCodexOpportunityEvaluator } from "../../src/ai/codex-opportunity.ts";
 import { initialState } from "../../src/core/model.ts";
+import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { undertake } from "../../src/core/semantics.ts";
-import { startRuntime } from "../../src/runtime/runtime.ts";
 
 if (process.env.EMBER_RUN_LIVE_ENDOGENOUS !== "1") {
     process.stderr.write(

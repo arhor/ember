@@ -9,9 +9,9 @@ import type { SurfaceDeliveryReceipt } from "./interaction-boundary.ts";
 
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { initialState } from "../core/model.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure, runSurfaceInteraction } from "./interaction-boundary.ts";
-import { startRuntime } from "./runtime.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

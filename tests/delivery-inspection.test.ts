@@ -7,9 +7,9 @@ import test from "node:test";
 
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
-import { startRuntime } from "../src/runtime/runtime.ts";
 import { main as cliMain } from "../src/surfaces/cli/index.ts";
 
 const PRINCIPAL = "max";

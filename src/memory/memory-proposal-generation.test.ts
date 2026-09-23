@@ -15,10 +15,11 @@ import { runPostTurnFollowUps } from "../app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { ProviderError } from "../core/errors.ts";
 import { initialState } from "../core/model.ts";
+import { startRuntime } from "../core/runtime-episode.ts";
 import { userEvidence } from "../core/semantics.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { runCognition, startRuntime } from "../runtime/runtime.ts";
+import { runCognition } from "../runtime/runtime.ts";
 import { cloneState } from "../util.ts";
 import { generateAndAdoptConversationMemories } from "./memory-proposal-generation.ts";
 

@@ -8,6 +8,7 @@ import type { ProviderInvoker } from "../src/providers/contract.ts";
 
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
+import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
     InteractionLedgerStore,
@@ -16,7 +17,6 @@ import {
     reconcileSurfaceDelivery,
     runSurfaceInteraction,
 } from "../src/runtime/interaction-boundary.ts";
-import { startRuntime } from "../src/runtime/runtime.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";
