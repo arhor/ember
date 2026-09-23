@@ -8,19 +8,19 @@ import { delimiter, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import type { SpecialistEpisodeRecord } from "../../src/delegation/codex-specialist.ts";
+import type { SystemdHostConfig } from "../../src/host/systemd.ts";
 import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/runtime/episodic-runtime.ts";
 
 import { initialState } from "../../src/core/model.ts";
 import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../src/delegation/codex-specialist.ts";
+import { runCommand, SystemdUserBackgroundHost } from "../../src/host/systemd.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import {
     EpisodicRecordStore,
-    SystemdUserSupervisor,
-    runCommand,
     scheduleWake,
-    specialistUnitName,
+    specialistJobId,
     startSpecialistEpisode,
-    wakeUnitName,
+    wakeJobId,
 } from "../../src/runtime/episodic-runtime.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -58,7 +58,7 @@ async function main() {
     let specialistId: string | null = null;
     let succeeded = false;
 
-    const config: EpisodicRuntimeConfig = {
+    const config: EpisodicRuntimeConfig & SystemdHostConfig = {
         config_version: 1,
         state_path: statePath,
         records_directory: recordsDirectory,
@@ -80,15 +80,15 @@ async function main() {
         await mkdir(specialistWorkspace);
         await writeFile(join(specialistWorkspace, "README.md"), "# Ember episodic runtime live smoke\n", "utf8");
 
-        const supervisor = new SystemdUserSupervisor(config, configPath);
+        const supervisor = new SystemdUserBackgroundHost(config);
         const records = new EpisodicRecordStore(recordsDirectory);
 
         const dueAt = new Date(Date.now() + 10_000).toISOString();
-        const wake = await scheduleWake(config, configPath, dueAt);
+        const wake = await scheduleWake(config, configPath, dueAt, supervisor);
         wakeId = wake.wake_id;
-        const wakeBase = wakeUnitName(wakeId);
-        const initialTimerState = await supervisor.unitState(`${wakeBase}.timer`);
-        assert.equal(initialTimerState, "active", `expected ${wakeBase}.timer to become active before the due time`);
+        const wakeBase = wakeJobId(wakeId);
+        const initialTimerState = (await supervisor.inspect(`${wakeBase}.timer`)).state;
+        assert.equal(initialTimerState, "running", `expected ${wakeBase}.timer to become active before the due time`);
 
         const wakeTerminal = await waitForWake(records, wakeId, WAKE_TIMEOUT_MS);
         assert.equal(
@@ -164,7 +164,7 @@ async function main() {
                 context_revision: "episodic-live-smoke-context-1",
             },
         });
-        specialistId = await startSpecialistEpisode(config, configPath, spec);
+        specialistId = await startSpecialistEpisode(config, configPath, spec, supervisor);
         const specialist = await waitForSpecialist(records.specialistRecordPath(specialistId), SPECIALIST_TIMEOUT_MS);
         assert.equal(specialist.runtime_state, "exited", `specialist runtime ended as ${specialist.runtime_state}`);
         assert.equal(
@@ -195,7 +195,7 @@ async function main() {
             await records.specialistObservation(specialistId, "worker_completed"),
             "specialist worker never established worker_completed",
         );
-        await requireNonActive(supervisor, `${specialistUnitName(specialistId)}.service`);
+        await requireNonActive(supervisor, `${specialistJobId(specialistId)}.service`);
 
         succeeded = true;
         process.stdout.write(
@@ -274,11 +274,11 @@ async function waitForSpecialist(recordPath: string, timeoutMs: number): Promise
     throw new Error("specialist did not reach an exited/lost durable record before the live-smoke deadline");
 }
 
-async function requireNonActive(supervisor: SystemdUserSupervisor, unit: string) {
+async function requireNonActive(supervisor: SystemdUserBackgroundHost, unit: string) {
     const deadline = Date.now() + 10_000;
     while (Date.now() < deadline) {
-        const state = await supervisor.unitState(unit);
-        if (state !== "active") return;
+        const state = (await supervisor.inspect(unit)).state;
+        if (state !== "running") return;
         await delay(250);
     }
     throw new Error(`${unit} remained active after durable worker completion`);
@@ -294,10 +294,10 @@ async function cleanupUnits(systemctl: string, wakeId: string | null, specialist
 function diagnosticUnits(wakeId: string | null, specialistId: string | null) {
     const units: string[] = [];
     if (wakeId) {
-        const base = wakeUnitName(wakeId);
+        const base = wakeJobId(wakeId);
         units.push(`${base}.timer`, `${base}.service`);
     }
-    if (specialistId) units.push(`${specialistUnitName(specialistId)}.service`);
+    if (specialistId) units.push(`${specialistJobId(specialistId)}.service`);
     return units;
 }
 

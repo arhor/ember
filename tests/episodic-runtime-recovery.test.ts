@@ -4,7 +4,8 @@ import { join } from "node:path";
 import test from "node:test";
 
 import type { SpecialistEpisodeRecord } from "../src/delegation/codex-specialist.ts";
-import type { CommandRunner, EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
+import type { CommandRunner } from "../src/host/systemd.ts";
+import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
 
 import { runCognitionOpportunity } from "../src/agency/cognition-opportunity.ts";
 import { executeCognition } from "../src/app/cognition-execution.ts";
@@ -13,6 +14,7 @@ import { ConcurrentWriter } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { createSpecialistEpisode, inspectSpecialistEpisode } from "../src/delegation/codex-specialist.ts";
+import { SystemdUserBackgroundHost } from "../src/host/systemd.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {
     EpisodicRecordStore,
@@ -25,6 +27,16 @@ import {
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const OBSERVED_AT = "2026-09-04T16:00:00Z";
+
+function host(config: EpisodicRuntimeConfig, runner: CommandRunner) {
+    return new SystemdUserBackgroundHost(
+        config as EpisodicRuntimeConfig & {
+            systemd_run_command: string;
+            systemctl_command: string;
+        },
+        runner,
+    );
+}
 
 function runtimeConfig(root: string): EpisodicRuntimeConfig {
     return {
@@ -126,9 +138,8 @@ test("manager restart should re-arm one pending wake without manufacturing an op
     const configPath = join(root, "runtime.json");
     await new StateStore(config.state_path).create(initialState(PRINCIPAL, OBSERVED_AT));
     const scheduled = missingUnitRunner();
-    const wake = await scheduleWake(config, configPath, "2026-09-05T18:00:00Z", {
+    const wake = await scheduleWake(config, configPath, "2026-09-05T18:00:00Z", host(config, scheduled.runner), {
         now: () => OBSERVED_AT,
-        runner: scheduled.runner,
     });
     let timerRestored = false;
     const recoveryCalls: Array<{ command: string; args: string[] }> = [];
@@ -147,12 +158,10 @@ test("manager restart should re-arm one pending wake without manufacturing an op
     };
 
     // When
-    const first = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recoveryRunner,
+    const first = await reconcileEpisodicRuntime(config, configPath, host(config, recoveryRunner), {
         now: () => "2026-09-04T18:05:00Z",
     });
-    const second = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recoveryRunner,
+    const second = await reconcileEpisodicRuntime(config, configPath, host(config, recoveryRunner), {
         now: () => "2026-09-04T18:06:00Z",
     });
     const state = await new StateStore(config.state_path).load();
@@ -171,9 +180,8 @@ test("stale writer lock should fail closed until explicit quarantine, then dispa
     const configPath = join(root, "runtime.json");
     await new StateStore(config.state_path).create(initialState(PRINCIPAL, OBSERVED_AT));
     const supervisor = missingUnitRunner();
-    const wake = await scheduleWake(config, configPath, "2026-09-04T18:01:00Z", {
+    const wake = await scheduleWake(config, configPath, "2026-09-04T18:01:00Z", host(config, supervisor.runner), {
         now: () => OBSERVED_AT,
-        runner: supervisor.runner,
     });
     const crashedWriter = new StateStore(config.state_path, {
         hostname: "issue-83-host",
@@ -332,8 +340,7 @@ test("forced specialist loss should preserve effect uncertainty and prohibit bli
     const configPath = join(root, "runtime.json");
     const spec = specialistSpec(root);
     const launched = missingUnitRunner();
-    await startSpecialistEpisode(config, configPath, spec, {
-        runner: launched.runner,
+    await startSpecialistEpisode(config, configPath, spec, host(config, launched.runner), {
         now: () => OBSERVED_AT,
     });
     const records = new EpisodicRecordStore(config.records_directory);
@@ -362,16 +369,14 @@ test("forced specialist loss should preserve effect uncertainty and prohibit bli
     const recovery = missingUnitRunner();
 
     // When
-    const first = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recovery.runner,
+    const first = await reconcileEpisodicRuntime(config, configPath, host(config, recovery.runner), {
         now: () => "2026-09-04T18:05:00Z",
     });
-    const second = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recovery.runner,
+    const second = await reconcileEpisodicRuntime(config, configPath, host(config, recovery.runner), {
         now: () => "2026-09-04T18:06:00Z",
     });
     const recovered = await inspectSpecialistEpisode(records.specialistRecordPath(spec.episode_id));
-    const status = await inspectEpisodicRuntime(config, configPath, { runner: recovery.runner });
+    const status = await inspectEpisodicRuntime(config, configPath, host(config, recovery.runner));
 
     // Then
     assert.deepEqual(first.lostSpecialists, [spec.episode_id]);
@@ -383,7 +388,7 @@ test("forced specialist loss should preserve effect uncertainty and prohibit bli
     assert.equal(recovered.recovery.retry_state, "prohibited_pending_reconciliation");
     assert.ok(recovered.possible_effects.length > 0);
     assert.equal(status.specialists[0]!.status, "lost");
-    assert.equal(status.specialists[0]!.unit_state, "not_found");
+    assert.equal(status.specialists[0]!.host_state, "absent");
     assert.equal(status.specialists[0]!.retry_state, "prohibited_pending_reconciliation");
     assert.equal(recovery.calls.filter((call) => call.command === config.systemd_run_command).length, 0);
 });
@@ -395,8 +400,7 @@ test("inspection should keep a supervisor-accepted pre-episode specialist gap ex
     const configPath = join(root, "runtime.json");
     const spec = specialistSpec(root);
     const launched = missingUnitRunner();
-    await startSpecialistEpisode(config, configPath, spec, {
-        runner: launched.runner,
+    await startSpecialistEpisode(config, configPath, spec, host(config, launched.runner), {
         now: () => OBSERVED_AT,
     });
     const records = new EpisodicRecordStore(config.records_directory);
@@ -408,16 +412,15 @@ test("inspection should keep a supervisor-accepted pre-episode specialist gap ex
     const recovery = missingUnitRunner();
 
     // When
-    const reconciliation = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recovery.runner,
+    const reconciliation = await reconcileEpisodicRuntime(config, configPath, host(config, recovery.runner), {
         now: () => "2026-09-04T18:05:00Z",
     });
-    const status = await inspectEpisodicRuntime(config, configPath, { runner: recovery.runner });
+    const status = await inspectEpisodicRuntime(config, configPath, host(config, recovery.runner));
 
     // Then
     assert.deepEqual(reconciliation.lostSpecialists, []);
     assert.equal(status.specialists[0]!.status, "running");
-    assert.equal(status.specialists[0]!.unit_state, "not_found");
+    assert.equal(status.specialists[0]!.host_state, "absent");
     assert.equal(status.specialists[0]!.runtime_state, null);
     assert.equal(status.specialists[0]!.report_state, null);
     assert.equal(status.specialists[0]!.retry_state, null);

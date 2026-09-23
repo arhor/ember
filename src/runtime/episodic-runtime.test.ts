@@ -3,21 +3,21 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { CommandRunner, EpisodicRuntimeConfig } from "./episodic-runtime.ts";
+import type { CommandRunner } from "../host/systemd.ts";
+import type { EpisodicRuntimeConfig } from "./episodic-runtime.ts";
 
 import { ROOT, PRINCIPAL, SCOPE, tempDir } from "../../tests/support.ts";
 import { initialState } from "../core/model.ts";
 import { createSpecialistEpisode } from "../delegation/codex-specialist.ts";
+import { renderSystemdService, SystemdUserBackgroundHost } from "../host/systemd.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import {
     EpisodicRecordStore,
-    SystemdUserSupervisor,
     inspectEpisodicRuntime,
     reconcileEpisodicRuntime,
-    renderReconciliationUnit,
     runWakeWorker,
     scheduleWake,
-    specialistUnitName,
+    specialistJobId,
     startSpecialistEpisode,
 } from "./episodic-runtime.ts";
 
@@ -59,9 +59,8 @@ test("schedule wake should persist intent before creating one-shot systemd activ
     const configPath = join(root, "runtime.json");
     const { calls, runner } = capturingRunner();
 
-    const intent = await scheduleWake(config, configPath, "2026-09-04T10:00:00.250Z", {
+    const intent = await scheduleWake(config, configPath, "2026-09-04T10:00:00.250Z", host(config, runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner,
     });
 
     const persisted = JSON.parse(
@@ -93,9 +92,8 @@ test("schedule wake should preserve exact-second UTC timing in systemd calendar 
     const configPath = join(root, "runtime.json");
     const { calls, runner } = capturingRunner();
 
-    await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", host(config, runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner,
     });
 
     assert.ok(calls[0]!.args.includes("--on-calendar=2026-09-04 10:00:00 UTC"));
@@ -107,9 +105,8 @@ test("schedule wake should dispatch an already-due one-shot without creating a t
     const configPath = join(root, "runtime.json");
     const { calls, runner } = capturingRunner();
 
-    const intent = await scheduleWake(config, configPath, "2026-09-03T19:59:00Z", {
+    const intent = await scheduleWake(config, configPath, "2026-09-03T19:59:00Z", host(config, runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner,
     });
 
     assert.equal(calls.length, 1);
@@ -123,9 +120,8 @@ test("wake worker should record one external-timing opportunity and cleanly stop
     const configPath = join(root, "runtime.json");
     const { runner } = capturingRunner();
     await new StateStore(config.state_path).create(initialState(PRINCIPAL, "2026-09-03T19:00:00Z"));
-    const intent = await scheduleWake(config, configPath, "2026-09-03T20:00:00Z", {
+    const intent = await scheduleWake(config, configPath, "2026-09-03T20:00:00Z", host(config, runner), {
         now: () => "2026-09-03T19:30:00Z",
-        runner,
     });
 
     const result = await runWakeWorker(config, intent.wake_id, {
@@ -152,13 +148,11 @@ test("reconciliation should re-arm only future wakes that have not begun dispatc
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
     const initial = capturingRunner();
-    const pending = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    const pending = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", host(config, initial.runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner: initial.runner,
     });
-    const ambiguous = await scheduleWake(config, configPath, "2026-09-04T11:00:00Z", {
+    const ambiguous = await scheduleWake(config, configPath, "2026-09-04T11:00:00Z", host(config, initial.runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner: initial.runner,
     });
     const records = new EpisodicRecordStore(config.records_directory);
     await records.observeWake(ambiguous.wake_id, {
@@ -168,8 +162,7 @@ test("reconciliation should re-arm only future wakes that have not begun dispatc
     });
     const recovery = capturingRunner();
 
-    const result = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recovery.runner,
+    const result = await reconcileEpisodicRuntime(config, configPath, host(config, recovery.runner), {
         now: () => "2026-09-03T20:05:00Z",
     });
 
@@ -187,14 +180,12 @@ test("reconciliation should dispatch one due pending wake now instead of replayi
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
     const initial = capturingRunner();
-    const due = await scheduleWake(config, configPath, "2026-09-03T20:10:00Z", {
+    const due = await scheduleWake(config, configPath, "2026-09-03T20:10:00Z", host(config, initial.runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner: initial.runner,
     });
     const recovery = capturingRunner();
 
-    const result = await reconcileEpisodicRuntime(config, configPath, {
-        runner: recovery.runner,
+    const result = await reconcileEpisodicRuntime(config, configPath, host(config, recovery.runner), {
         now: () => "2026-09-03T20:20:00Z",
     });
 
@@ -247,7 +238,7 @@ test("specialist launch should persist the spec and disable blind process restar
     });
     const { calls, runner } = capturingRunner();
 
-    await startSpecialistEpisode(config, configPath, spec, { runner });
+    await startSpecialistEpisode(config, configPath, spec, host(config, runner));
 
     const persisted = JSON.parse(
         await readFile(join(config.records_directory, "specialists", spec.episode_id, "spec.json"), "utf8"),
@@ -272,21 +263,20 @@ test("status should join durable runtime outcomes with systemd observation", asy
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
     const first = capturingRunner();
-    const wake = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", {
+    const wake = await scheduleWake(config, configPath, "2026-09-04T10:00:00Z", host(config, first.runner), {
         now: () => "2026-09-03T20:00:00Z",
-        runner: first.runner,
     });
     const statusRunner = capturingRunner("loaded\nactive\n");
 
-    const status = await inspectEpisodicRuntime(config, configPath, { runner: statusRunner.runner });
+    const status = await inspectEpisodicRuntime(config, configPath, host(config, statusRunner.runner));
 
     assert.equal(status.wakes.length, 1);
     assert.equal(status.wakes[0]!.wake_id, wake.wake_id);
     assert.equal(status.wakes[0]!.status, "pending");
     assert.equal(status.wakes[0]!.decision, null);
     assert.equal(status.wakes[0]!.evaluator_failure, null);
-    assert.equal(status.wakes[0]!.timer_state, "active");
-    assert.equal(status.wakes[0]!.service_state, "active");
+    assert.equal(status.wakes[0]!.timer_state, "running");
+    assert.equal(status.wakes[0]!.service_state, "running");
 });
 
 test("runtime record kinds should fail closed before they can become filesystem paths", async () => {
@@ -308,18 +298,34 @@ test("reconciliation unit should be one-shot and contain only explicit configure
     const config = runtimeConfig(root);
     const configPath = join(root, "runtime.json");
 
-    const unit = renderReconciliationUnit(config, configPath);
+    const unit = renderSystemdService({
+        description: "Ember episodic runtime reconciliation",
+        launch: {
+            jobId: "ember-reconcile",
+            executable: config.node_path,
+            arguments: [config.runtime_entrypoint, "reconcile", "--config", configPath],
+        },
+        restart: "no",
+        wantedBy: "default.target",
+    });
 
     assert.match(unit, /Type=oneshot/);
     assert.match(unit, /Restart=no/);
-    assert.match(unit, /reconcile --config/);
+    assert.match(unit, /"reconcile" "--config"/);
     assert.match(unit, new RegExp(config.node_path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(unit, new RegExp(configPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
-test("systemd supervisor should refuse relative or line-breaking runtime configuration paths", () => {
-    const config = runtimeConfig("/tmp/ember-runtime-test");
-    assert.throws(() => new SystemdUserSupervisor(config, "runtime.json"), /safe absolute path/);
-    assert.throws(() => new SystemdUserSupervisor(config, "/tmp/runtime\nInjected=1"), /safe absolute path/);
-    assert.equal(specialistUnitName("episode-abc"), "ember-specialist-episode-abc");
+test("background specialist job identifiers should remain opaque host input", () => {
+    assert.equal(specialistJobId("episode-abc"), "ember-specialist-episode-abc");
 });
+
+function host(config: EpisodicRuntimeConfig, runner: CommandRunner) {
+    return new SystemdUserBackgroundHost(
+        config as EpisodicRuntimeConfig & {
+            systemd_run_command: string;
+            systemctl_command: string;
+        },
+        runner,
+    );
+}
