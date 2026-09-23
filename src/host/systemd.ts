@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 
@@ -27,17 +27,22 @@ export type CommandRunner = (command: string, args: string[]) => Promise<Command
 type ServiceCommand = (command: string, args: string[]) => Promise<{ code: number | null; signal: string | null }>;
 
 export class SystemdTelegramResidentHost implements ResidentServiceHost {
-    readonly defaultUnitPath = join(homedir(), ".config", "systemd", "user", "ember-telegram.service");
     private readonly unitName = "ember-telegram.service";
+    private readonly definitionPath = join(homedir(), ".config", "systemd", "user", this.unitName);
     private readonly command: ServiceCommand;
+    private readonly read: (path: string) => Promise<string | null>;
     private readonly write: (path: string, content: string, mode: number) => Promise<void>;
 
     constructor(
-        command: ServiceCommand = runServiceCommand,
-        write: (path: string, content: string, mode: number) => Promise<void> = writeResidentUnit,
+        options: {
+            command?: ServiceCommand;
+            read?: (path: string) => Promise<string | null>;
+            write?: (path: string, content: string, mode: number) => Promise<void>;
+        } = {},
     ) {
-        this.command = command;
-        this.write = write;
+        this.command = options.command ?? runServiceCommand;
+        this.read = options.read ?? readResidentUnit;
+        this.write = options.write ?? writeResidentUnit;
     }
 
     render(launch: WorkerLaunch) {
@@ -48,6 +53,10 @@ export class SystemdTelegramResidentHost implements ResidentServiceHost {
             after: ["network-online.target"],
             wantedBy: "default.target",
         });
+    }
+
+    async readDefinition() {
+        return this.read(this.definitionPath);
     }
 
     async inspect() {
@@ -70,9 +79,8 @@ export class SystemdTelegramResidentHost implements ResidentServiceHost {
         return actionResult(await this.command("systemctl", ["--user", "start", this.unitName]));
     }
 
-    async install(path: string, content: string): Promise<void> {
-        requireAbsolute(path, "resident service unit path");
-        await this.write(path, content, 0o600);
+    async install(content: string): Promise<void> {
+        await this.write(this.definitionPath, content, 0o600);
     }
 
     async activate(wasActive: boolean): Promise<ServiceActionResult> {
@@ -84,6 +92,15 @@ export class SystemdTelegramResidentHost implements ResidentServiceHost {
                 wasActive ? ["--user", "restart", this.unitName] : ["--user", "enable", "--now", this.unitName],
             ),
         );
+    }
+}
+
+async function readResidentUnit(path: string): Promise<string | null> {
+    try {
+        return await readFile(path, "utf8");
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+        throw error;
     }
 }
 

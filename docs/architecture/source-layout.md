@@ -74,7 +74,7 @@ This keeps the semantic distinction required by the interaction architecture wit
 
 ## Telegram surface
 
-Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as its public entrypoint, `surface.ts` as the transport implementation, and `setup.ts` as its trusted-host setup boundary. This includes configuration validation, masked token entry, private-chat mapping, long polling, transport occurrence evidence, concrete `sendMessage` delivery, reconciliation, and systemd unit rendering and installation.
+Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as its public entrypoint, `surface.ts` as the transport implementation, and `setup.ts` as its trusted-host setup boundary. This includes configuration validation, masked token entry, private-chat mapping, long polling, transport occurrence evidence, concrete `sendMessage` delivery, and reconciliation. Resident service setup uses the injected host-neutral contract; the CLI setup entry selects the Linux adapter, which owns systemd unit rendering, definition readback and installation, and lifecycle commands.
 
 These mechanics remain subordinate to the shared interaction boundary. Telegram update/chat/message identifiers stay operational evidence and do not become canonical memory or semantic authority merely because their adapter is grouped as a surface module.
 

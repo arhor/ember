@@ -125,9 +125,11 @@ test("Telegram resident host should render a private restartable unit when given
 test("Telegram resident host should preserve service lifecycle commands when activating a stopped service", async () => {
     // Given
     const calls: Array<[string, string[]]> = [];
-    const host = new SystemdTelegramResidentHost(async (command, args) => {
-        calls.push([command, args]);
-        return { code: 0, signal: null };
+    const host = new SystemdTelegramResidentHost({
+        command: async (command, args) => {
+            calls.push([command, args]);
+            return { code: 0, signal: null };
+        },
     });
 
     // When
@@ -151,9 +153,11 @@ test("Telegram resident host should preserve service lifecycle commands when act
 test("Telegram resident host should report uncertain activation when daemon reload is interrupted", async () => {
     // Given
     const calls: string[] = [];
-    const host = new SystemdTelegramResidentHost(async (_command, args) => {
-        calls.push(args[1]!);
-        return { code: null, signal: "SIGTERM" };
+    const host = new SystemdTelegramResidentHost({
+        command: async (_command, args) => {
+            calls.push(args[1]!);
+            return { code: null, signal: "SIGTERM" };
+        },
     });
 
     // When
@@ -164,22 +168,44 @@ test("Telegram resident host should report uncertain activation when daemon relo
     assert.deepEqual(calls, ["daemon-reload"]);
 });
 
-test("Telegram resident host should install a private unit when given an absolute path", async () => {
+test("Telegram resident host should install a private unit at its own definition path", async () => {
     // Given
     const writes: Array<{ path: string; content: string; mode: number }> = [];
-    const host = new SystemdTelegramResidentHost(undefined, async (path, content, mode) => {
-        writes.push({ path, content, mode });
+    const host = new SystemdTelegramResidentHost({
+        write: async (path, content, mode) => {
+            writes.push({ path, content, mode });
+        },
     });
 
     // When
-    await host.install("/home/user/.config/systemd/user/ember-telegram.service", "[Unit]\n");
+    await host.install("[Unit]\n");
 
     // Then
-    assert.deepEqual(writes, [
-        {
-            path: "/home/user/.config/systemd/user/ember-telegram.service",
-            content: "[Unit]\n",
-            mode: 0o600,
+    assert.equal(writes.length, 1);
+    assert.match(writes[0]!.path, /\/\.config\/systemd\/user\/ember-telegram\.service$/);
+    assert.equal(writes[0]!.content, "[Unit]\n");
+    assert.equal(writes[0]!.mode, 0o600);
+});
+
+test("Telegram resident host should read the same definition it installs", async () => {
+    // Given
+    const paths: string[] = [];
+    const host = new SystemdTelegramResidentHost({
+        read: async (path) => {
+            paths.push(path);
+            return "[Unit]\n";
         },
-    ]);
+        write: async (path) => {
+            paths.push(path);
+        },
+    });
+
+    // When
+    const existing = await host.readDefinition();
+    await host.install(existing!);
+
+    // Then
+    assert.equal(existing, "[Unit]\n");
+    assert.equal(paths.length, 2);
+    assert.equal(paths[0], paths[1]);
 });

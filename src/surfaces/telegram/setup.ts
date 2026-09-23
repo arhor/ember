@@ -16,7 +16,6 @@ import type { SetupConfig } from "../cli/setup.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./surface.ts";
 
 import { ValidationError } from "../../core/errors.ts";
-import { SystemdTelegramResidentHost } from "../../host/systemd.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import {
@@ -46,7 +45,6 @@ export interface TelegramSetupBinding {
     scope: string;
     configPath?: string;
     tokenPath?: string;
-    servicePath?: string;
 }
 
 export interface TelegramSetupIo {
@@ -56,14 +54,13 @@ export interface TelegramSetupIo {
 }
 
 export interface TelegramSetupDependencies {
+    residentHost: ResidentServiceHost;
     secretPrompt?: (prompt: string) => Promise<string | null>;
     confirm?: (prompt: string) => Promise<boolean>;
     api?: (token: string) => Pick<Api, "getMe" | "getWebhookInfo" | "getUpdates">;
     read?: (path: string) => Promise<string | null>;
     write?: (path: string, value: string, mode: number) => Promise<void>;
     chmod?: (path: string, mode: number) => Promise<void>;
-    command?: (file: string, args: string[]) => Promise<{ code: number | null; signal: string | null }>;
-    residentHost?: ResidentServiceHost;
     observeRoundTrip?: (statePath: string, updateId: number) => Promise<boolean>;
     resolveExecutable?: (command: string) => Promise<string>;
     delay?: (milliseconds: number) => Promise<void>;
@@ -89,7 +86,7 @@ const stageDefaults = (): Record<TelegramSetupStage, TelegramSetupTruth> => ({
 export async function runTelegramSetup(
     binding: TelegramSetupBinding,
     io: TelegramSetupIo,
-    dependencies: TelegramSetupDependencies = {},
+    dependencies: TelegramSetupDependencies,
 ): Promise<TelegramSetupResult> {
     const stages = stageDefaults();
     const configPath = binding.configPath ?? join(homedir(), ".ember", "config", "telegram.json");
@@ -97,8 +94,7 @@ export async function runTelegramSetup(
     const read = dependencies.read ?? readOptional;
     const write = dependencies.write ?? writeSecretSafe;
     const confirm = dependencies.confirm ?? trustedConfirm;
-    const residentHost = dependencies.residentHost ?? new SystemdTelegramResidentHost(dependencies.command, write);
-    const servicePath = binding.servicePath ?? residentHost.defaultUnitPath;
+    const residentHost = dependencies.residentHost;
     let restoreActiveService = false;
 
     try {
@@ -179,7 +175,7 @@ export async function runTelegramSetup(
         stages.configuration = "confirmed";
 
         const renderedService = residentHost.render(telegramResidentLaunch(config, configPath));
-        const existingService = await read(servicePath);
+        const existingService = await residentHost.readDefinition();
         if (!(await confirm("Install and start the Telegram user service?"))) {
             restoreActiveService = false;
             return {
@@ -195,7 +191,7 @@ export async function runTelegramSetup(
             restoreActiveService = false;
             return { status: "configured_inactive", stages: { ...stages, service_installation: "declined" } };
         }
-        if (existingService !== renderedService) await residentHost.install(servicePath, renderedService);
+        if (existingService !== renderedService) await residentHost.install(renderedService);
         stages.service_installation = "confirmed";
 
         const activated = await residentHost.activate(wasActive);
