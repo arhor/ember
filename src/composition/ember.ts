@@ -12,7 +12,7 @@ import { createCursorLanguageModel } from "../ai/cursor.ts";
 import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../ai/onboarding-progress.ts";
 import { createProcessLanguageModel } from "../ai/process.ts";
-import { createProcessProvider, providerLabel } from "../ai/providers/process.ts";
+import { createProcessProvider } from "../ai/providers/process.ts";
 import { ObjectiveActionCoordinator } from "../app/objective-action.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../integrations/google-calendar/create.ts";
@@ -25,6 +25,7 @@ import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-ge
 import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
+import { providerLabel } from "./provider-label.ts";
 
 export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code";
 

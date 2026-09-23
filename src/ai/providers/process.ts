@@ -1,5 +1,3 @@
-import { basename } from "node:path";
-
 import type { PipedProcessSpawn } from "../../host/process-lifecycle.ts";
 import type {
     ProviderInvocationOptions,
@@ -170,10 +168,6 @@ export async function invokeProvider(
     }
     validateProviderResult(result, new Set(request.projection.selection.meaning_ids));
     return result;
-}
-
-export function providerLabel(command: string) {
-    return basename(command) || command;
 }
 
 function decodeDiagnostic(bytes: Uint8Array) {

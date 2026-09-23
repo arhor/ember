@@ -4,50 +4,56 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = resolve(root, "src");
-const violations: string[] = [];
+const surfaceAiExceptions = new Set(["surfaces/cli/setup.ts"]);
+const surfacePersistenceExceptions = new Set([
+    "surfaces/cli/google-calendar-setup.ts",
+    "surfaces/cli/main.ts",
+    "surfaces/cli/setup.ts",
+    "surfaces/telegram/setup.ts",
+]);
 
-for (const file of await sourceFiles(sourceRoot)) {
-    const source = await readFile(file, "utf8");
-    const owner = relative(sourceRoot, file).replaceAll("\\", "/");
-    if (owner.endsWith(".test.ts") || owner.endsWith(".test-d.ts")) continue;
-
+export function dependencyViolations(owner: string, source: string): string[] {
+    const violations: string[] = [];
     for (const specifier of importSpecifiers(source)) {
-        const target = resolvedOwner(file, specifier);
+        const target = resolvedOwner(owner, specifier);
         if (owner.startsWith("core/") && target?.startsWith("surfaces/"))
-            reject(owner, specifier, "core must not import a concrete surface");
+            reject(specifier, "core must not import a concrete surface");
 
-        if (owner.match(/^surfaces\/[^/]+\/surface\.ts$/)) {
-            if (
-                specifier === "ai" ||
-                specifier.startsWith("ai/") ||
-                specifier.startsWith("@ai-sdk/") ||
-                target?.startsWith("ai/")
-            )
-                reject(owner, specifier, "conversational surfaces must not import AI SDK infrastructure");
-            if (target?.match(/^persistence\/.+-store\.ts$/))
-                reject(owner, specifier, "conversational surfaces must not import concrete canonical persistence");
+        if (owner.startsWith("surfaces/")) {
+            if (!surfaceAiExceptions.has(owner) && isAiSdkImport(specifier, target))
+                reject(specifier, "surface-owned modules must not import AI SDK infrastructure");
+            if (!surfacePersistenceExceptions.has(owner) && target?.match(/^persistence\/.+-store\.ts$/))
+                reject(specifier, "surface-owned modules must not import concrete canonical persistence");
         }
 
         if (isSemanticOwner(owner) && isAiSdkImport(specifier, target))
-            reject(owner, specifier, "domain semantics must not import AI SDK types or runtime code");
+            reject(specifier, "domain semantics must not import AI SDK types or runtime code");
 
         if (owner.startsWith("ai/") && target?.startsWith("persistence/"))
-            reject(owner, specifier, "AI infrastructure must not own canonical persistence mutation");
+            reject(specifier, "AI infrastructure must not own canonical persistence mutation");
         if (owner.startsWith("ai/") && target === "core/semantics.ts")
-            reject(owner, specifier, "AI infrastructure must not own canonical semantic mutation");
+            reject(specifier, "AI infrastructure must not own canonical semantic mutation");
 
         if (owner.startsWith("app/") && target?.startsWith("surfaces/"))
-            reject(owner, specifier, "application orchestration must not import concrete surfaces");
+            reject(specifier, "application orchestration must not import concrete surfaces");
+    }
+    return violations;
+
+    function reject(specifier: string, reason: string) {
+        violations.push(`${owner} imports ${JSON.stringify(specifier)}: ${reason}`);
     }
 }
 
-if (violations.length) {
+async function main() {
+    const violations: string[] = [];
+    for (const file of await sourceFiles(sourceRoot)) {
+        const owner = relative(sourceRoot, file).replaceAll("\\", "/");
+        if (owner.endsWith(".test.ts") || owner.endsWith(".test-d.ts")) continue;
+        violations.push(...dependencyViolations(owner, await readFile(file, "utf8")));
+    }
+    if (!violations.length) return;
     process.stderr.write(`Dependency boundary violations:\n${violations.map((item) => `- ${item}`).join("\n")}\n`);
     process.exitCode = 1;
-}
-
-function reject(owner: string, specifier: string, reason: string) {
-    violations.push(`${owner} imports ${JSON.stringify(specifier)}: ${reason}`);
 }
 
 function isSemanticOwner(owner: string) {
@@ -63,17 +69,19 @@ function isAiSdkImport(specifier: string, target: string | null) {
     );
 }
 
-function resolvedOwner(importer: string, specifier: string) {
+function resolvedOwner(owner: string, specifier: string) {
     if (!specifier.startsWith(".")) return null;
-    const target = relative(sourceRoot, resolve(dirname(importer), specifier)).replaceAll("\\", "/");
+    const target = relative(sourceRoot, resolve(dirname(resolve(sourceRoot, owner)), specifier)).replaceAll("\\", "/");
     return target.startsWith("../") ? null : target;
 }
 
 function importSpecifiers(source: string) {
     const specifiers: string[] = [];
-    const pattern =
-        /(?:\bimport\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?|\bexport\s+(?:type\s+)?[\s\S]*?\s+from\s+|\bimport\s*\()(["'])([^"']+)\1/g;
-    for (const match of source.matchAll(pattern)) specifiers.push(match[2]!);
+    const declarationPattern = /\b(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?(["'])([^"'\r\n]+)\1/g;
+    const importCallPattern =
+        /\b(?:import|require)\s*\(\s*(?:(?:\/\*[\s\S]*?\*\/|\/\/[^\r\n]*(?:\r?\n|$))\s*)*(["'])([^"'\r\n]+)\1/g;
+    for (const pattern of [declarationPattern, importCallPattern])
+        for (const match of source.matchAll(pattern)) specifiers.push(match[2]!);
     return specifiers;
 }
 
@@ -86,3 +94,5 @@ async function sourceFiles(directory: string): Promise<string[]> {
     }
     return files;
 }
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

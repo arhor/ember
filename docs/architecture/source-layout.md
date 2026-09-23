@@ -121,7 +121,9 @@ Codex argument inspection lives under `eval/longitudinal/`, outside production s
 `npm run check`, including type-only and dynamic imports. Core cannot depend on concrete
 surfaces, conversational surfaces cannot reach into AI SDK infrastructure or concrete
 stores, semantic modules cannot acquire AI SDK types, and AI infrastructure cannot
-mutate canonical persistence or semantics.
+mutate canonical persistence or semantics. Exact exceptions retain the existing
+machine-setup and CLI-administration imports described above; adding another file under
+a surface does not inherit those exceptions.
 
 ## Application contract layer (#303/#304/#305)
 
