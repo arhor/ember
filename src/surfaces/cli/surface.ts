@@ -335,6 +335,9 @@ async function ask(
         scope: config.scope,
         text: parts.slice(3).join(" "),
         executor: dependencies.cognition.executor,
+        ...(dependencies.cognition.selectCapabilities === undefined
+            ? {}
+            : { selectCapabilities: dependencies.cognition.selectCapabilities }),
         providerLabel: dependencies.cognition.providerLabel,
         timeoutSeconds: dependencies.cognition.timeoutSeconds,
         signal,

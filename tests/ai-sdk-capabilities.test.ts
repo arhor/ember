@@ -249,6 +249,112 @@ test("AI SDK should not expose a capability that Ember did not select for the co
     }
 });
 
+test("capability selection should record definite failure when selector rejects before AI invocation", async () => {
+    // Given
+    const fixture = await startedFixture();
+    let modelInvoked = false;
+    const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+            modelInvoked = true;
+            return generated({ contractVersion: 1, reply: "must not run", usedMeaningIds: [] });
+        },
+    });
+
+    try {
+        // When
+        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+            runtimeId: fixture.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "current request",
+            providerLabel: "ai-sdk",
+            timeoutSeconds: 1,
+            executor: createAiSdkCognitionExecutor(model),
+            selectCapabilities: () => {
+                throw new Error("selector fixture failure");
+            },
+        });
+
+        // Then
+        assert.match(result.providerFailure ?? "", /capability selection failed before AI invocation/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "failed");
+        assert.equal(modelInvoked, false);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("capability selection should record cancellation when caller aborts an unresolved selector", async () => {
+    // Given
+    const fixture = await startedFixture();
+    const controller = new AbortController();
+    let modelInvoked = false;
+    const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+            modelInvoked = true;
+            return generated({ contractVersion: 1, reply: "must not run", usedMeaningIds: [] });
+        },
+    });
+
+    try {
+        // When
+        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+            runtimeId: fixture.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "current request",
+            providerLabel: "ai-sdk",
+            timeoutSeconds: 1,
+            signal: controller.signal,
+            executor: createAiSdkCognitionExecutor(model),
+            selectCapabilities: async () => {
+                controller.abort();
+                return await new Promise<never>(() => {});
+            },
+        });
+
+        // Then
+        assert.match(result.providerFailure ?? "", /capability selection was cancelled before AI invocation/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "cancellation_requested");
+        assert.equal(modelInvoked, false);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
+test("capability selection should record timeout when selector exceeds the configured timeout", async () => {
+    // Given
+    const fixture = await startedFixture();
+    let modelInvoked = false;
+    const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+            modelInvoked = true;
+            return generated({ contractVersion: 1, reply: "must not run", usedMeaningIds: [] });
+        },
+    });
+
+    try {
+        // When
+        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+            runtimeId: fixture.runtimeId,
+            principal: PRINCIPAL,
+            scope: SCOPE,
+            text: "current request",
+            providerLabel: "ai-sdk",
+            timeoutSeconds: 0.001,
+            executor: createAiSdkCognitionExecutor(model),
+            selectCapabilities: async () => await new Promise<never>(() => {}),
+        });
+
+        // Then
+        assert.match(result.providerFailure ?? "", /capability selection timed out before AI invocation/);
+        assert.equal(findCognition(result.state, result.cognitionId).status, "timed_out");
+        assert.equal(modelInvoked, false);
+    } finally {
+        await closeFixture(fixture);
+    }
+});
+
 test("AI SDK tool availability should not bypass Ember authority denial", async () => {
     const fixture = await startedFixture();
     const ledger = createCapabilityExecutionLedger();

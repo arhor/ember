@@ -1,6 +1,5 @@
 import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
-import type { AiExecutionRequest, AiExecutor } from "../ai/contract.ts";
-import type { CapabilityBinding } from "../capabilities/execution.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { StateStoreOptions } from "../persistence/state-store.ts";
@@ -49,9 +48,7 @@ export interface EmberCompositionOverrides {
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     stateStoreOptions?: StateStoreOptions;
     claudeProviderFactory?: (options: ClaudeCodeProviderOptions) => AiExecutor;
-    selectCapabilities?: (
-        request: AiExecutionRequest,
-    ) => readonly CapabilityBinding[] | Promise<readonly CapabilityBinding[]>;
+    selectCapabilities?: CapabilitySelector;
 }
 
 /** Concrete production dependencies for one Ember application instance. */
@@ -74,9 +71,7 @@ export interface EmberApplicationDependencies {
         executor: AiExecutor;
         providerLabel: string;
         timeoutSeconds: number;
-        selectCapabilities?:
-            | ((request: AiExecutionRequest) => readonly CapabilityBinding[] | Promise<readonly CapabilityBinding[]>)
-            | undefined;
+        selectCapabilities?: CapabilitySelector | undefined;
     };
     postTurn: {
         memoryProposalGenerator?: MemoryProposalGenerator;
