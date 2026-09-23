@@ -509,9 +509,9 @@ export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io:
                 : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
             configuredSetupHandoff: async () => {
                 const { runTelegramSetup } = await import("../telegram/setup.ts");
-                const { SystemdTelegramResidentHost } = await import("../../host/systemd.ts");
+                const { telegramResidentHost } = await import("../../host/telegram-resident-host.ts");
                 return await runTelegramSetup({ setup: config, scope }, io, {
-                    residentHost: new SystemdTelegramResidentHost(),
+                    residentHost: await telegramResidentHost(),
                 });
             },
         },

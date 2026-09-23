@@ -11,7 +11,16 @@ import {
 } from "../src/surfaces/telegram/index.ts";
 
 interface TelegramCliArgs {
-    command: "serve" | "check" | "delete-webhook" | "render-unit";
+    command:
+        | "serve"
+        | "check"
+        | "delete-webhook"
+        | "render-unit"
+        | "service-install"
+        | "service-uninstall"
+        | "service-start"
+        | "service-stop"
+        | "service-status";
     config: string;
 }
 
@@ -19,10 +28,35 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
     try {
         const args = parseArgs(argv);
         const config = await loadTelegramSurfaceConfig(args.config);
-        if (args.command === "render-unit") {
-            const { SystemdTelegramResidentHost } = await import("../src/host/systemd.ts");
-            process.stdout.write(new SystemdTelegramResidentHost().render(telegramResidentLaunch(config, args.config)));
-            return 0;
+        if (args.command === "render-unit" || args.command.startsWith("service-")) {
+            const { telegramResidentHost } = await import("../src/host/telegram-resident-host.ts");
+            const host = await telegramResidentHost();
+            if (args.command === "render-unit") {
+                process.stdout.write(host.render(telegramResidentLaunch(config, args.config)));
+                return 0;
+            }
+            if (args.command === "service-status") {
+                process.stdout.write(`${JSON.stringify(await host.inspect())}\n`);
+                return 0;
+            }
+            if (args.command === "service-install") {
+                const { active } = await host.inspect();
+                if (active === "unknown") throw new ValidationError("resident service activity is unknown");
+                if (active === "yes" && (await host.stop()) !== "confirmed")
+                    throw new ValidationError("resident service could not be stopped before installation");
+                await host.install(host.render(telegramResidentLaunch(config, args.config)));
+                const activated = await host.activate(active === "yes");
+                process.stdout.write(`${activated}\n`);
+                return activated === "confirmed" ? 0 : 2;
+            }
+            const result =
+                args.command === "service-uninstall"
+                    ? await host.uninstall()
+                    : args.command === "service-start"
+                      ? await host.start()
+                      : await host.stop();
+            process.stdout.write(`${result}\n`);
+            return result === "confirmed" ? 0 : 2;
         }
 
         const token = await readTelegramBotToken(config.token_file);
@@ -69,8 +103,20 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
 
 function parseArgs(argv: string[]): TelegramCliArgs {
     const command = argv[0];
-    if (!["serve", "check", "delete-webhook", "render-unit"].includes(command ?? ""))
-        throw new ValidationError("expected serve, check, delete-webhook, or render-unit command");
+    if (
+        ![
+            "serve",
+            "check",
+            "delete-webhook",
+            "render-unit",
+            "service-install",
+            "service-uninstall",
+            "service-start",
+            "service-stop",
+            "service-status",
+        ].includes(command ?? "")
+    )
+        throw new ValidationError("unsupported Telegram command");
     if (argv.length !== 3 || argv[1] !== "--config" || !argv[2])
         throw new ValidationError(`expected ${command} --config /ABSOLUTE/PATH/telegram.json`);
     return { command: command as TelegramCliArgs["command"], config: argv[2] };

@@ -12,5 +12,6 @@ export interface ResidentServiceHost {
     stop(): Promise<ServiceActionResult>;
     start(): Promise<ServiceActionResult>;
     install(content: string): Promise<void>;
+    uninstall(): Promise<ServiceActionResult>;
     activate(wasActive: boolean): Promise<ServiceActionResult>;
 }
