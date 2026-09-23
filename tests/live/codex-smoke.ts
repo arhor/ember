@@ -6,12 +6,12 @@ import { join } from "node:path";
 
 import { createCodexLanguageModel } from "../../src/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../../src/ai/cognition.ts";
+import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition } from "../../src/runtime/runtime.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = `relationship:${PRINCIPAL}`;
@@ -46,7 +46,7 @@ try {
     const loaded = await store.load();
     const started = startRuntime(loaded, PRINCIPAL, SCOPE);
     const running = await store.commit(loaded.revision, started.state);
-    const result = await runCognition(createFileBackedRepositoriesForState(store), running, {
+    const result = await executeCognition(createFileBackedRepositoriesForState(store), running, {
         runtimeId: started.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,

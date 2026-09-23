@@ -4,15 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { executeInteraction } from "../src/app/application.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import {
-    InteractionLedgerStore,
-    reconcileSurfaceDelivery,
-    runSurfaceInteraction,
-} from "../src/runtime/interaction-boundary.ts";
+import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../src/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";
@@ -37,7 +34,7 @@ test("restart sends a retained delivery intent that never crossed the external s
         };
 
         await assert.rejects(
-            runSurfaceInteraction(repositories, state, {
+            executeInteraction(repositories, state, {
                 runtimeId: started.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,

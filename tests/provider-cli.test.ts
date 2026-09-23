@@ -5,6 +5,7 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
+import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
@@ -12,7 +13,6 @@ import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { validateProviderResult } from "../src/providers/contract.ts";
 import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/providers/process.ts";
-import { runCognition } from "../src/runtime/runtime.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { cloneState } from "../src/util.ts";
 import {
@@ -263,7 +263,7 @@ test("runtime should preserve semantic state and inspection when provider fails"
     const fixture = await startedStore(),
         before = cloneState(fixture.state.meanings);
     // When
-    const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+    const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -293,7 +293,7 @@ test("runtime returns a committed expression without invoking transport", async 
     // Given
     const fixture = await startedStore();
     // When
-    const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+    const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -318,7 +318,7 @@ test("runtime returns a committed expression without invoking transport", async 
 test("state validator should reject orphan expression when second descriptor targets one cognition", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -340,7 +340,7 @@ test("state validator should reject orphan expression when second descriptor tar
 test("state validator should reject cognition when scope differs from owning runtime", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -360,7 +360,7 @@ test("state validator should reject cognition when scope differs from owning run
 test("state validator should reject provider termination when status contradicts it", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -397,7 +397,7 @@ test("state validator should reject provider termination when status contradicts
 test("state validator should accept cancellation when invocation ends before child exit is observable", async () => {
     // Given
     const fixture = await startedStore(),
-        result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

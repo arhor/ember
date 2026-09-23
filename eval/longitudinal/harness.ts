@@ -4,6 +4,7 @@ import type { EmberState, RuntimeId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
 import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 
+import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState, validateState } from "../../src/core/model.ts";
 import { inspectionView } from "../../src/core/projection.ts";
@@ -23,7 +24,6 @@ import {
     withholdDetail,
 } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition } from "../../src/runtime/runtime.ts";
 
 type ThreadControl = { mode: "fresh" } | { mode: "reuse"; episode: string };
 
@@ -262,7 +262,7 @@ export async function runLongitudinalScenario(
             let observedResult: ProviderResult | null = null;
             let observedBackendMetadata: BackendMetadata | null = null;
             const result = await withFixedTime(episode.at, () =>
-                runCognition(createFileBackedRepositoriesForState(store), state, {
+                executeCognition(createFileBackedRepositoriesForState(store), state, {
                     runtimeId: runtimeId as RuntimeId,
                     principal: scenario.ember.principal,
                     scope: episode.scope,

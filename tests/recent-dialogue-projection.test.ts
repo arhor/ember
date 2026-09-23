@@ -7,6 +7,7 @@ import type { ConversationMembershipIntent } from "../src/core/interaction-contr
 import type { EmberState } from "../src/core/model.ts";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 
+import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
@@ -15,7 +16,6 @@ import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { runCognition } from "../src/runtime/runtime.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 interface Fixture {
@@ -65,7 +65,7 @@ async function runTurn(
         conversationMembership,
     }: { surface?: string; conversationMembership?: ConversationMembershipIntent } = {},
 ) {
-    const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+    const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,

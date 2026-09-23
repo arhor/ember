@@ -1,13 +1,16 @@
 import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { CognitionId, EmberState } from "../core/model.ts";
-import type { PostTurnDiagnostics } from "../runtime/interaction-boundary.ts";
+interface PostTurnDiagnostics {
+    memoryProposalFailure: string | null;
+    onboardingProgressFailure: string | null;
+}
 import type { PreparedCognition } from "./cognition-preparation.ts";
 
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { nowUtc } from "../core/model.ts";
 import { applyOnboardingProgressDecision } from "../core/onboarding-work.ts";
 import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
-import { findCognition } from "../runtime/runtime.ts";
+import { findCognition } from "./cognition-execution.ts";
 
 /** Runs fallible application follow-ups after cognition and its delivery intent are durable. */
 export async function runPostTurnFollowUps(

@@ -7,6 +7,7 @@ import type { SpecialistEpisodeRecord } from "../src/delegation/codex-specialist
 import type { CommandRunner, EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
 
 import { runCognitionOpportunity } from "../src/agency/cognition-opportunity.ts";
+import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ConcurrentWriter } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
@@ -21,7 +22,6 @@ import {
     scheduleWake,
     startSpecialistEpisode,
 } from "../src/runtime/episodic-runtime.ts";
-import { runCognition } from "../src/runtime/runtime.ts";
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const OBSERVED_AT = "2026-09-04T16:00:00Z";
@@ -225,7 +225,7 @@ test("process restart should classify in-flight cognition and opportunity as out
     state = await store.commit(state.revision, started.state);
     const cognitionError = await withFixedTime("2026-09-04T17:00:00Z", () =>
         captureError(() =>
-            runCognition(createFileBackedRepositoriesForState(store), state, {
+            executeCognition(createFileBackedRepositoriesForState(store), state, {
                 runtimeId: started.runtimeId,
                 principal: PRINCIPAL,
                 scope: SCOPE,
@@ -292,7 +292,7 @@ test("restart should preserve completed cognition with pending delivery instead 
     state = await store.commit(state.revision, started.state);
     // When
     const cognitionResult = await withFixedTime("2026-09-04T17:00:00Z", () =>
-        runCognition(createFileBackedRepositoriesForState(store), state, {
+        executeCognition(createFileBackedRepositoriesForState(store), state, {
             runtimeId: started.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

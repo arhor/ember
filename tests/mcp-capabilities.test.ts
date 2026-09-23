@@ -9,13 +9,13 @@ import type { CapabilityContext } from "../src/capabilities/execution.ts";
 import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/capabilities/mcp-ai-sdk.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/capabilities/mcp-ai-sdk.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { newId } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const MCP_FIXTURE = fileURLToPath(new URL("./fixtures/mcp-server.ts", import.meta.url));
@@ -204,7 +204,7 @@ test("MCP discovery should remain mechanical while only Ember-mapped selected ca
             },
         });
 
-        const result = await runCognition(
+        const result = await executeCognition(
             createFileBackedRepositoriesForState(runtimeFixture.store),
             runtimeFixture.state,
             {

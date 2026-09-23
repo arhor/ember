@@ -6,6 +6,7 @@ import test from "node:test";
 
 import type { ProviderInvoker } from "../src/providers/contract.ts";
 
+import { executeInteraction } from "../src/app/application.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
@@ -15,7 +16,6 @@ import {
     SurfaceDeliveryFailure,
     interactionLedgerInspectionView,
     reconcileSurfaceDelivery,
-    runSurfaceInteraction,
 } from "../src/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";
@@ -76,7 +76,7 @@ async function createRetryableFailure(
     calls: { provider: number; delivery: number },
 ) {
     const providerCalls = { value: 0 };
-    const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+    const result = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
         runtimeId: f.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,

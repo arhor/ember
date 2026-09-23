@@ -4,12 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { executeCognition, executePreparedCognition } from "../app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { initialState } from "../core/model.ts";
 import { createOnboardingWork } from "../core/onboarding-work.ts";
 import { startRuntime } from "../core/runtime-episode.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { runCognition, runCognitionUntilExpressionCommit } from "../runtime/runtime.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 
 test("application preparation builds the provider projection before cognition execution", async () => {
@@ -36,7 +36,7 @@ test("application preparation builds the provider projection before cognition ex
         assert.deepEqual(preparation.projection.conversation_context?.turns, []);
 
         let receivedProjection: unknown = null;
-        const committed = await runCognitionUntilExpressionCommit(repositories, state, {
+        const committed = await executeCognition(repositories, state, {
             runtimeId: started.runtimeId,
             principal: "max",
             scope: "private",
@@ -71,7 +71,7 @@ test("low-level cognition execution rejects an unprepared invocation without cal
         let providerCalled = false;
 
         await assert.rejects(
-            runCognitionUntilExpressionCommit(createFileBackedRepositoriesForState(store), state, {
+            executePreparedCognition(createFileBackedRepositoriesForState(store), state, {
                 runtimeId: started.runtimeId,
                 principal: "max",
                 scope: "private",
@@ -116,11 +116,11 @@ test("rejected preflight does not advance a fresh conversation trajectory", asyn
             timeoutSeconds: 1,
             cognitionId: "cognition-duplicate" as const,
         };
-        state = (await runCognition(repositories, state, options)).state;
+        state = (await executeCognition(repositories, state, options)).state;
         const before = await repositories.conversation.load();
 
         await assert.rejects(
-            runCognition(repositories, state, {
+            executeCognition(repositories, state, {
                 ...options,
                 text: "must not reset",
                 conversationMembership: { action: "fresh", basis: "explicit_boundary" },
@@ -128,7 +128,7 @@ test("rejected preflight does not advance a fresh conversation trajectory", asyn
             /cognition already exists/,
         );
         await assert.rejects(
-            runCognition(repositories, state, {
+            executeCognition(repositories, state, {
                 ...options,
                 principal: "not-max",
                 text: "must not create a foreign trajectory",
@@ -197,7 +197,7 @@ test("incoherent prepared cognition is rejected before provider or persistence s
             mutate(invalid);
             let providerCalled = false;
             await assert.rejects(
-                runCognitionUntilExpressionCommit(repositories, state, {
+                executeCognition(repositories, state, {
                     runtimeId: started.runtimeId,
                     principal: "max",
                     scope: "private",
@@ -245,7 +245,7 @@ test("prepared cognition must resolve the invocation conversation membership int
         let providerCalled = false;
 
         await assert.rejects(
-            runCognitionUntilExpressionCommit(repositories, state, {
+            executeCognition(repositories, state, {
                 runtimeId: started.runtimeId,
                 principal: "max",
                 scope: "private",

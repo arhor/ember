@@ -8,12 +8,13 @@ import test from "node:test";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
+import { executeInteraction } from "../src/app/application.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { InteractionLedgerStore, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
+import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
 import { main as cliMain } from "../src/surfaces/cli/index.ts";
 import { TELEGRAM_SURFACE_ID, processTelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
@@ -104,7 +105,7 @@ async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
         const started = startRuntime(loaded, PRINCIPAL, SHARED_SCOPE);
         runtimeId = started.runtimeId;
         const state = await store.commit(loaded.revision, started.state);
-        return await runSurfaceInteraction(createFileBackedRepositoriesForState(store), state, {
+        return await executeInteraction(createFileBackedRepositoriesForState(store), state, {
             runtimeId,
             principal: PRINCIPAL,
             scope: SHARED_SCOPE,

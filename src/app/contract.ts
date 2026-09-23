@@ -4,7 +4,7 @@ import type {
     ExternalOccurrenceMetadata,
     PrincipalAssertionProvenance,
 } from "../core/interaction-contract.ts";
-import type { CognitionId, CognitionStatus } from "../core/model.ts";
+import type { CognitionId, CognitionPurpose, CognitionStatus, MeaningId } from "../core/model.ts";
 
 import { ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
@@ -22,6 +22,8 @@ export interface InteractionEvent {
     externalOccurrence?: ExternalOccurrenceMetadata;
     deliveryDestinationId?: string;
     conversationMembership?: ConversationMembershipIntent;
+    purpose?: CognitionPurpose;
+    explainIds?: Array<MeaningId | string>;
 }
 
 // delivery is null when initial delivery handling did not run; cognition completion is never inferred from it.
@@ -71,7 +73,13 @@ export interface EmberApplication {
 }
 
 const REQUIRED_EVENT_FIELDS = ["kind", "principal", "principalProvenance", "scope", "surfaceId", "text"];
-const OPTIONAL_EVENT_FIELDS = ["externalOccurrence", "deliveryDestinationId", "conversationMembership"];
+const OPTIONAL_EVENT_FIELDS = [
+    "externalOccurrence",
+    "deliveryDestinationId",
+    "conversationMembership",
+    "purpose",
+    "explainIds",
+];
 const ALLOWED_EVENT_FIELDS = new Set([...REQUIRED_EVENT_FIELDS, ...OPTIONAL_EVENT_FIELDS]);
 const EXTERNAL_OCCURRENCE_FIELDS = new Set(["occurrenceId", "messageId", "threadId", "correlationId", "occurredAt"]);
 const MAX_OPAQUE_LENGTH = 512;
@@ -143,6 +151,17 @@ export function validateInteractionEvent(event: unknown): asserts event is Inter
             throw new ValidationError("interaction event conversationMembership action is invalid");
         }
     }
+    if ("purpose" in event && event.purpose !== "ordinary" && event.purpose !== "explain")
+        throw new ValidationError("interaction event purpose is invalid");
+    if ("explainIds" in event) {
+        if (!Array.isArray(event.explainIds) || !event.explainIds.length)
+            throw new ValidationError("interaction event explainIds must be a non-empty array");
+        event.explainIds.forEach((id) => validateOpaque(id, "interaction event explainIds item"));
+    }
+    if (event.purpose === "explain" && !("explainIds" in event))
+        throw new ValidationError("explanation interaction requires explainIds");
+    if (event.purpose !== "explain" && "explainIds" in event)
+        throw new ValidationError("explainIds require explanation purpose");
 }
 
 // Shape only, mirroring the retry invariant runtime/interaction-boundary.ts already enforces for a delivery attempt.

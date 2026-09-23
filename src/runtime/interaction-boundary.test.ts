@@ -7,11 +7,12 @@ import test from "node:test";
 import type { ProviderInvoker, ProviderRequest } from "../providers/contract.ts";
 import type { SurfaceDeliveryReceipt } from "./interaction-boundary.ts";
 
+import { executeInteraction } from "../app/application.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { initialState } from "../core/model.ts";
 import { startRuntime } from "../core/runtime-episode.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure, runSurfaceInteraction } from "./interaction-boundary.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure } from "./interaction-boundary.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";
@@ -77,14 +78,14 @@ test("CLI-shaped identical inputs remain distinct semantic occurrences", async (
         const delivered: string[] = [];
         const provider = countingProvider(calls);
 
-        const first = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const first = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...options(f.runtimeId, provider, (text) => {
                 delivered.push(text);
             }),
             surfaceId: "local_cli",
             principalProvenance: "explicit_local_argument",
         });
-        const second = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
+        const second = await executeInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
             ...options(f.runtimeId, provider, (text) => {
                 delivered.push(text);
             }),
@@ -110,7 +111,7 @@ test("surface delivery representation is durable before memory reflection starts
     try {
         let reflected = false;
         const delivered: string[] = [];
-        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const result = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...options(f.runtimeId, countingProvider({ value: 0 }), (text) => {
                 delivered.push(text);
             }),
@@ -155,14 +156,14 @@ test("replayed messaging update reuses one occurrence and does not repeat cognit
             return { externalMessageId: "outbound-message-7" };
         };
 
-        const first = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const first = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...options(f.runtimeId, provider, deliver),
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
             externalOccurrence,
             deliveryDestinationId: "chat-1",
         });
-        const second = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
+        const second = await executeInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
             ...options(f.runtimeId, provider, deliver),
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
@@ -202,11 +203,11 @@ test("identical text with distinct transport occurrence ids remains distinct", a
             principalProvenance: "configured_surface_mapping" as const,
         };
 
-        const first = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const first = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...shared,
             externalOccurrence: { occurrenceId: "update-1" },
         });
-        const second = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
+        const second = await executeInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
             ...shared,
             externalOccurrence: { occurrenceId: "update-2" },
         });
@@ -225,7 +226,7 @@ test("conflicting replay metadata is rejected instead of becoming a second instr
     try {
         const calls = { value: 0 };
         const provider = countingProvider(calls);
-        const first = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const first = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...options(f.runtimeId, provider, () => {}),
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
@@ -234,7 +235,7 @@ test("conflicting replay metadata is rejected instead of becoming a second instr
         });
 
         await assert.rejects(
-            runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
+            executeInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
                 ...options(f.runtimeId, provider, () => {}),
                 text: "changed payload",
                 surfaceId: "messaging:test",
@@ -245,7 +246,7 @@ test("conflicting replay metadata is rejected instead of becoming a second instr
             /replay conflicts with the established occurrence metadata/,
         );
         await assert.rejects(
-            runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
+            executeInteraction(createFileBackedRepositoriesForState(f.store), first.state, {
                 ...options(f.runtimeId, provider, () => {}),
                 surfaceId: "messaging:test",
                 principalProvenance: "configured_surface_mapping",
@@ -271,7 +272,7 @@ test("rejected principal assertion does not establish an accepted occurrence", a
         const provider = countingProvider(calls);
 
         await assert.rejects(
-            runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+            executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
                 ...options(f.runtimeId, provider, () => {}),
                 principal: "intruder",
                 surfaceId: "messaging:test",
@@ -297,7 +298,7 @@ test("invalid surface cognition preflight does not advance a fresh conversation 
         let providerCalled = false;
 
         await assert.rejects(
-            runSurfaceInteraction(repositories, f.state, {
+            executeInteraction(repositories, f.state, {
                 ...options(
                     f.runtimeId,
                     async () => {
@@ -327,7 +328,7 @@ test("completed cognition remains separate from an uncertain delivery attempt", 
         const calls = { value: 0 };
         const provider = countingProvider(calls);
 
-        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const result = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...options(f.runtimeId, provider, () => {
                 throw new Error("transport write failed");
             }),
@@ -358,7 +359,7 @@ test("surface adapter can record a definite failed delivery attempt", async () =
         const calls = { value: 0 };
         const provider = countingProvider(calls);
 
-        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
+        const result = await executeInteraction(createFileBackedRepositoriesForState(f.store), f.state, {
             ...options(f.runtimeId, provider, () => {
                 throw new SurfaceDeliveryFailure("transport rejected send", {
                     outcome: "failed",

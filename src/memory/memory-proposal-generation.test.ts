@@ -10,6 +10,7 @@ import type { ProjectedConversationContext } from "../core/conversation-context.
 import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
 
 import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
+import { executeCognition } from "../app/cognition-execution.ts";
 import { prepareCognition } from "../app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
@@ -19,7 +20,6 @@ import { startRuntime } from "../core/runtime-episode.ts";
 import { userEvidence } from "../core/semantics.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { runCognition } from "../runtime/runtime.ts";
 import { cloneState } from "../util.ts";
 import { generateAndAdoptConversationMemories } from "./memory-proposal-generation.ts";
 
@@ -263,7 +263,7 @@ test("post-generation stale revision should terminalize with established earlier
     }
 });
 
-test("ordinary runCognition should invoke configured reflection after persisting the exchange", async () => {
+test("ordinary executeCognition should invoke configured reflection after persisting the exchange", async () => {
     const directory = await mkdtemp(join(tmpdir(), "ember-memory-cognition-"));
     const store = new StateStore(join(directory, "ember.json"));
     let state = initialState(PRINCIPAL, "2026-09-11T09:00:00Z");
@@ -281,7 +281,7 @@ test("ordinary runCognition should invoke configured reflection after persisting
             surface: "local_cli",
             text,
         });
-        const result = await runCognition(repositories, state, {
+        const result = await executeCognition(repositories, state, {
             runtimeId: started.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

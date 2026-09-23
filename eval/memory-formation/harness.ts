@@ -9,6 +9,7 @@ import type {
 } from "../../src/memory/memory-proposal-generation.ts";
 import type { ProviderRequest } from "../../src/providers/contract.ts";
 
+import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
@@ -17,7 +18,6 @@ import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition } from "../../src/runtime/runtime.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 export type ExpectedDecision = "adopted" | "rejected" | "invalid" | "no_proposal";
@@ -127,7 +127,7 @@ export async function runMemoryFormationScenario(
                 surface: "local_cli",
                 text: episode.input,
             });
-            const result = await runCognition(repositories, state, { ...cognitionOptions, preparation });
+            const result = await executeCognition(repositories, state, { ...cognitionOptions, preparation });
             const diagnostics = await runPostTurnFollowUps(
                 repositories,
                 {

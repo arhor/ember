@@ -5,11 +5,12 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
+import { executeInteraction } from "../src/app/application.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
+import { SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
 import { main as cliMain } from "../src/surfaces/cli/index.ts";
 
 const PRINCIPAL = "max";
@@ -26,7 +27,7 @@ test("CLI inspection redacts retained delivery representation while exposing rec
         const loaded = await store.load();
         const started = startRuntime(loaded, PRINCIPAL, SCOPE);
         const state = await store.commit(loaded.revision, started.state);
-        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(store), state, {
+        const result = await executeInteraction(createFileBackedRepositoriesForState(store), state, {
             runtimeId: started.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

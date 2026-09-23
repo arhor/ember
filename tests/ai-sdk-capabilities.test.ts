@@ -8,12 +8,12 @@ import type { InferenceEvidence } from "../src/ai/cognition.ts";
 import type { CapabilityBinding } from "../src/capabilities/execution.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const AUTHORIZED = {
@@ -100,7 +100,7 @@ async function runWithCapabilities(
     ledger = undefined,
     inferenceEvidence = undefined,
 ) {
-    return runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+    return executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,
@@ -263,7 +263,7 @@ test("capability selection should record definite failure when selector rejects 
 
     try {
         // When
-        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -299,7 +299,7 @@ test("capability selection should record cancellation when caller aborts an unre
 
     try {
         // When
-        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
@@ -336,7 +336,7 @@ test("capability selection should record timeout when selector exceeds the confi
 
     try {
         // When
-        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,
