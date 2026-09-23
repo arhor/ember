@@ -42,7 +42,7 @@ This evaluation was performed on **2026-09-17** against the merged implementatio
   Ember-owned objective ledger, validation, serialized/cross-process mutation,
   currentness assessment, episode reconciliation, checkpoint recording, and
   completion rules;
-- `src/objectives/objective-action.ts`: 158 lines binding proposals to an exact
+- `src/app/objective-action.ts`: 158 lines binding proposals to an exact
   objective revision, source episode, and step, revalidating them, and reintegrating
   effect outcomes;
 - issue #238 also added 38 lines to `ActionProposalStore`, 10 lines to the Calendar

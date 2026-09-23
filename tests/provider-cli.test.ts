@@ -5,6 +5,7 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
+import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/ai/providers/process.ts";
 import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { validateState } from "../src/core/model.ts";
@@ -12,7 +13,6 @@ import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { validateProviderResult } from "../src/providers/contract.ts";
-import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/providers/process.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { cloneState } from "../src/util.ts";
 import {

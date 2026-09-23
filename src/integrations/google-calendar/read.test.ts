@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createCapabilityExecutionFirewall } from "./execution.ts";
-import { createGoogleCalendarCapability, selectGoogleCalendarCapability } from "./google-calendar.ts";
+import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
+import { createGoogleCalendarCapability, selectGoogleCalendarCapability } from "./read.ts";
 
 const config = {
     config_version: 1 as const,

@@ -2,11 +2,9 @@ import type { Readable, Writable } from "node:stream";
 
 import { createInterface } from "node:readline";
 
-import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
+import type { EmberApplicationDependencies, EmberCompositionOverrides } from "../../composition/ember.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
-import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { TelegramSetupResult } from "../telegram/setup.ts";
 
 import { createEmberApplication } from "../../app/application.ts";
@@ -25,8 +23,9 @@ import {
     undertake,
     withholdDetail,
 } from "../../core/semantics.ts";
-import { StateStore } from "../../persistence/state-store.ts";
 import { cloneState } from "../../util.ts";
+
+type CliStateRepository = EmberApplicationDependencies["repositories"]["state"];
 
 export interface CliSurfaceConfig {
     statePath: string;
@@ -38,12 +37,12 @@ export interface CliSurfaceConfig {
     providerCommand: string;
     providerArgs: string[];
     providerTimeoutSeconds: number;
-    memoryProposalGenerator?: MemoryProposalGenerator;
+    memoryProposalGenerator?: EmberCompositionOverrides["memoryProposalGenerator"];
     memoryProposalProviderLabel?: string;
-    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
+    onboardingProgressEvaluator?: EmberCompositionOverrides["onboardingProgressEvaluator"];
     configuredSetupHandoff?: () => Promise<TelegramSetupResult>;
     googleCalendarConfigPath?: string;
-    claudeProviderFactory?: (options: { model?: string }) => AiExecutor;
+    claudeProviderFactory?: EmberCompositionOverrides["claudeProviderFactory"];
 }
 
 interface CliSurfaceIo {
@@ -192,7 +191,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
 }
 
 async function withCliLease(
-    store: StateStore,
+    store: CliStateRepository,
     config: CliSurfaceConfig,
     work: (state: EmberState, runtimeId: RuntimeId) => Promise<void>,
 ) {
@@ -269,7 +268,7 @@ async function writeCliOutput(output: Writable, text: string): Promise<void> {
     });
 }
 
-async function loadConfiguredState(store: StateStore, config: CliSurfaceConfig) {
+async function loadConfiguredState(store: CliStateRepository, config: CliSurfaceConfig) {
     const state = await loadForPrincipal(store, config.principal);
     if (
         config.expectedContinuityBinding !== undefined &&
@@ -281,7 +280,7 @@ async function loadConfiguredState(store: StateStore, config: CliSurfaceConfig) 
 }
 
 async function semanticCommand(
-    store: StateStore,
+    store: CliStateRepository,
     state: EmberState,
     runtimeId: RuntimeId,
     principal: string,
@@ -384,7 +383,7 @@ function dependenciesForCli(config: CliSurfaceConfig) {
     );
 }
 
-async function loadForPrincipal(store: StateStore, principal: string) {
+async function loadForPrincipal(store: CliStateRepository, principal: string) {
     const state = await store.load();
     if (principal !== state.runtimeContract.localPrincipal)
         throw new ValidationError("asserted principal does not match initialized local principal");

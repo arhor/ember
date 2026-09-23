@@ -160,7 +160,7 @@ A helper capable of preserving current behavior would need configuration or hook
 
 At that point the helper would own most of the lifecycle while receiving most of its meaning back through callbacks. It would reduce line duplication but increase semantic indirection and make review of provider-specific failure behavior harder.
 
-The generic `src/providers/process.ts` implementation is also not evidence that it should become a superclass for Codex and Cursor. It implements Ember's simple direct JSON process contract and has different cwd, environment, output, and continuation requirements. Treating it as the base runtime would confuse a transport mechanism with a shared external-agent semantic model.
+The generic `src/ai/providers/process.ts` implementation is also not evidence that it should become a superclass for Codex and Cursor. It implements Ember's simple direct JSON process contract and has different cwd, environment, output, and continuation requirements. Treating it as the base runtime would confuse a transport mechanism with a shared external-agent semantic model.
 
 ## Rejected alternatives
 

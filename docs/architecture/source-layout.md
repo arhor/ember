@@ -108,6 +108,23 @@ The current layout is the next architectural step rather than a reversal of that
 
 Ember remains one npm package. This source organization does not create independently versioned packages or a generic channel framework.
 
+## Ownership directories and enforced boundaries (#319)
+
+The production tree uses responsibility-bearing owners rather than provider/runtime
+convenience placement. `app/` coordinates Ember use cases, `ai/` owns AI SDK execution
+and bounded provider bridges, `integrations/` owns Calendar and MCP protocol mechanics,
+`persistence/` owns filesystem implementations, `host/` owns portable subprocess
+lifecycle, and `surfaces/` owns transport mapping and concrete delivery. Evaluation-only
+Codex argument inspection lives under `eval/longitudinal/`, outside production source.
+
+`scripts/check-dependencies.ts` makes the highest-value ownership rules part of
+`npm run check`, including type-only and dynamic imports. Core cannot depend on concrete
+surfaces, conversational surfaces cannot reach into AI SDK infrastructure or concrete
+stores, semantic modules cannot acquire AI SDK types, and AI infrastructure cannot
+mutate canonical persistence or semantics. Exact exceptions retain the existing
+machine-setup and CLI-administration imports described above; adding another file under
+a surface does not inherit those exceptions.
+
 ## Application contract layer (#303/#304/#305)
 
 The [accepted canonical application flow proposal](canonical-application-flow.md) amends the
@@ -115,11 +132,11 @@ preceding statement that no application/use-case layer would be introduced: `src
 now exists as that layer, starting from `src/app/contract.ts`, the transport-neutral
 request/result contract a coordinator will expose to surfaces. It contains no Telegram,
 CLI, provider, AI SDK, filesystem, or concrete store types; those stay in `surfaces/`,
-`providers/`, `persistence/`, and `runtime/`. `core/interaction-contract.ts` holds the
+`ai/`, `integrations/`, `persistence/`, and `host/`. `core/interaction-contract.ts` holds the
 handful of pure Ember types the contract reuses (`PrincipalAssertionProvenance`,
 `ExternalOccurrenceMetadata`, `ConversationMembershipIntent`,
 `DeliveryReconciliationResult`) so `src/app/` and `src/runtime/` share one definition
 instead of each declaring their own. The import restrictions proposed for the wider
-`src/app/`, `src/ai/`, `src/persistence/`, `src/integrations/`, and `src/host/` split take
-effect incrementally with #319, not retroactively; this module does not yet change the
-dependency direction described above for surfaces, runtime, persistence, or providers.
+`src/app/`, `src/ai/`, `src/persistence/`, `src/integrations/`, and `src/host/` split are
+enforced incrementally: #319 establishes the high-value rules while later host and
+mixed-file extractions continue shrinking transitional exceptions.

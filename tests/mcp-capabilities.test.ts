@@ -6,15 +6,15 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import type { CapabilityContext } from "../src/capabilities/execution.ts";
-import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/capabilities/mcp-ai-sdk.ts";
+import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/integrations/mcp/ai-sdk.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
-import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/capabilities/mcp-ai-sdk.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { newId } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
+import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/integrations/mcp/ai-sdk.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 

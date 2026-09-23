@@ -3,12 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
-import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
+import type { CliProcessSpawn } from "../host/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
-import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
+import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../host/process-lifecycle.ts";
 import { isObject } from "../util.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,

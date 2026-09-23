@@ -3,10 +3,10 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
+import type { CliProcessSpawn } from "../host/process-lifecycle.ts";
 
+import { NodeCliProcessSpawn, runProcess } from "../host/process-lifecycle.ts";
 import { replaceFileAtomically } from "../persistence/file-replacement.ts";
-import { NodeCliProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import { exactKeys, isObject } from "../util.ts";
 import { codexEnvironment } from "./codex.ts";
 

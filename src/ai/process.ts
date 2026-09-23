@@ -6,13 +6,13 @@ import type {
     LanguageModelV4Usage,
 } from "@ai-sdk/provider";
 
-import type { ProcessProviderConfig } from "../providers/process.ts";
 import type { AiExecutionRequest } from "./contract.ts";
+import type { ProcessProviderConfig } from "./providers/process.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { createProcessProvider } from "../providers/process.ts";
 import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
+import { createProcessProvider } from "./providers/process.ts";
 
 const EMPTY_USAGE: LanguageModelV4Usage = {
     inputTokens: { total: undefined, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
