@@ -159,8 +159,13 @@ test("Cursor AI SDK bridge should reject tool dispatch when ordinary route has n
                 throw new Error("must not spawn");
             },
         }),
-        {
-            selectCapabilities: () => [
+    );
+
+    // When
+    const error = await captureError(() =>
+        executor(request, {
+            timeoutSeconds: 1,
+            capabilities: [
                 {
                     name: "unsupported_tool",
                     description: "must be rejected",
@@ -175,11 +180,8 @@ test("Cursor AI SDK bridge should reject tool dispatch when ordinary route has n
                     execute: async () => ({}),
                 },
             ],
-        },
+        }),
     );
-
-    // When
-    const error = await captureError(() => executor(request, { timeoutSeconds: 1 }));
 
     // Then
     assert.match(error.message, /does not support tools/);

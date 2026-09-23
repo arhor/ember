@@ -522,8 +522,8 @@ test("CLI Calendar authority should refresh when config is disabled between cogn
             providerArgs: [],
             providerTimeoutSeconds: 30,
             googleCalendarConfigPath: configPath,
-            claudeProviderFactory: (options) => async (request) => {
-                selectedCounts.push(options.selectCapabilities?.(request).length ?? 0);
+            claudeProviderFactory: () => async (_request, options) => {
+                selectedCounts.push(options.capabilities?.length ?? 0);
                 if (selectedCounts.length === 1)
                     await writeFile(configPath, `${JSON.stringify({ ...calendar, enabled: false })}\n`);
                 return success;

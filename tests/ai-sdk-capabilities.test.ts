@@ -107,11 +107,9 @@ async function runWithCapabilities(
         providerLabel: "ai-sdk",
         timeoutSeconds: 1,
         output: () => {},
-        executor: createAiSdkCognitionExecutor(model, {
-            selectCapabilities: () => capabilities,
-            capabilityLedger: ledger,
-            inferenceEvidence,
-        }),
+        executor: createAiSdkCognitionExecutor(model, { inferenceEvidence }),
+        selectCapabilities: () => capabilities,
+        capabilityLedger: ledger,
     });
 }
 

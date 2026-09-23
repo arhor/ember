@@ -6,21 +6,18 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { InferenceEvidenceSink } from "./cognition.ts";
-import type { AiExecutionRequest, AiExecutor } from "./contract.ts";
+import type { AiExecutor } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { createAiSdkCognitionExecutor } from "./cognition.ts";
 
 const DEFAULT_MODEL = "sonnet";
-const ALLOWED_OPTION_KEYS = new Set(["model", "inferenceEvidence", "selectCapabilities", "capabilityLedger"]);
+const ALLOWED_OPTION_KEYS = new Set(["model", "inferenceEvidence"]);
 
 export interface ClaudeCodeProviderOptions {
     model?: string;
     inferenceEvidence?: InferenceEvidenceSink;
-    selectCapabilities?: (request: AiExecutionRequest) => readonly CapabilityBinding[];
-    capabilityLedger?: CapabilityExecutionLedger;
 }
 
 export type ClaudeCodeModelAccess = <T>(operation: (model: LanguageModel) => Promise<T>) => Promise<T>;
@@ -53,8 +50,6 @@ export function createClaudeCodeExecutorWithDependencies(
         withModel((model) => {
             const executor = createAiSdkCognitionExecutor(model, {
                 ...(options.inferenceEvidence === undefined ? {} : { inferenceEvidence: options.inferenceEvidence }),
-                ...(options.selectCapabilities === undefined ? {} : { selectCapabilities: options.selectCapabilities }),
-                ...(options.capabilityLedger === undefined ? {} : { capabilityLedger: options.capabilityLedger }),
             });
             return executor(request, invocationOptions);
         });

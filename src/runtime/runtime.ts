@@ -2,6 +2,7 @@ import { isDeepStrictEqual } from "node:util";
 
 import type { AiExecutionRequest, AiExecutor } from "../ai/contract.ts";
 import type { PreparedCognition } from "../app/cognition-preparation.ts";
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
     CognitionEpisode,
@@ -139,6 +140,10 @@ export interface RunCognitionOptions {
     text: string;
     providerLabel: string;
     executor: AiExecutor;
+    selectCapabilities?:
+        | ((request: AiExecutionRequest) => readonly CapabilityBinding[] | Promise<readonly CapabilityBinding[]>)
+        | undefined;
+    capabilityLedger?: CapabilityExecutionLedger | undefined;
     timeoutSeconds: number;
     signal?: AbortSignal | undefined;
     purpose?: CognitionPurpose;
@@ -200,6 +205,8 @@ export async function runCognitionUntilExpressionCommit(
         text,
         providerLabel: label,
         executor,
+        selectCapabilities,
+        capabilityLedger,
         timeoutSeconds,
         signal,
         purpose = "ordinary",
@@ -283,7 +290,8 @@ export async function runCognitionUntilExpressionCommit(
     };
     let result;
     try {
-        result = await executor(request, { timeoutSeconds, signal });
+        const capabilities = (await selectCapabilities?.(request)) ?? [];
+        result = await executor(request, { timeoutSeconds, signal, capabilities, capabilityLedger });
     } catch (error) {
         if (!(error instanceof ProviderError)) {
             throw error;

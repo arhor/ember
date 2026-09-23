@@ -120,8 +120,8 @@ async function closeFixture(fixture) {
     }
 }
 
-async function runStreaming(fixture, model, stream: ProviderStreamObserver, options = {}, providerOptions = {}) {
-    const provider = withStreaming(createAiSdkCognitionExecutor(model, providerOptions), stream);
+async function runStreaming(fixture, model, stream: ProviderStreamObserver, options = {}) {
+    const provider = withStreaming(createAiSdkCognitionExecutor(model), stream);
     return runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
@@ -291,16 +291,10 @@ test("AI SDK streamed tool loops should still execute through the Ember capabili
     });
 
     try {
-        const result = await runStreaming(
-            fixture,
-            model,
-            observations.observer,
-            {},
-            {
-                selectCapabilities: () => [capability],
-                capabilityLedger: ledger,
-            },
-        );
+        const result = await runStreaming(fixture, model, observations.observer, {
+            selectCapabilities: () => [capability],
+            capabilityLedger: ledger,
+        });
 
         assert.equal(result.providerFailure, null);
         assert.equal(findCognition(result.state, result.cognitionId).status, "completed");

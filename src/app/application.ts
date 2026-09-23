@@ -72,6 +72,9 @@ async function interact(
                 ? {}
                 : { conversationMembership: event.conversationMembership }),
             executor: dependencies.cognition.executor,
+            ...(dependencies.cognition.selectCapabilities === undefined
+                ? {}
+                : { selectCapabilities: dependencies.cognition.selectCapabilities }),
             providerLabel: dependencies.cognition.providerLabel,
             timeoutSeconds: dependencies.cognition.timeoutSeconds,
             postTurn: (committedState, cognitionId, preparation) =>
