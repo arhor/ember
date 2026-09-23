@@ -7,10 +7,10 @@ import type {
 } from "@ai-sdk/provider";
 
 import type { CodexProviderConfig } from "../providers/codex.ts";
-import type { AiExecutionRequest, AiExecutionResult } from "./contract.ts";
+import type { AiExecutionRequest } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { invokeCodexProvider } from "../providers/codex.ts";
+import { buildCodexPrompt, invokeCodexStructured } from "../providers/codex.ts";
 import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { validateAiExecutionResult } from "./contract.ts";
@@ -23,6 +23,7 @@ const FINISH_REASON = { unified: "stop" as const, raw: "stop" };
 
 export interface CodexLanguageModelConfig extends CodexProviderConfig {
     timeoutSeconds: number;
+    observeExternalThreadId?: (externalThreadId: string) => void;
 }
 
 /** Codex subscription-runtime bridge beneath the shared AI SDK executor. */
@@ -30,6 +31,7 @@ export function createCodexLanguageModel({
     command = "codex",
     arguments_: args = [],
     timeoutSeconds,
+    observeExternalThreadId,
     ...adapterOptions
 }: CodexLanguageModelConfig): LanguageModelV4 {
     return {
@@ -71,26 +73,32 @@ export function createCodexLanguageModel({
         const request = executionRequest(options);
         const invocationSignal = relayCallerCancellation(options.abortSignal);
         try {
-            const result = await invokeCodexProvider(command, args, request, {
-                ...adapterOptions,
-                timeoutSeconds,
-                ...(invocationSignal.signal === undefined ? {} : { signal: invocationSignal.signal }),
-            });
-            const { operational, ...modelResult } = result;
-            validateAiExecutionResult(modelResult, new Set(request.projection.selection.meaning_ids));
-            return operational === undefined
-                ? { result: modelResult }
-                : { result: modelResult, externalThreadId: operational.externalThreadId };
+            const parsed = await invokeCodexStructured(
+                command,
+                args,
+                {
+                    prompt: request === null ? structuredPrompt(options) : buildCodexPrompt(request),
+                    schema: options.responseFormat!.type === "json" ? options.responseFormat!.schema : undefined,
+                },
+                {
+                    ...adapterOptions,
+                    timeoutSeconds,
+                    ...(invocationSignal.signal === undefined ? {} : { signal: invocationSignal.signal }),
+                },
+            );
+            if (parsed.externalThreadId !== undefined) observeExternalThreadId?.(parsed.externalThreadId);
+            if (request !== null)
+                validateAiExecutionResult(parsed.result, new Set(request.projection.selection.meaning_ids));
+            return parsed.externalThreadId === undefined
+                ? { result: parsed.result }
+                : { result: parsed.result, externalThreadId: parsed.externalThreadId };
         } finally {
             invocationSignal.dispose();
         }
     }
 }
 
-function generateResult(invocation: {
-    result: AiExecutionResult;
-    externalThreadId?: string;
-}): LanguageModelV4GenerateResult {
+function generateResult(invocation: { result: unknown; externalThreadId?: string }): LanguageModelV4GenerateResult {
     return {
         content: [{ type: "text", text: JSON.stringify(invocation.result) }],
         finishReason: FINISH_REASON,
@@ -106,7 +114,7 @@ function codexMetadata(externalThreadId: string) {
     return { codex: { externalThreadId } };
 }
 
-function executionRequest(options: LanguageModelV4CallOptions): AiExecutionRequest {
+function executionRequest(options: LanguageModelV4CallOptions): AiExecutionRequest | null {
     if (options.prompt.length !== 2) throw new ProviderError("Codex AI bridge requires one instruction and one input");
     const [instruction, input] = options.prompt;
     if (instruction?.role !== "system" || typeof instruction.content !== "string" || !instruction.content.trim())
@@ -116,8 +124,8 @@ function executionRequest(options: LanguageModelV4CallOptions): AiExecutionReque
     let candidate: unknown;
     try {
         candidate = JSON.parse(input.content[0].text);
-    } catch (error) {
-        throw new ProviderError("Codex AI bridge input must be valid JSON", { cause: error });
+    } catch {
+        return null;
     }
     if (
         !isObject(candidate) ||
@@ -127,9 +135,20 @@ function executionRequest(options: LanguageModelV4CallOptions): AiExecutionReque
         !isObject(candidate.input) ||
         typeof candidate.input.text !== "string"
     ) {
-        throw new ProviderError("Codex AI bridge input does not match the Ember execution contract");
+        return null;
     }
     return candidate as unknown as AiExecutionRequest;
+}
+
+function structuredPrompt(options: LanguageModelV4CallOptions) {
+    const [instruction, input] = options.prompt;
+    if (instruction?.role !== "system" || input?.role !== "user" || input.content[0]?.type !== "text")
+        throw new ProviderError("Codex AI bridge supports only text structured-control prompts");
+    return [
+        instruction.content,
+        "Return only one JSON value matching the supplied output schema.",
+        input.content[0].text,
+    ].join("\n");
 }
 
 function validateCallOptions(options: LanguageModelV4CallOptions) {

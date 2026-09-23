@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
 import type { CliProcessSpawn } from "../runtime/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
@@ -37,21 +37,17 @@ const ENVIRONMENT_ALLOWLIST = [
     "XDG_CACHE_HOME",
 ] as const;
 
-const RESULT_SCHEMA = `${JSON.stringify(
-    {
-        $schema: "https://json-schema.org/draft/2020-12/schema",
-        type: "object",
-        additionalProperties: false,
-        required: ["contractVersion", "reply", "usedMeaningIds"],
-        properties: {
-            contractVersion: { type: "integer", const: 1 },
-            reply: { type: "string", minLength: 1 },
-            usedMeaningIds: { type: "array", items: { type: "string" } },
-        },
+export const CODEX_PROVIDER_RESULT_SCHEMA = {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    type: "object",
+    additionalProperties: false,
+    required: ["contractVersion", "reply", "usedMeaningIds"],
+    properties: {
+        contractVersion: { type: "integer", const: 1 },
+        reply: { type: "string", minLength: 1 },
+        usedMeaningIds: { type: "array", items: { type: "string" } },
     },
-    null,
-    2,
-)}\n`;
+} as const;
 
 export interface InvokeCodexOptions extends ProviderInvocationOptions {
     cwd?: string;
@@ -75,15 +71,6 @@ export interface CodexProviderConfig {
     terminationGraceMs?: number;
     finalTerminationMs?: number;
     thread?: InvokeCodexOptions["thread"];
-}
-
-/** Transitional JSON-in-reply control adapter; ordinary cognition uses the AI SDK bridge. */
-export function createCodexControlProvider({
-    command = "codex",
-    arguments_: args = [],
-    ...adapterOptions
-}: CodexProviderConfig = {}): ProviderInvoker {
-    return (request, options) => invokeCodexProvider(command, args, request, { ...adapterOptions, ...options });
 }
 
 export function buildCodexPrompt(request: ProviderRequest): string {
@@ -158,6 +145,24 @@ export async function invokeCodexProvider(
     command: string,
     argumentPrefix: string[],
     request: ProviderRequest,
+    options: InvokeCodexOptions,
+): Promise<ProviderResult> {
+    const parsed = await invokeCodexStructured(
+        command,
+        argumentPrefix,
+        { prompt: buildCodexPrompt(request), schema: CODEX_PROVIDER_RESULT_SCHEMA },
+        options,
+    );
+    validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
+    return parsed.externalThreadId === undefined
+        ? parsed.result
+        : { ...parsed.result, operational: { externalThreadId: parsed.externalThreadId } };
+}
+
+export async function invokeCodexStructured(
+    command: string,
+    argumentPrefix: string[],
+    structured: { prompt: string; schema: unknown },
     {
         timeoutSeconds,
         signal,
@@ -168,7 +173,7 @@ export async function invokeCodexProvider(
         finalTerminationMs = 1_000,
         thread = { mode: "ephemeral" },
     }: InvokeCodexOptions,
-): Promise<ProviderResult> {
+): Promise<{ result: unknown; externalThreadId?: string }> {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
         throw new ProviderError("provider timeout must be a positive finite number");
     if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
@@ -186,7 +191,7 @@ export async function invokeCodexProvider(
             },
         );
     }
-    const prompt = buildCodexPrompt(request);
+    const prompt = structured.prompt;
     if (Buffer.byteLength(prompt, "utf8") > MAX_PROMPT_BYTES) throw new ProviderError("Codex prompt exceeds 1 MiB");
 
     const ownsCwd = cwd === undefined;
@@ -194,7 +199,11 @@ export async function invokeCodexProvider(
     const schemaPath = join(runtimeCwd, RESULT_SCHEMA_NAME);
     let terminationUnconfirmed = false;
     try {
-        await writeFile(schemaPath, RESULT_SCHEMA, { encoding: "utf8", mode: 0o600, flag: "wx" });
+        await writeFile(schemaPath, `${JSON.stringify(structured.schema, null, 2)}\n`, {
+            encoding: "utf8",
+            mode: 0o600,
+            flag: "wx",
+        });
         let observedThreadId: string | undefined;
         let lineRemainder = "";
         const inspectLines = (chunk: Buffer) => {
@@ -310,16 +319,13 @@ export async function invokeCodexProvider(
             parsed.externalThreadId !== thread.externalThreadId
         )
             throw new ProviderError("Codex resumed a different thread than requested", errorOptions("failed"));
-        validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
-        return parsed.externalThreadId === undefined
-            ? parsed.result
-            : { ...parsed.result, operational: { externalThreadId: parsed.externalThreadId } };
+        return parsed;
     } finally {
         if (ownsCwd && !terminationUnconfirmed) await rm(runtimeCwd, { recursive: true, force: true }).catch(() => {});
     }
 }
 
-function parseCodexJsonl(output: string): { result: ProviderResult; externalThreadId?: string } {
+function parseCodexJsonl(output: string): { result: unknown; externalThreadId?: string } {
     let externalThreadId: string | undefined;
     let candidate: unknown;
     let agentMessages = 0;
@@ -355,9 +361,7 @@ function parseCodexJsonl(output: string): { result: ProviderResult; externalThre
         }
     }
     if (agentMessages !== 1) throw new ProviderError("Codex JSONL must contain exactly one completed agent message");
-    return externalThreadId === undefined
-        ? { result: candidate as ProviderResult }
-        : { result: candidate as ProviderResult, externalThreadId };
+    return externalThreadId === undefined ? { result: candidate } : { result: candidate, externalThreadId };
 }
 
 function validExternalId(value: unknown): value is string {

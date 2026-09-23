@@ -30,9 +30,9 @@ Issue #315 slice 10a replaced the application/runtime-facing seam with the Ember
 `AiExecutor` contract. Slice 10b moves ordinary Codex cognition through the common SDK
 executor and a `LanguageModelV4` bridge. Slice 10c applies the same boundary to ordinary
 Cursor cognition. `ProviderInvoker` is now a compatibility alias used by the generic process
-adapter and transitional control calls awaiting their SDK migrations. Each remaining backend
-migration must update the corresponding current implementation
-guidance here, and #321 must reconcile the remaining decision/consequences sections
+adapter and older compatibility callers. Slice 10d also moves production memory,
+onboarding, opportunity, and setup controls onto typed SDK calls through the Claude,
+Codex, and Cursor model boundaries. #321 must reconcile the remaining decision/consequences sections
 with the final implemented architecture. The proposal's forward and backward links
 make that pending revision discoverable without declaring full supersession early.
 

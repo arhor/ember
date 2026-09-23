@@ -136,7 +136,7 @@ silence scenarios without changing this evaluator contract.
 
 ## AI SDK structured evaluator
 
-Issue #198 adds `src/agency/ai-sdk-opportunity-evaluator.ts` as an in-process
+Issue #198 adds `src/ai/opportunity.ts` as an in-process
 implementation of the same `CognitionOpportunityEvaluator` seam. It uses AI SDK
 `generateText` with `Output.object` and `jsonSchema`, including local schema validation,
 so the model returns the typed decision object directly instead of encoding control
@@ -155,7 +155,7 @@ for the adapter/error boundary and repository sweep.
 
 ## Codex-backed live evaluator
 
-`src/agency/codex-opportunity-evaluator.ts` provides an opt-in real-model evaluator
+`src/ai/codex-opportunity.ts` provides an opt-in real-model evaluator
 using the existing isolated Codex provider boundary.
 
 For compatibility with the one-shot provider contract it uses one fixed evaluator

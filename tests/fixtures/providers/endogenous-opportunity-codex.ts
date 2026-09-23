@@ -5,15 +5,13 @@ export {};
 const chunks: Buffer[] = [];
 for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
 const prompt = Buffer.concat(chunks).toString("utf8");
-const match = prompt.match(/<ember_provider_request>\n([\s\S]+)\n<\/ember_provider_request>/);
-if (!match) throw new Error("fixture Codex prompt does not contain an Ember provider request");
-const request = JSON.parse(match[1]) as {
-    projection: { selection: { meaning_ids: string[] } };
-};
+const input = prompt.split("\n").at(-1);
+if (!input) throw new Error("fixture Codex prompt does not contain a structured opportunity request");
+const request = JSON.parse(input) as { projection: { selection: { meaning_ids: string[] } } };
 const result = {
     contractVersion: 1,
-    reply: "cognition",
-    usedMeaningIds: request.projection.selection.meaning_ids,
+    decision: "cognition",
+    selectedMeaningIds: request.projection.selection.meaning_ids,
 };
 process.stdout.write(`${JSON.stringify({ type: "thread.started", thread_id: "thread-endogenous-restart-fixture" })}\n`);
 process.stdout.write(

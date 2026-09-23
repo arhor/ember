@@ -8,6 +8,7 @@ import test from "node:test";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createCursorLanguageModel } from "../src/ai/cursor.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-progress.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
@@ -74,6 +75,45 @@ function childDouble({ output = "", error = "", exitCode = 0, closeOnKill = true
 function success(result: unknown, sessionId = "session-operational-90") {
     return `${JSON.stringify({ type: "result", subtype: "success", is_error: false, duration_ms: 1, duration_api_ms: 1, result: JSON.stringify(result), session_id: sessionId })}\n`;
 }
+
+test("Cursor AI SDK bridge should carry a typed onboarding decision in its bounded prompt", async () => {
+    // Given
+    const request = requestFixture();
+    const decision = {
+        decision_version: 1 as const,
+        updates: [{ topic: "expectations" as const, action: "resolve" as const, basis: "Keep it brief" }],
+    };
+    const fixture = childDouble({ output: success(decision) });
+    let prompt = "";
+    fixture.stdin.on("data", (chunk) => (prompt += chunk.toString()));
+    const evaluator = createAiSdkOnboardingProgressEvaluator(
+        createCursorLanguageModel({
+            timeoutSeconds: 1,
+            spawnImpl: () => {
+                fixture.complete();
+                return fixture.child as never;
+            },
+        }),
+        1,
+    );
+
+    // When
+    const result = await evaluator({
+        projection: request.projection,
+        onboardingWork: {
+            work_version: 1,
+            status: "active",
+            guidance: "optional",
+            topics: [{ topic: "expectations", status: "open" }],
+        },
+        input: "Keep it brief",
+    });
+
+    // Then
+    assert.deepEqual(result, decision);
+    assert.match(prompt, /"decision_version"/);
+    assert.doesNotMatch(prompt, /"reply"\s*:/);
+});
 
 test("Cursor AI SDK bridge should preserve structured result and fresh-session evidence when generation succeeds", async () => {
     // Given

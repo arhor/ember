@@ -32,7 +32,7 @@ Issue #198 therefore does **not** introduce a generic structured-generation port
 does not turn `ProviderResult` into an arbitrary schema carrier. The existing
 `CognitionOpportunityEvaluator` is the Ember-owned control boundary.
 
-`src/agency/ai-sdk-opportunity-evaluator.ts` adds one implementation of that boundary
+`src/ai/opportunity.ts` adds one implementation of that boundary
 for in-process AI SDK `LanguageModel`s. AI SDK 7.0.93 owns the mechanical structured
 output step through `generateText` + `Output.object` + `jsonSchema`.
 
@@ -95,32 +95,33 @@ AI SDK errors remain adapter-local. The evaluator translates:
 Provider request/response payloads and SDK error objects are not promoted into the
 cognition-opportunity contract or canonical state.
 
-## External-runtime compatibility
+## Subscription-runtime bridges
 
-`src/agency/codex-opportunity-evaluator.ts` remains available for the
-subscription-backed Codex CLI path. That runtime still sits behind the ordinary
-`ProviderInvoker` contract and therefore retains its adapter-local exact-token
-compatibility protocol.
+Issue #315 added bounded AI SDK `LanguageModelV4` bridges for the subscription-backed
+Codex and Cursor CLIs. Their ordinary cognition and control calls now share the same
+SDK structured-output mechanics. Codex supplies the requested JSON Schema through its
+native output-schema argument; Cursor receives the schema inside its isolated,
+tool-denied prompt and Ember validates the returned object through the SDK output
+contract.
 
-This is intentional rather than an incomplete migration. Issue #198 requires
-structured mechanics where the backend supports them, but explicitly preserves
-non-AI-SDK external runtimes. Replacing the Codex compatibility protocol would require
-a supported typed-output mechanism in that external runtime, not an AI SDK type leak
-into the shared agency contract.
+`src/ai/codex-opportunity.ts` is now a thin composition adapter over the
+shared typed opportunity evaluator. It no longer parses exact decision tokens or
+embeds decisions inside an ordinary cognition reply.
 
 ## Repository sweep
 
-The production sweep for issue #198 found no second earned model-control parser to
-convert. The only `result.reply.trim()` control parsing is the Codex opportunity
-compatibility adapter. Other matches are ordinary `ProviderResult` validation or
-experimental code, not another production typed control decision.
+The issue #315 follow-up sweep also migrated production memory proposal generation,
+onboarding progress, opportunity evaluation, and setup verification. Those paths no
+longer parse typed decisions from `ProviderResult.reply`. The explicit generic process
+backend retains its compatibility wrappers because its external protocol cannot
+represent arbitrary output schemas.
 
 No natural-language cognition reply, eval fixture, interruption rule, or provider
 contract was generalized as part of this task.
 
 ## Deterministic evidence
 
-`src/agency/ai-sdk-opportunity-evaluator.test.ts` covers:
+`src/ai/opportunity.test.ts` covers:
 
 - `cognition`, `defer`, and `no_cognition` through AI SDK structured output;
 - exclusion of mechanism/current-input control data from the model request;
@@ -131,5 +132,5 @@ contract was generalized as part of this task.
 - retryable provider failure remaining a single invocation because retries are
   disabled.
 
-The existing `src/agency/codex-opportunity-evaluator.test.ts` continues to prove the
-external-runtime path remains available independently of AI SDK.
+The Codex and Cursor provider suites additionally prove that a non-ordinary onboarding
+schema crosses each bridge without action tools or an ordinary reply envelope.

@@ -2,10 +2,14 @@ import { lstat, readFile, realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
+import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberState } from "../../core/model.ts";
-import type { ProviderInvoker } from "../../providers/contract.ts";
 import type { CliIo, ConfiguredRunArgs, SetupArgs, SetupIntent } from "./model.ts";
 
+import { createCodexLanguageModel } from "../../ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../../ai/cognition.ts";
+import { validateAiExecutionResult } from "../../ai/contract.ts";
+import { createCursorLanguageModel } from "../../ai/cursor.ts";
 import { loadGoogleCalendarConfig } from "../../capabilities/google-calendar.ts";
 import { ProviderError, ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
@@ -14,9 +18,6 @@ import { buildProjection } from "../../core/projection.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
-import { createCodexControlProvider } from "../../providers/codex.ts";
-import { validateProviderResult } from "../../providers/contract.ts";
-import { createCursorControlProvider } from "../../providers/cursor.ts";
 import { startRuntime } from "../../runtime/runtime.ts";
 import { exactKeys, isObject } from "../../util.ts";
 import { runTelegramSetup } from "../telegram/setup.ts";
@@ -52,7 +53,7 @@ export interface SetupConfig {
 }
 
 type SetupDependencies = {
-    provider?: (config: SetupProvider) => ProviderInvoker;
+    provider?: (config: SetupProvider) => AiExecutor;
     signal?: AbortSignal;
     persistConfig?: (path: string, config: SetupConfig) => Promise<void>;
 };
@@ -65,14 +66,20 @@ function defaultSetupStatePath(): string {
     return join(homedir(), ".ember", "state", "continuity.json");
 }
 
-export function setupProvider(config: SetupProvider): ProviderInvoker {
+export function setupProvider(config: SetupProvider): AiExecutor {
     if (config.kind === "claude-code")
         return async (request, options) => {
             const { createClaudeCodeExecutor } = await import("../../ai/claude-code.ts");
             return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
         };
-    const options = { command: config.command, arguments_: config.model ? ["--model", config.model] : [] };
-    return config.kind === "codex" ? createCodexControlProvider(options) : createCursorControlProvider(options);
+    const options = {
+        command: config.command,
+        arguments_: config.model ? ["--model", config.model] : [],
+        timeoutSeconds: config.timeoutSeconds,
+    };
+    return createAiSdkCognitionExecutor(
+        config.kind === "codex" ? createCodexLanguageModel(options) : createCursorLanguageModel(options),
+    );
 }
 
 export async function loadSetupConfig(path: string): Promise<SetupConfig | null> {
@@ -363,7 +370,7 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupD
                 },
                 { timeoutSeconds: config.provider.timeoutSeconds, signal: controller.signal },
             );
-            validateProviderResult(result, new Set());
+            validateAiExecutionResult(result, new Set());
             config.verification = "verified";
         } catch (error) {
             config.verification = error instanceof ProviderError ? error.outcome : "failed";

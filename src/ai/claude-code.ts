@@ -23,6 +23,8 @@ export interface ClaudeCodeProviderOptions {
     capabilityLedger?: CapabilityExecutionLedger;
 }
 
+export type ClaudeCodeModelAccess = <T>(operation: (model: LanguageModel) => Promise<T>) => Promise<T>;
+
 interface ClaudeCodeProviderDependencies {
     createModel(model: string, settings: ClaudeCodeSettings): LanguageModel;
     createTemporaryDirectory(): Promise<string>;
@@ -46,25 +48,40 @@ export function createClaudeCodeExecutorWithDependencies(
     options: ClaudeCodeProviderOptions,
     dependencies: ClaudeCodeProviderDependencies,
 ): AiExecutor {
-    validateOptions(options);
-    const modelId = options.model ?? DEFAULT_MODEL;
-
-    return async (request, invocationOptions) => {
-        const directory = await dependencies.createTemporaryDirectory();
-        try {
-            const model = dependencies.createModel(modelId, claudeCodeSettings(directory, dependencies.environment));
+    const withModel = createClaudeCodeModelAccessWithDependencies(options, dependencies);
+    return (request, invocationOptions) =>
+        withModel((model) => {
             const executor = createAiSdkCognitionExecutor(model, {
                 ...(options.inferenceEvidence === undefined ? {} : { inferenceEvidence: options.inferenceEvidence }),
                 ...(options.selectCapabilities === undefined ? {} : { selectCapabilities: options.selectCapabilities }),
                 ...(options.capabilityLedger === undefined ? {} : { capabilityLedger: options.capabilityLedger }),
             });
+            return executor(request, invocationOptions);
+        });
+}
+
+export function createClaudeCodeModelAccess(options: ClaudeCodeProviderOptions = {}): ClaudeCodeModelAccess {
+    return createClaudeCodeModelAccessWithDependencies(options, productionDependencies);
+}
+
+function createClaudeCodeModelAccessWithDependencies(
+    options: ClaudeCodeProviderOptions,
+    dependencies: ClaudeCodeProviderDependencies,
+): ClaudeCodeModelAccess {
+    validateOptions(options);
+    const modelId = options.model ?? DEFAULT_MODEL;
+    return async (operation) => {
+        const directory = await dependencies.createTemporaryDirectory();
+        try {
+            const model = dependencies.createModel(modelId, claudeCodeSettings(directory, dependencies.environment));
             try {
-                return await executor(request, invocationOptions);
+                return await operation(model);
             } catch (error) {
-                if (error instanceof ProviderError && error.cause !== undefined && isAuthenticationError(error.cause)) {
+                const cause = error instanceof ProviderError && error.cause !== undefined ? error.cause : error;
+                if (isAuthenticationError(cause)) {
                     throw new ProviderError(
                         "Claude Code subscription authentication is unavailable; authenticate with `claude auth login`.",
-                        { cause: error.cause },
+                        { cause },
                     );
                 }
                 throw error;

@@ -8,12 +8,12 @@ import type {
     SelectivityAttentionControl,
 } from "../../src/agency/endogenous-selectivity-evaluation.ts";
 
-import { createCodexOpportunityEvaluator } from "../../src/agency/codex-opportunity-evaluator.ts";
 import {
     parseSelectivityWorkload,
     runEndogenousSelectivityEvaluation,
     scriptedSelectivityEvaluator,
 } from "../../src/agency/endogenous-selectivity-evaluation.ts";
+import { createCodexOpportunityEvaluator } from "../../src/ai/codex-opportunity.ts";
 
 const cli = parseArguments(process.argv.slice(2));
 const raw = await readFile(new URL("./fixtures/selectivity-workload.json", import.meta.url), "utf8");
