@@ -15,6 +15,13 @@ const surfacePersistenceExceptions = new Set([
 
 export function dependencyViolations(owner: string, source: string): string[] {
     const violations: string[] = [];
+    if (
+        /^(?:app|core|agency|capabilities|delegation|memory|objectives|onboarding|runtime)\//.test(owner) &&
+        /systemd|systemctl|launchctl|raspberry/i.test(source)
+    )
+        violations.push(
+            `${owner}: application and semantic modules must not contain platform-specific service ownership`,
+        );
     for (const reference of importReferences(source)) {
         if (reference.specifier === null) {
             reject("<dynamic>", "non-static dynamic imports cannot be verified by the dependency checker");
@@ -42,6 +49,13 @@ export function dependencyViolations(owner: string, source: string): string[] {
 
         if (owner.startsWith("app/") && target?.startsWith("surfaces/"))
             reject(specifier, "application orchestration must not import concrete surfaces");
+        if (/^(?:app|core|agency|capabilities|delegation|memory|objectives|onboarding|runtime)\//.test(owner)) {
+            if (target === "host/systemd.ts" || target === "host/launchd.ts")
+                reject(
+                    specifier,
+                    "application and semantic modules must use host contracts, not service-manager adapters",
+                );
+        }
     }
     return violations;
 

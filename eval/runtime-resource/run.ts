@@ -162,8 +162,6 @@ async function prepareWorkload(name: WorkloadName, cli: CliOptions): Promise<Pre
         codex_command: configuredProvider.command,
         codex_arguments: configuredProvider.arguments_,
         opportunity_timeout_seconds: 120,
-        systemd_run_command: "/usr/bin/false",
-        systemctl_command: "/usr/bin/false",
         stop_timeout_seconds: 30,
     };
     await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });

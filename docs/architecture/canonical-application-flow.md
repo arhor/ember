@@ -878,9 +878,13 @@ interface BackgroundHost {
   stop(jobId: string): Promise<HostObservation>;
 }
 // WorkerLaunch is host-owned: opaque ID, executable/argv/cwd, bounded stop policy.
-// HostObservation distinguishes running, stopped, absent, failed, unknown,
-// and unsupported, with observed time; it never means objective/delivery success.
+// HostObservation distinguishes scheduled, running, stopped, absent, failed,
+// unknown, and unsupported, with observed time; it never means objective/delivery success.
 ```
+
+The application and runtime inspect only the opaque logical job ID. A host adapter
+owns any expansion into process-manager topology, such as systemd timer and service
+units, and folds those observations back into the host-neutral states above.
 
 Installation is a separate trusted operation, `installResident(spec)` with a concrete
 Linux/macOS implementation and a stage/result record. It is not called by application

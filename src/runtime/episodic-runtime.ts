@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
@@ -6,6 +5,7 @@ import { dirname, isAbsolute, join } from "node:path";
 import type { CognitionOpportunityEvaluator } from "../agency/cognition-opportunity.ts";
 import type { EmberState } from "../core/model.ts";
 import type { SpecialistEpisodeRecord, SpecialistEpisodeSpec } from "../delegation/codex-specialist.ts";
+import type { BackgroundHost, HostJobState, WorkerLaunch } from "../host/background.ts";
 
 import { findCognitionOpportunity, runCognitionOpportunity } from "../agency/cognition-opportunity.ts";
 import { createCodexOpportunityEvaluator } from "../ai/codex-opportunity.ts";
@@ -17,7 +17,6 @@ import {
     recordSpecialistProcessLoss,
     runCodexSpecialist,
 } from "../delegation/codex-specialist.ts";
-import { replaceFileAtomically } from "../persistence/file-replacement.ts";
 import { StateStore } from "../persistence/state-store.ts";
 
 export interface EpisodicRuntimeConfig {
@@ -31,8 +30,6 @@ export interface EpisodicRuntimeConfig {
     codex_command: string;
     codex_arguments: string[];
     opportunity_timeout_seconds: number;
-    systemd_run_command: string;
-    systemctl_command: string;
     stop_timeout_seconds: number;
 }
 
@@ -56,17 +53,6 @@ export interface RuntimeObservation {
     evaluator_failure?: string | null;
 }
 
-export interface CommandResult {
-    code: number | null;
-    signal: NodeJS.Signals | null;
-    stdout: string;
-    stderr: string;
-}
-
-export type CommandRunner = (command: string, args: string[]) => Promise<CommandResult>;
-
-export type UnitState = "active" | "inactive" | "failed" | "not_found" | "unknown";
-
 export interface RuntimeStatus {
     config_path: string;
     wakes: Array<{
@@ -76,16 +62,14 @@ export interface RuntimeStatus {
         decision: string | null;
         evaluator_failure: string | null;
         failure_detail: string | null;
-        timer_unit: string;
-        timer_state: UnitState;
-        service_unit: string;
-        service_state: UnitState;
+        host_job: string;
+        host_state: HostJobState;
     }>;
     specialists: Array<{
         episode_id: string;
         status: "prepared" | "launching" | "launch_failed" | "launched" | "running" | "completed" | "failed" | "lost";
-        service_unit: string;
-        unit_state: UnitState;
+        host_job: string;
+        host_state: HostJobState;
         runtime_state: string | null;
         report_state: string | null;
         retry_state: string | null;
@@ -182,120 +166,6 @@ export class EpisodicRecordStore {
     }
 }
 
-export class SystemdUserSupervisor {
-    readonly config: EpisodicRuntimeConfig;
-    readonly configPath: string;
-    readonly runner: CommandRunner;
-
-    constructor(config: EpisodicRuntimeConfig, configPath: string, runner: CommandRunner = runCommand) {
-        validateConfig(config);
-        requireAbsolute(configPath, "runtime config path");
-        this.config = config;
-        this.configPath = configPath;
-        this.runner = runner;
-    }
-
-    async scheduleWake(intent: WakeIntent) {
-        validateWakeIntent(intent);
-        const unit = wakeUnitName(intent.wake_id);
-        await this.run(this.config.systemd_run_command, [
-            "--user",
-            "--collect",
-            `--unit=${unit}`,
-            `--on-calendar=${systemdCalendarTimestamp(intent.due_at)}`,
-            "--property=Type=exec",
-            "--property=Restart=no",
-            ...this.wakeWorkerCommand(intent.wake_id),
-        ]);
-    }
-
-    async startWakeNow(intent: WakeIntent) {
-        validateWakeIntent(intent);
-        const unit = wakeUnitName(intent.wake_id);
-        await this.run(this.config.systemd_run_command, [
-            "--user",
-            "--collect",
-            `--unit=${unit}`,
-            "--property=Type=exec",
-            "--property=Restart=no",
-            ...this.wakeWorkerCommand(intent.wake_id),
-        ]);
-    }
-
-    async startSpecialist(episodeId: string) {
-        validateOpaqueId(episodeId, "specialist episode id");
-        const unit = specialistUnitName(episodeId);
-        await this.run(this.config.systemd_run_command, [
-            "--user",
-            "--collect",
-            `--unit=${unit}`,
-            "--property=Type=exec",
-            "--property=Restart=no",
-            "--property=KillMode=mixed",
-            `--property=TimeoutStopSec=${this.config.stop_timeout_seconds}s`,
-            this.config.node_path,
-            this.config.runtime_entrypoint,
-            "run-specialist",
-            "--config",
-            this.configPath,
-            "--episode-id",
-            episodeId,
-        ]);
-    }
-
-    async unitState(unit: string): Promise<UnitState> {
-        const result = await this.runner(this.config.systemctl_command, [
-            "--user",
-            "show",
-            unit,
-            "--property=LoadState",
-            "--property=ActiveState",
-            "--value",
-        ]);
-        const values = result.stdout.trim().split(/\r?\n/).filter(Boolean);
-        if (values.includes("not-found")) return "not_found";
-        if (values.includes("failed")) return "failed";
-        if (values.includes("active") || values.includes("activating") || values.includes("reloading")) return "active";
-        if (values.includes("inactive") || values.includes("deactivating")) return "inactive";
-        if (result.code !== 0 && /not found|not-found|could not be found/i.test(result.stderr)) return "not_found";
-        return "unknown";
-    }
-
-    async installReconciliationUnit(unitDirectory: string) {
-        requireAbsolute(unitDirectory, "systemd user unit directory");
-        await mkdir(unitDirectory, { recursive: true });
-        const unitPath = join(unitDirectory, "ember-reconcile.service");
-        const content = renderReconciliationUnit(this.config, this.configPath);
-        await replaceFileAtomically(unitPath, content, { mode: 0o600 });
-        await this.run(this.config.systemctl_command, ["--user", "daemon-reload"]);
-        await this.run(this.config.systemctl_command, ["--user", "enable", "--now", "ember-reconcile.service"]);
-        return unitPath;
-    }
-
-    private wakeWorkerCommand(wakeId: string) {
-        validateOpaqueId(wakeId, "wake id");
-        return [
-            this.config.node_path,
-            this.config.runtime_entrypoint,
-            "run-wake",
-            "--config",
-            this.configPath,
-            "--wake-id",
-            wakeId,
-        ];
-    }
-
-    private async run(command: string, args: string[]) {
-        const result = await this.runner(command, args);
-        if (result.code !== 0) {
-            throw new Error(
-                `${command} failed with ${result.code ?? result.signal ?? "unknown"}: ${result.stderr.trim()}`,
-            );
-        }
-        return result;
-    }
-}
-
 export async function loadEpisodicRuntimeConfig(path: string): Promise<EpisodicRuntimeConfig> {
     requireAbsolute(path, "runtime config path");
     const value = JSON.parse(await readFile(path, "utf8")) as EpisodicRuntimeConfig;
@@ -307,7 +177,8 @@ export async function scheduleWake(
     config: EpisodicRuntimeConfig,
     configPath: string,
     dueAt: string,
-    { now = () => new Date().toISOString(), runner }: { now?: () => string; runner?: CommandRunner } = {},
+    host: BackgroundHost,
+    { now = () => new Date().toISOString() }: { now?: () => string } = {},
 ) {
     validateConfig(config);
     if (!isRfc3339Utc(dueAt)) throw new ValidationError("wake due time must be RFC 3339 UTC");
@@ -325,9 +196,9 @@ export async function scheduleWake(
     };
     const records = new EpisodicRecordStore(config.records_directory);
     await records.createWake(intent);
-    const supervisor = new SystemdUserSupervisor(config, configPath, runner);
-    if (Date.parse(dueAt) <= Date.parse(createdAt)) await supervisor.startWakeNow(intent);
-    else await supervisor.scheduleWake(intent);
+    const launch = wakeLaunch(config, configPath, wakeId);
+    if (Date.parse(dueAt) <= Date.parse(createdAt)) await requireHostAccepted(await host.start(launch));
+    else await requireHostAccepted(await host.scheduleWake(launch, dueAt));
     return intent;
 }
 
@@ -335,16 +206,16 @@ export async function startSpecialistEpisode(
     config: EpisodicRuntimeConfig,
     configPath: string,
     spec: SpecialistEpisodeSpec,
-    { now = () => new Date().toISOString(), runner }: { now?: () => string; runner?: CommandRunner } = {},
+    host: BackgroundHost,
+    { now = () => new Date().toISOString() }: { now?: () => string } = {},
 ) {
     validateConfig(config);
     validateSpecialistIdentity(spec);
     const records = new EpisodicRecordStore(config.records_directory);
     await records.createSpecialistSpec(spec);
     await records.observeSpecialist(spec.episode_id, observation("launch_attempted", now()));
-    const supervisor = new SystemdUserSupervisor(config, configPath, runner);
     try {
-        await supervisor.startSpecialist(spec.episode_id);
+        await requireHostAccepted(await host.start(specialistLaunch(config, configPath, spec.episode_id)));
         await records.observeSpecialist(spec.episode_id, observation("launch_accepted", now()));
     } catch (error) {
         await records.observeSpecialist(spec.episode_id, observation("launch_failed", now(), errorMessage(error)));
@@ -470,11 +341,11 @@ export async function runSpecialistWorker(
 export async function reconcileEpisodicRuntime(
     config: EpisodicRuntimeConfig,
     configPath: string,
-    { runner, now = () => new Date().toISOString() }: { runner?: CommandRunner; now?: () => string } = {},
+    host: BackgroundHost,
+    { now = () => new Date().toISOString() }: { now?: () => string } = {},
 ) {
     validateConfig(config);
     const records = new EpisodicRecordStore(config.records_directory);
-    const supervisor = new SystemdUserSupervisor(config, configPath, runner);
     const repairedWakes: string[] = [];
     const startedDueWakes: string[] = [];
     const ambiguousWakes: string[] = [];
@@ -492,18 +363,18 @@ export async function reconcileEpisodicRuntime(
         }
         const intent = await records.readWake(wakeId);
         if (Date.parse(intent.due_at) <= Date.parse(observedAt)) {
-            const serviceState = await supervisor.unitState(`${wakeUnitName(wakeId)}.service`);
-            if (serviceState === "not_found") {
-                await supervisor.startWakeNow(intent);
+            const hostState = (await host.inspect(wakeJobId(wakeId))).state;
+            if (hostState === "absent") {
+                await requireHostAccepted(await host.start(wakeLaunch(config, configPath, wakeId)));
                 startedDueWakes.push(wakeId);
-            } else if (serviceState !== "active") {
+            } else if (hostState !== "running") {
                 ambiguousWakes.push(wakeId);
             }
             continue;
         }
-        const timerState = await supervisor.unitState(`${wakeUnitName(wakeId)}.timer`);
-        if (timerState === "not_found") {
-            await supervisor.scheduleWake(intent);
+        const hostState = (await host.inspect(wakeJobId(wakeId))).state;
+        if (hostState === "absent") {
+            await requireHostAccepted(await host.scheduleWake(wakeLaunch(config, configPath, wakeId), intent.due_at));
             repairedWakes.push(wakeId);
         }
     }
@@ -512,12 +383,12 @@ export async function reconcileEpisodicRuntime(
         const recordPath = records.specialistRecordPath(episodeId);
         const record = await readOptionalSpecialist(recordPath);
         if (!record || ["exited", "lost"].includes(record.runtime_state)) continue;
-        const unitState = await supervisor.unitState(`${specialistUnitName(episodeId)}.service`);
-        if (unitState === "not_found" || unitState === "inactive" || unitState === "failed") {
+        const hostState = (await host.inspect(specialistJobId(episodeId))).state;
+        if (hostState === "absent" || hostState === "stopped" || hostState === "failed") {
             if (["not_started", "running", "cancellation_requested", "timed_out"].includes(record.runtime_state)) {
                 await recordSpecialistProcessLoss(
                     recordPath,
-                    `systemd unit ${specialistUnitName(episodeId)} is ${unitState} during runtime reconciliation`,
+                    `background job ${specialistJobId(episodeId)} is ${hostState} during runtime reconciliation`,
                     { now: () => observedAt },
                 );
                 lostSpecialists.push(episodeId);
@@ -531,19 +402,17 @@ export async function reconcileEpisodicRuntime(
 export async function inspectEpisodicRuntime(
     config: EpisodicRuntimeConfig,
     configPath: string,
-    { runner }: { runner?: CommandRunner } = {},
+    host: BackgroundHost,
 ): Promise<RuntimeStatus> {
     validateConfig(config);
     const records = new EpisodicRecordStore(config.records_directory);
-    const supervisor = new SystemdUserSupervisor(config, configPath, runner);
     const wakes: RuntimeStatus["wakes"] = [];
     for (const wakeId of await records.listWakeIds()) {
         const intent = await records.readWake(wakeId);
         const status = await wakeStatus(records, wakeId);
         const completed = await records.wakeObservation(wakeId, "completed");
         const failed = await records.wakeObservation(wakeId, "failed");
-        const timerUnit = `${wakeUnitName(wakeId)}.timer`;
-        const serviceUnit = `${wakeUnitName(wakeId)}.service`;
+        const hostJob = wakeJobId(wakeId);
         wakes.push({
             wake_id: wakeId,
             due_at: intent.due_at,
@@ -551,22 +420,20 @@ export async function inspectEpisodicRuntime(
             decision: completed?.decision ?? null,
             evaluator_failure: completed?.evaluator_failure ?? null,
             failure_detail: failed?.detail ?? null,
-            timer_unit: timerUnit,
-            timer_state: await supervisor.unitState(timerUnit),
-            service_unit: serviceUnit,
-            service_state: await supervisor.unitState(serviceUnit),
+            host_job: hostJob,
+            host_state: (await host.inspect(hostJob)).state,
         });
     }
 
     const specialists: RuntimeStatus["specialists"] = [];
     for (const episodeId of await records.listSpecialistIds()) {
         const record = await readOptionalSpecialist(records.specialistRecordPath(episodeId));
-        const serviceUnit = `${specialistUnitName(episodeId)}.service`;
+        const hostJob = specialistJobId(episodeId);
         specialists.push({
             episode_id: episodeId,
             status: await specialistStatus(records, episodeId, record),
-            service_unit: serviceUnit,
-            unit_state: await supervisor.unitState(serviceUnit),
+            host_job: hostJob,
+            host_state: (await host.inspect(hostJob)).state,
             runtime_state: record?.runtime_state ?? null,
             report_state: record?.report_state ?? null,
             retry_state: record?.recovery.retry_state ?? null,
@@ -576,33 +443,42 @@ export async function inspectEpisodicRuntime(
     return { config_path: configPath, wakes, specialists };
 }
 
-export function renderReconciliationUnit(config: EpisodicRuntimeConfig, configPath: string) {
-    validateConfig(config);
-    requireAbsolute(configPath, "runtime config path");
-    return [
-        "[Unit]",
-        "Description=Ember episodic runtime reconciliation",
-        "After=default.target",
-        "",
-        "[Service]",
-        "Type=oneshot",
-        "Restart=no",
-        `ExecStart=${systemdQuote(config.node_path)} ${systemdQuote(config.runtime_entrypoint)} reconcile --config ${systemdQuote(configPath)}`,
-        "",
-        "[Install]",
-        "WantedBy=default.target",
-        "",
-    ].join("\n");
-}
-
-export function wakeUnitName(wakeId: string) {
+export function wakeJobId(wakeId: string) {
     validateOpaqueId(wakeId, "wake id");
     return `ember-wake-${wakeId}`;
 }
 
-export function specialistUnitName(episodeId: string) {
+export function specialistJobId(episodeId: string) {
     validateOpaqueId(episodeId, "specialist episode id");
     return `ember-specialist-${episodeId}`;
+}
+
+function wakeLaunch(config: EpisodicRuntimeConfig, configPath: string, wakeId: string): WorkerLaunch {
+    validateOpaqueId(wakeId, "wake id");
+    requireAbsolute(configPath, "runtime config path");
+    return {
+        jobId: wakeJobId(wakeId),
+        executable: config.node_path,
+        arguments: [config.runtime_entrypoint, "run-wake", "--config", configPath, "--wake-id", wakeId],
+    };
+}
+
+function specialistLaunch(config: EpisodicRuntimeConfig, configPath: string, episodeId: string): WorkerLaunch {
+    validateOpaqueId(episodeId, "specialist episode id");
+    requireAbsolute(configPath, "runtime config path");
+    return {
+        jobId: specialistJobId(episodeId),
+        executable: config.node_path,
+        arguments: [config.runtime_entrypoint, "run-specialist", "--config", configPath, "--episode-id", episodeId],
+        stopTimeoutSeconds: config.stop_timeout_seconds,
+    };
+}
+
+function requireHostAccepted(observation: { state: HostJobState; detail?: string }) {
+    if (observation.state === "unsupported")
+        throw new ValidationError(observation.detail ?? "background operation is unsupported by this host");
+    if (observation.state === "failed" || observation.state === "unknown")
+        throw new Error(observation.detail ?? `background host returned ${observation.state}`);
 }
 
 async function wakeStatus(
@@ -660,8 +536,6 @@ function validateConfig(value: EpisodicRuntimeConfig) {
         ["node_path", value.node_path],
         ["runtime_entrypoint", value.runtime_entrypoint],
         ["codex_command", value.codex_command],
-        ["systemd_run_command", value.systemd_run_command],
-        ["systemctl_command", value.systemctl_command],
     ] as const)
         requireAbsolute(path, name);
     if (typeof value.principal !== "string" || !value.principal.trim())
@@ -715,21 +589,6 @@ function requireAbsolute(value: string, label: string) {
         throw new ValidationError(`${label} must be a safe absolute path`);
 }
 
-function systemdCalendarTimestamp(value: string) {
-    if (!isRfc3339Utc(value)) throw new ValidationError("systemd calendar timestamp must originate from RFC 3339 UTC");
-    const parsed = Date.parse(value);
-    if (!Number.isFinite(parsed)) throw new ValidationError("systemd calendar timestamp is invalid");
-    const fraction = /\.(\d+)Z$/.exec(value)?.[1];
-    const wholeSecond = Math.floor(parsed / 1000) * 1000;
-    const roundedUp = wholeSecond + (fraction && /[1-9]/.test(fraction) ? 1000 : 0);
-    const normalized = new Date(roundedUp).toISOString();
-    return `${normalized.slice(0, 10)} ${normalized.slice(11, 19)} UTC`;
-}
-
-function systemdQuote(value: string) {
-    return `"${value.replaceAll("%", "%%").replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
-}
-
 async function writeExclusiveJson(path: string, value: unknown) {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
@@ -758,20 +617,6 @@ async function listDirectories(path: string) {
         if (errorCode(error) === "ENOENT") return [];
         throw error;
     }
-}
-
-export async function runCommand(command: string, args: string[]): Promise<CommandResult> {
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, { shell: false, stdio: ["ignore", "pipe", "pipe"] });
-        let stdout = "";
-        let stderr = "";
-        child.stdout.setEncoding("utf8");
-        child.stderr.setEncoding("utf8");
-        child.stdout.on("data", (chunk) => (stdout += chunk));
-        child.stderr.on("data", (chunk) => (stderr += chunk));
-        child.once("error", reject);
-        child.once("close", (code, signal) => resolve({ code, signal, stdout, stderr }));
-    });
 }
 
 function errorMessage(error: unknown) {

@@ -3,10 +3,11 @@
 import { readFile } from "node:fs/promises";
 
 import type { SpecialistEpisodeSpec } from "../src/delegation/codex-specialist.ts";
+import type { SystemdHostConfig } from "../src/host/systemd.ts";
 import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
 
+import { installSystemdUnit, renderSystemdService, SystemdUserBackgroundHost } from "../src/host/systemd.ts";
 import {
-    SystemdUserSupervisor,
     inspectEpisodicRuntime,
     loadEpisodicRuntimeConfig,
     reconcileEpisodicRuntime,
@@ -16,19 +17,21 @@ import {
     startSpecialistEpisode,
 } from "../src/runtime/episodic-runtime.ts";
 
-const controller = new AbortController();
-const cancel = () => controller.abort();
-process.on("SIGTERM", cancel);
-process.on("SIGINT", cancel);
+if (import.meta.main) {
+    const controller = new AbortController();
+    const cancel = () => controller.abort();
+    process.on("SIGTERM", cancel);
+    process.on("SIGINT", cancel);
 
-try {
-    process.exitCode = await main(process.argv.slice(2), controller.signal);
-} catch (error) {
-    process.stderr.write(`ember-runtime: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exitCode = 2;
-} finally {
-    process.off("SIGTERM", cancel);
-    process.off("SIGINT", cancel);
+    try {
+        process.exitCode = await main(process.argv.slice(2), controller.signal);
+    } catch (error) {
+        process.stderr.write(`ember-runtime: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.exitCode = 2;
+    } finally {
+        process.off("SIGTERM", cancel);
+        process.off("SIGINT", cancel);
+    }
 }
 
 async function main(argv: string[], signal: AbortSignal) {
@@ -37,13 +40,30 @@ async function main(argv: string[], signal: AbortSignal) {
 
     switch (parsed.command) {
         case "install": {
-            const supervisor = new SystemdUserSupervisor(config, parsed.config);
-            const path = await supervisor.installReconciliationUnit(parsed.unitDirectory);
+            const host = systemdHost(config);
+            const unitName = "ember-reconcile.service";
+            const launch = {
+                jobId: "ember-reconcile",
+                executable: config.node_path,
+                arguments: [config.runtime_entrypoint, "reconcile", "--config", parsed.config],
+            };
+            const path = await installSystemdUnit(
+                host,
+                parsed.unitDirectory,
+                unitName,
+                renderSystemdService({
+                    description: "Ember episodic runtime reconciliation",
+                    launch,
+                    restart: "no",
+                    wantedBy: "default.target",
+                    after: ["default.target"],
+                }),
+            );
             process.stdout.write(`${path}\n`);
             return 0;
         }
         case "schedule-wake": {
-            const intent = await scheduleWake(config, parsed.config, parsed.at);
+            const intent = await scheduleWake(config, parsed.config, parsed.at, systemdHost(config));
             process.stdout.write(`${JSON.stringify(intent, null, 2)}\n`);
             return 0;
         }
@@ -54,7 +74,7 @@ async function main(argv: string[], signal: AbortSignal) {
         }
         case "start-specialist": {
             const spec = JSON.parse(await readFile(parsed.spec, "utf8")) as SpecialistEpisodeSpec;
-            const episodeId = await startSpecialistEpisode(config, parsed.config, spec);
+            const episodeId = await startSpecialistEpisode(config, parsed.config, spec, systemdHost(config));
             process.stdout.write(`${episodeId}\n`);
             return 0;
         }
@@ -76,12 +96,14 @@ async function main(argv: string[], signal: AbortSignal) {
             return 0;
         }
         case "reconcile": {
-            const result = await reconcileEpisodicRuntime(config, parsed.config);
+            const result = await reconcileEpisodicRuntime(config, parsed.config, systemdHost(config));
             process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
             return 0;
         }
         case "status": {
-            process.stdout.write(`${JSON.stringify(await inspectEpisodicRuntime(config, parsed.config), null, 2)}\n`);
+            process.stdout.write(
+                `${JSON.stringify(await inspectEpisodicRuntime(config, parsed.config, systemdHost(config)), null, 2)}\n`,
+            );
             return 0;
         }
     }
@@ -149,3 +171,9 @@ function parseArgs(argv: string[]): Parsed {
 
 export { main, parseArgs };
 export type { EpisodicRuntimeConfig };
+
+type RuntimeFileConfig = EpisodicRuntimeConfig & SystemdHostConfig;
+
+function systemdHost(config: EpisodicRuntimeConfig) {
+    return new SystemdUserBackgroundHost(config as RuntimeFileConfig);
+}
