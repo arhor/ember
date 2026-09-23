@@ -7,8 +7,8 @@ import type { CognitionOpportunityEvaluator } from "../agency/cognition-opportun
 import type { EmberState } from "../core/model.ts";
 import type { SpecialistEpisodeRecord, SpecialistEpisodeSpec } from "../delegation/codex-specialist.ts";
 
-import { createCodexOpportunityEvaluator } from "../agency/codex-opportunity-evaluator.ts";
 import { findCognitionOpportunity, runCognitionOpportunity } from "../agency/cognition-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../ai/codex-opportunity.ts";
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
 import {

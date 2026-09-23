@@ -9,6 +9,7 @@ import test from "node:test";
 import type { ProjectedConversationContext } from "../core/conversation-context.ts";
 import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
 
+import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
 import { prepareCognition } from "../app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
@@ -19,10 +20,7 @@ import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-ge
 import { StateStore } from "../persistence/state-store.ts";
 import { runCognition, startRuntime } from "../runtime/runtime.ts";
 import { cloneState } from "../util.ts";
-import {
-    createAiSdkMemoryProposalGenerator,
-    generateAndAdoptConversationMemories,
-} from "./memory-proposal-generation.ts";
+import { generateAndAdoptConversationMemories } from "./memory-proposal-generation.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "project:ember";

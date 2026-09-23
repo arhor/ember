@@ -12,17 +12,17 @@ import {
     TypeValidationError,
 } from "ai";
 
-import type { CognitionOpportunityDecision, MeaningId } from "../core/model.ts";
 import type {
     CognitionOpportunityEvaluation,
     CognitionOpportunityEvaluator,
     CognitionOpportunityRequest,
-} from "./cognition-opportunity.ts";
+} from "../agency/cognition-opportunity.ts";
+import type { CognitionOpportunityDecision, MeaningId } from "../core/model.ts";
 
+import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "../agency/cognition-opportunity.ts";
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { exactKeys, isObject } from "../util.ts";
-import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "./cognition-opportunity.ts";
 
 interface AiSdkOpportunityOutput {
     contractVersion: 1;

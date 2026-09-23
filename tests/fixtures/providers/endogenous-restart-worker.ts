@@ -3,8 +3,8 @@ import type { EndogenousRestartScenarioKind } from "../../../eval/endogenous-res
 import type { CognitionOpportunityEvaluator } from "../../../src/agency/cognition-opportunity.ts";
 import type { EmberState, MeaningId } from "../../../src/core/model.ts";
 
-import { createCodexOpportunityEvaluator } from "../../../src/agency/codex-opportunity-evaluator.ts";
 import { runCognitionOpportunity } from "../../../src/agency/cognition-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../../../src/ai/codex-opportunity.ts";
 import { initialState } from "../../../src/core/model.ts";
 import { inspectionView } from "../../../src/core/projection.ts";
 import { rememberFact, supersede, transitionCommitment, undertake } from "../../../src/core/semantics.ts";

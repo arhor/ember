@@ -2,8 +2,8 @@
 
 import assert from "node:assert/strict";
 
-import { createCodexOpportunityEvaluator } from "../../src/agency/codex-opportunity-evaluator.ts";
 import { evaluateCognitionOpportunity } from "../../src/agency/cognition-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../../src/ai/codex-opportunity.ts";
 import { initialState } from "../../src/core/model.ts";
 import { undertake } from "../../src/core/semantics.ts";
 import { startRuntime } from "../../src/runtime/runtime.ts";

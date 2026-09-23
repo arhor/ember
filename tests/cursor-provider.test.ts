@@ -8,10 +8,10 @@ import test from "node:test";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createCursorLanguageModel } from "../src/ai/cursor.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-progress.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/providers/cursor.ts";
 import { startRuntime } from "../src/runtime/runtime.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";

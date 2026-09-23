@@ -9,18 +9,16 @@ import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
+import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../ai/onboarding-progress.ts";
 import { createProcessLanguageModel } from "../ai/process.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../capabilities/google-calendar-create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../capabilities/google-calendar.ts";
-import { createAiSdkMemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import { createProviderMemoryProposalGenerator } from "../memory/provider-memory-proposal-generator.ts";
 import { DurableObjectiveStore } from "../objectives/durable-objective.ts";
 import { ObjectiveActionCoordinator } from "../objectives/objective-action.ts";
-import {
-    createAiSdkOnboardingProgressEvaluator,
-    createProviderOnboardingProgressEvaluator,
-} from "../onboarding/progress-evaluator.ts";
+import { createProviderOnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";

@@ -4,7 +4,7 @@ import type { PipedProcessSpawn } from "../runtime/process-lifecycle.ts";
 import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { NodePipedProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
+import { isTimeoutAbort, NodePipedProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
@@ -62,11 +62,19 @@ export async function invokeProvider(
         throw new ProviderError("provider timeout must be a positive finite number");
     if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
         throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
-    if (signal?.aborted)
-        throw new ProviderError("provider cancellation requested before invocation", {
-            outcome: "cancellation_requested",
-            termination: { reason: "explicit_cancellation", directChildExitObserved: false },
-        });
+    if (signal?.aborted) {
+        const timedOut = isTimeoutAbort(signal.reason);
+        throw new ProviderError(
+            timedOut ? "provider timed out before invocation" : "provider cancellation requested before invocation",
+            {
+                outcome: timedOut ? "timed_out" : "cancellation_requested",
+                termination: {
+                    reason: timedOut ? "timeout" : "explicit_cancellation",
+                    directChildExitObserved: false,
+                },
+            },
+        );
+    }
 
     const processResult = await runProcess({
         command,

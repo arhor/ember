@@ -1,12 +1,9 @@
 import type { LanguageModel } from "ai";
 
-import type { CognitionOpportunityEvaluator, CognitionOpportunityRequest } from "./cognition-opportunity.ts";
+import type { CognitionOpportunityEvaluator, CognitionOpportunityRequest } from "../agency/cognition-opportunity.ts";
 
-import { createCodexLanguageModel } from "../ai/codex.ts";
-import {
-    AI_SDK_OPPORTUNITY_INSTRUCTION,
-    evaluateCognitionOpportunityWithAiSdk,
-} from "./ai-sdk-opportunity-evaluator.ts";
+import { createCodexLanguageModel } from "./codex.ts";
+import { AI_SDK_OPPORTUNITY_INSTRUCTION, evaluateCognitionOpportunityWithAiSdk } from "./opportunity.ts";
 
 export const CODEX_OPPORTUNITY_INSTRUCTION = AI_SDK_OPPORTUNITY_INSTRUCTION;
 

@@ -32,7 +32,7 @@ Issue #198 therefore does **not** introduce a generic structured-generation port
 does not turn `ProviderResult` into an arbitrary schema carrier. The existing
 `CognitionOpportunityEvaluator` is the Ember-owned control boundary.
 
-`src/agency/ai-sdk-opportunity-evaluator.ts` adds one implementation of that boundary
+`src/ai/opportunity.ts` adds one implementation of that boundary
 for in-process AI SDK `LanguageModel`s. AI SDK 7.0.93 owns the mechanical structured
 output step through `generateText` + `Output.object` + `jsonSchema`.
 
@@ -104,7 +104,7 @@ native output-schema argument; Cursor receives the schema inside its isolated,
 tool-denied prompt and Ember validates the returned object through the SDK output
 contract.
 
-`src/agency/codex-opportunity-evaluator.ts` is now a thin composition adapter over the
+`src/ai/codex-opportunity.ts` is now a thin composition adapter over the
 shared typed opportunity evaluator. It no longer parses exact decision tokens or
 embeds decisions inside an ordinary cognition reply.
 
@@ -121,7 +121,7 @@ contract was generalized as part of this task.
 
 ## Deterministic evidence
 
-`src/agency/ai-sdk-opportunity-evaluator.test.ts` covers:
+`src/ai/opportunity.test.ts` covers:
 
 - `cognition`, `defer`, and `no_cognition` through AI SDK structured output;
 - exclusion of mechanism/current-input control data from the model request;

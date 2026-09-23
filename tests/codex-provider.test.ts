@@ -8,11 +8,11 @@ import { describe, test } from "node:test";
 
 import { createCodexLanguageModel } from "../src/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-progress.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
 import { runCognition, startRuntime } from "../src/runtime/runtime.ts";
