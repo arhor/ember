@@ -1,16 +1,15 @@
 import { readFile } from "node:fs/promises";
 
-import type { MeaningId, RuntimeId } from "../../src/core/model.ts";
+import type { MeaningId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
 import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 
-import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
+import { createEmberApplication } from "../../src/app/application.ts";
+import { composeEmberApplication } from "../../src/composition/ember.ts";
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
-import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../../src/runtime/interaction-boundary.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 export interface ConversationEpisode {
@@ -87,68 +86,74 @@ export async function runConversationScenario(
     });
     const store = new StateStore(statePath);
     await store.create(state);
-    const lease = await store.acquireWriteLease();
     const episodes = [];
-    let currentState = state;
-    let runtimeId: RuntimeId | null = null;
     const previousNow = process.env.EMBER_TEST_NOW;
     const providerThreadIds = new Set<string>();
+    let activeEpisode: ConversationEpisode | null = null;
+    let projection: Projection | null = null;
+    let reply: string | null = null;
+    let providerThreadId: string | null = null;
+    const composeApplication = () =>
+        createEmberApplication(
+            composeEmberApplication(
+                {
+                    statePath,
+                    provider: {
+                        kind: "process",
+                        command: "conversation-evaluation-provider",
+                        arguments: [],
+                        timeoutSeconds: 300,
+                    },
+                },
+                {
+                    executor: async (request) => {
+                        const episode = activeEpisode;
+                        if (episode === null) throw new Error("conversation evaluation has no active episode");
+                        projection = request.projection;
+                        if (episode.provider_outcome) {
+                            throw new ProviderError(`fixture ${episode.provider_outcome}`, {
+                                outcome: episode.provider_outcome,
+                                terminationConfirmed: episode.provider_outcome === "failed",
+                            });
+                        }
+                        const result = await executor({ scenarioId: scenario.id, episode, request });
+                        reply = result.reply;
+                        providerThreadId = result.operational?.externalThreadId ?? null;
+                        return result;
+                    },
+                },
+            ),
+        );
+    let application = composeApplication();
     try {
         for (const episode of scenario.episodes) {
             process.env.EMBER_TEST_NOW = episode.at;
-            if (runtimeId === null || episode.restart) {
-                if (runtimeId !== null) {
-                    currentState = stopRuntime(currentState, runtimeId, { reason: `conversation_eval:${episode.id}` });
-                    currentState = await store.commit((await store.load()).revision, currentState);
-                }
-                currentState = await store.load();
-                const started = startRuntime(currentState, scenario.ember.principal, scenario.ember.scope);
-                currentState = await store.commit(currentState.revision, started.state);
-                runtimeId = started.runtimeId;
-            }
-
-            let projection: Projection | null = null;
-            let reply: string | null = null;
+            if (episode.restart) application = composeApplication();
+            activeEpisode = episode;
+            projection = null;
+            reply = null;
             let providerFailure: string | null = null;
             let deliveryOutcome: "not_attempted" | "displayed" | "uncertain" = "not_attempted";
-            let providerThreadId: string | null = null;
-            const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(store), currentState, {
-                runtimeId: runtimeId!,
-                principal: scenario.ember.principal,
-                scope: scenario.ember.scope,
-                surfaceId: episode.surface,
-                principalProvenance: "configured_surface_mapping",
-                externalOccurrence: { occurrenceId: `conversation-evaluation:${scenario.id}:${episode.id}` },
-                text: episode.input,
-                providerLabel: "conversation-evaluation-provider",
-                timeoutSeconds: 300,
-                conversationMembership: episode.fresh_conversation
-                    ? { action: "fresh", basis: "explicit_boundary" }
-                    : { action: "continue", basis: "ordinary_adjacency" },
-                executor: async (request) => {
-                    projection = request.projection;
-                    if (episode.provider_outcome) {
-                        throw new ProviderError(`fixture ${episode.provider_outcome}`, {
-                            outcome: episode.provider_outcome,
-                            terminationConfirmed: episode.provider_outcome === "failed",
-                        });
-                    }
-                    const result = await executor({
-                        scenarioId: scenario.id,
-                        episode,
-                        request,
-                    });
-                    reply = result.reply;
-                    providerThreadId = result.operational?.externalThreadId ?? null;
-                    return result;
+            providerThreadId = null;
+            const result = await application.interact(
+                {
+                    kind: "message",
+                    principal: scenario.ember.principal,
+                    scope: scenario.ember.scope,
+                    surfaceId: episode.surface,
+                    principalProvenance: "configured_surface_mapping",
+                    externalOccurrence: { occurrenceId: `conversation-evaluation:${scenario.id}:${episode.id}` },
+                    text: episode.input,
+                    conversationMembership: episode.fresh_conversation
+                        ? { action: "fresh", basis: "explicit_boundary" }
+                        : { action: "continue", basis: "ordinary_adjacency" },
                 },
-                deliver: () => {
-                    if (episode.delivery_outcome === "uncertain")
-                        throw new SurfaceDeliveryFailure(`fixture delivery uncertain: ${episode.id}`);
-                },
-            });
-            currentState = result.state;
-            providerFailure = result.providerFailure;
+                async () =>
+                    episode.delivery_outcome === "uncertain"
+                        ? { outcome: "uncertain", externalMessageId: null }
+                        : { outcome: "confirmed", externalMessageId: null },
+            );
+            providerFailure = result.diagnostics.providerFailure;
             if (result.delivery?.status === "confirmed") deliveryOutcome = "displayed";
             if (result.delivery?.status === "blocked_uncertain") deliveryOutcome = "uncertain";
             if (projection === null) throw new Error(`episode ${episode.id} did not expose a projection`);
@@ -232,7 +237,6 @@ export async function runConversationScenario(
     } finally {
         if (previousNow === undefined) delete process.env.EMBER_TEST_NOW;
         else process.env.EMBER_TEST_NOW = previousNow;
-        await store.releaseWriteLease(lease);
     }
     return {
         report_version: 1,

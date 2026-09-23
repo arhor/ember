@@ -5,11 +5,10 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/app/application.ts";
+import { composeEmberApplication } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { SurfaceDeliveryFailure, runSurfaceInteraction } from "../src/runtime/interaction-boundary.ts";
 import { main as cliMain } from "../src/surfaces/cli/index.ts";
 
 const PRINCIPAL = "max";
@@ -21,38 +20,35 @@ test("CLI inspection redacts retained delivery representation while exposing rec
     const statePath = join(directory, "ember.json");
     const store = new StateStore(statePath);
     await store.create(initialState(PRINCIPAL));
-    const lease = await store.acquireWriteLease();
-    try {
-        const loaded = await store.load();
-        const started = startRuntime(loaded, PRINCIPAL, SCOPE);
-        const state = await store.commit(loaded.revision, started.state);
-        const result = await runSurfaceInteraction(createFileBackedRepositoriesForState(store), state, {
-            runtimeId: started.runtimeId,
+    const application = createEmberApplication(
+        composeEmberApplication(
+            {
+                statePath,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            {
+                executor: async () => ({
+                    contractVersion: 1,
+                    reply: RETAINED_REPLY,
+                    usedMeaningIds: [],
+                }),
+            },
+        ),
+    );
+    const result = await application.interact(
+        {
+            kind: "message",
             principal: PRINCIPAL,
             scope: SCOPE,
             text: "please answer",
-            providerLabel: "fixture-provider",
-            timeoutSeconds: 1,
-            executor: async () => ({
-                contractVersion: 1,
-                reply: RETAINED_REPLY,
-                usedMeaningIds: [],
-            }),
             surfaceId: "messaging:test",
             principalProvenance: "configured_surface_mapping",
             externalOccurrence: { occurrenceId: "update-inspection" },
             deliveryDestinationId: "chat-inspection",
-            deliver: () => {
-                throw new SurfaceDeliveryFailure("definite retryable transport failure", {
-                    outcome: "failed",
-                    retryable: true,
-                });
-            },
-        });
-        assert.equal(result.delivery?.status, "retryable_failure");
-    } finally {
-        await store.releaseWriteLease(lease);
-    }
+        },
+        async () => ({ outcome: "failed", retryable: true, retryAfterSeconds: null, externalMessageId: null }),
+    );
+    assert.equal(result.delivery?.status, "retryable_failure");
 
     try {
         let output = "";

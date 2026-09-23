@@ -22,10 +22,11 @@ keeping one evidence format.
 
 The harness is evaluation infrastructure, not a second continuity or retrieval
 implementation: state changes use the minimal slice's semantic operations,
-projections use `buildProjection`, cognition uses `runCognition`, and restarts use
-the existing runtime/store boundary. Generated history is expanded into those same
-semantic operations before the scenario's explicit setup. It does not bypass
-canonical validation or introduce a search/index representation.
+projections and cognition use the application-owned cognition preparation and execution
+path, while the harness manages its runtime/store lifecycle and restart boundaries.
+Generated history is expanded into those same semantic operations before the scenario's
+explicit setup. It does not bypass canonical validation or introduce a search/index
+representation.
 
 Two representative scenarios show the main uses:
 

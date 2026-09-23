@@ -93,8 +93,8 @@ snapshot is emitted only when a non-empty partial `reply` changes.
 
 After streaming finishes, the adapter awaits the final structured output and runs the
 unchanged Ember `validateProviderResult` check against the selected projection meaning
-IDs. Only that validated final `ProviderResult` can reach `runCognition` completion and
-canonical expression evidence.
+IDs. Only that validated final `ProviderResult` can reach application-owned cognition
+completion and canonical expression evidence.
 
 This preserves the governing boundary:
 
@@ -107,10 +107,10 @@ inventing a parallel token-loop lifecycle. Existing `onStart`, `onStepEnd`, tool
 execution, and `onEnd` evidence callbacks remain in place.
 
 If the model stream fails after one or more snapshots were observed, those snapshots
-remain provisional and the provider invocation fails. `runCognition` therefore records
-the ordinary failed provider outcome without creating completed expression evidence.
-The visible partial output and the final failed outcome are intentionally distinct
-facts.
+remain provisional and the provider invocation fails. Application-owned cognition
+execution therefore records the ordinary failed provider outcome without creating
+completed expression evidence. The visible partial output and the final failed outcome
+are intentionally distinct facts.
 
 Caller aborts continue to use the existing `AbortSignal` and Ember
 `cancellation_requested` semantics. An abort after provisional output does not promote
@@ -131,8 +131,8 @@ provider lifecycle metadata and cannot be interpreted as effect-completion evide
 
 The first consumer is deliberately a deterministic test/event sink rather than a UI
 transport. Tests wrap the production `ProviderInvoker` and add a
-`ProviderStreamObserver` for that invocation, then execute through the ordinary
-`runCognition` path.
+`ProviderStreamObserver` for that invocation, then execute through the focused
+application cognition execution path (`executeCognition`).
 
 This proves the seam end to end while keeping interaction surfaces unchanged. Telegram
 edit-in-place behavior remains outside this task until the Telegram transport/framework

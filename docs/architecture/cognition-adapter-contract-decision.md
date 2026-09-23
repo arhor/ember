@@ -53,7 +53,7 @@ This decision is based on current repository-owned production and evaluation evi
 - issue #46 and `src/providers/codex.ts`, which established the first production one-shot cognition adapter;
 - issue #90 and `src/providers/cursor.ts`, which deliberately added Cursor as a separate thin adapter without pre-committing #92;
 - `src/providers/contract.ts`, the already-shared Ember-owned request/result/invocation seam;
-- `src/runtime/runtime.ts`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
+- `src/app/cognition-execution.ts`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
 - `docs/architecture/cognition-backend-replacement-evaluation.md`, including the September 1, 2026 Codex-to-Cursor live replacement evidence; and
 - ADR 0001, ADR 0003, ADR 0004, and ADR 0005, which constrain continuity, projection, authority, and failure semantics independently of backend implementation.
 
@@ -98,9 +98,9 @@ At the Ember runtime boundary, the common operation is intentionally semantic:
     -> validated ProviderResult or typed ProviderError
 ```
 
-Executable commands, argument prefixes, workspaces, and other launch details are adapter-construction concerns. Codex, Cursor, and the deterministic process backend close over those mechanics before entering `runCognition`; the in-process AI SDK adapter uses the same invoker shape without synthetic process placeholders.
+Executable commands, argument prefixes, workspaces, and other launch details are adapter-construction concerns. Codex, Cursor, and the deterministic process backend close over those mechanics before entering application-owned cognition execution; the in-process AI SDK adapter uses the same invoker shape without synthetic process placeholders.
 
-`runCognition` receives a separate explicit `providerLabel` for stable cognition and expression-evidence diagnostics, so provider identity does not have to be inferred from subprocess configuration.
+The application cognition path receives a separate explicit `providerLabel` for stable cognition and expression-evidence diagnostics, so provider identity does not have to be inferred from subprocess configuration.
 
 ### Shared failure vocabulary
 

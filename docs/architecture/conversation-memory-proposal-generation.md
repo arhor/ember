@@ -80,7 +80,7 @@ not remove adopted meaning, while ledger presence cannot establish or modify mea
 Deterministic tests use the AI SDK test model and a scripted generator to cover
 bounded disclosure, grounded adoption, durable provenance, empty no-proposal output,
 malformed candidates, partial adoption followed by stale revision, provider failure,
-redaction, and zero implicit retries. `runCognition` invokes reflection after an
+redaction, and zero implicit retries. The application post-turn boundary invokes reflection after an
 ordinary exchange has been durably recorded when a generator is configured. For a
 surface interaction, the delivery hook first persists the committed expression's
 delivery intent and retained representation; only then may reflection begin, and the

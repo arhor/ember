@@ -60,9 +60,9 @@ Its lifetime and bounded exchange payload remain governed by the transient-dialo
 semantics from the #216 design.
 
 The current v2 persistence mechanic keeps one active trajectory per principal/scope
-pair, but the store does **not** infer conversation membership from that pair.
-`runCognition(...)` resolves an explicit membership intent above the store. Ordinary
-adjacency may continue the active trajectory; an explicit boundary or an
+pair, but the store does **not** infer conversation membership from that pair. The
+application cognition-preparation boundary resolves an explicit membership intent above
+the store. Ordinary adjacency may continue the active trajectory; an explicit boundary or an
 ambiguous-discourse decision starts a different Ember-owned trajectory even when
 principal, scope, surface, runtime, and provider are unchanged. The first interaction
 creates an initial trajectory.

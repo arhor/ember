@@ -9,12 +9,12 @@ import type { CapabilityBinding } from "../src/capabilities/execution.ts";
 import type { ProviderInvoker, ProviderStreamObservation, ProviderStreamObserver } from "../src/providers/contract.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const USAGE = {
@@ -123,7 +123,7 @@ async function closeFixture(fixture) {
 
 async function runStreaming(fixture, model, stream: ProviderStreamObserver, options = {}) {
     const provider = withStreaming(createAiSdkCognitionExecutor(model), stream);
-    return runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+    return executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,
         principal: PRINCIPAL,
         scope: SCOPE,

@@ -38,8 +38,10 @@ privacy, and delivery distinctions executable across both current surfaces.
 
 ## Boundary
 
-`src/runtime/interaction-boundary.ts` exposes a small surface-neutral seam around the
-existing cognition runner.
+`src/app/contract.ts` and `src/app/application.ts` expose the one supported
+surface-neutral ordinary-interaction seam. `src/runtime/interaction-boundary.ts`
+retains the focused operational ledger and delivery-reconciliation mechanics used by
+that application boundary.
 
 ```text
 surface input
@@ -91,8 +93,8 @@ The currently supported principal-provenance classes are deliberately narrow:
 - `configured_surface_mapping` for a surface whose account/chat identity has already
   been mapped by deployment policy to the supported local principal.
 
-The production CLI conversation in `src/surfaces/cli/surface.ts` invokes this boundary
-directly for ordinary cognition and `:ask --explain`, so its asserted principal is
+The production CLI conversation in `src/surfaces/cli/surface.ts` invokes
+`EmberApplication.interact` for ordinary cognition and `:ask --explain`, so its asserted principal is
 represented with `explicit_local_argument` rather than existing only as an implicit
 caller convention. The Telegram adapter uses `configured_surface_mapping` only after
 filtering to one configured private chat.
@@ -136,9 +138,9 @@ remain correlated operational metadata rather than alternate occurrence identity
 
 ### Stable cognition handoff
 
-The ledger allocates a cognition ID before invoking the existing cognition runner.
-`runCognition` accepts that ID optionally while preserving its previous default of
-generating one itself for direct lower-level callers.
+The application-owned interaction coordinator allocates a cognition ID before invoking
+focused prepared cognition execution. There is no separate public ordinary-interaction
+runner that accepts an already-started runtime or writer lease.
 
 The ordering is intentional:
 
@@ -218,9 +220,10 @@ survive process boundaries. It is not canonical semantic memory:
 The sidecar is written atomically with file and directory synchronization, following
 the same local durability discipline as the continuity store. Its mutations are
 expected to occur under the existing single-principal/single-writer lifecycle. The
-Telegram worker preserves that assumption by acquiring the normal `StateStore` writer
-lease only while processing one accepted update, never while idly long polling. The
-interactive CLI already holds that same writer lease while accepting local input.
+Telegram worker preserves that assumption by calling the application only while
+processing one accepted update, never while idly long polling. The application
+coordinator acquires and releases the normal `StateStore` writer lease and owns the
+short runtime episode for both Telegram and CLI interactions.
 
 The ledger and canonical state are deliberately separate, so there is no claim of a
 cross-file transaction. The ordering and stable cognition ID make inbound replay
@@ -258,8 +261,8 @@ The production CLI uses logical surface `local_cli`, principal provenance
 `explicit_local_argument`, and no external occurrence ID. Each submitted cognition
 line is therefore a fresh occurrence even when text is identical. `:ask --explain`
 uses the same occurrence/delivery boundary while retaining the pre-existing explicit
-explanation selection semantics. Direct lower-level callers of `runCognition` retain
-`local_cli` as the compatibility default.
+explanation selection semantics. Focused non-ordinary cognition callers must prepare
+their projection explicitly; they are not alternate ordinary surface entry points.
 
 The Telegram adapter uses logical surface `telegram_bot`,
 `configured_surface_mapping`, a configured private-chat delivery destination, and
@@ -279,7 +282,7 @@ or the delivery lifecycle.
 ## Privacy and context selection
 
 The surface boundary does not broaden cognition context merely because one transport
-carries richer metadata. `runCognition` calls Ember's projection builder with the
+carries richer metadata. The application coordinator calls Ember's projection builder with the
 asserted principal, active scope, logical surface, current text, purpose, and canonical
 state. The projection receives the logical surface so cognition never falsely claims
 a Telegram-originated interaction came from `local_cli`; it does not receive transport
@@ -309,11 +312,11 @@ remain Ember-owned inputs.
 
 ## Executable acceptance scenarios
 
-The focused tests in `src/runtime/interaction-boundary.test.ts` instantiate the issue
-#85 transport semantics. `src/surfaces/telegram/surface.test.ts` exercises those rules
-through the concrete Telegram adapter. `tests/cross-surface-semantics.test.ts` now
-validates the same principal/privacy/delivery invariants across both real logical
-surfaces.
+The focused tests in `src/app/application.test.ts` instantiate the issue #85 transport
+semantics through the public application contract. `src/surfaces/telegram/surface.test.ts`
+exercises those rules through the concrete Telegram adapter.
+`tests/cross-surface-semantics.test.ts` validates the same
+principal/privacy/delivery invariants across both real logical surfaces.
 
 | Scenario                                                                             | Expected result                                                                                                      | Canonical trace      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------- |

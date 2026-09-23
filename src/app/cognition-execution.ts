@@ -1,7 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 
 import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
-import type { PreparedCognition } from "../app/cognition-preparation.ts";
 import type { CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
@@ -16,9 +15,9 @@ import type {
 import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
 import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
+import type { PreparedCognition } from "./cognition-preparation.ts";
 
 import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../ai/contract.ts";
-import { prepareCognition } from "../app/cognition-preparation.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc } from "../core/model.ts";
@@ -26,6 +25,7 @@ import { projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
 import { cloneState } from "../util.ts";
+import { prepareCognition } from "./cognition-preparation.ts";
 
 export interface RunCognitionOptions {
     runtimeId: RuntimeId;
@@ -55,7 +55,7 @@ export interface CognitionRepositories {
     onboarding: Pick<OnboardingWorkStore, "load">;
 }
 
-export async function runCognition(
+export async function executeCognition(
     repositories: CognitionRepositories,
     state: EmberState,
     options: RunCognitionOptions,
@@ -75,7 +75,7 @@ export async function runCognition(
                 ? {}
                 : { conversationMembership: options.conversationMembership }),
         }));
-    return runCognitionUntilExpressionCommit(repositories, state, { ...options, preparation });
+    return executePreparedCognition(repositories, state, { ...options, preparation });
 }
 
 export interface CognitionResult {
@@ -86,8 +86,9 @@ export interface CognitionResult {
 }
 
 export type CommittedCognitionResult = CognitionResult;
+export type PreparedCognitionOptions = RunCognitionOptions & { preparation: PreparedCognition };
 
-export async function runCognitionUntilExpressionCommit(
+export async function executePreparedCognition(
     repositories: CognitionRepositories,
     state: EmberState,
     {
@@ -107,7 +108,7 @@ export async function runCognitionUntilExpressionCommit(
         conversationMembership,
         cognitionId: requestedCognitionId,
         preparation: suppliedPreparation,
-    }: RunCognitionOptions,
+    }: PreparedCognitionOptions,
 ): Promise<CommittedCognitionResult> {
     const store = repositories.state;
     validateCognitionInvocation(state, {

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createAiSdkMemoryProposalGenerator } from "../../src/ai/memory-proposals.ts";
+import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
@@ -13,7 +14,6 @@ import { initialState } from "../../src/core/model.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition } from "../../src/runtime/runtime.ts";
 
 if (process.env.EMBER_RUN_LIVE_MEMORY_PROPOSAL !== "1") {
     process.stdout.write("skipped: set EMBER_RUN_LIVE_MEMORY_PROPOSAL=1 to run the live memory-proposal smoke\n");
@@ -56,7 +56,7 @@ try {
         surface: "local_cli",
         text,
     });
-    const result = await runCognition(repositories, state, {
+    const result = await executeCognition(repositories, state, {
         runtimeId: started.runtimeId,
         principal,
         scope,

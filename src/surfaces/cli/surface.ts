@@ -4,7 +4,6 @@ import { createInterface } from "node:readline";
 
 import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
-import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
@@ -27,7 +26,6 @@ import {
     withholdDetail,
 } from "../../core/semantics.ts";
 import { StateStore } from "../../persistence/state-store.ts";
-import { runSurfaceInteraction } from "../../runtime/interaction-boundary.ts";
 import { cloneState } from "../../util.ts";
 
 export interface CliSurfaceConfig {
@@ -86,6 +84,15 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
             }
             continue;
         }
+        if (line.startsWith(":ask ")) {
+            try {
+                await runExplanationCliInteraction(config, application, line, io);
+            } catch (error) {
+                if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
+                else throw error;
+            }
+            continue;
+        }
         await withCliLease(store, config, async (state, runtimeId) => {
             try {
                 if (line.startsWith(":")) {
@@ -95,11 +102,6 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
                             config.scope,
                         );
                         io.output.write(`${conversationId}\n`);
-                    } else if (line.startsWith(":ask ")) {
-                        const result = await withSigintCancellation((signal) =>
-                            ask(config, dependencies, store, state, runtimeId, line, io.output, signal),
-                        );
-                        if (result.providerFailure) io.error.write(`provider: ${result.providerFailure}\n`);
                     } else if (line.startsWith(":show-action ")) {
                         const [command, proposalId, ...extra] = splitCommand(line);
                         if (!proposalId || extra.length) throw new ValidationError(`${command} requires PROPOSAL_ID`);
@@ -314,39 +316,37 @@ async function semanticCommand(
     return { state: await store.commit(state.revision, candidate), id };
 }
 
-async function ask(
+async function runExplanationCliInteraction(
     config: CliSurfaceConfig,
-    dependencies: EmberApplicationDependencies,
-    store: StateStore,
-    state: EmberState,
-    runtimeId: RuntimeId,
+    application: EmberApplication,
     line: string,
-    output: Writable,
-    signal: AbortSignal,
+    io: CliSurfaceIo,
 ) {
     const parts = splitCommand(line);
     if (parts.length < 4 || parts[0] !== ":ask" || parts[1] !== "--explain")
         throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
     const ids = parts[2]!.split(",").filter(Boolean);
     if (!ids.length) throw new ValidationError("at least one explanation ID is required");
-    return runSurfaceInteraction(dependencies.repositories, state, {
-        runtimeId,
-        principal: config.principal,
-        scope: config.scope,
-        text: parts.slice(3).join(" "),
-        executor: dependencies.cognition.executor,
-        ...(dependencies.cognition.selectCapabilities === undefined
-            ? {}
-            : { selectCapabilities: dependencies.cognition.selectCapabilities }),
-        providerLabel: dependencies.cognition.providerLabel,
-        timeoutSeconds: dependencies.cognition.timeoutSeconds,
-        signal,
-        purpose: "explain",
-        explainIds: ids,
-        surfaceId: "local_cli",
-        principalProvenance: "explicit_local_argument",
-        deliver: output,
-    });
+    const result = await withSigintCancellation((signal) =>
+        application.interact(
+            {
+                kind: "message",
+                principal: config.principal,
+                scope: config.scope,
+                text: parts.slice(3).join(" "),
+                purpose: "explain",
+                explainIds: ids,
+                surfaceId: "local_cli",
+                principalProvenance: "explicit_local_argument",
+            },
+            async ({ text }) => {
+                await writeCliOutput(io.output, text);
+                return { outcome: "confirmed", externalMessageId: null };
+            },
+            { signal },
+        ),
+    );
+    if (result.diagnostics.providerFailure) io.error.write(`provider: ${result.diagnostics.providerFailure}\n`);
 }
 
 function dependenciesForCli(config: CliSurfaceConfig) {

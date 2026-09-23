@@ -3,24 +3,20 @@ import type { Writable } from "node:stream";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-import type { PreparedCognition } from "../app/cognition-preparation.ts";
+import type { CognitionRepositories } from "../app/cognition-execution.ts";
 import type {
     DeliveryReconciliationResult,
     DeliveryReconciliationStatus,
     ExternalOccurrenceMetadata,
     PrincipalAssertionProvenance,
 } from "../core/interaction-contract.ts";
-import type { CognitionId, CognitionStatus, EmberState, EvidenceId } from "../core/model.ts";
-import type { CognitionRepositories, CognitionResult, RunCognitionOptions } from "./runtime.ts";
+import type { CognitionId, EvidenceId } from "../core/model.ts";
 
-import { prepareCognition } from "../app/cognition-preparation.ts";
+import { findCognition } from "../app/cognition-execution.ts";
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
-import { findRuntime } from "../core/projection.ts";
-import { requirePrincipal } from "../core/semantics.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../core/model.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { findCognition, runCognitionUntilExpressionCommit, validateCognitionInvocation } from "../runtime/runtime.ts";
 import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
 
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
@@ -34,11 +30,6 @@ export type TerminalDeliveryAttemptOutcome = Exclude<DeliveryAttemptOutcome, "st
 export type SurfaceDelivery =
     | Writable
     | ((text: string) => void | SurfaceDeliveryReceipt | Promise<void | SurfaceDeliveryReceipt>);
-
-export interface PostTurnDiagnostics {
-    memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
-}
 
 export class SurfaceDeliveryFailure extends Error {
     readonly outcome: Exclude<TerminalDeliveryAttemptOutcome, "confirmed">;
@@ -85,36 +76,6 @@ export class SurfaceDeliveryFailure extends Error {
         this.onboardingProgressFailure = onboardingProgressFailure;
         return this;
     }
-}
-
-export interface SurfaceInteractionOptions extends Omit<
-    RunCognitionOptions,
-    "cognitionId" | "surface" | "preparation"
-> {
-    surfaceId: string;
-    principalProvenance: PrincipalAssertionProvenance;
-    externalOccurrence?: ExternalOccurrenceMetadata | null;
-    deliveryDestinationId?: string | null;
-    deliver?: SurfaceDelivery;
-    prepareCognition?: (state: EmberState, surface: string) => Promise<PreparedCognition>;
-    postTurn?: (
-        state: EmberState,
-        cognitionId: CognitionId,
-        preparation: PreparedCognition,
-    ) => Promise<PostTurnDiagnostics>;
-}
-
-export interface SurfaceInteractionResult {
-    state: EmberState;
-    providerFailure: string | null;
-    memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
-    cognitionId: CognitionId;
-    cognitionStatus: CognitionStatus;
-    occurrenceId: string;
-    deliveryId: string | null;
-    delivery: DeliveryReconciliationResult | null;
-    replayed: boolean;
 }
 
 export interface InteractionRepositories extends CognitionRepositories {
@@ -512,132 +473,6 @@ export class InteractionLedgerStore {
     }
 }
 
-export async function runSurfaceInteraction(
-    repositories: InteractionRepositories,
-    state: EmberState,
-    options: SurfaceInteractionOptions,
-): Promise<SurfaceInteractionResult> {
-    const store = repositories.state;
-    const {
-        surfaceId,
-        principalProvenance,
-        externalOccurrence = null,
-        deliveryDestinationId = null,
-        deliver = process.stdout,
-        ...cognitionOptions
-    } = options;
-    requirePrincipal(state, cognitionOptions.principal);
-    findRuntime(state, cognitionOptions.runtimeId);
-
-    const ledger = repositories.interactions;
-    const plannedCognitionId = newId("cognition");
-    const accepted = await ledger.acceptInbound(
-        {
-            surfaceId,
-            principal: cognitionOptions.principal,
-            principalProvenance,
-            scope: cognitionOptions.scope,
-            text: cognitionOptions.text,
-            externalOccurrence,
-            deliveryDestinationId,
-        },
-        plannedCognitionId,
-    );
-    const cognitionId = accepted.record.cognitionId;
-    const current = await store.load();
-    const existing = current.operations.cognitionEpisodes.find((episode) => episode.cognitionId === cognitionId);
-    if (existing) {
-        let delivery = findDeliveryForCognition(await ledger.load(), cognitionId);
-        if (delivery === null && existing.status === "completed" && existing.expressionEvidenceId !== null) {
-            delivery = await ledger.createDeliveryIntent({
-                cognitionId,
-                expressionEvidenceId: existing.expressionEvidenceId,
-                surfaceId: accepted.record.surface_id,
-                destinationId: accepted.record.delivery_destination_id,
-                representationText: null,
-            });
-        }
-        return {
-            state: current,
-            providerFailure:
-                existing.status === "completed"
-                    ? null
-                    : `transport replay suppressed; existing cognition status is ${existing.status}`,
-            memoryProposalFailure: null,
-            onboardingProgressFailure: null,
-            cognitionId,
-            cognitionStatus: existing.status,
-            occurrenceId: accepted.record.occurrence_id,
-            deliveryId: delivery?.delivery_id ?? null,
-            delivery: null,
-            replayed: true,
-        };
-    }
-
-    let deliveryId: string | null = null;
-    const cognitionState = accepted.replayed ? current : state;
-    validateCognitionInvocation(cognitionState, {
-        ...cognitionOptions,
-        surface: surfaceId,
-        cognitionId,
-    });
-    const preparation = cognitionOptions.prepareCognition
-        ? await cognitionOptions.prepareCognition(cognitionState, surfaceId)
-        : await prepareCognition(repositories, cognitionState, {
-              runtimeId: cognitionOptions.runtimeId,
-              principal: cognitionOptions.principal,
-              scope: cognitionOptions.scope,
-              surface: surfaceId,
-              text: cognitionOptions.text,
-              ...(cognitionOptions.purpose === undefined ? {} : { purpose: cognitionOptions.purpose }),
-              ...(cognitionOptions.explainIds === undefined ? {} : { explainIds: cognitionOptions.explainIds }),
-              ...(cognitionOptions.conversationMembership === undefined
-                  ? {}
-                  : { conversationMembership: cognitionOptions.conversationMembership }),
-          });
-    const committed = await runCognitionUntilExpressionCommit(repositories, cognitionState, {
-        ...cognitionOptions,
-        surface: surfaceId,
-        cognitionId,
-        preparation,
-    });
-    let delivery: DeliveryReconciliationResult | null = null;
-    let result: CognitionResult = committed;
-    let postTurnDiagnostics: PostTurnDiagnostics = {
-        memoryProposalFailure: null,
-        onboardingProgressFailure: null,
-    };
-    if (committed.expressionText !== null) {
-        const cognition = findCognition(committed.state, cognitionId);
-        if (cognition.expressionEvidenceId === null)
-            throw new ValidationError("completed cognition is missing expression evidence");
-        const intent = await ledger.createDeliveryIntent({
-            cognitionId,
-            expressionEvidenceId: cognition.expressionEvidenceId,
-            surfaceId: accepted.record.surface_id,
-            destinationId: accepted.record.delivery_destination_id,
-            representationText: committed.expressionText,
-        });
-        deliveryId = intent.delivery_id;
-        if (cognitionOptions.postTurn !== undefined) {
-            postTurnDiagnostics = await cognitionOptions.postTurn(committed.state, cognitionId, preparation);
-        }
-        delivery = await reconcileSurfaceDelivery(repositories, deliveryId, deliver);
-    }
-    const latestState = await store.load();
-    const cognition = findCognition(latestState, cognitionId);
-    return {
-        ...result,
-        ...postTurnDiagnostics,
-        state: latestState,
-        cognitionStatus: cognition.status,
-        occurrenceId: accepted.record.occurrence_id,
-        deliveryId,
-        delivery,
-        replayed: accepted.replayed,
-    };
-}
-
 export async function reconcileSurfaceDelivery(
     repositories: Pick<InteractionRepositories, "state" | "interactions">,
     deliveryId: string,
@@ -775,10 +610,6 @@ async function markCanonicalDeliveryDisplayed(store: InteractionRepositories["st
     const candidate = cloneState(current);
     findCognition(candidate, cognitionId).deliveryStatus = "displayed";
     return store.commit(current.revision, candidate);
-}
-
-function findDeliveryForCognition(ledger: InteractionLedgerDocument, cognitionId: CognitionId) {
-    return ledger.deliveries.find((record) => record.cognitionId === cognitionId) ?? null;
 }
 
 function requireDelivery(ledger: InteractionLedgerDocument, deliveryId: string) {

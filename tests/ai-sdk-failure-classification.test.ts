@@ -8,10 +8,10 @@ import test from "node:test";
 import type { InferenceEvidence } from "../src/ai/cognition.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { findCognition, runCognition } from "../src/runtime/runtime.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 function inferenceEvidenceSink() {
@@ -63,7 +63,7 @@ test("AI SDK provider failure should not be overwritten by a later caller cancel
     });
 
     try {
-        const result = await runCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
+        const result = await executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
             runtimeId: fixture.runtimeId,
             principal: PRINCIPAL,
             scope: SCOPE,

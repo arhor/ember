@@ -12,8 +12,8 @@ discovery_status: current
 
 Issue [#219](https://github.com/arhor/ember/issues/219) adds a repository-owned
 evaluation of the implementation boundaries established by issues #216 through
-#218. The evaluator uses production `runCognition`, canonical state persistence,
-runtime restart, and the durable conversation sidecar. It is evaluation
+#218. The evaluator uses production `EmberApplication.interact`, canonical state
+persistence, explicit application recomposition at marked restarts, and the durable conversation sidecar. It is evaluation
 infrastructure, not a second dialogue selector.
 
 The default fixture covers:
@@ -43,7 +43,7 @@ node --test tests/conversation-evaluation.test.ts
 
 The opt-in live path invokes Codex freshly for every episode. It does not rely on a
 provider conversation or thread for continuity. The runner passes the exact
-`ProviderRequest` produced by `runCognition` to the adapter, preserving the canonical
+`ProviderRequest` produced through the application coordinator to the adapter, preserving the canonical
 cognition ID and request correlation:
 
 ```sh

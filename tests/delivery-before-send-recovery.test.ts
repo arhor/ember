@@ -4,15 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/app/application.ts";
+import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import {
-    InteractionLedgerStore,
-    reconcileSurfaceDelivery,
-    runSurfaceInteraction,
-} from "../src/runtime/interaction-boundary.ts";
+import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../src/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";
@@ -22,38 +18,43 @@ test("restart sends a retained delivery intent that never crossed the external s
     const statePath = join(directory, "ember.json");
     const store = new StateStore(statePath);
     await store.create(initialState(PRINCIPAL));
-    const lease = await store.acquireWriteLease();
     let providerCalls = 0;
-    try {
-        const loaded = await store.load();
-        const started = startRuntime(loaded, PRINCIPAL, SCOPE);
-        const state = await store.commit(loaded.revision, started.state);
+    {
         const ledger = new InteractionLedgerStore(statePath);
-        const repositories = createFileBackedRepositoriesForState(store);
-        const createIntent = repositories.interactions.createDeliveryIntent.bind(repositories.interactions);
-        repositories.interactions.createDeliveryIntent = async (...arguments_) => {
+        const dependencies = composeEmberApplication(
+            {
+                statePath,
+                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
+            },
+            {
+                executor: async () => {
+                    providerCalls += 1;
+                    return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
+                },
+            },
+        );
+        const createIntent = dependencies.repositories.interactions.createDeliveryIntent.bind(
+            dependencies.repositories.interactions,
+        );
+        dependencies.repositories.interactions.createDeliveryIntent = async (...arguments_) => {
             await createIntent(...arguments_);
             throw new Error("simulated process loss after durable intent");
         };
 
         await assert.rejects(
-            runSurfaceInteraction(repositories, state, {
-                runtimeId: started.runtimeId,
-                principal: PRINCIPAL,
-                scope: SCOPE,
-                text: "prepare one durable reply",
-                providerLabel: "fixture-provider",
-                timeoutSeconds: 1,
-                executor: async () => {
-                    providerCalls += 1;
-                    return { contractVersion: 1, reply: "reply retained before send", usedMeaningIds: [] };
+            createEmberApplication(dependencies).interact(
+                {
+                    kind: "message",
+                    principal: PRINCIPAL,
+                    scope: SCOPE,
+                    text: "prepare one durable reply",
+                    surfaceId: "messaging:test",
+                    principalProvenance: "configured_surface_mapping",
+                    externalOccurrence: { occurrenceId: "update-before-send" },
+                    deliveryDestinationId: "chat-before-send",
                 },
-                surfaceId: "messaging:test",
-                principalProvenance: "configured_surface_mapping",
-                externalOccurrence: { occurrenceId: "update-before-send" },
-                deliveryDestinationId: "chat-before-send",
-                deliver: () => assert.fail("transport must not start before the injected process loss"),
-            }),
+                async () => assert.fail("transport must not start before the injected process loss"),
+            ),
             /simulated process loss after durable intent/,
         );
 
@@ -62,8 +63,6 @@ test("restart sends a retained delivery intent that never crossed the external s
         assert.equal(beforeRestart.deliveries.length, 1);
         assert.equal(beforeRestart.deliveries[0]?.representation?.text, "reply retained before send\n");
         assert.deepEqual(beforeRestart.deliveries[0]?.attempts, []);
-    } finally {
-        await store.releaseWriteLease(lease);
     }
 
     try {

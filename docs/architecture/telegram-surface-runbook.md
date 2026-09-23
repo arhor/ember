@@ -277,8 +277,8 @@ because Telegram does not permit `getUpdates` while a webhook owns delivery.
 
 The Bot API preflight proves bot authentication and long-poll availability. It is not
 a substitute for Ember principal policy: when an accepted update is processed, the
-configured principal is resolved against the initialized continuity state before
-`runSurfaceInteraction`; a mismatch fails before provider invocation, interaction
+configured principal is resolved against the initialized continuity state inside
+`EmberApplication.interact`; a mismatch fails before provider invocation, interaction
 acceptance, or delivery.
 
 If this bot was previously configured for webhook delivery and switching it to Ember
@@ -312,18 +312,19 @@ The worker does **not** hold the canonical writer lease while waiting for Telegr
 For each accepted update it:
 
 1. filters to the configured private-chat mapping;
-2. acquires the existing `StateStore` writer lease;
-3. resolves the configured principal against the initialized local principal while
-   starting one short Ember runtime episode;
-4. calls `runSurfaceInteraction` with surface `telegram_bot`, principal provenance
+2. maps the update into the transport-neutral interaction contract with surface
+   `telegram_bot`, principal provenance
    `configured_surface_mapping`, the configured active scope, and stable `update_id`
    correlation;
-5. builds cognition context through the ordinary Ember projection boundary, without
+3. calls `EmberApplication.interact`, which acquires the `StateStore` writer lease,
+   resolves the configured principal and continuity binding, and starts one short
+   Ember runtime episode;
+4. builds cognition context through the ordinary Ember projection boundary, without
    injecting Telegram IDs/history;
-6. sends the committed expression through `sendMessage`;
-7. records Telegram's returned outbound `message_id` as operational delivery evidence;
-8. cleanly stops the short runtime episode; and
-9. releases the writer lease before the next network wait.
+5. sends the committed expression through the supplied `sendMessage` transport;
+6. records Telegram's returned outbound `message_id` as operational delivery evidence;
+7. lets the application cleanly stop the short runtime episode and release the writer
+   lease before the next network wait.
 
 An ignored or unmapped update creates no Ember runtime/cognition occurrence. A mapped
 chat paired with a wrong Ember principal fails before accepted interaction/cognition.

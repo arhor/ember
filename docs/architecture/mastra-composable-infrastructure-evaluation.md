@@ -98,7 +98,8 @@ validated ProviderResult
   { reply, usedMeaningIds, optional operational handle }
 ```
 
-A Mastra-backed cognition adapter should implement this existing contract rather than introduce `Agent` into `src/runtime/runtime.ts`.
+A Mastra-backed cognition adapter should implement this existing contract rather than
+introduce `Agent` into Ember's application-owned cognition execution.
 
 That preserves several current invariants:
 

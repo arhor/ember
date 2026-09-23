@@ -1,12 +1,13 @@
 import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
+import type { RunCognitionOptions } from "../../src/app/cognition-execution.ts";
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type { MemoryProposalGenerator } from "../../src/memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-evaluator.ts";
-import type { RunCognitionOptions } from "../../src/runtime/runtime.ts";
 import type { SetupConfig } from "../../src/surfaces/cli/setup.ts";
 
+import { executeCognition as runCoreCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
@@ -16,7 +17,6 @@ import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { runCognition as runCoreCognition } from "../../src/runtime/runtime.ts";
 import { setupMain } from "../../src/surfaces/cli/setup.ts";
 import { runTelegramSetup } from "../../src/surfaces/telegram/setup.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
@@ -41,7 +41,7 @@ export interface AssertionRecord {
     passed: boolean;
 }
 
-async function runCognition(
+async function executeCognition(
     repositories: ReturnType<typeof createFileBackedRepositoriesForState>,
     state: EmberState,
     options: RunCognitionOptions & {
@@ -304,7 +304,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     state = await store.commit(state.revision, runtime.state);
     const defer = scenarioEpisode(s, "defer");
     state = (
-        await runCognition(
+        await executeCognition(
             createFileBackedRepositoriesForState(store),
             state,
             cognition(runtime.runtimeId, s, defer, projections, { onboarding: "defer" }),
@@ -324,7 +324,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     );
     const learn = scenarioEpisode(s, "learn");
     state = (
-        await runCognition(
+        await executeCognition(
             createFileBackedRepositoriesForState(store),
             state,
             cognition(runtime.runtimeId, s, learn, projections, { memory: true }),
@@ -333,7 +333,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
     const meaning = state.meanings.find((item) => item.slot === "response-style");
     const close = scenarioEpisode(s, "close");
     state = (
-        await runCognition(
+        await executeCognition(
             createFileBackedRepositoriesForState(store),
             state,
             cognition(runtime.runtimeId, s, close, projections, { onboarding: "close" }),
@@ -532,7 +532,7 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
     const started = startRuntime(state, s.principal, s.scope);
     state = await store.commit(state.revision, started.state);
     state = (
-        await runCognition(createFileBackedRepositoriesForState(store), state, {
+        await executeCognition(createFileBackedRepositoriesForState(store), state, {
             runtimeId: started.runtimeId,
             principal: s.principal,
             scope: s.scope,
@@ -607,7 +607,7 @@ async function establishedBundle(s: SetupOnboardingScenario, path: string): Prom
         surface: "local_cli",
         text,
     });
-    const result = await runCognition(repositories, state, {
+    const result = await executeCognition(repositories, state, {
         runtimeId: started.runtimeId,
         principal: s.principal,
         scope: s.scope,

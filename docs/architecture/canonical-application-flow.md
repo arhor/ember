@@ -31,14 +31,19 @@ SDK cognition executor and Claude Code construction behind it. Slice 10b routes 
 Codex cognition through a bounded `LanguageModelV4` bridge beneath that executor. Slice 10c
 does the same for ordinary Cursor cognition. Slice 10d routes memory, onboarding,
 opportunity, and setup control generation through typed SDK calls for Claude Code,
-Codex, and Cursor. The generic process backend retains its explicit compatibility
-protocol, including its post-turn wrappers, until its separate migration in #318.
+Codex, and Cursor. The generic process backend retains its explicit external protocol,
+while ordinary interaction and post-turn orchestration now use the canonical application
+path rather than a provider-oriented compatibility entry point.
 Issue #316 moves per-cognition capability selection out of AI provider configuration:
 application composition owns the selector, runtime resolves it before AI execution, and
 the AI boundary receives only the selected bindings for SDK tool mapping and
 firewall-routed dispatch. Issue #317 moves portable runtime start, clean-stop, and
-interruption-recovery bookkeeping into `core/runtime-episode.ts`; cognition orchestration
-remains temporarily in `runtime/runtime.ts` for the #318 compatibility cleanup.
+interruption-recovery bookkeeping into `core/runtime-episode.ts`. Issue #318 removes the
+legacy `runSurfaceInteraction` and `runCognition` entry points: ordinary surface and
+evaluation traffic enters `createEmberApplication(...).interact(...)`, application-owned
+interaction orchestration lives in `app/application.ts`, focused prepared cognition
+execution lives in `app/cognition-execution.ts`, and `runtime/interaction-boundary.ts`
+retains interaction-ledger and delivery-reconciliation responsibilities.
 
 ## Recommendation and governing constraints
 
@@ -57,9 +62,9 @@ bounded provider adapters; neither their sessions nor SDK agents become Ember.
 
 Three observations constrain the migration:
 
-1. CLI and Telegram already converge at `runSurfaceInteraction`, but each constructs
-   stores, providers, memory/onboarding helpers, and runtime episodes before entering
-   it. This is the application work to consolidate.
+1. CLI and Telegram converge at the transport-neutral `EmberApplication.interact`
+   boundary. The composition root constructs stores, providers, and post-turn helpers;
+   the application owns each interaction runtime episode.
 2. Cognition commits an expression and persists dialogue without transport dependencies.
    The interaction boundary then retains the representation in a durable delivery intent
    before resuming onboarding/memory follow-up; delivery attempts and status updates remain
@@ -195,13 +200,13 @@ or semantic responsibilities currently embedded in the transport file.
 ### Shared accepted-input → expression → delivery path
 
 This expansion applies to both diagrams. Source anchors are
-[runSurfaceInteraction / reconcileSurfaceDelivery](../../src/runtime/interaction-boundary.ts),
+[application interaction coordination](../../src/app/application.ts),
 [runtime episode lifecycle](../../src/core/runtime-episode.ts), and
-[runCognition](../../src/runtime/runtime.ts).
+[prepared cognition execution](../../src/app/cognition-execution.ts).
 
 | Order | Current owner and concrete operation                                                                                                                | Durable/effect boundary                                                                                                                                                                           |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | `runSurfaceInteraction` validates principal/runtime, constructs `InteractionLedgerStore(store.path)`, calls `acceptInbound`                         | `.interactions.json` records stable occurrence, input digest, provenance, destination and planned cognition ID                                                                                    |
+| 1     | `EmberApplication.interact` validates the event and continuity while application interaction coordination calls `acceptInbound`                     | `.interactions.json` records stable occurrence, input digest, provenance, destination and planned cognition ID                                                                                    |
 | 2     | Same function reloads canonical state and looks for that cognition                                                                                  | Existing cognition suppresses rerun; completed expression without intent produces a representation-less intent, never an invented reply                                                           |
 | 3     | Application-owned `prepareCognition` resolves continue/fresh membership through the injected conversation repository                                | `.conversation.json` active Ember trajectory, independent of Telegram chat or provider session                                                                                                    |
 | 4     | The same explicit preparation step selects recent context, loads onboarding work, and calls `buildProjection`                                       | Scope/currentness/bounds enforced by `core`; onboarding lineage/principal validated; canonical selection remains independent of dialogue                                                          |
@@ -414,9 +419,9 @@ or implementation after callers migrate; it does not retain a permanent facade.
 | `surfaces/cli/setup.ts`                                                                                                     | Config, provider probe, restore/create, onboarding activation, run handoff        | `app/bootstrap.ts`, `composition/ember.ts`, `host/setup.ts`; CLI prompts remain                                               | SPLIT       | Shared AI execution for probe                         | #306, #322, #326                                                                      |
 | `surfaces/cli/google-calendar-setup.ts`                                                                                     | Trusted OAuth/configuration CLI flow                                              | CLI prompts + `integrations/google-calendar/setup.ts`                                                                         | SPLIT       | —                                                     | #322, #327; preserve explicit mutations and secret isolation                          |
 | `surfaces/telegram/setup.ts`                                                                                                | Token/mapping/config/service installation/round-trip verification                 | Telegram setup prompts + `host/setup.ts` + host service adapter                                                               | SPLIT       | —                                                     | #322, #324, #325, #327                                                                |
-| `runtime/interaction-boundary.ts`                                                                                           | Ledger schemas/storage, ordinary wrapper, output bridge, recovery                 | `core/interaction.ts`, `persistence/interaction-ledger-store.ts`, `app/interaction.ts`, `app/delivery.ts`                     | SPLIT       | —                                                     | #307, #308, #312; DELETE old `runSurfaceInteraction`/Writable bridge at #318          |
+| `runtime/interaction-boundary.ts`                                                                                           | Ledger schemas/storage and delivery reconciliation                                | Future focused persistence/delivery owners may split this further                                                             | KEEP        | —                                                     | Legacy ordinary wrapper deleted by #318                                               |
 | `core/runtime-episode.ts`                                                                                                   | Portable runtime start, clean-stop, and interruption-recovery semantics           | Implemented focused core lifecycle owner                                                                                      | MOVED       | —                                                     | #317 implemented                                                                      |
-| `runtime/runtime.ts`                                                                                                        | Remaining cognition execution and compatibility orchestration                     | App interaction/conversation/post-turn/delivery                                                                               | SPLIT       | —                                                     | #309, #312–#314/#317 implemented; DELETE `runCognition` compatibility at #318         |
+| `app/cognition-execution.ts`                                                                                                | Focused validation, AI invocation, and expression commit for prepared cognition   | Application interaction and focused non-ordinary callers                                                                      | KEEP        | —                                                     | Legacy runtime prepare-and-execute entry point deleted by #318                        |
 | `runtime/episodic-runtime.ts`                                                                                               | Wake/specialist records, workers, supervisor, unit/config helpers                 | App opportunity/work orchestration; persistence episode records; `host/systemd.ts`                                            | SPLIT       | —                                                     | #317, #322, #324                                                                      |
 | `runtime/process-lifecycle.ts`                                                                                              | Bounded subprocess IO, cancellation/termination observations                      | `host/process-lifecycle.ts`                                                                                                   | MOVE        | —                                                     | #315, #322; shared by inference and specialist execution                              |
 | `providers/contract.ts`                                                                                                     | Compatibility aliases for the explicit generic process protocol and older callers | Implemented Ember contract in `ai/contract.ts`; remove aliases with compatibility cleanup                                     | SPLIT       | —                                                     | #315 implemented; #318 cleanup                                                        |
