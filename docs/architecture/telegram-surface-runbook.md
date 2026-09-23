@@ -1,8 +1,8 @@
 ---
-summary: "Current Telegram surface runbook: Bot API 10.3 long polling via node-telegram-bot-api 2.1.0, principal/scope privacy mapping, restart-safe delivery reconciliation, systemd supervision, and secret-safe configuration."
+summary: "Current Telegram surface runbook: Bot API 10.3 long polling, principal/scope privacy mapping, restart-safe delivery reconciliation, optional systemd or launchd supervision, and secret-safe configuration."
 read_when:
   - "Setting up, running, debugging, or reviewing Ember's Telegram interaction surface"
-  - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior, or Telegram systemd startup"
+  - "Changing Telegram Bot API polling, bot-token handling, principal/chat mapping, disclosure scope, delivery behavior, or optional systemd/launchd startup"
 role: guide
 discovery_status: current
 ---
@@ -429,6 +429,49 @@ journalctl --user -u ember-telegram.service
 
 Do not log raw incoming message text or the bot token as part of normal adapter
 operation.
+
+## macOS LaunchAgent
+
+The same configured `ember-telegram` process can run as a per-user LaunchAgent on
+macOS. Foreground `ember` and `ember-telegram serve` do not require launchd. The
+optional agent is installed at `~/Library/LaunchAgents/dev.ember.telegram.plist` and
+starts in the current user's GUI login session. It is unavailable before login or
+after logout. It uses the same Telegram config path, state path, application
+coordinator, and writer lease as foreground use. The plist holds only the absolute
+Node executable, entry point, config path, and working directory. Keep the bot token
+in the protected `token_file` named by the Telegram config, outside the plist.
+
+Run `ember`, then request Telegram setup to install and verify the service. For an
+existing validated Telegram config, the direct host commands are:
+
+```bash
+npm run surface:telegram -- service-install --config "$HOME/.ember/config/telegram.json"
+npm run surface:telegram -- service-status --config "$HOME/.ember/config/telegram.json"
+npm run surface:telegram -- service-stop --config "$HOME/.ember/config/telegram.json"
+npm run surface:telegram -- service-start --config "$HOME/.ember/config/telegram.json"
+npm run surface:telegram -- service-uninstall --config "$HOME/.ember/config/telegram.json"
+```
+
+`service-install` replaces the plist and bootstraps the login agent; repeat it after
+changing Node, the checkout location, or the Telegram config path. `service-status`
+reports file installation and observed process activity separately. A present plist
+or a successful launchctl command does not prove that Telegram delivery succeeded.
+Use `launchctl print "gui/$(id -u)/dev.ember.telegram"` for host diagnostics and
+Ember's interaction ledger for delivery truth.
+
+If installation stops after writing the plist, inspect both the file and launchctl
+state. To remove a partially installed agent manually, run:
+
+```bash
+launchctl bootout "gui/$(id -u)/dev.ember.telegram"
+rm "$HOME/Library/LaunchAgents/dev.ember.telegram.plist"
+```
+
+An absent-service error from `bootout` is safe to ignore when the agent is already
+unloaded. After cleanup, rerun setup or `service-install` if resident Telegram is
+still wanted. The foreground application needs no LaunchAgent. Timed background wake
+work is not installed by this adapter; host support for that separate capability
+remains unavailable on macOS.
 
 ## Inspection
 

@@ -896,15 +896,14 @@ replay of work-bearing jobs, bounded shutdown, and Telegram transport restart po
 These distinctions are already encoded in ADRs 0007/0008; a process restart still
 enters Ember reconciliation rather than proving that a prior effect failed.
 
-macOS #325 should initially install a per-user LaunchAgent for resident transport,
+macOS #325 installs a per-user LaunchAgent for resident Telegram transport,
 using the same Node entry point and explicit paths/config. User agents are tied to
 the user's login context; do not promise Linux lingering or pre-login availability.
 Apple documents the per-user LaunchAgents location and login lifecycle in
 [Creating Launch Daemons and Agents](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html).
-Wake scheduling is a separate capability: launchd calendar scheduling is recurring,
-so do not label a raw calendar entry an exactly-once Ember wake. If #325 supports
-it, dispatch by durable wake ID, apply the existing consumed/currentness gate, and
-remove/reconcile activation after use; otherwise return `unsupported`. Apple's
+Wake scheduling remains a separate capability: launchd calendar scheduling is recurring,
+so do not label a raw calendar entry an exactly-once Ember wake. The macOS Telegram
+adapter does not install timed wake jobs. Apple's
 [Scheduling Timed Jobs](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/ScheduledJobs.html)
 is supporting host evidence, not Ember missed-wake semantics. Verify command behavior
 on the supported macOS release in #325; no live launchd/systemd operation was run in

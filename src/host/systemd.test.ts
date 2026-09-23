@@ -209,3 +209,29 @@ test("Telegram resident host should read the same definition it installs", async
     assert.equal(paths.length, 2);
     assert.equal(paths[0], paths[1]);
 });
+
+test("Telegram resident host should disable and remove its unit when uninstalling", async () => {
+    // Given
+    const calls: string[][] = [];
+    const removed: string[] = [];
+    const host = new SystemdTelegramResidentHost({
+        command: async (_command, args) => {
+            calls.push(args);
+            return { code: 0, signal: null };
+        },
+        remove: async (path) => {
+            removed.push(path);
+        },
+    });
+
+    // When
+    const result = await host.uninstall();
+
+    // Then
+    assert.equal(result, "confirmed");
+    assert.deepEqual(calls, [
+        ["--user", "disable", "--now", "ember-telegram.service"],
+        ["--user", "daemon-reload"],
+    ]);
+    assert.match(removed[0]!, /ember-telegram\.service$/);
+});

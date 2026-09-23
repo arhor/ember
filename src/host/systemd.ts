@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 
@@ -32,17 +32,20 @@ export class SystemdTelegramResidentHost implements ResidentServiceHost {
     private readonly command: ServiceCommand;
     private readonly read: (path: string) => Promise<string | null>;
     private readonly write: (path: string, content: string, mode: number) => Promise<void>;
+    private readonly remove: (path: string) => Promise<void>;
 
     constructor(
         options: {
             command?: ServiceCommand;
             read?: (path: string) => Promise<string | null>;
             write?: (path: string, content: string, mode: number) => Promise<void>;
+            remove?: (path: string) => Promise<void>;
         } = {},
     ) {
         this.command = options.command ?? runServiceCommand;
         this.read = options.read ?? readResidentUnit;
         this.write = options.write ?? writeResidentUnit;
+        this.remove = options.remove ?? unlink;
     }
 
     render(launch: WorkerLaunch) {
@@ -81,6 +84,17 @@ export class SystemdTelegramResidentHost implements ResidentServiceHost {
 
     async install(content: string): Promise<void> {
         await this.write(this.definitionPath, content, 0o600);
+    }
+
+    async uninstall(): Promise<ServiceActionResult> {
+        const disabled = actionResult(await this.command("systemctl", ["--user", "disable", "--now", this.unitName]));
+        if (disabled !== "confirmed") return disabled;
+        try {
+            await this.remove(this.definitionPath);
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        }
+        return actionResult(await this.command("systemctl", ["--user", "daemon-reload"]));
     }
 
     async activate(wasActive: boolean): Promise<ServiceActionResult> {
