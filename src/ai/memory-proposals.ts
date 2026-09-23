@@ -19,7 +19,7 @@ import {
     MEMORY_PROPOSAL_GENERATION_CONTRACT_VERSION,
     MEMORY_PROPOSAL_GENERATION_MAX_PROPOSALS,
 } from "../memory/memory-proposal-generation.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "./contract.ts";
 
 export const AI_SDK_MEMORY_PROPOSAL_INSTRUCTION = [
     "Inspect only the supplied bounded conversation projection for the continuing agent.",
@@ -126,10 +126,8 @@ export function createAiSdkMemoryProposalGenerator(
 }
 
 function validateTimeout(timeoutSeconds: number) {
-    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
-        throw new ProviderError(
-            `memory proposal timeout must be between 0 and ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`,
-        );
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`memory proposal timeout must be between 0 and ${MAX_AI_TIMEOUT_SECONDS} seconds`);
 }
 
 function translateFailure(error: unknown, signal?: AbortSignal): ProviderError | ValidationError {

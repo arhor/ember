@@ -21,8 +21,8 @@ import type { CognitionOpportunityDecision, MeaningId } from "../core/model.ts";
 
 import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "../agency/cognition-opportunity.ts";
 import { ProviderError, ValidationError } from "../core/errors.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
 import { exactKeys, isObject } from "../util.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "./contract.ts";
 
 interface AiSdkOpportunityOutput {
     contractVersion: 1;
@@ -142,10 +142,8 @@ function validateTimeout(timeoutSeconds: number) {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
         throw new ProviderError("opportunity evaluator timeout must be a positive finite number");
     }
-    if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS) {
-        throw new ProviderError(
-            `opportunity evaluator timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`,
-        );
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS) {
+        throw new ProviderError(`opportunity evaluator timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
     }
 }
 

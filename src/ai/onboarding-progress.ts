@@ -18,7 +18,7 @@ import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluat
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { validateOnboardingProgressDecision } from "../core/onboarding-work.ts";
 import { ONBOARDING_PROGRESS_INSTRUCTION } from "../onboarding/progress-evaluator.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../providers/contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "./contract.ts";
 
 const onboardingProgressOutput = Output.object({
     schema: jsonSchema<OnboardingProgressDecision>({
@@ -73,10 +73,8 @@ export function createAiSdkOnboardingProgressEvaluator(
 }
 
 function validateTimeout(timeoutSeconds: number) {
-    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
-        throw new ProviderError(
-            `onboarding progress timeout must be between 0 and ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`,
-        );
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`onboarding progress timeout must be between 0 and ${MAX_AI_TIMEOUT_SECONDS} seconds`);
 }
 
 function translateFailure(error: unknown): ProviderError | ValidationError {
