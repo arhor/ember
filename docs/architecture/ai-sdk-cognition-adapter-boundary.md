@@ -73,10 +73,10 @@ For capability semantics, see
 
 The SDK call remains enclosed by Ember-owned boundaries.
 
-Before invocation, `runCognition` builds the projection and resolves the
-application-composed capability selector. The adapter receives the already-bounded
-`ProviderRequest` plus only those selected bindings in `AiExecutionOptions`, and sends
-the model only:
+Before invocation, the application cognition-preparation boundary builds the projection
+and resolves the application-composed capability selector. The adapter receives the
+already-bounded `ProviderRequest` plus only those selected bindings in
+`AiExecutionOptions`, and sends the model only:
 
 - that selected `Projection`;
 - the current input object; and
@@ -245,12 +245,12 @@ persistence is required because AI SDK owns none of those concepts here.
 
 ## Deterministic evidence
 
-`tests/ai-sdk-provider.test.ts` exercises direct structured cognition through
-production `runCognition`: projection disclosure, final semantic validation, malformed
-structured output, standard-code timeout classification, cancellation before and during
-model work, API-error redaction/classification, no implicit model retry, lifecycle
-provider/model/finish/warning/usage evidence, and exclusion of prompts, raw provider
-payloads, and SDK metadata from both evidence and canonical state.
+`tests/ai-sdk-provider.test.ts` exercises direct structured cognition through the
+production application cognition path: projection disclosure, final semantic validation,
+malformed structured output, standard-code timeout classification, cancellation before
+and during model work, API-error redaction/classification, no implicit model retry,
+lifecycle provider/model/finish/warning/usage evidence, and exclusion of prompts, raw
+provider payloads, and SDK metadata from both evidence and canonical state.
 
 `tests/ai-sdk-capabilities.test.ts` extends that oracle through the real AI SDK tool
 loop. It covers selected versus unselected capability visibility, permitted execution,

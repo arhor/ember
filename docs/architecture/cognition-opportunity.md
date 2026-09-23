@@ -39,15 +39,15 @@ The central invariant is:
 
 ## Why the current ordinary cognition path cannot represent wake-up directly
 
-The current production path is intentionally user-input shaped:
+The current production application interaction path is intentionally user-input shaped:
 
-- `runCognition` accepts required `text`;
+- `EmberApplication.interact` accepts required `text`;
 - it records that text as `userEvidence` before invoking a provider;
 - `ProviderRequest` requires `input.text`; and
 - `Projection` currently carries `current_input` as a string.
 
 That is correct for ordinary interactive cognition, but it means a wake-up must not
-be implemented by calling `runCognition` with an empty string or a synthetic prompt
+be implemented by calling `EmberApplication.interact` with an empty string or a synthetic prompt
 such as `you may think now`. Either representation would make a non-user occurrence
 look like user evidence and risk letting the trigger text determine the topic.
 

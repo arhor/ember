@@ -224,8 +224,8 @@ URLs) is not inferred from ignored user configuration and must likewise be
 supplied explicitly through `--codex-arg` and validated with the installed
 runtime before use.
 
-Ordinary input now flows through Ember's current bounded projection and
-`runCognition` reintegration path. `--provider codex` defaults to the `codex`
+Ordinary input now flows through `EmberApplication.interact`, including Ember's bounded
+projection and application-owned cognition execution. `--provider codex` defaults to the `codex`
 executable on `PATH`; `--codex-command PATH` can select another installed binary.
 The production adapter starts a fresh ephemeral Codex thread for every turn in a
 new temporary cwd containing only Ember's generated result schema. It ignores

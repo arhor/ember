@@ -166,7 +166,7 @@ small: the purpose is to exercise the real execution firewall without adding she
 filesystem, network, MCP, or product behavior.
 
 `tests/ai-sdk-capabilities.test.ts` uses AI SDK's `MockLanguageModelV3` through the
-production `createAiSdkCognitionExecutor` and `runCognition` path. It proves that:
+production `createAiSdkCognitionExecutor` and application cognition path. It proves that:
 
 - only Ember-selected capabilities are model-visible;
 - a selected capability can still be denied by Ember authority without executing;
