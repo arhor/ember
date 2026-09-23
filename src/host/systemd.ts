@@ -70,8 +70,16 @@ export class SystemdUserBackgroundHost implements BackgroundHost {
 
     async stop(jobId: string) {
         validateJobId(jobId);
-        await this.run(this.config.systemctl_command, ["--user", "stop", `${jobId}.timer`, `${jobId}.service`]);
+        await Promise.all([this.stopUnit(`${jobId}.timer`), this.stopUnit(`${jobId}.service`)]);
         return observation(jobId, "stopped");
+    }
+
+    private async stopUnit(unitName: string) {
+        const result = await this.runner(this.config.systemctl_command, ["--user", "stop", unitName]);
+        if (result.code !== 0 && !isMissingUnitResult(result))
+            throw new Error(
+                `${this.config.systemctl_command} failed with ${result.code ?? result.signal ?? "unknown"}: ${result.stderr.trim()}`,
+            );
     }
 
     private async inspectUnit(
@@ -161,6 +169,12 @@ function jobCommand(job: WorkerLaunch) {
 
 function observation(jobId: string, state: HostObservation["state"]): HostObservation {
     return { jobId, state, observedAt: new Date().toISOString() };
+}
+
+function isMissingUnitResult(result: CommandResult) {
+    return /not loaded|not found|not-found|could not be found|does not exist/i.test(
+        `${result.stdout}\n${result.stderr}`,
+    );
 }
 
 function validateLaunch(job: WorkerLaunch) {

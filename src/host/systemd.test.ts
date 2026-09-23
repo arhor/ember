@@ -47,6 +47,35 @@ test("systemd inspection maps timer and service units back to one logical host s
     assert.deepEqual(inspected.sort(), [`${JOB.jobId}.service`, `${JOB.jobId}.timer`].sort());
 });
 
+test("systemd stop treats an absent timer as benign for a service-only job", async () => {
+    const stopped: string[] = [];
+    const runner: CommandRunner = async (_command, arguments_) => {
+        const unit = arguments_.at(-1)!;
+        stopped.push(unit);
+        return unit.endsWith(".timer")
+            ? { code: 5, signal: null, stdout: "", stderr: `Unit ${unit} not loaded.` }
+            : { code: 0, signal: null, stdout: "", stderr: "" };
+    };
+    const host = new SystemdUserBackgroundHost(CONFIG, runner);
+
+    const observation = await host.stop(JOB.jobId);
+
+    assert.equal(observation.state, "stopped");
+    assert.deepEqual(stopped.sort(), [`${JOB.jobId}.service`, `${JOB.jobId}.timer`].sort());
+});
+
+test("systemd stop preserves a non-absence control failure", async () => {
+    const runner: CommandRunner = async (_command, arguments_) => ({
+        code: arguments_.at(-1)!.endsWith(".service") ? 1 : 0,
+        signal: null,
+        stdout: "",
+        stderr: arguments_.at(-1)!.endsWith(".service") ? "Access denied" : "",
+    });
+    const host = new SystemdUserBackgroundHost(CONFIG, runner);
+
+    await assert.rejects(host.stop(JOB.jobId), /Access denied/);
+});
+
 test("systemd service rendering keeps host syntax out of the runtime", () => {
     const unit = renderSystemdService({
         description: "Ember reconciliation",
