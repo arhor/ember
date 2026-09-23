@@ -6,12 +6,13 @@ import { isAbsolute } from "node:path";
 
 import type { ContactAttentionDecisionRecord } from "../../agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "../../agency/proactive-contact-store.ts";
-import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
-import type { EmberApplicationDependencies } from "../../composition/ember.ts";
+import type { EmberApplicationDependencies, EmberCompositionOverrides } from "../../composition/ember.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
-import type { MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
+
+type SurfaceExecutor = NonNullable<EmberCompositionOverrides["executor"]>;
+type SurfaceMemoryProposalGenerator = NonNullable<EmberCompositionOverrides["memoryProposalGenerator"]>;
+type SurfaceOnboardingProgressEvaluator = NonNullable<EmberCompositionOverrides["onboardingProgressEvaluator"]>;
 
 import {
     decideConfiguredProactiveContactHandoff,
@@ -252,10 +253,10 @@ export async function processTelegramUpdate(
         dependencies: suppliedDependencies,
         application: suppliedApplication,
     }: {
-        executor?: AiExecutor | undefined;
-        memoryProposalGenerator?: MemoryProposalGenerator | undefined;
+        executor?: SurfaceExecutor | undefined;
+        memoryProposalGenerator?: SurfaceMemoryProposalGenerator | undefined;
         memoryProposalProviderLabel?: string | undefined;
-        onboardingProgressEvaluator?: OnboardingProgressEvaluator | undefined;
+        onboardingProgressEvaluator?: SurfaceOnboardingProgressEvaluator | undefined;
         signal?: AbortSignal | undefined;
         dependencies?: EmberApplicationDependencies | undefined;
         application?: EmberApplication | undefined;
@@ -529,7 +530,7 @@ export async function runTelegramPolling(
         revalidateProactiveContact,
         dependencies: suppliedDependencies,
     }: {
-        executor?: AiExecutor;
+        executor?: SurfaceExecutor;
         signal?: AbortSignal;
         onOutcome?: (outcome: TelegramUpdateOutcome) => void;
         maxAcceptedUpdates?: number;
@@ -733,10 +734,10 @@ function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): Telegram
 function dependenciesForTelegram(
     config: TelegramSurfaceConfig,
     overrides: {
-        executor?: AiExecutor;
-        memoryProposalGenerator?: MemoryProposalGenerator;
+        executor?: SurfaceExecutor;
+        memoryProposalGenerator?: SurfaceMemoryProposalGenerator;
         memoryProposalProviderLabel?: string;
-        onboardingProgressEvaluator?: OnboardingProgressEvaluator;
+        onboardingProgressEvaluator?: SurfaceOnboardingProgressEvaluator;
     } = {},
 ) {
     return composeEmberApplication(
@@ -760,10 +761,10 @@ function dependenciesForTelegram(
 function dependenciesForTelegramInteraction(
     config: TelegramSurfaceConfig,
     overrides: {
-        executor: AiExecutor | undefined;
-        memoryProposalGenerator: MemoryProposalGenerator | undefined;
+        executor: SurfaceExecutor | undefined;
+        memoryProposalGenerator: SurfaceMemoryProposalGenerator | undefined;
         memoryProposalProviderLabel: string | undefined;
-        onboardingProgressEvaluator: OnboardingProgressEvaluator | undefined;
+        onboardingProgressEvaluator: SurfaceOnboardingProgressEvaluator | undefined;
         suppliedDependencies: EmberApplicationDependencies | undefined;
     },
 ): EmberApplicationDependencies {

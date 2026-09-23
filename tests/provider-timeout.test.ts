@@ -5,11 +5,11 @@ import test from "node:test";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createProcessLanguageModel } from "../src/ai/process.ts";
+import { invokeProvider } from "../src/ai/providers/process.ts";
 import { ProviderError, ValidationError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../src/providers/contract.ts";
-import { invokeProvider } from "../src/providers/process.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 

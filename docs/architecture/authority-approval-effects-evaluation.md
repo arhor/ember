@@ -19,7 +19,7 @@ adapter contracts with an isolated deterministic external substitute.
 ## Multi-episode objective composition
 
 Issue [#238](https://github.com/arhor/ember/issues/238) extends the deterministic
-evidence with `src/objectives/objective-action.test.ts`. The scenario creates an
+evidence with `src/app/objective-action.test.ts`. The scenario creates an
 objective action proposal in one bounded episode, persists an exact approval on a
 different surface, reconstructs both ledgers in a fresh process/provider episode,
 revalidates objective currentness before the Google Calendar effect, and

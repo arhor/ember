@@ -1,16 +1,21 @@
 import { basename } from "node:path";
 
-import type { PipedProcessSpawn } from "../runtime/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderInvoker, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { PipedProcessSpawn } from "../../host/process-lifecycle.ts";
+import type {
+    ProviderInvocationOptions,
+    ProviderInvoker,
+    ProviderRequest,
+    ProviderResult,
+} from "../../providers/contract.ts";
 
-import { ProviderError } from "../core/errors.ts";
-import { isTimeoutAbort, NodePipedProcessSpawn, runProcess } from "../runtime/process-lifecycle.ts";
+import { ProviderError } from "../../core/errors.ts";
+import { isTimeoutAbort, NodePipedProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
 import {
     MAX_PROVIDER_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
     MAX_STDOUT_BYTES,
     validateProviderResult,
-} from "./contract.ts";
+} from "../../providers/contract.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 

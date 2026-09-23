@@ -3,17 +3,17 @@ import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { CapabilityJsonValue } from "./execution.ts";
+import type { CapabilityJsonValue } from "../../capabilities/execution.ts";
 
-import { tempDir } from "../../tests/support.ts";
-import { actionProposalConfirmation, ActionProposalStore } from "./action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "./execution.ts";
+import { tempDir } from "../../../tests/support.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
     createGoogleCalendarEventProposalCapability,
     googleCalendarRecoveryBinding,
-} from "./google-calendar-create.ts";
+} from "./create.ts";
 
 const config = {
     config_version: 1 as const,

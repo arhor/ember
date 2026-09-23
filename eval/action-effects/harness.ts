@@ -5,15 +5,15 @@ import type { CapabilityExecutionEvidence } from "../../src/capabilities/executi
 
 import { actionProposalConfirmation, ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
+import { ValidationError } from "../../src/core/errors.ts";
 import {
     createApprovedGoogleCalendarEventCapability,
     selectApprovedGoogleCalendarEventCapability,
-} from "../../src/capabilities/google-calendar-create.ts";
+} from "../../src/integrations/google-calendar/create.ts";
 import {
     createGoogleCalendarCapability,
     selectGoogleCalendarCapability,
-} from "../../src/capabilities/google-calendar.ts";
-import { ValidationError } from "../../src/core/errors.ts";
+} from "../../src/integrations/google-calendar/read.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 const CASES = [

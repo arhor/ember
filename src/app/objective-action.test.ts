@@ -11,8 +11,8 @@ import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts"
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
-} from "../capabilities/google-calendar-create.ts";
-import { DurableObjectiveStore } from "./durable-objective.ts";
+} from "../integrations/google-calendar/create.ts";
+import { DurableObjectiveStore } from "../objectives/durable-objective.ts";
 import { ObjectiveActionCoordinator } from "./objective-action.ts";
 
 const config = {

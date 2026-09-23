@@ -44,6 +44,10 @@ evaluation traffic enters `createEmberApplication(...).interact(...)`, applicati
 interaction orchestration lives in `app/application.ts`, focused prepared cognition
 execution lives in `app/cognition-execution.ts`, and `runtime/interaction-boundary.ts`
 retains interaction-ledger and delivery-reconciliation responsibilities.
+Issue #319 moves portable process execution to `host/`, Google Calendar and MCP adapters
+to `integrations/`, the generic process bridge beneath `ai/providers/`, objective/action
+coordination to `app/`, and evaluation-only Codex argument evidence to `eval/`. Its
+zero-dependency import checker enforces the highest-value inward dependency rules in CI.
 
 ## Recommendation and governing constraints
 
@@ -799,8 +803,13 @@ a superclass for Codex/Cursor. Its supported schema profile must be explicit; ne
 control fixtures use SDK test models instead of assuming the legacy process protocol
 supports arbitrary output contracts.
 
-#319 should extend the repository's static boundary checks (or add a small import
-inspection test) with at least these assertions, covering dynamic and type imports:
+`scripts/check-dependencies.ts`, run by `npm run check`, inspects static, type-only, and
+dynamic imports. It currently enforces the high-value rules that apply to the migrated
+tree: core cannot import concrete surfaces; conversational surfaces cannot import AI SDK
+infrastructure or concrete stores; semantic modules cannot import AI SDK code; AI
+infrastructure cannot import canonical persistence or semantic mutation; and application
+orchestration cannot import concrete surfaces. The following stricter end-state rules
+remain the direction for later mixed-file splits:
 
 - `app/**` cannot import concrete `surfaces/**`, `host/systemd.ts`, `host/launchd.ts`,
   `persistence/*-store.ts`, `ai`, `@ai-sdk/*`, `node:child_process`, or `node:fs*`.

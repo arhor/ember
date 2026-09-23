@@ -9,7 +9,7 @@ import type { HarnessProvider } from "./harness.ts";
 
 import { invokeCodexProvider } from "../../src/providers/codex.ts";
 import { invokeCursorProvider } from "../../src/providers/cursor.ts";
-import { codexArgumentEvidence } from "../../src/providers/evidence.ts";
+import { codexArgumentEvidence } from "./codex-argument-evidence.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));
