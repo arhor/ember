@@ -1,5 +1,5 @@
 ---
-summary: "Issue #304 research proposal for one Ember application coordinator: serialized interaction/delivery, explicit persistence and specialist ownership, AI SDK V4 bridges, portable host boundaries, and the #303 migration sequence."
+summary: "Issue #304 application-flow proposal and #303 migration record: serialized interaction/delivery, explicit ownership, AI SDK V4 bridges, and portable foreground entry."
 read_when:
   - "Implementing or reviewing the application-flow simplification in epic #303"
   - "Moving interaction, delivery, provider, memory, onboarding, or persistence orchestration out of surfaces and runtime"
@@ -73,10 +73,10 @@ Three observations constrain the migration:
    The interaction boundary then retains the representation in a durable delivery intent
    before resuming onboarding/memory follow-up; delivery attempts and status updates remain
    owned by the delivery boundary.
-3. Foreground `ember run` already works without systemd. Plain `ember` currently
-   fails with “a command is required”; configured run requires prior setup. The
-   portability work concerns bootstrap UX and optional service machinery, not removal
-   of a daemon that ordinary CLI cognition currently requires.
+3. Foreground `ember run` already worked without systemd at the time of the #304
+   investigation. Issue #323 adds plain `ember` after verified default setup: it
+   selects the configured lineage and relationship scope, then uses the same application
+   coordinator. The CLI loads Telegram service setup only on an explicit setup request.
 
 Preserve the [semantic ADR baseline](decisions/README.md),
 [conversation continuity](cross-surface-conversation-continuity.md),

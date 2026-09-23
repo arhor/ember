@@ -169,6 +169,11 @@ export type ConfiguredRunArgs = {
     scope: string;
 };
 
+export type DefaultRunArgs = {
+    command: typeof Commands.RUN;
+    mode: "default";
+};
+
 export type ExplicitRunArgs = {
     command: typeof Commands.RUN;
     mode: "explicit";
@@ -181,7 +186,7 @@ export type ExplicitRunArgs = {
     providerTimeoutSeconds: number;
 };
 
-export type RunArgs = ExplicitRunArgs | ConfiguredRunArgs;
+export type RunArgs = ExplicitRunArgs | ConfiguredRunArgs | DefaultRunArgs;
 
 export type InspectArgs = {
     command: typeof Commands.INSPECT;
