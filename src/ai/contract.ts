@@ -22,6 +22,7 @@ export interface AiExecutionResult {
     contractVersion: 1;
     reply: string;
     usedMeaningIds: MeaningId[];
+    setupIntent?: "telegram" | null;
     operational?: {
         externalThreadId: string;
     };
@@ -58,9 +59,14 @@ export function validateAiExecutionResult(
 ): asserts result is AiExecutionResult {
     if (!isObject(result)) throw new ProviderError("provider result must be an object");
     const requiredFields = ["contractVersion", "reply", "usedMeaningIds"];
-    const allowedFields = [...requiredFields, "operational"];
-    if (!exactKeys(result, requiredFields) && !exactKeys(result, allowedFields))
+    const allowedFields = [...requiredFields, "operational", "setupIntent"];
+    if (
+        !Object.keys(result).every((key) => allowedFields.includes(key)) ||
+        !requiredFields.every((key) => key in result)
+    )
         throw new ProviderError("provider result contains missing or unsupported fields");
+    if ("setupIntent" in result && result.setupIntent !== null && result.setupIntent !== "telegram")
+        throw new ProviderError("provider setup intent is invalid");
     if (!Number.isSafeInteger(result.contractVersion) || result.contractVersion !== 1)
         throw new ProviderError("provider result contractVersion is unsupported");
     if (typeof result.reply !== "string" || !result.reply.trim())

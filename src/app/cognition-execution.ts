@@ -41,6 +41,7 @@ export interface RunCognitionOptions {
     signal?: AbortSignal | undefined;
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
+    trustedHostSetupAvailable?: boolean;
     conversationMembership?: ConversationMembershipIntent;
     cognitionId?: CognitionId;
     preparation?: PreparedCognition;
@@ -83,6 +84,7 @@ export interface CognitionResult {
     providerFailure: string | null;
     cognitionId: CognitionId;
     expressionText: string | null;
+    setupIntent?: "telegram" | null;
 }
 
 export type CommittedCognitionResult = CognitionResult;
@@ -105,6 +107,7 @@ export async function executePreparedCognition(
         signal,
         purpose = "ordinary",
         explainIds = [],
+        trustedHostSetupAvailable = false,
         conversationMembership,
         cognitionId: requestedCognitionId,
         preparation: suppliedPreparation,
@@ -249,15 +252,17 @@ export async function executePreparedCognition(
     });
     findRuntime(completed, runtimeId).lastDurableObservationAt = at;
     state = await store.commit(current.revision, completed);
+    const expressionContent = `${result.reply}${result.setupIntent === "telegram" && !trustedHostSetupAvailable ? "\nTo continue, open Ember on the trusted local host and ask to set up Telegram there. Enter the bot token locally, never in chat." : ""}`;
     await conversationStore.recordCommittedExpression({
         cognition_id: cognitionId,
         expression_evidence_id: expressionId,
         expression_occurred_at: expression.occurredAt,
-        expression_content: result.reply,
+        expression_content: expressionContent,
     });
-    const outputText = `${result.reply}\n`;
+    const outputText = `${expressionContent}\n`;
     return {
         state,
+        ...(result.setupIntent === undefined ? {} : { setupIntent: result.setupIntent }),
         providerFailure: null,
         cognitionId,
         expressionText: outputText,

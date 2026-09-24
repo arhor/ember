@@ -117,7 +117,9 @@ and are not automatically projected into cognition.
 
 ## Bot setup
 
-For configured Ember conversation, enter the literal local command `:setup telegram`.
+In ordinary Ember conversation, ask to connect Telegram. Cognition may propose a typed
+setup handoff; the local CLI asks for a separate `yes` before opening the trusted-host wizard.
+From Telegram, continue on the trusted local host; never send a bot token in chat.
 The trusted-host wizard explains each mutation, reads the BotFather token through masked
 TTY input, discovers a private chat using a one-time displayed code, and asks before mapping,
 replacing drifted files, installing the unit, or starting the service. Discovery is bounded

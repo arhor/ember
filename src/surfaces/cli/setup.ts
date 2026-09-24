@@ -145,13 +145,30 @@ async function runConfigured(
                 ? {}
                 : { expectedContinuityBinding: config.expectedContinuityBinding }),
             ...(lines === undefined ? {} : { lines }),
-            configuredSetupHandoff: async () => {
+            trustedHostSetup: async (request) => {
+                if (
+                    request.intent !== "telegram" ||
+                    request.principal !== config.principal ||
+                    request.scope !== config.scope ||
+                    !request.proposalOccurrenceId ||
+                    request.confirmedBy.principal !== config.principal ||
+                    request.confirmedBy.provenance !== "explicit_local_prompt" ||
+                    request.confirmedBy.response !== "yes"
+                )
+                    throw new ValidationError("Telegram setup requires attributable local confirmation");
                 const { runTelegramSetup } = await import("../telegram/setup.ts");
                 const { telegramResidentHost } = await import("../../host/telegram-resident-host.ts");
                 const setup = await loadSetupConfig(args.mode === "default" ? defaultSetupConfigPath() : args.config);
                 if (!setup) throw new ValidationError("setup configuration is unavailable");
+                let residentHost;
+                try {
+                    residentHost = await telegramResidentHost();
+                } catch (error) {
+                    if (error instanceof ValidationError) return { status: "unsupported_host" };
+                    throw error;
+                }
                 return await runTelegramSetup({ setup, scope: config.scope }, io, {
-                    residentHost: await telegramResidentHost(),
+                    residentHost,
                 });
             },
         },
