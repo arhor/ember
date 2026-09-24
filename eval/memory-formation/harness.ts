@@ -7,7 +7,7 @@ import type {
     MemoryProposalGenerator,
     MemoryProposalGenerationRequest,
 } from "../../src/memory/memory-proposal-generation.ts";
-import type { ProviderRequest } from "../../src/providers/contract.ts";
+import type { AiExecutionRequest } from "../../src/ai/contract.ts";
 
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
@@ -113,7 +113,7 @@ export async function runMemoryFormationScenario(
                 scope: scenario.ember.scope,
                 text: episode.input,
                 providerLabel: "memory-formation-evaluation-provider",
-                executor: async (request: ProviderRequest) => ({
+                executor: async (request: AiExecutionRequest) => ({
                     contractVersion: 1 as const,
                     reply: "Acknowledged.",
                     usedMeaningIds: request.projection.selection.meaning_ids,
