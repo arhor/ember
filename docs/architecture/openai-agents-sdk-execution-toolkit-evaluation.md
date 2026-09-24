@@ -1,14 +1,18 @@
 ---
-summary: "Issue #179 evaluation of OpenAI Agents SDK JS/TS as a replaceable bounded agent-loop, tool, approval, session, MCP, tracing, and testing toolkit beneath Ember-owned semantics."
+summary: "Historical issue #179 evaluation of OpenAI Agents SDK JS/TS against Ember's pre-adoption provider contract and semantic boundaries."
 read_when:
-  - "Considering OpenAI Agents SDK JS/TS for bounded cognition loops, tools, approvals, sessions, MCP, tracing, retries, or testing in Ember"
-  - "Comparing lightweight agent runtimes beneath Ember-owned identity, continuity, memory, authority, and delegation semantics"
-  - "Reviewing OpenAI Agents SDK type leakage, persisted RunState/session lock-in, provider neutrality, or replaceability"
+  - "Tracing the pre-adoption OpenAI Agents SDK comparison and its dated runner assumptions"
+  - "Revisiting historical evidence about SDK sessions, RunState, type leakage, or replaceability"
 role: design
-discovery_status: current
+discovery_status: historical
 ---
 
 # OpenAI Agents SDK JS/TS Execution Toolkit Evaluation
+
+> Historical evaluation from issue #179. References to `ProviderRequest`,
+> `ProviderResult`, and `ProviderInvoker` describe the former contract. Current
+> production ownership is documented in [Canonical Ember Application Flow](canonical-application-flow.md)
+> and [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md).
 
 ## Decision
 

@@ -150,27 +150,10 @@ Current architecture material:
 - [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
   Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
-- [Mastra Composable Infrastructure Evaluation](mastra-composable-infrastructure-evaluation.md)
-  evaluates issue #176's candidate model routing, tools, MCP, workflows, memory,
-  storage, delegation, observability, and eval primitives as independently
-  replaceable mechanics beneath Ember-owned semantic boundaries.
 - [LangGraph.js Durable Execution Evaluation](langgraph-durable-execution-evaluation.md)
   evaluates issue #177's Functional and Graph APIs, checkpointing, replay,
   interrupt/resume, persistence, delegation, and runtime mechanics as a replaceable
   durable-execution layer beneath Ember-owned continuity and canonical state.
-- [Vercel AI SDK Modular Cognition Evaluation](vercel-ai-sdk-modular-cognition-evaluation.md)
-  evaluates issue #178's model/provider abstraction, structured output, streaming,
-  tools, approvals, MCP, telemetry, testing, and agent-loop mechanics as replaceable
-  cognition infrastructure beneath Ember-owned semantics.
-- [OpenAI Agents SDK JS/TS Execution Toolkit Evaluation](openai-agents-sdk-execution-toolkit-evaluation.md)
-  evaluates issue #179's bounded runner, model/provider abstraction, tools, handoffs,
-  sessions, approvals, MCP, retries, tracing, streaming, and deterministic testing as
-  replaceable execution mechanics beneath Ember-owned semantics.
-- [Composable Agent Infrastructure Adoption Strategy](composable-agent-infrastructure-strategy.md)
-  synthesizes issues #176-#180 into a single-primary-SDK strategy: preserve
-  Ember-owned semantics and current custom runtime, prefer Vercel AI SDK as the
-  primary reusable toolkit, and add LangGraph.js, OpenAI Agents SDK, or Mastra only
-  when an evidence-backed capability gap justifies the extra integration surface.
 - [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md) records the
   validation, foreground CLI, restart probe, lock recovery, and optional
   live-provider smoke procedure for that executable experiment.
@@ -198,6 +181,17 @@ Current architecture material:
 
 Historical material:
 
+- [Composable Agent Infrastructure Adoption Strategy](composable-agent-infrastructure-strategy.md)
+  preserves issue #180's pre-adoption comparison and staged AI SDK plan; the
+  implemented production path is documented above.
+- [Vercel AI SDK Modular Cognition Evaluation](vercel-ai-sdk-modular-cognition-evaluation.md)
+  preserves issue #178's pre-adoption evaluation, superseded by the current
+  AI SDK cognition boundary.
+- [Mastra Composable Infrastructure Evaluation](mastra-composable-infrastructure-evaluation.md)
+  and [OpenAI Agents SDK JS/TS Execution Toolkit Evaluation](openai-agents-sdk-execution-toolkit-evaluation.md)
+  preserve the dated alternatives considered before AI SDK adoption.
+- [External Agent Runtime Spike](external-agent-runtime-spike.md) preserves issue
+  #44's pre-production CLI experiments and original provider contract.
 - [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md) records
   the pre-#303 provider-oriented execution seam and is superseded by the current AI SDK
   cognition boundary.

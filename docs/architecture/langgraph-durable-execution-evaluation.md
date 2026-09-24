@@ -58,7 +58,7 @@ This evaluation was performed on **2026-09-07** against:
   and the current systemd-supervised episodic runtime;
 - the current canonical `StateStore`, including revision, writer-lease, and
   `DurabilityUncertain` behavior;
-- the current `ProviderInvoker` seam and specialist currentness/reintegration rules;
+- the then-current `ProviderInvoker` seam (now `AiExecutor`) and specialist currentness/reintegration rules;
 - stable `@langchain/langgraph@1.4.14`; repository `main` was already on
   `1.4.15-rc.0` during this review;
 - the current first-party LangGraph JavaScript documentation and source linked in

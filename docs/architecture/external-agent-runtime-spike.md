@@ -1,15 +1,17 @@
 ---
-summary: "Completed issue #44 spike evaluating subscription-backed Codex, Claude Code, and Cursor runtimes and proving a bounded Ember-to-Codex cognition round-trip."
+summary: "Historical issue #44 spike evidence for subscription-backed Codex, Claude Code, and Cursor runtimes before the production AI SDK bridges."
 read_when:
-  - "Investigating or implementing issue #44 external agent runtime integration"
-  - "Reviewing the evidence behind issue #46's production Codex cognition backend"
-  - "Comparing Codex, Claude Code, or Cursor as a live cognition or specialist runtime for Ember"
-  - "Designing a replaceable boundary between Ember cognition and an already-authenticated local agent runtime"
+  - "Tracing the original issue #44 runtime probes and pre-production Codex round-trip"
+  - "Reviewing historical evidence behind the later Codex, Cursor, and Claude Code integrations"
 role: design
-discovery_status: current
+discovery_status: historical
 ---
 
 # External agent runtime spike result
+
+> Historical spike evidence. The `ProviderRequest` / `ProviderResult` experiment
+> predates the current [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md)
+> and [Canonical Ember Application Flow](canonical-application-flow.md).
 
 ## Status and conclusion
 

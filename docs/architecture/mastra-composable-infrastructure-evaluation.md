@@ -1,14 +1,18 @@
 ---
-summary: "Issue #176 evaluation of Mastra as a set of replaceable TypeScript infrastructure primitives beneath Ember-owned cognition, capability, memory, delegation, persistence, and runtime semantics."
+summary: "Historical issue #176 evaluation of Mastra primitives against Ember's pre-adoption provider contract and semantic boundaries."
 read_when:
-  - "Considering Mastra for model routing, tools, MCP, workflows, memory, observability, evals, or storage in Ember"
-  - "Comparing agent frameworks as replaceable infrastructure beneath Ember-owned semantics"
-  - "Reviewing which Mastra state may remain operational and disposable versus which state must stay canonical in Ember"
+  - "Tracing the pre-adoption Mastra comparison and its dated model-routing or workflow assumptions"
+  - "Revisiting historical evidence for Mastra primitives beneath Ember-owned semantics"
 role: design
-discovery_status: current
+discovery_status: historical
 ---
 
 # Mastra Composable Infrastructure Evaluation
+
+> Historical evaluation from issue #176. References to `ProviderRequest`,
+> `ProviderResult`, and `ProviderInvoker` describe the former contract. Current
+> production ownership is documented in [Canonical Ember Application Flow](canonical-application-flow.md)
+> and [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md).
 
 ## Decision
 

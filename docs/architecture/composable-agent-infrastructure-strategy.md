@@ -1,14 +1,19 @@
 ---
-summary: "Issue #180 synthesis of Mastra, LangGraph.js, Vercel AI SDK, and OpenAI Agents SDK research into a single-primary-SDK adoption strategy that keeps Ember semantics and canonical state framework-independent."
+summary: "Pre-adoption issue #180 synthesis explaining why Ember chose Vercel AI SDK as its primary infrastructure toolkit while retaining Ember-owned semantics."
 read_when:
-  - "Choosing reusable JS/TS model, tool, MCP, durable-execution, retrieval, tracing, persistence, or evaluation infrastructure for Ember"
-  - "Deciding whether Ember should adopt Vercel AI SDK as a primary toolkit or earn an exception for another agent SDK"
-  - "Designing framework replacement boundaries, operational persistence, or migration escape hatches"
+  - "Tracing the research and staged adoption plan that preceded Ember's production AI SDK integration"
+  - "Comparing the historical rationale for choosing Vercel AI SDK over Mastra, LangGraph.js, or OpenAI Agents SDK"
 role: design
-discovery_status: current
+discovery_status: superseded
+superseded_by: docs/architecture/canonical-application-flow.md
 ---
 
 # Composable Agent Infrastructure Adoption Strategy
+
+> Historical adoption plan from issue #180. Its staged steps and provider-contract
+> names describe the architecture at the time of evaluation. For the implemented
+> production path, see [Canonical Ember Application Flow](canonical-application-flow.md)
+> and [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md).
 
 ## Decision
 
