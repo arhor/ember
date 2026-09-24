@@ -107,7 +107,7 @@ media payloads are not promoted by this minimal adapter.
 The normalized value still passes through the #189 output bound and becomes only
 operational cognition evidence. It is not automatically canonical meaning or proof of
 external truth. The final provider result remains subject to Ember's existing
-`validateProviderResult` provenance checks.
+`validateAiExecutionResult` provenance checks.
 
 The deterministic acceptance path verifies that MCP source tool names, MCP/AI SDK
 call identifiers, provider identifiers, and `CapabilityExecutionEvidence` do not enter

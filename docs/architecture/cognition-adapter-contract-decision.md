@@ -5,7 +5,7 @@ read_when:
   - "Reviewing historical architecture that was superseded by the current AiExecutor and AI SDK execution boundary"
 role: design
 discovery_status: superseded
-supersededBy: docs/architecture/ai-sdk-cognition-adapter-boundary.md
+superseded_by: docs/architecture/ai-sdk-cognition-adapter-boundary.md
 ---
 
 # Cognition Adapter Contract Decision

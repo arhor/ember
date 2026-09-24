@@ -1,6 +1,6 @@
+import type { AiExecutor } from "../ai/contract.ts";
 import type { OnboardingProgressDecision, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
 import type { Projection } from "../core/projection.ts";
-import type { AiExecutor } from "../ai/contract.ts";
 
 import { ValidationError } from "../core/errors.ts";
 import { newId } from "../core/model.ts";

@@ -681,7 +681,7 @@ remains available only through the existing explicit low-level CLI.
 Each mutating setup invocation makes one real, non-retried invocation through the selected
 production adapter. The request uses a disposable synthetic in-memory lineage/runtime,
 no user meaning, no canonical lineage or principal, and no host paths or credentials.
-The response must pass `ProviderResult` validation with an empty permitted meaning set.
+The response must pass `AiExecutionResult` validation with an empty permitted meaning set.
 Provider reply, external session identifiers, and raw error diagnostics are discarded.
 Setup records only normalized probe outcomes. Failure instructions direct the operator
 to check provider-owned authentication and retry or explicitly select another provider.

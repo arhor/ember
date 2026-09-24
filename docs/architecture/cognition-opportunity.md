@@ -43,7 +43,7 @@ The current production application interaction path is intentionally user-input 
 
 - `EmberApplication.interact` accepts required `text`;
 - it records that text as `userEvidence` before invoking a provider;
-- `ProviderRequest` requires `input.text`; and
+- `AiExecutionRequest` requires `input.text`; and
 - `Projection` currently carries `current_input` as a string.
 
 That is correct for ordinary interactive cognition, but it means a wake-up must not

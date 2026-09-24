@@ -238,7 +238,7 @@ cannot augment the model-visible episode.
 
 Codex JSONL and stdout are bounded to 1 MiB, stderr diagnostics to 64 KiB, and the
 final response is checked both by Codex's output schema and Ember's independent
-`ProviderResult` validator. An external thread ID, when present, is retained only
+`AiExecutionResult` validator. An external thread ID, when present, is retained only
 on the cognition episode as operational evidence. It is not projected as memory,
 used as lineage, or resumed. The adapter never retries automatically.
 
@@ -316,11 +316,11 @@ child cwd and `--workspace`. Ember passes `--trust` only for that adapter-create
 empty workspace so headless execution cannot pause at Cursor's workspace-trust
 prompt. The workspace also contains an adapter-owned `.cursor/cli.json` denying
 shell, file read/write, web-fetch, and all MCP tool execution. The prompt contains
-only Ember's current bounded `ProviderRequest`. The adapter forwards a minimal environment needed for the CLI
+only Ember's current bounded `AiExecutionRequest`. The adapter forwards a minimal environment needed for the CLI
 and its own stored browser login while dropping `CURSOR_API_KEY`, endpoint
 overrides, and unrelated ambient values. Cursor's successful result envelope and
 session identifier are bounded, the nested candidate is parsed as JSON, and Ember
-independently validates the `ProviderResult` and claimed meaning IDs. The session
+independently validates the `AiExecutionResult` and claimed meaning IDs. The session
 identifier remains cognition-episode operational evidence only; ordinary CLI
 turns start fresh sessions and never use them as memory or identity.
 

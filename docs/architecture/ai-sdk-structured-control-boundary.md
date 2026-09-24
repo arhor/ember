@@ -2,7 +2,7 @@
 summary: "Issue #198 boundary for using Vercel AI SDK structured output to represent typed model-control decisions without transferring Ember decision semantics or provenance authority to the SDK."
 read_when:
   - "Changing AI SDK-backed cognition opportunity evaluation or another typed model-control decision"
-  - "Deciding whether a model control result belongs in ProviderResult or a narrower typed Ember contract"
+  - "Deciding whether a model control result belongs in AiExecutionResult or a narrower typed Ember contract"
   - "Replacing prompt-level exact-token or JSON control protocols with structured generation"
 role: design
 discovery_status: current
@@ -29,7 +29,7 @@ CognitionOpportunityEvaluation
 ```
 
 Issue #198 therefore does **not** introduce a generic structured-generation port and
-does not turn `ProviderResult` into an arbitrary schema carrier. The existing
+does not turn `AiExecutionResult` into an arbitrary schema carrier. The existing
 `CognitionOpportunityEvaluator` is the Ember-owned control boundary.
 
 `src/ai/opportunity.ts` adds one implementation of that boundary
@@ -112,7 +112,7 @@ embeds decisions inside an ordinary cognition reply.
 
 The issue #315 follow-up sweep also migrated production memory proposal generation,
 onboarding progress, opportunity evaluation, and setup verification. Those paths no
-longer parse typed decisions from `ProviderResult.reply`. The explicit generic process
+longer parse typed decisions from `AiExecutionResult.reply`. The explicit generic process
 backend retains its compatibility wrappers because its external protocol cannot
 represent arbitrary output schemas.
 

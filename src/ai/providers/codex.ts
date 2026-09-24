@@ -11,12 +11,7 @@ import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } fro
 import { codexEnvironment } from "../../host/codex-environment.ts";
 import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
 import { isObject } from "../../util.ts";
-import {
-    MAX_AI_TIMEOUT_SECONDS,
-    MAX_STDERR_BYTES,
-    MAX_STDOUT_BYTES,
-    validateAiExecutionResult,
-} from "../contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, validateAiExecutionResult } from "../contract.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const RESULT_SCHEMA_NAME = "provider-result.schema.json";

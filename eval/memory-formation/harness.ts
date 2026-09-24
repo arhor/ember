@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 
+import type { AiExecutionRequest } from "../../src/ai/contract.ts";
 import type { MemoryProposalCandidate } from "../../src/core/memory-proposal.ts";
 import type { Meaning, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type {
@@ -7,7 +8,6 @@ import type {
     MemoryProposalGenerator,
     MemoryProposalGenerationRequest,
 } from "../../src/memory/memory-proposal-generation.ts";
-import type { AiExecutionRequest } from "../../src/ai/contract.ts";
 
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";

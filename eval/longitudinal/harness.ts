@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
+import type { AiExecutionRequest, AiExecutionResult } from "../../src/ai/contract.ts";
 import type { EmberState, RuntimeId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
-import type { AiExecutionRequest, AiExecutionResult } from "../../src/ai/contract.ts";
 
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";

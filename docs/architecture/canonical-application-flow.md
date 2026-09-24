@@ -167,14 +167,14 @@ production application, provider, AI SDK infrastructure, or canonical persistenc
 One ordinary interaction crosses several durable representations with different
 meanings:
 
-| Concern | Owner | What it proves |
-| --- | --- | --- |
-| Canonical continuity and semantic evidence | `StateStore` and core semantics | Ember-owned meaning and lifecycle |
-| Conversation trajectory | `ConversationContextStore` | Short-lived dialogue membership and retained turns |
-| Transport occurrence and delivery | `InteractionLedgerStore` | Admission, replay identity, retained delivery intent, attempts, and outcomes |
-| Onboarding work | `OnboardingWorkStore` | Progressive onboarding work bound to continuity/principal/scope |
-| Memory proposal generation | `MemoryProposalGenerationStore` | Proposal-generation evidence, not automatic canonical memory |
-| Provider/runtime observations | AI/runtime evidence | Operational facts that do not become identity or semantic authority by themselves |
+| Concern                                    | Owner                           | What it proves                                                                    |
+| ------------------------------------------ | ------------------------------- | --------------------------------------------------------------------------------- |
+| Canonical continuity and semantic evidence | `StateStore` and core semantics | Ember-owned meaning and lifecycle                                                 |
+| Conversation trajectory                    | `ConversationContextStore`      | Short-lived dialogue membership and retained turns                                |
+| Transport occurrence and delivery          | `InteractionLedgerStore`        | Admission, replay identity, retained delivery intent, attempts, and outcomes      |
+| Onboarding work                            | `OnboardingWorkStore`           | Progressive onboarding work bound to continuity/principal/scope                   |
+| Memory proposal generation                 | `MemoryProposalGenerationStore` | Proposal-generation evidence, not automatic canonical memory                      |
+| Provider/runtime observations              | AI/runtime evidence             | Operational facts that do not become identity or semantic authority by themselves |
 
 No provider thread, Telegram chat, systemd unit, launchd job, process ID, or SDK session
 is a substitute for Ember continuity.

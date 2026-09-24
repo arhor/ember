@@ -32,20 +32,6 @@ jobs:
       - name: Install locked development toolchain
         run: npm ci
 
-      - name: Format working tree for final-refactor handoff
-        run: npm run fmt
-
-      - name: Upload formatted sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: oxfmt-tree
-          path: |
-            README.md
-            docs
-            src
-            eval
-            tests
-
       - name: Run static and repository checks
         run: npm run check
 

@@ -15,6 +15,7 @@ import type {
 } from "./model.ts";
 
 import { proactiveContactInspectionView, ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";
 import { composeCliSurface } from "../../composition/cli.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
@@ -29,7 +30,6 @@ import {
 } from "../../persistence/markdown-state-materializer.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { assertUnreachable, cloneState } from "../../util.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";

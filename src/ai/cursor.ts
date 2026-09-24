@@ -6,14 +6,14 @@ import type {
     LanguageModelV4Usage,
 } from "@ai-sdk/provider";
 
-import type { CursorProviderConfig } from "./providers/cursor.ts";
 import type { AiExecutionRequest } from "./contract.ts";
+import type { CursorProviderConfig } from "./providers/cursor.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { buildCursorPrompt, invokeCursorStructured } from "./providers/cursor.ts";
 import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { validateAiExecutionResult } from "./contract.ts";
+import { buildCursorPrompt, invokeCursorStructured } from "./providers/cursor.ts";
 
 const EMPTY_USAGE: LanguageModelV4Usage = {
     inputTokens: { total: undefined, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },

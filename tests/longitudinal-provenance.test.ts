@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { AiExecutionResult } from "../src/ai/contract.ts";
 import type { EvidenceId } from "../src/core/model.ts";
 import type { ProjectedMeaning } from "../src/core/projection.ts";
-import type { AiExecutionResult } from "../src/ai/contract.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { initialState, validateState } from "../src/core/model.ts";

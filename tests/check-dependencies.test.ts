@@ -43,7 +43,6 @@ test("dependency checker should reject type-only AI runtime imports in a surface
     assert.match(violations[0]!, /must not import AI SDK infrastructure/);
 });
 
-
 test("dependency checker should allow the Ember-owned AI execution contract outside AI infrastructure", () => {
     // Given
     const sources = [
