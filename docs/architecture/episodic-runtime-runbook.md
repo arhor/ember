@@ -10,10 +10,13 @@ discovery_status: current
 
 # Episodic Runtime Runbook
 
-> Status: current implementation runbook for issue #94 and ADR 0007.
+> Status: current Linux/systemd host runbook for issue #94 and ADR 0007.
 >
-> systemd processes, units, timers, and the user manager are operational loci only.
-> Canonical continuity and work truth remain Ember-owned durable evidence.
+> This is optional host infrastructure, not Ember's ordinary application entry point.
+> Foreground CLI conversation and resident Telegram both use the same application
+> architecture documented in [Canonical Ember Application Flow](canonical-application-flow.md).
+> systemd processes, units, timers, and the user manager are operational loci only;
+> canonical continuity and work truth remain Ember-owned durable evidence.
 
 ## Runtime shape
 
