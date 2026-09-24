@@ -6,7 +6,7 @@ import { dependencyViolations } from "../scripts/check-dependencies.ts";
 test("dependency checker should reject composition and provider imports when used by conversational adapters", () => {
     // Given
     const owners = ["surfaces/cli/surface.ts", "surfaces/telegram/surface.ts", "surfaces/cli/ordinary-helper.ts"];
-    const specifiers = ["../../app/application.ts", "../../composition/ember.ts", "../../providers/contract.ts"];
+    const specifiers = ["../../app/application.ts", "../../composition/ember.ts", "../../ai/contract.ts"];
 
     // When
     const results = owners.flatMap((owner) =>
