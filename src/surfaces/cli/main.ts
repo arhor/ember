@@ -29,7 +29,7 @@ import {
 } from "../../persistence/markdown-state-materializer.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { assertUnreachable, cloneState } from "../../util.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
@@ -441,8 +441,8 @@ export function parseArgs(argv: string[]): CliCommandArgs {
         if (!Number.isFinite(timeout) || timeout <= 0) {
             throw new ValidationError("--provider-timeout-seconds must be a positive finite number");
         }
-        if (timeout > MAX_PROVIDER_TIMEOUT_SECONDS) {
-            throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS}`);
+        if (timeout > MAX_AI_TIMEOUT_SECONDS) {
+            throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_AI_TIMEOUT_SECONDS}`);
         }
         const provider = values["--provider"];
         if (provider !== undefined && provider !== "codex" && provider !== "cursor") {
