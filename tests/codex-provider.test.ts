@@ -16,7 +16,7 @@ import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
+import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/ai/providers/codex.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
