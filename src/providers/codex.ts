@@ -73,7 +73,7 @@ export interface CodexProviderConfig {
     thread?: InvokeCodexOptions["thread"];
 }
 
-export function buildCodexPrompt(request: ProviderRequest): string {
+export function buildCodexPrompt(request: ProviderRequest, setupIntent = false): string {
     return [
         "Act only as a bounded cognition provider for the continuing agent.",
         "The JSON below contains the complete permitted projection and current input for this episode.",
@@ -81,6 +81,11 @@ export function buildCodexPrompt(request: ProviderRequest): string {
         "Return one ProviderResult matching the supplied output schema.",
         "Set usedMeaningIds to only projected meaning IDs materially used in the reply.",
         "When onboarding_work is present, follow its guidance through ordinary conversation and prioritize the user's current request.",
+        ...(setupIntent
+            ? [
+                  "When the user wants to begin Telegram setup, set setupIntent to telegram; otherwise set it to null. Explain that token entry and machine changes require separate confirmation on the trusted local host. Never ask for a token in chat.",
+              ]
+            : []),
         "This provider runtime does not own the continuing agent's continuity, memory, canonical state, or authority.",
         "<ember_provider_request>",
         JSON.stringify(request),

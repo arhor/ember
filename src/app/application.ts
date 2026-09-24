@@ -74,6 +74,9 @@ async function interact(
                 : { conversationMembership: event.conversationMembership }),
             ...(event.purpose === undefined ? {} : { purpose: event.purpose }),
             ...(event.explainIds === undefined ? {} : { explainIds: event.explainIds }),
+            ...(event.trustedHostSetupAvailable === undefined
+                ? {}
+                : { trustedHostSetupAvailable: event.trustedHostSetupAvailable }),
             executor: dependencies.cognition.executor,
             ...(dependencies.cognition.selectCapabilities === undefined
                 ? {}
@@ -131,6 +134,7 @@ async function interact(
             cognitionId: result.cognitionId,
             cognitionStatus: result.cognitionStatus,
             replayed: result.replayed,
+            ...(result.setupIntent === undefined ? {} : { setupIntent: result.setupIntent }),
             deliveryId: result.deliveryId,
             delivery: result.replayed ? null : result.delivery,
             diagnostics: {
@@ -182,6 +186,7 @@ interface InteractionExecutionResult {
     deliveryId: string | null;
     delivery: InteractionResult["delivery"];
     replayed: boolean;
+    setupIntent?: "telegram" | null;
 }
 
 async function executeInteraction(
@@ -276,6 +281,9 @@ async function executeInteraction(
         ...(options.signal === undefined ? {} : { signal: options.signal }),
         ...(options.purpose === undefined ? {} : { purpose: options.purpose }),
         ...(options.explainIds === undefined ? {} : { explainIds: options.explainIds }),
+        ...(options.trustedHostSetupAvailable === undefined
+            ? {}
+            : { trustedHostSetupAvailable: options.trustedHostSetupAvailable }),
         ...(options.conversationMembership === undefined
             ? {}
             : { conversationMembership: options.conversationMembership }),

@@ -845,18 +845,22 @@ deterministic evaluators for testing while core transition validation remains un
 
 ## Implemented guided Telegram setup (#255)
 
-Configured local CLI conversation intercepts only the literal `:setup telegram` command.
-Because the idle CLI holds neither a canonical writer lease nor an open runtime episode, the
-command enters the Telegram trusted-host wizard without inventing a cognition/runtime boundary.
-It is neither provider input nor an ordinary interaction occurrence. After completion,
-cancellation, or a recoverable failure, the CLI resumes its input loop over the same configured
-principal, scope, continuity binding, and conversation sidecar. CLI and Telegram interactions
-each reload current state and create one lease-bounded runtime episode for their actual work,
-preserving the sequential recovery model.
+Ordinary cognition may return a typed Telegram setup proposal alongside its reply. This proposal
+has no host authority. On the configured local CLI, the user must separately answer `yes` to a
+trusted-host confirmation before the existing wizard runs. The handoff carries the principal and scope,
+records the interaction occurrence only as the proposal source, and attributes the separate `yes`
+to that configured principal through an explicit local prompt. The proposal occurrence is not
+confirmation evidence; the bot token is entered only through the wizard’s masked local input. A remote Telegram proposal instead receives a bounded instruction
+to continue on the trusted local host. The conversation never requests or carries the token.
+After completion, cancellation, or a recoverable failure, the CLI resumes its input loop over the
+same configured principal, scope, continuity binding, and conversation sidecar. Unsupported resident
+hosts report `unsupported_host` before the wizard touches a secret or machine file. CLI and Telegram
+interactions each reload current state and create one lease-bounded runtime episode for their actual
+work, preserving the sequential recovery model.
 
 The wizard owns masked BotFather-token entry, mode-`0600` storage, bot/webhook preflight,
 short-code private-chat discovery, explicit mapping confirmation, configuration/unit drift
-confirmation, exact-argument `systemctl --user` calls, and ledger-correlated round-trip
+confirmation, host-selected systemd or launchd service calls, and ledger-correlated round-trip
 observation. It derives principal, state path, provider, and scope from the verified setup
 binding. Its per-stage result keeps storage, preflight, mapping, rendering, installation,
 activation, and bounded polling for correlated delivery truth separate. Provider executables

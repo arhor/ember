@@ -67,3 +67,123 @@ test("CLI surface should deliver through an injected application when reading or
     assert.equal(received?.surfaceId, "local_cli");
     assert.equal(output, "fixture response\n");
 });
+
+test("CLI setup should require local confirmation when cognition proposes Telegram", async (t) => {
+    // Given
+    const directory = await mkdtemp(join(tmpdir(), "ember-cli-setup-declined-"));
+    t.after(() => rm(directory, { recursive: true, force: true }));
+    const statePath = join(directory, "state.json");
+    await new StateStore(statePath).create(initialState("principal"));
+    const { repositories } = composeCliSurface({
+        statePath,
+        provider: { kind: "process", command: "unused", arguments: [], timeoutSeconds: 1 },
+    });
+    let handoffs = 0;
+    let output = "";
+    const application = {
+        async interact() {
+            return {
+                occurrenceId: "occurrence-setup",
+                replayed: false,
+                setupIntent: "telegram",
+                diagnostics: { providerFailure: null, memoryProposalFailure: null, onboardingProgressFailure: null },
+            };
+        },
+    } as EmberApplication;
+    const io = {
+        input: Readable.from(["Can we set up Telegram?\n", "no\n", ":quit\n"]),
+        output: new Writable({
+            write(chunk, _encoding, callback) {
+                output += String(chunk);
+                callback();
+            },
+        }),
+        error: new Writable({
+            write(_chunk, _encoding, callback) {
+                callback();
+            },
+        }),
+    };
+
+    // When
+    const status = await runCliSurface(
+        {
+            principal: "principal",
+            scope: "private",
+            trustedHostSetup: async () => {
+                handoffs++;
+                return { status: "complete" };
+            },
+        },
+        io,
+        { application, repositories },
+    );
+
+    // Then
+    assert.equal(status, 0);
+    assert.equal(handoffs, 0);
+    assert.match(output, /Telegram setup cancelled/);
+});
+
+test("CLI setup should keep proposal occurrence separate from explicit local confirmation", async (t) => {
+    // Given
+    const directory = await mkdtemp(join(tmpdir(), "ember-cli-setup-confirmed-"));
+    t.after(() => rm(directory, { recursive: true, force: true }));
+    const statePath = join(directory, "state.json");
+    await new StateStore(statePath).create(initialState("principal"));
+    const { repositories } = composeCliSurface({
+        statePath,
+        provider: { kind: "process", command: "unused", arguments: [], timeoutSeconds: 1 },
+    });
+    let request: import("../../app/contract.ts").TrustedHostSetupRequest | undefined;
+    let output = "";
+    const application = {
+        async interact() {
+            return {
+                occurrenceId: "occurrence-setup",
+                replayed: false,
+                setupIntent: "telegram",
+                diagnostics: { providerFailure: null, memoryProposalFailure: null, onboardingProgressFailure: null },
+            };
+        },
+    } as EmberApplication;
+    const io = {
+        input: Readable.from(["Can we set up Telegram?\n", "yes\n", ":quit\n"]),
+        output: new Writable({
+            write(chunk, _encoding, callback) {
+                output += String(chunk);
+                callback();
+            },
+        }),
+        error: new Writable({
+            write(_chunk, _encoding, callback) {
+                callback();
+            },
+        }),
+    };
+
+    // When
+    const status = await runCliSurface(
+        {
+            principal: "principal",
+            scope: "private",
+            trustedHostSetup: async (value) => {
+                request = value;
+                return { status: "configured_inactive" };
+            },
+        },
+        io,
+        { application, repositories },
+    );
+
+    // Then
+    assert.equal(status, 0);
+    assert.deepEqual(request, {
+        intent: "telegram",
+        principal: "principal",
+        scope: "private",
+        proposalOccurrenceId: "occurrence-setup",
+        confirmedBy: { principal: "principal", provenance: "explicit_local_prompt", response: "yes" },
+    });
+    assert.match(output, /Telegram setup: configured_inactive/);
+});

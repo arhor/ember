@@ -795,3 +795,34 @@ function event(surfaceId: string, principalProvenance: InteractionEvent["princip
         text: "same input",
     };
 }
+
+test("application should hand remote Telegram setup to a trusted local host when cognition proposes it", async () => {
+    // Given
+    const fixture = await applicationFixture({
+        executor: async () => ({
+            contractVersion: 1,
+            reply: "I can help connect Telegram.",
+            usedMeaningIds: [],
+            setupIntent: "telegram",
+        }),
+    });
+    let delivered = "";
+    try {
+        // When
+        const result = await fixture.application.interact(
+            event("telegram_bot", "configured_surface_mapping"),
+            async ({ text }) => {
+                delivered = text;
+                return { outcome: "confirmed", externalMessageId: null };
+            },
+        );
+
+        // Then
+        assert.equal(result.setupIntent, "telegram");
+        assert.match(delivered, /open Ember on the trusted local host/);
+        assert.match(delivered, /never in chat/);
+        assert.equal(result.delivery?.status, "confirmed");
+    } finally {
+        await fixture.close();
+    }
+});

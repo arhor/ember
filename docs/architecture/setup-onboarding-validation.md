@@ -83,7 +83,7 @@ codex`. Confirm failed authentication creates no lineage, then authenticate and 
 --accept-continuity-risk`. Verify setup does not change bundle bytes and no new
    onboarding record appears. After conversation, compare structural identities and
    provenance; do not use a familiar-sounding reply as proof.
-6. Optionally create a fresh bot with BotFather and enter `:setup telegram`. Confirm the
+6. Optionally create a fresh bot with BotFather and ask Ember to connect Telegram and confirm the local handoff. Confirm the
    private mapping code, install the user service, send one message, receive one reply,
    and inspect correlated delivery evidence. Verify the token occurs only in
    `~/.ember/secrets/telegram.token`, whose mode is `0600`, and redact it immediately from

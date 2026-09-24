@@ -35,6 +35,7 @@ interface AiSdkProviderOutput {
     contractVersion: 1;
     reply: string;
     usedMeaningIds: string[];
+    setupIntent?: "telegram" | null;
 }
 
 export type InferenceFinishReason = "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other";
@@ -135,6 +136,7 @@ const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
             items: { type: "string" },
             uniqueItems: true,
         },
+        setupIntent: { type: ["string", "null"], enum: ["telegram", null] },
     },
     required: ["contractVersion", "reply", "usedMeaningIds"],
 });
@@ -153,6 +155,7 @@ const INSTRUCTIONS = [
     "Return a structured result matching the requested schema.",
     "List in usedMeaningIds only meaning IDs from projection.selection.meaning_ids that actually contributed to the reply.",
     "When onboarding_work is present, follow its guidance through ordinary conversation and prioritize the user's current request.",
+    "When the user wants to begin Telegram setup, set setupIntent to telegram and explain that local confirmation and trusted-host entry are required. Otherwise set it to null. Never ask for a reusable token in conversation. A setupIntent is a proposal only and cannot authorize host mutation.",
 ].join(" ");
 
 const MAX_TOOL_LOOP_STEPS = 4;
