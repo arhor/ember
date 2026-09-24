@@ -24,10 +24,10 @@ Project foundations:
 
 Current architecture material:
 
-- [Canonical Ember Application Flow](canonical-application-flow.md) records issue
-  #304's production CLI/Telegram trace and proposed application, AI SDK, persistence,
-  host, and bootstrap ownership for epic #303, with a file-level migration sequence.
-  It is a research proposal; its target structure is not yet implemented.
+- [Canonical Ember Application Flow](canonical-application-flow.md) describes the
+  implemented production path shared by CLI and Telegram, including executable
+  composition, application coordination, AI execution, durable delivery, first-run
+  bootstrap, and typed trusted-host setup.
 - [Cross-Cutting Research Synthesis and Ember Design Directions](design-directions.md)
   is the canonical synthesis of the completed concern-driven research programme.
 - [Ember Architecture Decisions](decisions/README.md) records the accepted
@@ -51,6 +51,9 @@ Current architecture material:
 - [Interaction Surface Boundary](interaction-surface-boundary.md) defines issue #85's
   transport-independent principal provenance, stable occurrence correlation, and
   delivery intent/attempt lifecycle without making surface metadata canonical memory.
+- [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md) defines the
+  current Ember-owned `AiExecutor` seam and the Vercel AI SDK model/tool mechanics
+  below it without transferring semantic or canonical-state ownership to the SDK.
 - [Conversation Context and Turn Semantics](conversation-context-turn-semantics.md)
   defines issue #216's Ember-owned short-lived dialogue trajectory, turn/exchange
   correlation, bounded currentness, cross-surface continuation, restart behavior, and
@@ -147,10 +150,6 @@ Current architecture material:
 - [Codex Specialist Integration Evaluation](codex-specialist-integration-evaluation.md)
   evaluates the implemented specialist requirements against `codex exec`, App
   Server, and the TypeScript SDK, and records why issue #64 retains the CLI boundary.
-- [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md)
-  records issue #92's evidence-based decision to retain the existing shared
-  `ProviderInvoker` cognition seam while keeping Codex and Cursor runtime lifecycle
-  mechanics in separate thin adapters.
 - [Mastra Composable Infrastructure Evaluation](mastra-composable-infrastructure-evaluation.md)
   evaluates issue #176's candidate model routing, tools, MCP, workflows, memory,
   storage, delegation, observability, and eval primitives as independently
@@ -199,6 +198,9 @@ Current architecture material:
 
 Historical material:
 
+- [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md) records
+  the pre-#303 provider-oriented execution seam and is superseded by the current AI SDK
+  cognition boundary.
 - [Initial Architecture Model](initial-model.md) is the pre-synthesis hypothesis.
   It remains useful as research history but does not override the synthesis or
   accepted decisions.
