@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
+import type { AiExecutor, AiExecutionRequest } from "../src/ai/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
 import { composeCliSurface } from "../src/composition/cli.ts";
@@ -61,7 +61,7 @@ function telegramUpdate(updateId: number, text = "hello from Telegram"): Telegra
     };
 }
 
-function captureProvider(requests: ProviderRequest[]): ProviderInvoker {
+function captureProvider(requests: AiExecutionRequest[]): AiExecutor {
     return async (request) => {
         requests.push(request);
         return { contractVersion: 1, reply: "accepted", usedMeaningIds: [] };
@@ -103,7 +103,7 @@ async function fixture() {
 
 async function runLocalSurface(
     store: StateStore,
-    provider: ProviderInvoker,
+    provider: AiExecutor,
     output: string[],
     followUps: { memory: number; onboarding: number },
 ) {
@@ -173,8 +173,8 @@ test("canonical flow should preserve shared semantics through real CLI and Teleg
     // Given
     const f = await fixture();
     try {
-        const cliRequests: ProviderRequest[] = [];
-        const telegramRequests: ProviderRequest[] = [];
+        const cliRequests: AiExecutionRequest[] = [];
+        const telegramRequests: AiExecutionRequest[] = [];
         const cliOutput: string[] = [];
         const followUps = { memory: 0, onboarding: 0 };
         const state = await f.store.load();
