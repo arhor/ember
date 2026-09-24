@@ -18,6 +18,7 @@
     "smoke:codex": "node tests/live/codex-smoke.ts",
     "smoke:cursor": "node tests/live/cursor-smoke.ts",
     "smoke:claude": "node tests/live/claude-code-smoke.ts",
+    "smoke:ollama": "node tests/live/ollama-smoke.ts",
     "smoke:memory-proposal:live": "EMBER_RUN_LIVE_MEMORY_PROPOSAL=1 node tests/live/memory-proposal-smoke.ts",
     "smoke:google-calendar-create:live": "EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE=1 node eval/action-effects/run.ts --mode live",
     "smoke:specialist:live": "EMBER_RUN_LIVE_SPECIALIST=1 node tests/live/codex-specialist.ts",
@@ -54,6 +55,7 @@
     "@ai-sdk/mcp": "2.0.45",
     "@ai-sdk/provider": "4.0.10",
     "ai": "7.0.93",
+    "ai-sdk-ollama": "^4.2.0",
     "ai-sdk-provider-claude-code": "4.3.1",
     "node-telegram-bot-api": "2.1.0"
   },

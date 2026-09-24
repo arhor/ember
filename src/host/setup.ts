@@ -91,7 +91,14 @@ export async function loadSetupConfig(path: string): Promise<SetupConfig | null>
         typeof value.continuity !== "string" ||
         !["pending", "requested", "available", "outcome_unknown"].includes(String(value.continuity)) ||
         !isObject(value.provider) ||
-        !exactKeys(value.provider, ["kind", "command", "model", "timeoutSeconds"])
+        !exactKeys(
+            value.provider,
+            value.provider.kind === "ollama"
+                ? value.provider.baseUrl === undefined
+                    ? ["kind", "model", "timeoutSeconds"]
+                    : ["kind", "model", "baseUrl", "timeoutSeconds"]
+                : ["kind", "command", "model", "timeoutSeconds"],
+        )
     )
         throw new ValidationError("invalid machine-local setup configuration; preserve it for recovery");
     validateSetupProvider(value.provider);

@@ -170,6 +170,84 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     assert.deepEqual(explicit.providerArgs, ["--config"]);
 });
 
+test("setup parser should retain Ollama model and loopback endpoint when explicitly configured", () => {
+    // Given
+    const argv = [
+        "setup",
+        "--intent",
+        "create-new",
+        "--principal",
+        "user",
+        "--provider",
+        "ollama",
+        "--model",
+        "qwen3:8b",
+        "--provider-base-url",
+        "http://127.0.0.1:11435",
+    ];
+
+    // When
+    const parsed = parseArgs(argv);
+
+    // Then
+    assert.equal(parsed.command, "setup");
+    assert.equal(parsed.provider, "ollama");
+    assert.equal(parsed.model, "qwen3:8b");
+    assert.equal(parsed.providerBaseUrl, "http://127.0.0.1:11435");
+});
+
+test("setup should persist an Ollama provider without a command and retain existing setup configurations", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [
+        ...f.create.slice(0, -1),
+        "ollama",
+        "--model",
+        "qwen3:8b",
+        "--provider-base-url",
+        "http://localhost:11434",
+    ];
+
+    // When
+    assert.equal(await setupMain(args, capture(), verified), 0);
+    const config = await loadSetupConfig(f.config);
+
+    // Then
+    assert.deepEqual(config?.provider, {
+        kind: "ollama",
+        model: "qwen3:8b",
+        baseUrl: "http://localhost:11434",
+        timeoutSeconds: 60,
+    });
+    assert.equal("command" in config!.provider, false);
+});
+
+test("setup should reject an Ollama provider without an explicit model", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [...f.create.slice(0, -1), "ollama"];
+
+    // When
+    const result = setupMain(args, capture(), verified);
+
+    // Then
+    await assert.rejects(result, /Ollama/);
+    assert.equal(await loadSetupConfig(f.config), null);
+});
+
+test("setup should reject process configuration for Ollama when an endpoint is selected", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [...f.create.slice(0, -1), "ollama", "--model", "qwen3:8b", "--provider-command", "ollama"];
+
+    // When
+    const result = setupMain(args, capture(), verified);
+
+    // Then
+    await assert.rejects(result, /does not accept --provider-command/);
+    assert.equal(await loadSetupConfig(f.config), null);
+});
+
 test("CLI should select the default foreground run when no command is supplied", () => {
     // Given
     const argv: string[] = [];

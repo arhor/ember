@@ -58,6 +58,30 @@ scheme, gateway, or vendor at this boundary. The production dependency remains p
 to `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from `ai/test` and
 require no network access.
 
+## Local Ollama provider
+
+Issue [#357](https://github.com/arhor/ember/issues/357) composes an already-running
+local Ollama server through `ai-sdk-ollama@4.2.0`, whose `ai@^7.0.66` peer range covers
+Ember's pinned AI SDK 7.0.93. The adapter supplies a V4 `LanguageModel` to the same
+executor, so structured output, streaming, bounded tool execution, cancellation,
+timeout handling, evidence translation, and final Ember validation remain unchanged.
+
+Ollama configuration is machine-local operational configuration, not canonical Ember
+state. It requires a model name and optionally accepts an `http` loopback base URL;
+the default is `http://127.0.0.1:11434`. Ember neither starts Ollama nor downloads a
+model. Its stable inference label is `ollama`, never a process executable name.
+
+To exercise a local installation deliberately, start Ollama and pull a structured-output
+capable model, then run:
+
+```text
+EMBER_OLLAMA_MODEL=<model> npm run smoke:ollama
+```
+
+Set `EMBER_OLLAMA_BASE_URL` only for a loopback override. The smoke test runs an
+ordinary structured cognition turn through the production adapter; it does not mutate
+the Ollama installation or Ember continuity outside a temporary fixture.
+
 The model call uses `generateText`, structured `Output.object`, and `jsonSchema`.
 Issue #189 additionally uses AI SDK `tool` definitions plus a bounded step stop
 condition. Issue #197 uses the AI SDK 7 lifecycle callbacks `onStart`, `onStepEnd`,

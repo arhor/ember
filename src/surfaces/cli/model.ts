@@ -40,6 +40,7 @@ export const CommandSpecs = {
             "--provider",
             "--provider-command",
             "--model",
+            "--provider-base-url",
             "--provider-timeout-seconds",
             "--accept-continuity-risk",
             "--confirm-provider-change",
@@ -138,9 +139,10 @@ export type SetupArgs = {
     state: string | undefined;
     principal: string | undefined;
     intent: SetupIntent | undefined;
-    provider: "codex" | "cursor" | "claude-code" | undefined;
+    provider: "codex" | "cursor" | "claude-code" | "ollama" | undefined;
     providerCommand: string | undefined;
     model: string | undefined;
+    providerBaseUrl?: string | undefined;
     providerTimeoutSeconds: number | undefined;
     acceptContinuityRisk: boolean;
     confirmProviderChange: boolean;
