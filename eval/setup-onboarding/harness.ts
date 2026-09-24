@@ -1,11 +1,11 @@
 import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
+import type { SetupConfig } from "../../src/app/bootstrap.ts";
 import type { RunCognitionOptions } from "../../src/app/cognition-execution.ts";
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type { MemoryProposalGenerator } from "../../src/memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-evaluator.ts";
-import type { SetupConfig } from "../../src/surfaces/cli/setup.ts";
 
 import { executeCognition as runCoreCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";

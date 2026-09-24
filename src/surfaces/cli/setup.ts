@@ -1,522 +1,199 @@
-import { lstat, readFile, realpath } from "node:fs/promises";
-import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { resolve } from "node:path";
+import { createInterface } from "node:readline";
 
-import type { AiExecutor } from "../../ai/contract.ts";
-import type { EmberState } from "../../core/model.ts";
-import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs, SetupIntent } from "./model.ts";
+import type { BootstrapEvent } from "../../app/bootstrap.ts";
+import type { SetupCompositionOverrides } from "../../composition/setup.ts";
+import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
 
-import { createCodexLanguageModel } from "../../ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../../ai/cognition.ts";
-import { validateAiExecutionResult } from "../../ai/contract.ts";
-import { createCursorLanguageModel } from "../../ai/cursor.ts";
-import { ProviderError, ValidationError } from "../../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../../core/model.ts";
-import { createOnboardingWork } from "../../core/onboarding-work.ts";
-import { buildProjection } from "../../core/projection.ts";
-import { startRuntime } from "../../core/runtime-episode.ts";
-import { loadGoogleCalendarConfig } from "../../integrations/google-calendar/read.ts";
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
-import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
-import { StateStore } from "../../persistence/state-store.ts";
-import { exactKeys, isObject } from "../../util.ts";
+import { bootstrapContinuity, prepareConfiguredRun } from "../../app/bootstrap.ts";
+import { composeSetupDependencies } from "../../composition/setup.ts";
+import { ValidationError } from "../../core/errors.ts";
+import { defaultSetupConfigPath, loadSetupConfig } from "../../host/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
-export interface SetupProvider {
-    kind: "codex" | "cursor" | "claude-code";
-    command: string;
-    model: string;
-    timeoutSeconds: number;
-}
-
-export interface SetupConfig {
-    version: 1 | 2;
-    googleCalendarConfigPath?: string;
-    intent: SetupIntent;
-    statePath: string;
-    principal: string;
-    lineageId: string;
-    establishedAt: string;
-    provider: SetupProvider;
-    verification:
-        | "not_attempted"
-        | "requested"
-        | "verified"
-        | "failed"
-        | "timed_out"
-        | "cancellation_requested"
-        | "outcome_unknown";
-    continuity: "pending" | "requested" | "available" | "outcome_unknown";
-    cancellationRequested: boolean;
-    updatedAt: string;
-}
-
-type SetupDependencies = {
-    provider?: (config: SetupProvider) => AiExecutor;
-    signal?: AbortSignal;
-    persistConfig?: (path: string, config: SetupConfig) => Promise<void>;
-};
-
-export function defaultSetupConfigPath(): string {
-    return join(homedir(), ".ember", "config", "setup.json");
-}
-
-function defaultSetupStatePath(): string {
-    return join(homedir(), ".ember", "state", "continuity.json");
-}
-
-export function setupProvider(config: SetupProvider): AiExecutor {
-    if (config.kind === "claude-code")
-        return async (request, options) => {
-            const { createClaudeCodeExecutor } = await import("../../ai/claude-code.ts");
-            return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
-        };
-    const options = {
-        command: config.command,
-        arguments_: config.model ? ["--model", config.model] : [],
-        timeoutSeconds: config.timeoutSeconds,
-    };
-    return createAiSdkCognitionExecutor(
-        config.kind === "codex" ? createCodexLanguageModel(options) : createCursorLanguageModel(options),
-    );
-}
-
-export async function loadSetupConfig(path: string): Promise<SetupConfig | null> {
-    let text: string;
-    try {
-        text = await readFile(path, "utf8");
-    } catch (error) {
-        if (hasCode(error, "ENOENT")) return null;
-        throw new ValidationError("cannot read machine-local setup configuration");
-    }
-    let value: unknown;
-    try {
-        value = JSON.parse(text);
-    } catch {
-        throw new ValidationError("invalid machine-local setup JSON; preserve it for recovery");
-    }
-    if (
-        !isObject(value) ||
-        !exactKeys(
-            value,
-            value.version === 2
-                ? [
-                      "version",
-                      "googleCalendarConfigPath",
-                      "intent",
-                      "statePath",
-                      "principal",
-                      "lineageId",
-                      "establishedAt",
-                      "provider",
-                      "verification",
-                      "continuity",
-                      "cancellationRequested",
-                      "updatedAt",
-                  ]
-                : [
-                      "version",
-                      "intent",
-                      "statePath",
-                      "principal",
-                      "lineageId",
-                      "establishedAt",
-                      "provider",
-                      "verification",
-                      "continuity",
-                      "cancellationRequested",
-                      "updatedAt",
-                  ],
-        ) ||
-        (value.version !== 1 && value.version !== 2) ||
-        (value.version === 2 &&
-            (!safeText(value.googleCalendarConfigPath) || !isAbsolute(value.googleCalendarConfigPath))) ||
-        typeof value.cancellationRequested !== "boolean" ||
-        typeof value.intent !== "string" ||
-        !["create-new", "restore-existing", "use-existing"].includes(String(value.intent)) ||
-        !safeText(value.statePath) ||
-        !isAbsolute(value.statePath) ||
-        !safeText(value.principal) ||
-        !safeText(value.lineageId) ||
-        !value.lineageId.startsWith("lineage-") ||
-        !isRfc3339Utc(value.establishedAt) ||
-        !isRfc3339Utc(value.updatedAt) ||
-        typeof value.verification !== "string" ||
-        ![
-            "not_attempted",
-            "requested",
-            "verified",
-            "failed",
-            "timed_out",
-            "cancellation_requested",
-            "outcome_unknown",
-        ].includes(String(value.verification)) ||
-        typeof value.continuity !== "string" ||
-        !["pending", "requested", "available", "outcome_unknown"].includes(String(value.continuity)) ||
-        !isObject(value.provider) ||
-        !exactKeys(value.provider, ["kind", "command", "model", "timeoutSeconds"])
-    )
-        throw new ValidationError("invalid machine-local setup configuration; preserve it for recovery");
-    validateSetupProvider(value.provider);
-    return value as unknown as SetupConfig;
-}
-
-function validateSetupProvider(value: Record<string, unknown>): void {
-    if (
-        typeof value.kind !== "string" ||
-        !["codex", "cursor", "claude-code"].includes(String(value.kind)) ||
-        !safeText(value.command) ||
-        typeof value.model !== "string" ||
-        (value.model !== "" && !safeText(value.model)) ||
-        typeof value.timeoutSeconds !== "number" ||
-        !Number.isFinite(value.timeoutSeconds) ||
-        value.timeoutSeconds <= 0 ||
-        value.timeoutSeconds > 120 ||
-        (value.kind === "claude-code" && value.command !== "claude-code")
-    )
-        throw new ValidationError(
-            "setup provider requires codex, cursor, or claude-code and a timeout in (0, 120] seconds",
-        );
-}
-
-function safeText(value: unknown): value is string {
-    return (
-        typeof value === "string" &&
-        value.trim().length > 0 &&
-        value.length <= 4096 &&
-        !ASCII_CONTROL_CHARACTER_PATTERN.test(value)
-    );
-}
-
-function validateLocalPath(path: string, label: string): void {
-    if (!isAbsolute(path) || !safeText(path))
-        throw new ValidationError(`${label} path must be absolute and contain no control characters`);
-}
-
-async function exists(path: string): Promise<boolean> {
-    try {
-        await lstat(path);
-        return true;
-    } catch (error) {
-        if (hasCode(error, "ENOENT")) return false;
-        throw error;
-    }
-}
-
-function hasCode(error: unknown, code: string): boolean {
-    return isObject(error) && error.code === code;
-}
-
-// Resolve parent aliases even for not-yet-created files before comparing destinations.
-async function physicalPath(path: string): Promise<string> {
-    try {
-        return await realpath(path);
-    } catch (error) {
-        if (!hasCode(error, "ENOENT")) throw error;
-        const parent = dirname(path);
-        if (parent === path) throw error;
-        return join(await physicalPath(parent), basename(path));
-    }
-}
-
-async function writeConfig(path: string, config: SetupConfig): Promise<void> {
-    config.updatedAt = nowUtc();
-    await replaceFileDurably(path, `${JSON.stringify(config, null, 2)}\n`, {
-        durabilityUncertainMessage: "setup configuration may be visible; inspect it before retrying",
-    });
-}
-
-export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupDependencies = {}): Promise<number> {
+export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
     if (args.help) {
         io.output.write(SETUP_HELP);
         return 0;
     }
-    const requestedConfigPath = resolve(args.config ?? defaultSetupConfigPath());
-    validateLocalPath(requestedConfigPath, "setup configuration");
-    const configPath = await physicalPath(requestedConfigPath);
-    validateLocalPath(configPath, "setup configuration");
-    const existing = await loadSetupConfig(configPath);
-    const requestedStatePath = resolve(args.state ?? existing?.statePath ?? defaultSetupStatePath());
-    validateLocalPath(requestedStatePath, "continuity state");
-    const statePath = await physicalPath(requestedStatePath);
-    validateLocalPath(statePath, "continuity state");
-    if (configPath === statePath || configPath.startsWith(`${statePath}.`) || statePath.startsWith(`${configPath}.`))
-        throw new ValidationError("setup configuration and canonical state/sidecars must have separate paths");
-    const store = new StateStore(statePath);
-    const state = (await exists(statePath)) ? await store.load() : null;
-    io.output.write(
-        `Machine configuration: ${existing ? "present" : "absent"}; continuity: ${state ? "loadable" : "absent"}.\n`,
-    );
-    if (existing && (existing.statePath !== statePath || (args.principal && args.principal !== existing.principal)))
-        throw new ValidationError(
-            "existing setup binding is preserved; use a separate --config and --state for another lineage",
+    const result = await bootstrapForCli(args, io, dependencies);
+    if (!args.intent) io.output.write(SETUP_HELP);
+    if (result === 0 && args.intent) {
+        const configPath = resolve(args.config ?? defaultSetupConfigPath());
+        const config = await loadSetupConfig(configPath);
+        if (!config) throw new ValidationError("setup configuration is unavailable after activation");
+        const scope = `relationship:${config.principal}`;
+        io.output.write(
+            args.config === undefined
+                ? "Run: ember\n"
+                : `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${scope.replaceAll("'", "'\\''")}'\n`,
         );
-    if (existing && state) assertBinding(existing, state);
-    if (!args.intent) {
-        if (existing)
-            io.output.write(
-                `Last probe: ${existing.verification}; continuity operation: ${existing.continuity}. This inspection does not reverify cognition.\n`,
-            );
-        io.output.write(SETUP_HELP);
-        return 0;
     }
-    const intent = args.intent;
-    if (existing && intent !== "use-existing" && intent !== existing.intent)
-        throw new ValidationError("existing setup intent is preserved; use use-existing or a separate configuration");
-    if (intent === "create-new" && state && !existing)
-        throw new ValidationError("create-new refuses existing state; choose a separate state path");
-    if (intent !== "create-new" && !state)
-        throw new ValidationError("selected existing continuity is absent; restore it explicitly before retrying");
-    if (intent === "restore-existing" && !existing && !args.acceptContinuityRisk)
-        throw new ValidationError(
-            "restore attaches local state; snapshot age, missing history, and forks remain unresolved. Confirm intended continuation with --accept-continuity-risk",
-        );
-    if (existing && !state && (existing.continuity !== "pending" || existing.intent !== "create-new"))
-        throw new ValidationError(
-            "previous continuity operation requires recovery; missing state will not be recreated",
-        );
-    const principal = args.principal ?? existing?.principal ?? state?.runtimeContract.localPrincipal;
-    if (!principal || !safeText(principal)) throw new ValidationError("create-new requires --principal");
-    if (state && principal !== state.runtimeContract.localPrincipal)
-        throw new ValidationError("principal does not match continuity state");
-    const kind = args.provider ?? existing?.provider.kind;
-    const changedKind = kind !== existing?.provider.kind;
-    const provider = {
-        kind,
-        command:
-            args.providerCommand ??
-            (!changedKind ? existing?.provider.command : undefined) ??
-            (kind === "cursor" ? "cursor-agent" : kind),
-        model: args.model ?? (!changedKind ? existing?.provider.model : undefined) ?? "",
-        timeoutSeconds: args.providerTimeoutSeconds ?? existing?.provider.timeoutSeconds ?? 60,
-    };
-    validateSetupProvider(provider);
-    if (existing && JSON.stringify(provider) !== JSON.stringify(existing.provider) && !args.confirmProviderChange)
-        throw new ValidationError("provider configuration change requires --confirm-provider-change");
-    const candidate = state ?? initialState(principal);
-    if (existing && !state) {
-        candidate.lineage.lineageId = existing.lineageId as EmberState["lineage"]["lineageId"];
-        candidate.lineage.establishedAt = existing.establishedAt;
-    }
-    const config: SetupConfig = {
-        version: existing?.version ?? 1,
-        ...(existing?.version === 2 ? { googleCalendarConfigPath: existing.googleCalendarConfigPath } : {}),
-        intent: existing?.intent ?? intent,
-        statePath,
-        principal,
-        lineageId: candidate.lineage.lineageId,
-        establishedAt: candidate.lineage.establishedAt,
-        provider: provider as SetupProvider,
-        verification: "not_attempted",
-        continuity: state ? "available" : "pending",
-        cancellationRequested: false,
-        updatedAt: nowUtc(),
-    };
-    const lock = new StateStore(configPath);
-    const lease = await lock.acquireWriteLease();
+    return result;
+}
+
+async function bootstrapForCli(
+    args: SetupArgs | Omit<SetupArgs, "command" | "help">,
+    io: CliIo,
+    overrides: SetupCompositionOverrides = {},
+) {
     const controller = new AbortController();
-    const cancel = () => {
-        config.cancellationRequested = true;
-        controller.abort();
-    };
+    const cancel = () => controller.abort();
     process.on("SIGINT", cancel);
     process.on("SIGTERM", cancel);
-    dependencies.signal?.addEventListener("abort", cancel, { once: true });
-    if (dependencies.signal?.aborted) cancel();
-    const persistConfig = dependencies.persistConfig ?? writeConfig;
-    const persistObserved = async () => {
-        const cancellationWasRequested = config.cancellationRequested;
-        await persistConfig(configPath, config);
-        if (!cancellationWasRequested && config.cancellationRequested) await persistConfig(configPath, config);
-    };
+    overrides.signal?.addEventListener("abort", cancel, { once: true });
+    if (overrides.signal?.aborted) cancel();
     try {
-        // Prevent concurrent setup from replacing a configuration read before acquiring the lease.
-        if (JSON.stringify(await loadSetupConfig(configPath)) !== JSON.stringify(existing))
-            throw new ValidationError("setup configuration changed; inspect and retry");
-        await persistObserved();
-        if (controller.signal.aborted) {
-            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
-            return 2;
-        }
-        config.verification = "requested";
-        await persistObserved();
-        if (controller.signal.aborted) {
-            config.verification = "not_attempted";
-            await persistObserved();
-            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
-            return 2;
-        }
-        io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
-        let continuityMutationStarted = false;
-        try {
-            const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
-            const input =
-                "This is a synthetic machine bootstrap probe. Reply briefly to confirm cognition works; do not infer identity or user facts.";
-            const projection = buildProjection(synthetic.state, {
-                principal: "setup-probe",
-                scope: "setup-probe",
-                surface: "setup-probe",
-                currentInput: input,
-                currentTime: nowUtc(),
-                runtimeId: synthetic.runtimeId,
-            });
-            const result = await (dependencies.provider ?? setupProvider)(config.provider)(
-                {
-                    contractVersion: 1,
-                    cognitionId: newId("cognition"),
-                    projection,
-                    input: { text: input },
-                },
-                { timeoutSeconds: config.provider.timeoutSeconds, signal: controller.signal },
-            );
-            validateAiExecutionResult(result, new Set());
-            config.verification = "verified";
-        } catch (error) {
-            config.verification = error instanceof ProviderError ? error.outcome : "failed";
-            await persistObserved();
-            io.error.write(
-                `Cognition verification ${config.verification}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
-            );
-            return 2;
-        }
-        await persistObserved();
-        if (controller.signal.aborted) {
-            io.output.write(
-                "Cancellation requested; cognition returned successfully, continuity activation was not attempted.\n",
-            );
-            return 2;
-        }
-        config.continuity = "requested";
-        await persistObserved();
-        if (controller.signal.aborted) {
-            config.continuity = state ? "available" : "pending";
-            await persistObserved();
-            io.output.write("Setup cancelled before continuity activation; continuity unchanged.\n");
-            return 2;
-        }
-        try {
-            const onboardingStore = new OnboardingWorkStore(statePath);
-            if (!state && intent === "create-new") {
-                const work = await onboardingStore.load();
-                if (work === null) {
-                    await onboardingStore.save(
-                        createOnboardingWork(
-                            candidate.lineage.lineageId,
-                            principal,
-                            `relationship:${principal}`,
-                            nowUtc(),
-                            "pending_activation",
-                        ),
-                    );
-                } else if (
-                    work.lineage_id !== candidate.lineage.lineageId ||
-                    work.principal !== principal ||
-                    work.status !== "pending_activation"
-                ) {
-                    throw new ValidationError("onboarding activation evidence conflicts with the intended new lineage");
-                }
-            }
-            if (!state) {
-                continuityMutationStarted = true;
-                await store.create(candidate);
-            }
-            assertBinding(config, await store.load());
-            const pendingOnboarding = await onboardingStore.load();
-            if (
-                config.intent === "create-new" &&
-                pendingOnboarding?.status === "pending_activation" &&
-                pendingOnboarding.lineage_id === config.lineageId &&
-                pendingOnboarding.principal === principal
-            ) {
-                pendingOnboarding.status = "active";
-                pendingOnboarding.updated_at = nowUtc();
-                await onboardingStore.save(pendingOnboarding);
-            }
-            config.continuity = "available";
-            await persistObserved();
-        } catch {
-            try {
-                assertBinding(config, await store.load());
-                config.continuity = "available";
-            } catch {
-                config.continuity = continuityMutationStarted ? "outcome_unknown" : "pending";
-            }
-            await persistObserved();
-            io.error.write(
-                "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
-            );
-            return 2;
-        }
-        io.output.write(
-            "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
+        return await bootstrapContinuity(
+            args,
+            composeSetupDependencies((event) => presentBootstrapEvent(event, io), {
+                ...overrides,
+                signal: controller.signal,
+            }),
         );
-        const onboardingScope = `relationship:${principal}`;
-        io.output.write(
-            configPath === (await physicalPath(defaultSetupConfigPath()))
-                ? "Run: ember\n"
-                : `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${onboardingScope.replaceAll("'", "'\\''")}'\n`,
-        );
-        if (controller.signal.aborted) {
-            io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
-        }
-        return controller.signal.aborted ? 2 : 0;
     } finally {
         process.off("SIGINT", cancel);
         process.off("SIGTERM", cancel);
-        dependencies.signal?.removeEventListener("abort", cancel);
-        await lock.releaseWriteLease(lease);
+        overrides.signal?.removeEventListener("abort", cancel);
     }
 }
 
-export function assertBinding(config: SetupConfig, state: EmberState): void {
-    if (
-        state.lineage.lineageId !== config.lineageId ||
-        state.runtimeContract.localPrincipal !== config.principal ||
-        state.lineage.establishedAt !== config.establishedAt
-    )
-        throw new ValidationError("continuity no longer matches setup binding; explicit recovery is required");
+function presentBootstrapEvent(event: BootstrapEvent, io: CliIo): void {
+    switch (event.kind) {
+        case "inspection":
+            io.output.write(
+                `Machine configuration: ${event.configured ? "present" : "absent"}; continuity: ${event.continuity ? "loadable" : "absent"}.\n`,
+            );
+            if (event.verification !== undefined)
+                io.output.write(
+                    `Last probe: ${event.verification}; continuity operation: ${event.operation}. This inspection does not reverify cognition.\n`,
+                );
+            break;
+        case "cancelled_before_cognition":
+            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
+            break;
+        case "verifying":
+            io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
+            break;
+        case "verification_failed":
+            io.error.write(
+                `Cognition verification ${event.outcome}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
+            );
+            break;
+        case "cancelled_after_probe":
+            io.output.write(
+                "Cancellation requested; cognition returned successfully, continuity activation was not attempted.\n",
+            );
+            break;
+        case "cancelled_before_activation":
+            io.output.write("Setup cancelled before continuity activation; continuity unchanged.\n");
+            break;
+        case "activation_failed":
+            io.error.write(
+                "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
+            );
+            break;
+        case "ready":
+            io.output.write(
+                "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
+            );
+            break;
+        case "cancelled_after_activation":
+            io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
+            break;
+    }
 }
 
 export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io: CliIo): Promise<number> {
-    if (args.mode === "configured" && (!args.config || !safeText(args.scope)))
-        throw new ValidationError("configured run requires --config PATH and --scope SCOPE");
-    const config = await loadSetupConfig(resolve(args.mode === "default" ? defaultSetupConfigPath() : args.config));
-    if (!config || config.verification !== "verified" || config.continuity !== "available")
-        throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
-    const scope = args.mode === "default" ? `relationship:${config.principal}` : args.scope;
-    if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
-        throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
-    const googleCalendarConfig =
-        config.version === 2 ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath!) : undefined;
-    if (googleCalendarConfig && googleCalendarConfig.setup_lineage_id !== config.lineageId)
-        throw new ValidationError("Google Calendar configuration belongs to a different setup lineage");
+    if (args.mode === "default" && !(await loadSetupConfig(defaultSetupConfigPath()))) {
+        return await firstRun(io);
+    }
+    return await runConfigured(args, io);
+}
+
+async function runConfigured(
+    args: ConfiguredRunArgs | DefaultRunArgs,
+    io: CliIo,
+    lines?: AsyncIterable<string>,
+): Promise<number> {
+    const config = await prepareConfiguredRun(
+        args,
+        composeSetupDependencies(() => {}),
+    );
     return await runCliSurface(
         {
-            statePath: config.statePath,
-            principal: config.principal,
-            scope,
-            expectedContinuityBinding: {
-                lineageId: config.lineageId,
-                establishedAt: config.establishedAt,
-            },
-            providerKind: config.provider.kind,
-            providerCommand: config.provider.command,
-            providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
-            providerModel: config.provider.model,
-            providerTimeoutSeconds: config.provider.timeoutSeconds,
-            ...(googleCalendarConfig === undefined
-                ? {}
-                : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
+            ...config,
+            ...(lines === undefined ? {} : { lines }),
             configuredSetupHandoff: async () => {
                 const { runTelegramSetup } = await import("../telegram/setup.ts");
                 const { telegramResidentHost } = await import("../../host/telegram-resident-host.ts");
-                return await runTelegramSetup({ setup: config, scope }, io, {
+                const setup = await loadSetupConfig(args.mode === "default" ? defaultSetupConfigPath() : args.config);
+                if (!setup) throw new ValidationError("setup configuration is unavailable");
+                return await runTelegramSetup({ setup, scope: config.scope }, io, {
                     residentHost: await telegramResidentHost(),
                 });
             },
         },
         io,
     );
+}
+
+async function firstRun(io: CliIo): Promise<number> {
+    const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
+    const iterator = lines[Symbol.asyncIterator]();
+    const ask = async (prompt: string): Promise<string> => {
+        io.output.write(prompt);
+        const answer = await iterator.next();
+        if (answer.done)
+            throw new ValidationError("first-run setup needs an explicit choice; run ember again to continue");
+        return answer.value.trim();
+    };
+    try {
+        io.output.write("Ember needs a continuity and a working cognition provider before conversation.\n");
+        const choice = await ask("Create a new Ember or restore existing continuity? [create/restore]: ");
+        if (choice !== "create" && choice !== "restore")
+            throw new ValidationError("choose create or restore; no continuity was created");
+        const state = choice === "restore" ? await ask("Absolute path to existing continuity state: ") : undefined;
+        if (choice === "restore" && !state) throw new ValidationError("restore requires an existing state path");
+        const principal = choice === "create" ? await ask("Local principal identifier: ") : undefined;
+        if (choice === "create" && !principal) throw new ValidationError("create requires a principal identifier");
+        const provider = await ask("Cognition provider [codex/cursor/claude-code]: ");
+        if (provider !== "codex" && provider !== "cursor" && provider !== "claude-code")
+            throw new ValidationError("select codex, cursor, or claude-code");
+        const providerCommand =
+            provider === "claude-code"
+                ? undefined
+                : (await ask("Provider executable (blank for installed default): ")) || undefined;
+        const acceptContinuityRisk =
+            choice === "restore"
+                ? (await ask("Continue this existing lineage despite possible stale or forked copies? [yes/no]: ")) ===
+                  "yes"
+                : false;
+        if (choice === "restore" && !acceptContinuityRisk)
+            throw new ValidationError("restore requires explicit acknowledgement of continuity uncertainty");
+        const result = await bootstrapForCli(
+            {
+                config: undefined,
+                state,
+                principal,
+                intent: choice === "create" ? "create-new" : "restore-existing",
+                provider,
+                providerCommand,
+                model: undefined,
+                providerTimeoutSeconds: undefined,
+                acceptContinuityRisk,
+                confirmProviderChange: false,
+            },
+            io,
+        );
+        if (result !== 0) return result;
+        io.output.write("Machine setup is ready. Say hello to begin ordinary conversation.\n");
+        return await runConfigured({ command: "run", mode: "default" }, io, {
+            [Symbol.asyncIterator]: () => iterator,
+        });
+    } finally {
+        lines.close();
+    }
 }
 
 const SETUP_HELP = `ember setup [--config PATH] [--state PATH]

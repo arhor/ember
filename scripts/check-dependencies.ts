@@ -5,11 +5,10 @@ import { createScanner, SyntaxKind } from "typescript/unstable/ast";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = resolve(root, "src");
-const surfaceAiExceptions = new Set(["surfaces/cli/setup.ts"]);
+const surfaceAiExceptions = new Set<string>();
 const surfacePersistenceExceptions = new Set([
     "surfaces/cli/google-calendar-setup.ts",
     "surfaces/cli/main.ts",
-    "surfaces/cli/setup.ts",
     "surfaces/telegram/setup.ts",
 ]);
 

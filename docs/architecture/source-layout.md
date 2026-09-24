@@ -1,5 +1,5 @@
 ---
-summary: "Current source-layout rules for interaction surfaces, default and explicit typed CLI routing, machine-local setup, and inward dependency boundaries."
+summary: "Current source-layout rules for interaction surfaces, typed CLI routing, application-owned machine bootstrap, and inward dependency boundaries."
 read_when:
   - "Adding or reorganizing an interaction surface under src/surfaces/"
   - "Deciding whether CLI code belongs to conversational surface mechanics or CLI-local command plumbing"
@@ -47,13 +47,23 @@ Everything that is specifically CLI-facing stays inside `src/surfaces/cli/`. The
 
 - `index.ts` defines the public module API;
 - `main.ts` owns CLI argument parsing and command dispatch;
-- `setup.ts` owns machine-local bootstrap, provider verification, setup recovery, and the configured `run` handoff; and
+- `setup.ts` owns first-run machine prompts and the configured `run` handoff;
 - `surface.ts` owns the conversational `run` mechanics.
+
+`app/bootstrap.ts` owns provider-verification decisions, continuity binding and
+activation, onboarding-work activation, and configured-run preparation through
+injected ports. `composition/setup.ts` supplies provider and store implementations;
+`host/setup.ts` owns machine paths and the setup-record filesystem format. The CLI
+supplies operator choices, process cancellation, and progress presentation. A missing default
+configuration makes `ember` ask explicitly whether to create or attach an existing
+continuity, then pass the first real user input through the ordinary application path.
+An incomplete existing setup record still requires explicit recovery.
 
 Every command passes through `parseArgs()` once and the same dispatch switch.
 `model.ts` defines `Commands`, `CommandSpecs`, and the typed command arguments, including
 `SetupArgs` and `RunArgs` with `mode: "explicit" | "configured" | "default"`. The
-zero-argument default selects verified setup and its relationship scope. Setup and configured
+zero-argument default selects verified setup and its relationship scope, or asks for
+the minimum machine bootstrap choices when no setup record exists. Setup and configured
 run handlers receive those typed arguments; they do not parse their own option grammar
 or bypass dispatch based on the presence of a flag.
 

@@ -709,11 +709,21 @@ conversation surface. It uses the exact configured provider/model/timeout; provi
 overrides cannot be mixed into this invocation. The explicit config selects the locally
 asserted principal. The original explicit `run --state ...` interface remains available.
 Plain `ember` reads the default setup record and selects `relationship:<principal>` as
-its conversation scope. Each invocation uses the same application composition and
-interaction lifecycle as configured `run`, and the persisted conversation continues
-after a clean process exit. Missing or incomplete setup remains an explicit error.
-Conversational onboarding prompts and memory formation are the separate #254 task;
-setup establishes readiness and does not start or claim completion of that journey.
+its conversation scope. When that record is absent, the CLI asks the operator to
+choose create-new or restore-existing, identify the local principal or existing
+state path, and select a provider. Restore also requires explicit acknowledgement
+of continuity uncertainty. Application bootstrap performs the same provider probe,
+binding, and activation used by explicit `ember setup`, then hands the first real
+input to ordinary application conversation. It does not invent a greeting or user
+turn. Later invocations use the same application composition and interaction
+lifecycle, continuing the persisted conversation after process exit without a setup
+wizard. Incomplete or corrupt existing setup remains an explicit recovery error.
+`app/bootstrap.ts` owns the bootstrap decisions and emits typed progress through an
+injected port. `composition/setup.ts` supplies the configured cognition adapter and
+stores; `host/setup.ts` owns machine paths and setup-record I/O. The CLI owns operator
+prompts, signal handling, presentation, and handoff. The explicit setup command remains available.
+Conversational onboarding and memory formation reuse the #254/#220 ordinary path;
+machine setup does not claim completion of that journey.
 
 ### Rerun, interruption, and recovery
 

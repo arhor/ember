@@ -74,8 +74,9 @@ Three observations constrain the migration:
    before resuming onboarding/memory follow-up; delivery attempts and status updates remain
    owned by the delivery boundary.
 3. Foreground `ember run` already worked without systemd at the time of the #304
-   investigation. Issue #323 adds plain `ember` after verified default setup: it
-   selects the configured lineage and relationship scope, then uses the same application
+   investigation. Issue #323 adds plain `ember` after verified default setup. Issue #326
+   adds explicit create/restore bootstrap when the default setup record is absent; both
+   paths select the configured lineage and relationship scope, then use the same application
    coordinator. The CLI loads Telegram service setup only on an explicit setup request.
 
 Preserve the [semantic ADR baseline](decisions/README.md),
@@ -916,7 +917,7 @@ install Node/package/provider host bits
   -> ember (CLI default entry, machine-local preflight)
   -> if needed: explicit create / restore / attach existing continuity choice
   -> host-owned provider authentication and bounded verification
-  -> app/bootstrap creates or validates/binds continuity and onboarding work
+  -> app/bootstrap creates or validates/binds continuity and onboarding work through injected ports
   -> composition builds the same application
   -> CLI calls app.interact(message, transport), including initial delivery under one lease
   -> normal memory adoption / onboarding progress / persistence
@@ -937,7 +938,7 @@ it does not ask profile questions and write semantic facts directly. Onboarding 
 can be skipped, deferred, resumed, or interrupted by real work. Returning runs load
 the existing trajectory and remaining work, without forcing the wizard or provider
 authentication again when the binding is usable. Do not insert a fabricated user
-message to make an initial onboarding greeting: a host welcome/prompt can invite the
+message to make an initial onboarding greeting: the host prompt invites the
 first real input; any future unsolicited agent greeting needs its own explicit semantics.
 
 Optional Telegram/Calendar/provider setup may be suggested from conversation. #327

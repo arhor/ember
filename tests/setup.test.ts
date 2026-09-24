@@ -11,12 +11,13 @@ import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
+import { loadSetupConfig } from "../src/host/setup.ts";
 import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { setupGoogleCalendarMain } from "../src/surfaces/cli/google-calendar-setup.ts";
-import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
+import { main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
@@ -125,7 +126,7 @@ test("CLI should select the default foreground run when no command is supplied",
     assert.deepEqual(parsed, { command: "run", mode: "default" });
 });
 
-test("foreground ember should require verified setup when no configuration exists", async (t) => {
+test("foreground ember should require an explicit continuity choice when no configuration exists", async (t) => {
     // Given
     const f = await fixture(t);
 
@@ -134,8 +135,64 @@ test("foreground ember should require verified setup when no configuration exist
 
     // Then
     assert.equal(run.code, 2);
-    assert.match(run.stderr, /setup has not verified cognition and continuity/);
+    assert.match(run.stdout, /Create a new Ember or restore existing continuity/);
+    assert.match(run.stderr, /choose create or restore/);
     await assert.rejects(stat(join(f.directory, ".ember", "state", "continuity.json")), { code: "ENOENT" });
+});
+
+test("foreground ember should attach existing continuity when restore is chosen", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const restoredStatePath = join(f.directory, "restored.json");
+    const restored = initialState("user");
+    await new StateStore(restoredStatePath).create(restored);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    const env = { HOME: f.directory, PATH: dirname(process.execPath) };
+
+    // When
+    const run = await command([], {
+        env,
+        stdin: `restore\n${restoredStatePath}\ncodex\n${executable}\nyes\nhello\n:quit\n`,
+    });
+
+    // Then
+    assert.equal(run.code, 0, JSON.stringify(run));
+    assert.match(run.stdout, /CODEX_CLI_RESPONSE/);
+    const state = await new StateStore(restoredStatePath).load();
+    const config = await loadSetupConfig(join(f.directory, ".ember", "config", "setup.json"));
+    assert.equal(state.lineage.lineageId, restored.lineage.lineageId);
+    assert.equal(config?.intent, "restore-existing");
+    assert.equal(config?.statePath, await realpath(restoredStatePath));
+});
+
+test("foreground ember should enter ordinary onboarding on first run and resume it later", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    const env = { HOME: f.directory, PATH: dirname(process.execPath) };
+    const statePath = join(f.directory, ".ember", "state", "continuity.json");
+
+    // When
+    const first = await command([], { env, stdin: `create\nuser\ncodex\n${executable}\nhello\n:quit\n` });
+    const second = await command([], { env, stdin: "continue\n:quit\n" });
+
+    // Then
+    assert.equal(first.code, 0, JSON.stringify(first));
+    assert.equal(second.code, 0, JSON.stringify(second));
+    assert.match(first.stdout, /Machine setup is ready.*Say hello/s);
+    assert.match(first.stdout, /CODEX_CLI_RESPONSE/);
+    assert.doesNotMatch(second.stdout, /Create a new Ember or restore/);
+    assert.match(second.stdout, /CODEX_CLI_RESPONSE/);
+    const state = await new StateStore(statePath).load();
+    const conversation = await new ConversationContextStore(statePath).load();
+    const onboarding = await new OnboardingWorkStore(statePath).load();
+    assert.equal(conversation.exchanges.length, 2);
+    assert.equal(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
+    assert.equal(onboarding?.lineage_id, state.lineage.lineageId);
 });
 
 test("foreground ember should continue one conversation across clean process exits without a service manager", async (t) => {

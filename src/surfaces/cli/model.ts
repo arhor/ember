@@ -1,5 +1,7 @@
 import type { Readable, Writable } from "node:stream";
 
+import type { SetupIntent } from "../../app/bootstrap.ts";
+
 export interface CliIo {
     input: Readable;
     output: Writable;
@@ -130,7 +132,6 @@ export type InitArgs = {
     principal: string;
 };
 
-export type SetupIntent = "create-new" | "restore-existing" | "use-existing";
 export type SetupArgs = {
     command: typeof Commands.SETUP;
     config: string | undefined;

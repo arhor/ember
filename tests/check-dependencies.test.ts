@@ -77,7 +77,7 @@ test("dependency checker should reject non-static dynamic imports when ownership
     ]);
 });
 
-test("dependency checker should preserve explicit machine-setup infrastructure exceptions", () => {
+test("dependency checker should reject AI and persistence imports after CLI bootstrap extraction", () => {
     // Given
     const source = [
         'import { createAiSdkCognitionExecutor } from "../../ai/cognition.ts";',
@@ -88,5 +88,7 @@ test("dependency checker should preserve explicit machine-setup infrastructure e
     const violations = dependencyViolations("surfaces/cli/setup.ts", source);
 
     // Then
-    assert.deepEqual(violations, []);
+    assert.equal(violations.length, 2);
+    assert.match(violations[0]!, /must not import AI SDK infrastructure/);
+    assert.match(violations[1]!, /must not import concrete canonical persistence/);
 });
