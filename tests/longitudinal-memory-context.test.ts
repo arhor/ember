@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ProviderResult } from "../src/providers/contract.ts";
+import type { AiExecutionResult } from "../src/ai/contract.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";
@@ -98,7 +98,7 @@ test("memory/context projection evidence should remain independent from empirica
     ]);
 });
 
-function harnessOutput(backend: string, result: ProviderResult) {
+function harnessOutput(backend: string, result: AiExecutionResult) {
     return {
         result,
         backend_metadata: {
