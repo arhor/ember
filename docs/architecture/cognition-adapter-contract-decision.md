@@ -1,15 +1,16 @@
 ---
-summary: "Current Ember-owned cognition contract from #92/#188, with a forward pointer to #304's proposed SDK V4 execution consolidation and its provider-specific parity gates."
+summary: "Historical #92 provider-contract decision retained to explain the pre-#303 adapter design and why provider-specific process mechanics were originally kept separate."
 read_when:
-  - "Changing the shared cognition provider contract or adding another production cognition backend"
-  - "Considering deduplication or a common process runner across Codex and Cursor adapters"
-  - "Reviewing which cognition-backend semantics are genuinely shared versus runtime-specific"
-  - "Reconciling the current adapter-local design with epic #303's proposed common AI SDK execution boundary"
+  - "Investigating the pre-#303 ProviderInvoker design or why Codex and Cursor process mechanics were not originally unified"
+  - "Reviewing historical architecture that was superseded by the current AiExecutor and AI SDK execution boundary"
 role: design
-discovery_status: current
+discovery_status: superseded
+supersededBy: docs/architecture/ai-sdk-cognition-adapter-boundary.md
 ---
 
 # Cognition Adapter Contract Decision
+
+> Historical design record from the pre-#303 provider-oriented architecture. The current production execution boundary is [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md), with application composition described by [Canonical Ember Application Flow](canonical-application-flow.md).
 
 ## Proposed evolution under #303
 
