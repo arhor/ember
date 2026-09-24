@@ -9,11 +9,11 @@ import { invokeProvider } from "../src/ai/providers/process.ts";
 import { ProviderError, ValidationError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../src/providers/contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../src/ai/contract.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
-const OVERSIZED_TIMEOUT = MAX_PROVIDER_TIMEOUT_SECONDS + 1;
+const OVERSIZED_TIMEOUT = MAX_AI_TIMEOUT_SECONDS + 1;
 
 test("provider adapter should reject timeout before spawn when delay exceeds Node timer range", async () => {
     // Given
