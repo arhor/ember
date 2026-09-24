@@ -6,11 +6,11 @@ import type {
     LanguageModelV4Usage,
 } from "@ai-sdk/provider";
 
-import type { CodexProviderConfig } from "../providers/codex.ts";
+import type { CodexProviderConfig } from "./providers/codex.ts";
 import type { AiExecutionRequest } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { buildCodexPrompt, invokeCodexStructured } from "../providers/codex.ts";
+import { buildCodexPrompt, invokeCodexStructured } from "./providers/codex.ts";
 import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { validateAiExecutionResult } from "./contract.ts";
