@@ -4,7 +4,7 @@ import type {
     AiExecutor,
     AiExecutionRequest,
     AiExecutionResult,
-} from "../../ai/contract.ts";
+} from "../contract.ts";
 
 import { ProviderError } from "../../core/errors.ts";
 import { isTimeoutAbort, NodePipedProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
@@ -13,7 +13,7 @@ import {
     MAX_STDERR_BYTES,
     MAX_STDOUT_BYTES,
     validateAiExecutionResult,
-} from "../../ai/contract.ts";
+} from "../contract.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
