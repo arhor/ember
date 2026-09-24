@@ -5,7 +5,7 @@ import type { WorkerLaunch } from "../../host/background.ts";
 
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";
 import { exactKeys, isObject } from "../../util.ts";
 
 export type TelegramProviderConfig =
@@ -126,9 +126,9 @@ export function validateTelegramSurfaceConfig(value: unknown): asserts value is 
         typeof providerTimeout(value) !== "number" ||
         !Number.isFinite(providerTimeout(value)) ||
         providerTimeout(value) <= 0 ||
-        providerTimeout(value) > MAX_PROVIDER_TIMEOUT_SECONDS
+        providerTimeout(value) > MAX_AI_TIMEOUT_SECONDS
     )
-        throw new ValidationError(`Telegram provider timeout must be in (0, ${MAX_PROVIDER_TIMEOUT_SECONDS}]`);
+        throw new ValidationError(`Telegram provider timeout must be in (0, ${MAX_AI_TIMEOUT_SECONDS}]`);
     if (
         typeof value.stop_timeout_seconds !== "number" ||
         !Number.isSafeInteger(value.stop_timeout_seconds) ||
