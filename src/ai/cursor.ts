@@ -6,11 +6,11 @@ import type {
     LanguageModelV4Usage,
 } from "@ai-sdk/provider";
 
-import type { CursorProviderConfig } from "../providers/cursor.ts";
+import type { CursorProviderConfig } from "./providers/cursor.ts";
 import type { AiExecutionRequest } from "./contract.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { buildCursorPrompt, invokeCursorStructured } from "../providers/cursor.ts";
+import { buildCursorPrompt, invokeCursorStructured } from "./providers/cursor.ts";
 import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { validateAiExecutionResult } from "./contract.ts";
