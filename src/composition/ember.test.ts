@@ -5,7 +5,7 @@ import test from "node:test";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { ClaudeCodeProviderOptions } from "../providers/claude-code.ts";
-import type { ProviderInvoker } from "../providers/contract.ts";
+import type { AiExecutor } from "../ai/contract.ts";
 
 import { emptyRequest } from "../../tests/support.ts";
 import { composeEmberApplication } from "./ember.ts";
@@ -112,7 +112,7 @@ test("an empty configured Claude model invokes the provider factory with its def
     assert.deepEqual(options, {});
 });
 
-const providerStub: ProviderInvoker = async () => ({
+const providerStub: AiExecutor = async () => ({
     contractVersion: 1,
     reply: "unused",
     usedMeaningIds: [],
