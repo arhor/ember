@@ -6,7 +6,7 @@ import test from "node:test";
 
 import type { ConfiguredProactiveContactPolicy } from "../src/agency/configured-proactive-contact-policy.ts";
 import type { ContactAttentionDecisionRecord } from "../src/agency/proactive-contact-attention-policy.ts";
-import type { ProviderInvoker } from "../src/providers/contract.ts";
+import type { AiExecutor } from "../src/ai/contract.ts";
 import type {
     ProactiveContactHandoffRevalidator,
     TelegramSurfaceConfig,
@@ -92,7 +92,7 @@ async function fixture() {
     };
 }
 
-function provider(calls: { value: number }): ProviderInvoker {
+function provider(calls: { value: number }): AiExecutor {
     return async () => {
         calls.value += 1;
         return { contractVersion: 1, reply: "telegram reply", usedMeaningIds: [] };
