@@ -235,6 +235,21 @@ test("setup should reject an Ollama provider without an explicit model", async (
     assert.equal(await loadSetupConfig(f.config), null);
 });
 
+test("CLI setup should reject Ollama before probing when no model is configured", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const argv = ["setup", ...f.create.slice(0, -1), "ollama"];
+    const io = capture();
+
+    // When
+    const result = await main(argv, io);
+
+    // Then
+    assert.equal(result, 2);
+    assert.match(io.text(), /Ollama/);
+    assert.equal(await loadSetupConfig(f.config), null);
+});
+
 test("setup should reject process configuration for Ollama when an endpoint is selected", async (t) => {
     // Given
     const f = await fixture(t);

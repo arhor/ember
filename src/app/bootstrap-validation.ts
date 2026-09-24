@@ -8,13 +8,13 @@ export function validateSetupProvider(value: Record<string, unknown>): void {
         (value.kind !== "ollama" && !safeText(value.command)) ||
         (value.kind === "ollama" && value.command !== undefined) ||
         typeof value.model !== "string" ||
-        (value.model !== "" && !safeText(value.model)) ||
+        (value.kind === "ollama" && !safeText(value.model)) ||
+        (value.kind !== "ollama" && value.model !== "" && !safeText(value.model)) ||
         typeof value.timeoutSeconds !== "number" ||
         !Number.isFinite(value.timeoutSeconds) ||
         value.timeoutSeconds <= 0 ||
         value.timeoutSeconds > 120 ||
         (value.kind === "claude-code" && value.command !== "claude-code") ||
-        (value.kind === "ollama" && !safeText(value.model)) ||
         (value.kind === "ollama" && value.baseUrl !== undefined && !isLocalOllamaUrl(value.baseUrl))
     )
         throw new ValidationError(
