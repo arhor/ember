@@ -28,6 +28,7 @@ import { cloneState } from "../../util.ts";
 type CliStateRepository = EmberApplicationDependencies["repositories"]["state"];
 
 export interface CliSurfaceConfig {
+    lines?: AsyncIterable<string>;
     statePath: string;
     principal: string;
     scope: string;
@@ -61,7 +62,7 @@ export async function runCliSurface(config: CliSurfaceConfig, io: CliSurfaceIo):
     } finally {
         await store.releaseWriteLease(initialLease);
     }
-    const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
+    const lines = config.lines ?? createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     for await (const line of lines) {
         if (!line.trim()) continue;
         if (line === ":quit") return 0;
