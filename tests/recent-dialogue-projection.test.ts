@@ -5,7 +5,7 @@ import test from "node:test";
 
 import type { ConversationMembershipIntent } from "../src/core/interaction-contract.ts";
 import type { EmberState } from "../src/core/model.ts";
-import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
+import type { AiExecutor, AiExecutionRequest } from "../src/ai/contract.ts";
 
 import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
@@ -45,7 +45,7 @@ async function closeFixture(fixture: Fixture) {
     }
 }
 
-function capturingProvider(requests: ProviderRequest[], reply: (request: ProviderRequest) => string): ProviderInvoker {
+function capturingProvider(requests: AiExecutionRequest[], reply: (request: AiExecutionRequest) => string): AiExecutor {
     return async (request) => {
         requests.push(structuredClone(request));
         return {
@@ -58,7 +58,7 @@ function capturingProvider(requests: ProviderRequest[], reply: (request: Provide
 
 async function runTurn(
     fixture: Fixture,
-    provider: ProviderInvoker,
+    provider: AiExecutor,
     text: string,
     {
         surface = "local_cli",
@@ -95,7 +95,7 @@ async function cleanRestart(fixture: Fixture) {
 
 test("second turn receives prior user and Ember turns separately from canonical meaning selection", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const provider = capturingProvider(requests, (request) =>
         request.input.text === "Choose between red and blue" ? "Red is first; blue is second." : "Using blue.",
     );
@@ -129,9 +129,9 @@ test("second turn receives prior user and Ember turns separately from canonical 
 
 test("accepted user turns survive provider failure without inventing an Ember turn across surfaces", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     let failNext = true;
-    const provider: ProviderInvoker = async (request) => {
+    const provider: AiExecutor = async (request) => {
         requests.push(structuredClone(request));
         if (failNext) {
             failNext = false;
@@ -194,7 +194,7 @@ test("conversation sidecar preserves durable acceptance order when timestamps ti
 
 test("recent dialogue selection is deterministic and excludes exchanges beyond the bound", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const provider = capturingProvider(requests, (request) => `reply:${request.input.text}`);
     try {
         for (let index = 0; index < RECENT_DIALOGUE_MAX_EXCHANGES + 2; index += 1) {
@@ -226,7 +226,7 @@ test("recent dialogue selection is deterministic and excludes exchanges beyond t
 
 test("conversation turn payloads are deterministically truncated to the byte bound", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const longReply = "🦊".repeat(RECENT_DIALOGUE_MAX_TURN_BYTES);
     const provider = capturingProvider(requests, (request) => (request.input.text === "long" ? longReply : "done"));
     try {
@@ -245,7 +245,7 @@ test("conversation turn payloads are deterministically truncated to the byte bou
 
 test("surface changes continue the active agent-owned conversation trajectory", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const provider = capturingProvider(requests, () => "ack");
     try {
         await runTurn(fixture, provider, "cli context", { surface: "local_cli" });
@@ -271,7 +271,7 @@ test("surface changes continue the active agent-owned conversation trajectory", 
 
 test("membership policy can start a new same-owner trajectory without changing operational identity", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const provider = capturingProvider(requests, () => "ack");
     try {
         await runTurn(fixture, provider, "first topic", { surface: "local_cli" });
@@ -312,7 +312,7 @@ test("membership policy can start a new same-owner trajectory without changing o
 
 test("clean process restart continues the same conversation with a fresh provider invocation", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const provider = capturingProvider(requests, () => "ack");
     try {
         await runTurn(fixture, provider, "before restart", { surface: "local_cli" });
@@ -339,7 +339,7 @@ test("clean process restart continues the same conversation with a fresh provide
 
 test("starting a fresh conversation clears only transient dialogue and preserves canonical meaning and evidence", async () => {
     const fixture = await startedFixture();
-    const requests: ProviderRequest[] = [];
+    const requests: AiExecutionRequest[] = [];
     const provider = capturingProvider(requests, () => "ack");
     const conversationStore = new ConversationContextStore(fixture.store.path);
     try {
