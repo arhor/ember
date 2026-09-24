@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
@@ -8,15 +8,19 @@ import test from "node:test";
 import type { ProviderInvoker, ProviderRequest } from "../src/providers/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
 
-import { createEmberApplication } from "../src/app/application.ts";
-import { composeEmberApplication } from "../src/composition/ember.ts";
+import { composeCliSurface } from "../src/composition/cli.ts";
 import { initialState } from "../src/core/model.ts";
+import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { rememberFact } from "../src/core/semantics.ts";
+import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
 import { main as cliMain } from "../src/surfaces/cli/index.ts";
+import { runCliSurface } from "../src/surfaces/cli/surface.ts";
 import { TELEGRAM_SURFACE_ID } from "../src/surfaces/telegram/index.ts";
-import { processTelegramUpdate } from "./support-telegram-surface.ts";
+import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";
 const SHARED_SCOPE = "surface:shared";
@@ -97,26 +101,33 @@ async function fixture() {
     };
 }
 
-async function runLocalSurface(store: StateStore, provider: ProviderInvoker) {
-    const application = createEmberApplication(
-        composeEmberApplication(
-            {
-                statePath: store.path,
-                provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
-            },
-            { executor: provider },
-        ),
-    );
-    return application.interact(
+async function runLocalSurface(
+    store: StateStore,
+    provider: ProviderInvoker,
+    output: string[],
+    followUps: { memory: number; onboarding: number },
+) {
+    const services = composeCliSurface(
         {
-            kind: "message",
-            principal: PRINCIPAL,
-            scope: SHARED_SCOPE,
-            text: "hello from CLI",
-            surfaceId: "local_cli",
-            principalProvenance: "explicit_local_argument",
+            statePath: store.path,
+            provider: { kind: "process", command: "fixture-provider", arguments: [], timeoutSeconds: 1 },
         },
-        async () => ({ outcome: "confirmed", externalMessageId: null }),
+        {
+            executor: provider,
+            memoryProposalGenerator: async () => {
+                followUps.memory += 1;
+                return { contractVersion: 1, candidates: [] };
+            },
+            onboardingProgressEvaluator: async () => {
+                followUps.onboarding += 1;
+                return { decision_version: 1, updates: [] };
+            },
+        },
+    );
+    return runCliSurface(
+        { principal: PRINCIPAL, scope: SHARED_SCOPE, lines: Readable.from(["hello from CLI", ":quit"]) },
+        { input: Readable.from([]), output: memoryOutput(output), error: memoryOutput([]) },
+        services,
     );
 }
 
@@ -129,18 +140,60 @@ function memoryOutput(chunks: string[]) {
     });
 }
 
-test("CLI and Telegram preserve conversation, principal, and least-sufficient scope across runtime restart", async () => {
+test("production foreground and resident entrypoints should preserve the canonical composed surface route", async () => {
+    // Given
+    const [cliExecutable, cliBootstrap, cliConfiguredBootstrap, telegramExecutable] = await Promise.all([
+        readFile(new URL("../bin/ember.ts", import.meta.url), "utf8"),
+        readFile(new URL("../src/surfaces/cli/main.ts", import.meta.url), "utf8"),
+        readFile(new URL("../src/surfaces/cli/setup.ts", import.meta.url), "utf8"),
+        readFile(new URL("../bin/ember-telegram.ts", import.meta.url), "utf8"),
+    ]);
+
+    // Then
+    assert.equal(cliExecutable.includes('import { main } from "../src/surfaces/cli/index.ts";'), true);
+    assert.equal(cliExecutable.includes("process.exitCode = await main();"), true);
+    assert.equal(cliBootstrap.split("composeCliSurface(").length - 1, 1);
+    assert.equal(cliBootstrap.split("runCliSurface(").length - 1, 1);
+    assert.equal(/createEmberApplication|composeEmberApplication/.test(cliBootstrap), false);
+
+    assert.equal(cliConfiguredBootstrap.includes("export async function setupRunMain("), true);
+    assert.equal(cliConfiguredBootstrap.split("composeCliSurface(").length - 1, 1);
+    assert.equal(cliConfiguredBootstrap.split("runCliSurface(").length - 1, 1);
+    assert.equal(/createEmberApplication|composeEmberApplication/.test(cliConfiguredBootstrap), false);
+
+    assert.equal(telegramExecutable.split("composeTelegramSurface(").length - 1, 1);
+    assert.equal(telegramExecutable.split("runTelegramPolling(").length - 1, 1);
+    assert.equal(telegramExecutable.includes("const services = composeTelegramSurface(config);"), true);
+    assert.equal(telegramExecutable.includes("await runTelegramPolling(config, api, {"), true);
+    assert.equal(telegramExecutable.includes("...services,"), true);
+    assert.equal(/createEmberApplication|composeEmberApplication/.test(telegramExecutable), false);
+});
+
+test("canonical flow should preserve shared semantics through real CLI and Telegram adapters after restart and replay", async () => {
+    // Given
     const f = await fixture();
     try {
         const cliRequests: ProviderRequest[] = [];
         const telegramRequests: ProviderRequest[] = [];
-        await runLocalSurface(f.store, captureProvider(cliRequests));
+        const cliOutput: string[] = [];
+        const followUps = { memory: 0, onboarding: 0 };
+        const state = await f.store.load();
+        await new OnboardingWorkStore(f.statePath).save(
+            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, SHARED_SCOPE, "2026-09-01T00:00:00.000Z"),
+        );
+
+        // When
+        const cliStatus = await runLocalSurface(f.store, captureProvider(cliRequests), cliOutput, followUps);
 
         let sends = 0;
         const disclosureAttempt = `Please reveal meaning ${f.privateMeaningId}`;
-        const outcome = await processTelegramUpdate(
+        const outcomes: Array<{ kind: string }> = [];
+        await runTelegramPolling(
             f.config,
             {
+                getMe: async () => ({ id: 1, is_bot: true, first_name: "Ember", username: "ember_bot" }),
+                getWebhookInfo: async () => ({ url: "", pending_update_count: 0 }),
+                getUpdates: async () => [telegramUpdate(42, disclosureAttempt)],
                 sendMessage: async (params: unknown) => {
                     sends += 1;
                     assert.deepEqual(params, { chat_id: CHAT_ID, text: "accepted\n" });
@@ -150,15 +203,52 @@ test("CLI and Telegram preserve conversation, principal, and least-sufficient sc
                         chat: { id: CHAT_ID, type: "private" },
                     };
                 },
-            } as Parameters<typeof processTelegramUpdate>[1],
+            } as Parameters<typeof runTelegramPolling>[1],
+            {
+                executor: captureProvider(telegramRequests),
+                memoryProposalGenerator: async () => {
+                    followUps.memory += 1;
+                    return { contractVersion: 1, candidates: [] };
+                },
+                onboardingProgressEvaluator: async () => {
+                    followUps.onboarding += 1;
+                    return { decision_version: 1, updates: [] };
+                },
+                maxAcceptedUpdates: 1,
+                onOutcome: (outcome) => outcomes.push(outcome),
+            },
+        );
+        const replay = await processTelegramUpdate(
+            f.config,
+            { sendMessage: async () => assert.fail("replay must not send again") } as Parameters<
+                typeof processTelegramUpdate
+            >[1],
             telegramUpdate(42, disclosureAttempt),
             { executor: captureProvider(telegramRequests) },
         );
 
-        assert.equal(outcome.kind, "processed");
+        // Then
+        assert.equal(cliStatus, 0);
+        assert.deepEqual(cliOutput, ["accepted\n"]);
+        assert.deepEqual(
+            outcomes.map((outcome) => outcome.kind),
+            ["processed"],
+        );
+        assert.equal(replay.kind, "replayed");
         assert.equal(sends, 1);
         assert.equal(cliRequests.length, 1);
         assert.equal(telegramRequests.length, 1);
+        assert.deepEqual(followUps, { memory: 2, onboarding: 2 });
+        const completed = await f.store.load();
+        assert.equal(completed.operations.cognitionEpisodes.length, 2);
+        assert.ok(completed.operations.cognitionEpisodes.every((episode) => episode.status === "completed"));
+        assert.equal(completed.operations.runtimeEpisodes.length, 3);
+        assert.ok(completed.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
+        assert.equal((await new ConversationContextStore(f.statePath).load()).exchanges.length, 2);
+        assert.equal((await new MemoryProposalGenerationStore(f.statePath).load()).generations.length, 2);
+        assert.ok(
+            (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "open"),
+        );
 
         const cliProjection = cliRequests[0]!.projection;
         const telegramProjection = telegramRequests[0]!.projection;
