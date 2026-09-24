@@ -6,8 +6,8 @@ import type { AiExecutionRequest } from "../src/ai/contract.ts";
 
 import { agentActor, initialState, normalizeLegacyIdentityRepresentation, validateState } from "../src/core/model.ts";
 import { rememberInference, supersede, userEvidence } from "../src/core/semantics.ts";
-import { buildCodexPrompt } from "../src/providers/codex.ts";
-import { buildCursorPrompt } from "../src/providers/cursor.ts";
+import { buildCodexPrompt } from "../src/ai/providers/codex.ts";
+import { buildCursorPrompt } from "../src/ai/providers/cursor.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "relationship:user-1";
