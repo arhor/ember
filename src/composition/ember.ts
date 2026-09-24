@@ -10,6 +10,7 @@ import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
 import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
+import { createOllamaLanguageModel } from "../ai/ollama.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../ai/onboarding-progress.ts";
 import { createProcessLanguageModel } from "../ai/process.ts";
 import { createProcessProvider } from "../ai/providers/process.ts";
@@ -27,16 +28,17 @@ import { StateStore } from "../persistence/state-store.ts";
 import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
 import { providerLabel } from "./provider-label.ts";
 
-export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code";
+export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code" | "ollama";
 
 export interface EmberCompositionConfig {
     statePath: string;
     expectedContinuityBinding?: { lineageId: string; establishedAt: string };
     provider: {
         kind: EmberProviderKind;
-        command: string;
-        arguments: string[];
+        command?: string;
+        arguments?: string[];
         model?: string;
+        baseUrl?: string;
         timeoutSeconds: number;
     };
     googleCalendarConfigPath?: string;
@@ -108,7 +110,7 @@ export function composeEmberApplication(
         repositories,
         cognition: {
             executor,
-            providerLabel: providerLabel(config.provider.command),
+            providerLabel: config.provider.kind === "ollama" ? "ollama" : providerLabel(config.provider.command!),
             timeoutSeconds: config.provider.timeoutSeconds,
             ...createCapabilitySelector(config, repositories, overrides),
         },
@@ -127,7 +129,7 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
     onboardingProgressEvaluator?: OnboardingProgressEvaluator;
 } {
     const timeoutSeconds = config.provider.timeoutSeconds;
-    const adapter = { command: config.provider.command, arguments_: config.provider.arguments, timeoutSeconds };
+    const adapter = { command: config.provider.command!, arguments_: config.provider.arguments!, timeoutSeconds };
     if (config.provider.kind === "codex" || config.provider.kind === "cursor") {
         const model =
             config.provider.kind === "codex" ? createCodexLanguageModel(adapter) : createCursorLanguageModel(adapter);
@@ -153,8 +155,21 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
             },
         };
     }
+    if (config.provider.kind === "ollama") {
+        const model = createOllamaLanguageModel({
+            model: config.provider.model!,
+            ...(config.provider.baseUrl === undefined ? {} : { baseUrl: config.provider.baseUrl }),
+        });
+        return {
+            memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
+            onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
+        };
+    }
 
-    const executor = createProcessProvider({ command: config.provider.command, arguments_: config.provider.arguments });
+    const executor = createProcessProvider({
+        command: config.provider.command!,
+        arguments_: config.provider.arguments!,
+    });
     return {
         memoryProposalGenerator: createProviderMemoryProposalGenerator(executor, timeoutSeconds),
         onboardingProgressEvaluator: createProviderOnboardingProgressEvaluator(executor, timeoutSeconds),
@@ -190,7 +205,7 @@ export function createFileBackedRepositoriesForState(state: StateStore) {
 }
 
 function createConfiguredExecutor(config: EmberCompositionConfig, overrides: EmberCompositionOverrides): AiExecutor {
-    const adapter = { command: config.provider.command, arguments_: config.provider.arguments };
+    const adapter = { command: config.provider.command!, arguments_: config.provider.arguments! };
     if (config.provider.kind === "codex")
         return createAiSdkCognitionExecutor(
             createCodexLanguageModel({ ...adapter, timeoutSeconds: config.provider.timeoutSeconds }),
@@ -202,6 +217,13 @@ function createConfiguredExecutor(config: EmberCompositionConfig, overrides: Emb
     if (config.provider.kind === "process")
         return createAiSdkCognitionExecutor(
             createProcessLanguageModel({ ...adapter, timeoutSeconds: config.provider.timeoutSeconds }),
+        );
+    if (config.provider.kind === "ollama")
+        return createAiSdkCognitionExecutor(
+            createOllamaLanguageModel({
+                model: config.provider.model!,
+                ...(config.provider.baseUrl === undefined ? {} : { baseUrl: config.provider.baseUrl }),
+            }),
         );
 
     return async (request, options) => {

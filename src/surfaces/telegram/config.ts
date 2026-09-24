@@ -10,7 +10,8 @@ import { exactKeys, isObject } from "../../util.ts";
 
 export type TelegramProviderConfig =
     | { kind: "codex" | "cursor"; command: string; model: string; timeout_seconds: number }
-    | { kind: "claude-code"; model: string; timeout_seconds: number };
+    | { kind: "claude-code"; model: string; timeout_seconds: number }
+    | { kind: "ollama"; model: string; base_url?: string; timeout_seconds: number };
 
 export interface TelegramSurfaceConfig {
     config_version: 1 | 2 | 3;
@@ -21,7 +22,7 @@ export interface TelegramSurfaceConfig {
     chat_id: number;
     token_file: string;
     poll_timeout_seconds: number;
-    provider_kind: "process" | "codex" | "cursor" | "claude-code";
+    provider_kind: "process" | "codex" | "cursor" | "claude-code" | "ollama";
     provider_command: string;
     provider_arguments: string[];
     provider_timeout_seconds: number;
@@ -151,16 +152,26 @@ function validateLegacyProvider(value: Record<string, unknown>) {
 
 function validateStructuredProvider(value: unknown): asserts value is TelegramProviderConfig {
     if (!isObject(value)) throw new ValidationError("Telegram provider configuration is invalid");
-    if (!["codex", "cursor", "claude-code"].includes(String(value.kind)))
+    if (!["codex", "cursor", "claude-code", "ollama"].includes(String(value.kind)))
         throw new ValidationError("Telegram provider kind is unsupported");
     const fields =
         value.kind === "claude-code"
             ? ["kind", "model", "timeout_seconds"]
-            : ["kind", "command", "model", "timeout_seconds"];
+            : value.kind === "ollama"
+              ? value.base_url === undefined
+                  ? ["kind", "model", "timeout_seconds"]
+                  : ["kind", "model", "base_url", "timeout_seconds"]
+              : ["kind", "command", "model", "timeout_seconds"];
     if (!exactKeys(value, fields)) throw new ValidationError("Telegram provider configuration is invalid");
-    if (value.kind !== "claude-code") requireAbsolutePath(value.command, "Telegram provider command");
+    if (value.kind !== "claude-code" && value.kind !== "ollama")
+        requireAbsolutePath(value.command, "Telegram provider command");
     if (typeof value.model !== "string" || ASCII_CONTROL_CHARACTER_PATTERN.test(value.model))
         throw new ValidationError("Telegram provider model is invalid");
+    if (
+        value.kind === "ollama" &&
+        (!value.model.trim() || (value.base_url !== undefined && !isLoopbackUrl(value.base_url)))
+    )
+        throw new ValidationError("Telegram Ollama provider configuration is invalid");
 }
 
 function providerTimeout(value: Record<string, unknown>) {
@@ -175,10 +186,21 @@ function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): Telegram
     return {
         ...config,
         provider_kind: provider.kind,
-        provider_command: provider.kind === "claude-code" ? "claude-code" : provider.command,
+        provider_command:
+            provider.kind === "claude-code" || provider.kind === "ollama" ? provider.kind : provider.command,
         provider_arguments: provider.model ? ["--model", provider.model] : [],
         provider_timeout_seconds: provider.timeout_seconds,
     };
+}
+
+function isLoopbackUrl(value: unknown): boolean {
+    if (typeof value !== "string" || ASCII_CONTROL_CHARACTER_PATTERN.test(value)) return false;
+    try {
+        const url = new URL(value);
+        return url.protocol === "http:" && ["127.0.0.1", "localhost", "::1"].includes(url.hostname);
+    } catch {
+        return false;
+    }
 }
 
 function validatePollTimeout(value: unknown) {

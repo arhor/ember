@@ -128,10 +128,11 @@ async function runConfigured(
             : { expectedContinuityBinding: config.expectedContinuityBinding }),
         provider: {
             kind: config.providerKind,
-            command: config.providerCommand,
-            arguments: config.providerArgs,
+            ...(config.providerCommand === undefined ? {} : { command: config.providerCommand }),
+            ...(config.providerKind === "ollama" ? {} : { arguments: config.providerArgs }),
             timeoutSeconds: config.providerTimeoutSeconds,
             ...(config.providerModel === undefined ? {} : { model: config.providerModel }),
+            ...(config.providerBaseUrl === undefined ? {} : { baseUrl: config.providerBaseUrl }),
         },
         ...(config.googleCalendarConfigPath === undefined
             ? {}
@@ -196,13 +197,19 @@ async function firstRun(io: CliIo): Promise<number> {
         if (choice === "restore" && !state) throw new ValidationError("restore requires an existing state path");
         const principal = choice === "create" ? await ask("Local principal identifier: ") : undefined;
         if (choice === "create" && !principal) throw new ValidationError("create requires a principal identifier");
-        const provider = await ask("Cognition provider [codex/cursor/claude-code]: ");
-        if (provider !== "codex" && provider !== "cursor" && provider !== "claude-code")
-            throw new ValidationError("select codex, cursor, or claude-code");
+        const provider = await ask("Cognition provider [codex/cursor/claude-code/ollama]: ");
+        if (provider !== "codex" && provider !== "cursor" && provider !== "claude-code" && provider !== "ollama")
+            throw new ValidationError("select codex, cursor, claude-code, or ollama");
         const providerCommand =
-            provider === "claude-code"
+            provider === "claude-code" || provider === "ollama"
                 ? undefined
                 : (await ask("Provider executable (blank for installed default): ")) || undefined;
+        const model = provider === "ollama" ? await ask("Ollama model name: ") : undefined;
+        if (provider === "ollama" && !model) throw new ValidationError("Ollama requires an explicit model name");
+        const providerBaseUrl =
+            provider === "ollama"
+                ? (await ask("Ollama base URL (blank for http://127.0.0.1:11434): ")) || undefined
+                : undefined;
         const acceptContinuityRisk =
             choice === "restore"
                 ? (await ask("Continue this existing lineage despite possible stale or forked copies? [yes/no]: ")) ===
@@ -218,7 +225,8 @@ async function firstRun(io: CliIo): Promise<number> {
                 intent: choice === "create" ? "create-new" : "restore-existing",
                 provider,
                 providerCommand,
-                model: undefined,
+                model,
+                providerBaseUrl,
                 providerTimeoutSeconds: undefined,
                 acceptContinuityRisk,
                 confirmProviderChange: false,
@@ -239,11 +247,12 @@ const SETUP_HELP = `ember setup [--config PATH] [--state PATH]
 Defaults: ~/.ember/config/setup.json and ~/.ember/state/continuity.json.
 Config and state path overrides are independent; an existing config retains its state binding.
 Inspect first, then choose explicitly:
-  --intent create-new --principal USER --provider codex|cursor|claude-code
+  --intent create-new --principal USER --provider codex|cursor|claude-code|ollama
   --intent restore-existing --state PATH --accept-continuity-risk --provider PROVIDER
   --intent use-existing [--state PATH] [--provider PROVIDER]
 Restore attaches a local store and its sidecars; fork, snapshot age, and missing-history risks remain unresolved.
-Options: --model MODEL, --provider-command EXECUTABLE (Codex/Cursor only),
+Options: --model MODEL (required for Ollama), --provider-base-url LOOPBACK_URL (Ollama only),
+  --provider-command EXECUTABLE (Codex/Cursor only),
   --provider-timeout-seconds SECONDS (default 60, maximum 120), --confirm-provider-change.
 Provider credentials stay in provider-owned login stores; never pass secrets as options.
 Rerun with the same intent or use-existing to reverify; existing continuity is never overwritten.

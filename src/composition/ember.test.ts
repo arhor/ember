@@ -112,6 +112,21 @@ test("an empty configured Claude model invokes the provider factory with its def
     assert.deepEqual(options, {});
 });
 
+test("the composition root should label Ollama inference independently of an executable", () => {
+    // Given
+    const config = {
+        statePath,
+        provider: { kind: "ollama" as const, model: "qwen3:8b", baseUrl: "http://127.0.0.1:11435", timeoutSeconds: 60 },
+    };
+
+    // When
+    const dependencies = composeEmberApplication(config, { executor: providerStub });
+
+    // Then
+    assert.equal(dependencies.cognition.providerLabel, "ollama");
+    assert.equal(dependencies.cognition.timeoutSeconds, 60);
+});
+
 const providerStub: AiExecutor = async () => ({
     contractVersion: 1,
     reply: "unused",

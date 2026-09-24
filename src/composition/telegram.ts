@@ -10,10 +10,13 @@ export function composeTelegramSurface(config: TelegramSurfaceConfig, overrides:
             statePath: config.state_path,
             provider: {
                 kind: config.provider_kind,
-                command: config.provider_command,
-                arguments: config.provider_arguments,
+                ...(config.provider_kind === "ollama" ? {} : { command: config.provider_command }),
+                ...(config.provider_kind === "ollama" ? {} : { arguments: config.provider_arguments }),
                 timeoutSeconds: config.provider_timeout_seconds,
                 ...(config.provider?.model === undefined ? {} : { model: config.provider.model }),
+                ...(config.provider?.kind === "ollama" && config.provider.base_url !== undefined
+                    ? { baseUrl: config.provider.base_url }
+                    : {}),
             },
             ...(config.google_calendar_config_path === undefined
                 ? {}

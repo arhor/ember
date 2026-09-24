@@ -4,6 +4,7 @@ import type { BootstrapDependencies, SetupConfig, SetupProvider } from "../app/b
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
+import { createOllamaLanguageModel } from "../ai/ollama.ts";
 import {
     defaultSetupConfigPath,
     defaultSetupStatePath,
@@ -48,6 +49,13 @@ export function setupProvider(config: SetupProvider): AiExecutor {
             const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");
             return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
         };
+    if (config.kind === "ollama")
+        return createAiSdkCognitionExecutor(
+            createOllamaLanguageModel({
+                model: config.model,
+                ...(config.baseUrl === undefined ? {} : { baseUrl: config.baseUrl }),
+            }),
+        );
     const options = {
         command: config.command,
         arguments_: config.model ? ["--model", config.model] : [],
