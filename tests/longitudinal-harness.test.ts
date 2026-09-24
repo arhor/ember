@@ -5,7 +5,7 @@ import test from "node:test";
 import type { AiExecutionResult } from "../src/ai/contract.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { buildCodexArguments } from "../src/providers/codex.ts";
+import { buildCodexArguments } from "../src/ai/providers/codex.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "restart-thread-continuity.json");
