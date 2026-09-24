@@ -605,8 +605,8 @@ commands, interrupts, or “memory” types belong in canonical models.
 writer lease, atomic replacement, and `DurabilityUncertain` handling. A LangGraph
 checkpointer is a second operational store, never a replacement.
 
-**`src/providers/contract.ts`** remains the cognition provider seam. LangGraph may
-orchestrate when a provider is called but need not become the provider abstraction.
+**`src/ai/contract.ts`** remains the Ember-owned cognition execution seam. LangGraph may
+orchestrate when execution is called but need not become Ember's execution abstraction.
 Provider `externalThreadId` and LangGraph `thread_id` remain unrelated opaque IDs.
 
 **`src/delegation/`** keeps specialist purpose, authority, disclosure, partial/final
