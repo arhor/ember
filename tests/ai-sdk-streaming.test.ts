@@ -5,8 +5,8 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { AiExecutor, AiStreamObservation, AiStreamObserver } from "../src/ai/contract.ts";
 import type { CapabilityBinding } from "../src/capabilities/execution.ts";
-import type { ProviderInvoker, ProviderStreamObservation, ProviderStreamObserver } from "../src/providers/contract.ts";
 
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
@@ -61,20 +61,20 @@ function structuredTextChunks(deltas: string[], finishReason: "stop" | "tool-cal
     ];
 }
 
-function observationSink(onObservation?: (observation: ProviderStreamObservation) => void) {
-    const entries: ProviderStreamObservation[] = [];
+function observationSink(onObservation?: (observation: AiStreamObservation) => void) {
+    const entries: AiStreamObservation[] = [];
     return {
         entries,
         observer: {
-            observe(observation: ProviderStreamObservation) {
+            observe(observation: AiStreamObservation) {
                 entries.push(observation);
                 onObservation?.(observation);
             },
-        } satisfies ProviderStreamObserver,
+        } satisfies AiStreamObserver,
     };
 }
 
-function withStreaming(provider: ProviderInvoker, stream: ProviderStreamObserver): ProviderInvoker {
+function withStreaming(provider: AiExecutor, stream: AiStreamObserver): AiExecutor {
     return (request, options) => provider(request, { ...options, stream });
 }
 
@@ -121,7 +121,7 @@ async function closeFixture(fixture) {
     }
 }
 
-async function runStreaming(fixture, model, stream: ProviderStreamObserver, options = {}) {
+async function runStreaming(fixture, model, stream: AiStreamObserver, options = {}) {
     const provider = withStreaming(createAiSdkCognitionExecutor(model), stream);
     return executeCognition(createFileBackedRepositoriesForState(fixture.store), fixture.state, {
         runtimeId: fixture.runtimeId,

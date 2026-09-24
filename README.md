@@ -2,11 +2,14 @@
 
 Ember is an experimental persistent personal agent runtime focused on continuity, memory, agency, and composable capabilities.
 
-The initial research programme and representation-neutral semantic architecture are established. The repository now also contains a deliberately narrow executable continuity slice implemented as native ESM TypeScript on Node.js 26, following [ADR 0006](docs/architecture/decisions/0006-adopt-typescript-on-nodejs-26.md).
+The repository contains a native ESM TypeScript implementation on Node.js 26. The current production architecture routes
+CLI and Telegram interaction through one transport-neutral Ember application boundary while keeping continuity, semantic
+state, authority, conversation membership, and delivery truth Ember-owned.
 
 ## Quick start
 
-The supported development/runtime baseline is Node.js **26.8.1 or newer within 26.x** and npm. TypeScript is executed directly by Node; there is no transpilation or generated JavaScript tree.
+The supported development/runtime baseline is Node.js **26.8.1 or newer within 26.x** and npm. TypeScript is executed
+directly by Node; there is no transpilation or generated JavaScript tree.
 
 ```sh
 npm ci
@@ -14,53 +17,75 @@ npm run check
 npm test
 ```
 
-Inspect machine setup directly from source, then explicitly create a new lineage or
-attach existing continuity. Authenticate with your chosen provider's own login flow first:
+Run Ember from source:
 
 ```sh
-node bin/ember.ts setup
-node bin/ember.ts setup --intent create-new --principal user-1 --provider codex
 node bin/ember.ts
 ```
 
-The application home separates machine configuration (`~/.ember/config/`) from continuity
-state (`~/.ember/state/`). Setup prints the configuration path; `--config` and `--state`
-provide independent overrides.
-After verified setup, plain `ember` starts a foreground conversation in the configured
-lineage's relationship scope. Exiting and starting it again continues the persisted
-conversation. A resident service is optional. For a nondefault setup configuration or
-another scope, use `ember run --config PATH --scope SCOPE`.
-See [Setup and Onboarding](docs/architecture/setup-and-onboarding-semantics.md#implemented-machine-bootstrap-253)
-for restore, provider selection, and recovery. The low-level `init` command remains available;
-see the [Minimal Continuity Slice Runbook](docs/architecture/minimal-continuity-runbook.md)
-for explicit `run`, inspection, recovery, and provider examples.
+With no default setup record, plain `ember` asks whether to create a new continuity or restore an existing one, verifies the
+selected cognition provider, activates the continuity, and then continues directly into ordinary conversation. On later
+runs, plain `ember` loads the same configured continuity and relationship scope.
+
+Provider authentication remains owned by the selected provider runtime. Authenticate there first when required.
+
+Explicit setup and nondefault runs remain available for scripting, recovery, or alternate configuration:
+
+```sh
+node bin/ember.ts setup --intent create-new --principal user-1 --provider codex
+node bin/ember.ts run --config PATH --scope SCOPE
+```
+
+The application home separates machine configuration (`~/.ember/config/`) from continuity state (`~/.ember/state/`).
+A resident service is optional. Foreground CLI conversation does not require systemd, launchd, or another daemon.
+
+See [Canonical Ember Application Flow](docs/architecture/canonical-application-flow.md) for the complete ordinary message
+path and [Setup and Onboarding](docs/architecture/setup-and-onboarding-semantics.md) for create/restore, provider
+verification, recovery, and trusted-host setup.
 
 ## Repository layout
 
-The adopted runtime is organized around explicit module boundaries rather than one flat source directory:
+The production tree is organized by ownership:
 
-- `src/core/` owns canonical state types, semantic operations, projections, and shared domain errors;
-- `src/runtime/` owns runtime lifecycle and cognition orchestration;
-- `src/providers/` owns the one-shot cognition provider contract, generic process transport, concrete provider adapters, and provider evidence helpers;
-- `src/delegation/` owns bounded specialist-delegation boundaries, kept conceptually separate from one-shot cognition providers;
-- `src/persistence/` owns durable state storage;
-- `src/surfaces/` owns concrete interaction modules, with each surface grouped under `src/surfaces/<surface>/`; the local CLI and Telegram are sibling modules over the shared interaction boundary. CLI-specific command parsing and operator/application dispatch remain local to `src/surfaces/cli/`, while conversational mechanics are isolated in its `surface.ts`;
-- `eval/` contains longitudinal and process-restart evaluation harnesses rather than production runtime code;
-- narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under `tests/`.
+- `src/app/` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
+  and execution coordination, post-turn work, bootstrap decisions, and application-level use cases;
+- `src/composition/` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
+  capability selection, and concrete surface services;
+- `src/ai/` owns the Ember AI execution contract, Vercel AI SDK execution mechanics, bounded provider/model bridges,
+  structured control generation, and generic process compatibility mechanics;
+- `src/core/` owns canonical state types, semantic operations, projections, runtime-episode semantics, and shared domain
+  errors;
+- `src/runtime/` owns focused operational runtime mechanics such as the interaction ledger, delivery reconciliation, and
+  episodic unattended execution;
+- `src/persistence/` owns durable filesystem-backed repositories and materializations;
+- `src/integrations/` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
+- `src/host/` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
+- `src/surfaces/` owns concrete interaction transports. CLI and Telegram receive an already composed
+  `EmberApplication` for ordinary conversation and keep transport-specific admission and delivery behavior;
+- `eval/` contains evaluation harnesses rather than production runtime code;
+- narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under
+  `tests/`.
 
-See [Source Layout and Surface Placement](docs/architecture/source-layout.md) for the current placement rules and intended dependency direction.
+Conversational surfaces must not privately compose the production application, providers, AI SDK infrastructure, or
+canonical persistence. `scripts/check-dependencies.ts` enforces the high-value dependency rules in `npm run check`.
 
-Older research/evaluation records and explicitly historical sections of current design records may preserve source paths that were accurate when those artifacts were produced. Current implementation references should use the layout above.
+See [Source Layout and Surface Placement](docs/architecture/source-layout.md) for placement rules and dependency direction.
 
 ## Design and architecture
 
+- [Canonical application flow](docs/architecture/canonical-application-flow.md)
 - [Vision](docs/vision.md)
 - [Design principles](docs/principles.md)
 - [Architecture index](docs/architecture/README.md)
 - [Source layout and surface placement](docs/architecture/source-layout.md)
-- [Cross-cutting design directions](docs/architecture/design-directions.md)
+- [Interaction surface boundary](docs/architecture/interaction-surface-boundary.md)
+- [AI SDK cognition adapter boundary](docs/architecture/ai-sdk-cognition-adapter-boundary.md)
+- [Setup and onboarding semantics](docs/architecture/setup-and-onboarding-semantics.md)
 - [Architecture acceptance scenarios](docs/architecture/acceptance-scenarios.md)
-- [Minimal continuity vertical slice](docs/architecture/minimal-continuity-slice.md)
-- [Minimal continuity runbook](docs/architecture/minimal-continuity-runbook.md)
+- [Cross-cutting design directions](docs/architecture/design-directions.md)
 - [TypeScript runtime decision](docs/architecture/decisions/0006-adopt-typescript-on-nodejs-26.md)
 - [Architecture research](docs/research/README.md)
+
+Older research, evaluations, and explicitly historical documents may preserve source paths or architecture names that were
+accurate when those artifacts were produced. Current implementation work should begin with the canonical flow and current
+discovery metadata above.

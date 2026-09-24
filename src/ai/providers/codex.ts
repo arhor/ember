@@ -2,41 +2,20 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
-import type { CliProcessSpawn } from "../host/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderErrorOptions, ProviderOutcome } from "../../core/errors.ts";
+import type { CliProcessSpawn } from "../../host/process-lifecycle.ts";
+import type { AiExecutionOptions, AiExecutionRequest, AiExecutionResult } from "../contract.ts";
 
-import { ProviderError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
-import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../host/process-lifecycle.ts";
-import { isObject } from "../util.ts";
-import {
-    MAX_PROVIDER_TIMEOUT_SECONDS,
-    MAX_STDERR_BYTES,
-    MAX_STDOUT_BYTES,
-    validateProviderResult,
-} from "./contract.ts";
+import { ProviderError } from "../../core/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../../core/model.ts";
+import { codexEnvironment } from "../../host/codex-environment.ts";
+import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
+import { isObject } from "../../util.ts";
+import { MAX_AI_TIMEOUT_SECONDS, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, validateAiExecutionResult } from "../contract.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const RESULT_SCHEMA_NAME = "provider-result.schema.json";
 const decoder = new TextDecoder("utf-8", { fatal: true });
-const ENVIRONMENT_ALLOWLIST = [
-    "PATH",
-    "HOME",
-    "CODEX_HOME",
-    "TMPDIR",
-    "TMP",
-    "TEMP",
-    "LANG",
-    "LC_ALL",
-    "SSL_CERT_FILE",
-    "SSL_CERT_DIR",
-    "NODE_EXTRA_CA_CERTS",
-    "XDG_CONFIG_HOME",
-    "XDG_DATA_HOME",
-    "XDG_CACHE_HOME",
-] as const;
-
 export const CODEX_PROVIDER_RESULT_SCHEMA = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     type: "object",
@@ -49,7 +28,7 @@ export const CODEX_PROVIDER_RESULT_SCHEMA = {
     },
 } as const;
 
-export interface InvokeCodexOptions extends ProviderInvocationOptions {
+export interface InvokeCodexOptions extends AiExecutionOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
     spawnImpl?: CliProcessSpawn;
@@ -73,12 +52,12 @@ export interface CodexProviderConfig {
     thread?: InvokeCodexOptions["thread"];
 }
 
-export function buildCodexPrompt(request: ProviderRequest, setupIntent = false): string {
+export function buildCodexPrompt(request: AiExecutionRequest, setupIntent = false): string {
     return [
         "Act only as a bounded cognition provider for the continuing agent.",
         "The JSON below contains the complete permitted projection and current input for this episode.",
         "Do not use tools, files, prior threads, or outside context.",
-        "Return one ProviderResult matching the supplied output schema.",
+        "Return one AiExecutionResult matching the supplied output schema.",
         "Set usedMeaningIds to only projected meaning IDs materially used in the reply.",
         "When onboarding_work is present, follow its guidance through ordinary conversation and prioritize the user's current request.",
         ...(setupIntent
@@ -91,12 +70,6 @@ export function buildCodexPrompt(request: ProviderRequest, setupIntent = false):
         JSON.stringify(request),
         "</ember_provider_request>",
     ].join("\n");
-}
-
-export function codexEnvironment(source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-    const environment: NodeJS.ProcessEnv = {};
-    for (const name of ENVIRONMENT_ALLOWLIST) if (source[name] !== undefined) environment[name] = source[name];
-    return environment;
 }
 
 export function buildCodexArguments(
@@ -149,16 +122,16 @@ export function buildCodexArguments(
 export async function invokeCodexProvider(
     command: string,
     argumentPrefix: string[],
-    request: ProviderRequest,
+    request: AiExecutionRequest,
     options: InvokeCodexOptions,
-): Promise<ProviderResult> {
+): Promise<AiExecutionResult> {
     const parsed = await invokeCodexStructured(
         command,
         argumentPrefix,
         { prompt: buildCodexPrompt(request), schema: CODEX_PROVIDER_RESULT_SCHEMA },
         options,
     );
-    validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
+    validateAiExecutionResult(parsed.result, new Set(request.projection.selection.meaning_ids));
     return parsed.externalThreadId === undefined
         ? parsed.result
         : { ...parsed.result, operational: { externalThreadId: parsed.externalThreadId } };
@@ -181,8 +154,8 @@ export async function invokeCodexStructured(
 ): Promise<{ result: unknown; externalThreadId?: string }> {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
         throw new ProviderError("provider timeout must be a positive finite number");
-    if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
-        throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`provider timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
     if (signal?.aborted) {
         const timedOut = isTimeoutAbort(signal.reason);
         throw new ProviderError(

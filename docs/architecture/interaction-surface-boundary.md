@@ -39,9 +39,15 @@ privacy, and delivery distinctions executable across both current surfaces.
 ## Boundary
 
 `src/app/contract.ts` and `src/app/application.ts` expose the one supported
-surface-neutral ordinary-interaction seam. `src/runtime/interaction-boundary.ts`
-retains the focused operational ledger and delivery-reconciliation mechanics used by
-that application boundary.
+surface-neutral ordinary-interaction seam. Executable/bootstrap code composes that
+application through `src/composition/cli.ts` or `src/composition/telegram.ts` before
+entering the concrete adapter; ordinary surface modules receive the application and do
+not construct providers, stores, or cognition orchestration themselves.
+`src/runtime/interaction-boundary.ts` retains the focused operational ledger and
+delivery-reconciliation mechanics used by the application boundary.
+
+The complete executable path is documented in
+[Canonical Ember Application Flow](canonical-application-flow.md).
 
 ```text
 surface input

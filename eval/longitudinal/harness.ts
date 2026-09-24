@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
+import type { AiExecutionRequest, AiExecutionResult } from "../../src/ai/contract.ts";
 import type { EmberState, RuntimeId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
-import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
@@ -126,7 +126,7 @@ export interface HarnessProviderInvocation {
     episodeId: string;
     cognitionBackend: string;
     thread: { mode: "fresh" } | { mode: "reuse"; externalThreadId: string; sourceEpisode: string };
-    request: ProviderRequest;
+    request: AiExecutionRequest;
 }
 
 export interface BackendMetadata {
@@ -137,7 +137,7 @@ export interface BackendMetadata {
 }
 
 export interface HarnessProviderOutput {
-    result: ProviderResult;
+    result: AiExecutionResult;
     backend_metadata: BackendMetadata;
 }
 
@@ -194,7 +194,7 @@ export interface LongitudinalReport {
         canonical_before: ReturnType<typeof inspectionView>;
         projection: Projection;
         context_evaluation: ContextEvaluation;
-        provider_result: ProviderResult;
+        provider_result: AiExecutionResult;
         canonical_after: ReturnType<typeof inspectionView>;
         ember_assertions: AssertionObservation[];
         model_observations: AssertionObservation[];
@@ -258,8 +258,8 @@ export async function runLongitudinalScenario(
             const canonicalBefore = inspectionView(state);
             const thread = resolveThread(episode.external_thread, episodeThreads);
             const previouslyObservedThreadIds = new Set(episodeThreads.values());
-            let observedRequest: ProviderRequest | null = null;
-            let observedResult: ProviderResult | null = null;
+            let observedRequest: AiExecutionRequest | null = null;
+            let observedResult: AiExecutionResult | null = null;
             let observedBackendMetadata: BackendMetadata | null = null;
             const result = await withFixedTime(episode.at, () =>
                 executeCognition(createFileBackedRepositoriesForState(store), state, {
@@ -299,8 +299,8 @@ export async function runLongitudinalScenario(
             }
             state = result.state;
             const reply = result.expressionText ?? "";
-            const providerResult = observedResult as ProviderResult;
-            const request = observedRequest as ProviderRequest;
+            const providerResult = observedResult as AiExecutionResult;
+            const request = observedRequest as AiExecutionRequest;
             const backendMetadata = observedBackendMetadata as BackendMetadata;
             const providerThreadId = providerResult.operational?.externalThreadId ?? null;
             if (providerThreadId !== null) episodeThreads.set(episode.id, providerThreadId);

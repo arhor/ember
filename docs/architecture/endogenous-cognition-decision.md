@@ -171,7 +171,7 @@ opportunity boundary applies its stricter outcome validation.
 The exact-token reply protocol here is an external-runtime compatibility mechanism,
 not the shared opportunity contract. Issue #198 deliberately leaves this Codex path
 available alongside the AI SDK structured implementation rather than making
-`ProviderResult` generic or leaking AI SDK schema types into it.
+`AiExecutionResult` generic or leaking AI SDK schema types into it.
 
 ### Reproduction
 

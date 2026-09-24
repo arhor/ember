@@ -1,5 +1,5 @@
 ---
-summary: "Issue #199 boundary for provisional cognition streaming through an Ember-owned provider observer backed by Vercel AI SDK streamText, while final ProviderResult validation remains the only semantic completion boundary."
+summary: "Issue #199 boundary for provisional cognition streaming through an Ember-owned provider observer backed by Vercel AI SDK streamText, while final AiExecutionResult validation remains the only semantic completion boundary."
 read_when:
   - "Adding or changing provisional model output streaming"
   - "Using AI SDK streamText in an Ember cognition provider"
@@ -19,26 +19,26 @@ optional capability beside the existing buffered provider path. It does not repl
 The shared seam remains SDK-independent:
 
 ```text
-ProviderRequest
+AiExecutionRequest
         |
         v
-ProviderInvoker
+AiExecutor
         |
-        +-> optional ProviderStreamObserver
+        +-> optional AiStreamObserver
         |      |
         |      +-> provisional_text_snapshot
         |
         v
-ProviderResult
+AiExecutionResult
         |
         v
-validateProviderResult
+validateAiExecutionResult
         |
         v
 canonical cognition completion
 ```
 
-`ProviderInvocationOptions.stream` accepts an optional `ProviderStreamObserver`. The
+`AiExecutionOptions.stream` accepts an optional `AiStreamObserver`. The
 observer receives only Ember-owned plain data:
 
 ```ts
@@ -82,7 +82,7 @@ own failures.
 `createAiSdkCognitionExecutor` keeps its existing buffered behavior when no stream observer is
 supplied. That path still uses `generateText`.
 
-When a caller supplies `ProviderInvocationOptions.stream`, the same adapter uses AI SDK
+When a caller supplies `AiExecutionOptions.stream`, the same adapter uses AI SDK
 `streamText` with the same bounded prompt, structured `Output.object`, selected tools,
 step limit, retry policy, timeout, abort signal, capability firewall, and lifecycle
 evidence callbacks as the buffered path.
@@ -92,8 +92,8 @@ the partially generated structured output. It does not forward raw SDK chunks. A
 snapshot is emitted only when a non-empty partial `reply` changes.
 
 After streaming finishes, the adapter awaits the final structured output and runs the
-unchanged Ember `validateProviderResult` check against the selected projection meaning
-IDs. Only that validated final `ProviderResult` can reach application-owned cognition
+unchanged Ember `validateAiExecutionResult` check against the selected projection meaning
+IDs. Only that validated final `AiExecutionResult` can reach application-owned cognition
 completion and canonical expression evidence.
 
 This preserves the governing boundary:
@@ -130,8 +130,8 @@ provider lifecycle metadata and cannot be interpreted as effect-completion evide
 ## First consumer
 
 The first consumer is deliberately a deterministic test/event sink rather than a UI
-transport. Tests wrap the production `ProviderInvoker` and add a
-`ProviderStreamObserver` for that invocation, then execute through the focused
+transport. Tests wrap the production `AiExecutor` and add a
+`AiStreamObserver` for that invocation, then execute through the focused
 application cognition execution path (`executeCognition`).
 
 This proves the seam end to end while keeping interaction surfaces unchanged. Telegram

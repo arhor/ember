@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ProviderResult } from "../src/providers/contract.ts";
+import type { AiExecutionResult } from "../src/ai/contract.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { buildCodexArguments } from "../src/providers/codex.ts";
+import { buildCodexArguments } from "../src/ai/providers/codex.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "restart-thread-continuity.json");
@@ -291,7 +291,7 @@ test("longitudinal harness should fail Ember freshness assertions when a fresh e
     );
 });
 
-function harnessOutput(backend: string, result: ProviderResult) {
+function harnessOutput(backend: string, result: AiExecutionResult) {
     return {
         result,
         backend_metadata: {

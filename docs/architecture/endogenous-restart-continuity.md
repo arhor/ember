@@ -82,7 +82,7 @@ process performs no model call and exposes no thread to resume.
 
 The live assertion does not infer freshness merely from the selected execution mode.
 The worker wraps the production provider invocation, observes the provider's actual
-`thread.started` evidence through `ProviderResult.operational.externalThreadId`,
+`thread.started` evidence through `AiExecutionResult.operational.externalThreadId`,
 and retains only a boolean `provider_thread_observed` signal in the sanitized report.
 The live proof fails if no external thread ID is actually observed after restart.
 

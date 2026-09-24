@@ -1,14 +1,18 @@
 ---
-summary: "Issue #178 evaluation of Vercel AI SDK as a replaceable TypeScript model, structured-output, streaming, tool-loop, approval, MCP, and observability substrate beneath Ember-owned cognition and authority semantics."
+summary: "Pre-adoption issue #178 evaluation of Vercel AI SDK as a replaceable model and tool substrate beneath Ember-owned semantics."
 read_when:
-  - "Considering Vercel AI SDK for model invocation, structured output, streaming, tools, approvals, MCP, or provider normalization in Ember"
-  - "Comparing low-level agent SDKs as replaceable mechanics beneath Ember-owned ProviderRequest and ProviderResult semantics"
-  - "Reviewing provider-specific continuation/evidence leakage, AI SDK type containment, or direct-API provider adoption"
+  - "Tracing the pre-adoption Vercel AI SDK evaluation and its former provider-contract assumptions"
+  - "Comparing historical AI SDK alternatives, type-containment risks, and provider-specific evidence concerns"
 role: design
-discovery_status: current
+discovery_status: superseded
+superseded_by: docs/architecture/ai-sdk-cognition-adapter-boundary.md
 ---
 
 # Vercel AI SDK Modular Cognition Evaluation
+
+> Historical evaluation from issue #178. Its proposed provider contract and
+> adoption steps precede the implemented `AiExecutionRequest` / `AiExecutor` boundary.
+> For current mechanics, see [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md).
 
 ## Decision
 
@@ -61,7 +65,7 @@ This evaluation was performed on **2026-09-07** against:
 
 - Ember's [Design Principles](../principles.md), accepted ADRs, and
   [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- `src/providers/contract.ts` and the
+- the then-current provider contract (now `src/ai/contract.ts`) and the historical
   [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current Codex/Cursor one-shot cognition adapters and their replacement,
   cancellation, and provider-specific lifecycle evidence;

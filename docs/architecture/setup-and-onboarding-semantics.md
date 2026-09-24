@@ -11,10 +11,12 @@ discovery_status: current
 
 # Installation, Restore/Create, and Conversational Onboarding Semantics
 
-> Status: architecture contract for issue #252 and the setup epic #250.
+> Status: current setup/onboarding contract from epic #250, including the implemented
+> default first-run conversation entry and the typed trusted-host Telegram setup handoff.
 >
-> The semantic contract precedes implementation. The #253 section below records the
-> subordinate machine bootstrap CLI and its current limits.
+> Machine bootstrap and optional host mutation surround the same ordinary application
+> path documented in [Canonical Ember Application Flow](canonical-application-flow.md);
+> they are not alternate cognition architectures.
 
 ## Purpose
 
@@ -679,7 +681,7 @@ remains available only through the existing explicit low-level CLI.
 Each mutating setup invocation makes one real, non-retried invocation through the selected
 production adapter. The request uses a disposable synthetic in-memory lineage/runtime,
 no user meaning, no canonical lineage or principal, and no host paths or credentials.
-The response must pass `ProviderResult` validation with an empty permitted meaning set.
+The response must pass `AiExecutionResult` validation with an empty permitted meaning set.
 Provider reply, external session identifiers, and raw error diagnostics are discarded.
 Setup records only normalized probe outcomes. Failure instructions direct the operator
 to check provider-owned authentication and retry or explicitly select another provider.

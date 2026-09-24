@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
+import type { AiExecutionResult } from "../src/ai/contract.ts";
 import type { EvidenceId } from "../src/core/model.ts";
 import type { ProjectedMeaning } from "../src/core/projection.ts";
-import type { ProviderResult } from "../src/providers/contract.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { initialState, validateState } from "../src/core/model.ts";
@@ -232,7 +232,7 @@ function roots(meaning: ProjectedMeaning): string[] {
         .sort();
 }
 
-function harnessOutput(backend: string, result: ProviderResult) {
+function harnessOutput(backend: string, result: AiExecutionResult) {
     return {
         result,
         backend_metadata: {

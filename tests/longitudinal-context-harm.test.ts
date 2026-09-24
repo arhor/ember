@@ -3,7 +3,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import type { ContextEvaluationInput } from "../eval/longitudinal/context-harm.ts";
-import type { ProviderResult } from "../src/providers/contract.ts";
+import type { AiExecutionResult } from "../src/ai/contract.ts";
 
 import { evaluateContextHarm } from "../eval/longitudinal/context-harm.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
@@ -209,7 +209,7 @@ function episode(
     return value;
 }
 
-function harnessOutput(backend: string, result: ProviderResult) {
+function harnessOutput(backend: string, result: AiExecutionResult) {
     return {
         result,
         backend_metadata: {

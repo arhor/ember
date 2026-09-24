@@ -30,20 +30,20 @@ leaving Ember's request/result semantics outside the provider.
 
 ## Semantic boundary
 
-Claude cognition consumes the existing Ember-owned `ProviderRequest` and returns the
-existing `ProviderResult`:
+Claude cognition consumes the existing Ember-owned `AiExecutionRequest` and returns the
+existing `AiExecutionResult`:
 
 ```text
-ProviderRequest
+AiExecutionRequest
   -> Claude-specific isolation/model construction
   -> createAiSdkCognitionExecutor(LanguageModel)
   -> AI SDK Output.object structured generation
-  -> validateProviderResult
-  -> ProviderResult
+  -> validateAiExecutionResult
+  -> AiExecutionResult
 ```
 
 `usedMeaningIds` therefore still has two gates. AI SDK/provider schema validation proves
-shape; `validateProviderResult` proves every claimed meaning was actually selected in
+shape; `validateAiExecutionResult` proves every claimed meaning was actually selected in
 the supplied projection. Claude model/session metadata is not canonical meaning.
 
 The adapter deliberately does not expose `sdkOptions`, `settings`, `extraArgs`, resume
@@ -115,7 +115,7 @@ and Ember's strict JSON schema for:
 - `usedMeaningIds`.
 
 Provider 4.3.1 maps this AI SDK response format onto Claude Agent SDK structured output.
-The result then passes `validateProviderResult`; prompt-only JSON obedience is never a
+The result then passes `validateAiExecutionResult`; prompt-only JSON obedience is never a
 parsing contract. This directly replaces the custom structured-output parsing that a
 hand-written Claude CLI adapter would otherwise need.
 
@@ -163,7 +163,7 @@ The opt-in authenticated probe is:
 npm run smoke:claude
 ```
 
-It uses a real Ember `ProviderRequest`, places a project `CLAUDE.md`/settings marker
+It uses a real Ember `AiExecutionRequest`, places a project `CLAUDE.md`/settings marker
 outside the adapter's isolated cwd, injects intentionally invalid API/token environment
 values that the adapter must remove, and requires an already authenticated local Claude
 subscription. The probe checks least-sufficient projection disclosure, absence of the

@@ -18,7 +18,7 @@ model-facing capability execution seam. The implementation deliberately keeps th
 semantic contract smaller than a plugin system or agent framework:
 
 ```text
-ProviderRequest
+AiExecutionRequest
     |
     v
 Ember selects CapabilityBinding values for this cognition
@@ -41,10 +41,10 @@ Ember capability execution firewall
 bounded operational evidence returned as the AI SDK tool result
     |
     v
-model produces final ProviderResult
+model produces final AiExecutionResult
     |
     v
-Ember validateProviderResult
+Ember validateAiExecutionResult
 ```
 
 `src/capabilities/execution.ts` owns the capability contract and firewall. Application
@@ -151,7 +151,7 @@ operational evidence rather than thrown away or converted into success-shaped da
 
 That evidence is input to the remaining cognition loop only. It is not automatically
 adopted as Ember meaning, authority, or observed external truth. The final model
-response must still satisfy the existing `ProviderResult` contract, including
+response must still satisfy the existing `AiExecutionResult` contract, including
 `usedMeaningIds` being a subset of the projection selected before invocation.
 
 Canonical cognition state therefore continues to contain Ember-owned cognition and

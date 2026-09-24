@@ -2,20 +2,15 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { ProviderErrorOptions, ProviderOutcome } from "../core/errors.ts";
-import type { CliProcessSpawn } from "../host/process-lifecycle.ts";
-import type { ProviderInvocationOptions, ProviderRequest, ProviderResult } from "./contract.ts";
+import type { ProviderErrorOptions, ProviderOutcome } from "../../core/errors.ts";
+import type { CliProcessSpawn } from "../../host/process-lifecycle.ts";
+import type { AiExecutionOptions, AiExecutionRequest, AiExecutionResult } from "../contract.ts";
 
-import { ProviderError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../core/model.ts";
-import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../host/process-lifecycle.ts";
-import { isObject } from "../util.ts";
-import {
-    MAX_PROVIDER_TIMEOUT_SECONDS,
-    MAX_STDERR_BYTES,
-    MAX_STDOUT_BYTES,
-    validateProviderResult,
-} from "./contract.ts";
+import { ProviderError } from "../../core/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../../core/model.ts";
+import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
+import { isObject } from "../../util.ts";
+import { MAX_AI_TIMEOUT_SECONDS, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, validateAiExecutionResult } from "../contract.ts";
 
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const CURSOR_CONFIG_DIRECTORY = ".cursor";
@@ -38,7 +33,7 @@ const ENVIRONMENT_ALLOWLIST = [
 ] as const;
 const TOOL_DENY_CONFIG = `${JSON.stringify({ permissions: { allow: [], deny: ["Shell(*)", "Read(*)", "Read(**)", "Write(*)", "Write(**)", "WebFetch(*)", "Mcp(*:*)"] } }, null, 2)}\n`;
 
-export interface InvokeCursorOptions extends ProviderInvocationOptions {
+export interface InvokeCursorOptions extends AiExecutionOptions {
     cwd?: string;
     environment?: NodeJS.ProcessEnv;
     spawnImpl?: CliProcessSpawn;
@@ -58,7 +53,7 @@ export interface CursorProviderConfig {
     finalTerminationMs?: number;
 }
 
-export function buildCursorPrompt(request: ProviderRequest, setupIntent = false): string {
+export function buildCursorPrompt(request: AiExecutionRequest, setupIntent = false): string {
     return [
         "Act only as a bounded cognition provider for the continuing agent.",
         "The JSON below contains the complete permitted projection and current input for this episode.",
@@ -136,11 +131,11 @@ export function validateCursorArguments(arguments_: string[]): void {
 export async function invokeCursorProvider(
     command: string,
     argumentPrefix: string[],
-    request: ProviderRequest,
+    request: AiExecutionRequest,
     options: InvokeCursorOptions,
-): Promise<ProviderResult> {
+): Promise<AiExecutionResult> {
     const parsed = await invokeCursorStructured(command, argumentPrefix, buildCursorPrompt(request), options);
-    validateProviderResult(parsed.result, new Set(request.projection.selection.meaning_ids));
+    validateAiExecutionResult(parsed.result, new Set(request.projection.selection.meaning_ids));
     return { ...parsed.result, operational: { externalThreadId: parsed.externalSessionId } };
 }
 
@@ -161,8 +156,8 @@ export async function invokeCursorStructured(
 ): Promise<{ result: unknown; externalSessionId: string }> {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
         throw new ProviderError("provider timeout must be a positive finite number");
-    if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
-        throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`provider timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
     if (signal?.aborted) {
         const timedOut = isTimeoutAbort(signal.reason);
         throw new ProviderError(

@@ -1,6 +1,6 @@
+import type { AiExecutor } from "../ai/contract.ts";
 import type { OnboardingProgressDecision, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
 import type { Projection } from "../core/projection.ts";
-import type { ProviderInvoker } from "../providers/contract.ts";
 
 import { ValidationError } from "../core/errors.ts";
 import { newId } from "../core/model.ts";
@@ -29,7 +29,7 @@ export const ONBOARDING_PROGRESS_INSTRUCTION = [
 ].join(" ");
 
 export function createProviderOnboardingProgressEvaluator(
-    provider: ProviderInvoker,
+    provider: AiExecutor,
     timeoutSeconds: number,
 ): OnboardingProgressEvaluator {
     return async ({ projection, onboardingWork, input }) => {

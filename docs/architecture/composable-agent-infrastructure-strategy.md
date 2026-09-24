@@ -1,14 +1,19 @@
 ---
-summary: "Issue #180 synthesis of Mastra, LangGraph.js, Vercel AI SDK, and OpenAI Agents SDK research into a single-primary-SDK adoption strategy that keeps Ember semantics and canonical state framework-independent."
+summary: "Pre-adoption issue #180 synthesis explaining why Ember chose Vercel AI SDK as its primary infrastructure toolkit while retaining Ember-owned semantics."
 read_when:
-  - "Choosing reusable JS/TS model, tool, MCP, durable-execution, retrieval, tracing, persistence, or evaluation infrastructure for Ember"
-  - "Deciding whether Ember should adopt Vercel AI SDK as a primary toolkit or earn an exception for another agent SDK"
-  - "Designing framework replacement boundaries, operational persistence, or migration escape hatches"
+  - "Tracing the research and staged adoption plan that preceded Ember's production AI SDK integration"
+  - "Comparing the historical rationale for choosing Vercel AI SDK over Mastra, LangGraph.js, or OpenAI Agents SDK"
 role: design
-discovery_status: current
+discovery_status: superseded
+superseded_by: docs/architecture/canonical-application-flow.md
 ---
 
 # Composable Agent Infrastructure Adoption Strategy
+
+> Historical adoption plan from issue #180. Its staged steps and provider-contract
+> names describe the architecture at the time of evaluation. For the implemented
+> production path, see [Canonical Ember Application Flow](canonical-application-flow.md)
+> and [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md).
 
 ## Decision
 
@@ -78,11 +83,12 @@ The comparison is against Ember's current architecture on **2026-09-07**, especi
 
 - [Design Principles](../principles.md) and
   [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
+- [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md), which now
+  supersedes the earlier provider-contract decision;
 - [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md) and ADR 0007;
 - [Specialist Authority and Context Flow](specialist-authority-context-flow.md) and
   [Specialist Result Reintegration](specialist-result-reintegration.md);
-- `src/providers/contract.ts`, `src/host/process-lifecycle.ts`,
+- `src/ai/contract.ts`, `src/host/process-lifecycle.ts`,
   `src/runtime/episodic-runtime.ts`, `src/persistence/state-store.ts`, and
   `src/delegation/codex-specialist.ts`.
 
@@ -277,20 +283,20 @@ elsewhere.
 The useful result is not just what Ember could add. It is what current code should
 **not** be rewritten.
 
-| Current Ember area                                       | Generic mechanics in that area                                                                          | Candidate reuse                                                              | Decision                                                                                                                                         |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/providers/contract.ts`                              | cognition invocation seam, request/result shapes, abort option                                          | AI SDK is the preferred future direct backend; alternatives are challengers  | **Preserve request/result semantics.** Invocation is now semantic-only; process launch configuration stays inside concrete adapter construction. |
-| `src/providers/codex.ts` and `src/providers/cursor.ts`   | subscription-backed CLI invocation, provider/session parsing and evidence                               | none of the four removes the hard parts                                      | **Keep.** Do not wrap working CLI adapters for aesthetic uniformity.                                                                             |
-| `src/host/process-lifecycle.ts`                          | spawn, bounded streams, timeout/abort, termination escalation and observation                           | generic agent SDKs do not replace it                                         | **Keep custom.** It is already the correct commodity seam for external runtimes.                                                                 |
-| `src/core/projection.ts` plus provider-result validation | least-sufficient selected context and provenance claims                                                 | structured output can reduce parsing only                                    | **Keep semantics custom.** AI SDK `Output` may implement syntax inside one adapter.                                                              |
-| `src/persistence/state-store.ts`                         | canonical revision, writer lease, atomic replacement, durability uncertainty                            | framework stores/checkpointers                                               | **Never replace with framework operational storage.** Coexist only below a narrow adapter.                                                       |
-| `src/runtime/episodic-runtime.ts` and ADR 0007           | work ownership, systemd supervision, recovery, specialist episodes                                      | LangGraph/Mastra durable execution                                           | **Keep today.** Insert a durable executor inside a worker only after a specific operation earns it.                                              |
-| `src/delegation/codex-specialist.ts` and reintegration   | specialist purpose, disclosure, authority, lifecycle/effect evidence, currentness, report/reintegration | Agents SDK agents-as-tools, LangGraph subgraphs, Mastra subagents            | **Keep semantics custom.** Alternative runtimes may implement the inside of the specialist executor only.                                        |
-| future local tool layer                                  | model-facing schemas, loop execution, timeout, approval plumbing                                        | AI SDK first; another agent SDK only after a demonstrated gap                | **Do not invent provider/tool protocol plumbing from scratch.** Add Ember capability/effect wrappers first.                                      |
-| future MCP capabilities                                  | protocol transport, discovery, schema conversion                                                        | AI SDK MCP is leading in-scope candidate; direct MCP SDK is replacement path | **Add a transport seam, not framework-owned authority.**                                                                                         |
-| context retrieval/compression                            | indexing, candidate retrieval, derived compression                                                      | Mastra semantic recall/Observational Memory; LangGraph Store                 | **No adoption without longitudinal evidence.** Derived artifacts must be rebuildable and provenance-linked.                                      |
-| tracing/diagnostics                                      | spans, export, provider/tool timing                                                                     | framework telemetry or direct OTel                                           | **Additive only.** Keep Ember IDs/privacy/retention policy outside the framework.                                                                |
-| tests/evals                                              | model fakes, scorer runners, deterministic lifecycle scripts                                            | AI SDK mocks, Agents SDK `ScriptedModel`, optional Mastra scorers            | **Reuse adapter test mechanics; keep semantic scenarios and expected outcomes repository-owned.**                                                |
+| Current Ember area                                           | Generic mechanics in that area                                                                          | Candidate reuse                                                                    | Decision                                                                                                                   |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/ai/contract.ts`                                         | Ember-owned execution request/result shapes, per-call options, and abort semantics                      | AI SDK is the adopted production mechanics layer; alternatives remain challengers  | **Preserve Ember-owned execution semantics.** SDK/provider types stay below this seam.                                     |
+| `src/ai/providers/codex.ts` and `src/ai/providers/cursor.ts` | subscription-backed CLI invocation, provider/session parsing and evidence                               | shared AI SDK execution now wraps these bridges; their protocol differences remain | **Keep provider protocol mechanics local.** Share execution mechanics above them, not their distinct CLI/runtime evidence. |
+| `src/host/process-lifecycle.ts`                              | spawn, bounded streams, timeout/abort, termination escalation and observation                           | generic agent SDKs do not replace it                                               | **Keep custom.** It is already the correct commodity seam for external runtimes.                                           |
+| `src/core/projection.ts` plus provider-result validation     | least-sufficient selected context and provenance claims                                                 | structured output can reduce parsing only                                          | **Keep semantics custom.** AI SDK `Output` may implement syntax inside one adapter.                                        |
+| `src/persistence/state-store.ts`                             | canonical revision, writer lease, atomic replacement, durability uncertainty                            | framework stores/checkpointers                                                     | **Never replace with framework operational storage.** Coexist only below a narrow adapter.                                 |
+| `src/runtime/episodic-runtime.ts` and ADR 0007               | work ownership, systemd supervision, recovery, specialist episodes                                      | LangGraph/Mastra durable execution                                                 | **Keep today.** Insert a durable executor inside a worker only after a specific operation earns it.                        |
+| `src/delegation/codex-specialist.ts` and reintegration       | specialist purpose, disclosure, authority, lifecycle/effect evidence, currentness, report/reintegration | Agents SDK agents-as-tools, LangGraph subgraphs, Mastra subagents                  | **Keep semantics custom.** Alternative runtimes may implement the inside of the specialist executor only.                  |
+| future local tool layer                                      | model-facing schemas, loop execution, timeout, approval plumbing                                        | AI SDK first; another agent SDK only after a demonstrated gap                      | **Do not invent provider/tool protocol plumbing from scratch.** Add Ember capability/effect wrappers first.                |
+| future MCP capabilities                                      | protocol transport, discovery, schema conversion                                                        | AI SDK MCP is leading in-scope candidate; direct MCP SDK is replacement path       | **Add a transport seam, not framework-owned authority.**                                                                   |
+| context retrieval/compression                                | indexing, candidate retrieval, derived compression                                                      | Mastra semantic recall/Observational Memory; LangGraph Store                       | **No adoption without longitudinal evidence.** Derived artifacts must be rebuildable and provenance-linked.                |
+| tracing/diagnostics                                          | spans, export, provider/tool timing                                                                     | framework telemetry or direct OTel                                                 | **Additive only.** Keep Ember IDs/privacy/retention policy outside the framework.                                          |
+| tests/evals                                                  | model fakes, scorer runners, deterministic lifecycle scripts                                            | AI SDK mocks, Agents SDK `ScriptedModel`, optional Mastra scorers                  | **Reuse adapter test mechanics; keep semantic scenarios and expected outcomes repository-owned.**                          |
 
 ## Ember-owned capability seams
 

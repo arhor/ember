@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ProviderInvoker } from "../src/providers/contract.ts";
+import type { AiExecutor } from "../src/ai/contract.ts";
 
 import { createEmberApplication } from "../src/app/application.ts";
 import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
@@ -45,7 +45,7 @@ async function withRestartedWriter<T>(
     }
 }
 
-function provider(calls: { value: number }): ProviderInvoker {
+function provider(calls: { value: number }): AiExecutor {
     return async () => {
         calls.value += 1;
         return { contractVersion: 1, reply: "durable reply", usedMeaningIds: [] };

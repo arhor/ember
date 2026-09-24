@@ -1,4 +1,4 @@
-import type { ProviderInvoker } from "../providers/contract.ts";
+import type { AiExecutor } from "../ai/contract.ts";
 import type { MemoryProposalGenerationResult, MemoryProposalGenerator } from "./memory-proposal-generation.ts";
 
 import { ProviderError } from "../core/errors.ts";
@@ -7,7 +7,7 @@ import { buildProjection } from "../core/projection.ts";
 import { startRuntime } from "../core/runtime-episode.ts";
 
 export function createProviderMemoryProposalGenerator(
-    provider: ProviderInvoker,
+    provider: AiExecutor,
     timeoutSeconds: number,
 ): MemoryProposalGenerator {
     return async (request) => {

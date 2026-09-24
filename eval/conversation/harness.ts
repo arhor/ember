@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
+import type { AiExecutionRequest, AiExecutionResult } from "../../src/ai/contract.ts";
 import type { MeaningId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
-import type { ProviderRequest, ProviderResult } from "../../src/providers/contract.ts";
 
 import { createEmberApplication } from "../../src/app/application.ts";
 import { composeEmberApplication } from "../../src/composition/ember.ts";
@@ -43,10 +43,10 @@ export interface ConversationScenario {
 export interface ConversationProviderInvocation {
     scenarioId: string;
     episode: ConversationEpisode;
-    request: ProviderRequest;
+    request: AiExecutionRequest;
 }
 
-export type ConversationProvider = (invocation: ConversationProviderInvocation) => Promise<ProviderResult>;
+export type ConversationProvider = (invocation: ConversationProviderInvocation) => Promise<AiExecutionResult>;
 
 export interface ConversationProviderControl {
     invocation_mode: "fresh";

@@ -9,14 +9,15 @@ import { describe, test } from "node:test";
 import { createCodexLanguageModel } from "../src/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-progress.ts";
+import { buildCodexPrompt, invokeCodexProvider } from "../src/ai/providers/codex.ts";
 import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
+import { codexEnvironment } from "../src/host/codex-environment.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { buildCodexPrompt, codexEnvironment, invokeCodexProvider } from "../src/providers/codex.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 

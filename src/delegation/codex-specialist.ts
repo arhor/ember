@@ -5,10 +5,10 @@ import { dirname, join, resolve } from "node:path";
 
 import type { CliProcessSpawn } from "../host/process-lifecycle.ts";
 
+import { codexEnvironment } from "../host/codex-environment.ts";
 import { NodeCliProcessSpawn, runProcess } from "../host/process-lifecycle.ts";
 import { replaceFileAtomically } from "../persistence/file-replacement.ts";
 import { exactKeys, isObject } from "../util.ts";
-import { codexEnvironment } from "./codex.ts";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const MAX_TEXT_BYTES = 256 * 1024;

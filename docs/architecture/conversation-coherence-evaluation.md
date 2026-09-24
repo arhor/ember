@@ -43,7 +43,7 @@ node --test tests/conversation-evaluation.test.ts
 
 The opt-in live path invokes Codex freshly for every episode. It does not rely on a
 provider conversation or thread for continuity. The runner passes the exact
-`ProviderRequest` produced through the application coordinator to the adapter, preserving the canonical
+`AiExecutionRequest` produced through the application coordinator to the adapter, preserving the canonical
 cognition ID and request correlation:
 
 ```sh

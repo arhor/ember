@@ -1,14 +1,18 @@
 ---
-summary: "Issue #176 evaluation of Mastra as a set of replaceable TypeScript infrastructure primitives beneath Ember-owned cognition, capability, memory, delegation, persistence, and runtime semantics."
+summary: "Historical issue #176 evaluation of Mastra primitives against Ember's pre-adoption provider contract and semantic boundaries."
 read_when:
-  - "Considering Mastra for model routing, tools, MCP, workflows, memory, observability, evals, or storage in Ember"
-  - "Comparing agent frameworks as replaceable infrastructure beneath Ember-owned semantics"
-  - "Reviewing which Mastra state may remain operational and disposable versus which state must stay canonical in Ember"
+  - "Tracing the pre-adoption Mastra comparison and its dated model-routing or workflow assumptions"
+  - "Revisiting historical evidence for Mastra primitives beneath Ember-owned semantics"
 role: design
-discovery_status: current
+discovery_status: historical
 ---
 
 # Mastra Composable Infrastructure Evaluation
+
+> Historical evaluation from issue #176. References to `ProviderRequest`,
+> `ProviderResult`, and `ProviderInvoker` describe the former contract. Current
+> production ownership is documented in [Canonical Ember Application Flow](canonical-application-flow.md)
+> and [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md).
 
 ## Decision
 
@@ -33,7 +37,7 @@ In short: **Ember owns meaning; Mastra may own selected mechanics.**
 This evaluation was performed on **2026-09-07** against:
 
 - Ember's current [Design Principles](../principles.md), accepted architecture decisions, and [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- the current one-shot cognition contract in `src/providers/contract.ts` and the [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
+- the then-current one-shot cognition contract (now `src/ai/contract.ts`) and the historical [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist boundary and [Specialist Result Reintegration](specialist-result-reintegration.md);
 - the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `src/runtime/episodic-runtime.ts`;
 - Mastra's stable `@mastra/core@1.64.0` release published on 2026-09-04, while repository `main` already identified itself as `1.65.0-alpha.7` during this review;
@@ -512,9 +516,9 @@ Keep responsibility, authority, currentness, cancellation uncertainty, specialis
 
 ### Plausible places to become thinner
 
-**`src/providers/`**
+**`src/ai/`**
 
-A new direct-model adapter could use Mastra Model Router beneath the existing `ProviderInvoker` seam. This could remove provider-package/routing glue for remote model APIs. It should not rewrite `codex.ts`/`cursor.ts` merely to deduplicate process mechanics: issue #92 already concluded that those external runtimes have meaningfully different lifecycle evidence.
+A new direct-model adapter could use Mastra Model Router beneath the Ember-owned `AiExecutor` seam. The current production stack already shares AI SDK execution mechanics while keeping Codex/Cursor CLI protocol bridges under `src/ai/providers/`; another toolkit would need a concrete gap rather than aesthetic uniformity.
 
 **Future tool-capability execution**
 
