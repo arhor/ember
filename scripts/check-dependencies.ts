@@ -104,7 +104,7 @@ function isAiSdkImport(specifier: string, target: string | null) {
         specifier === "ai" ||
         specifier.startsWith("ai/") ||
         specifier.startsWith("@ai-sdk/") ||
-        target?.startsWith("ai/")
+        (target?.startsWith("ai/") && target !== "ai/contract.ts")
     );
 }
 
