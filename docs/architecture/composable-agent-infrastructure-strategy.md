@@ -78,11 +78,12 @@ The comparison is against Ember's current architecture on **2026-09-07**, especi
 
 - [Design Principles](../principles.md) and
   [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
+- [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md), which now
+  supersedes the earlier provider-contract decision;
 - [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md) and ADR 0007;
 - [Specialist Authority and Context Flow](specialist-authority-context-flow.md) and
   [Specialist Result Reintegration](specialist-result-reintegration.md);
-- `src/providers/contract.ts`, `src/host/process-lifecycle.ts`,
+- `src/ai/contract.ts`, `src/host/process-lifecycle.ts`,
   `src/runtime/episodic-runtime.ts`, `src/persistence/state-store.ts`, and
   `src/delegation/codex-specialist.ts`.
 
@@ -279,8 +280,8 @@ The useful result is not just what Ember could add. It is what current code shou
 
 | Current Ember area                                       | Generic mechanics in that area                                                                          | Candidate reuse                                                              | Decision                                                                                                                                         |
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/providers/contract.ts`                              | cognition invocation seam, request/result shapes, abort option                                          | AI SDK is the preferred future direct backend; alternatives are challengers  | **Preserve request/result semantics.** Invocation is now semantic-only; process launch configuration stays inside concrete adapter construction. |
-| `src/providers/codex.ts` and `src/providers/cursor.ts`   | subscription-backed CLI invocation, provider/session parsing and evidence                               | none of the four removes the hard parts                                      | **Keep.** Do not wrap working CLI adapters for aesthetic uniformity.                                                                             |
+| `src/ai/contract.ts`                                    | Ember-owned execution request/result shapes, per-call options, and abort semantics                       | AI SDK is the adopted production mechanics layer; alternatives remain challengers | **Preserve Ember-owned execution semantics.** SDK/provider types stay below this seam.                                                        |
+| `src/ai/providers/codex.ts` and `src/ai/providers/cursor.ts` | subscription-backed CLI invocation, provider/session parsing and evidence                           | shared AI SDK execution now wraps these bridges; their protocol differences remain | **Keep provider protocol mechanics local.** Share execution mechanics above them, not their distinct CLI/runtime evidence.                   |
 | `src/host/process-lifecycle.ts`                          | spawn, bounded streams, timeout/abort, termination escalation and observation                           | generic agent SDKs do not replace it                                         | **Keep custom.** It is already the correct commodity seam for external runtimes.                                                                 |
 | `src/core/projection.ts` plus provider-result validation | least-sufficient selected context and provenance claims                                                 | structured output can reduce parsing only                                    | **Keep semantics custom.** AI SDK `Output` may implement syntax inside one adapter.                                                              |
 | `src/persistence/state-store.ts`                         | canonical revision, writer lease, atomic replacement, durability uncertainty                            | framework stores/checkpointers                                               | **Never replace with framework operational storage.** Coexist only below a narrow adapter.                                                       |
