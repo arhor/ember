@@ -718,8 +718,10 @@ input to ordinary application conversation. It does not invent a greeting or use
 turn. Later invocations use the same application composition and interaction
 lifecycle, continuing the persisted conversation after process exit without a setup
 wizard. Incomplete or corrupt existing setup remains an explicit recovery error.
-`app/bootstrap.ts` owns the machine operation; `surfaces/cli/setup.ts` owns the
-operator prompts and handoff. The explicit setup command remains available.
+`app/bootstrap.ts` owns the bootstrap decisions and emits typed progress through an
+injected port. `composition/setup.ts` supplies the configured cognition adapter and
+stores; `host/setup.ts` owns machine paths and setup-record I/O. The CLI owns operator
+prompts, signal handling, presentation, and handoff. The explicit setup command remains available.
 Conversational onboarding and memory formation reuse the #254/#220 ordinary path;
 machine setup does not claim completion of that journey.
 

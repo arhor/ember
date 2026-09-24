@@ -50,9 +50,11 @@ Everything that is specifically CLI-facing stays inside `src/surfaces/cli/`. The
 - `setup.ts` owns first-run machine prompts and the configured `run` handoff;
 - `surface.ts` owns the conversational `run` mechanics.
 
-`app/bootstrap.ts` owns setup configuration, provider verification, continuity
-binding and activation, onboarding-work activation, and configured-run preparation.
-The CLI supplies operator choices and presents setup results. A missing default
+`app/bootstrap.ts` owns provider-verification decisions, continuity binding and
+activation, onboarding-work activation, and configured-run preparation through
+injected ports. `composition/setup.ts` supplies provider and store implementations;
+`host/setup.ts` owns machine paths and the setup-record filesystem format. The CLI
+supplies operator choices, process cancellation, and progress presentation. A missing default
 configuration makes `ember` ask explicitly whether to create or attach an existing
 continuity, then pass the first real user input through the ordinary application path.
 An incomplete existing setup record still requires explicit recovery.

@@ -1,26 +1,22 @@
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
+import type { BootstrapEvent } from "../../app/bootstrap.ts";
+import type { SetupCompositionOverrides } from "../../composition/setup.ts";
 import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
 
-import {
-    defaultSetupConfigPath,
-    loadSetupConfig,
-    prepareConfiguredRun,
-    setupMain as bootstrap,
-} from "../../app/bootstrap.ts";
+import { bootstrapContinuity, prepareConfiguredRun } from "../../app/bootstrap.ts";
+import { composeSetupDependencies } from "../../composition/setup.ts";
 import { ValidationError } from "../../core/errors.ts";
+import { defaultSetupConfigPath, loadSetupConfig } from "../../host/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
-export { loadSetupConfig } from "../../app/bootstrap.ts";
-export type { SetupConfig } from "../../app/bootstrap.ts";
-
-export async function setupMain(args: SetupArgs, io: CliIo, dependencies?: Parameters<typeof bootstrap>[2]) {
+export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
     if (args.help) {
         io.output.write(SETUP_HELP);
         return 0;
     }
-    const result = await bootstrap(args, io, dependencies);
+    const result = await bootstrapForCli(args, io, dependencies);
     if (!args.intent) io.output.write(SETUP_HELP);
     if (result === 0 && args.intent) {
         const configPath = resolve(args.config ?? defaultSetupConfigPath());
@@ -36,6 +32,78 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies?: Param
     return result;
 }
 
+async function bootstrapForCli(
+    args: SetupArgs | Omit<SetupArgs, "command" | "help">,
+    io: CliIo,
+    overrides: SetupCompositionOverrides = {},
+) {
+    const controller = new AbortController();
+    const cancel = () => controller.abort();
+    process.on("SIGINT", cancel);
+    process.on("SIGTERM", cancel);
+    overrides.signal?.addEventListener("abort", cancel, { once: true });
+    if (overrides.signal?.aborted) cancel();
+    try {
+        return await bootstrapContinuity(
+            args,
+            composeSetupDependencies((event) => presentBootstrapEvent(event, io), {
+                ...overrides,
+                signal: controller.signal,
+            }),
+        );
+    } finally {
+        process.off("SIGINT", cancel);
+        process.off("SIGTERM", cancel);
+        overrides.signal?.removeEventListener("abort", cancel);
+    }
+}
+
+function presentBootstrapEvent(event: BootstrapEvent, io: CliIo): void {
+    switch (event.kind) {
+        case "inspection":
+            io.output.write(
+                `Machine configuration: ${event.configured ? "present" : "absent"}; continuity: ${event.continuity ? "loadable" : "absent"}.\n`,
+            );
+            if (event.verification !== undefined)
+                io.output.write(
+                    `Last probe: ${event.verification}; continuity operation: ${event.operation}. This inspection does not reverify cognition.\n`,
+                );
+            break;
+        case "cancelled_before_cognition":
+            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
+            break;
+        case "verifying":
+            io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
+            break;
+        case "verification_failed":
+            io.error.write(
+                `Cognition verification ${event.outcome}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
+            );
+            break;
+        case "cancelled_after_probe":
+            io.output.write(
+                "Cancellation requested; cognition returned successfully, continuity activation was not attempted.\n",
+            );
+            break;
+        case "cancelled_before_activation":
+            io.output.write("Setup cancelled before continuity activation; continuity unchanged.\n");
+            break;
+        case "activation_failed":
+            io.error.write(
+                "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
+            );
+            break;
+        case "ready":
+            io.output.write(
+                "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
+            );
+            break;
+        case "cancelled_after_activation":
+            io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
+            break;
+    }
+}
+
 export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io: CliIo): Promise<number> {
     if (args.mode === "default" && !(await loadSetupConfig(defaultSetupConfigPath()))) {
         return await firstRun(io);
@@ -48,7 +116,10 @@ async function runConfigured(
     io: CliIo,
     lines?: AsyncIterable<string>,
 ): Promise<number> {
-    const config = await prepareConfiguredRun(args);
+    const config = await prepareConfiguredRun(
+        args,
+        composeSetupDependencies(() => {}),
+    );
     return await runCliSurface(
         {
             ...config,
@@ -100,7 +171,7 @@ async function firstRun(io: CliIo): Promise<number> {
                 : false;
         if (choice === "restore" && !acceptContinuityRisk)
             throw new ValidationError("restore requires explicit acknowledgement of continuity uncertainty");
-        const result = await bootstrap(
+        const result = await bootstrapForCli(
             {
                 config: undefined,
                 state,

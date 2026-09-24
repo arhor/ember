@@ -1,26 +1,15 @@
-import type { Writable } from "node:stream";
-
-import { lstat, readFile, realpath } from "node:fs/promises";
-import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
-
 import type { AiExecutor } from "../ai/contract.ts";
 import type { EmberState } from "../core/model.ts";
+import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
+import type { StateStore } from "../persistence/state-store.ts";
 
-import { createCodexLanguageModel } from "../ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { validateAiExecutionResult } from "../ai/contract.ts";
-import { createCursorLanguageModel } from "../ai/cursor.ts";
 import { ProviderError, ValidationError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, initialState, isRfc3339Utc, newId, nowUtc } from "../core/model.ts";
+import { initialState, newId, nowUtc } from "../core/model.ts";
 import { createOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection } from "../core/projection.ts";
 import { startRuntime } from "../core/runtime-episode.ts";
-import { loadGoogleCalendarConfig } from "../integrations/google-calendar/read.ts";
-import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
-import { StateStore } from "../persistence/state-store.ts";
-import { exactKeys, isObject } from "../util.ts";
+import { safeText, validateSetupProvider } from "./bootstrap-validation.ts";
 
 export type SetupIntent = "create-new" | "restore-existing" | "use-existing";
 export interface SetupRequest {
@@ -34,11 +23,6 @@ export interface SetupRequest {
     providerTimeoutSeconds: number | undefined;
     acceptContinuityRisk: boolean;
     confirmProviderChange: boolean;
-}
-
-export interface BootstrapIo {
-    output: Writable;
-    error: Writable;
 }
 
 export interface SetupProvider {
@@ -70,212 +54,68 @@ export interface SetupConfig {
     updatedAt: string;
 }
 
-type SetupDependencies = {
-    provider?: (config: SetupProvider) => AiExecutor;
+export type BootstrapEvent =
+    | {
+          kind: "inspection";
+          configured: boolean;
+          continuity: boolean;
+          verification?: SetupConfig["verification"];
+          operation?: SetupConfig["continuity"];
+      }
+    | {
+          kind:
+              | "cancelled_before_cognition"
+              | "verifying"
+              | "verification_failed"
+              | "cancelled_after_probe"
+              | "cancelled_before_activation"
+              | "activation_failed"
+              | "ready"
+              | "cancelled_after_activation";
+          outcome?: SetupConfig["verification"];
+      };
+
+export interface BootstrapDependencies {
+    defaultConfigPath(): string;
+    defaultStatePath(): string;
+    resolvePath(path: string, label: string): Promise<string>;
+    exists(path: string): Promise<boolean>;
+    loadConfig(path: string): Promise<SetupConfig | null>;
+    persistConfig(path: string, config: SetupConfig): Promise<void>;
+    createStateStore(path: string): Pick<StateStore, "load" | "create" | "acquireWriteLease" | "releaseWriteLease">;
+    createOnboardingStore(path: string): Pick<OnboardingWorkStore, "load" | "save">;
+    provider(config: SetupProvider): AiExecutor;
+    loadGoogleCalendarConfig(path: string): Promise<{ setup_lineage_id: string } | null>;
     signal?: AbortSignal;
-    persistConfig?: (path: string, config: SetupConfig) => Promise<void>;
-};
-
-export function defaultSetupConfigPath(): string {
-    return join(homedir(), ".ember", "config", "setup.json");
+    onProgress(event: BootstrapEvent): void;
 }
 
-function defaultSetupStatePath(): string {
-    return join(homedir(), ".ember", "state", "continuity.json");
-}
-
-export function setupProvider(config: SetupProvider): AiExecutor {
-    if (config.kind === "claude-code")
-        return async (request, options) => {
-            const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");
-            return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
-        };
-    const options = {
-        command: config.command,
-        arguments_: config.model ? ["--model", config.model] : [],
-        timeoutSeconds: config.timeoutSeconds,
-    };
-    return createAiSdkCognitionExecutor(
-        config.kind === "codex" ? createCodexLanguageModel(options) : createCursorLanguageModel(options),
+export async function bootstrapContinuity(args: SetupRequest, dependencies: BootstrapDependencies): Promise<number> {
+    const configPath = await dependencies.resolvePath(
+        args.config ?? dependencies.defaultConfigPath(),
+        "setup configuration",
     );
-}
-
-export async function loadSetupConfig(path: string): Promise<SetupConfig | null> {
-    let text: string;
-    try {
-        text = await readFile(path, "utf8");
-    } catch (error) {
-        if (hasCode(error, "ENOENT")) return null;
-        throw new ValidationError("cannot read machine-local setup configuration");
-    }
-    let value: unknown;
-    try {
-        value = JSON.parse(text);
-    } catch {
-        throw new ValidationError("invalid machine-local setup JSON; preserve it for recovery");
-    }
-    if (
-        !isObject(value) ||
-        !exactKeys(
-            value,
-            value.version === 2
-                ? [
-                      "version",
-                      "googleCalendarConfigPath",
-                      "intent",
-                      "statePath",
-                      "principal",
-                      "lineageId",
-                      "establishedAt",
-                      "provider",
-                      "verification",
-                      "continuity",
-                      "cancellationRequested",
-                      "updatedAt",
-                  ]
-                : [
-                      "version",
-                      "intent",
-                      "statePath",
-                      "principal",
-                      "lineageId",
-                      "establishedAt",
-                      "provider",
-                      "verification",
-                      "continuity",
-                      "cancellationRequested",
-                      "updatedAt",
-                  ],
-        ) ||
-        (value.version !== 1 && value.version !== 2) ||
-        (value.version === 2 &&
-            (!safeText(value.googleCalendarConfigPath) || !isAbsolute(value.googleCalendarConfigPath))) ||
-        typeof value.cancellationRequested !== "boolean" ||
-        typeof value.intent !== "string" ||
-        !["create-new", "restore-existing", "use-existing"].includes(String(value.intent)) ||
-        !safeText(value.statePath) ||
-        !isAbsolute(value.statePath) ||
-        !safeText(value.principal) ||
-        !safeText(value.lineageId) ||
-        !value.lineageId.startsWith("lineage-") ||
-        !isRfc3339Utc(value.establishedAt) ||
-        !isRfc3339Utc(value.updatedAt) ||
-        typeof value.verification !== "string" ||
-        ![
-            "not_attempted",
-            "requested",
-            "verified",
-            "failed",
-            "timed_out",
-            "cancellation_requested",
-            "outcome_unknown",
-        ].includes(String(value.verification)) ||
-        typeof value.continuity !== "string" ||
-        !["pending", "requested", "available", "outcome_unknown"].includes(String(value.continuity)) ||
-        !isObject(value.provider) ||
-        !exactKeys(value.provider, ["kind", "command", "model", "timeoutSeconds"])
-    )
-        throw new ValidationError("invalid machine-local setup configuration; preserve it for recovery");
-    validateSetupProvider(value.provider);
-    return value as unknown as SetupConfig;
-}
-
-function validateSetupProvider(value: Record<string, unknown>): void {
-    if (
-        typeof value.kind !== "string" ||
-        !["codex", "cursor", "claude-code"].includes(String(value.kind)) ||
-        !safeText(value.command) ||
-        typeof value.model !== "string" ||
-        (value.model !== "" && !safeText(value.model)) ||
-        typeof value.timeoutSeconds !== "number" ||
-        !Number.isFinite(value.timeoutSeconds) ||
-        value.timeoutSeconds <= 0 ||
-        value.timeoutSeconds > 120 ||
-        (value.kind === "claude-code" && value.command !== "claude-code")
-    )
-        throw new ValidationError(
-            "setup provider requires codex, cursor, or claude-code and a timeout in (0, 120] seconds",
-        );
-}
-
-function safeText(value: unknown): value is string {
-    return (
-        typeof value === "string" &&
-        value.trim().length > 0 &&
-        value.length <= 4096 &&
-        !ASCII_CONTROL_CHARACTER_PATTERN.test(value)
+    const existing = await dependencies.loadConfig(configPath);
+    const statePath = await dependencies.resolvePath(
+        args.state ?? existing?.statePath ?? dependencies.defaultStatePath(),
+        "continuity state",
     );
-}
-
-function validateLocalPath(path: string, label: string): void {
-    if (!isAbsolute(path) || !safeText(path))
-        throw new ValidationError(`${label} path must be absolute and contain no control characters`);
-}
-
-async function exists(path: string): Promise<boolean> {
-    try {
-        await lstat(path);
-        return true;
-    } catch (error) {
-        if (hasCode(error, "ENOENT")) return false;
-        throw error;
-    }
-}
-
-function hasCode(error: unknown, code: string): boolean {
-    return isObject(error) && error.code === code;
-}
-
-// Resolve parent aliases even for not-yet-created files before comparing destinations.
-async function physicalPath(path: string): Promise<string> {
-    try {
-        return await realpath(path);
-    } catch (error) {
-        if (!hasCode(error, "ENOENT")) throw error;
-        const parent = dirname(path);
-        if (parent === path) throw error;
-        return join(await physicalPath(parent), basename(path));
-    }
-}
-
-async function writeConfig(path: string, config: SetupConfig): Promise<void> {
-    config.updatedAt = nowUtc();
-    await replaceFileDurably(path, `${JSON.stringify(config, null, 2)}\n`, {
-        durabilityUncertainMessage: "setup configuration may be visible; inspect it before retrying",
-    });
-}
-
-export async function setupMain(
-    args: SetupRequest,
-    io: BootstrapIo,
-    dependencies: SetupDependencies = {},
-): Promise<number> {
-    const requestedConfigPath = resolve(args.config ?? defaultSetupConfigPath());
-    validateLocalPath(requestedConfigPath, "setup configuration");
-    const configPath = await physicalPath(requestedConfigPath);
-    validateLocalPath(configPath, "setup configuration");
-    const existing = await loadSetupConfig(configPath);
-    const requestedStatePath = resolve(args.state ?? existing?.statePath ?? defaultSetupStatePath());
-    validateLocalPath(requestedStatePath, "continuity state");
-    const statePath = await physicalPath(requestedStatePath);
-    validateLocalPath(statePath, "continuity state");
     if (configPath === statePath || configPath.startsWith(`${statePath}.`) || statePath.startsWith(`${configPath}.`))
         throw new ValidationError("setup configuration and canonical state/sidecars must have separate paths");
-    const store = new StateStore(statePath);
-    const state = (await exists(statePath)) ? await store.load() : null;
-    io.output.write(
-        `Machine configuration: ${existing ? "present" : "absent"}; continuity: ${state ? "loadable" : "absent"}.\n`,
-    );
+    const store = dependencies.createStateStore(statePath);
+    const state = (await dependencies.exists(statePath)) ? await store.load() : null;
+    dependencies.onProgress({
+        kind: "inspection",
+        configured: !!existing,
+        continuity: !!state,
+        ...(!args.intent && existing ? { verification: existing.verification, operation: existing.continuity } : {}),
+    });
     if (existing && (existing.statePath !== statePath || (args.principal && args.principal !== existing.principal)))
         throw new ValidationError(
             "existing setup binding is preserved; use a separate --config and --state for another lineage",
         );
     if (existing && state) assertBinding(existing, state);
     if (!args.intent) {
-        if (existing)
-            io.output.write(
-                `Last probe: ${existing.verification}; continuity operation: ${existing.continuity}. This inspection does not reverify cognition.\n`,
-            );
         return 0;
     }
     const intent = args.intent;
@@ -330,18 +170,16 @@ export async function setupMain(
         cancellationRequested: false,
         updatedAt: nowUtc(),
     };
-    const lock = new StateStore(configPath);
+    const lock = dependencies.createStateStore(configPath);
     const lease = await lock.acquireWriteLease();
     const controller = new AbortController();
     const cancel = () => {
         config.cancellationRequested = true;
         controller.abort();
     };
-    process.on("SIGINT", cancel);
-    process.on("SIGTERM", cancel);
     dependencies.signal?.addEventListener("abort", cancel, { once: true });
     if (dependencies.signal?.aborted) cancel();
-    const persistConfig = dependencies.persistConfig ?? writeConfig;
+    const persistConfig = dependencies.persistConfig;
     const persistObserved = async () => {
         const cancellationWasRequested = config.cancellationRequested;
         await persistConfig(configPath, config);
@@ -349,11 +187,11 @@ export async function setupMain(
     };
     try {
         // Prevent concurrent setup from replacing a configuration read before acquiring the lease.
-        if (JSON.stringify(await loadSetupConfig(configPath)) !== JSON.stringify(existing))
+        if (JSON.stringify(await dependencies.loadConfig(configPath)) !== JSON.stringify(existing))
             throw new ValidationError("setup configuration changed; inspect and retry");
         await persistObserved();
         if (controller.signal.aborted) {
-            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
+            dependencies.onProgress({ kind: "cancelled_before_cognition" });
             return 2;
         }
         config.verification = "requested";
@@ -361,10 +199,10 @@ export async function setupMain(
         if (controller.signal.aborted) {
             config.verification = "not_attempted";
             await persistObserved();
-            io.output.write("Setup cancelled before cognition; continuity unchanged.\n");
+            dependencies.onProgress({ kind: "cancelled_before_cognition" });
             return 2;
         }
-        io.output.write("Verifying cognition. Authentication remains owned by the selected provider runtime.\n");
+        dependencies.onProgress({ kind: "verifying" });
         let continuityMutationStarted = false;
         try {
             const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
@@ -378,7 +216,7 @@ export async function setupMain(
                 currentTime: nowUtc(),
                 runtimeId: synthetic.runtimeId,
             });
-            const result = await (dependencies.provider ?? setupProvider)(config.provider)(
+            const result = await dependencies.provider(config.provider)(
                 {
                     contractVersion: 1,
                     cognitionId: newId("cognition"),
@@ -392,16 +230,12 @@ export async function setupMain(
         } catch (error) {
             config.verification = error instanceof ProviderError ? error.outcome : "failed";
             await persistObserved();
-            io.error.write(
-                `Cognition verification ${config.verification}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
-            );
+            dependencies.onProgress({ kind: "verification_failed", outcome: config.verification });
             return 2;
         }
         await persistObserved();
         if (controller.signal.aborted) {
-            io.output.write(
-                "Cancellation requested; cognition returned successfully, continuity activation was not attempted.\n",
-            );
+            dependencies.onProgress({ kind: "cancelled_after_probe" });
             return 2;
         }
         config.continuity = "requested";
@@ -409,11 +243,11 @@ export async function setupMain(
         if (controller.signal.aborted) {
             config.continuity = state ? "available" : "pending";
             await persistObserved();
-            io.output.write("Setup cancelled before continuity activation; continuity unchanged.\n");
+            dependencies.onProgress({ kind: "cancelled_before_activation" });
             return 2;
         }
         try {
-            const onboardingStore = new OnboardingWorkStore(statePath);
+            const onboardingStore = dependencies.createOnboardingStore(statePath);
             if (!state && intent === "create-new") {
                 const work = await onboardingStore.load();
                 if (work === null) {
@@ -460,21 +294,15 @@ export async function setupMain(
                 config.continuity = continuityMutationStarted ? "outcome_unknown" : "pending";
             }
             await persistObserved();
-            io.error.write(
-                "Continuity activation did not complete; inspect the state and setup record before retrying. Existing state was not reset.\n",
-            );
+            dependencies.onProgress({ kind: "activation_failed" });
             return 2;
         }
-        io.output.write(
-            "Cognition verified; continuity available. Ready for ordinary conversation and progressive onboarding.\n",
-        );
+        dependencies.onProgress({ kind: "ready" });
         if (controller.signal.aborted) {
-            io.output.write("Cancellation requested after activation; committed continuity remains available.\n");
+            dependencies.onProgress({ kind: "cancelled_after_activation" });
         }
         return controller.signal.aborted ? 2 : 0;
     } finally {
-        process.off("SIGINT", cancel);
-        process.off("SIGTERM", cancel);
         dependencies.signal?.removeEventListener("abort", cancel);
         await lock.releaseWriteLease(lease);
     }
@@ -491,17 +319,25 @@ export function assertBinding(config: SetupConfig, state: EmberState): void {
 
 export async function prepareConfiguredRun(
     args: { mode: "configured"; config: string; scope: string } | { mode: "default" },
+    dependencies: BootstrapDependencies,
 ) {
     if (args.mode === "configured" && (!args.config || !safeText(args.scope)))
         throw new ValidationError("configured run requires --config PATH and --scope SCOPE");
-    const config = await loadSetupConfig(resolve(args.mode === "default" ? defaultSetupConfigPath() : args.config));
+    const config = await dependencies.loadConfig(
+        await dependencies.resolvePath(
+            args.mode === "default" ? dependencies.defaultConfigPath() : args.config,
+            "setup configuration",
+        ),
+    );
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
     const scope = args.mode === "default" ? `relationship:${config.principal}` : args.scope;
-    if ((await new OnboardingWorkStore(config.statePath).load())?.status === "pending_activation")
+    if ((await dependencies.createOnboardingStore(config.statePath).load())?.status === "pending_activation")
         throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
     const googleCalendarConfig =
-        config.version === 2 ? await loadGoogleCalendarConfig(config.googleCalendarConfigPath!) : undefined;
+        config.version === 2
+            ? await dependencies.loadGoogleCalendarConfig(config.googleCalendarConfigPath!)
+            : undefined;
     if (googleCalendarConfig && googleCalendarConfig.setup_lineage_id !== config.lineageId)
         throw new ValidationError("Google Calendar configuration belongs to a different setup lineage");
     return {

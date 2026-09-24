@@ -11,12 +11,13 @@ import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
+import { loadSetupConfig } from "../src/host/setup.ts";
 import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { setupGoogleCalendarMain } from "../src/surfaces/cli/google-calendar-setup.ts";
-import { loadSetupConfig, main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
+import { main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };

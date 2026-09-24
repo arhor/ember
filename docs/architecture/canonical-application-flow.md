@@ -917,7 +917,7 @@ install Node/package/provider host bits
   -> ember (CLI default entry, machine-local preflight)
   -> if needed: explicit create / restore / attach existing continuity choice
   -> host-owned provider authentication and bounded verification
-  -> app/bootstrap creates or validates/binds continuity and onboarding work
+  -> app/bootstrap creates or validates/binds continuity and onboarding work through injected ports
   -> composition builds the same application
   -> CLI calls app.interact(message, transport), including initial delivery under one lease
   -> normal memory adoption / onboarding progress / persistence

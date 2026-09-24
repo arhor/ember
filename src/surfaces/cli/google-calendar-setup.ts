@@ -8,6 +8,7 @@ import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
 import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
 import { ValidationError } from "../../core/errors.ts";
+import { loadSetupConfig } from "../../host/setup.ts";
 import {
     GOOGLE_CALENDAR_SCOPE,
     GOOGLE_OAUTH_TOKEN_ENDPOINT,
@@ -16,7 +17,6 @@ import {
 } from "../../integrations/google-calendar/read.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { StateStore } from "../../persistence/state-store.ts";
-import { loadSetupConfig } from "./setup.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 
