@@ -8,6 +8,7 @@ import type { AiExecutionOptions, AiExecutionRequest, AiExecutionResult } from "
 
 import { ProviderError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../../core/model.ts";
+import { codexEnvironment } from "../../host/codex-environment.ts";
 import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
 import { isObject } from "../../util.ts";
 import {
@@ -20,23 +21,6 @@ import {
 const MAX_PROMPT_BYTES = 1024 * 1024;
 const RESULT_SCHEMA_NAME = "provider-result.schema.json";
 const decoder = new TextDecoder("utf-8", { fatal: true });
-const ENVIRONMENT_ALLOWLIST = [
-    "PATH",
-    "HOME",
-    "CODEX_HOME",
-    "TMPDIR",
-    "TMP",
-    "TEMP",
-    "LANG",
-    "LC_ALL",
-    "SSL_CERT_FILE",
-    "SSL_CERT_DIR",
-    "NODE_EXTRA_CA_CERTS",
-    "XDG_CONFIG_HOME",
-    "XDG_DATA_HOME",
-    "XDG_CACHE_HOME",
-] as const;
-
 export const CODEX_PROVIDER_RESULT_SCHEMA = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     type: "object",
@@ -91,12 +75,6 @@ export function buildCodexPrompt(request: AiExecutionRequest, setupIntent = fals
         JSON.stringify(request),
         "</ember_provider_request>",
     ].join("\n");
-}
-
-export function codexEnvironment(source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-    const environment: NodeJS.ProcessEnv = {};
-    for (const name of ENVIRONMENT_ALLOWLIST) if (source[name] !== undefined) environment[name] = source[name];
-    return environment;
 }
 
 export function buildCodexArguments(
