@@ -15,7 +15,8 @@ import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
 import { main as cliMain } from "../src/surfaces/cli/index.ts";
-import { TELEGRAM_SURFACE_ID, processTelegramUpdate } from "../src/surfaces/telegram/index.ts";
+import { TELEGRAM_SURFACE_ID } from "../src/surfaces/telegram/index.ts";
+import { processTelegramUpdate } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";
 const SHARED_SCOPE = "surface:shared";

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../../../src/surfaces/telegram/index.ts";
 
+import { composeTelegramSurface } from "../../../src/composition/telegram.ts";
 import { SurfaceDeliveryFailure } from "../../../src/runtime/interaction-boundary.ts";
 import { processTelegramUpdate } from "../../../src/surfaces/telegram/index.ts";
 
@@ -87,6 +88,7 @@ const outcome = await processTelegramUpdate(
         },
     } as Parameters<typeof processTelegramUpdate>[1],
     update,
+    { application: composeTelegramSurface(config).application },
 );
 
 process.stdout.write(

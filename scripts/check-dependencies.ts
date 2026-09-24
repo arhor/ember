@@ -11,6 +11,14 @@ const surfacePersistenceExceptions = new Set([
     "surfaces/cli/main.ts",
     "surfaces/telegram/setup.ts",
 ]);
+const surfaceBootstrapAndCommandModules = new Set([
+    "surfaces/cli/main.ts",
+    "surfaces/cli/setup.ts",
+    "surfaces/cli/google-calendar-setup.ts",
+    "surfaces/cli/commands.ts",
+    "surfaces/telegram/config.ts",
+    "surfaces/telegram/setup.ts",
+]);
 
 export function dependencyViolations(owner: string, source: string): string[] {
     const violations: string[] = [];
@@ -36,6 +44,18 @@ export function dependencyViolations(owner: string, source: string): string[] {
                 reject(specifier, "surface-owned modules must not import AI SDK infrastructure");
             if (!surfacePersistenceExceptions.has(owner) && target?.match(/^persistence\/.+-store\.ts$/))
                 reject(specifier, "surface-owned modules must not import concrete canonical persistence");
+        }
+
+        if (
+            (owner.startsWith("surfaces/cli/") || owner.startsWith("surfaces/telegram/")) &&
+            !surfaceBootstrapAndCommandModules.has(owner)
+        ) {
+            if (target === "app/application.ts" || target?.startsWith("composition/"))
+                reject(specifier, "conversational adapters must receive a composed application");
+            if (target?.startsWith("providers/") || target?.startsWith("ai/providers/"))
+                reject(specifier, "conversational adapters must not construct cognition providers");
+            if (target?.startsWith("persistence/"))
+                reject(specifier, "conversational adapters must not construct canonical persistence");
         }
 
         if (isSemanticOwner(owner) && isAiSdkImport(specifier, target))

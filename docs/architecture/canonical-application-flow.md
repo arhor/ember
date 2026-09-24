@@ -48,6 +48,13 @@ Issue #319 moves portable process execution to `host/`, Google Calendar and MCP 
 to `integrations/`, the generic process bridge beneath `ai/providers/`, objective/action
 coordination to `app/`, and evaluation-only Codex argument evidence to `eval/`. Its
 zero-dependency import checker enforces the highest-value inward dependency rules in CI.
+Issue #353 moves the remaining CLI and Telegram application construction to
+`composition/cli.ts` and `composition/telegram.ts`, invoked by bootstrap and executable
+callers. Ordinary adapters receive the composed application directly; CLI operator
+commands and Telegram recovery retain separate injected repositories. Telegram machine
+provider configuration is parsed outside its conversational adapter. The dependency
+checker rejects application composition and provider imports in the ordinary adapter
+files.
 
 ## Recommendation and governing constraints
 

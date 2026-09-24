@@ -1,5 +1,5 @@
 ---
-summary: "Current source-layout rules for interaction surfaces, typed CLI routing, application-owned machine bootstrap, and inward dependency boundaries."
+summary: "Current source-layout rules for thin conversational adapters, executable composition, CLI routing, and inward dependency boundaries."
 read_when:
   - "Adding or reorganizing an interaction surface under src/surfaces/"
   - "Deciding whether CLI code belongs to conversational surface mechanics or CLI-local command plumbing"
@@ -23,8 +23,10 @@ src/surfaces/
 │   ├── index.ts
 │   ├── main.ts
 │   ├── setup.ts
+│   ├── commands.ts
 │   └── surface.ts
 └── telegram/
+    ├── config.ts
     ├── index.ts
     ├── setup.ts
     ├── surface.ts
@@ -48,7 +50,8 @@ Everything that is specifically CLI-facing stays inside `src/surfaces/cli/`. The
 - `index.ts` defines the public module API;
 - `main.ts` owns CLI argument parsing and command dispatch;
 - `setup.ts` owns first-run machine prompts and the configured `run` handoff;
-- `surface.ts` owns the conversational `run` mechanics.
+- `commands.ts` owns explicit in-session operator commands and their repository leases;
+- `surface.ts` owns the conversational `run` mechanics over an injected application.
 
 `app/bootstrap.ts` owns provider-verification decisions, continuity binding and
 activation, onboarding-work activation, and configured-run preparation through
@@ -78,13 +81,13 @@ The CLI dispatch includes commands such as:
 
 Co-location does not make these commands conversational interaction-surface semantics. They administer, inspect, or mutate Ember state through the CLI. Their orchestration may depend directly on existing core, persistence, or runtime APIs while there is no demonstrated second consumer that justifies extracting a generic application/use-case layer.
 
-The `run` command is different. Its readline loop, interactive semantic commands, provider selection for user conversation, SIGINT cancellation, local output delivery, `local_cli` surface identity, and `explicit_local_argument` principal provenance are concrete local-surface mechanics. `main.ts` delegates those mechanics to `surface.ts`.
+The `run` command is different. `main.ts` and `setup.ts` select provider configuration and call `composition/cli.ts` before entering the adapter. The adapter receives an `EmberApplication` and repositories for explicit commands. Its readline loop, SIGINT cancellation, local output delivery, `local_cli` surface identity, and `explicit_local_argument` principal provenance remain concrete local-surface mechanics. `commands.ts` keeps semantic and action commands outside the ordinary interaction path.
 
 This keeps the semantic distinction required by the interaction architecture without preserving a separate top-level `src/cli/` namespace merely for composition plumbing.
 
 ## Telegram surface
 
-Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as its public entrypoint, `surface.ts` as the transport implementation, and `setup.ts` as its trusted-host setup boundary. This includes configuration validation, masked token entry, private-chat mapping, long polling, transport occurrence evidence, concrete `sendMessage` delivery, and reconciliation. Resident service setup uses the injected host-neutral contract; the CLI setup entry selects the Linux adapter, which owns systemd unit rendering, definition readback and installation, and lifecycle commands.
+Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as its public entrypoint, `surface.ts` as the transport implementation, `config.ts` as machine configuration parsing, and `setup.ts` as its trusted-host setup boundary. The executable calls `composition/telegram.ts` after loading config, then injects the application and recovery repositories into polling. The adapter receives only transport and recovery fields; it keeps private-chat mapping, long polling, transport occurrence evidence, concrete `sendMessage` delivery, and reconciliation. Resident service setup uses the injected host-neutral contract; the CLI setup entry selects the Linux adapter, which owns systemd unit rendering, definition readback and installation, and lifecycle commands.
 
 These mechanics remain subordinate to the shared interaction boundary. Telegram update/chat/message identifiers stay operational evidence and do not become canonical memory or semantic authority merely because their adapter is grouped as a surface module.
 
@@ -110,7 +113,7 @@ Concrete surfaces and CLI-local composition depend inward on shared Ember module
               core  persistence  provider contract/adapters
 ```
 
-The public `index.ts` files make module boundaries explicit without introducing repository-wide barrel layers. The important rule is ownership: `core` and the shared runtime boundary must not depend on concrete CLI or Telegram implementations. Concrete surfaces and CLI-specific composition may depend inward on shared runtime, persistence, provider, and core APIs, but they must not redefine shared semantic policy locally.
+The public `index.ts` files make module boundaries explicit without introducing repository-wide barrel layers. `core` and the shared runtime boundary must not depend on concrete CLI or Telegram implementations. Executable and bootstrap composition selects providers and repositories; conversational adapter modules receive an application and keep transport behavior. CLI command plumbing and Telegram recovery use injected repositories for their separate operations.
 
 ## Evolution from the earlier source reorganization
 
@@ -131,8 +134,9 @@ Codex argument inspection lives under `eval/longitudinal/`, outside production s
 
 `scripts/check-dependencies.ts` makes the highest-value ownership rules part of
 `npm run check`, including type-only and dynamic imports. Core cannot depend on concrete
-surfaces, conversational surfaces cannot reach into AI SDK infrastructure or concrete
-stores, semantic modules cannot acquire AI SDK types, and AI infrastructure cannot
+surfaces, conversational adapters cannot import production composition, the application
+factory, provider constructors, AI SDK infrastructure, or concrete stores; semantic
+modules cannot acquire AI SDK types, and AI infrastructure cannot
 mutate canonical persistence or semantics. Exact exceptions retain the existing
 machine-setup and CLI-administration imports described above; adding another file under
 a surface does not inherit those exceptions.

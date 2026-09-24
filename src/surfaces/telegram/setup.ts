@@ -13,17 +13,13 @@ import { fileURLToPath } from "node:url";
 
 import type { SetupConfig } from "../../app/bootstrap.ts";
 import type { ResidentServiceHost } from "../../host/resident-service.ts";
-import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./surface.ts";
+import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./config.ts";
 
 import { ValidationError } from "../../core/errors.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
-import {
-    createTelegramApi,
-    telegramResidentLaunch,
-    validateTelegramToken,
-    verifyTelegramLongPollingReady,
-} from "./surface.ts";
+import { telegramResidentLaunch } from "./config.ts";
+import { createTelegramApi, validateTelegramToken, verifyTelegramLongPollingReady } from "./surface.ts";
 
 export type TelegramSetupStage =
     | "token_storage"

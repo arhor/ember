@@ -15,6 +15,7 @@ import type {
 } from "./model.ts";
 
 import { proactiveContactInspectionView, ProactiveContactStore } from "../../agency/proactive-contact-store.ts";
+import { composeCliSurface } from "../../composition/cli.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
 import { initialState } from "../../core/model.ts";
@@ -96,17 +97,22 @@ async function onInit(args: InitArgs, io: CliIo) {
 
 async function onRun(args: RunArgs, io: CliIo) {
     if (args.mode !== "explicit") return await setupRunMain(args, io);
+    const services = composeCliSurface({
+        statePath: args.state,
+        provider: {
+            kind: args.providerKind,
+            command: args.providerCommand,
+            arguments: args.providerArgs,
+            timeoutSeconds: args.providerTimeoutSeconds,
+        },
+    });
     return await runCliSurface(
         {
-            statePath: args.state,
             principal: args.principal,
             scope: args.scope,
-            providerKind: args.providerKind,
-            providerCommand: args.providerCommand,
-            providerArgs: args.providerArgs,
-            providerTimeoutSeconds: args.providerTimeoutSeconds,
         },
         io,
+        services,
     );
 }
 
