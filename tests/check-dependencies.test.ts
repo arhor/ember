@@ -3,10 +3,10 @@ import test from "node:test";
 
 import { dependencyViolations } from "../scripts/check-dependencies.ts";
 
-test("dependency checker should reject composition and provider imports when used by conversational adapters", () => {
+test("dependency checker should reject composition and AI runtime imports when used by conversational adapters", () => {
     // Given
     const owners = ["surfaces/cli/surface.ts", "surfaces/telegram/surface.ts", "surfaces/cli/ordinary-helper.ts"];
-    const specifiers = ["../../app/application.ts", "../../composition/ember.ts", "../../ai/contract.ts"];
+    const specifiers = ["../../app/application.ts", "../../composition/ember.ts", "../../ai/cognition.ts"];
 
     // When
     const results = owners.flatMap((owner) =>
@@ -31,9 +31,9 @@ test("dependency checker should reject static AI imports anywhere in a surface-o
     ]);
 });
 
-test("dependency checker should reject type-only AI imports in a surface-owned module", () => {
+test("dependency checker should reject type-only AI runtime imports in a surface-owned module", () => {
     // Given
-    const source = 'type Executor = import("../../ai/contract.ts").AiExecutor;';
+    const source = 'type ExecutorOptions = import("../../ai/cognition.ts").AiSdkProviderOptions;';
 
     // When
     const violations = dependencyViolations("surfaces/cli/provider-types.ts", source);
@@ -41,6 +41,21 @@ test("dependency checker should reject type-only AI imports in a surface-owned m
     // Then
     assert.equal(violations.length, 1);
     assert.match(violations[0]!, /must not import AI SDK infrastructure/);
+});
+
+
+test("dependency checker should allow the Ember-owned AI execution contract outside AI infrastructure", () => {
+    // Given
+    const sources = [
+        ["memory/provider-memory-proposal-generator.ts", 'import type { AiExecutor } from "../ai/contract.ts";'],
+        ["surfaces/cli/main.ts", 'import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";'],
+    ] as const;
+
+    // When
+    const violations = sources.flatMap(([owner, source]) => dependencyViolations(owner, source));
+
+    // Then
+    assert.deepEqual(violations, []);
 });
 
 test("dependency checker should reject dynamic AI imports when comments and whitespace follow the parenthesis", () => {
