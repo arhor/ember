@@ -12,7 +12,7 @@ import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { validateProviderResult } from "../src/providers/contract.ts";
+import { validateAiExecutionResult } from "../src/ai/contract.ts";
 import { parseArgs } from "../src/surfaces/cli/index.ts";
 import { cloneState } from "../src/util.ts";
 import {
@@ -214,7 +214,7 @@ test("provider adapter should reject result when boolean impersonates contract v
     // Given
     const result = { contractVersion: true, reply: "text", usedMeaningIds: [] };
     // When
-    const error = await captureError(() => validateProviderResult(result, new Set()));
+    const error = await captureError(() => validateAiExecutionResult(result, new Set()));
     // Then
     assert.match(error.message, /unsupported/);
 });
