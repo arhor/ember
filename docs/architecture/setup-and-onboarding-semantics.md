@@ -11,10 +11,12 @@ discovery_status: current
 
 # Installation, Restore/Create, and Conversational Onboarding Semantics
 
-> Status: architecture contract for issue #252 and the setup epic #250.
+> Status: current setup/onboarding contract from epic #250, including the implemented
+> default first-run conversation entry and the typed trusted-host Telegram setup handoff.
 >
-> The semantic contract precedes implementation. The #253 section below records the
-> subordinate machine bootstrap CLI and its current limits.
+> Machine bootstrap and optional host mutation surround the same ordinary application
+> path documented in [Canonical Ember Application Flow](canonical-application-flow.md);
+> they are not alternate cognition architectures.
 
 ## Purpose
 
