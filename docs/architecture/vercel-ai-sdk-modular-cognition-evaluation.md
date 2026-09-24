@@ -61,7 +61,7 @@ This evaluation was performed on **2026-09-07** against:
 
 - Ember's [Design Principles](../principles.md), accepted ADRs, and
   [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- `src/providers/contract.ts` and the
+- the then-current provider contract (now `src/ai/contract.ts`) and the historical
   [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current Codex/Cursor one-shot cognition adapters and their replacement,
   cancellation, and provider-specific lifecycle evidence;
