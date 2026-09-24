@@ -1,25 +1,25 @@
 import type { PipedProcessSpawn } from "../../host/process-lifecycle.ts";
 import type {
-    ProviderInvocationOptions,
-    ProviderInvoker,
-    ProviderRequest,
-    ProviderResult,
-} from "../../providers/contract.ts";
+    AiExecutionOptions,
+    AiExecutor,
+    AiExecutionRequest,
+    AiExecutionResult,
+} from "../../ai/contract.ts";
 
 import { ProviderError } from "../../core/errors.ts";
 import { isTimeoutAbort, NodePipedProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
 import {
-    MAX_PROVIDER_TIMEOUT_SECONDS,
+    MAX_AI_TIMEOUT_SECONDS,
     MAX_STDERR_BYTES,
     MAX_STDOUT_BYTES,
-    validateProviderResult,
-} from "../../providers/contract.ts";
+    validateAiExecutionResult,
+} from "../../ai/contract.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 type SpawnImpl = PipedProcessSpawn;
 
-export interface InvokeProviderOptions extends ProviderInvocationOptions {
+export interface InvokeProviderOptions extends AiExecutionOptions {
     spawnImpl?: SpawnImpl;
     terminationGraceMs?: number;
     finalTerminationMs?: number;
@@ -39,7 +39,7 @@ export function createProcessProvider({
     spawnImpl,
     terminationGraceMs,
     finalTerminationMs,
-}: ProcessProviderConfig): ProviderInvoker {
+}: ProcessProviderConfig): AiExecutor {
     return (request, options) =>
         invokeProvider(command, args, request, {
             ...options,
@@ -52,7 +52,7 @@ export function createProcessProvider({
 export async function invokeProvider(
     command: string,
     arguments_: string[],
-    request: ProviderRequest,
+    request: AiExecutionRequest,
     {
         timeoutSeconds,
         signal,
@@ -60,11 +60,11 @@ export async function invokeProvider(
         terminationGraceMs = 100,
         finalTerminationMs = 500,
     }: InvokeProviderOptions,
-): Promise<ProviderResult> {
+): Promise<AiExecutionResult> {
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
         throw new ProviderError("provider timeout must be a positive finite number");
-    if (timeoutSeconds > MAX_PROVIDER_TIMEOUT_SECONDS)
-        throw new ProviderError(`provider timeout must not exceed ${MAX_PROVIDER_TIMEOUT_SECONDS} seconds`);
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`provider timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
     if (signal?.aborted) {
         const timedOut = isTimeoutAbort(signal.reason);
         throw new ProviderError(
@@ -166,7 +166,7 @@ export async function invokeProvider(
             cause: error,
         });
     }
-    validateProviderResult(result, new Set(request.projection.selection.meaning_ids));
+    validateAiExecutionResult(result, new Set(request.projection.selection.meaning_ids));
     return result;
 }
 
