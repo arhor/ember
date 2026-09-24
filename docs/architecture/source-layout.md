@@ -1,17 +1,77 @@
 ---
-summary: "Current source-layout rules for thin conversational adapters, executable composition, CLI routing, and inward dependency boundaries."
+summary: "Current source-layout rules for application composition, AI execution, host boundaries, thin conversational adapters, CLI routing, and enforced inward dependencies."
 read_when:
-  - "Adding or reorganizing an interaction surface under src/surfaces/"
-  - "Deciding whether CLI code belongs to conversational surface mechanics or CLI-local command plumbing"
-  - "Changing zero-argument CLI startup or configured and explicit conversation routing"
-  - "Changing source organization or dependency direction around surfaces, runtime, core, providers, or persistence"
+  - "Adding, moving, or reorganizing production code under src/"
+  - "Adding or changing an interaction surface under src/surfaces/"
+  - "Deciding whether code belongs to application coordination, composition, AI mechanics, runtime operations, persistence, integrations, host adapters, or transport"
+  - "Changing dependency rules enforced by scripts/check-dependencies.ts"
 role: design
 discovery_status: current
 ---
 
 # Source Layout and Surface Placement
 
-Ember's filesystem layout is implementation architecture beneath the representation-neutral semantic baseline. Directory placement should make ownership and dependency direction visible without inventing abstractions that the semantics do not require.
+Directory placement is an ownership statement. The current layout is designed so that
+an ordinary interaction can be traced from an executable through composition into one
+application boundary without finding provider construction or canonical persistence
+hidden inside a transport adapter.
+
+## Production ownership map
+
+```text
+src/
+  app/           transport-neutral application contract, use-case coordination, bootstrap
+  composition/   concrete production dependency assembly at executable/bootstrap boundaries
+  ai/            Ember AI execution contract, AI SDK mechanics, model/provider bridges
+  core/          canonical state, semantics, projections, shared domain/runtime-episode rules
+  runtime/       interaction ledger, delivery reconciliation, episodic operational runtime
+  persistence/   filesystem-backed repositories and materializations
+  integrations/  external capability/protocol adapters such as Calendar and MCP
+  host/          subprocess and service-manager mechanics such as systemd and launchd
+  surfaces/      CLI, Telegram, and future concrete interaction transports
+```
+
+These directories are not independently versioned packages. Ember remains one npm
+package, and shared abstractions are introduced only where demonstrated ownership
+requires them.
+
+## Application and composition
+
+`src/app/contract.ts` defines the transport-neutral
+`InteractionEvent`, `EmberApplication`, delivery callback, and typed trusted-host
+setup handoff shapes. It must not expose Telegram objects, CLI streams, AI SDK types,
+filesystem paths, or concrete store implementations.
+
+`src/app/application.ts` is the only production coordinator for an ordinary user
+interaction. It owns the writer lease and runtime episode around admission, cognition,
+post-turn work, and delivery reconciliation.
+
+`src/composition/ember.ts` is the production dependency composition root. It creates
+repositories, the configured `AiExecutor`, structured control helpers, capability
+selection, and the other collaborators required by the application.
+
+Surface-specific composition is intentionally tiny:
+
+- `src/composition/cli.ts` adapts validated CLI/bootstrap configuration into one
+  composed application plus repositories needed by explicit operator commands;
+- `src/composition/telegram.ts` adapts validated Telegram configuration into the same
+  application dependencies.
+
+Composition belongs to executable/bootstrap plumbing, not to ordinary conversational
+surface modules.
+
+## AI execution
+
+`src/ai/contract.ts` owns the application-facing `AiExecutionRequest`,
+`AiExecutionResult`, `AiExecutionOptions`, and `AiExecutor` contract.
+
+`src/ai/cognition.ts` owns the shared Vercel AI SDK ordinary cognition mechanics.
+Concrete Codex, Cursor, Claude Code, and process bridges also live under `src/ai/`.
+Provider-specific process/protocol mechanics are implementation details beneath the
+Ember-owned execution contract.
+
+Semantic modules do not import AI SDK runtime types. AI infrastructure does not mutate
+canonical persistence or semantic state directly.
 
 ## Interaction surfaces
 
@@ -19,140 +79,140 @@ Concrete ways for a principal to interact with Ember live under one surface name
 
 ```text
 src/surfaces/
-├── cli/
-│   ├── index.ts
-│   ├── main.ts
-│   ├── setup.ts
-│   ├── commands.ts
-│   └── surface.ts
-└── telegram/
-    ├── config.ts
-    ├── index.ts
-    ├── setup.ts
-    ├── surface.ts
-    └── surface.test.ts
+  cli/
+    index.ts
+    main.ts
+    model.ts
+    setup.ts
+    commands.ts
+    surface.ts
+  telegram/
+    index.ts
+    config.ts
+    setup.ts
+    surface.ts
 ```
 
-Each surface directory exposes `index.ts` as its public module entrypoint. Code outside that surface imports through the index; files such as `main.ts` and `surface.ts` are implementation details that may change without forcing consumers to follow the internal layout.
+Each surface directory exposes `index.ts` as its public module entrypoint. Files such
+as `main.ts`, `setup.ts`, and `surface.ts` are internal implementation structure.
 
-The local conversational CLI and Telegram are sibling interaction surfaces over the shared boundary in `src/runtime/interaction-boundary.ts`. They may differ in transport mechanics, principal-provenance evidence, occurrence correlation, delivery mechanics, and lifecycle plumbing, but neither owns canonical identity, memory, authority, context-selection policy, or delivery truth.
+CLI and Telegram are sibling adapters over the same `EmberApplication`. They may
+differ in input parsing, principal-provenance evidence, occurrence metadata, delivery
+transport, polling, cancellation, and recovery. They do not own canonical identity,
+memory, context policy, provider selection, cognition execution, or application
+composition.
 
-A new concrete interaction surface should normally become another `src/surfaces/<surface>/` sibling with an explicit `index.ts` entrypoint. Do not introduce a generic `Surface` interface, registry, framework, or plugin layer merely because two concrete surfaces exist. Shared abstractions should follow demonstrated duplicated mechanics or a separately justified requirement.
+A new concrete interaction surface should normally become another
+`src/surfaces/<surface>/` sibling. Do not add a generic surface registry, plugin
+framework, or event bus merely because multiple surfaces exist.
 
-Surface-local tests belong beside their implementation when they primarily exercise one adapter. Cross-surface continuity, privacy, provenance, and integration scenarios remain under top-level `tests/` because their subject is the relationship between modules rather than one local adapter.
+## CLI placement
 
-## CLI module and conversational surface
+`bin/ember.ts` is the general CLI executable and imports the public CLI module.
 
-`bin/ember.ts` remains the executable entry point for the general Ember CLI and imports the public CLI module from `src/surfaces/cli/index.ts`.
+The CLI-specific split is:
 
-Everything that is specifically CLI-facing stays inside `src/surfaces/cli/`. The current internal split is deliberately small:
+- `main.ts` owns argument parsing and command dispatch;
+- `setup.ts` owns first-run prompts, configured-run preparation, and trusted local
+  setup handoff;
+- `commands.ts` owns explicit in-session operator/admin commands;
+- `surface.ts` owns ordinary readline interaction, SIGINT cancellation, local
+  occurrence provenance, and stdout delivery over an injected `EmberApplication`.
 
-- `index.ts` defines the public module API;
-- `main.ts` owns CLI argument parsing and command dispatch;
-- `setup.ts` owns first-run machine prompts and the configured `run` handoff;
-- `commands.ts` owns explicit in-session operator commands and their repository leases;
-- `surface.ts` owns the conversational `run` mechanics over an injected application.
+Explicit operator commands may depend on repositories or application/host operations
+when that is the command's actual responsibility. Their co-location under
+`surfaces/cli/` does not make those operations part of the ordinary conversational
+adapter.
 
-`app/bootstrap.ts` owns provider-verification decisions, continuity binding and
-activation, onboarding-work activation, and configured-run preparation through
-injected ports. `composition/setup.ts` supplies provider and store implementations;
-`host/setup.ts` owns machine paths and the setup-record filesystem format. The CLI
-supplies operator choices, process cancellation, and progress presentation. A missing default
-configuration makes `ember` ask explicitly whether to create or attach an existing
-continuity, then pass the first real user input through the ordinary application path.
-An incomplete existing setup record still requires explicit recovery.
+The ordinary conversational path is stricter: it receives the composed application
+and calls `EmberApplication.interact`.
 
-Every command passes through `parseArgs()` once and the same dispatch switch.
-`model.ts` defines `Commands`, `CommandSpecs`, and the typed command arguments, including
-`SetupArgs` and `RunArgs` with `mode: "explicit" | "configured" | "default"`. The
-zero-argument default selects verified setup and its relationship scope, or asks for
-the minimum machine bootstrap choices when no setup record exists. Setup and configured
-run handlers receive those typed arguments; they do not parse their own option grammar
-or bypass dispatch based on the presence of a flag.
+## Telegram placement
 
-The CLI dispatch includes commands such as:
+Telegram-specific Bot API integration lives under `src/surfaces/telegram/`.
 
-- `init`;
-- `setup`;
-- `inspect` and `explain`;
-- `correct`;
-- `check` and `lock-status`; and
-- `quarantine-stale-lock`.
+- `config.ts` parses and validates machine transport configuration;
+- `setup.ts` owns the existing trusted-host Telegram setup workflow;
+- `surface.ts` owns private-chat admission, long polling, transport occurrence
+  evidence, Bot API delivery, and Telegram reconciliation.
 
-Co-location does not make these commands conversational interaction-surface semantics. They administer, inspect, or mutate Ember state through the CLI. Their orchestration may depend directly on existing core, persistence, or runtime APIs while there is no demonstrated second consumer that justifies extracting a generic application/use-case layer.
+`bin/ember-telegram.ts` loads machine configuration and secrets, calls
+`composition/telegram.ts`, and injects the resulting application/repositories into
+the polling adapter.
 
-The `run` command is different. `main.ts` and `setup.ts` select provider configuration and call `composition/cli.ts` before entering the adapter. The adapter receives an `EmberApplication` and repositories for explicit commands. Its readline loop, SIGINT cancellation, local output delivery, `local_cli` surface identity, and `explicit_local_argument` principal provenance remain concrete local-surface mechanics. `commands.ts` keeps semantic and action commands outside the ordinary interaction path.
+Resident installation is selected through host infrastructure. Linux/systemd and
+macOS/launchd remain `src/host/` concerns and do not create alternate Telegram
+application architectures.
 
-This keeps the semantic distinction required by the interaction architecture without preserving a separate top-level `src/cli/` namespace merely for composition plumbing.
+## Runtime and host placement
 
-## Telegram surface
+`src/runtime/` contains operational mechanisms that are shared by application flows
+without owning transport or provider construction. In particular,
+`runtime/interaction-boundary.ts` owns occurrence/delivery ledger mechanics and
+delivery reconciliation.
 
-Telegram-specific Bot API integration lives under `src/surfaces/telegram/`, with `index.ts` as its public entrypoint, `surface.ts` as the transport implementation, `config.ts` as machine configuration parsing, and `setup.ts` as its trusted-host setup boundary. The executable calls `composition/telegram.ts` after loading config, then injects the application and recovery repositories into polling. The adapter receives only transport and recovery fields; it keeps private-chat mapping, long polling, transport occurrence evidence, concrete `sendMessage` delivery, and reconciliation. Resident service setup uses the injected host-neutral contract; the CLI setup entry selects the Linux adapter, which owns systemd unit rendering, definition readback and installation, and lifecycle commands.
+Portable semantic runtime-episode state lives in `src/core/runtime-episode.ts`.
+Platform-specific process and service-manager behavior belongs in `src/host/`.
 
-These mechanics remain subordinate to the shared interaction boundary. Telegram update/chat/message identifiers stay operational evidence and do not become canonical memory or semantic authority merely because their adapter is grouped as a surface module.
+A systemd unit, launchd job, resident Telegram worker, or foreground process is an
+operational host shape around Ember. None is a canonical identity or a separate
+ordinary interaction coordinator.
 
 ## Intended dependency direction
 
-Concrete surfaces and CLI-local composition depend inward on shared Ember modules:
-
 ```text
-        executable plumbing
-               |
-               v
-     surface public entrypoint
-               |
-          +----+----+
-          |         |
-          v         v
-   CLI dispatch   conversational surface
-          |         |
-          |         v
-          |   runtime interaction boundary
-          |      /      |       \
-          +---->v       v        v
-              core  persistence  provider contract/adapters
+bin/*, CLI bootstrap, resident worker
+              |
+              v
+       src/composition/*
+        /      |       \
+       v       v        v
+   src/app   src/ai   infrastructure
+      |                /   |    \
+      v               v    v     v
+ core/runtime   persistence integrations host
+      ^
+      |
+surfaces receive EmberApplication and map transport only
 ```
 
-The public `index.ts` files make module boundaries explicit without introducing repository-wide barrel layers. `core` and the shared runtime boundary must not depend on concrete CLI or Telegram implementations. Executable and bootstrap composition selects providers and repositories; conversational adapter modules receive an application and keep transport behavior. CLI command plumbing and Telegram recovery use injected repositories for their separate operations.
+The exact graph is intentionally not a framework-wide DI system. The important rule is
+that construction points are explicit and ordinary transports do not rediscover
+dependencies privately.
 
-## Evolution from the earlier source reorganization
+## Enforced boundaries
 
-Issue #105 correctly separated the then-flat implementation into core, runtime, providers, persistence, and a CLI application boundary. At that point the repository did not yet contain the later explicit interaction-surface boundary and concrete Telegram surface.
+`scripts/check-dependencies.ts` is part of `npm run check`. It inspects production
+TypeScript imports, including static dynamic imports, and enforces the highest-value
+ownership rules.
 
-The current layout is the next architectural step rather than a reversal of that decision. The shared interaction semantics added later revealed CLI conversation and Telegram as sibling concrete surfaces. The general CLI remains a real executable interface, but its CLI-specific parsing and administrative composition now live beside its conversational adapter under `src/surfaces/cli/` instead of requiring a second top-level CLI namespace.
+Among other checks:
 
-Ember remains one npm package. This source organization does not create independently versioned packages or a generic channel framework.
+- `core/` cannot import concrete surfaces;
+- application orchestration cannot import concrete surfaces;
+- ordinary CLI/Telegram conversational modules cannot import the application factory
+  or `composition/`;
+- ordinary conversational modules cannot construct providers, AI infrastructure, or
+  canonical persistence;
+- semantic owners cannot import AI SDK mechanics;
+- AI infrastructure cannot own canonical persistence or semantic mutation;
+- application and semantic modules cannot own systemd or launchd adapters.
 
-## Ownership directories and enforced boundaries (#319)
+Exceptions are narrow and explicit for real bootstrap, setup, recovery, or operator
+responsibilities. Adding a new file under a surface does not inherit an exception.
 
-The production tree uses responsibility-bearing owners rather than provider/runtime
-convenience placement. `app/` coordinates Ember use cases, `ai/` owns AI SDK execution
-and bounded provider bridges, `integrations/` owns Calendar and MCP protocol mechanics,
-`persistence/` owns filesystem implementations, `host/` owns portable subprocess
-lifecycle, and `surfaces/` owns transport mapping and concrete delivery. Evaluation-only
-Codex argument inspection lives under `eval/longitudinal/`, outside production source.
+## Tests and evaluations
 
-`scripts/check-dependencies.ts` makes the highest-value ownership rules part of
-`npm run check`, including type-only and dynamic imports. Core cannot depend on concrete
-surfaces, conversational adapters cannot import production composition, the application
-factory, provider constructors, AI SDK infrastructure, or concrete stores; semantic
-modules cannot acquire AI SDK types, and AI infrastructure cannot
-mutate canonical persistence or semantics. Exact exceptions retain the existing
-machine-setup and CLI-administration imports described above; adding another file under
-a surface does not inherit those exceptions.
+Tests that primarily exercise one module should live beside that module. Cross-cutting
+acceptance and integration tests belong under `tests/`.
 
-## Application contract layer (#303/#304/#305)
+The canonical cross-surface regression lives in
+`tests/cross-surface-semantics.test.ts`. It is intentionally allowed to assemble
+fixtures directly because tests and evaluations are not production conversational
+surfaces.
 
-The [accepted canonical application flow proposal](canonical-application-flow.md) amends the
-preceding statement that no application/use-case layer would be introduced: `src/app/`
-now exists as that layer, starting from `src/app/contract.ts`, the transport-neutral
-request/result contract a coordinator will expose to surfaces. It contains no Telegram,
-CLI, provider, AI SDK, filesystem, or concrete store types; those stay in `surfaces/`,
-`ai/`, `integrations/`, `persistence/`, and `host/`. `core/interaction-contract.ts` holds the
-handful of pure Ember types the contract reuses (`PrincipalAssertionProvenance`,
-`ExternalOccurrenceMetadata`, `ConversationMembershipIntent`,
-`DeliveryReconciliationResult`) so `src/app/` and `src/runtime/` share one definition
-instead of each declaring their own. The import restrictions proposed for the wider
-`src/app/`, `src/ai/`, `src/persistence/`, `src/integrations/`, and `src/host/` split are
-enforced incrementally: #319 establishes the high-value rules while later host and
-mixed-file extractions continue shrinking transitional exceptions.
+Evaluation harnesses live under `eval/` and may construct application dependencies
+for controlled experiments. They must not be mistaken for production entry points.
+
+For the executable message path, see
+[Canonical Ember Application Flow](canonical-application-flow.md).
