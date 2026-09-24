@@ -56,6 +56,7 @@ export interface ProviderErrorOptions extends ErrorOptions {
     terminationConfirmed?: boolean | undefined;
     externalThreadId?: string | undefined;
     termination?: ProviderTermination | undefined;
+    statusCode?: number | undefined;
 }
 
 export class ProviderError extends EmberError {
@@ -63,6 +64,7 @@ export class ProviderError extends EmberError {
     readonly terminationConfirmed: boolean;
     readonly externalThreadId: string | null;
     readonly termination: ProviderTermination | null;
+    readonly statusCode: number | null;
 
     constructor(
         message: string,
@@ -71,6 +73,7 @@ export class ProviderError extends EmberError {
             terminationConfirmed = true,
             externalThreadId,
             termination,
+            statusCode,
             cause,
         }: ProviderErrorOptions = {},
     ) {
@@ -79,5 +82,6 @@ export class ProviderError extends EmberError {
         this.terminationConfirmed = terminationConfirmed;
         this.externalThreadId = externalThreadId ?? null;
         this.termination = termination ?? null;
+        this.statusCode = statusCode ?? null;
     }
 }

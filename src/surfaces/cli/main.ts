@@ -407,6 +407,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             providerTimeoutSeconds: timeout,
             acceptContinuityRisk: values["--accept-continuity-risk"] === true,
             confirmProviderChange: values["--confirm-provider-change"] === true,
+            diagnostics: values["--diagnostics"] === true,
             help: values["--help"] === true,
         };
     }

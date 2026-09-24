@@ -669,6 +669,15 @@ and does not accept an executable override. Model and executable selection stay 
 machine record. Arbitrary shell commands, passthrough arguments, keys, or tokens are
 not setup options.
 
+When a setup probe fails, `ember setup --diagnostics` may retain an opt-in, mode-0600
+JSONL record beneath `~/.ember/logs/setup/` (with a mode-0700 directory). It records only
+the probe lifecycle, selected provider kind, configured-model presence, runtime metadata,
+bounded outcome/termination facts, error class, duration, and an available HTTP status.
+It never retains prompts, replies, provider stdout/stderr, request/response bodies,
+credentials, environment values, or arbitrary exception text. Successful probes discard
+their transient diagnostic file; failed probes print its local path. These host-local
+records are neither setup configuration nor canonical Ember meaning.
+
 Authenticate through the provider-owned flow first: Codex's login, Cursor's browser
 login, or `claude auth login`. Ember neither launches nor mediates those login flows
 in this slice, and never reads/copies their credentials. Provider-specific isolation and

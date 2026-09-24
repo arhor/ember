@@ -180,6 +180,22 @@ supported command; availability can be restored only by manual quarantine after
 independent quiescence verification. PID reuse intentionally preserves an
 availability failure rather than risking concurrent writers.
 
+## Diagnose a failed setup probe
+
+For a first-run provider failure, repeat setup with opt-in redacted diagnostics:
+
+```sh
+npm run serve -- setup --diagnostics
+```
+
+On a failed verification, Ember prints a local JSONL path under
+`~/.ember/logs/setup/`. The file is mode 0600 and contains only allowlisted operational
+classification (provider kind, timing, error class, outcome/termination, and available
+HTTP status); it excludes prompts, provider output, error text, credentials, and request
+or response payloads. A successful probe removes its transient file. These logs help
+identify whether failure is invocation, timeout, API, or structured-output related, but
+they are not continuity evidence and are never uploaded automatically.
+
 ## Supported live Codex cognition
 
 Issue [#46](https://github.com/arhor/ember/issues/46) promotes Codex `exec` into

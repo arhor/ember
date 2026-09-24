@@ -143,6 +143,7 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     assert.equal(setup.provider, "claude-code");
     assert.equal(setup.providerTimeoutSeconds, 30);
     assert.equal(setup.acceptContinuityRisk, true);
+    assert.equal(setup.diagnostics, false);
     assert.equal(parseArgs(["setup", "--help"]).help, true);
     assert.equal(parseArgs(["setup"]).intent, undefined);
     assert.deepEqual(parseArgs(["run", "--config", "host.json", "--scope", "test"]), {
@@ -168,6 +169,18 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     ]);
     assert.equal(explicit.mode, "explicit");
     assert.deepEqual(explicit.providerArgs, ["--config"]);
+});
+
+test("setup parser should enable opt-in diagnostics when requested", () => {
+    // Given
+    const argv = ["setup", "--diagnostics"];
+
+    // When
+    const setup = parseArgs(argv);
+
+    // Then
+    assert.equal(setup.command, "setup");
+    assert.equal(setup.diagnostics, true);
 });
 
 test("setup parser should retain Ollama model and loopback endpoint when explicitly configured", () => {

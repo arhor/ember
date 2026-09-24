@@ -44,9 +44,10 @@ export const CommandSpecs = {
             "--provider-timeout-seconds",
             "--accept-continuity-risk",
             "--confirm-provider-change",
+            "--diagnostics",
             "--help",
         ],
-        booleans: ["--accept-continuity-risk", "--confirm-provider-change", "--help"],
+        booleans: ["--accept-continuity-risk", "--confirm-provider-change", "--diagnostics", "--help"],
         positionals: 0,
     },
     [Commands.SETUP_GOOGLE_CALENDAR]: {
@@ -146,6 +147,7 @@ export type SetupArgs = {
     providerTimeoutSeconds: number | undefined;
     acceptContinuityRisk: boolean;
     confirmProviderChange: boolean;
+    diagnostics?: boolean;
     help: boolean;
 };
 
