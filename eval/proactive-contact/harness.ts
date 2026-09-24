@@ -14,13 +14,14 @@ import { decideProactiveContactAttention } from "../../src/agency/proactive-cont
 import { ProactiveContactStore } from "../../src/agency/proactive-contact-store.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
+import { composeTelegramSurface } from "../../src/composition/telegram.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
-import { reconcileTelegramProactiveContacts } from "../../src/surfaces/telegram/index.ts";
+import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/surfaces/telegram/index.ts";
 import { contentDigest, exactKeys, isObject } from "../../src/util.ts";
 
 const CASE_IDS = [
@@ -35,6 +36,13 @@ const CASE_IDS = [
     "repeated-opportunity",
     "remembered-currentness-change",
 ] as const;
+function reconcileTelegramProactiveContacts(
+    config: TelegramSurfaceConfig,
+    api: Parameters<typeof reconcileContacts>[1],
+    options: Omit<Parameters<typeof reconcileContacts>[2], "repositories">,
+) {
+    return reconcileContacts(config, api, { repositories: composeTelegramSurface(config).repositories, ...options });
+}
 export type ProactiveContactCaseId = (typeof CASE_IDS)[number];
 type ExpectedPolicyOutcome = "admit" | "defer" | "suppress" | "no_delivery";
 export interface ProactiveContactScenarioCase {

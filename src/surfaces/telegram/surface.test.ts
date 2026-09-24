@@ -6,8 +6,10 @@ import test from "node:test";
 
 import type { AiExecutor } from "../../ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
-import type { TelegramSurfaceConfig, TelegramUpdate } from "./surface.ts";
+import type { TelegramSurfaceConfig } from "./config.ts";
+import type { TelegramUpdate } from "./surface.ts";
 
+import { processTelegramUpdate, runTelegramPolling } from "../../../tests/support-telegram-surface.ts";
 import { initialState } from "../../core/model.ts";
 import { createOnboardingWork } from "../../core/onboarding-work.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
@@ -17,8 +19,6 @@ import {
     TELEGRAM_SURFACE_ID,
     createTelegramApi,
     deliverTelegramMessage,
-    processTelegramUpdate,
-    runTelegramPolling,
     selectTelegramInbound,
     verifyTelegramLongPollingReady,
 } from "./surface.ts";

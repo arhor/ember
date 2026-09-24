@@ -5,7 +5,11 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
+import type { EmberCompositionOverrides, EmberProviderKind } from "../src/composition/ember.ts";
+import type { CliSurfaceConfig } from "../src/surfaces/cli/index.ts";
+
 import { actionProposalConfirmation, ActionProposalStore } from "../src/capabilities/action-proposal.ts";
+import { composeCliSurface } from "../src/composition/cli.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
@@ -17,10 +21,61 @@ import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposa
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { setupGoogleCalendarMain } from "../src/surfaces/cli/google-calendar-setup.ts";
-import { main, parseArgs, runCliSurface, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
+import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/surfaces/cli/index.ts";
 import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
+type FixtureCliConfig = CliSurfaceConfig & {
+    statePath: string;
+    providerKind: EmberProviderKind;
+    providerCommand: string;
+    providerArgs: string[];
+    providerTimeoutSeconds: number;
+    providerModel?: string;
+    googleCalendarConfigPath?: string;
+} & Pick<
+        EmberCompositionOverrides,
+        | "memoryProposalGenerator"
+        | "memoryProposalProviderLabel"
+        | "onboardingProgressEvaluator"
+        | "claudeProviderFactory"
+    >;
+
+function runCliSurface(config: FixtureCliConfig, io: Parameters<typeof runCliAdapter>[1]) {
+    const services = composeCliSurface(
+        {
+            statePath: config.statePath,
+            ...(config.expectedContinuityBinding === undefined
+                ? {}
+                : { expectedContinuityBinding: config.expectedContinuityBinding }),
+            provider: {
+                kind: config.providerKind,
+                command: config.providerCommand,
+                arguments: config.providerArgs,
+                timeoutSeconds: config.providerTimeoutSeconds,
+                ...(config.providerModel === undefined ? {} : { model: config.providerModel }),
+            },
+            ...(config.googleCalendarConfigPath === undefined
+                ? {}
+                : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
+        },
+        {
+            ...(config.memoryProposalGenerator === undefined
+                ? {}
+                : { memoryProposalGenerator: config.memoryProposalGenerator }),
+            ...(config.memoryProposalProviderLabel === undefined
+                ? {}
+                : { memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
+            ...(config.onboardingProgressEvaluator === undefined
+                ? {}
+                : { onboardingProgressEvaluator: config.onboardingProgressEvaluator }),
+            ...(config.claudeProviderFactory === undefined
+                ? {}
+                : { claudeProviderFactory: config.claudeProviderFactory }),
+        },
+    );
+    return runCliAdapter(config, io, services);
+}
 async function setupMain(argv, io, dependencies) {
     const args = parseArgs(["setup", ...argv]);
     assert.equal(args.command, "setup");

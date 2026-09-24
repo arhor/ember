@@ -25,11 +25,13 @@ import {
     createTelegramApi,
     deliverTelegramMessage,
     loadTelegramSurfaceConfig,
+} from "../src/surfaces/telegram/index.ts";
+import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,
     reconcileTelegramProactiveContacts,
     runTelegramPolling,
-} from "../src/surfaces/telegram/index.ts";
+} from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";
 const CHAT_ID = 424242;

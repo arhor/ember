@@ -6,6 +6,7 @@ import type { SetupCompositionOverrides } from "../../composition/setup.ts";
 import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
 
 import { bootstrapContinuity, prepareConfiguredRun } from "../../app/bootstrap.ts";
+import { composeCliSurface } from "../../composition/cli.ts";
 import { composeSetupDependencies } from "../../composition/setup.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { defaultSetupConfigPath, loadSetupConfig } from "../../host/setup.ts";
@@ -120,9 +121,29 @@ async function runConfigured(
         args,
         composeSetupDependencies(() => {}),
     );
+    const services = composeCliSurface({
+        statePath: config.statePath,
+        ...(config.expectedContinuityBinding === undefined
+            ? {}
+            : { expectedContinuityBinding: config.expectedContinuityBinding }),
+        provider: {
+            kind: config.providerKind,
+            command: config.providerCommand,
+            arguments: config.providerArgs,
+            timeoutSeconds: config.providerTimeoutSeconds,
+            ...(config.providerModel === undefined ? {} : { model: config.providerModel }),
+        },
+        ...(config.googleCalendarConfigPath === undefined
+            ? {}
+            : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
+    });
     return await runCliSurface(
         {
-            ...config,
+            principal: config.principal,
+            scope: config.scope,
+            ...(config.expectedContinuityBinding === undefined
+                ? {}
+                : { expectedContinuityBinding: config.expectedContinuityBinding }),
             ...(lines === undefined ? {} : { lines }),
             configuredSetupHandoff: async () => {
                 const { runTelegramSetup } = await import("../telegram/setup.ts");
@@ -135,6 +156,7 @@ async function runConfigured(
             },
         },
         io,
+        services,
     );
 }
 

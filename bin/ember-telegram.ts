@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { composeTelegramSurface } from "../src/composition/telegram.ts";
 import { ValidationError } from "../src/core/errors.ts";
 import {
     createTelegramApi,
@@ -75,6 +76,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
         }
 
         process.chdir(config.working_directory);
+        const services = composeTelegramSurface(config);
         const controller = new AbortController();
         const stop = () => controller.abort();
         process.once("SIGINT", stop);
@@ -82,6 +84,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
         try {
             process.stdout.write("Telegram surface starting\n");
             await runTelegramPolling(config, api, {
+                ...services,
                 signal: controller.signal,
                 onOutcome: (outcome) => {
                     if (outcome.kind !== "ignored" && outcome.providerFailure)

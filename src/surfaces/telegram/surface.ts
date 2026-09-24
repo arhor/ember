@@ -7,54 +7,25 @@ import { isAbsolute } from "node:path";
 import type { ContactAttentionDecisionRecord } from "../../agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "../../agency/proactive-contact-store.ts";
 import type { EmberApplication } from "../../app/contract.ts";
-import type { EmberApplicationDependencies, EmberCompositionOverrides } from "../../composition/ember.ts";
+import type { SurfaceRepositories } from "../../app/surface-repositories.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
-import type { WorkerLaunch } from "../../host/background.ts";
 
-type SurfaceExecutor = NonNullable<EmberCompositionOverrides["executor"]>;
-type SurfaceMemoryProposalGenerator = NonNullable<EmberCompositionOverrides["memoryProposalGenerator"]>;
-type SurfaceOnboardingProgressEvaluator = NonNullable<EmberCompositionOverrides["onboardingProgressEvaluator"]>;
+type TelegramRepositories = SurfaceRepositories;
 
 import {
     decideConfiguredProactiveContactHandoff,
     loadConfiguredProactiveContactPolicy,
 } from "../../agency/configured-proactive-contact-policy.ts";
-import { createEmberApplication } from "../../app/application.ts";
-import { composeEmberApplication } from "../../composition/ember.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
-import { MAX_PROVIDER_TIMEOUT_SECONDS } from "../../providers/contract.ts";
 import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
-import { exactKeys, isObject } from "../../util.ts";
+import { isObject } from "../../util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";
 export const TELEGRAM_BOT_API_BASE_URL = "https://api.telegram.org";
 
-export type TelegramProviderConfig =
-    | { kind: "codex" | "cursor"; command: string; model: string; timeout_seconds: number }
-    | { kind: "claude-code"; model: string; timeout_seconds: number };
-
-export interface TelegramSurfaceConfig {
-    config_version: 1 | 2 | 3;
-    google_calendar_config_path?: string;
-    state_path: string;
-    principal: string;
-    activeScope: string;
-    chat_id: number;
-    token_file: string;
-    poll_timeout_seconds: number;
-    provider_kind: "process" | "codex" | "cursor" | "claude-code";
-    provider_command: string;
-    provider_arguments: string[];
-    provider_timeout_seconds: number;
-    provider?: TelegramProviderConfig;
-    proactive_contact_policy_path?: string;
-    working_directory: string;
-    node_path: string;
-    surface_entrypoint: string;
-    stop_timeout_seconds: number;
-}
+import type { TelegramTransportConfig } from "./config.ts";
 
 export type TelegramUpdate = Update;
 
@@ -190,19 +161,6 @@ export async function deliverTelegramMessage(
     }
 }
 
-export async function loadTelegramSurfaceConfig(path: string): Promise<TelegramSurfaceConfig> {
-    requireAbsolutePath(path, "Telegram surface config path");
-    let value: unknown;
-    try {
-        value = JSON.parse(await readFile(path, "utf8"));
-    } catch (error) {
-        if (error instanceof SyntaxError) throw new ValidationError("Telegram surface config is not valid JSON");
-        throw error;
-    }
-    validateTelegramSurfaceConfig(value);
-    return normalizeTelegramSurfaceConfig(value);
-}
-
 export async function readTelegramBotToken(path: string) {
     requireAbsolutePath(path, "Telegram token file");
     const token = (await readFile(path, "utf8")).trim();
@@ -212,9 +170,8 @@ export async function readTelegramBotToken(path: string) {
 
 export function selectTelegramInbound(
     update: TelegramUpdate,
-    config: TelegramSurfaceConfig,
+    config: TelegramTransportConfig,
 ): TelegramInboundMessage | null {
-    validateTelegramSurfaceConfig(config);
     validateTelegramUpdateEvidence(update);
     const message = "message" in update ? update.message : undefined;
     if (message === undefined) return null;
@@ -242,42 +199,20 @@ export function selectTelegramInbound(
 }
 
 export async function processTelegramUpdate(
-    config: TelegramSurfaceConfig,
+    config: TelegramTransportConfig,
     api: TelegramDeliveryApi,
     update: TelegramUpdate,
     {
-        executor,
-        memoryProposalGenerator,
-        memoryProposalProviderLabel,
-        onboardingProgressEvaluator,
+        application,
         signal,
-        dependencies: suppliedDependencies,
-        application: suppliedApplication,
     }: {
-        executor?: SurfaceExecutor | undefined;
-        memoryProposalGenerator?: SurfaceMemoryProposalGenerator | undefined;
-        memoryProposalProviderLabel?: string | undefined;
-        onboardingProgressEvaluator?: SurfaceOnboardingProgressEvaluator | undefined;
+        application: EmberApplication;
         signal?: AbortSignal | undefined;
-        dependencies?: EmberApplicationDependencies | undefined;
-        application?: EmberApplication | undefined;
-    } = {},
+    },
 ): Promise<TelegramUpdateOutcome> {
-    validateTelegramSurfaceConfig(config);
     const inbound = selectTelegramInbound(update, config);
     if (inbound === null) return { kind: "ignored", updateId: update.update_id };
 
-    const application =
-        suppliedApplication ??
-        createEmberApplication(
-            dependenciesForTelegramInteraction(config, {
-                executor,
-                memoryProposalGenerator,
-                memoryProposalProviderLabel,
-                onboardingProgressEvaluator,
-                suppliedDependencies,
-            }),
-        );
     const result = await application.interact(
         {
             kind: "message",
@@ -330,25 +265,23 @@ export async function processTelegramUpdate(
 }
 
 export async function reconcileTelegramDeliveries(
-    config: TelegramSurfaceConfig,
+    config: TelegramTransportConfig,
     api: TelegramDeliveryApi,
     {
         signal,
         observedAt,
-        dependencies: suppliedDependencies,
+        repositories,
     }: {
         signal?: AbortSignal | undefined;
         observedAt?: string;
-        dependencies?: EmberApplicationDependencies;
-    } = {},
+        repositories: TelegramRepositories;
+    },
 ) {
-    validateTelegramSurfaceConfig(config);
-    const dependencies = suppliedDependencies ?? dependenciesForTelegram(config);
-    const store = dependencies.repositories.state;
+    const store = repositories.state;
     const lease = await store.acquireWriteLease();
     try {
         const state = await store.load();
-        const ledger = await dependencies.repositories.interactions.load();
+        const ledger = await repositories.interactions.load();
         const pendingCognitionIds = new Set(
             state.operations.cognitionEpisodes
                 .filter((cognition) => cognition.status === "completed" && cognition.deliveryStatus !== "displayed")
@@ -368,7 +301,7 @@ export async function reconcileTelegramDeliveries(
                 throw new ValidationError("Telegram delivery destination no longer matches configured private chat");
             results.push(
                 await reconcileSurfaceDelivery(
-                    dependencies.repositories,
+                    repositories,
                     delivery.delivery_id,
                     (text) =>
                         deliverTelegramMessage(api, destination.chatId, text, {
@@ -386,28 +319,26 @@ export async function reconcileTelegramDeliveries(
 }
 
 export async function reconcileTelegramProactiveContacts(
-    config: TelegramSurfaceConfig,
+    config: TelegramTransportConfig,
     api: TelegramDeliveryApi,
     {
         signal,
         observedAt = nowUtc(),
         revalidateBeforeHandoff,
-        dependencies: suppliedDependencies,
+        repositories,
     }: {
         signal?: AbortSignal | undefined;
         observedAt?: string;
         revalidateBeforeHandoff?: ProactiveContactHandoffRevalidator;
-        dependencies?: EmberApplicationDependencies;
-    } = {},
+        repositories: TelegramRepositories;
+    },
 ) {
-    validateTelegramSurfaceConfig(config);
-    const dependencies = suppliedDependencies ?? dependenciesForTelegram(config);
-    const store = dependencies.repositories.state;
+    const store = repositories.state;
     const lease = await store.acquireWriteLease();
     try {
         const state = await store.load();
-        const contacts = dependencies.repositories.proactiveContacts;
-        const ledger = dependencies.repositories.interactions;
+        const contacts = repositories.proactiveContacts;
+        const ledger = repositories.interactions;
         const document = await contacts.load();
         const results = [];
         for (const intent of document.intents) {
@@ -501,7 +432,7 @@ export async function reconcileTelegramProactiveContacts(
                 });
             }
             const result = await reconcileSurfaceDelivery(
-                dependencies.repositories,
+                repositories,
                 delivery.delivery_id,
                 (text) => deliverTelegramMessage(api, config.chat_id, text, { signal }),
                 { observedAt },
@@ -521,35 +452,26 @@ export async function reconcileTelegramProactiveContacts(
 }
 
 export async function runTelegramPolling(
-    config: TelegramSurfaceConfig,
+    config: TelegramTransportConfig,
     api: TelegramPollingApi,
     {
-        executor,
+        application,
+        repositories,
         signal,
         onOutcome,
         maxAcceptedUpdates,
         revalidateProactiveContact,
-        dependencies: suppliedDependencies,
     }: {
-        executor?: SurfaceExecutor;
+        application: EmberApplication;
+        repositories: TelegramRepositories;
         signal?: AbortSignal;
         onOutcome?: (outcome: TelegramUpdateOutcome) => void;
         maxAcceptedUpdates?: number;
         revalidateProactiveContact?: ProactiveContactHandoffRevalidator;
-        dependencies?: EmberApplicationDependencies;
-    } = {},
+    },
 ) {
-    validateTelegramSurfaceConfig(config);
     if (maxAcceptedUpdates !== undefined && (!Number.isSafeInteger(maxAcceptedUpdates) || maxAcceptedUpdates < 1))
         throw new ValidationError("max accepted Telegram updates must be a positive safe integer");
-    const dependencies = dependenciesForTelegramInteraction(config, {
-        executor,
-        memoryProposalGenerator: undefined,
-        memoryProposalProviderLabel: undefined,
-        onboardingProgressEvaluator: undefined,
-        suppliedDependencies,
-    });
-    const application = createEmberApplication(dependencies);
     try {
         await verifyTelegramLongPollingReady(api, signal);
     } catch (error) {
@@ -572,10 +494,10 @@ export async function runTelegramPolling(
         : undefined;
     const proactiveRevalidator = revalidateProactiveContact ?? configuredRevalidator;
     while (!signal?.aborted) {
-        await reconcileTelegramDeliveries(config, api, { signal, dependencies });
+        await reconcileTelegramDeliveries(config, api, { signal, repositories });
         await reconcileTelegramProactiveContacts(config, api, {
             signal,
-            dependencies,
+            repositories,
             ...(proactiveRevalidator === undefined ? {} : { revalidateBeforeHandoff: proactiveRevalidator }),
         });
         if (signal?.aborted) return;
@@ -607,209 +529,6 @@ export async function runTelegramPolling(
             if (signal?.aborted) return;
         }
     }
-}
-
-export function telegramResidentLaunch(config: TelegramSurfaceConfig, configPath: string): WorkerLaunch {
-    validateTelegramSurfaceConfig(config);
-    requireAbsolutePath(configPath, "Telegram surface config path");
-    return {
-        jobId: "ember-telegram",
-        executable: config.node_path,
-        arguments: [config.surface_entrypoint, "serve", "--config", configPath],
-        workingDirectory: config.working_directory,
-        stopTimeoutSeconds: config.stop_timeout_seconds,
-    };
-}
-
-export function validateTelegramSurfaceConfig(value: unknown): asserts value is TelegramSurfaceConfig {
-    if (!isObject(value)) throw new ValidationError("Telegram surface config must be an object");
-    const legacyFields = [
-        "activeScope",
-        "chat_id",
-        "config_version",
-        "node_path",
-        "poll_timeout_seconds",
-        "principal",
-        "provider_arguments",
-        "provider_command",
-        "provider_kind",
-        "provider_timeout_seconds",
-        "state_path",
-        "stop_timeout_seconds",
-        "surface_entrypoint",
-        "token_file",
-        "working_directory",
-    ];
-    const v2Fields = legacyFields.filter((field) => !field.startsWith("provider_")).concat("provider");
-    const structuredFields = value.config_version === 3 ? [...v2Fields, "google_calendar_config_path"] : v2Fields;
-    const optionalPolicyFields = [...structuredFields, "proactive_contact_policy_path"];
-    if (
-        (value.config_version !== 1 || !exactKeys(value, legacyFields)) &&
-        ((value.config_version !== 2 && value.config_version !== 3) ||
-            (!exactKeys(value, structuredFields) &&
-                !exactKeys(value, optionalPolicyFields) &&
-                !exactKeys(value, [
-                    ...structuredFields,
-                    "provider_kind",
-                    "provider_command",
-                    "provider_arguments",
-                    "provider_timeout_seconds",
-                ]) &&
-                !exactKeys(value, [
-                    ...optionalPolicyFields,
-                    "provider_kind",
-                    "provider_command",
-                    "provider_arguments",
-                    "provider_timeout_seconds",
-                ])))
-    )
-        throw new ValidationError("Telegram surface config contains unsupported fields or version");
-    validateOpaque(value.principal, "Telegram principal", 256);
-    validateOpaque(value.activeScope, "Telegram active scope", 256);
-    validateChatId(value.chat_id);
-    requireAbsolutePath(value.state_path, "Telegram state path");
-    requireAbsolutePath(value.token_file, "Telegram token file");
-    requireAbsolutePath(value.working_directory, "Telegram working directory");
-    requireAbsolutePath(value.node_path, "Telegram Node path");
-    requireAbsolutePath(value.surface_entrypoint, "Telegram surface entrypoint");
-    if (value.config_version === 3)
-        requireAbsolutePath(value.google_calendar_config_path, "Google Calendar config path");
-    if (value.proactive_contact_policy_path !== undefined)
-        requireAbsolutePath(value.proactive_contact_policy_path, "proactive contact policy path");
-    if (value.config_version === 1) validateLegacyProvider(value);
-    else validateStructuredProvider(value.provider);
-    validatePollTimeout(value.poll_timeout_seconds);
-    if (
-        typeof providerTimeout(value) !== "number" ||
-        !Number.isFinite(providerTimeout(value)) ||
-        providerTimeout(value) <= 0 ||
-        providerTimeout(value) > MAX_PROVIDER_TIMEOUT_SECONDS
-    )
-        throw new ValidationError(`Telegram provider timeout must be in (0, ${MAX_PROVIDER_TIMEOUT_SECONDS}]`);
-    if (
-        typeof value.stop_timeout_seconds !== "number" ||
-        !Number.isSafeInteger(value.stop_timeout_seconds) ||
-        value.stop_timeout_seconds < 1 ||
-        value.stop_timeout_seconds > 3600
-    )
-        throw new ValidationError("Telegram stop timeout must be an integer between 1 and 3600 seconds");
-}
-
-function validateLegacyProvider(value: Record<string, unknown>) {
-    requireAbsolutePath(value.provider_command, "Telegram provider command");
-    if (!["process", "codex", "cursor"].includes(value.provider_kind as string))
-        throw new ValidationError("Telegram provider kind is unsupported");
-    if (!Array.isArray(value.provider_arguments) || value.provider_arguments.some((arg) => typeof arg !== "string"))
-        throw new ValidationError("Telegram provider arguments must be a string list");
-    for (const argument of value.provider_arguments as string[])
-        if (ASCII_CONTROL_CHARACTER_PATTERN.test(argument))
-            throw new ValidationError("Telegram provider argument contains a control character");
-}
-
-function validateStructuredProvider(value: unknown): asserts value is TelegramProviderConfig {
-    if (!isObject(value)) throw new ValidationError("Telegram provider configuration is invalid");
-    if (!["codex", "cursor", "claude-code"].includes(String(value.kind)))
-        throw new ValidationError("Telegram provider kind is unsupported");
-    const fields =
-        value.kind === "claude-code"
-            ? ["kind", "model", "timeout_seconds"]
-            : ["kind", "command", "model", "timeout_seconds"];
-    if (!exactKeys(value, fields)) throw new ValidationError("Telegram provider configuration is invalid");
-    if (value.kind !== "claude-code") requireAbsolutePath(value.command, "Telegram provider command");
-    if (typeof value.model !== "string" || ASCII_CONTROL_CHARACTER_PATTERN.test(value.model))
-        throw new ValidationError("Telegram provider model is invalid");
-}
-
-function providerTimeout(value: Record<string, unknown>) {
-    return value.config_version !== 1 && isObject(value.provider)
-        ? value.provider.timeout_seconds
-        : value.provider_timeout_seconds;
-}
-
-function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): TelegramSurfaceConfig {
-    if (config.config_version === 1) return config;
-    const provider = config.provider!;
-    return {
-        ...config,
-        provider_kind: provider.kind,
-        provider_command: provider.kind === "claude-code" ? "claude-code" : provider.command,
-        provider_arguments: provider.model ? ["--model", provider.model] : [],
-        provider_timeout_seconds: provider.timeout_seconds,
-    };
-}
-
-function dependenciesForTelegram(
-    config: TelegramSurfaceConfig,
-    overrides: {
-        executor?: SurfaceExecutor;
-        memoryProposalGenerator?: SurfaceMemoryProposalGenerator;
-        memoryProposalProviderLabel?: string;
-        onboardingProgressEvaluator?: SurfaceOnboardingProgressEvaluator;
-    } = {},
-) {
-    return composeEmberApplication(
-        {
-            statePath: config.state_path,
-            provider: {
-                kind: config.provider_kind,
-                command: config.provider_command,
-                arguments: config.provider_arguments,
-                timeoutSeconds: config.provider_timeout_seconds,
-                ...(config.provider?.model === undefined ? {} : { model: config.provider.model }),
-            },
-            ...(config.google_calendar_config_path === undefined
-                ? {}
-                : { googleCalendarConfigPath: config.google_calendar_config_path }),
-        },
-        overrides,
-    );
-}
-
-function dependenciesForTelegramInteraction(
-    config: TelegramSurfaceConfig,
-    overrides: {
-        executor: SurfaceExecutor | undefined;
-        memoryProposalGenerator: SurfaceMemoryProposalGenerator | undefined;
-        memoryProposalProviderLabel: string | undefined;
-        onboardingProgressEvaluator: SurfaceOnboardingProgressEvaluator | undefined;
-        suppliedDependencies: EmberApplicationDependencies | undefined;
-    },
-): EmberApplicationDependencies {
-    const dependencies =
-        overrides.suppliedDependencies ??
-        dependenciesForTelegram(config, {
-            ...(overrides.executor === undefined ? {} : { executor: overrides.executor }),
-            ...(overrides.memoryProposalGenerator === undefined
-                ? {}
-                : { memoryProposalGenerator: overrides.memoryProposalGenerator }),
-            ...(overrides.memoryProposalProviderLabel === undefined
-                ? {}
-                : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
-            ...(overrides.onboardingProgressEvaluator === undefined
-                ? {}
-                : { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }),
-        });
-    const useComposedHelpers = overrides.executor === undefined;
-    return {
-        ...dependencies,
-        postTurn: {
-            ...(overrides.memoryProposalGenerator !== undefined
-                ? { memoryProposalGenerator: overrides.memoryProposalGenerator }
-                : useComposedHelpers && dependencies.postTurn.memoryProposalGenerator !== undefined
-                  ? { memoryProposalGenerator: dependencies.postTurn.memoryProposalGenerator }
-                  : {}),
-            ...(overrides.memoryProposalProviderLabel !== undefined
-                ? { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }
-                : useComposedHelpers && dependencies.postTurn.memoryProposalProviderLabel !== undefined
-                  ? { memoryProposalProviderLabel: dependencies.postTurn.memoryProposalProviderLabel }
-                  : {}),
-            ...(overrides.onboardingProgressEvaluator !== undefined
-                ? { onboardingProgressEvaluator: overrides.onboardingProgressEvaluator }
-                : useComposedHelpers && dependencies.postTurn.onboardingProgressEvaluator !== undefined
-                  ? { onboardingProgressEvaluator: dependencies.postTurn.onboardingProgressEvaluator }
-                  : {}),
-        },
-    };
 }
 
 function validateTelegramUpdates(value: unknown): asserts value is TelegramUpdate[] {
@@ -893,24 +612,9 @@ export function validateTelegramToken(token: string) {
         throw new ValidationError("Telegram bot token has an invalid shape");
 }
 
-function validatePollTimeout(value: unknown) {
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1 || value > 60)
-        throw new ValidationError("Telegram poll timeout must be an integer between 1 and 60 seconds");
-}
-
 function validateChatId(value: unknown) {
     if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0)
         throw new ValidationError("Telegram chat id must be a positive safe integer");
-}
-
-function validateOpaque(value: unknown, field: string, maxLength: number) {
-    if (
-        typeof value !== "string" ||
-        !value.trim() ||
-        value.length > maxLength ||
-        ASCII_CONTROL_CHARACTER_PATTERN.test(value)
-    )
-        throw new ValidationError(`${field} is invalid`);
 }
 
 function requireAbsolutePath(value: unknown, field: string): asserts value is string {

@@ -3,6 +3,21 @@ import test from "node:test";
 
 import { dependencyViolations } from "../scripts/check-dependencies.ts";
 
+test("dependency checker should reject composition and provider imports when used by conversational adapters", () => {
+    // Given
+    const owners = ["surfaces/cli/surface.ts", "surfaces/telegram/surface.ts", "surfaces/cli/ordinary-helper.ts"];
+    const specifiers = ["../../app/application.ts", "../../composition/ember.ts", "../../providers/contract.ts"];
+
+    // When
+    const results = owners.flatMap((owner) =>
+        specifiers.map((specifier) => dependencyViolations(owner, `import type { X } from "${specifier}";`)),
+    );
+
+    // Then
+    assert.equal(results.length, 9);
+    for (const violations of results) assert.equal(violations.length, 1);
+});
+
 test("dependency checker should reject static AI imports anywhere in a surface-owned subtree", () => {
     // Given
     const source = 'import { generateText } from "../../ai/cognition.ts";';
