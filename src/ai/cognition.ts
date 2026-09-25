@@ -23,8 +23,8 @@ import {
     TypeValidationError,
 } from "ai";
 
-import type { CognitionId } from "../core/model.ts";
 import type { ProviderFailureCategory } from "../core/errors.ts";
+import type { CognitionId } from "../core/model.ts";
 import type { AiExecutor, AiStreamObserver } from "./contract.ts";
 
 import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";

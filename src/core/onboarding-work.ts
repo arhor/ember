@@ -53,7 +53,12 @@ export function migrateOnboardingWorkTopics(value: unknown): unknown {
     const missing = ONBOARDING_TOPICS.filter((topic) => !present.has(topic));
     if (missing.length === 0) return value;
     const backfillStatus: OnboardingTopicStatus = value.status === "closed" ? "declined" : "open";
-    const updatedAt = typeof value.updated_at === "string" ? value.updated_at : typeof value.created_at === "string" ? value.created_at : new Date().toISOString();
+    const updatedAt =
+        typeof value.updated_at === "string"
+            ? value.updated_at
+            : typeof value.created_at === "string"
+              ? value.created_at
+              : new Date().toISOString();
     return {
         ...value,
         topics: [

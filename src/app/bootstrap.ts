@@ -285,9 +285,7 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
                     errorClass: error instanceof Error ? error.constructor.name : typeof error,
                     configuredTimeoutSeconds: config.provider.timeoutSeconds,
                     durationMs: Math.max(0, Math.round(performance.now() - probeStartedAt)),
-                    ...(error instanceof ProviderError && error.category !== null
-                        ? { category: error.category }
-                        : {}),
+                    ...(error instanceof ProviderError && error.category !== null ? { category: error.category } : {}),
                     ...(error instanceof ProviderError && error.statusCode !== null
                         ? { statusCode: error.statusCode }
                         : {}),

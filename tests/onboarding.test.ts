@@ -470,10 +470,7 @@ test("loading a legacy onboarding document backfills a topic introduced after it
     const backfilled = loaded!.topics.find((topic) => topic.topic === "agent_personality");
     assert.equal(backfilled?.status, "open");
     assert.deepEqual(backfilled?.source_evidence_ids, []);
-    assert.equal(
-        loaded!.topics.find((topic) => topic.topic === "forms_of_address")?.status,
-        "resolved",
-    );
+    assert.equal(loaded!.topics.find((topic) => topic.topic === "forms_of_address")?.status, "resolved");
 
     const legacyClosed = {
         ...legacyActive,

@@ -689,18 +689,16 @@ function cognition(
                       decision_version: 1 as const,
                       updates: (
                           ["forms_of_address", "agent_personality", "expectations", "optional_capabilities"] as const
-                      ).map(
-                          (topic) => ({
-                              topic,
-                              action:
-                                  options.onboarding === "defer"
-                                      ? ("defer" as const)
-                                      : topic === "optional_capabilities"
-                                        ? ("decline" as const)
-                                        : ("resolve" as const),
-                              basis: episode.input,
-                          }),
-                      ),
+                      ).map((topic) => ({
+                          topic,
+                          action:
+                              options.onboarding === "defer"
+                                  ? ("defer" as const)
+                                  : topic === "optional_capabilities"
+                                    ? ("decline" as const)
+                                    : ("resolve" as const),
+                          basis: episode.input,
+                      })),
                   }),
               }
             : {}),
