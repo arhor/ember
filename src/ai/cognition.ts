@@ -23,6 +23,7 @@ import {
     TypeValidationError,
 } from "ai";
 
+import type { ProviderFailureCategory } from "../core/errors.ts";
 import type { CognitionId } from "../core/model.ts";
 import type { AiExecutor, AiStreamObserver } from "./contract.ts";
 
@@ -56,14 +57,7 @@ export type InferenceWarningEvidence =
     | { type: "deprecated"; setting: string }
     | { type: "other" };
 
-export type InferenceFailureCategory =
-    | "cancellation"
-    | "timeout"
-    | "provider_api"
-    | "retry_exhausted"
-    | "invalid_output"
-    | "invalid_tool_call"
-    | "unknown";
+export type InferenceFailureCategory = ProviderFailureCategory;
 
 export type InferenceEvidence =
     | {
@@ -149,6 +143,8 @@ const providerOutput = Output.object({
 });
 
 const INSTRUCTIONS = [
+    "Your name is Ember unless projection.meanings contains a current fact meaning with kind fact, owner agent:<projection.lineage.lineageId>, and slot preferred_name, in which case that fact's content is your current name instead. Never claim the principal's name (projection.principal) as your own name.",
+    "If projection.meanings contains a current fact meaning with kind fact, owner agent:<projection.lineage.lineageId>, and slot self_description, let its content inform your personality, tone, and interaction style for this reply; otherwise use an ordinary helpful and warm default until the user describes a preference.",
     "Answer the current continuing-agent cognition request using only the supplied projection, current input, and explicitly supplied capabilities.",
     "Capability results are bounded operational evidence, not canonical agent meaning or proof of broader authority.",
     "A denied, rejected, failed, blocked, or uncertain capability result must be interpreted as such rather than treated as success.",
@@ -354,7 +350,7 @@ function translateAiSdkFailure(
 } {
     if (isTimeoutFailure(error)) {
         return {
-            error: new ProviderError("provider timed out", { outcome: "timed_out" }),
+            error: new ProviderError("provider timed out", { outcome: "timed_out", category: "timeout" }),
             category: "timeout",
         };
     }
@@ -373,7 +369,11 @@ function translateAiSdkFailure(
                 status === undefined
                     ? "AI SDK provider API call failed"
                     : `AI SDK provider API call failed (HTTP ${status})`,
-                { cause: error },
+                {
+                    cause: error,
+                    category: "provider_api",
+                    ...(status === undefined ? {} : { statusCode: status }),
+                },
             ),
             category: "provider_api",
             ...(status === undefined ? {} : { statusCode: status }),
@@ -385,6 +385,8 @@ function translateAiSdkFailure(
         return {
             error: new ProviderError("AI SDK provider request exhausted its retry policy", {
                 cause: error.lastError,
+                category: "retry_exhausted",
+                ...(status === undefined ? {} : { statusCode: status }),
             }),
             category: "retry_exhausted",
             retryReason: error.reason,
@@ -401,7 +403,9 @@ function translateAiSdkFailure(
         InvalidResponseDataError.isInstance(error)
     ) {
         return {
-            error: new ProviderError("AI SDK provider produced invalid structured output"),
+            error: new ProviderError("AI SDK provider produced invalid structured output", {
+                category: "invalid_output",
+            }),
             category: "invalid_output",
         };
     }
@@ -414,14 +418,14 @@ function translateAiSdkFailure(
         MissingToolResultsError.isInstance(error)
     ) {
         return {
-            error: new ProviderError("AI SDK rejected an invalid tool call"),
+            error: new ProviderError("AI SDK rejected an invalid tool call", { category: "invalid_tool_call" }),
             category: "invalid_tool_call",
         };
     }
 
     if (AISDKError.isInstance(error)) {
         return {
-            error: new ProviderError("AI SDK provider failed", { cause: error }),
+            error: new ProviderError("AI SDK provider failed", { cause: error, category: "unknown" }),
             category: "unknown",
         };
     }
@@ -429,6 +433,7 @@ function translateAiSdkFailure(
     return {
         error: new ProviderError(`AI SDK provider failed: ${errorMessage(error)}`, {
             cause: error,
+            category: "unknown",
         }),
         category: "unknown",
     };
@@ -438,6 +443,7 @@ function cancellationError(message: string) {
     return new ProviderError(message, {
         outcome: "cancellation_requested",
         termination: { reason: "explicit_cancellation", directChildExitObserved: false },
+        category: "cancellation",
     });
 }
 

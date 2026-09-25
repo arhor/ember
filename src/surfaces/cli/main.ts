@@ -318,8 +318,10 @@ function renderInspection({
 type RawValue = string | string[] | boolean | undefined;
 
 export function parseArgs(argv: string[]): CliCommandArgs {
+    const defaultDiagnostics = argv[0] === "--diagnostics";
+    if (defaultDiagnostics) argv = argv.slice(1);
     if (!argv.length) {
-        return { command: Commands.RUN, mode: "default" };
+        return { command: Commands.RUN, mode: "default", ...(defaultDiagnostics ? { diagnostics: true } : {}) };
     }
     const command = argv[0]!;
     const spec = CommandSpecs[command];
@@ -407,6 +409,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             providerTimeoutSeconds: timeout,
             acceptContinuityRisk: values["--accept-continuity-risk"] === true,
             confirmProviderChange: values["--confirm-provider-change"] === true,
+            diagnostics: defaultDiagnostics || values["--diagnostics"] === true,
             help: values["--help"] === true,
         };
     }

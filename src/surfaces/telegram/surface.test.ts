@@ -117,6 +117,7 @@ test("Telegram uses the ordinary onboarding progress and memory seams", async ()
                 decision_version: 1,
                 updates: [
                     { topic: "forms_of_address", action: "defer", basis: "later" },
+                    { topic: "agent_personality", action: "defer", basis: "later" },
                     { topic: "expectations", action: "defer", basis: "later" },
                     { topic: "optional_capabilities", action: "defer", basis: "later" },
                 ],

@@ -52,6 +52,30 @@ export interface SetupConfig {
     updatedAt: string;
 }
 
+/** A deliberately redacted, host-local setup probe record. */
+export type SetupProbeDiagnostic =
+    | {
+          event: "probe_started";
+          at: string;
+          provider: "codex" | "cursor" | "claude-code" | "ollama";
+          modelConfigured: boolean;
+          node: string;
+          platform: string;
+      }
+    | {
+          event: "probe_failed";
+          at: string;
+          provider: "codex" | "cursor" | "claude-code" | "ollama";
+          outcome: SetupConfig["verification"];
+          errorClass: string;
+          category?: ProviderError["category"];
+          configuredTimeoutSeconds: number;
+          durationMs: number;
+          statusCode?: number;
+          termination?: ProviderError["termination"];
+          terminationConfirmed?: boolean;
+      };
+
 export type BootstrapEvent =
     | {
           kind: "inspection";
@@ -71,6 +95,7 @@ export type BootstrapEvent =
               | "ready"
               | "cancelled_after_activation";
           outcome?: SetupConfig["verification"];
+          diagnostic?: SetupProbeDiagnostic;
       };
 
 export interface BootstrapDependencies {
@@ -212,7 +237,16 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
             dependencies.onProgress({ kind: "cancelled_before_cognition" });
             return 2;
         }
-        dependencies.onProgress({ kind: "verifying" });
+        const probeStartedAt = performance.now();
+        const probeDiagnostic = {
+            event: "probe_started" as const,
+            at: nowUtc(),
+            provider: config.provider.kind,
+            modelConfigured: Boolean(config.provider.model),
+            node: process.version,
+            platform: process.platform,
+        };
+        dependencies.onProgress({ kind: "verifying", diagnostic: probeDiagnostic });
         let continuityMutationStarted = false;
         try {
             const synthetic = startRuntime(initialState("setup-probe"), "setup-probe", "setup-probe");
@@ -240,7 +274,27 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
         } catch (error) {
             config.verification = error instanceof ProviderError ? error.outcome : "failed";
             await persistObserved();
-            dependencies.onProgress({ kind: "verification_failed", outcome: config.verification });
+            dependencies.onProgress({
+                kind: "verification_failed",
+                outcome: config.verification,
+                diagnostic: {
+                    event: "probe_failed",
+                    at: nowUtc(),
+                    provider: config.provider.kind,
+                    outcome: config.verification,
+                    errorClass: error instanceof Error ? error.constructor.name : typeof error,
+                    configuredTimeoutSeconds: config.provider.timeoutSeconds,
+                    durationMs: Math.max(0, Math.round(performance.now() - probeStartedAt)),
+                    ...(error instanceof ProviderError && error.category !== null ? { category: error.category } : {}),
+                    ...(error instanceof ProviderError && error.statusCode !== null
+                        ? { statusCode: error.statusCode }
+                        : {}),
+                    ...(error instanceof ProviderError && error.termination !== null
+                        ? { termination: error.termination }
+                        : {}),
+                    ...(error instanceof ProviderError ? { terminationConfirmed: error.terminationConfirmed } : {}),
+                },
+            });
             return 2;
         }
         await persistObserved();

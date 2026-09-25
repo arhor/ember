@@ -12,7 +12,7 @@
     "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",
-    "serve": "node bin/ember.ts",
+    "serve": "node bin/ember.ts --diagnostics",
     "runtime:episodic": "node bin/ember-runtime.ts",
     "surface:telegram": "node bin/ember-telegram.ts",
     "smoke:codex": "node tests/live/codex-smoke.ts",

@@ -51,11 +51,23 @@ export interface ProviderTermination {
     directChildExitObserved: boolean;
 }
 
+/** A closed classification of why an AI SDK invocation failed; safe to log unredacted. */
+export type ProviderFailureCategory =
+    | "cancellation"
+    | "timeout"
+    | "provider_api"
+    | "retry_exhausted"
+    | "invalid_output"
+    | "invalid_tool_call"
+    | "unknown";
+
 export interface ProviderErrorOptions extends ErrorOptions {
     outcome?: ProviderOutcome | undefined;
     terminationConfirmed?: boolean | undefined;
     externalThreadId?: string | undefined;
     termination?: ProviderTermination | undefined;
+    statusCode?: number | undefined;
+    category?: ProviderFailureCategory | undefined;
 }
 
 export class ProviderError extends EmberError {
@@ -63,6 +75,8 @@ export class ProviderError extends EmberError {
     readonly terminationConfirmed: boolean;
     readonly externalThreadId: string | null;
     readonly termination: ProviderTermination | null;
+    readonly statusCode: number | null;
+    readonly category: ProviderFailureCategory | null;
 
     constructor(
         message: string,
@@ -71,6 +85,8 @@ export class ProviderError extends EmberError {
             terminationConfirmed = true,
             externalThreadId,
             termination,
+            statusCode,
+            category,
             cause,
         }: ProviderErrorOptions = {},
     ) {
@@ -79,5 +95,7 @@ export class ProviderError extends EmberError {
         this.terminationConfirmed = terminationConfirmed;
         this.externalThreadId = externalThreadId ?? null;
         this.termination = termination ?? null;
+        this.statusCode = statusCode ?? null;
+        this.category = category ?? null;
     }
 }
