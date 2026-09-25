@@ -8,13 +8,13 @@ state, authority, conversation membership, and delivery truth Ember-owned.
 
 ## Quick start
 
-The supported development/runtime baseline is Node.js **26.8.1 or newer within 26.x** and npm. TypeScript is executed
+The supported development/runtime baseline is Node.js **26.8.1 or newer within 26.x** and pnpm. TypeScript is executed
 directly by Node; there is no transpilation or generated JavaScript tree.
 
 ```sh
-npm ci
-npm run check
-npm test
+pnpm install
+pnpm check
+pnpm test
 ```
 
 Run Ember from source:
@@ -67,7 +67,7 @@ The production tree is organized by ownership:
   `tests/`.
 
 Conversational surfaces must not privately compose the production application, providers, AI SDK infrastructure, or
-canonical persistence. `scripts/check-dependencies.ts` enforces the high-value dependency rules in `npm run check`.
+canonical persistence. `scripts/check-dependencies.ts` enforces the high-value dependency rules in `pnpm check`.
 
 See [Source Layout and Surface Placement](docs/architecture/source-layout.md) for placement rules and dependency direction.
 

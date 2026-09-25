@@ -59,9 +59,9 @@ restart probe.
 The deterministic runners need no login, subscription, or network:
 
 ```sh
-npm run eval:continuity
-npm run eval:memory-context
-npm run eval:provenance
+pnpm eval:continuity
+pnpm eval:memory-context
+pnpm eval:provenance
 node --test tests/longitudinal-harness.test.ts tests/longitudinal-memory-context.test.ts tests/longitudinal-provenance.test.ts
 ```
 

@@ -21,7 +21,7 @@ A document's repository role, its `discovery_status`, and any role-specific life
 
 ## Commands
 
-Run discovery from the repository root with Node.js built-ins only. Use Node.js 26.8.1 or newer on the Node 26 release line, matching the repository baseline in `package.json`. Ember now has an npm toolchain, but a Markdown/YAML dependency is still a poor fit here: the discovery utility deliberately preserves a narrow, inspectable grammar whose rejection behavior is part of its contract. Keeping discovery dependency-free avoids importing broader parser semantics that the repository does not accept.
+Run discovery from the repository root with Node.js built-ins only. Use Node.js 26.8.1 or newer on the Node 26 release line, matching the repository baseline in `package.json`. Ember now has a pnpm toolchain, but a Markdown/YAML dependency is still a poor fit here: the discovery utility deliberately preserves a narrow, inspectable grammar whose rejection behavior is part of its contract. Keeping discovery dependency-free avoids importing broader parser semantics that the repository does not accept.
 
 ```bash
 # Current foundations, decisions, design, scenarios, canonical research, and guides.
@@ -137,7 +137,7 @@ Do not use `discovery_status` as a substitute for role-specific lifecycle. For e
 
 ## Ember frontmatter subset
 
-Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an **Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: the repository's established Node.js/npm toolchain does not make a general YAML model a semantic fit. The parser remains small, inspectable, and zero-dependency because its deliberately narrow accepted and rejected forms are part of discovery behavior.
+Participating files use familiar YAML-style `---` frontmatter delimiters, but the discovery utility implements an **Ember-specific frontmatter grammar**, not a general YAML parser. This distinction is intentional: the repository's established Node.js/pnpm toolchain does not make a general YAML model a semantic fit. The parser remains small, inspectable, and zero-dependency because its deliberately narrow accepted and rejected forms are part of discovery behavior.
 
 The accepted grammar is limited to what the v1 contract needs:
 
@@ -191,7 +191,7 @@ Do not copy identical hints across a directory merely to satisfy validation. A d
 Run:
 
 ```bash
-npm run test:docs
+pnpm test:docs
 node scripts/docs-discovery.ts check
 ```
 

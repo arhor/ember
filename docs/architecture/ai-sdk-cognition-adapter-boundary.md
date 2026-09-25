@@ -75,7 +75,7 @@ To exercise a local installation deliberately, start Ollama and pull a structure
 capable model, then run:
 
 ```text
-EMBER_OLLAMA_MODEL=<model> npm run smoke:ollama
+EMBER_OLLAMA_MODEL=<model> pnpm smoke:ollama
 ```
 
 Set `EMBER_OLLAMA_BASE_URL` only for a loopback override. The smoke test runs an

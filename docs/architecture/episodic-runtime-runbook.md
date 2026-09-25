@@ -34,7 +34,7 @@ systemd --user
 The repository command is:
 
 ```bash
-npm run runtime:episodic -- <command> ...
+pnpm runtime:episodic -- <command> ...
 ```
 
 It dispatches to `bin/ember-runtime.ts`. The generated systemd units call that Node
@@ -159,7 +159,7 @@ This grants host capability only. It is not Ember authority.
 ## Install startup reconciliation
 
 ```bash
-npm run runtime:episodic -- install \
+pnpm runtime:episodic -- install \
   --config /ABSOLUTE/PATH/ember-runtime.json \
   --unit-directory "$HOME/.config/systemd/user"
 ```
@@ -174,7 +174,7 @@ failed work-bearing process.
 ## Schedule one unattended opportunity
 
 ```bash
-npm run runtime:episodic -- schedule-wake \
+pnpm runtime:episodic -- schedule-wake \
   --config /ABSOLUTE/PATH/ember-runtime.json \
   --at 2026-09-04T18:00:00Z
 ```
@@ -194,7 +194,7 @@ There is no default repeating cadence and no `Persistent=true` catch-up policy.
 Given an already authored `SpecialistEpisodeSpec` JSON file:
 
 ```bash
-npm run runtime:episodic -- start-specialist \
+pnpm runtime:episodic -- start-specialist \
   --config /ABSOLUTE/PATH/ember-runtime.json \
   --spec /ABSOLUTE/PATH/specialist-spec.json
 ```
@@ -213,7 +213,7 @@ reconciled from durable specialist evidence rather than replayed by systemd.
 ## Status
 
 ```bash
-npm run runtime:episodic -- status \
+pnpm runtime:episodic -- status \
   --config /ABSOLUTE/PATH/ember-runtime.json
 ```
 
@@ -301,7 +301,7 @@ be preserved correctly across the external wait.
 ## Manual reconciliation
 
 ```bash
-npm run runtime:episodic -- reconcile \
+pnpm runtime:episodic -- reconcile \
   --config /ABSOLUTE/PATH/ember-runtime.json
 ```
 
@@ -333,9 +333,9 @@ available.
 ## Deterministic repository validation
 
 ```bash
-npm run check
-npm test
-npm run test:docs
+pnpm check
+pnpm test
+pnpm test:docs
 node scripts/docs-discovery.ts check
 ```
 
@@ -369,7 +369,7 @@ systemd assumptions.
 3. Install reconciliation and inspect it:
 
    ```bash
-   npm run runtime:episodic -- install \
+   pnpm runtime:episodic -- install \
      --config /ABSOLUTE/PATH/ember-runtime.json \
      --unit-directory "$HOME/.config/systemd/user"
    systemctl --user status ember-reconcile.service
@@ -378,11 +378,11 @@ systemd assumptions.
 4. Schedule a wake several minutes ahead, then inspect both layers:
 
    ```bash
-   npm run runtime:episodic -- schedule-wake \
+   pnpm runtime:episodic -- schedule-wake \
      --config /ABSOLUTE/PATH/ember-runtime.json \
      --at <RFC3339-UTC-TIME>
    systemctl --user list-timers 'ember-wake-*'
-   npm run runtime:episodic -- status \
+   pnpm runtime:episodic -- status \
      --config /ABSOLUTE/PATH/ember-runtime.json
    ```
 

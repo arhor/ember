@@ -11,16 +11,21 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-          cache: npm
+          cache: pnpm
 
       - name: Install locked development toolchain
-        run: npm ci
+        run: pnpm install
 
       - name: Record host identity
         run: |
@@ -30,7 +35,7 @@ jobs:
           free -m
 
       - name: Measure episodic runtime resource usage
-        run: npm run --silent eval:runtime-resource | tee runtime-resource-evidence.json
+        run: pnpm --silent eval:runtime-resource | tee runtime-resource-evidence.json
 
       - name: Validate raw resource evidence
         run: node -e 'JSON.parse(require("node:fs").readFileSync("runtime-resource-evidence.json", "utf8"))'

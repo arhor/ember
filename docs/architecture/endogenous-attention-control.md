@@ -123,9 +123,9 @@ user delivery.
 
 The same versioned 25-opportunity #79 workload is retained in two modes:
 
-- `npm run eval:endogenous:baseline` disables the #95 control and reproduces the
+- `pnpm eval:endogenous:baseline` disables the #95 control and reproduces the
   pre-control evidence; and
-- `npm run eval:endogenous` enables the current repeated-projection control.
+- `pnpm eval:endogenous` enables the current repeated-projection control.
 
 The deterministic structural control changes the reproduced repetition case from:
 

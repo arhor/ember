@@ -160,7 +160,7 @@ protocol. They cover:
 The opt-in authenticated probe is:
 
 ```sh
-npm run smoke:claude
+pnpm smoke:claude
 ```
 
 It uses a real Ember `AiExecutionRequest`, places a project `CLAUDE.md`/settings marker

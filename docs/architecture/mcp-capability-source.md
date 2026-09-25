@@ -127,7 +127,7 @@ source subsequently refuses discovery, and that a capability already bound from 
 closed source cannot submit another remote tool request.
 
 The ordinary repository continuity workflow validates this slice with the locked Node
-26 toolchain, `npm run check`, the complete `npm test` suite, and the deterministic
+26 toolchain, `pnpm check`, the complete `pnpm test` suite, and the deterministic
 endogenous selectivity evaluation. No MCP-specific bootstrap workflow is retained.
 
 ## Replacement path

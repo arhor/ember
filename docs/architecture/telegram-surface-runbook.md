@@ -279,7 +279,7 @@ backend.
 From the repository root:
 
 ```bash
-npm run surface:telegram -- check \
+pnpm surface:telegram -- check \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
@@ -296,7 +296,7 @@ If this bot was previously configured for webhook delivery and switching it to E
 is intentional:
 
 ```bash
-npm run surface:telegram -- delete-webhook \
+pnpm surface:telegram -- delete-webhook \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
@@ -308,7 +308,7 @@ discards pending Telegram updates implicitly.
 The exact transport can be exercised without systemd first:
 
 ```bash
-npm run surface:telegram -- serve \
+pnpm surface:telegram -- serve \
   --config "$HOME/.config/ember/telegram.json"
 ```
 
@@ -405,7 +405,7 @@ Generate the unit from the validated local configuration:
 
 ```bash
 mkdir -p "$HOME/.config/systemd/user"
-npm run surface:telegram -- render-unit \
+pnpm surface:telegram -- render-unit \
   --config "$HOME/.config/ember/telegram.json" \
   > "$HOME/.config/systemd/user/ember-telegram.service"
 systemctl --user daemon-reload
@@ -450,11 +450,11 @@ Run `ember`, then request Telegram setup to install and verify the service. For 
 existing validated Telegram config, the direct host commands are:
 
 ```bash
-npm run surface:telegram -- service-install --config "$HOME/.ember/config/telegram.json"
-npm run surface:telegram -- service-status --config "$HOME/.ember/config/telegram.json"
-npm run surface:telegram -- service-stop --config "$HOME/.ember/config/telegram.json"
-npm run surface:telegram -- service-start --config "$HOME/.ember/config/telegram.json"
-npm run surface:telegram -- service-uninstall --config "$HOME/.ember/config/telegram.json"
+pnpm surface:telegram -- service-install --config "$HOME/.ember/config/telegram.json"
+pnpm surface:telegram -- service-status --config "$HOME/.ember/config/telegram.json"
+pnpm surface:telegram -- service-stop --config "$HOME/.ember/config/telegram.json"
+pnpm surface:telegram -- service-start --config "$HOME/.ember/config/telegram.json"
+pnpm surface:telegram -- service-uninstall --config "$HOME/.ember/config/telegram.json"
 ```
 
 `service-install` replaces the plist and bootstraps the login agent; repeat it after
@@ -482,7 +482,7 @@ remains unavailable on macOS.
 
 The isolated host smoke checks plist acceptance and the real bootstrap → print →
 bootout lifecycle without loading Telegram config or contacting its API. Run it in
-a macOS GUI login session with `npm run smoke:launchd:live`; it skips when the GUI
+a macOS GUI login session with `pnpm smoke:launchd:live`; it skips when the GUI
 domain is unavailable. It creates a uniquely labeled temporary agent and removes it
 after verification. Normal CI remains portable and uses deterministic adapter tests.
 
@@ -545,8 +545,8 @@ ambiguous prior send remains blocked instead of being duplicated.
 No Telegram token or network is needed for repository confidence:
 
 ```bash
-npm run check
-npm test
+pnpm check
+pnpm test
 ```
 
 Focused tests cover:

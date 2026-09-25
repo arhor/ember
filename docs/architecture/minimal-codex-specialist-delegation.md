@@ -363,7 +363,7 @@ and a successful result arriving after objective supersession.
 The opt-in live scenario is:
 
 ```bash
-npm run smoke:specialist:live
+pnpm smoke:specialist:live
 ```
 
 It creates an ephemeral workspace outside Ember, asks authenticated Codex to create

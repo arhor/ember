@@ -39,6 +39,7 @@ new decision explicitly confronts and supersedes the affected semantic ADR.
 | [0006](0006-adopt-typescript-on-nodejs-26.md)                    | Adopt TypeScript on Node.js 26 as Ember's Implementation Runtime                                    | Accepted | ADRs 0001-0005 |
 | [0007](0007-use-systemd-supervised-episodic-runtime.md)          | Use a systemd-Supervised Episodic Runtime Before a Resident Ember Daemon                            | Accepted | ADRs 0001-0006 |
 | [0008](0008-add-systemd-supervised-telegram-transport-worker.md) | Add a systemd-Supervised Resident Telegram Transport Worker Without Making It Ember's Runtime Owner | Accepted | ADRs 0001-0007 |
+| [0009](0009-adopt-pnpm-as-package-manager.md)                    | Adopt pnpm as Ember's Package Manager                                                               | Accepted | ADR 0006       |
 
 ## Decision discipline
 

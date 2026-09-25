@@ -283,7 +283,7 @@ EMBER_GOOGLE_CALENDAR_EVENT_TITLE='Ember live smoke' \
 EMBER_GOOGLE_CALENDAR_EVENT_START='2026-09-18T08:00:00Z' \
 EMBER_GOOGLE_CALENDAR_EVENT_END='2026-09-18T08:15:00Z' \
 EMBER_GOOGLE_CALENDAR_EXACT_APPROVAL='Ember live smoke|2026-09-18T08:00:00Z|2026-09-18T08:15:00Z' \
-npm run smoke:google-calendar-create:live
+pnpm smoke:google-calendar-create:live
 ```
 
 The repeated exact approval value is an explicit smoke-test safety interlock, not a

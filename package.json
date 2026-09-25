@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "check": "npm run fmt:check && npm run lint && tsc -p tsconfig.json && npm run test:types && npm run check:dependencies && node scripts/docs-discovery.ts check",
+    "check": "pnpm fmt:check && pnpm lint && tsc -p tsconfig.json && pnpm test:types && pnpm check:dependencies && node scripts/docs-discovery.ts check",
     "check:dependencies": "node scripts/check-dependencies.ts",
     "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
@@ -68,5 +68,6 @@
   },
   "engines": {
     "node": ">=26.8.1 <27"
-  }
+  },
+  "packageManager": "pnpm@12.6.0"
 }

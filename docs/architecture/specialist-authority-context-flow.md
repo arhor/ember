@@ -201,7 +201,7 @@ The production tests exercise the issue-61 adversarial boundaries directly:
   report while the top-level boundary effect arrays stay empty.
 
 The existing controlled process fixture continues to prove the ordinary bounded
-write path, and the opt-in `npm run smoke:specialist:live` scenario continues to use
+write path, and the opt-in `pnpm smoke:specialist:live` scenario continues to use
 an ephemeral workspace outside Ember. The live harness records the same scoped
 context, attributable/current authority, runtime capability, and specialist report
 provenance as the deterministic boundary.

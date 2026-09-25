@@ -231,8 +231,8 @@ Repository tests cover:
 Run the normal repository checks:
 
 ```bash
-npm run check
-npm test
+pnpm check
+pnpm test
 ```
 
 ## Deliberate limits

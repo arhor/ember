@@ -30,7 +30,7 @@ const WAKE_TIMEOUT_MS = 90_000;
 const SPECIALIST_TIMEOUT_MS = 240_000;
 
 if (process.env.EMBER_RUN_LIVE_EPISODIC !== "1") {
-    process.stderr.write("Run through `npm run smoke:runtime:live` to execute the real systemd + Codex smoke.\n");
+    process.stderr.write("Run through `pnpm smoke:runtime:live` to execute the real systemd + Codex smoke.\n");
     process.exitCode = 2;
 } else if (process.platform !== "linux") {
     process.stderr.write("The episodic runtime live smoke requires Linux with a systemd user manager.\n");

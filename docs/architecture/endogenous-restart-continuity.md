@@ -41,8 +41,8 @@ subscription, transcript, or hidden session dependency.
 Run the proof through the normal suite:
 
 ```sh
-npm test
-npm run check
+pnpm test
+pnpm check
 ```
 
 ## Durable inspection evidence
@@ -70,7 +70,7 @@ uses the production Codex opportunity evaluator with an explicitly ephemeral thr
 policy and forbids prior threads and outside context:
 
 ```sh
-EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 npm run eval:endogenous:restart:live -- \
+EMBER_RUN_LIVE_ENDOGENOUS_RESTART=1 pnpm eval:endogenous:restart:live -- \
   --timeout-seconds 180 \
   --report /tmp/ember-77-endogenous-restart.json
 ```

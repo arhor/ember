@@ -87,7 +87,7 @@ delivery intent and retained representation; only then may reflection begin, and
 external send remains after reflection. A crash during the model-backed call therefore
 cannot turn an already committed reply into a representation-less delivery. Both CLI
 and Telegram surface paths can supply that generator. The opt-in
-`npm run smoke:memory-proposal:live` command exercises a representative ordinary
+`pnpm smoke:memory-proposal:live` command exercises a representative ordinary
 conversation against a live subscription-backed structured-output model. The
 proposal-semantic tests continue to own invalid, rejection, and supersession policy
 coverage.

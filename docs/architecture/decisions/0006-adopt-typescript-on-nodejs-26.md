@@ -158,7 +158,7 @@ wishlist.
 | Concern                          | Policy                                                                                                                                                                                                                                                                                                    |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Runtime                          | Node.js 26, initially pinned to **26.8.1** in CI.                                                                                                                                                                                                                                                         |
-| Package manager                  | npm. Commit the lockfile and use `npm ci` in CI. Do not add another package manager without a concrete benefit.                                                                                                                                                                                           |
+| Package manager                  | npm. Commit the lockfile and use `npm ci` in CI. Do not add another package manager without a concrete benefit. **Superseded by [ADR 0009](0009-adopt-pnpm-as-package-manager.md)**, which replaces npm with pnpm; the rest of this table is unaffected.                                                  |
 | Type checking                    | Start with exact `typescript@7.0.2`, the checker exercised by #38, and run `tsc` with `noEmit` and strict settings. Type checking is a required confidence gate.                                                                                                                                          |
 | Node ambient types               | Start with exact `@types/node@26.4.0`, the ambient declarations exercised by #38.                                                                                                                                                                                                                         |
 | Checker/type-definition upgrades | TypeScript and `@types/node` are independently upgradable development tools. Do not float them automatically: change their locked versions in a reviewed dependency update and run the full confidence suite. A checker update needs a new ADR only if it changes a material assumption of this decision. |
@@ -179,6 +179,10 @@ npm ci
 npm run check
 npm test
 ```
+
+(These were the commands as originally adopted. [ADR 0009](0009-adopt-pnpm-as-package-manager.md)
+later replaced npm with pnpm; the equivalent commands are `pnpm install`, `pnpm check`,
+and `pnpm test`. The script names and confidence-loop shape are unaffected.)
 
 `check` must include TypeScript static checking and existing deterministic
 repository checks such as documentation-discovery validation. `test` must retain

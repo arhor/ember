@@ -21,16 +21,16 @@ expand that design's semantic scope or its supported deployment boundary.
 The slice supports Node.js 26, with **26.8.1** as the reviewed minimum, on a local
 Linux filesystem. Production execution uses Node.js built-ins and native erasable
 TypeScript directly. A fresh checkout installs only the locked development checker
-and Node ambient types with `npm ci`; there is no transpilation, bundle, generated
+and Node ambient types with `pnpm install`; there is no transpilation, bundle, generated
 JavaScript tree, or background service.
 
 From the repository root, run the complete gate:
 
 ```sh
 node --version
-npm ci
-npm run check
-npm test
+pnpm install
+pnpm check
+pnpm test
 ```
 
 `node bin/ember.ts` is the exact direct-source entry point. Node.js 26 executes
@@ -185,13 +185,13 @@ availability failure rather than risking concurrent writers.
 For a first-run provider failure, repeat setup with opt-in redacted diagnostics:
 
 ```sh
-npm run serve
+pnpm serve
 ```
 
 To reverify a previously incomplete setup through the same diagnostics-enabled script:
 
 ```sh
-npm run serve -- setup --intent use-existing
+pnpm serve -- setup --intent use-existing
 ```
 
 On a failed verification, Ember prints a local JSONL path under
@@ -282,7 +282,7 @@ Run the opt-in synthetic production smoke path without placing a subscription in
 CI:
 
 ```sh
-npm run smoke:codex
+pnpm smoke:codex
 ```
 
 The smoke creates temporary synthetic canonical state containing one deliberately
@@ -375,7 +375,7 @@ direct-child exit never proves remote rollback or absence of work.
 Run the opt-in synthetic smoke using the installed browser-authenticated CLI:
 
 ```sh
-npm run smoke:cursor
+pnpm smoke:cursor
 ```
 
 The smoke is local and non-gating. It checks bounded selection, exclusion of an

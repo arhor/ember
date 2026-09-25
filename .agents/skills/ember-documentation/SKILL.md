@@ -61,7 +61,7 @@ When a new document supersedes old guidance, update the old document's discovery
 After adding or materially changing participating documentation, run:
 
 ```bash
-npm run test:docs
+pnpm test:docs
 node scripts/docs-discovery.ts check
 ```
 

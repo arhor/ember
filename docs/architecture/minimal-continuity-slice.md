@@ -294,7 +294,7 @@ One foreground CLI is sufficient because the slice tests process and cognition
 replacement, not surface diversity.
 
 The command examples below use `ember`. In a repository checkout, install the
-locked development toolchain with `npm ci`; the exact source entry point is the
+locked development toolchain with `pnpm install`; the exact source entry point is the
 Node-shebang-bearing `bin/ember.ts`. Node.js 26 executes that erasable TypeScript
 directly without transpilation, and `node bin/ember.ts` is the portable direct
 invocation. The `package.json` bin mapping makes the shorter name available after
@@ -876,7 +876,7 @@ An injected clock and ID source keep deterministic tests independent of wall
 time and randomness.
 
 CI pins Node 24.x, runs `node --test`, then runs the documentation-discovery tests
-and `node scripts/docs-discovery.ts check`. No `npm install` or build artifact is
+and `node scripts/docs-discovery.ts check`. No `pnpm install` or build artifact is
 needed. The contributor runbook records direct CLI commands, the supported local
 Linux filesystem assumption, how to inspect or quarantine an apparently stale
 lock under quiescence, the full stop/restart probe, and the fact that a live-model

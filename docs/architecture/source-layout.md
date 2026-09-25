@@ -182,7 +182,7 @@ dependencies privately.
 
 ## Enforced boundaries
 
-`scripts/check-dependencies.ts` is part of `npm run check`. It inspects production
+`scripts/check-dependencies.ts` is part of `pnpm check`. It inspects production
 TypeScript imports, including static dynamic imports, and enforces the highest-value
 ownership rules.
 
