@@ -10,8 +10,12 @@ export function composeTelegramSurface(config: TelegramSurfaceConfig, overrides:
             statePath: config.state_path,
             provider: {
                 kind: config.provider_kind,
-                ...(config.provider_kind === "ollama" ? {} : { command: config.provider_command }),
-                ...(config.provider_kind === "ollama" ? {} : { arguments: config.provider_arguments }),
+                ...(config.provider_kind === "ollama" || config.provider_kind === "deepseek"
+                    ? {}
+                    : { command: config.provider_command }),
+                ...(config.provider_kind === "ollama" || config.provider_kind === "deepseek"
+                    ? {}
+                    : { arguments: config.provider_arguments }),
                 timeoutSeconds: config.provider_timeout_seconds,
                 ...(config.provider?.model === undefined ? {} : { model: config.provider.model }),
                 ...(config.provider?.kind === "ollama" && config.provider.base_url !== undefined

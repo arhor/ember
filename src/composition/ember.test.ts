@@ -127,6 +127,21 @@ test("the composition root should label Ollama inference independently of an exe
     assert.equal(dependencies.cognition.timeoutSeconds, 60);
 });
 
+test("the composition root should label DeepSeek inference independently of an executable", () => {
+    // Given
+    const config = {
+        statePath,
+        provider: { kind: "deepseek" as const, model: "deepseek-chat", timeoutSeconds: 60 },
+    };
+
+    // When
+    const dependencies = composeEmberApplication(config, { executor: providerStub });
+
+    // Then
+    assert.equal(dependencies.cognition.providerLabel, "deepseek");
+    assert.equal(dependencies.cognition.timeoutSeconds, 60);
+});
+
 const providerStub: AiExecutor = async () => ({
     contractVersion: 1,
     reply: "unused",

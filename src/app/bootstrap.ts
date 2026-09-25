@@ -17,7 +17,7 @@ export interface SetupRequest {
     state: string | undefined;
     principal: string | undefined;
     intent: SetupIntent | undefined;
-    provider: "codex" | "cursor" | "claude-code" | "ollama" | undefined;
+    provider: "codex" | "cursor" | "claude-code" | "ollama" | "deepseek" | undefined;
     providerCommand: string | undefined;
     model: string | undefined;
     providerBaseUrl?: string | undefined;
@@ -28,7 +28,8 @@ export interface SetupRequest {
 
 export type SetupProvider =
     | { kind: "codex" | "cursor" | "claude-code"; command: string; model: string; timeoutSeconds: number }
-    | { kind: "ollama"; model: string; baseUrl?: string; timeoutSeconds: number };
+    | { kind: "ollama"; model: string; baseUrl?: string; timeoutSeconds: number }
+    | { kind: "deepseek"; model: string; timeoutSeconds: number };
 
 export interface SetupConfig {
     version: 1 | 2;
@@ -57,7 +58,7 @@ export type SetupProbeDiagnostic =
     | {
           event: "probe_started";
           at: string;
-          provider: "codex" | "cursor" | "claude-code" | "ollama";
+          provider: "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";
           modelConfigured: boolean;
           node: string;
           platform: string;
@@ -65,7 +66,7 @@ export type SetupProbeDiagnostic =
     | {
           event: "probe_failed";
           at: string;
-          provider: "codex" | "cursor" | "claude-code" | "ollama";
+          provider: "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";
           outcome: SetupConfig["verification"];
           errorClass: string;
           category?: ProviderError["category"];
@@ -162,8 +163,8 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
         throw new ValidationError("principal does not match continuity state");
     const kind = args.provider ?? existing?.provider.kind;
     const changedKind = kind !== existing?.provider.kind;
-    if (kind === "ollama" && args.providerCommand !== undefined)
-        throw new ValidationError("Ollama connects to an endpoint and does not accept --provider-command");
+    if ((kind === "ollama" || kind === "deepseek") && args.providerCommand !== undefined)
+        throw new ValidationError("Ollama and DeepSeek do not accept --provider-command");
     if (kind !== "ollama" && args.providerBaseUrl !== undefined)
         throw new ValidationError("--provider-base-url is supported only for Ollama");
     const model = args.model ?? (!changedKind ? existing?.provider.model : undefined) ?? "";
@@ -174,15 +175,19 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
     const provider =
         kind === "ollama"
             ? { kind, model, ...(baseUrl === undefined ? {} : { baseUrl }), timeoutSeconds }
-            : {
-                  kind,
-                  command:
-                      args.providerCommand ??
-                      (!changedKind && existing?.provider.kind !== "ollama" ? existing?.provider.command : undefined) ??
-                      (kind === "cursor" ? "cursor-agent" : kind),
-                  model,
-                  timeoutSeconds,
-              };
+            : kind === "deepseek"
+              ? { kind, model, timeoutSeconds }
+              : {
+                    kind,
+                    command:
+                        args.providerCommand ??
+                        (!changedKind && existing?.provider.kind !== "ollama" && existing?.provider.kind !== "deepseek"
+                            ? existing?.provider.command
+                            : undefined) ??
+                        (kind === "cursor" ? "cursor-agent" : kind),
+                    model,
+                    timeoutSeconds,
+                };
     validateSetupProvider(provider);
     if (existing && JSON.stringify(provider) !== JSON.stringify(existing.provider) && !args.confirmProviderChange)
         throw new ValidationError("provider configuration change requires --confirm-provider-change");
@@ -413,7 +418,10 @@ export async function prepareConfiguredRun(
             establishedAt: config.establishedAt,
         },
         providerKind: config.provider.kind,
-        providerCommand: config.provider.kind === "ollama" ? undefined : config.provider.command,
+        providerCommand:
+            config.provider.kind === "ollama" || config.provider.kind === "deepseek"
+                ? undefined
+                : config.provider.command,
         providerArgs: config.provider.model ? ["--model", config.provider.model] : [],
         providerModel: config.provider.model,
         ...(config.provider.kind === "ollama" && config.provider.baseUrl !== undefined

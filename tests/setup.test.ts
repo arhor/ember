@@ -296,7 +296,94 @@ test("setup should reject process configuration for Ollama when an endpoint is s
     const result = setupMain(args, capture(), verified);
 
     // Then
-    await assert.rejects(result, /does not accept --provider-command/);
+    await assert.rejects(result, /do not accept --provider-command/);
+    assert.equal(await loadSetupConfig(f.config), null);
+});
+
+test("setup parser should retain the DeepSeek model when explicitly configured", () => {
+    // Given
+    const argv = [
+        "setup",
+        "--intent",
+        "create-new",
+        "--principal",
+        "user",
+        "--provider",
+        "deepseek",
+        "--model",
+        "deepseek-chat",
+    ];
+
+    // When
+    const parsed = parseArgs(argv);
+
+    // Then
+    assert.equal(parsed.command, "setup");
+    assert.equal(parsed.provider, "deepseek");
+    assert.equal(parsed.model, "deepseek-chat");
+});
+
+test("setup should persist a DeepSeek provider without a command and retain existing setup configurations", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [...f.create.slice(0, -1), "deepseek", "--model", "deepseek-chat"];
+
+    // When
+    assert.equal(await setupMain(args, capture(), verified), 0);
+    const config = await loadSetupConfig(f.config);
+
+    // Then
+    assert.deepEqual(config?.provider, {
+        kind: "deepseek",
+        model: "deepseek-chat",
+        timeoutSeconds: 60,
+    });
+    assert.equal("command" in config!.provider, false);
+});
+
+test("setup should reject a DeepSeek provider without an explicit model", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [...f.create.slice(0, -1), "deepseek"];
+
+    // When
+    const result = setupMain(args, capture(), verified);
+
+    // Then
+    await assert.rejects(result, /DeepSeek/);
+    assert.equal(await loadSetupConfig(f.config), null);
+});
+
+test("setup should reject process configuration for DeepSeek", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [...f.create.slice(0, -1), "deepseek", "--model", "deepseek-chat", "--provider-command", "deepseek"];
+
+    // When
+    const result = setupMain(args, capture(), verified);
+
+    // Then
+    await assert.rejects(result, /do not accept --provider-command/);
+    assert.equal(await loadSetupConfig(f.config), null);
+});
+
+test("setup should reject a DeepSeek provider base URL", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const args = [
+        ...f.create.slice(0, -1),
+        "deepseek",
+        "--model",
+        "deepseek-chat",
+        "--provider-base-url",
+        "http://127.0.0.1:11434",
+    ];
+
+    // When
+    const result = setupMain(args, capture(), verified);
+
+    // Then
+    await assert.rejects(result, /--provider-base-url is supported only for Ollama/);
     assert.equal(await loadSetupConfig(f.config), null);
 });
 

@@ -140,7 +140,7 @@ export type SetupArgs = {
     state: string | undefined;
     principal: string | undefined;
     intent: SetupIntent | undefined;
-    provider: "codex" | "cursor" | "claude-code" | "ollama" | undefined;
+    provider: "codex" | "cursor" | "claude-code" | "ollama" | "deepseek" | undefined;
     providerCommand: string | undefined;
     model: string | undefined;
     providerBaseUrl?: string | undefined;

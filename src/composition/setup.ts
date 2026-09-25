@@ -4,6 +4,7 @@ import type { BootstrapDependencies, SetupConfig, SetupProvider } from "../app/b
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
+import { createDeepSeekLanguageModel } from "../ai/deepseek.ts";
 import { createOllamaLanguageModel } from "../ai/ollama.ts";
 import {
     defaultSetupConfigPath,
@@ -56,6 +57,8 @@ export function setupProvider(config: SetupProvider): AiExecutor {
                 ...(config.baseUrl === undefined ? {} : { baseUrl: config.baseUrl }),
             }),
         );
+    if (config.kind === "deepseek")
+        return createAiSdkCognitionExecutor(createDeepSeekLanguageModel({ model: config.model }));
     const options = {
         command: config.command,
         arguments_: config.model ? ["--model", config.model] : [],

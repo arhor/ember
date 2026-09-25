@@ -11,7 +11,8 @@ import { exactKeys, isObject } from "../../util.ts";
 export type TelegramProviderConfig =
     | { kind: "codex" | "cursor"; command: string; model: string; timeout_seconds: number }
     | { kind: "claude-code"; model: string; timeout_seconds: number }
-    | { kind: "ollama"; model: string; base_url?: string; timeout_seconds: number };
+    | { kind: "ollama"; model: string; base_url?: string; timeout_seconds: number }
+    | { kind: "deepseek"; model: string; timeout_seconds: number };
 
 export interface TelegramSurfaceConfig {
     config_version: 1 | 2 | 3;
@@ -22,7 +23,7 @@ export interface TelegramSurfaceConfig {
     chat_id: number;
     token_file: string;
     poll_timeout_seconds: number;
-    provider_kind: "process" | "codex" | "cursor" | "claude-code" | "ollama";
+    provider_kind: "process" | "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";
     provider_command: string;
     provider_arguments: string[];
     provider_timeout_seconds: number;
@@ -152,10 +153,10 @@ function validateLegacyProvider(value: Record<string, unknown>) {
 
 function validateStructuredProvider(value: unknown): asserts value is TelegramProviderConfig {
     if (!isObject(value)) throw new ValidationError("Telegram provider configuration is invalid");
-    if (!["codex", "cursor", "claude-code", "ollama"].includes(String(value.kind)))
+    if (!["codex", "cursor", "claude-code", "ollama", "deepseek"].includes(String(value.kind)))
         throw new ValidationError("Telegram provider kind is unsupported");
     const fields =
-        value.kind === "claude-code"
+        value.kind === "claude-code" || value.kind === "deepseek"
             ? ["kind", "model", "timeout_seconds"]
             : value.kind === "ollama"
               ? value.base_url === undefined
@@ -163,7 +164,7 @@ function validateStructuredProvider(value: unknown): asserts value is TelegramPr
                   : ["kind", "model", "base_url", "timeout_seconds"]
               : ["kind", "command", "model", "timeout_seconds"];
     if (!exactKeys(value, fields)) throw new ValidationError("Telegram provider configuration is invalid");
-    if (value.kind !== "claude-code" && value.kind !== "ollama")
+    if (value.kind !== "claude-code" && value.kind !== "ollama" && value.kind !== "deepseek")
         requireAbsolutePath(value.command, "Telegram provider command");
     if (typeof value.model !== "string" || ASCII_CONTROL_CHARACTER_PATTERN.test(value.model))
         throw new ValidationError("Telegram provider model is invalid");
@@ -187,7 +188,9 @@ function normalizeTelegramSurfaceConfig(config: TelegramSurfaceConfig): Telegram
         ...config,
         provider_kind: provider.kind,
         provider_command:
-            provider.kind === "claude-code" || provider.kind === "ollama" ? provider.kind : provider.command,
+            provider.kind === "claude-code" || provider.kind === "ollama" || provider.kind === "deepseek"
+                ? provider.kind
+                : provider.command,
         provider_arguments: provider.model ? ["--model", provider.model] : [],
         provider_timeout_seconds: provider.timeout_seconds,
     };

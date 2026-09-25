@@ -12,9 +12,9 @@
     "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",
-    "serve": "node bin/ember.ts --diagnostics",
-    "runtime:episodic": "node bin/ember-runtime.ts",
-    "surface:telegram": "node bin/ember-telegram.ts",
+    "serve": "node --env-file-if-exists=.env.local bin/ember.ts --diagnostics",
+    "runtime:episodic": "node --env-file-if-exists=.env.local bin/ember-runtime.ts",
+    "surface:telegram": "node --env-file-if-exists=.env.local bin/ember-telegram.ts",
     "smoke:codex": "node tests/live/codex-smoke.ts",
     "smoke:cursor": "node tests/live/cursor-smoke.ts",
     "smoke:claude": "node tests/live/claude-code-smoke.ts",
@@ -52,6 +52,7 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "3.0.39",
     "@ai-sdk/mcp": "2.0.45",
     "@ai-sdk/provider": "4.0.10",
     "ai": "7.0.93",

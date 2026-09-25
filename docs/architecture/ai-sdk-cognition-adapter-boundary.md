@@ -93,6 +93,31 @@ adopted.
 For capability semantics, see
 [Capability Execution Boundary](capability-execution-boundary.md).
 
+## Hosted DeepSeek provider
+
+`src/ai/deepseek.ts` composes the hosted `@ai-sdk/deepseek` package through the same
+`createAiSdkCognitionExecutor`, supplying a V4 `LanguageModel` exactly like the Codex,
+Cursor, Claude Code, and Ollama adapters. Structured output, tool execution,
+cancellation, timeout handling, evidence translation, and final Ember validation are
+unchanged.
+
+DeepSeek is Ember's first _hosted, API-key_ provider. Every other provider is either a
+local CLI tool with its own provider-owned login store (Codex, Cursor, Claude Code) or a
+machine-local, credential-free endpoint (Ollama); Codex's Claude Code adapter explicitly
+strips `ANTHROPIC_API_KEY` from its subprocess environment to keep that boundary. DeepSeek
+necessarily crosses it: `createDeepSeek()` reads `DEEPSEEK_API_KEY` from `process.env` at
+call time, exactly as the AI SDK does for any hosted provider. Ember never accepts the key
+as a CLI flag, never persists it to `setup.json` or the Telegram surface config, and never
+writes it to setup diagnostics — the setup provider record for `deepseek` carries only
+`kind`, `model`, and `timeoutSeconds`, with no `command` and no `baseUrl`.
+
+`DEEPSEEK_API_KEY` reaches `process.env` only for development-time invocations. The
+`serve`, `runtime:episodic`, and `surface:telegram` package.json scripts load
+`.env.local` (git-ignored) via Node's native `--env-file-if-exists` flag. The installed
+`ember` binary and CI are unaffected and continue to rely on the shell/process manager
+exporting real environment variables, matching the pattern already used for
+`EMBER_OLLAMA_MODEL`/`EMBER_OLLAMA_BASE_URL`.
+
 ## Ember still owns meaning on both sides
 
 The SDK call remains enclosed by Ember-owned boundaries.

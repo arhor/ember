@@ -9,6 +9,7 @@ import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
+import { createDeepSeekLanguageModel } from "../ai/deepseek.ts";
 import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
 import { createOllamaLanguageModel } from "../ai/ollama.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../ai/onboarding-progress.ts";
@@ -28,7 +29,7 @@ import { StateStore } from "../persistence/state-store.ts";
 import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
 import { providerLabel } from "./provider-label.ts";
 
-export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code" | "ollama";
+export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";
 
 export interface EmberCompositionConfig {
     statePath: string;
@@ -110,7 +111,10 @@ export function composeEmberApplication(
         repositories,
         cognition: {
             executor,
-            providerLabel: config.provider.kind === "ollama" ? "ollama" : providerLabel(config.provider.command!),
+            providerLabel:
+                config.provider.kind === "ollama" || config.provider.kind === "deepseek"
+                    ? config.provider.kind
+                    : providerLabel(config.provider.command!),
             timeoutSeconds: config.provider.timeoutSeconds,
             ...createCapabilitySelector(config, repositories, overrides),
         },
@@ -160,6 +164,13 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
             model: config.provider.model!,
             ...(config.provider.baseUrl === undefined ? {} : { baseUrl: config.provider.baseUrl }),
         });
+        return {
+            memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
+            onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
+        };
+    }
+    if (config.provider.kind === "deepseek") {
+        const model = createDeepSeekLanguageModel({ model: config.provider.model! });
         return {
             memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
             onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
@@ -225,6 +236,8 @@ function createConfiguredExecutor(config: EmberCompositionConfig, overrides: Emb
                 ...(config.provider.baseUrl === undefined ? {} : { baseUrl: config.provider.baseUrl }),
             }),
         );
+    if (config.provider.kind === "deepseek")
+        return createAiSdkCognitionExecutor(createDeepSeekLanguageModel({ model: config.provider.model! }));
 
     return async (request, options) => {
         const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");

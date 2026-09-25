@@ -154,7 +154,9 @@ async function runConfigured(
         provider: {
             kind: config.providerKind,
             ...(config.providerCommand === undefined ? {} : { command: config.providerCommand }),
-            ...(config.providerKind === "ollama" ? {} : { arguments: config.providerArgs }),
+            ...(config.providerKind === "ollama" || config.providerKind === "deepseek"
+                ? {}
+                : { arguments: config.providerArgs }),
             timeoutSeconds: config.providerTimeoutSeconds,
             ...(config.providerModel === undefined ? {} : { model: config.providerModel }),
             ...(config.providerBaseUrl === undefined ? {} : { baseUrl: config.providerBaseUrl }),
@@ -222,15 +224,27 @@ async function firstRun(io: CliIo, diagnostics: boolean): Promise<number> {
         if (choice === "restore" && !state) throw new ValidationError("restore requires an existing state path");
         const principal = choice === "create" ? await ask("Local principal identifier: ") : undefined;
         if (choice === "create" && !principal) throw new ValidationError("create requires a principal identifier");
-        const provider = await ask("Cognition provider [codex/cursor/claude-code/ollama]: ");
-        if (provider !== "codex" && provider !== "cursor" && provider !== "claude-code" && provider !== "ollama")
-            throw new ValidationError("select codex, cursor, claude-code, or ollama");
+        const provider = await ask("Cognition provider [codex/cursor/claude-code/ollama/deepseek]: ");
+        if (
+            provider !== "codex" &&
+            provider !== "cursor" &&
+            provider !== "claude-code" &&
+            provider !== "ollama" &&
+            provider !== "deepseek"
+        )
+            throw new ValidationError("select codex, cursor, claude-code, ollama, or deepseek");
         const providerCommand =
-            provider === "claude-code" || provider === "ollama"
+            provider === "claude-code" || provider === "ollama" || provider === "deepseek"
                 ? undefined
                 : (await ask("Provider executable (blank for installed default): ")) || undefined;
-        const model = provider === "ollama" ? await ask("Ollama model name: ") : undefined;
+        const model =
+            provider === "ollama"
+                ? await ask("Ollama model name: ")
+                : provider === "deepseek"
+                  ? await ask("DeepSeek model name: ")
+                  : undefined;
         if (provider === "ollama" && !model) throw new ValidationError("Ollama requires an explicit model name");
+        if (provider === "deepseek" && !model) throw new ValidationError("DeepSeek requires an explicit model name");
         const providerBaseUrl =
             provider === "ollama"
                 ? (await ask("Ollama base URL (blank for http://127.0.0.1:11434): ")) || undefined
@@ -273,14 +287,14 @@ const SETUP_HELP = `ember setup [--config PATH] [--state PATH]
 Defaults: ~/.ember/config/setup.json and ~/.ember/state/continuity.json.
 Config and state path overrides are independent; an existing config retains its state binding.
 Inspect first, then choose explicitly:
-  --intent create-new --principal USER --provider codex|cursor|claude-code|ollama
+  --intent create-new --principal USER --provider codex|cursor|claude-code|ollama|deepseek
   --intent restore-existing --state PATH --accept-continuity-risk --provider PROVIDER
   --intent use-existing [--state PATH] [--provider PROVIDER]
 Restore attaches a local store and its sidecars; fork, snapshot age, and missing-history risks remain unresolved.
-Options: --model MODEL (required for Ollama), --provider-base-url LOOPBACK_URL (Ollama only),
+Options: --model MODEL (required for Ollama and DeepSeek), --provider-base-url LOOPBACK_URL (Ollama only),
   --provider-command EXECUTABLE (Codex/Cursor only),
   --provider-timeout-seconds SECONDS (default 60, maximum 120), --confirm-provider-change, --diagnostics.
-Provider credentials stay in provider-owned login stores; never pass secrets as options.
+Provider credentials stay in provider-owned login stores or DEEPSEEK_API_KEY in the environment; never pass secrets as options.
 --diagnostics retains a redacted setup-probe log under ~/.ember/logs/setup/ only when verification fails.
 Rerun with the same intent or use-existing to reverify; existing continuity is never overwritten.
 Use a separate config and state path to create another lineage. Ctrl-C requests cancellation.

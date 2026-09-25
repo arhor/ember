@@ -97,7 +97,9 @@ export async function loadSetupConfig(path: string): Promise<SetupConfig | null>
                 ? value.provider.baseUrl === undefined
                     ? ["kind", "model", "timeoutSeconds"]
                     : ["kind", "model", "baseUrl", "timeoutSeconds"]
-                : ["kind", "command", "model", "timeoutSeconds"],
+                : value.provider.kind === "deepseek"
+                  ? ["kind", "model", "timeoutSeconds"]
+                  : ["kind", "command", "model", "timeoutSeconds"],
         )
     )
         throw new ValidationError("invalid machine-local setup configuration; preserve it for recovery");

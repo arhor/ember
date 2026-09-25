@@ -246,23 +246,29 @@ async function telegramV2Config(
                   model: binding.setup.provider.model,
                   timeout_seconds: binding.setup.provider.timeoutSeconds,
               }
-            : binding.setup.provider.kind === "ollama"
+            : binding.setup.provider.kind === "deepseek"
               ? {
-                    kind: "ollama",
+                    kind: "deepseek",
                     model: binding.setup.provider.model,
-                    ...(binding.setup.provider.baseUrl === undefined
-                        ? {}
-                        : { base_url: binding.setup.provider.baseUrl }),
                     timeout_seconds: binding.setup.provider.timeoutSeconds,
                 }
-              : {
-                    kind: binding.setup.provider.kind,
-                    command: await (dependencies.resolveExecutable ?? resolveExecutable)(
-                        binding.setup.provider.command,
-                    ),
-                    model: binding.setup.provider.model,
-                    timeout_seconds: binding.setup.provider.timeoutSeconds,
-                };
+              : binding.setup.provider.kind === "ollama"
+                ? {
+                      kind: "ollama",
+                      model: binding.setup.provider.model,
+                      ...(binding.setup.provider.baseUrl === undefined
+                          ? {}
+                          : { base_url: binding.setup.provider.baseUrl }),
+                      timeout_seconds: binding.setup.provider.timeoutSeconds,
+                  }
+                : {
+                      kind: binding.setup.provider.kind,
+                      command: await (dependencies.resolveExecutable ?? resolveExecutable)(
+                          binding.setup.provider.command,
+                      ),
+                      model: binding.setup.provider.model,
+                      timeout_seconds: binding.setup.provider.timeoutSeconds,
+                  };
     return {
         config_version: binding.setup.version === 2 ? 3 : 2,
         ...(binding.setup.googleCalendarConfigPath
@@ -277,7 +283,9 @@ async function telegramV2Config(
         provider,
         provider_kind: provider.kind,
         provider_command:
-            provider.kind === "claude-code" || provider.kind === "ollama" ? provider.kind : provider.command,
+            provider.kind === "claude-code" || provider.kind === "ollama" || provider.kind === "deepseek"
+                ? provider.kind
+                : provider.command,
         provider_arguments: provider.model ? ["--model", provider.model] : [],
         provider_timeout_seconds: provider.timeout_seconds,
         working_directory: dependencies.workingDirectory ?? packageRoot,

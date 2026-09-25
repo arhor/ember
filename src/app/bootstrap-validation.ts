@@ -2,23 +2,25 @@ import { ValidationError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
 
 export function validateSetupProvider(value: Record<string, unknown>): void {
+    const noCommandKind = value.kind === "ollama" || value.kind === "deepseek";
     if (
         typeof value.kind !== "string" ||
-        !["codex", "cursor", "claude-code", "ollama"].includes(String(value.kind)) ||
-        (value.kind !== "ollama" && !safeText(value.command)) ||
-        (value.kind === "ollama" && value.command !== undefined) ||
+        !["codex", "cursor", "claude-code", "ollama", "deepseek"].includes(String(value.kind)) ||
+        (!noCommandKind && !safeText(value.command)) ||
+        (noCommandKind && value.command !== undefined) ||
         typeof value.model !== "string" ||
-        (value.kind === "ollama" && !safeText(value.model)) ||
-        (value.kind !== "ollama" && value.model !== "" && !safeText(value.model)) ||
+        (noCommandKind && !safeText(value.model)) ||
+        (!noCommandKind && value.model !== "" && !safeText(value.model)) ||
         typeof value.timeoutSeconds !== "number" ||
         !Number.isFinite(value.timeoutSeconds) ||
         value.timeoutSeconds <= 0 ||
         value.timeoutSeconds > 120 ||
         (value.kind === "claude-code" && value.command !== "claude-code") ||
-        (value.kind === "ollama" && value.baseUrl !== undefined && !isLocalOllamaUrl(value.baseUrl))
+        (value.kind === "ollama" && value.baseUrl !== undefined && !isLocalOllamaUrl(value.baseUrl)) ||
+        (value.kind === "deepseek" && value.baseUrl !== undefined)
     )
         throw new ValidationError(
-            "setup provider requires codex, cursor, claude-code, or Ollama with a timeout in (0, 120] seconds",
+            "setup provider requires codex, cursor, claude-code, Ollama, or DeepSeek with a timeout in (0, 120] seconds",
         );
 }
 

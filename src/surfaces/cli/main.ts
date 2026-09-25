@@ -390,8 +390,8 @@ export function parseArgs(argv: string[]): CliCommandArgs {
         )
             throw new ValidationError("--intent requires create-new, restore-existing, or use-existing");
         const provider = optional("--provider");
-        if (provider !== undefined && !["codex", "cursor", "claude-code", "ollama"].includes(provider))
-            throw new ValidationError("--provider supports codex, cursor, claude-code, or ollama for setup");
+        if (provider !== undefined && !["codex", "cursor", "claude-code", "ollama", "deepseek"].includes(provider))
+            throw new ValidationError("--provider supports codex, cursor, claude-code, ollama, or deepseek for setup");
         const timeoutValue = optional("--provider-timeout-seconds");
         const timeout = timeoutValue === undefined ? undefined : Number(timeoutValue);
         if (timeout !== undefined && (!Number.isFinite(timeout) || timeout <= 0 || timeout > 120))
@@ -402,7 +402,7 @@ export function parseArgs(argv: string[]): CliCommandArgs {
             state: optional("--state"),
             principal: optional("--principal"),
             intent,
-            provider: provider as "codex" | "cursor" | "claude-code" | "ollama" | undefined,
+            provider: provider as "codex" | "cursor" | "claude-code" | "ollama" | "deepseek" | undefined,
             providerCommand: optional("--provider-command"),
             model: optional("--model"),
             providerBaseUrl: optional("--provider-base-url"),
