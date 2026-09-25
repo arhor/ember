@@ -34,7 +34,7 @@ const onboardingProgressOutput = Output.object({
                     properties: {
                         topic: {
                             type: "string",
-                            enum: ["forms_of_address", "expectations", "optional_capabilities"],
+                            enum: ["forms_of_address", "agent_personality", "expectations", "optional_capabilities"],
                         },
                         action: { type: "string", enum: ["leave_open", "defer", "decline", "resolve", "resume"] },
                         basis: { type: "string" },

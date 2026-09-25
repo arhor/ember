@@ -19,7 +19,7 @@ export type OnboardingProgressEvaluator = (
 export const ONBOARDING_PROGRESS_INSTRUCTION = [
     "Classify only explicit onboarding meaning in the current user input.",
     "Return exact JSON with decision_version 1 and one update per relevant topic; every update contains topic, action, and basis.",
-    "Topics are forms_of_address, expectations, and optional_capabilities.",
+    "Topics are forms_of_address, agent_personality, expectations, and optional_capabilities.",
     "Actions are leave_open, defer, decline, resolve, and resume.",
     "Use resolve only when the user supplied useful topic information, decline for an explicit refusal, defer for later/not-now intent, and resume only when explicitly reopening deferred work.",
     "A request to skip or finish all onboarding declines every unfinished topic.",

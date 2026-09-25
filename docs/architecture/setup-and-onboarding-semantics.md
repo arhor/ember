@@ -669,6 +669,15 @@ and does not accept an executable override. Model and executable selection stay 
 machine record. Arbitrary shell commands, passthrough arguments, keys, or tokens are
 not setup options.
 
+When a setup probe fails, `ember setup --diagnostics` may retain an opt-in, mode-0600
+JSONL record beneath `~/.ember/logs/setup/` (with a mode-0700 directory). It records only
+the probe lifecycle, selected provider kind, configured-model presence, runtime metadata,
+bounded outcome/termination facts, error class, duration, and an available HTTP status.
+It never retains prompts, replies, provider stdout/stderr, request/response bodies,
+credentials, environment values, or arbitrary exception text. Successful probes discard
+their transient diagnostic file; failed probes print its local path. These host-local
+records are neither setup configuration nor canonical Ember meaning.
+
 Authenticate through the provider-owned flow first: Codex's login, Cursor's browser
 login, or `claude auth login`. Ember neither launches nor mediates those login flows
 in this slice, and never reads/copies their credentials. Provider-specific isolation and
@@ -801,9 +810,15 @@ Creating a new lineage after verified cognition now creates
 `<continuity-state-path>.onboarding.json`. This sidecar is temporary semantic work bound
 to the lineage, principal, and relationship scope. Other scopes neither receive nor
 advance that work, preventing onboarding-derived meaning from being adopted into an
-unrelated scope. It records the small initial topic set—forms of address,
-expectations, and optional capabilities—with distinct `open`, `deferred`, `declined`,
-and `resolved` states. A closed record remains as operational evidence so a later setup
+unrelated scope. It records the small initial topic set—forms of address (covering both
+what to call the user and what name the user wants for the agent), agent personality
+(the interaction style or tone the user wants), expectations, and optional
+capabilities—with distinct `open`, `deferred`, `declined`, and `resolved` states. When
+forms of address and agent personality are both still open, the agent may combine them
+into one welcoming first-reply invitation covering all three questions (the user's
+preferred address, the agent's preferred name, and the wanted personality); the user may
+answer any subset, skip, or defer any part. A closed record remains as operational
+evidence so a later setup
 rerun or process restart does not treat the lineage as newborn. Setup first records
 `pending_activation`, then activates the work only after the intended lineage is loadable
 and matches the setup binding. A restart can reconcile that boundary without recreating

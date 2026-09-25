@@ -9,6 +9,7 @@ import { bootstrapContinuity, prepareConfiguredRun } from "../../app/bootstrap.t
 import { composeCliSurface } from "../../composition/cli.ts";
 import { composeSetupDependencies } from "../../composition/setup.ts";
 import { ValidationError } from "../../core/errors.ts";
+import { createSetupDiagnostics } from "../../host/setup-diagnostics.ts";
 import { defaultSetupConfigPath, loadSetupConfig } from "../../host/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
@@ -45,13 +46,37 @@ async function bootstrapForCli(
     overrides.signal?.addEventListener("abort", cancel, { once: true });
     if (overrides.signal?.aborted) cancel();
     try {
-        return await bootstrapContinuity(
+        const diagnostics = args.diagnostics
+            ? await createSetupDiagnostics().catch((error) => {
+                  io.error.write(
+                      `Diagnostics could not be enabled: ${error instanceof Error ? error.constructor.name : "host failure"}. Continuing without a diagnostic log.\n`,
+                  );
+                  return undefined;
+              })
+            : undefined;
+        let diagnosticWrites = Promise.resolve();
+        const recordDiagnostic = (event: BootstrapEvent) => {
+            if (!diagnostics || !("diagnostic" in event) || event.diagnostic === undefined) return;
+            diagnosticWrites = diagnosticWrites.then(() => diagnostics.record(event.diagnostic!));
+        };
+        const result = await bootstrapContinuity(
             args,
-            composeSetupDependencies((event) => presentBootstrapEvent(event, io), {
-                ...overrides,
-                signal: controller.signal,
-            }),
+            composeSetupDependencies(
+                (event) => {
+                    recordDiagnostic(event);
+                    presentBootstrapEvent(event, io, diagnostics?.path);
+                },
+                {
+                    ...overrides,
+                    signal: controller.signal,
+                },
+            ),
         );
+        await diagnosticWrites.catch(() => {
+            io.error.write("Diagnostics could not be written; no provider payload was retained.\n");
+        });
+        if (result === 0 && diagnostics) await diagnostics.discard().catch(() => {});
+        return result;
     } finally {
         process.off("SIGINT", cancel);
         process.off("SIGTERM", cancel);
@@ -59,7 +84,7 @@ async function bootstrapForCli(
     }
 }
 
-function presentBootstrapEvent(event: BootstrapEvent, io: CliIo): void {
+function presentBootstrapEvent(event: BootstrapEvent, io: CliIo, diagnosticsPath?: string): void {
     switch (event.kind) {
         case "inspection":
             io.output.write(
@@ -78,7 +103,7 @@ function presentBootstrapEvent(event: BootstrapEvent, io: CliIo): void {
             break;
         case "verification_failed":
             io.error.write(
-                `Cognition verification ${event.outcome}; setup is not ready. Check provider-owned authentication and retry setup. Raw provider diagnostics are not retained.\n`,
+                `Cognition verification ${event.outcome}; setup is not ready. Check provider-owned authentication and retry setup.${diagnosticsPath === undefined ? " Raw provider diagnostics are not retained." : ` Redacted diagnostics: ${diagnosticsPath}`}\n`,
             );
             break;
         case "cancelled_after_probe":
@@ -107,7 +132,7 @@ function presentBootstrapEvent(event: BootstrapEvent, io: CliIo): void {
 
 export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io: CliIo): Promise<number> {
     if (args.mode === "default" && !(await loadSetupConfig(defaultSetupConfigPath()))) {
-        return await firstRun(io);
+        return await firstRun(io, args.diagnostics === true);
     }
     return await runConfigured(args, io);
 }
@@ -178,7 +203,7 @@ async function runConfigured(
     );
 }
 
-async function firstRun(io: CliIo): Promise<number> {
+async function firstRun(io: CliIo, diagnostics: boolean): Promise<number> {
     const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     const iterator = lines[Symbol.asyncIterator]();
     const ask = async (prompt: string): Promise<string> => {
@@ -230,6 +255,7 @@ async function firstRun(io: CliIo): Promise<number> {
                 providerTimeoutSeconds: undefined,
                 acceptContinuityRisk,
                 confirmProviderChange: false,
+                diagnostics,
             },
             io,
         );
@@ -253,8 +279,9 @@ Inspect first, then choose explicitly:
 Restore attaches a local store and its sidecars; fork, snapshot age, and missing-history risks remain unresolved.
 Options: --model MODEL (required for Ollama), --provider-base-url LOOPBACK_URL (Ollama only),
   --provider-command EXECUTABLE (Codex/Cursor only),
-  --provider-timeout-seconds SECONDS (default 60, maximum 120), --confirm-provider-change.
+  --provider-timeout-seconds SECONDS (default 60, maximum 120), --confirm-provider-change, --diagnostics.
 Provider credentials stay in provider-owned login stores; never pass secrets as options.
+--diagnostics retains a redacted setup-probe log under ~/.ember/logs/setup/ only when verification fails.
 Rerun with the same intent or use-existing to reverify; existing continuity is never overwritten.
 Use a separate config and state path to create another lineage. Ctrl-C requests cancellation.
 `;

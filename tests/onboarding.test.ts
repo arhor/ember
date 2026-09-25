@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -78,6 +78,7 @@ test("onboarding progress distinguishes defer, resume, decline, and closure", ()
             decision_version: 1,
             updates: [
                 { topic: "forms_of_address", action: "defer", basis: "later" },
+                { topic: "agent_personality", action: "defer", basis: "later" },
                 { topic: "expectations", action: "defer", basis: "later" },
                 { topic: "optional_capabilities", action: "defer", basis: "later" },
             ],
@@ -152,6 +153,7 @@ test("ordinary cognition receives and advances restart-persistent onboarding wor
             decision_version: 1,
             updates: [
                 { topic: "forms_of_address", action: "defer", basis: "later" },
+                { topic: "agent_personality", action: "defer", basis: "later" },
                 { topic: "expectations", action: "defer", basis: "later" },
                 { topic: "optional_capabilities", action: "defer", basis: "later" },
             ],
@@ -272,6 +274,7 @@ test("completion closes temporary work while adopted meaning remains available",
             decision_version: 1,
             updates: [
                 { topic: "forms_of_address", action: "resolve", basis: "Call me Sam" },
+                { topic: "agent_personality", action: "decline", basis: "no personality preference" },
                 { topic: "expectations", action: "resolve", basis: "concise replies" },
                 { topic: "optional_capabilities", action: "decline", basis: "no integrations" },
             ],
@@ -398,7 +401,7 @@ test("provider progress evaluation returns a validated typed decision for natura
         },
         input: "I'd rather leave all of the introductory questions aside.",
     });
-    assert.equal(decision.updates.length, 3);
+    assert.equal(decision.updates.length, 4);
     assert.match(supplied, /introductory questions/);
     await assert.rejects(
         createProviderOnboardingProgressEvaluator(
@@ -429,4 +432,53 @@ test("provider progress evaluation returns a validated typed decision for natura
         }),
         /update is invalid/,
     );
+});
+
+test("loading a legacy onboarding document backfills a topic introduced after it was persisted", async (t) => {
+    const directory = await mkdtemp(join(tmpdir(), "ember-onboarding-migration-"));
+    t.after(() => rm(directory, { recursive: true, force: true }));
+    const statePath = join(directory, "continuity.json");
+    const legacyActive = {
+        onboarding_work_version: 1,
+        lineage_id: "lineage-legacy",
+        principal: "user",
+        scope: "relationship:user",
+        status: "active",
+        created_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-01T00:00:00.000Z",
+        topics: [
+            {
+                topic: "forms_of_address",
+                status: "resolved",
+                updated_at: "2026-01-01T00:00:00.000Z",
+                source_evidence_ids: ["evidence-1"],
+            },
+            { topic: "expectations", status: "open", updated_at: "2026-01-01T00:00:00.000Z", source_evidence_ids: [] },
+            {
+                topic: "optional_capabilities",
+                status: "open",
+                updated_at: "2026-01-01T00:00:00.000Z",
+                source_evidence_ids: [],
+            },
+        ],
+    };
+    await writeFile(`${statePath}.onboarding.json`, JSON.stringify(legacyActive));
+    const store = new OnboardingWorkStore(statePath);
+    const loaded = await store.load();
+    validateOnboardingWork(loaded);
+    assert.equal(loaded!.topics.length, 4);
+    const backfilled = loaded!.topics.find((topic) => topic.topic === "agent_personality");
+    assert.equal(backfilled?.status, "open");
+    assert.deepEqual(backfilled?.source_evidence_ids, []);
+    assert.equal(loaded!.topics.find((topic) => topic.topic === "forms_of_address")?.status, "resolved");
+
+    const legacyClosed = {
+        ...legacyActive,
+        status: "closed",
+        topics: legacyActive.topics.map((topic) => ({ ...topic, status: "declined" })),
+    };
+    await writeFile(`${statePath}.onboarding.json`, JSON.stringify(legacyClosed));
+    const loadedClosed = await new OnboardingWorkStore(statePath).load();
+    validateOnboardingWork(loadedClosed);
+    assert.equal(loadedClosed!.topics.find((topic) => topic.topic === "agent_personality")?.status, "declined");
 });

@@ -687,18 +687,18 @@ function cognition(
             ? {
                   onboardingProgressEvaluator: async () => ({
                       decision_version: 1 as const,
-                      updates: (["forms_of_address", "expectations", "optional_capabilities"] as const).map(
-                          (topic) => ({
-                              topic,
-                              action:
-                                  options.onboarding === "defer"
-                                      ? ("defer" as const)
-                                      : topic === "optional_capabilities"
-                                        ? ("decline" as const)
-                                        : ("resolve" as const),
-                              basis: episode.input,
-                          }),
-                      ),
+                      updates: (
+                          ["forms_of_address", "agent_personality", "expectations", "optional_capabilities"] as const
+                      ).map((topic) => ({
+                          topic,
+                          action:
+                              options.onboarding === "defer"
+                                  ? ("defer" as const)
+                                  : topic === "optional_capabilities"
+                                    ? ("decline" as const)
+                                    : ("resolve" as const),
+                          basis: episode.input,
+                      })),
                   }),
               }
             : {}),
