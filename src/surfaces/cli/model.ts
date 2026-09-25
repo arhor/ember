@@ -177,6 +177,7 @@ export type ConfiguredRunArgs = {
 export type DefaultRunArgs = {
     command: typeof Commands.RUN;
     mode: "default";
+    diagnostics?: boolean;
 };
 
 export type ExplicitRunArgs = {

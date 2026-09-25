@@ -687,7 +687,9 @@ function cognition(
             ? {
                   onboardingProgressEvaluator: async () => ({
                       decision_version: 1 as const,
-                      updates: (["forms_of_address", "expectations", "optional_capabilities"] as const).map(
+                      updates: (
+                          ["forms_of_address", "agent_personality", "expectations", "optional_capabilities"] as const
+                      ).map(
                           (topic) => ({
                               topic,
                               action:

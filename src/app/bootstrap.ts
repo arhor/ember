@@ -68,6 +68,8 @@ export type SetupProbeDiagnostic =
           provider: "codex" | "cursor" | "claude-code" | "ollama";
           outcome: SetupConfig["verification"];
           errorClass: string;
+          category?: ProviderError["category"];
+          configuredTimeoutSeconds: number;
           durationMs: number;
           statusCode?: number;
           termination?: ProviderError["termination"];
@@ -281,7 +283,11 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
                     provider: config.provider.kind,
                     outcome: config.verification,
                     errorClass: error instanceof Error ? error.constructor.name : typeof error,
+                    configuredTimeoutSeconds: config.provider.timeoutSeconds,
                     durationMs: Math.max(0, Math.round(performance.now() - probeStartedAt)),
+                    ...(error instanceof ProviderError && error.category !== null
+                        ? { category: error.category }
+                        : {}),
                     ...(error instanceof ProviderError && error.statusCode !== null
                         ? { statusCode: error.statusCode }
                         : {}),

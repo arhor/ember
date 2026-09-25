@@ -183,6 +183,30 @@ test("setup parser should enable opt-in diagnostics when requested", () => {
     assert.equal(setup.diagnostics, true);
 });
 
+test("CLI parser should enable diagnostics for the default first-run entry", () => {
+    // Given
+    const argv = ["--diagnostics"];
+
+    // When
+    const run = parseArgs(argv);
+
+    // Then
+    assert.deepEqual(run, { command: "run", mode: "default", diagnostics: true });
+});
+
+test("setup parser should preserve globally supplied diagnostics when npm prepends it", () => {
+    // Given
+    const argv = ["--diagnostics", "setup", "--intent", "use-existing"];
+
+    // When
+    const setup = parseArgs(argv);
+
+    // Then
+    assert.equal(setup.command, "setup");
+    assert.equal(setup.intent, "use-existing");
+    assert.equal(setup.diagnostics, true);
+});
+
 test("setup parser should retain Ollama model and loopback endpoint when explicitly configured", () => {
     // Given
     const argv = [

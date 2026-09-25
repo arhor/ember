@@ -132,7 +132,7 @@ function presentBootstrapEvent(event: BootstrapEvent, io: CliIo, diagnosticsPath
 
 export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io: CliIo): Promise<number> {
     if (args.mode === "default" && !(await loadSetupConfig(defaultSetupConfigPath()))) {
-        return await firstRun(io);
+        return await firstRun(io, args.diagnostics === true);
     }
     return await runConfigured(args, io);
 }
@@ -203,7 +203,7 @@ async function runConfigured(
     );
 }
 
-async function firstRun(io: CliIo): Promise<number> {
+async function firstRun(io: CliIo, diagnostics: boolean): Promise<number> {
     const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     const iterator = lines[Symbol.asyncIterator]();
     const ask = async (prompt: string): Promise<string> => {
@@ -255,7 +255,7 @@ async function firstRun(io: CliIo): Promise<number> {
                 providerTimeoutSeconds: undefined,
                 acceptContinuityRisk,
                 confirmProviderChange: false,
-                diagnostics: false,
+                diagnostics,
             },
             io,
         );

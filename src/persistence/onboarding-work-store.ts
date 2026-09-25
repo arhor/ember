@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import type { OnboardingWorkDocument } from "../core/onboarding-work.ts";
 
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { validateOnboardingWork } from "../core/onboarding-work.ts";
+import { migrateOnboardingWorkTopics, validateOnboardingWork } from "../core/onboarding-work.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
 export class OnboardingWorkStore {
@@ -21,7 +21,7 @@ export class OnboardingWorkStore {
             throw new StoreUnavailable(`cannot read onboarding work ${this.path}`, { cause: error });
         }
         try {
-            const value: unknown = JSON.parse(text);
+            const value = migrateOnboardingWorkTopics(JSON.parse(text));
             validateOnboardingWork(value);
             return value;
         } catch (error) {

@@ -19,6 +19,8 @@ test("setup diagnostics should retain only allowlisted redacted records when a p
         provider: "ollama",
         outcome: "failed",
         errorClass: "ProviderError",
+        category: "provider_api",
+        configuredTimeoutSeconds: 60,
         durationMs: 42,
         statusCode: 404,
     });
@@ -37,6 +39,8 @@ test("setup diagnostics should retain only allowlisted redacted records when a p
         provider: "ollama",
         outcome: "failed",
         errorClass: "ProviderError",
+        category: "provider_api",
+        configuredTimeoutSeconds: 60,
         durationMs: 42,
         statusCode: 404,
     });

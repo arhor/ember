@@ -2,7 +2,12 @@ import { exactKeys, isObject } from "../util.ts";
 import { ValidationError } from "./errors.ts";
 import { isRfc3339Utc } from "./model.ts";
 
-export const ONBOARDING_TOPICS = ["forms_of_address", "expectations", "optional_capabilities"] as const;
+export const ONBOARDING_TOPICS = [
+    "forms_of_address",
+    "agent_personality",
+    "expectations",
+    "optional_capabilities",
+] as const;
 export type OnboardingTopic = (typeof ONBOARDING_TOPICS)[number];
 export type OnboardingTopicStatus = "open" | "deferred" | "declined" | "resolved";
 export type OnboardingProgressAction = "leave_open" | "defer" | "decline" | "resolve" | "resume";
@@ -37,6 +42,32 @@ export interface ProjectedOnboardingWork {
     topics: Array<{ topic: OnboardingTopic; status: OnboardingTopicStatus }>;
 }
 
+/**
+ * Backfills topics introduced after a document was persisted, as newly `open` (or
+ * `declined` on an already-closed document, to preserve the closed/unfinished-topic
+ * invariant) without inventing evidence for a topic that was never surfaced.
+ */
+export function migrateOnboardingWorkTopics(value: unknown): unknown {
+    if (!isObject(value) || !Array.isArray(value.topics)) return value;
+    const present = new Set(value.topics.map((item) => (isObject(item) ? item.topic : undefined)));
+    const missing = ONBOARDING_TOPICS.filter((topic) => !present.has(topic));
+    if (missing.length === 0) return value;
+    const backfillStatus: OnboardingTopicStatus = value.status === "closed" ? "declined" : "open";
+    const updatedAt = typeof value.updated_at === "string" ? value.updated_at : typeof value.created_at === "string" ? value.created_at : new Date().toISOString();
+    return {
+        ...value,
+        topics: [
+            ...value.topics,
+            ...missing.map((topic) => ({
+                topic,
+                status: backfillStatus,
+                updated_at: updatedAt,
+                source_evidence_ids: [],
+            })),
+        ],
+    };
+}
+
 export function createOnboardingWork(
     lineageId: string,
     principal: string,
@@ -69,7 +100,7 @@ export function projectOnboardingWork(document: OnboardingWorkDocument | null): 
         work_version: 1,
         status: "active",
         guidance:
-            "Treat onboarding as optional ordinary conversation. Address the user's current request first. Invite at most one useful open topic; respect deferred and declined topics, and never request reusable secrets. When Telegram is wanted, explain BotFather and propose the trusted local setup handoff; never ask for its token in conversation.",
+            "Treat onboarding as optional ordinary conversation; never fabricate a user turn to force it. forms_of_address covers both what to call the user and what name the user would like to use for you; agent_personality covers what personality, tone, or interaction style the user wants from you. If forms_of_address and agent_personality are both still open, you may combine them into one welcoming invitation on your first substantive reply asking all three at once: what to call the user, what to call you, and what personality or style they want from you. Otherwise invite at most one other useful open topic per turn. The user may answer any subset, skip, or defer any part; respect deferred and declined topics, and never request reusable secrets. When Telegram is wanted, explain BotFather and propose the trusted local setup handoff; never ask for its token in conversation.",
         topics: document.topics.map(({ topic, status }) => ({ topic, status })),
     };
 }
