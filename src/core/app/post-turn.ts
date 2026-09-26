@@ -6,8 +6,8 @@ interface PostTurnDiagnostics {
 }
 import type { PreparedCognition } from "./cognition-preparation.ts";
 
-import { generateAndAdoptConversationMemories } from "../../memory/memory-proposal-generation.ts";
 import { selectRecentConversationContext } from "../conversation-context.ts";
+import { generateAndAdoptConversationMemories } from "../memory/memory-proposal-generation.ts";
 import { nowUtc } from "../model.ts";
 import { applyOnboardingProgressDecision } from "../onboarding-work.ts";
 import { findCognition } from "./cognition-execution.ts";

@@ -1,10 +1,10 @@
-import type { AiExecutor } from "../core/ai/contract.ts";
+import type { AiExecutor } from "../ai/contract.ts";
 import type { MemoryProposalGenerationResult, MemoryProposalGenerator } from "./memory-proposal-generation.ts";
 
-import { ProviderError } from "../core/errors.ts";
-import { initialState, newId } from "../core/model.ts";
-import { buildProjection } from "../core/projection.ts";
-import { startRuntime } from "../core/runtime-episode.ts";
+import { ProviderError } from "../errors.ts";
+import { initialState, newId } from "../model.ts";
+import { buildProjection } from "../projection.ts";
+import { startRuntime } from "../runtime-episode.ts";
 
 export function createProviderMemoryProposalGenerator(
     provider: AiExecutor,

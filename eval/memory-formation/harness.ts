@@ -2,12 +2,12 @@ import { readFile } from "node:fs/promises";
 
 import type { AiExecutionRequest } from "../../src/core/ai/contract.ts";
 import type { MemoryProposalCandidate } from "../../src/core/memory-proposal.ts";
-import type { Meaning, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type {
     MemoryProposalGenerationOutcome,
     MemoryProposalGenerator,
     MemoryProposalGenerationRequest,
-} from "../../src/memory/memory-proposal-generation.ts";
+} from "../../src/core/memory/memory-proposal-generation.ts";
+import type { Meaning, MeaningId, RuntimeId } from "../../src/core/model.ts";
 
 import { executeCognition } from "../../src/core/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/core/app/cognition-preparation.ts";

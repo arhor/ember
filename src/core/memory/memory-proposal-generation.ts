@@ -1,13 +1,13 @@
-import type { ConversationId, ProjectedConversationContext } from "../core/conversation-context.ts";
-import type { MemoryProposal, MemoryProposalAssessment } from "../core/memory-proposal.ts";
-import type { AgentActor, EmberState, EvidenceId, MeaningId } from "../core/model.ts";
-import type { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
-import type { StateStore } from "../persistence/state-store.ts";
+import type { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
+import type { StateStore } from "../../persistence/state-store.ts";
+import type { ConversationId, ProjectedConversationContext } from "../conversation-context.ts";
+import type { MemoryProposal, MemoryProposalAssessment } from "../memory-proposal.ts";
+import type { AgentActor, EmberState, EvidenceId, MeaningId } from "../model.ts";
 
-import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import { assessMemoryProposal, resolveMemoryProposal } from "../core/memory-proposal.ts";
-import { agentActor, isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
-import { contentDigest, exactKeys, isObject } from "../core/util.ts";
+import { ProviderError, StaleRevision, ValidationError } from "../errors.ts";
+import { assessMemoryProposal, resolveMemoryProposal } from "../memory-proposal.ts";
+import { agentActor, isRfc3339Utc, nowUtc, validateState } from "../model.ts";
+import { contentDigest, exactKeys, isObject } from "../util.ts";
 
 export const MEMORY_PROPOSAL_GENERATION_CONTRACT_VERSION = 1;
 export const MEMORY_PROPOSAL_GENERATION_MAX_PROPOSALS = 8;

@@ -6,21 +6,21 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ProjectedConversationContext } from "../core/conversation-context.ts";
-import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
+import type { ProjectedConversationContext } from "../conversation-context.ts";
+import type { MemoryProposalCandidate } from "../memory-proposal.ts";
 
-import { createAiSdkMemoryProposalGenerator } from "../core/ai/memory-proposals.ts";
-import { executeCognition } from "../core/app/cognition-execution.ts";
-import { prepareCognition } from "../core/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../core/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../core/composition/ember.ts";
-import { ProviderError } from "../core/errors.ts";
-import { initialState } from "../core/model.ts";
-import { startRuntime } from "../core/runtime-episode.ts";
-import { userEvidence } from "../core/semantics.ts";
-import { cloneState } from "../core/util.ts";
-import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
-import { StateStore } from "../persistence/state-store.ts";
+import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
+import { StateStore } from "../../persistence/state-store.ts";
+import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
+import { executeCognition } from "../app/cognition-execution.ts";
+import { prepareCognition } from "../app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../app/post-turn.ts";
+import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
+import { ProviderError } from "../errors.ts";
+import { initialState } from "../model.ts";
+import { startRuntime } from "../runtime-episode.ts";
+import { userEvidence } from "../semantics.ts";
+import { cloneState } from "../util.ts";
 import { generateAndAdoptConversationMemories } from "./memory-proposal-generation.ts";
 
 const PRINCIPAL = "user-1";
