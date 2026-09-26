@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../core/ai/contract.ts";
 import type { CapabilityExecutionLedger } from "../capabilities/execution.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../core/ai/contract.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
     CognitionEpisode,

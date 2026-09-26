@@ -1,11 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import type {
-    CognitionOpportunityDecision,
-    CognitionOpportunityOccurrence,
-    EmberState,
-    MeaningId,
-} from "../model.ts";
+import type { CognitionOpportunityDecision, CognitionOpportunityOccurrence, EmberState, MeaningId } from "../model.ts";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-control.ts";
 import type {

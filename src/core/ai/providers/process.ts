@@ -1,8 +1,8 @@
 import type { PipedProcessSpawn } from "../../../host/process-lifecycle.ts";
 import type { AiExecutionOptions, AiExecutor, AiExecutionRequest, AiExecutionResult } from "../contract.ts";
 
-import { ProviderError } from "../../errors.ts";
 import { isTimeoutAbort, NodePipedProcessSpawn, runProcess } from "../../../host/process-lifecycle.ts";
+import { ProviderError } from "../../errors.ts";
 import { MAX_AI_TIMEOUT_SECONDS, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, validateAiExecutionResult } from "../contract.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

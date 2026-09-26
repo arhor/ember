@@ -5,11 +5,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAiSdkMemoryProposalGenerator } from "../../src/core/ai/memory-proposals.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
+import { createAiSdkMemoryProposalGenerator } from "../../src/core/ai/memory-proposals.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";

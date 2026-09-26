@@ -1,8 +1,8 @@
 import type { EmberState, Evidence, Meaning } from "./model.ts";
 
-import { cloneState } from "./util.ts";
 import { ValidationError } from "./errors.ts";
 import { validateState } from "./model.ts";
+import { cloneState } from "./util.ts";
 
 export const MARKDOWN_MATERIALIZATION_VERSION = 1;
 

@@ -13,11 +13,11 @@ import type {
 } from "./model.ts";
 import type { ProjectedOnboardingWork } from "./onboarding-work.ts";
 
-import { cloneState } from "./util.ts";
 import { emptyConversationContext } from "./conversation-context.ts";
 import { ValidationError } from "./errors.ts";
 import { validateState } from "./model.ts";
 import { findMeaning } from "./semantics.ts";
+import { cloneState } from "./util.ts";
 
 export type ProjectedEvidence = Omit<Evidence, "payload" | "contentDigest"> & {
     payload?: string;

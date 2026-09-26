@@ -16,9 +16,9 @@ import { createFileBackedRepositoriesForState } from "../../src/composition/embe
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
+import { exactKeys, isObject } from "../../src/core/util.ts";
 import { MemoryProposalGenerationStore } from "../../src/persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { exactKeys, isObject } from "../../src/core/util.ts";
 
 export type ExpectedDecision = "adopted" | "rejected" | "invalid" | "no_proposal";
 

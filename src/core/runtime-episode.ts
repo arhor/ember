@@ -1,10 +1,10 @@
 import type { EmberState, RuntimeEpisode, RuntimeId } from "./model.ts";
 
-import { cloneState } from "./util.ts";
 import { ValidationError } from "./errors.ts";
 import { newId, nowUtc, validateState } from "./model.ts";
 import { findRuntime } from "./projection.ts";
 import { requirePrincipal } from "./semantics.ts";
+import { cloneState } from "./util.ts";
 
 export function startRuntime(
     state: EmberState,

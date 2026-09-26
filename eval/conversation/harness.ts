@@ -9,8 +9,8 @@ import { composeEmberApplication } from "../../src/composition/ember.ts";
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 import { exactKeys, isObject } from "../../src/core/util.ts";
+import { StateStore } from "../../src/persistence/state-store.ts";
 
 export interface ConversationEpisode {
     id: string;

@@ -1,8 +1,8 @@
 import type { CognitionId, DeliveryStatus, EmberState, EvidenceId } from "./model.ts";
 
-import { exactKeys, isObject } from "./util.ts";
 import { ValidationError } from "./errors.ts";
 import { isRfc3339Utc, validateState } from "./model.ts";
+import { exactKeys, isObject } from "./util.ts";
 
 export const RECENT_DIALOGUE_SELECTION_STRATEGY = "recent_same_conversation_v2" as const;
 export const RECENT_DIALOGUE_MAX_EXCHANGES = 4;

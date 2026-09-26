@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor } from "../../core/ai/contract.ts";
 import type { EmberApplication } from "../../app/contract.ts";
+import type { AiExecutor } from "../../core/ai/contract.ts";
 import type { TelegramSurfaceConfig } from "./config.ts";
 import type { TelegramUpdate } from "./surface.ts";
 

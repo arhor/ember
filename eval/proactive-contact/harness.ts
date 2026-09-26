@@ -1,28 +1,28 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
+import type { TelegramSurfaceConfig } from "../../src/apps/telegram/index.ts";
 import type {
     ContactAttentionDecisionRecord,
     ContactAttentionPolicyRequest,
     ProactiveContactIntentSnapshot,
 } from "../../src/core/agency/proactive-contact-attention-policy.ts";
 import type { CognitionId, EvidenceId, MeaningId } from "../../src/core/model.ts";
-import type { TelegramSurfaceConfig } from "../../src/apps/telegram/index.ts";
 
+import { executeCognition } from "../../src/app/cognition-execution.ts";
+import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
+import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
+import { composeTelegramSurface } from "../../src/composition/telegram.ts";
 import { decideUserInterruption } from "../../src/core/agency/interruption-decision.ts";
 import { decideProactiveContactAttention } from "../../src/core/agency/proactive-contact-attention-policy.ts";
 import { ProactiveContactStore } from "../../src/core/agency/proactive-contact-store.ts";
-import { executeCognition } from "../../src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
-import { composeTelegramSurface } from "../../src/composition/telegram.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
+import { contentDigest, exactKeys, isObject } from "../../src/core/util.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
-import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
-import { contentDigest, exactKeys, isObject } from "../../src/core/util.ts";
 
 const CASE_IDS = [
     "useful-contact",

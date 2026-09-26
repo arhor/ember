@@ -5,9 +5,12 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/apps/telegram/index.ts";
+import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts";
 
+import { main as cliMain } from "../src/apps/cli/index.ts";
+import { runCliSurface } from "../src/apps/cli/surface.ts";
+import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
 import { composeCliSurface } from "../src/composition/cli.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
@@ -17,9 +20,6 @@ import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposa
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
-import { main as cliMain } from "../src/apps/cli/index.ts";
-import { runCliSurface } from "../src/apps/cli/surface.ts";
-import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";

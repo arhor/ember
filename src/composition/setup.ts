@@ -1,5 +1,5 @@
-import type { AiExecutor } from "../core/ai/contract.ts";
 import type { BootstrapDependencies, SetupConfig, SetupProvider } from "../app/bootstrap.ts";
+import type { AiExecutor } from "../core/ai/contract.ts";
 
 import { createCodexLanguageModel } from "../core/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../core/ai/cognition.ts";

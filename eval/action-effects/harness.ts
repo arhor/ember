@@ -6,6 +6,7 @@ import type { CapabilityExecutionEvidence } from "../../src/capabilities/executi
 import { actionProposalConfirmation, ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
 import { ValidationError } from "../../src/core/errors.ts";
+import { exactKeys, isObject } from "../../src/core/util.ts";
 import {
     createApprovedGoogleCalendarEventCapability,
     selectApprovedGoogleCalendarEventCapability,
@@ -14,7 +15,6 @@ import {
     createGoogleCalendarCapability,
     selectGoogleCalendarCapability,
 } from "../../src/integrations/google-calendar/read.ts";
-import { exactKeys, isObject } from "../../src/core/util.ts";
 
 const CASES = [
     "read-only-observation",

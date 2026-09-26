@@ -8,8 +8,8 @@ import type {
     MeaningKind,
 } from "./model.ts";
 
-import { contentDigest, exactKeys, isNotBlankString, isObject } from "./util.ts";
 import { agentActor, isRfc3339Utc, validateState } from "./model.ts";
+import { contentDigest, exactKeys, isNotBlankString, isObject } from "./util.ts";
 
 export type MemoryProposalId = `memory-proposal-${string}`;
 export type ProposableMeaningKind = Exclude<MeaningKind, "commitment">;

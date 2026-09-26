@@ -14,15 +14,16 @@ import type {
     SetupGoogleCalendarArgs,
 } from "./model.ts";
 
+import { composeCliSurface } from "../../composition/cli.ts";
 import { proactiveContactInspectionView, ProactiveContactStore } from "../../core/agency/proactive-contact-store.ts";
 import { MAX_AI_TIMEOUT_SECONDS } from "../../core/ai/contract.ts";
-import { composeCliSurface } from "../../composition/cli.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
 import { initialState } from "../../core/model.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
 import { supersede } from "../../core/semantics.ts";
 import { buildStateMaterialization } from "../../core/state-materialization.ts";
+import { assertUnreachable, cloneState } from "../../core/util.ts";
 import {
     inspectMarkdownStateEdits,
     publishMarkdownStateViews,
@@ -31,7 +32,6 @@ import {
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
-import { assertUnreachable, cloneState } from "../../core/util.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
 import { Commands, CommandSpecs } from "./model.ts";
 import { setupMain, setupRunMain } from "./setup.ts";

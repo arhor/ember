@@ -5,9 +5,11 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { EmberCompositionOverrides, EmberProviderKind } from "../src/composition/ember.ts";
 import type { CliSurfaceConfig } from "../src/apps/cli/index.ts";
+import type { EmberCompositionOverrides, EmberProviderKind } from "../src/composition/ember.ts";
 
+import { setupGoogleCalendarMain } from "../src/apps/cli/google-calendar-setup.ts";
+import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/apps/cli/index.ts";
 import { actionProposalConfirmation, ActionProposalStore } from "../src/capabilities/action-proposal.ts";
 import { composeCliSurface } from "../src/composition/cli.ts";
 import { ProviderError } from "../src/core/errors.ts";
@@ -20,8 +22,6 @@ import { ConversationContextStore } from "../src/persistence/conversation-contex
 import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { setupGoogleCalendarMain } from "../src/apps/cli/google-calendar-setup.ts";
-import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/apps/cli/index.ts";
 import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };

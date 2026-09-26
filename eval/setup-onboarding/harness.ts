@@ -10,17 +10,17 @@ import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-
 import { executeCognition as runCoreCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
+import { setupMain } from "../../src/apps/cli/setup.ts";
+import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
+import { exactKeys, isObject } from "../../src/core/util.ts";
 import { SystemdTelegramResidentHost } from "../../src/host/systemd.ts";
 import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { setupMain } from "../../src/apps/cli/setup.ts";
-import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
-import { exactKeys, isObject } from "../../src/core/util.ts";
 
 export type SetupOnboardingFlow = "fresh-create" | "restore-existing";
 export interface SetupOnboardingScenario {

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { contentDigest, exactKeys, isNotBlankString, isObject } from "./util.ts";
 import { ValidationError } from "./errors.ts";
+import { contentDigest, exactKeys, isNotBlankString, isObject } from "./util.ts";
 
 declare const idBrand: unique symbol;
 type Brand<Name extends string> = string & { readonly [idBrand]: Name };

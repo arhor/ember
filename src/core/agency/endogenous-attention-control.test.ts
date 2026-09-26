@@ -7,10 +7,10 @@ import test from "node:test";
 import type { CognitionOpportunityOccurrence, EvidenceId, MeaningId, RuntimeId } from "../model.ts";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
+import { StateStore } from "../../persistence/state-store.ts";
 import { initialState, newId } from "../model.ts";
 import { startRuntime } from "../runtime-episode.ts";
 import { rememberFact, undertake } from "../semantics.ts";
-import { StateStore } from "../../persistence/state-store.ts";
 import { runCognitionOpportunity } from "./cognition-opportunity.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 

@@ -1,6 +1,6 @@
-import { exactKeys, isObject } from "./util.ts";
 import { ValidationError } from "./errors.ts";
 import { isRfc3339Utc } from "./model.ts";
+import { exactKeys, isObject } from "./util.ts";
 
 export const ONBOARDING_TOPICS = [
     "forms_of_address",

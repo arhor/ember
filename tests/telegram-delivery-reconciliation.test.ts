@@ -4,28 +4,24 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { ConfiguredProactiveContactPolicy } from "../src/core/agency/configured-proactive-contact-policy.ts";
-import type { ContactAttentionDecisionRecord } from "../src/core/agency/proactive-contact-attention-policy.ts";
-import type { AiExecutor } from "../src/core/ai/contract.ts";
 import type {
     ProactiveContactHandoffRevalidator,
     TelegramSurfaceConfig,
     TelegramUpdate,
 } from "../src/apps/telegram/index.ts";
+import type { ConfiguredProactiveContactPolicy } from "../src/core/agency/configured-proactive-contact-policy.ts";
+import type { ContactAttentionDecisionRecord } from "../src/core/agency/proactive-contact-attention-policy.ts";
+import type { AiExecutor } from "../src/core/ai/contract.ts";
 
+import { createEmberApplication } from "../src/app/application.ts";
+import { createTelegramApi, deliverTelegramMessage, loadTelegramSurfaceConfig } from "../src/apps/telegram/index.ts";
+import { composeEmberApplication } from "../src/composition/ember.ts";
 import { decideConfiguredProactiveContactHandoff } from "../src/core/agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../src/core/agency/proactive-contact-store.ts";
-import { createEmberApplication } from "../src/app/application.ts";
-import { composeEmberApplication } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { rememberFact } from "../src/core/semantics.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
-import {
-    createTelegramApi,
-    deliverTelegramMessage,
-    loadTelegramSurfaceConfig,
-} from "../src/apps/telegram/index.ts";
 import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,

@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import { composeTelegramSurface } from "../src/composition/telegram.ts";
-import { ValidationError } from "../src/core/errors.ts";
 import {
     createTelegramApi,
     deleteTelegramWebhook,
@@ -10,6 +8,8 @@ import {
     telegramResidentLaunch,
     verifyTelegramLongPollingReady,
 } from "../src/apps/telegram/index.ts";
+import { composeTelegramSurface } from "../src/composition/telegram.ts";
+import { ValidationError } from "../src/core/errors.ts";
 
 interface TelegramCliArgs {
     command:

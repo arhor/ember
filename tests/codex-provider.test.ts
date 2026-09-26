@@ -6,19 +6,19 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
+import { executeCognition } from "../src/app/cognition-execution.ts";
+import { parseArgs } from "../src/apps/cli/index.ts";
+import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { createCodexLanguageModel } from "../src/core/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../src/core/ai/onboarding-progress.ts";
 import { buildCodexPrompt, invokeCodexProvider } from "../src/core/ai/providers/codex.ts";
-import { executeCognition } from "../src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
 import { codexEnvironment } from "../src/host/codex-environment.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { parseArgs } from "../src/apps/cli/index.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const SCRIPTED_CODEX = join(ROOT, "tests", "fixtures", "providers", "scripted-codex.ts");

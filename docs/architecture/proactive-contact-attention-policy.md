@@ -275,5 +275,5 @@ mapping consume its decision record without re-deciding policy.
 | Admit, defer, or suppress with rationale | Typed outcomes and enumerated bases return a complete assessment record with copied currentness, authority, attention, occurrence, surface, and supersession evidence. |
 | Deterministic quiet and duplicate cases  | Bounded quiet windows, provenance-classified occurrence inputs, deterministic evaluation order, and replay assertions are covered by the focused unit suite.           |
 | Re-evaluate stale intents                | Every assessment checks current meanings, applicability, live commitments, expiry, and representation currentness while recording source and assessment revisions.     |
-| Telegram does not own policy             | The module is under `../../src/core/agency`, accepts opaque surface IDs, imports no surface or transport module, and only returns permission for a later handoff.                |
+| Telegram does not own policy             | The module is under `../../src/core/agency`, accepts opaque surface IDs, imports no surface or transport module, and only returns permission for a later handoff.      |
 | Silence remains first-class              | Every `defer` and `suppress` record explicitly returns `remain_silent`; every defer also records a typed next-step owner and bounded reconsideration condition.        |

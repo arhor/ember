@@ -8,9 +8,9 @@ import type {
     ContactReconsiderationCondition,
 } from "./proactive-contact-attention-policy.ts";
 
+import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { StoreUnavailable, ValidationError } from "../errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../model.ts";
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { contentDigest, exactKeys, isObject } from "../util.ts";
 
 const MAX_REPRESENTATION_BYTES = 1024 * 1024;
