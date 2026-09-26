@@ -1,10 +1,6 @@
-import type {
-    DurableObjectiveStore,
-    ObjectiveCheckpoint,
-    ObjectiveProgress,
-} from "../../objectives/durable-objective.ts";
 import type { ActionProposalRecord, ActionProposalStore } from "../capabilities/action-proposal.ts";
 import type { CapabilityJsonValue } from "../capabilities/execution.ts";
+import type { DurableObjectiveStore, ObjectiveCheckpoint, ObjectiveProgress } from "../objectives/durable-objective.ts";
 
 import { ValidationError } from "../errors.ts";
 

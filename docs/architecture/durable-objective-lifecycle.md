@@ -23,7 +23,7 @@ durable action ledger through `../../src/core/app`.
 
 This design specializes existing architecture and, as of issue
 [#237](https://github.com/arhor/ember/issues/237), has a minimal executable
-implementation in `src/objectives/durable-objective.ts`:
+implementation in `../../src/core/objectives`:
 
 - [ADR 0001](decisions/0001-continuity-belongs-to-ember.md) makes continuity
   independent of operational loci;

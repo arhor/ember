@@ -5,7 +5,6 @@ import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
 import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 
-import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
 import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
@@ -27,6 +26,7 @@ import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../integrations/google-calendar/create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../integrations/google-calendar/read.ts";
 import { createProviderMemoryProposalGenerator } from "../memory/provider-memory-proposal-generator.ts";
+import { DurableObjectiveStore } from "../objectives/durable-objective.ts";
 import { providerLabel } from "./provider-label.ts";
 
 export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";

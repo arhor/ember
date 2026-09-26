@@ -38,7 +38,7 @@ with many restart-sensitive internal steps may earn LangGraph's Functional API.
 This evaluation was performed on **2026-09-17** against the merged implementation at
 `510b18c`, including:
 
-- `src/objectives/durable-objective.ts`: 729 lines implementing the versioned
+- `../../src/core/objectives`: 729 lines implementing the versioned
   Ember-owned objective ledger, validation, serialized/cross-process mutation,
   currentness assessment, episode reconciliation, checkpoint recording, and
   completion rules;
@@ -56,7 +56,7 @@ This evaluation was performed on **2026-09-17** against the merged implementatio
   [Durable Action Proposal and Approval Correlation](durable-action-proposal-approval.md),
   and the accepted operational-continuity and authority decisions.
 
-Across the six touched production files, issues #237/#238 added 983 lines and removed 28. The 887 lines under `src/objectives/` are the cohesive objective-store/coordinator
+Across the six touched production files, issues #237/#238 added 983 lines and removed 28. The 887 lines under `../../src/core/objectives` are the cohesive objective-store/coordinator
 core; the other changes extend the existing action and surface boundaries. Line counts
 describe maintenance surface, not automatically replaceable framework boilerplate.
 Most of the core validates Ember meanings and causal evidence, while the other paths
@@ -156,7 +156,7 @@ position to recover.
 
 ### The apparent code saving is mostly semantic leakage
 
-The 887 production lines in `src/objectives/` are not a hand-built workflow engine.
+The 887 production lines in `../../src/core/objectives` are not a hand-built workflow engine.
 They encode schema validation, chronology, attribution, concurrency, stale-revision
 rejection, completion evidence, approval binding, and truthful effect reintegration.
 The remaining #238 production changes make proposal/objective identity and

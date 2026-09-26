@@ -3,7 +3,7 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import { tempDir } from "../../tests/support.ts";
+import { tempDir } from "../../../tests/support.ts";
 import { DurableObjectiveStore, validateObjectiveDocument } from "./durable-objective.ts";
 
 async function createdObjective(store: DurableObjectiveStore) {
