@@ -1,7 +1,7 @@
-import type { CognitionId, EmberState, MeaningId, OpportunityId } from "../core/model.ts";
+import type { CognitionId, EmberState, MeaningId, OpportunityId } from "../model.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { isRfc3339Utc, validateState } from "../core/model.ts";
+import { ValidationError } from "../errors.ts";
+import { isRfc3339Utc, validateState } from "../model.ts";
 
 export type InterruptionOutcome = "deliver" | "defer" | "suppress" | "no_delivery";
 export type InterruptionAuthority = "authorized" | "unknown" | "denied";

@@ -5,7 +5,7 @@ import type {
     CognitionOpportunityOccurrence,
     EmberState,
     MeaningId,
-} from "../core/model.ts";
+} from "../model.ts";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-control.ts";
 import type {
@@ -16,10 +16,10 @@ import type {
     InterruptionUrgency,
 } from "./interruption-decision.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { initialState, isRfc3339Utc, newId } from "../core/model.ts";
-import { startRuntime } from "../core/runtime-episode.ts";
-import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
+import { ValidationError } from "../errors.ts";
+import { initialState, isRfc3339Utc, newId } from "../model.ts";
+import { startRuntime } from "../runtime-episode.ts";
+import { rememberFact, transitionCommitment, undertake } from "../semantics.ts";
 import { buildCognitionOpportunityProjection, evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 import { decideUserInterruption } from "./interruption-decision.ts";

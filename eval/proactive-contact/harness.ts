@@ -5,13 +5,13 @@ import type {
     ContactAttentionDecisionRecord,
     ContactAttentionPolicyRequest,
     ProactiveContactIntentSnapshot,
-} from "../../src/agency/proactive-contact-attention-policy.ts";
+} from "../../src/core/agency/proactive-contact-attention-policy.ts";
 import type { CognitionId, EvidenceId, MeaningId } from "../../src/core/model.ts";
 import type { TelegramSurfaceConfig } from "../../src/apps/telegram/index.ts";
 
-import { decideUserInterruption } from "../../src/agency/interruption-decision.ts";
-import { decideProactiveContactAttention } from "../../src/agency/proactive-contact-attention-policy.ts";
-import { ProactiveContactStore } from "../../src/agency/proactive-contact-store.ts";
+import { decideUserInterruption } from "../../src/core/agency/interruption-decision.ts";
+import { decideProactiveContactAttention } from "../../src/core/agency/proactive-contact-attention-policy.ts";
+import { ProactiveContactStore } from "../../src/core/agency/proactive-contact-store.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { composeTelegramSurface } from "../../src/composition/telegram.ts";

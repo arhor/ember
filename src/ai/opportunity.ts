@@ -16,10 +16,10 @@ import type {
     CognitionOpportunityEvaluation,
     CognitionOpportunityEvaluator,
     CognitionOpportunityRequest,
-} from "../agency/cognition-opportunity.ts";
+} from "../core/agency/cognition-opportunity.ts";
 import type { CognitionOpportunityDecision, MeaningId } from "../core/model.ts";
 
-import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "../agency/cognition-opportunity.ts";
+import { COGNITION_OPPORTUNITY_CONTRACT_VERSION } from "../core/agency/cognition-opportunity.ts";
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { exactKeys, isObject } from "../core/util.ts";
 import { MAX_AI_TIMEOUT_SECONDS } from "./contract.ts";

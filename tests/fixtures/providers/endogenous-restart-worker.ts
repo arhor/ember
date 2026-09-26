@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import type { EndogenousRestartScenarioKind } from "../../../eval/endogenous-restart/harness.ts";
-import type { CognitionOpportunityEvaluator } from "../../../src/agency/cognition-opportunity.ts";
+import type { CognitionOpportunityEvaluator } from "../../../src/core/agency/cognition-opportunity.ts";
 import type { EmberState, MeaningId } from "../../../src/core/model.ts";
 
-import { runCognitionOpportunity } from "../../../src/agency/cognition-opportunity.ts";
+import { runCognitionOpportunity } from "../../../src/core/agency/cognition-opportunity.ts";
 import { createCodexOpportunityEvaluator } from "../../../src/ai/codex-opportunity.ts";
 import { initialState } from "../../../src/core/model.ts";
 import { inspectionView } from "../../../src/core/projection.ts";

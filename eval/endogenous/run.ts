@@ -6,13 +6,13 @@ import { readFile } from "node:fs/promises";
 import type {
     EvaluationBackend,
     SelectivityAttentionControl,
-} from "../../src/agency/endogenous-selectivity-evaluation.ts";
+} from "../../src/core/agency/endogenous-selectivity-evaluation.ts";
 
 import {
     parseSelectivityWorkload,
     runEndogenousSelectivityEvaluation,
     scriptedSelectivityEvaluator,
-} from "../../src/agency/endogenous-selectivity-evaluation.ts";
+} from "../../src/core/agency/endogenous-selectivity-evaluation.ts";
 import { createCodexOpportunityEvaluator } from "../../src/ai/codex-opportunity.ts";
 
 const cli = parseArguments(process.argv.slice(2));

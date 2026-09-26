@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-import type { EmberState } from "../core/model.ts";
+import type { EmberState } from "../model.ts";
 import type {
     ContactAttentionDecisionRecord,
     ContactAttentionWindow,
@@ -10,9 +10,9 @@ import type {
 } from "./proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "./proactive-contact-store.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
-import { exactKeys, isObject } from "../core/util.ts";
+import { ValidationError } from "../errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN } from "../model.ts";
+import { exactKeys, isObject } from "../util.ts";
 import { decideProactiveContactAttention } from "./proactive-contact-attention-policy.ts";
 import { ProactiveContactStore } from "./proactive-contact-store.ts";
 

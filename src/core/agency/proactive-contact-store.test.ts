@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { CognitionId, EvidenceId, MeaningId } from "../core/model.ts";
+import type { CognitionId, EvidenceId, MeaningId } from "../model.ts";
 import type { ContactAttentionDecisionRecord } from "./proactive-contact-attention-policy.ts";
 
-import { contentDigest } from "../core/util.ts";
+import { contentDigest } from "../util.ts";
 import { ProactiveContactStore, proactiveContactInspectionView } from "./proactive-contact-store.ts";
 
 const CREATED_AT = "2026-09-17T10:00:00Z";

@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { MeaningId, CognitionOpportunityMechanism } from "../core/model.ts";
+import type { MeaningId, CognitionOpportunityMechanism } from "../model.ts";
 import type { CognitionOpportunityEvaluator, CognitionOpportunityRequest } from "./cognition-opportunity.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { initialState } from "../core/model.ts";
-import { startRuntime, stopRuntime } from "../core/runtime-episode.ts";
-import { undertake } from "../core/semantics.ts";
-import { cloneState } from "../core/util.ts";
+import { ValidationError } from "../errors.ts";
+import { initialState } from "../model.ts";
+import { startRuntime, stopRuntime } from "../runtime-episode.ts";
+import { undertake } from "../semantics.ts";
+import { cloneState } from "../util.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";

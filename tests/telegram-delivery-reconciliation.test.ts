@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { ConfiguredProactiveContactPolicy } from "../src/agency/configured-proactive-contact-policy.ts";
-import type { ContactAttentionDecisionRecord } from "../src/agency/proactive-contact-attention-policy.ts";
+import type { ConfiguredProactiveContactPolicy } from "../src/core/agency/configured-proactive-contact-policy.ts";
+import type { ContactAttentionDecisionRecord } from "../src/core/agency/proactive-contact-attention-policy.ts";
 import type { AiExecutor } from "../src/ai/contract.ts";
 import type {
     ProactiveContactHandoffRevalidator,
@@ -13,8 +13,8 @@ import type {
     TelegramUpdate,
 } from "../src/apps/telegram/index.ts";
 
-import { decideConfiguredProactiveContactHandoff } from "../src/agency/configured-proactive-contact-policy.ts";
-import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
+import { decideConfiguredProactiveContactHandoff } from "../src/core/agency/configured-proactive-contact-policy.ts";
+import { ProactiveContactStore } from "../src/core/agency/proactive-contact-store.ts";
 import { createEmberApplication } from "../src/app/application.ts";
 import { composeEmberApplication } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";

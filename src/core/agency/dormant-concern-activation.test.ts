@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { EmberState, MeaningId } from "../core/model.ts";
+import type { EmberState, MeaningId } from "../model.ts";
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
-import { initialState } from "../core/model.ts";
-import { startRuntime } from "../core/runtime-episode.ts";
-import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
-import { cloneState } from "../core/util.ts";
+import { initialState } from "../model.ts";
+import { startRuntime } from "../runtime-episode.ts";
+import { rememberFact, transitionCommitment, undertake } from "../semantics.ts";
+import { cloneState } from "../util.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";

@@ -29,7 +29,7 @@ model-written reasons into canonical memory.
 
 ## Implemented seam
 
-`src/agency/cognition-opportunity.ts` exposes a narrow evaluator contract:
+`../../src/core/agency` exposes a narrow evaluator contract:
 
 ```text
 current Ember state + active runtime
@@ -122,7 +122,7 @@ at this boundary; issue #78 owns later delivery/interruption decisions.
 
 ## Deterministic scenario controls
 
-`src/agency/cognition-opportunity.test.ts` exercises the issue-73 CO-01/CO-02
+`../../src/core/agency` exercises the issue-73 CO-01/CO-02
 counterfactual directly. Quiet state and live-concern state receive the same
 `foreground_probe`; only Ember-owned projected state differs.
 

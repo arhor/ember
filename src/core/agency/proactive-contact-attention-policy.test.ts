@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { MeaningId } from "../core/model.ts";
+import type { MeaningId } from "../model.ts";
 import type {
     ContactAttentionPolicyRequest,
     ContactOccurrenceAssessment,
     ProactiveContactIntentSnapshot,
 } from "./proactive-contact-attention-policy.ts";
 
-import { initialState } from "../core/model.ts";
-import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
+import { initialState } from "../model.ts";
+import { rememberFact, transitionCommitment, undertake } from "../semantics.ts";
 import { decideProactiveContactAttention } from "./proactive-contact-attention-policy.ts";
 
 const PRINCIPAL = "user-1";

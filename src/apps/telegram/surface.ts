@@ -4,8 +4,8 @@ import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "n
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { ContactAttentionDecisionRecord } from "../../agency/proactive-contact-attention-policy.ts";
-import type { ProactiveContactIntentRecord } from "../../agency/proactive-contact-store.ts";
+import type { ContactAttentionDecisionRecord } from "../../core/agency/proactive-contact-attention-policy.ts";
+import type { ProactiveContactIntentRecord } from "../../core/agency/proactive-contact-store.ts";
 import type { EmberApplication } from "../../app/contract.ts";
 import type { SurfaceRepositories } from "../../app/surface-repositories.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
@@ -15,7 +15,7 @@ type TelegramRepositories = SurfaceRepositories;
 import {
     decideConfiguredProactiveContactHandoff,
     loadConfiguredProactiveContactPolicy,
-} from "../../agency/configured-proactive-contact-policy.ts";
+} from "../../core/agency/configured-proactive-contact-policy.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
 import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";

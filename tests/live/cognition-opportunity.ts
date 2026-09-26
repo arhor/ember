@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 
-import { evaluateCognitionOpportunity } from "../../src/agency/cognition-opportunity.ts";
+import { evaluateCognitionOpportunity } from "../../src/core/agency/cognition-opportunity.ts";
 import { createCodexOpportunityEvaluator } from "../../src/ai/codex-opportunity.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";

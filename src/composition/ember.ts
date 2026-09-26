@@ -5,7 +5,7 @@ import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluat
 import type { StateStoreOptions } from "../persistence/state-store.ts";
 import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
-import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
+import { ProactiveContactStore } from "../core/agency/proactive-contact-store.ts";
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";

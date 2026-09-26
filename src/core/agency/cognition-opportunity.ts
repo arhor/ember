@@ -6,15 +6,15 @@ import type {
     MeaningId,
     OpportunityId,
     RuntimeId,
-} from "../core/model.ts";
-import type { Projection } from "../core/projection.ts";
-import type { StateStore } from "../persistence/state-store.ts";
+} from "../model.ts";
+import type { Projection } from "../projection.ts";
+import type { StateStore } from "../../persistence/state-store.ts";
 import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-control.ts";
 
-import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import { COGNITION_OPPORTUNITY_MECHANISMS, newId, nowUtc, validateState, isRfc3339Utc } from "../core/model.ts";
-import { buildProjection, findRuntime } from "../core/projection.ts";
-import { cloneState, exactKeys, isObject } from "../core/util.ts";
+import { ProviderError, StaleRevision, ValidationError } from "../errors.ts";
+import { COGNITION_OPPORTUNITY_MECHANISMS, newId, nowUtc, validateState, isRfc3339Utc } from "../model.ts";
+import { buildProjection, findRuntime } from "../projection.ts";
+import { cloneState, exactKeys, isObject } from "../util.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 
 export const COGNITION_OPPORTUNITY_CONTRACT_VERSION = 1 as const;

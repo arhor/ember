@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-import type { DeliveryReconciliationStatus } from "../core/interaction-contract.ts";
-import type { CognitionId, EvidenceId, MeaningId } from "../core/model.ts";
+import type { DeliveryReconciliationStatus } from "../interaction-contract.ts";
+import type { CognitionId, EvidenceId, MeaningId } from "../model.ts";
 import type {
     ContactAttentionDecisionRecord,
     ContactReconsiderationCondition,
 } from "./proactive-contact-attention-policy.ts";
 
-import { StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../core/model.ts";
-import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { contentDigest, exactKeys, isObject } from "../core/util.ts";
+import { StoreUnavailable, ValidationError } from "../errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../model.ts";
+import { replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { contentDigest, exactKeys, isObject } from "../util.ts";
 
 const MAX_REPRESENTATION_BYTES = 1024 * 1024;
 

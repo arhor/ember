@@ -4,9 +4,9 @@ import type {
     MeaningId,
     OpportunityId,
     RuntimeId,
-} from "../core/model.ts";
+} from "../model.ts";
 
-import { sameContent } from "../core/util.ts";
+import { sameContent } from "../util.ts";
 
 export type RepeatedCognitionAttentionOutcome = "evaluate" | "defer_repeated_projection";
 
