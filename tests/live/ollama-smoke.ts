@@ -4,8 +4,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAiSdkCognitionExecutor } from "../../src/ai/cognition.ts";
-import { createOllamaLanguageModel } from "../../src/ai/ollama.ts";
+import { createAiSdkCognitionExecutor } from "../../src/core/ai/cognition.ts";
+import { createOllamaLanguageModel } from "../../src/core/ai/ollama.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";

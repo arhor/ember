@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
-import { createCodexLanguageModel } from "../src/ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-progress.ts";
-import { buildCodexPrompt, invokeCodexProvider } from "../src/ai/providers/codex.ts";
+import { createCodexLanguageModel } from "../src/core/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../src/core/ai/onboarding-progress.ts";
+import { buildCodexPrompt, invokeCodexProvider } from "../src/core/ai/providers/codex.ts";
 import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";

@@ -12,13 +12,13 @@ import {
     TypeValidationError,
 } from "ai";
 
-import type { MemoryProposalGenerationResult, MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
+import type { MemoryProposalGenerationResult, MemoryProposalGenerator } from "../../memory/memory-proposal-generation.ts";
 
-import { ProviderError, ValidationError } from "../core/errors.ts";
+import { ProviderError, ValidationError } from "../errors.ts";
 import {
     MEMORY_PROPOSAL_GENERATION_CONTRACT_VERSION,
     MEMORY_PROPOSAL_GENERATION_MAX_PROPOSALS,
-} from "../memory/memory-proposal-generation.ts";
+} from "../../memory/memory-proposal-generation.ts";
 import { MAX_AI_TIMEOUT_SECONDS } from "./contract.ts";
 
 export const AI_SDK_MEMORY_PROPOSAL_INSTRUCTION = [

@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
-import { createCursorLanguageModel } from "../src/ai/cursor.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../src/ai/onboarding-progress.ts";
-import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/ai/providers/cursor.ts";
+import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
+import { createCursorLanguageModel } from "../src/core/ai/cursor.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../src/core/ai/onboarding-progress.ts";
+import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/core/ai/providers/cursor.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";

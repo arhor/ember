@@ -6,7 +6,7 @@ import { isAbsolute, join, resolve } from "node:path";
 
 import type { ConversationProvider } from "./harness.ts";
 
-import { invokeCodexProvider } from "../../src/ai/providers/codex.ts";
+import { invokeCodexProvider } from "../../src/core/ai/providers/codex.ts";
 import { loadConversationScenario, runConversationScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));

@@ -5,7 +5,7 @@ import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createClaudeCodeExecutor, createClaudeCodeExecutorWithDependencies } from "../src/ai/claude-code.ts";
+import { createClaudeCodeExecutor, createClaudeCodeExecutorWithDependencies } from "../src/core/ai/claude-code.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { captureError, emptyRequest } from "./support.ts";
 

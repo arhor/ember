@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { AiExecutor, AiExecutionRequest } from "../src/ai/contract.ts";
+import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/apps/telegram/index.ts";
 
 import { composeCliSurface } from "../src/composition/cli.ts";

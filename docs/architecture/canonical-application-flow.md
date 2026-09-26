@@ -125,11 +125,11 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
 5. **The application executes the prepared cognition.**
    [`executePreparedCognition`](../../src/app/cognition-execution.ts) records accepted
    user evidence and cognition lifecycle state, then calls the Ember-owned
-   [`AiExecutor`](../../src/ai/contract.ts).
+   [`AiExecutor`](../../src/core/ai/contract.ts).
 
 6. **AI mechanics stay below the Ember contract.**
    Production Codex, Cursor, process, and Claude Code execution are composed under
-   [`src/ai/`](../../src/ai/). The ordinary production stack uses Vercel AI SDK
+   [`../../src/core/ai`](../../src/core/ai/). The ordinary production stack uses Vercel AI SDK
    mechanics behind `AiExecutor`. Selected capabilities are passed per call and are
    still authorized by Ember before execution.
 
@@ -202,7 +202,7 @@ selection. They do not define alternate ordinary cognition paths.
 ## Optional Telegram setup uses a typed trusted-host handoff
 
 Ordinary cognition may return the bounded `setupIntent: "telegram"` field defined by
-[`AiExecutionResult`](../../src/ai/contract.ts). This is a proposal only.
+[`AiExecutionResult`](../../src/core/ai/contract.ts). This is a proposal only.
 
 For a local CLI conversation whose configuration exposes a trusted-host setup callback:
 

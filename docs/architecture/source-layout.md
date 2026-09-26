@@ -62,11 +62,11 @@ surface modules.
 
 ## AI execution
 
-`src/ai/contract.ts` owns the application-facing `AiExecutionRequest`,
+`../../src/core/ai` owns the application-facing `AiExecutionRequest`,
 `AiExecutionResult`, `AiExecutionOptions`, and `AiExecutor` contract.
 
-`src/ai/cognition.ts` owns the shared Vercel AI SDK ordinary cognition mechanics.
-Concrete Codex, Cursor, Claude Code, and process bridges also live under `src/ai/`.
+`../../src/core/ai` owns the shared Vercel AI SDK ordinary cognition mechanics.
+Concrete Codex, Cursor, Claude Code, and process bridges also live under `../../src/core/ai`.
 Provider-specific process/protocol mechanics are implementation details beneath the
 Ember-owned execution contract.
 

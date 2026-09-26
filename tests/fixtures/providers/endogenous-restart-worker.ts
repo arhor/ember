@@ -4,7 +4,7 @@ import type { CognitionOpportunityEvaluator } from "../../../src/core/agency/cog
 import type { EmberState, MeaningId } from "../../../src/core/model.ts";
 
 import { runCognitionOpportunity } from "../../../src/core/agency/cognition-opportunity.ts";
-import { createCodexOpportunityEvaluator } from "../../../src/ai/codex-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../../../src/core/ai/codex-opportunity.ts";
 import { initialState } from "../../../src/core/model.ts";
 import { inspectionView } from "../../../src/core/projection.ts";
 import { startRuntime, stopRuntime } from "../../../src/core/runtime-episode.ts";

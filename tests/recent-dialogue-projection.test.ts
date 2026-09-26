@@ -3,7 +3,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor, AiExecutionRequest } from "../src/ai/contract.ts";
+import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts";
 import type { ConversationMembershipIntent } from "../src/core/interaction-contract.ts";
 import type { EmberState } from "../src/core/model.ts";
 

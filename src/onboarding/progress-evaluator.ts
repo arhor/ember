@@ -1,4 +1,4 @@
-import type { AiExecutor } from "../ai/contract.ts";
+import type { AiExecutor } from "../core/ai/contract.ts";
 import type { OnboardingProgressDecision, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
 import type { Projection } from "../core/projection.ts";
 

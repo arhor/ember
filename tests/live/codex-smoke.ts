@@ -4,8 +4,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createCodexLanguageModel } from "../../src/ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../../src/ai/cognition.ts";
+import { createCodexLanguageModel } from "../../src/core/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../../src/core/ai/cognition.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";

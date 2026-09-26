@@ -5,7 +5,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { createAiSdkMemoryProposalGenerator } from "../../src/ai/memory-proposals.ts";
+import { createAiSdkMemoryProposalGenerator } from "../../src/core/ai/memory-proposals.ts";
 import { loadMemoryFormationScenario, runMemoryFormationScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));

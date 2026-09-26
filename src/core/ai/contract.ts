@@ -1,10 +1,10 @@
-import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
-import type { CognitionId, MeaningId } from "../core/model.ts";
-import type { Projection } from "../core/projection.ts";
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../../capabilities/execution.ts";
+import type { CognitionId, MeaningId } from "../model.ts";
+import type { Projection } from "../projection.ts";
 
-import { ProviderError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
-import { exactKeys, isObject } from "../core/util.ts";
+import { ProviderError } from "../errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN } from "../model.ts";
+import { exactKeys, isObject } from "../util.ts";
 
 export const AI_EXECUTION_CONTRACT_VERSION = 1;
 export const MAX_STDOUT_BYTES = 1024 * 1024;

@@ -7,8 +7,8 @@ import { isAbsolute, join, resolve } from "node:path";
 
 import type { HarnessProvider } from "./harness.ts";
 
-import { invokeCodexProvider } from "../../src/ai/providers/codex.ts";
-import { invokeCursorProvider } from "../../src/ai/providers/cursor.ts";
+import { invokeCodexProvider } from "../../src/core/ai/providers/codex.ts";
+import { invokeCursorProvider } from "../../src/core/ai/providers/cursor.ts";
 import { codexArgumentEvidence } from "./codex-argument-evidence.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
 

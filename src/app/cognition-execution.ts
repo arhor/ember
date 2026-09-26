@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../core/ai/contract.ts";
 import type { CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
 import type {
@@ -17,7 +17,7 @@ import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.t
 import type { StateStore } from "../persistence/state-store.ts";
 import type { PreparedCognition } from "./cognition-preparation.ts";
 
-import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../ai/contract.ts";
+import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../core/ai/contract.ts";
 import { selectRecentConversationContext } from "../core/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { agentActor, newId, nowUtc } from "../core/model.ts";

@@ -15,7 +15,7 @@ import type {
 } from "./model.ts";
 
 import { proactiveContactInspectionView, ProactiveContactStore } from "../../core/agency/proactive-contact-store.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../../core/ai/contract.ts";
 import { composeCliSurface } from "../../composition/cli.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";

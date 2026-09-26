@@ -1,9 +1,9 @@
-import type { AiExecutor } from "../ai/contract.ts";
+import type { AiExecutor } from "../core/ai/contract.ts";
 import type { EmberState } from "../core/model.ts";
 import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../persistence/state-store.ts";
 
-import { validateAiExecutionResult } from "../ai/contract.ts";
+import { validateAiExecutionResult } from "../core/ai/contract.ts";
 import { ProviderError, ValidationError } from "../core/errors.ts";
 import { initialState, newId, nowUtc } from "../core/model.ts";
 import { createOnboardingWork } from "../core/onboarding-work.ts";

@@ -52,7 +52,7 @@ AiExecutionResult
 canonical cognition episode / expression evidence
 ```
 
-The executor lives in `src/ai/cognition.ts` behind the Ember-owned contract in `src/ai/contract.ts`. It accepts an injected AI SDK
+The executor lives in `../../src/core/ai` behind the Ember-owned contract in `../../src/core/ai`. It accepts an injected AI SDK
 `LanguageModel`, so Ember still does not choose a paid API provider, authentication
 scheme, gateway, or vendor at this boundary. The production dependency remains pinned
 to `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from `ai/test` and
@@ -95,7 +95,7 @@ For capability semantics, see
 
 ## Hosted DeepSeek provider
 
-`src/ai/deepseek.ts` composes the hosted `@ai-sdk/deepseek` package through the same
+`../../src/core/ai` composes the hosted `@ai-sdk/deepseek` package through the same
 `createAiSdkCognitionExecutor`, supplying a V4 `LanguageModel` exactly like the Codex,
 Cursor, Claude Code, and Ollama adapters. Structured output, tool execution,
 cancellation, timeout handling, evidence translation, and final Ember validation are

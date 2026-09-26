@@ -1,20 +1,20 @@
-import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
-import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
+import type { ClaudeCodeProviderOptions } from "../core/ai/claude-code.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../core/ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { StateStoreOptions } from "../persistence/state-store.ts";
 import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
 import { ProactiveContactStore } from "../core/agency/proactive-contact-store.ts";
-import { createCodexLanguageModel } from "../ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
-import { createCursorLanguageModel } from "../ai/cursor.ts";
-import { createDeepSeekLanguageModel } from "../ai/deepseek.ts";
-import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
-import { createOllamaLanguageModel } from "../ai/ollama.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../ai/onboarding-progress.ts";
-import { createProcessLanguageModel } from "../ai/process.ts";
-import { createProcessProvider } from "../ai/providers/process.ts";
+import { createCodexLanguageModel } from "../core/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../core/ai/cognition.ts";
+import { createCursorLanguageModel } from "../core/ai/cursor.ts";
+import { createDeepSeekLanguageModel } from "../core/ai/deepseek.ts";
+import { createAiSdkMemoryProposalGenerator } from "../core/ai/memory-proposals.ts";
+import { createOllamaLanguageModel } from "../core/ai/ollama.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../core/ai/onboarding-progress.ts";
+import { createProcessLanguageModel } from "../core/ai/process.ts";
+import { createProcessProvider } from "../core/ai/providers/process.ts";
 import { ObjectiveActionCoordinator } from "../app/objective-action.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../integrations/google-calendar/create.ts";
@@ -146,13 +146,13 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
         const options = config.provider.model ? { model: config.provider.model } : {};
         return {
             memoryProposalGenerator: async (request) => {
-                const { createClaudeCodeModelAccess } = await import("../ai/claude-code.ts");
+                const { createClaudeCodeModelAccess } = await import("../core/ai/claude-code.ts");
                 return createClaudeCodeModelAccess(options)((model) =>
                     createAiSdkMemoryProposalGenerator(model, { timeoutSeconds })(request),
                 );
             },
             onboardingProgressEvaluator: async (request) => {
-                const { createClaudeCodeModelAccess } = await import("../ai/claude-code.ts");
+                const { createClaudeCodeModelAccess } = await import("../core/ai/claude-code.ts");
                 return createClaudeCodeModelAccess(options)((model) =>
                     createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds)(request),
                 );
@@ -240,7 +240,7 @@ function createConfiguredExecutor(config: EmberCompositionConfig, overrides: Emb
         return createAiSdkCognitionExecutor(createDeepSeekLanguageModel({ model: config.provider.model! }));
 
     return async (request, options) => {
-        const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");
+        const { createClaudeCodeExecutor } = await import("../core/ai/claude-code.ts");
         return (overrides.claudeProviderFactory ?? createClaudeCodeExecutor)({
             ...(config.provider.model ? { model: config.provider.model } : {}),
         })(request, options);

@@ -6,7 +6,7 @@ import test from "node:test";
 
 import type { ConfiguredProactiveContactPolicy } from "../src/core/agency/configured-proactive-contact-policy.ts";
 import type { ContactAttentionDecisionRecord } from "../src/core/agency/proactive-contact-attention-policy.ts";
-import type { AiExecutor } from "../src/ai/contract.ts";
+import type { AiExecutor } from "../src/core/ai/contract.ts";
 import type {
     ProactiveContactHandoffRevalidator,
     TelegramSurfaceConfig,

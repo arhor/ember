@@ -3,13 +3,13 @@ import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { CognitionOpportunityDecision } from "../core/model.ts";
+import type { CognitionOpportunityDecision } from "../model.ts";
 
-import { evaluateCognitionOpportunity } from "../core/agency/cognition-opportunity.ts";
-import { ProviderError, ValidationError } from "../core/errors.ts";
-import { initialState } from "../core/model.ts";
-import { startRuntime } from "../core/runtime-episode.ts";
-import { undertake } from "../core/semantics.ts";
+import { evaluateCognitionOpportunity } from "../agency/cognition-opportunity.ts";
+import { ProviderError, ValidationError } from "../errors.ts";
+import { initialState } from "../model.ts";
+import { startRuntime } from "../runtime-episode.ts";
+import { undertake } from "../semantics.ts";
 import { AI_SDK_OPPORTUNITY_INSTRUCTION, createAiSdkOpportunityEvaluator } from "./opportunity.ts";
 
 const PRINCIPAL = "user-1";

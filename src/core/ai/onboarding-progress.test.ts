@@ -2,7 +2,7 @@ import { MockLanguageModelV4 } from "ai/test";
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ProviderError, ValidationError } from "../core/errors.ts";
+import { ProviderError, ValidationError } from "../errors.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "./onboarding-progress.ts";
 
 const REQUEST = {

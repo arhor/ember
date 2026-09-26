@@ -1,11 +1,11 @@
-import type { AiExecutor } from "../ai/contract.ts";
+import type { AiExecutor } from "../core/ai/contract.ts";
 import type { BootstrapDependencies, SetupConfig, SetupProvider } from "../app/bootstrap.ts";
 
-import { createCodexLanguageModel } from "../ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
-import { createCursorLanguageModel } from "../ai/cursor.ts";
-import { createDeepSeekLanguageModel } from "../ai/deepseek.ts";
-import { createOllamaLanguageModel } from "../ai/ollama.ts";
+import { createCodexLanguageModel } from "../core/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../core/ai/cognition.ts";
+import { createCursorLanguageModel } from "../core/ai/cursor.ts";
+import { createDeepSeekLanguageModel } from "../core/ai/deepseek.ts";
+import { createOllamaLanguageModel } from "../core/ai/ollama.ts";
 import {
     defaultSetupConfigPath,
     defaultSetupStatePath,
@@ -47,7 +47,7 @@ export function composeSetupDependencies(
 export function setupProvider(config: SetupProvider): AiExecutor {
     if (config.kind === "claude-code")
         return async (request, options) => {
-            const { createClaudeCodeExecutor } = await import("../ai/claude-code.ts");
+            const { createClaudeCodeExecutor } = await import("../core/ai/claude-code.ts");
             return await createClaudeCodeExecutor(config.model ? { model: config.model } : {})(request, options);
         };
     if (config.kind === "ollama")

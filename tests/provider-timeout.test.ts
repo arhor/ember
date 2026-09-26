@@ -3,10 +3,10 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "../src/ai/contract.ts";
-import { createProcessLanguageModel } from "../src/ai/process.ts";
-import { invokeProvider } from "../src/ai/providers/process.ts";
+import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../src/core/ai/contract.ts";
+import { createProcessLanguageModel } from "../src/core/ai/process.ts";
+import { invokeProvider } from "../src/core/ai/providers/process.ts";
 import { ProviderError, ValidationError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";

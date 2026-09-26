@@ -5,7 +5,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAiSdkMemoryProposalGenerator } from "../../src/ai/memory-proposals.ts";
+import { createAiSdkMemoryProposalGenerator } from "../../src/core/ai/memory-proposals.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";

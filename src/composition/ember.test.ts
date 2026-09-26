@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
-import type { AiExecutor } from "../ai/contract.ts";
+import type { ClaudeCodeProviderOptions } from "../core/ai/claude-code.ts";
+import type { AiExecutor } from "../core/ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 

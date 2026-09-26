@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutionRequest } from "../ai/contract.ts";
+import type { AiExecutionRequest } from "../core/ai/contract.ts";
 import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { InteractionEvent } from "./contract.ts";
 

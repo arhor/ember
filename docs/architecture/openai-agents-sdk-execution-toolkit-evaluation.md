@@ -77,7 +77,7 @@ This evaluation was performed on **2026-09-07** against:
 
 - Ember's [Design Principles](../principles.md), accepted ADRs, and
   [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- the then-current cognition seam (now `src/ai/contract.ts`) and the historical
+- the then-current cognition seam (now `../../src/core/ai`) and the historical
   [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist contract in `src/delegation/codex-specialist.ts`, the
   [Minimal Codex Specialist-Delegation Boundary](minimal-codex-specialist-delegation.md),
@@ -758,7 +758,7 @@ evidence; the Ember specialist report remains the contract.
 
 | Current Ember area                   | Potential SDK role                                                            | What must remain Ember-owned                                                                                 |
 | ------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `src/ai/contract.ts`                 | An SDK-backed implementation could run beneath the Ember-owned execution seam | request/result semantics, selected projection, `usedMeaningIds` validation, operational continuation meaning |
+| `../../src/core/ai`                 | An SDK-backed implementation could run beneath the Ember-owned execution seam | request/result semantics, selected projection, `usedMeaningIds` validation, operational continuation meaning |
 | Codex/Cursor provider adapters       | Little immediate benefit; they already own subscription-backed CLI lifecycle  | CLI auth/session/process evidence and uncertainty                                                            |
 | `src/host/process-lifecycle.ts`      | No replacement for existing CLI process lifecycle                             | child termination evidence, output bounds, process cleanup                                                   |
 | future generic local tool layer      | FunctionTool schema/timeout/execution plumbing                                | capability identity, authority, effects, provenance                                                          |

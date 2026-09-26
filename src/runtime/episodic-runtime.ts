@@ -8,7 +8,7 @@ import type { SpecialistEpisodeRecord, SpecialistEpisodeSpec } from "../delegati
 import type { BackgroundHost, HostJobState, WorkerLaunch } from "../host/background.ts";
 
 import { findCognitionOpportunity, runCognitionOpportunity } from "../core/agency/cognition-opportunity.ts";
-import { createCodexOpportunityEvaluator } from "../ai/codex-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../core/ai/codex-opportunity.ts";
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
 import { startRuntime, stopRuntime } from "../core/runtime-episode.ts";

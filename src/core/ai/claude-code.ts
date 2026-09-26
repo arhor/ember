@@ -9,7 +9,7 @@ import { join } from "node:path";
 import type { InferenceEvidenceSink } from "./cognition.ts";
 import type { AiExecutor } from "./contract.ts";
 
-import { ProviderError } from "../core/errors.ts";
+import { ProviderError } from "../errors.ts";
 import { createAiSdkCognitionExecutor } from "./cognition.ts";
 
 const DEFAULT_MODEL = "sonnet";

@@ -9,8 +9,8 @@ import type {
 import type { AiExecutionRequest } from "./contract.ts";
 import type { CodexProviderConfig } from "./providers/codex.ts";
 
-import { ProviderError } from "../core/errors.ts";
-import { isObject } from "../core/util.ts";
+import { ProviderError } from "../errors.ts";
+import { isObject } from "../util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { validateAiExecutionResult } from "./contract.ts";
 import { buildCodexPrompt, invokeCodexStructured } from "./providers/codex.ts";

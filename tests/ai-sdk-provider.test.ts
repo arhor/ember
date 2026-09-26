@@ -5,9 +5,9 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { InferenceEvidence } from "../src/ai/cognition.ts";
+import type { InferenceEvidence } from "../src/core/ai/cognition.ts";
 
-import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
 import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";

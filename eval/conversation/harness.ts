@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import type { AiExecutionRequest, AiExecutionResult } from "../../src/ai/contract.ts";
+import type { AiExecutionRequest, AiExecutionResult } from "../../src/core/ai/contract.ts";
 import type { MeaningId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
 

@@ -49,7 +49,7 @@ Ember validateAiExecutionResult
 
 `src/capabilities/execution.ts` owns the capability contract and firewall. Application
 composition owns the selection policy, and runtime resolves that policy before invoking
-AI execution. `src/ai/cognition.ts` receives only the selected bindings for that call and
+AI execution. `../../src/core/ai` receives only the selected bindings for that call and
 adapts them to AI SDK `tool` and `generateText` mechanics. AI SDK `Tool`, tool-call,
 message, step, approval, and result types are not domain contracts and are not stored in
 canonical Ember state.

@@ -1,4 +1,4 @@
-import type { AiExecutor } from "../ai/contract.ts";
+import type { AiExecutor } from "../core/ai/contract.ts";
 import type { MemoryProposalGenerationResult, MemoryProposalGenerator } from "./memory-proposal-generation.ts";
 
 import { ProviderError } from "../core/errors.ts";

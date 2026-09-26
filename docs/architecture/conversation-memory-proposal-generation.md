@@ -48,7 +48,7 @@ boundaries. Invalid and unsupported candidates never reach adoption. Rejected
 proposals do not mutate canonical meaning. Adopted replacement state is committed
 through the canonical optimistic-revision store.
 
-The AI SDK adapter in `src/ai/memory-proposals.ts` uses structured output with at most eight candidates, zero implicit
+The AI SDK adapter in `../../src/core/ai` uses structured output with at most eight candidates, zero implicit
 retries, the shared timeout bound, and the existing provider error categories.
 Timeout, cancellation, malformed structured output, and provider failure remain
 different from a valid empty candidate list. SDK and provider result types do not

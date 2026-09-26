@@ -37,7 +37,7 @@ In short: **Ember owns meaning; Mastra may own selected mechanics.**
 This evaluation was performed on **2026-09-07** against:
 
 - Ember's current [Design Principles](../principles.md), accepted architecture decisions, and [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- the then-current one-shot cognition contract (now `src/ai/contract.ts`) and the historical [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
+- the then-current one-shot cognition contract (now `../../src/core/ai`) and the historical [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist boundary and [Specialist Result Reintegration](specialist-result-reintegration.md);
 - the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `src/runtime/episodic-runtime.ts`;
 - Mastra's stable `@mastra/core@1.64.0` release published on 2026-09-04, while repository `main` already identified itself as `1.65.0-alpha.7` during this review;
@@ -516,9 +516,9 @@ Keep responsibility, authority, currentness, cancellation uncertainty, specialis
 
 ### Plausible places to become thinner
 
-**`src/ai/`**
+**`../../src/core/ai`**
 
-A new direct-model adapter could use Mastra Model Router beneath the Ember-owned `AiExecutor` seam. The current production stack already shares AI SDK execution mechanics while keeping Codex/Cursor CLI protocol bridges under `src/ai/providers/`; another toolkit would need a concrete gap rather than aesthetic uniformity.
+A new direct-model adapter could use Mastra Model Router beneath the Ember-owned `AiExecutor` seam. The current production stack already shares AI SDK execution mechanics while keeping Codex/Cursor CLI protocol bridges under `../../src/core/ai`; another toolkit would need a concrete gap rather than aesthetic uniformity.
 
 **Future tool-capability execution**
 

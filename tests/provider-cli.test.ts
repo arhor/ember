@@ -5,8 +5,8 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { validateAiExecutionResult } from "../src/ai/contract.ts";
-import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/ai/providers/process.ts";
+import { validateAiExecutionResult } from "../src/core/ai/contract.ts";
+import { createProcessProvider as createTestProcessProvider, invokeProvider } from "../src/core/ai/providers/process.ts";
 import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { validateState } from "../src/core/model.ts";

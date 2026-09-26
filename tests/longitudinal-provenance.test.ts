@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutionResult } from "../src/ai/contract.ts";
+import type { AiExecutionResult } from "../src/core/ai/contract.ts";
 import type { EvidenceId } from "../src/core/model.ts";
 import type { ProjectedMeaning } from "../src/core/projection.ts";
 

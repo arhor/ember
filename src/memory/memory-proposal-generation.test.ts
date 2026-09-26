@@ -9,7 +9,7 @@ import test from "node:test";
 import type { ProjectedConversationContext } from "../core/conversation-context.ts";
 import type { MemoryProposalCandidate } from "../core/memory-proposal.ts";
 
-import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
+import { createAiSdkMemoryProposalGenerator } from "../core/ai/memory-proposals.ts";
 import { executeCognition } from "../app/cognition-execution.ts";
 import { prepareCognition } from "../app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../app/post-turn.ts";

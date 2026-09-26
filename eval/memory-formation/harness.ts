@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import type { AiExecutionRequest } from "../../src/ai/contract.ts";
+import type { AiExecutionRequest } from "../../src/core/ai/contract.ts";
 import type { MemoryProposalCandidate } from "../../src/core/memory-proposal.ts";
 import type { Meaning, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type {

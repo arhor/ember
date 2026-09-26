@@ -166,7 +166,7 @@ The final proof originally lived in a dedicated `external-agent-runtime` experim
 directory. That spike contained a Codex provider-process adapter, output schema, live
 round-trip harness, and lifecycle probe. Those experiment-only files were removed after
 the boundary graduated. The supported Codex implementation now lives in
-`src/ai/providers/codex.ts`, with deterministic coverage in
+`../../src/core/ai`, with deterministic coverage in
 `tests/codex-provider.test.ts` and the opt-in production smoke in
 `tests/live/codex-smoke.ts`.
 

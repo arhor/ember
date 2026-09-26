@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import type { CapabilityContext } from "../src/capabilities/execution.ts";
 import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/integrations/mcp/ai-sdk.ts";
 
-import { createAiSdkCognitionExecutor } from "../src/ai/cognition.ts";
+import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
 import { findCognition, executeCognition } from "../src/app/cognition-execution.ts";
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor } from "../src/ai/contract.ts";
+import type { AiExecutor } from "../src/core/ai/contract.ts";
 
 import { createEmberApplication } from "../src/app/application.ts";
 import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/composition/ember.ts";

@@ -4,8 +4,8 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAiSdkCognitionExecutor } from "../../src/ai/cognition.ts";
-import { createCursorLanguageModel } from "../../src/ai/cursor.ts";
+import { createAiSdkCognitionExecutor } from "../../src/core/ai/cognition.ts";
+import { createCursorLanguageModel } from "../../src/core/ai/cursor.ts";
 import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
