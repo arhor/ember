@@ -1,6 +1,6 @@
 import type { ResidentServiceHost } from "./resident-service.ts";
 
-import { ValidationError } from "../core/errors.ts";
+import { ValidationError } from "../errors.ts";
 
 export async function telegramResidentHost(platform = process.platform): Promise<ResidentServiceHost> {
     if (platform === "darwin") {

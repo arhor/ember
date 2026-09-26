@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { renderLaunchAgent } from "../../src/host/launchd.ts";
+import { renderLaunchAgent } from "../../src/core/host/launchd.ts";
 
 const run = promisify(execFile);
 

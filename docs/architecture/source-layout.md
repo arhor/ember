@@ -141,7 +141,7 @@ Telegram-specific Bot API integration lives under `../../src/apps`.
 the polling adapter.
 
 Resident installation is selected through host infrastructure. Linux/systemd and
-macOS/launchd remain `src/host/` concerns and do not create alternate Telegram
+macOS/launchd remain `../../src/core/host` concerns and do not create alternate Telegram
 application architectures.
 
 ## Runtime and host placement
@@ -152,7 +152,7 @@ without owning transport or provider construction. In particular,
 delivery reconciliation.
 
 Portable semantic runtime-episode state lives in `src/core/runtime-episode.ts`.
-Platform-specific process and service-manager behavior belongs in `src/host/`.
+Platform-specific process and service-manager behavior belongs in `../../src/core/host`.
 
 A systemd unit, launchd job, resident Telegram worker, or foreground process is an
 operational host shape around Ember. None is a canonical identity or a separate

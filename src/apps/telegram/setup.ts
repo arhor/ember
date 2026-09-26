@@ -12,7 +12,7 @@ import { ReadStream, WriteStream } from "node:tty";
 import { fileURLToPath } from "node:url";
 
 import type { SetupConfig } from "../../core/app/bootstrap.ts";
-import type { ResidentServiceHost } from "../../host/resident-service.ts";
+import type { ResidentServiceHost } from "../../core/host/resident-service.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./config.ts";
 
 import { ValidationError } from "../../core/errors.ts";

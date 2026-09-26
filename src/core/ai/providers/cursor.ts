@@ -2,12 +2,12 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { CliProcessSpawn } from "../../../host/process-lifecycle.ts";
 import type { ProviderErrorOptions, ProviderOutcome } from "../../errors.ts";
+import type { CliProcessSpawn } from "../../host/process-lifecycle.ts";
 import type { AiExecutionOptions, AiExecutionRequest, AiExecutionResult } from "../contract.ts";
 
-import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../../../host/process-lifecycle.ts";
 import { ProviderError } from "../../errors.ts";
+import { isTimeoutAbort, NodeCliProcessSpawn, runProcess } from "../../host/process-lifecycle.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, ASCII_CONTROL_CHARACTERS_PATTERN } from "../../model.ts";
 import { isObject } from "../../util.ts";
 import { MAX_AI_TIMEOUT_SECONDS, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, validateAiExecutionResult } from "../contract.ts";

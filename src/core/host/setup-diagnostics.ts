@@ -3,7 +3,7 @@ import { appendFile, chmod, mkdir, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import type { SetupProbeDiagnostic } from "../core/app/bootstrap.ts";
+import type { SetupProbeDiagnostic } from "../app/bootstrap.ts";
 
 export interface SetupDiagnostics {
     readonly path: string;

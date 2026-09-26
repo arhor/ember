@@ -6,9 +6,9 @@ import { dirname, isAbsolute, join } from "node:path";
 import type { BackgroundHost, HostObservation, WorkerLaunch } from "./background.ts";
 import type { ResidentServiceHost, ServiceActionResult, ServiceState } from "./resident-service.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { isRfc3339Utc } from "../core/model.ts";
-import { replaceFileAtomically, replaceFileDurably } from "../persistence/file-replacement.ts";
+import { replaceFileAtomically, replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { ValidationError } from "../errors.ts";
+import { isRfc3339Utc } from "../model.ts";
 
 export interface SystemdHostConfig {
     systemd_run_command: string;

@@ -14,10 +14,10 @@ import { actionProposalConfirmation, ActionProposalStore } from "../src/core/cap
 import { composeCliSurface } from "../src/core/composition/cli.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
+import { loadSetupConfig } from "../src/core/host/setup.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { loadSetupConfig } from "../src/host/setup.ts";
 import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";

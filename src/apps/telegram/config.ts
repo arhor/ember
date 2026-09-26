@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { WorkerLaunch } from "../../host/background.ts";
+import type { WorkerLaunch } from "../../core/host/background.ts";
 
 import { MAX_AI_TIMEOUT_SECONDS } from "../../core/ai/contract.ts";
 import { ValidationError } from "../../core/errors.ts";

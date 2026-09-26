@@ -14,10 +14,10 @@ import { buildCodexPrompt, invokeCodexProvider } from "../src/core/ai/providers/
 import { executeCognition } from "../src/core/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
+import { codexEnvironment } from "../src/core/host/codex-environment.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
-import { codexEnvironment } from "../src/host/codex-environment.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 

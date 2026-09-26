@@ -4,8 +4,8 @@ import { dirname, isAbsolute, join } from "node:path";
 
 import type { CognitionOpportunityEvaluator } from "../core/agency/cognition-opportunity.ts";
 import type { SpecialistEpisodeRecord, SpecialistEpisodeSpec } from "../core/delegation/codex-specialist.ts";
+import type { BackgroundHost, HostJobState, WorkerLaunch } from "../core/host/background.ts";
 import type { EmberState } from "../core/model.ts";
-import type { BackgroundHost, HostJobState, WorkerLaunch } from "../host/background.ts";
 
 import { findCognitionOpportunity, runCognitionOpportunity } from "../core/agency/cognition-opportunity.ts";
 import { createCodexOpportunityEvaluator } from "../core/ai/codex-opportunity.ts";

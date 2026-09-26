@@ -8,12 +8,12 @@ import { delimiter, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import type { SpecialistEpisodeRecord } from "../../src/core/delegation/codex-specialist.ts";
-import type { SystemdHostConfig } from "../../src/host/systemd.ts";
+import type { SystemdHostConfig } from "../../src/core/host/systemd.ts";
 import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/runtime/episodic-runtime.ts";
 
 import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
+import { runCommand, SystemdUserBackgroundHost } from "../../src/core/host/systemd.ts";
 import { initialState } from "../../src/core/model.ts";
-import { runCommand, SystemdUserBackgroundHost } from "../../src/host/systemd.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import {
     EpisodicRecordStore,

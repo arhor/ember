@@ -8,7 +8,7 @@ import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
 import { createCapabilityExecutionFirewall } from "../../core/capabilities/execution.ts";
 import { ValidationError } from "../../core/errors.ts";
-import { loadSetupConfig } from "../../host/setup.ts";
+import { loadSetupConfig } from "../../core/host/setup.ts";
 import {
     GOOGLE_CALENDAR_SCOPE,
     GOOGLE_OAUTH_TOKEN_ENDPOINT,

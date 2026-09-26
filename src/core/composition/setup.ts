@@ -1,14 +1,6 @@
 import type { AiExecutor } from "../ai/contract.ts";
 import type { BootstrapDependencies, SetupConfig, SetupProvider } from "../app/bootstrap.ts";
 
-import {
-    defaultSetupConfigPath,
-    defaultSetupStatePath,
-    exists,
-    loadSetupConfig,
-    resolveSetupPath,
-    writeConfig,
-} from "../../host/setup.ts";
 import { loadGoogleCalendarConfig } from "../../integrations/google-calendar/read.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
@@ -17,6 +9,14 @@ import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
 import { createDeepSeekLanguageModel } from "../ai/deepseek.ts";
 import { createOllamaLanguageModel } from "../ai/ollama.ts";
+import {
+    defaultSetupConfigPath,
+    defaultSetupStatePath,
+    exists,
+    loadSetupConfig,
+    resolveSetupPath,
+    writeConfig,
+} from "../host/setup.ts";
 
 export interface SetupCompositionOverrides {
     provider?: (config: SetupProvider) => AiExecutor;

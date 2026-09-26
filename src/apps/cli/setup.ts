@@ -9,8 +9,8 @@ import { bootstrapContinuity, prepareConfiguredRun } from "../../core/app/bootst
 import { composeCliSurface } from "../../core/composition/cli.ts";
 import { composeSetupDependencies } from "../../core/composition/setup.ts";
 import { ValidationError } from "../../core/errors.ts";
-import { createSetupDiagnostics } from "../../host/setup-diagnostics.ts";
-import { defaultSetupConfigPath, loadSetupConfig } from "../../host/setup.ts";
+import { createSetupDiagnostics } from "../../core/host/setup-diagnostics.ts";
+import { defaultSetupConfigPath, loadSetupConfig } from "../../core/host/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
@@ -185,7 +185,7 @@ async function runConfigured(
                 )
                     throw new ValidationError("Telegram setup requires attributable local confirmation");
                 const { runTelegramSetup } = await import("../telegram/setup.ts");
-                const { telegramResidentHost } = await import("../../host/telegram-resident-host.ts");
+                const { telegramResidentHost } = await import("../../core/host/telegram-resident-host.ts");
                 const setup = await loadSetupConfig(args.mode === "default" ? defaultSetupConfigPath() : args.config);
                 if (!setup) throw new ValidationError("setup configuration is unavailable");
                 let residentHost;

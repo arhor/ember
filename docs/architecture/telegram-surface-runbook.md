@@ -64,7 +64,7 @@ not itself a cognition retry. Telegram may replay an unacknowledged `update_id`,
 the issue #85 correlation boundary suppresses duplicate cognition and duplicate
 response delivery for that established occurrence.
 
-The Linux resident installation is owned by `src/host/systemd.ts`. The CLI setup
+The Linux resident installation is owned by `../../src/core/host`. The CLI setup
 entry selects that adapter when the user requests Telegram setup; Telegram setup
 supplies a host-neutral process launch and calls the injected resident host to render,
 read back, inspect, install, stop, restore, and activate the service. The adapter retains
