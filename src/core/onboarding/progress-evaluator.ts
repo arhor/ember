@@ -1,10 +1,10 @@
-import type { AiExecutor } from "../core/ai/contract.ts";
-import type { OnboardingProgressDecision, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
-import type { Projection } from "../core/projection.ts";
+import type { AiExecutor } from "../ai/contract.ts";
+import type { OnboardingProgressDecision, ProjectedOnboardingWork } from "../onboarding-work.ts";
+import type { Projection } from "../projection.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { newId } from "../core/model.ts";
-import { validateOnboardingProgressDecision } from "../core/onboarding-work.ts";
+import { ValidationError } from "../errors.ts";
+import { newId } from "../model.ts";
+import { validateOnboardingProgressDecision } from "../onboarding-work.ts";
 
 export interface OnboardingProgressEvaluationRequest {
     projection: Projection;

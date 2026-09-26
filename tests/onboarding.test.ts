@@ -6,7 +6,7 @@ import test from "node:test";
 
 import type { RunCognitionOptions } from "../src/core/app/cognition-execution.ts";
 import type { MemoryProposalGenerator } from "../src/core/memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
+import type { OnboardingProgressEvaluator } from "../src/core/onboarding/progress-evaluator.ts";
 
 import { executeCognition as runCoreCognition } from "../src/core/app/cognition-execution.ts";
 import { prepareCognition } from "../src/core/app/cognition-preparation.ts";
@@ -20,8 +20,8 @@ import {
     validateOnboardingProgressDecision,
     validateOnboardingWork,
 } from "../src/core/onboarding-work.ts";
+import { createProviderOnboardingProgressEvaluator } from "../src/core/onboarding/progress-evaluator.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
-import { createProviderOnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 

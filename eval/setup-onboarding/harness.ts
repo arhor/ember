@@ -5,7 +5,7 @@ import type { SetupConfig } from "../../src/core/app/bootstrap.ts";
 import type { RunCognitionOptions } from "../../src/core/app/cognition-execution.ts";
 import type { MemoryProposalGenerator } from "../../src/core/memory/memory-proposal-generation.ts";
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
-import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-evaluator.ts";
+import type { OnboardingProgressEvaluator } from "../../src/core/onboarding/progress-evaluator.ts";
 
 import { setupMain } from "../../src/apps/cli/setup.ts";
 import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";

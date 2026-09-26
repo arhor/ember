@@ -12,12 +12,12 @@ import {
     TypeValidationError,
 } from "ai";
 
-import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { OnboardingProgressDecision } from "../onboarding-work.ts";
+import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 
-import { ONBOARDING_PROGRESS_INSTRUCTION } from "../../onboarding/progress-evaluator.ts";
 import { ProviderError, ValidationError } from "../errors.ts";
 import { validateOnboardingProgressDecision } from "../onboarding-work.ts";
+import { ONBOARDING_PROGRESS_INSTRUCTION } from "../onboarding/progress-evaluator.ts";
 import { MAX_AI_TIMEOUT_SECONDS } from "./contract.ts";
 
 const onboardingProgressOutput = Output.object({

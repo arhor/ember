@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { OnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
 import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
 import type { AiExecutor } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 
 import { emptyRequest } from "../../../tests/support.ts";
 import { composeEmberApplication } from "./ember.ts";
