@@ -31,7 +31,7 @@ import {
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
-import { assertUnreachable, cloneState } from "../../util.ts";
+import { assertUnreachable, cloneState } from "../../core/util.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
 import { Commands, CommandSpecs } from "./model.ts";
 import { setupMain, setupRunMain } from "./setup.ts";

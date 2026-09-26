@@ -6,7 +6,7 @@ import type { WorkerLaunch } from "../../host/background.ts";
 import { MAX_AI_TIMEOUT_SECONDS } from "../../ai/contract.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../../core/model.ts";
-import { exactKeys, isObject } from "../../util.ts";
+import { exactKeys, isObject } from "../../core/util.ts";
 
 export type TelegramProviderConfig =
     | { kind: "codex" | "cursor"; command: string; model: string; timeout_seconds: number }

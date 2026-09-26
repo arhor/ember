@@ -7,7 +7,7 @@ import type { StateStore } from "../persistence/state-store.ts";
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../core/memory-proposal.ts";
 import { agentActor, isRfc3339Utc, nowUtc, validateState } from "../core/model.ts";
-import { contentDigest, exactKeys, isObject } from "../util.ts";
+import { contentDigest, exactKeys, isObject } from "../core/util.ts";
 
 export const MEMORY_PROPOSAL_GENERATION_CONTRACT_VERSION = 1;
 export const MEMORY_PROPOSAL_GENERATION_MAX_PROPOSALS = 8;

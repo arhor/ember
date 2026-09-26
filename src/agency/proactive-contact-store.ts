@@ -11,7 +11,7 @@ import type {
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../core/model.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { contentDigest, exactKeys, isObject } from "../util.ts";
+import { contentDigest, exactKeys, isObject } from "../core/util.ts";
 
 const MAX_REPRESENTATION_BYTES = 1024 * 1024;
 

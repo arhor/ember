@@ -20,7 +20,7 @@ import { startRuntime } from "../core/runtime-episode.ts";
 import { userEvidence } from "../core/semantics.ts";
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { cloneState } from "../util.ts";
+import { cloneState } from "../core/util.ts";
 import { generateAndAdoptConversationMemories } from "./memory-proposal-generation.ts";
 
 const PRINCIPAL = "user-1";

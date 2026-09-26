@@ -8,7 +8,7 @@ import { safeText, validateSetupProvider } from "../app/bootstrap-validation.ts"
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc, nowUtc } from "../core/model.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { exactKeys, isObject } from "../util.ts";
+import { exactKeys, isObject } from "../core/util.ts";
 
 export function defaultSetupConfigPath(): string {
     return join(homedir(), ".ember", "config", "setup.json");

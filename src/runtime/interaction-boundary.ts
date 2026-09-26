@@ -17,7 +17,7 @@ import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../core/model.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { cloneState, contentDigest, exactKeys, isObject } from "../util.ts";
+import { cloneState, contentDigest, exactKeys, isObject } from "../core/util.ts";
 
 const MAX_DELIVERY_REPRESENTATION_BYTES = 1024 * 1024;
 

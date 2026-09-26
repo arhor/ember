@@ -18,7 +18,7 @@ import {
     undertake,
     withholdDetail,
 } from "../../core/semantics.ts";
-import { cloneState } from "../../util.ts";
+import { cloneState } from "../../core/util.ts";
 
 type CliStateRepository = SurfaceRepositories["state"];
 

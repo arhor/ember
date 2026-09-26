@@ -13,7 +13,7 @@ import {
 } from "../src/core/errors.ts";
 import { initialState, validateState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { cloneState } from "../src/util.ts";
+import { cloneState } from "../src/core/util.ts";
 import { captureError, populatedState, PRINCIPAL, tempDir } from "./support.ts";
 
 test("state validator should accept state when schema and invariants are complete", () => {

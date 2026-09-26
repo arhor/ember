@@ -20,7 +20,7 @@ import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { setupMain } from "../../src/apps/cli/setup.ts";
 import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
-import { exactKeys, isObject } from "../../src/util.ts";
+import { exactKeys, isObject } from "../../src/core/util.ts";
 
 export type SetupOnboardingFlow = "fresh-create" | "restore-existing";
 export interface SetupOnboardingScenario {

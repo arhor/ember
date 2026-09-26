@@ -4,7 +4,7 @@ import type { StateMaterialization } from "../../src/core/state-materialization.
 
 import { ValidationError } from "../../src/core/errors.ts";
 import { validateState } from "../../src/core/model.ts";
-import { cloneState } from "../../src/util.ts";
+import { cloneState } from "../../src/core/util.ts";
 
 export const SEMANTIC_MEMORY_EXPORT_VERSION = 1;
 

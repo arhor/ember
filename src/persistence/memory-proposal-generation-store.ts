@@ -6,7 +6,7 @@ import type { MemoryProposalGenerationOutcome } from "../memory/memory-proposal-
 
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
-import { exactKeys, isNotBlankString, isObject } from "../util.ts";
+import { exactKeys, isNotBlankString, isObject } from "../core/util.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
 export type MemoryProposalGenerationStatus =

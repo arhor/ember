@@ -9,7 +9,7 @@ import type { EmberState } from "../core/model.ts";
 
 import { ConcurrentWriter, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
 import { isRfc3339Utc, normalizeLegacyIdentityRepresentation, nowUtc, validateState } from "../core/model.ts";
-import { cloneState, exactKeys } from "../util.ts";
+import { cloneState, exactKeys } from "../core/util.ts";
 import { replaceFileDurably, syncDirectory } from "./file-replacement.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

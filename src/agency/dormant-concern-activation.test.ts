@@ -7,7 +7,7 @@ import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 import { initialState } from "../core/model.ts";
 import { startRuntime } from "../core/runtime-episode.ts";
 import { rememberFact, transitionCommitment, undertake } from "../core/semantics.ts";
-import { cloneState } from "../util.ts";
+import { cloneState } from "../core/util.ts";
 import { evaluateCognitionOpportunity } from "./cognition-opportunity.ts";
 
 const PRINCIPAL = "user-1";

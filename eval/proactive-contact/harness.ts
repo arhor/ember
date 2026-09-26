@@ -22,7 +22,7 @@ import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.t
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
 import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
-import { contentDigest, exactKeys, isObject } from "../../src/util.ts";
+import { contentDigest, exactKeys, isObject } from "../../src/core/util.ts";
 
 const CASE_IDS = [
     "useful-contact",

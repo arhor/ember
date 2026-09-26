@@ -6,7 +6,7 @@ import type {
     RuntimeId,
 } from "../core/model.ts";
 
-import { sameContent } from "../util.ts";
+import { sameContent } from "../core/util.ts";
 
 export type RepeatedCognitionAttentionOutcome = "evaluate" | "defer_repeated_projection";
 

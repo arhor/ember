@@ -9,7 +9,7 @@ import { supersede, userEvidence } from "../src/core/semantics.ts";
 import { buildStateMaterialization } from "../src/core/state-materialization.ts";
 import { publishMarkdownStateViews, renderMarkdownStateViews } from "../src/persistence/markdown-state-materializer.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { cloneState } from "../src/util.ts";
+import { cloneState } from "../src/core/util.ts";
 import { command, populatedState, PRINCIPAL, RELATIONSHIP_SCOPE, SCOPE, tempDir } from "./support.ts";
 
 test("Markdown v1 is deterministic and carries stable semantic and evidence references", () => {

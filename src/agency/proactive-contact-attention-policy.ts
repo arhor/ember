@@ -2,7 +2,7 @@ import type { EmberState, MeaningId } from "../core/model.ts";
 
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc, validateState } from "../core/model.ts";
-import { isNotBlankString } from "../util.ts";
+import { isNotBlankString } from "../core/util.ts";
 
 export type ContactAttentionOutcome = "admit" | "defer" | "suppress";
 export type ContactAttentionBasis =

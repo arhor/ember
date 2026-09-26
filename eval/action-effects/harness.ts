@@ -14,7 +14,7 @@ import {
     createGoogleCalendarCapability,
     selectGoogleCalendarCapability,
 } from "../../src/integrations/google-calendar/read.ts";
-import { exactKeys, isObject } from "../../src/util.ts";
+import { exactKeys, isObject } from "../../src/core/util.ts";
 
 const CASES = [
     "read-only-observation",

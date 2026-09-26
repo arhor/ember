@@ -6,7 +6,7 @@ import { agentActor, newId, validateState } from "../src/core/model.ts";
 import { buildProjection, inspectionView } from "../src/core/projection.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { findMeaning, supersede, userEvidence, withholdDetail } from "../src/core/semantics.ts";
-import { cloneState } from "../src/util.ts";
+import { cloneState } from "../src/core/util.ts";
 import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 test("commitment should preserve user request and agent adoption when created", () => {

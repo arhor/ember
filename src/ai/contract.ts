@@ -4,7 +4,7 @@ import type { Projection } from "../core/projection.ts";
 
 import { ProviderError } from "../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
-import { exactKeys, isObject } from "../util.ts";
+import { exactKeys, isObject } from "../core/util.ts";
 
 export const AI_EXECUTION_CONTRACT_VERSION = 1;
 export const MAX_STDOUT_BYTES = 1024 * 1024;

@@ -14,7 +14,7 @@ import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-c
 import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
 import { COGNITION_OPPORTUNITY_MECHANISMS, newId, nowUtc, validateState, isRfc3339Utc } from "../core/model.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
-import { cloneState, exactKeys, isObject } from "../util.ts";
+import { cloneState, exactKeys, isObject } from "../core/util.ts";
 import { decideRepeatedCognitionAttention } from "./endogenous-attention-control.ts";
 
 export const COGNITION_OPPORTUNITY_CONTRACT_VERSION = 1 as const;

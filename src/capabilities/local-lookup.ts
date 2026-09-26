@@ -1,6 +1,6 @@
 import type { CapabilityAuthorityDecision, CapabilityBinding, CapabilityContext } from "./execution.ts";
 
-import { exactKeys, isObject } from "../util.ts";
+import { exactKeys, isObject } from "../core/util.ts";
 
 export interface LocalLookupCapabilityOptions {
     entries: Readonly<Record<string, string>>;

@@ -7,7 +7,7 @@ import type { GoogleCalendarConfig } from "./read.ts";
 
 import { CapabilityExecutionFailure } from "../../capabilities/execution.ts";
 import { isRfc3339Utc } from "../../core/model.ts";
-import { exactKeys, isObject } from "../../util.ts";
+import { exactKeys, isObject } from "../../core/util.ts";
 import { GOOGLE_CALENDAR_API_ORIGIN, GOOGLE_OAUTH_TOKEN_ENDPOINT } from "./read.ts";
 
 export const GOOGLE_CALENDAR_WRITE_SCOPE = "https://www.googleapis.com/auth/calendar.events";

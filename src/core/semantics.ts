@@ -17,7 +17,7 @@ import type {
     UnavailableUserDetailEvidence,
 } from "./model.ts";
 
-import { contentDigest } from "../util.ts";
+import { contentDigest } from "./util.ts";
 import { ValidationError } from "./errors.ts";
 import { agentActor, newId, nowUtc, validateState } from "./model.ts";
 

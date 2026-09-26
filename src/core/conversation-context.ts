@@ -1,6 +1,6 @@
 import type { CognitionId, DeliveryStatus, EmberState, EvidenceId } from "./model.ts";
 
-import { exactKeys, isObject } from "../util.ts";
+import { exactKeys, isObject } from "./util.ts";
 import { ValidationError } from "./errors.ts";
 import { isRfc3339Utc, validateState } from "./model.ts";
 

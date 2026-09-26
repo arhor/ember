@@ -10,7 +10,7 @@ import type { AiExecutionRequest } from "./contract.ts";
 import type { ProcessProviderConfig } from "./providers/process.ts";
 
 import { ProviderError } from "../core/errors.ts";
-import { isObject } from "../util.ts";
+import { isObject } from "../core/util.ts";
 import { relayCallerCancellation } from "./abort.ts";
 import { createProcessProvider } from "./providers/process.ts";
 

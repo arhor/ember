@@ -10,7 +10,7 @@ import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { exactKeys, isObject } from "../../src/util.ts";
+import { exactKeys, isObject } from "../../src/core/util.ts";
 
 export interface ConversationEpisode {
     id: string;

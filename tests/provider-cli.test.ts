@@ -14,7 +14,7 @@ import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { parseArgs } from "../src/apps/cli/index.ts";
-import { cloneState } from "../src/util.ts";
+import { cloneState } from "../src/core/util.ts";
 import {
     captureError,
     command,

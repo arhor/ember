@@ -6,7 +6,7 @@ import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc } from "../core/model.ts";
 import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { StateStore } from "../persistence/state-store.ts";
-import { exactKeys, isNotBlankString, isObject } from "../util.ts";
+import { exactKeys, isNotBlankString, isObject } from "../core/util.ts";
 
 export type ObjectiveLifecycle = "active" | "deferred" | "blocked" | "completed" | "abandoned";
 export type ObjectiveEpisodeStatus = "running" | "completed" | "failed" | "outcome_unknown";

@@ -19,7 +19,7 @@ import {
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
 import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
-import { isObject } from "../../util.ts";
+import { isObject } from "../../core/util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";

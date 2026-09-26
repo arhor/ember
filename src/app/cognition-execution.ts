@@ -24,7 +24,7 @@ import { agentActor, newId, nowUtc } from "../core/model.ts";
 import { projectOnboardingWork } from "../core/onboarding-work.ts";
 import { buildProjection, findRuntime } from "../core/projection.ts";
 import { requirePrincipal, userEvidence } from "../core/semantics.ts";
-import { cloneState } from "../util.ts";
+import { cloneState } from "../core/util.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 
 export interface RunCognitionOptions {
