@@ -2,7 +2,7 @@
 
 import { readFile } from "node:fs/promises";
 
-import type { SpecialistEpisodeSpec } from "../src/delegation/codex-specialist.ts";
+import type { SpecialistEpisodeSpec } from "../src/core/delegation/codex-specialist.ts";
 import type { SystemdHostConfig } from "../src/host/systemd.ts";
 import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
 

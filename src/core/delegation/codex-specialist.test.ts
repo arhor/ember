@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { ROOT, tempDir } from "../../tests/support.ts";
+import { ROOT, tempDir } from "../../../tests/support.ts";
 import {
     buildSpecialistPrompt,
     createSpecialistEpisode,

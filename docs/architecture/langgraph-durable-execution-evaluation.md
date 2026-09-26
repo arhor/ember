@@ -609,7 +609,7 @@ checkpointer is a second operational store, never a replacement.
 orchestrate when execution is called but need not become Ember's execution abstraction.
 Provider `externalThreadId` and LangGraph `thread_id` remain unrelated opaque IDs.
 
-**`src/delegation/`** keeps specialist purpose, authority, disclosure, partial/final
+**`../../src/core/delegation`** keeps specialist purpose, authority, disclosure, partial/final
 observations, cancellation/effect uncertainty, currentness, and reintegration.
 Subgraphs may later implement mechanics below that boundary.
 

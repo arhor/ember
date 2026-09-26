@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, rm, writeFile } from "node:fs/promises";
 
-import type { StateStore } from "../persistence/state-store.ts";
+import type { StateStore } from "../../persistence/state-store.ts";
 import type {
     SpecialistCurrentnessCheckpoint,
     SpecialistDisposition,
@@ -9,8 +9,8 @@ import type {
     SpecialistReportProvenance,
 } from "./codex-specialist.ts";
 
-import { StaleRevision } from "../core/errors.ts";
-import { replaceFileAtomically } from "../persistence/file-replacement.ts";
+import { replaceFileAtomically } from "../../persistence/file-replacement.ts";
+import { StaleRevision } from "../errors.ts";
 import { inspectSpecialistEpisode, reconcileSpecialistResult } from "./codex-specialist.ts";
 
 export type SpecialistReintegrationOutcome = "integrated" | "withheld" | "rejected";

@@ -8,11 +8,11 @@ import { basename, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { SpecialistEpisodeSpec } from "../../src/delegation/codex-specialist.ts";
+import type { SpecialistEpisodeSpec } from "../../src/core/delegation/codex-specialist.ts";
 import type { EpisodicRuntimeConfig, RuntimeObservation, WakeIntent } from "../../src/runtime/episodic-runtime.ts";
 
+import { createSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
 import { initialState } from "../../src/core/model.ts";
-import { createSpecialistEpisode } from "../../src/delegation/codex-specialist.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { EpisodicRecordStore } from "../../src/runtime/episodic-runtime.ts";
 

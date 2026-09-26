@@ -54,9 +54,9 @@ its underlying App Server capabilities and costs remain covered here.
 This evaluation was performed on **2026-09-02** against:
 
 - repository specialist record contract version 3 and episode specification
-  contract version 2 in `src/delegation/codex-specialist.ts`;
+  contract version 2 in `../../src/core/delegation`;
 - the implemented behavior and deterministic cases in
-  `src/delegation/codex-specialist.test.ts`;
+  `../../src/core/delegation`;
 - the [minimal specialist design](minimal-codex-specialist-delegation.md),
   [authority and context flow](specialist-authority-context-flow.md),
   [external-runtime spike](external-agent-runtime-spike.md), and AS-DEL-00 through

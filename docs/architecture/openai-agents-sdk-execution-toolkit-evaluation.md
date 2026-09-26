@@ -79,7 +79,7 @@ This evaluation was performed on **2026-09-07** against:
   [Architecture Acceptance Scenarios](acceptance-scenarios.md);
 - the then-current cognition seam (now `../../src/core/ai`) and the historical
   [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
-- the current specialist contract in `src/delegation/codex-specialist.ts`, the
+- the current specialist contract in `../../src/core/delegation`, the
   [Minimal Codex Specialist-Delegation Boundary](minimal-codex-specialist-delegation.md),
   and [Specialist Result Reintegration](specialist-result-reintegration.md);
 - the issue #176 Mastra, #177 LangGraph.js, and #178 Vercel AI SDK evaluations;
@@ -756,17 +756,17 @@ evidence; the Ember specialist report remains the contract.
 
 ## Mapping to current Ember code
 
-| Current Ember area                   | Potential SDK role                                                            | What must remain Ember-owned                                                                                 |
-| ------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `../../src/core/ai`                  | An SDK-backed implementation could run beneath the Ember-owned execution seam | request/result semantics, selected projection, `usedMeaningIds` validation, operational continuation meaning |
-| Codex/Cursor provider adapters       | Little immediate benefit; they already own subscription-backed CLI lifecycle  | CLI auth/session/process evidence and uncertainty                                                            |
-| `src/host/process-lifecycle.ts`      | No replacement for existing CLI process lifecycle                             | child termination evidence, output bounds, process cleanup                                                   |
-| future generic local tool layer      | FunctionTool schema/timeout/execution plumbing                                | capability identity, authority, effects, provenance                                                          |
-| MCP integration                      | transport, discovery, schema conversion, approval pause mechanics             | server trust, principal policy, resource authorization, returned evidence                                    |
-| `src/delegation/codex-specialist.ts` | Possible throwaway agents-as-tools execution spike                            | episode spec, disclosure, authority, currentness, effects, report provenance, reintegration                  |
-| episodic runtime                     | Serialized `RunState` could be one opaque work checkpoint                     | work ownership, recovery, liveness, writer leases, canonical state                                           |
-| observability                        | trace/span generation and processors                                          | Ember correlation IDs, retention/privacy policy, interpretation                                              |
-| tests                                | `ScriptedModel` and helpers                                                   | Ember acceptance assertions and semantic oracles                                                             |
+| Current Ember area              | Potential SDK role                                                            | What must remain Ember-owned                                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `../../src/core/ai`             | An SDK-backed implementation could run beneath the Ember-owned execution seam | request/result semantics, selected projection, `usedMeaningIds` validation, operational continuation meaning |
+| Codex/Cursor provider adapters  | Little immediate benefit; they already own subscription-backed CLI lifecycle  | CLI auth/session/process evidence and uncertainty                                                            |
+| `src/host/process-lifecycle.ts` | No replacement for existing CLI process lifecycle                             | child termination evidence, output bounds, process cleanup                                                   |
+| future generic local tool layer | FunctionTool schema/timeout/execution plumbing                                | capability identity, authority, effects, provenance                                                          |
+| MCP integration                 | transport, discovery, schema conversion, approval pause mechanics             | server trust, principal policy, resource authorization, returned evidence                                    |
+| `../../src/core/delegation`     | Possible throwaway agents-as-tools execution spike                            | episode spec, disclosure, authority, currentness, effects, report provenance, reintegration                  |
+| episodic runtime                | Serialized `RunState` could be one opaque work checkpoint                     | work ownership, recovery, liveness, writer leases, canonical state                                           |
+| observability                   | trace/span generation and processors                                          | Ember correlation IDs, retention/privacy policy, interpretation                                              |
+| tests                           | `ScriptedModel` and helpers                                                   | Ember acceptance assertions and semantic oracles                                                             |
 
 ### What current Ember code should not be replaced
 
