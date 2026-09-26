@@ -17,10 +17,10 @@ import { ValidationError } from "../../src/core/errors.ts";
 import { SystemdTelegramResidentHost } from "../../src/core/host/systemd.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";
+import { OnboardingWorkStore } from "../../src/core/persistence/onboarding-work-store.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { exactKeys, isObject } from "../../src/core/util.ts";
-import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 
 export type SetupOnboardingFlow = "fresh-create" | "restore-existing";
 export interface SetupOnboardingScenario {

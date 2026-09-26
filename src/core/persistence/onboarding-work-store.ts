@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
-import type { OnboardingWorkDocument } from "../core/onboarding-work.ts";
+import type { OnboardingWorkDocument } from "../onboarding-work.ts";
 
-import { StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { migrateOnboardingWorkTopics, validateOnboardingWork } from "../core/onboarding-work.ts";
+import { StoreUnavailable, ValidationError } from "../errors.ts";
+import { migrateOnboardingWorkTopics, validateOnboardingWork } from "../onboarding-work.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
 export class OnboardingWorkStore {

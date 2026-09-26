@@ -6,9 +6,9 @@ import test from "node:test";
 
 import type { CognitionOpportunityEvaluator } from "./cognition-opportunity.ts";
 
-import { StateStore } from "../../persistence/state-store.ts";
 import { ProviderError, ValidationError } from "../errors.ts";
 import { initialState, newId, validateState } from "../model.ts";
+import { StateStore } from "../persistence/state-store.ts";
 import { inspectionView } from "../projection.ts";
 import { startRuntime, stopRuntime } from "../runtime-episode.ts";
 import { cloneState } from "../util.ts";

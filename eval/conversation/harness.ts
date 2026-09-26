@@ -8,9 +8,9 @@ import { createEmberApplication } from "../../src/core/app/application.ts";
 import { composeEmberApplication } from "../../src/core/composition/ember.ts";
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { rememberFact } from "../../src/core/semantics.ts";
 import { exactKeys, isObject } from "../../src/core/util.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 
 export interface ConversationEpisode {
     id: string;

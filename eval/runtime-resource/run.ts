@@ -13,7 +13,7 @@ import type { EpisodicRuntimeConfig, RuntimeObservation, WakeIntent } from "../.
 
 import { createSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
 import { initialState } from "../../src/core/model.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { EpisodicRecordStore } from "../../src/runtime/episodic-runtime.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");

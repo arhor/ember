@@ -601,7 +601,7 @@ resumable execution observations. Effect truth remains Ember-owned.
 **`src/core/`** stays framework-free. No LangGraph IDs, graph schemas, node names,
 commands, interrupts, or “memory” types belong in canonical models.
 
-**`src/persistence/state-store.ts`** keeps canonical persistence, revision checks,
+**`../../src/core/persistence`** keeps canonical persistence, revision checks,
 writer lease, atomic replacement, and `DurabilityUncertain` handling. A LangGraph
 checkpointer is a second operational store, never a replacement.
 

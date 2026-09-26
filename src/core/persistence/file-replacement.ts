@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, open, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
-import { DurabilityUncertain } from "../core/errors.ts";
+import { DurabilityUncertain } from "../errors.ts";
 
 export interface AtomicFileReplacementOptions {
     mode?: number;

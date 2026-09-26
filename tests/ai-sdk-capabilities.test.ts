@@ -12,8 +12,8 @@ import { findCognition, executeCognition } from "../src/core/app/cognition-execu
 import { createCapabilityExecutionLedger } from "../src/core/capabilities/execution.ts";
 import { createLocalLookupCapability } from "../src/core/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const AUTHORIZED = {

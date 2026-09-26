@@ -13,10 +13,10 @@ import {
     querySemanticMemory,
     semanticMemoryExportReader,
 } from "../eval/graph-memory/semantic-export.ts";
+import { renderMarkdownStateViews } from "../src/core/persistence/markdown-state-materializer.ts";
 import { explanationView, selectProjectionMeanings, stateProjectionMeaningReader } from "../src/core/projection.ts";
 import { supersede } from "../src/core/semantics.ts";
 import { buildStateMaterialization } from "../src/core/state-materialization.ts";
-import { renderMarkdownStateViews } from "../src/persistence/markdown-state-materializer.ts";
 import { populatedState, PRINCIPAL, RELATIONSHIP_SCOPE, SCOPE } from "./support.ts";
 
 test("semantic export preserves Markdown v1 while graph uses the same representation-neutral query seam", () => {

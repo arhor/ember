@@ -1,8 +1,6 @@
 import type { AiExecutor } from "../ai/contract.ts";
 import type { BootstrapDependencies, SetupConfig, SetupProvider } from "../app/bootstrap.ts";
 
-import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
-import { StateStore } from "../../persistence/state-store.ts";
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
 import { createCursorLanguageModel } from "../ai/cursor.ts";
@@ -17,6 +15,8 @@ import {
     writeConfig,
 } from "../host/setup.ts";
 import { loadGoogleCalendarConfig } from "../integrations/google-calendar/read.ts";
+import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
+import { StateStore } from "../persistence/state-store.ts";
 
 export interface SetupCompositionOverrides {
     provider?: (config: SetupProvider) => AiExecutor;

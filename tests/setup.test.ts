@@ -17,11 +17,11 @@ import { DurabilityUncertain } from "../src/core/errors.ts";
 import { loadSetupConfig } from "../src/core/host/setup.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
+import { ConversationContextStore } from "../src/core/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../src/core/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
-import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };

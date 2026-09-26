@@ -7,6 +7,7 @@ import type { Projection } from "../../src/core/projection.ts";
 import { executeCognition } from "../../src/core/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
 import { initialState, validateState } from "../../src/core/model.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { inspectionView } from "../../src/core/projection.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import {
@@ -23,7 +24,6 @@ import {
     undertake,
     withholdDetail,
 } from "../../src/core/semantics.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 
 type ThreadControl = { mode: "fresh" } | { mode: "reuse"; episode: string };
 

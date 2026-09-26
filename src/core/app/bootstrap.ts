@@ -1,7 +1,7 @@
-import type { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
-import type { StateStore } from "../../persistence/state-store.ts";
 import type { AiExecutor } from "../ai/contract.ts";
 import type { EmberState } from "../model.ts";
+import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
+import type { StateStore } from "../persistence/state-store.ts";
 
 import { validateAiExecutionResult } from "../ai/contract.ts";
 import { ProviderError, ValidationError } from "../errors.ts";

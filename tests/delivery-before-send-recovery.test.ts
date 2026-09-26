@@ -7,7 +7,7 @@ import test from "node:test";
 import { createEmberApplication } from "../src/core/app/application.ts";
 import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../src/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";

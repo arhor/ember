@@ -1,12 +1,12 @@
 import { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import type { MemoryProposalGenerationOutcome } from "../core/memory/memory-proposal-generation.ts";
-import type { EvidenceId } from "../core/model.ts";
+import type { MemoryProposalGenerationOutcome } from "../memory/memory-proposal-generation.ts";
+import type { EvidenceId } from "../model.ts";
 
-import { StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { isRfc3339Utc } from "../core/model.ts";
-import { exactKeys, isNotBlankString, isObject } from "../core/util.ts";
+import { StoreUnavailable, ValidationError } from "../errors.ts";
+import { isRfc3339Utc } from "../model.ts";
+import { exactKeys, isNotBlankString, isObject } from "../util.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
 export type MemoryProposalGenerationStatus =

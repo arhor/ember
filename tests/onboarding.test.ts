@@ -21,9 +21,9 @@ import {
     validateOnboardingWork,
 } from "../src/core/onboarding-work.ts";
 import { createProviderOnboardingProgressEvaluator } from "../src/core/onboarding/progress-evaluator.ts";
+import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
-import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 
 async function executeCognition(
     repositories: ReturnType<typeof createFileBackedRepositoriesForState>,

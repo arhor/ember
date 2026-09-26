@@ -16,7 +16,7 @@ import type { ResidentServiceHost } from "../../core/host/resident-service.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./config.ts";
 
 import { ValidationError } from "../../core/errors.ts";
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { replaceFileDurably } from "../../core/persistence/file-replacement.ts";
 import { InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { telegramResidentLaunch } from "./config.ts";
 import { createTelegramApi, validateTelegramToken, verifyTelegramLongPollingReady } from "./surface.ts";

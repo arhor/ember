@@ -18,10 +18,10 @@ import { createFileBackedRepositoriesForState } from "../../src/core/composition
 import { composeTelegramSurface } from "../../src/core/composition/telegram.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
 import { contentDigest, exactKeys, isObject } from "../../src/core/util.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
 
 const CASE_IDS = [

@@ -14,11 +14,11 @@ import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
 import { composeCliSurface } from "../src/core/composition/cli.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
+import { ConversationContextStore } from "../src/core/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../src/core/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { rememberFact } from "../src/core/semantics.ts";
-import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
-import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 

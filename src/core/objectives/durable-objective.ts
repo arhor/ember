@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
-import { StateStore } from "../../persistence/state-store.ts";
 import { StoreUnavailable, ValidationError } from "../errors.ts";
 import { isRfc3339Utc } from "../model.ts";
+import { replaceFileDurably } from "../persistence/file-replacement.ts";
+import { StateStore } from "../persistence/state-store.ts";
 import { exactKeys, isNotBlankString, isObject } from "../util.ts";
 
 export type ObjectiveLifecycle = "active" | "deferred" | "blocked" | "completed" | "abandoned";

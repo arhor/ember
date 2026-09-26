@@ -12,10 +12,10 @@ import { createFileBackedRepositoriesForState } from "../src/core/composition/em
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
+import { ConversationContextStore } from "../src/core/persistence/conversation-context-store.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
 import { rememberFact } from "../src/core/semantics.ts";
-import { ConversationContextStore } from "../src/persistence/conversation-context-store.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 interface Fixture {

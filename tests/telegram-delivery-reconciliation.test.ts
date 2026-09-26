@@ -19,8 +19,8 @@ import { ProactiveContactStore } from "../src/core/agency/proactive-contact-stor
 import { createEmberApplication } from "../src/core/app/application.ts";
 import { composeEmberApplication } from "../src/core/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { rememberFact } from "../src/core/semantics.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
 import {
     processTelegramUpdate,

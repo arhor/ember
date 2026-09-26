@@ -1,4 +1,3 @@
-import type { StateStore } from "../../persistence/state-store.ts";
 import type {
     CognitionOpportunityDecision,
     CognitionOpportunityMechanism,
@@ -8,6 +7,7 @@ import type {
     OpportunityId,
     RuntimeId,
 } from "../model.ts";
+import type { StateStore } from "../persistence/state-store.ts";
 import type { Projection } from "../projection.ts";
 import type { RepeatedCognitionAttentionOutcome } from "./endogenous-attention-control.ts";
 

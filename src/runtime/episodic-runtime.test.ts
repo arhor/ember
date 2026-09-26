@@ -9,7 +9,7 @@ import { FakeBackgroundHost } from "../../tests/fake-background-host.ts";
 import { ROOT, PRINCIPAL, SCOPE, tempDir } from "../../tests/support.ts";
 import { createSpecialistEpisode } from "../core/delegation/codex-specialist.ts";
 import { initialState } from "../core/model.ts";
-import { StateStore } from "../persistence/state-store.ts";
+import { StateStore } from "../core/persistence/state-store.ts";
 import {
     EpisodicRecordStore,
     inspectEpisodicRuntime,

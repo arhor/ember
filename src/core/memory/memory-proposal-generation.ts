@@ -1,8 +1,8 @@
-import type { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
-import type { StateStore } from "../../persistence/state-store.ts";
 import type { ConversationId, ProjectedConversationContext } from "../conversation-context.ts";
 import type { MemoryProposal, MemoryProposalAssessment } from "../memory-proposal.ts";
 import type { AgentActor, EmberState, EvidenceId, MeaningId } from "../model.ts";
+import type { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
+import type { StateStore } from "../persistence/state-store.ts";
 
 import { ProviderError, StaleRevision, ValidationError } from "../errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "../memory-proposal.ts";

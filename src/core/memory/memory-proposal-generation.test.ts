@@ -9,8 +9,6 @@ import test from "node:test";
 import type { ProjectedConversationContext } from "../conversation-context.ts";
 import type { MemoryProposalCandidate } from "../memory-proposal.ts";
 
-import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
-import { StateStore } from "../../persistence/state-store.ts";
 import { createAiSdkMemoryProposalGenerator } from "../ai/memory-proposals.ts";
 import { executeCognition } from "../app/cognition-execution.ts";
 import { prepareCognition } from "../app/cognition-preparation.ts";
@@ -18,6 +16,8 @@ import { runPostTurnFollowUps } from "../app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { ProviderError } from "../errors.ts";
 import { initialState } from "../model.ts";
+import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
+import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime } from "../runtime-episode.ts";
 import { userEvidence } from "../semantics.ts";
 import { cloneState } from "../util.ts";

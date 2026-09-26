@@ -9,7 +9,7 @@ import type { EmberApplication, InteractionEvent } from "../../core/app/contract
 
 import { composeCliSurface } from "../../core/composition/cli.ts";
 import { initialState } from "../../core/model.ts";
-import { StateStore } from "../../persistence/state-store.ts";
+import { StateStore } from "../../core/persistence/state-store.ts";
 import { runCliSurface } from "./surface.ts";
 
 test("CLI surface should deliver through an injected application when reading ordinary input", async (t) => {

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { DurabilityUncertain } from "../core/errors.ts";
+import { DurabilityUncertain } from "../errors.ts";
 import { replaceFileAtomically, replaceFileDurably } from "./file-replacement.ts";
 
 test("atomic file replacement should publish complete replacement and clean temporary file", async () => {

@@ -78,7 +78,7 @@ principal. The longitudinal ambient facts that reproduce SEL-01 satisfy those br
 membership predicates, so they are admitted even though the scenario oracle marks
 them irrelevant to the present purpose.
 
-`src/persistence/state-store.ts` reads the complete canonical document, validates it,
+`../../src/core/persistence` reads the complete canonical document, validates it,
 and returns the resulting state. The longitudinal restart scenarios demonstrate that
 relevant state, provenance, currentness, and truthful gaps remain available after
 persistence/reload. Nothing in the current failure corpus shows a relevant meaning

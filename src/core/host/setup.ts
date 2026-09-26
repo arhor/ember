@@ -4,10 +4,10 @@ import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 import type { SetupConfig } from "../app/bootstrap.ts";
 
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { safeText, validateSetupProvider } from "../app/bootstrap-validation.ts";
 import { ValidationError } from "../errors.ts";
 import { isRfc3339Utc, nowUtc } from "../model.ts";
+import { replaceFileDurably } from "../persistence/file-replacement.ts";
 import { exactKeys, isObject } from "../util.ts";
 
 export function defaultSetupConfigPath(): string {

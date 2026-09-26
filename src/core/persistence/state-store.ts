@@ -5,11 +5,11 @@ import { access, mkdir, open, readFile, rename, unlink } from "node:fs/promises"
 import { hostname } from "node:os";
 import { dirname } from "node:path";
 
-import type { EmberState } from "../core/model.ts";
+import type { EmberState } from "../model.ts";
 
-import { ConcurrentWriter, StaleRevision, StoreExists, StoreUnavailable } from "../core/errors.ts";
-import { isRfc3339Utc, normalizeLegacyIdentityRepresentation, nowUtc, validateState } from "../core/model.ts";
-import { cloneState, exactKeys } from "../core/util.ts";
+import { ConcurrentWriter, StaleRevision, StoreExists, StoreUnavailable } from "../errors.ts";
+import { isRfc3339Utc, normalizeLegacyIdentityRepresentation, nowUtc, validateState } from "../model.ts";
+import { cloneState, exactKeys } from "../util.ts";
 import { replaceFileDurably, syncDirectory } from "./file-replacement.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

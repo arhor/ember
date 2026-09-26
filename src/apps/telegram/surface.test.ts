@@ -12,8 +12,8 @@ import type { TelegramUpdate } from "./surface.ts";
 import { processTelegramUpdate, runTelegramPolling } from "../../../tests/support-telegram-surface.ts";
 import { initialState } from "../../core/model.ts";
 import { createOnboardingWork } from "../../core/onboarding-work.ts";
-import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
-import { StateStore } from "../../persistence/state-store.ts";
+import { OnboardingWorkStore } from "../../core/persistence/onboarding-work-store.ts";
+import { StateStore } from "../../core/persistence/state-store.ts";
 import { SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
 import {
     TELEGRAM_SURFACE_ID,

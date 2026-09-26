@@ -17,8 +17,8 @@ import {
 import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
 import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/core/integrations/mcp/ai-sdk.ts";
 import { newId } from "../src/core/model.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const MCP_FIXTURE = fileURLToPath(new URL("./fixtures/mcp-server.ts", import.meta.url));

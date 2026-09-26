@@ -15,8 +15,8 @@ import {
     createGoogleCalendarCapability,
     loadGoogleCalendarConfig,
 } from "../../core/integrations/google-calendar/read.ts";
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
-import { StateStore } from "../../persistence/state-store.ts";
+import { replaceFileDurably } from "../../core/persistence/file-replacement.ts";
+import { StateStore } from "../../core/persistence/state-store.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 

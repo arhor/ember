@@ -10,8 +10,8 @@ import type { InferenceEvidence } from "../src/core/ai/cognition.ts";
 import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
 import { findCognition, executeCognition } from "../src/core/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 function inferenceEvidenceSink() {

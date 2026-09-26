@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { StateStore } from "../../persistence/state-store.ts";
 import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { initialState } from "../model.ts";
 import { createOnboardingWork } from "../onboarding-work.ts";
+import { StateStore } from "../persistence/state-store.ts";
 import { startRuntime } from "../runtime-episode.ts";
 import { executeCognition, executePreparedCognition } from "./cognition-execution.ts";
 import { prepareCognition } from "./cognition-preparation.ts";

@@ -9,9 +9,9 @@ import { createCursorLanguageModel } from "../../src/core/ai/cursor.ts";
 import { executeCognition } from "../../src/core/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 
 const principal = "user-1";
 const scope = `relationship:${principal}`;

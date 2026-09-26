@@ -9,9 +9,9 @@ import { createOllamaLanguageModel } from "../../src/core/ai/ollama.ts";
 import { executeCognition } from "../../src/core/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
 import { initialState } from "../../src/core/model.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact, rememberRelationship } from "../../src/core/semantics.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
 
 const model = process.env.EMBER_OLLAMA_MODEL;
 if (!model) throw new Error("set EMBER_OLLAMA_MODEL to a local Ollama model before running this smoke test");

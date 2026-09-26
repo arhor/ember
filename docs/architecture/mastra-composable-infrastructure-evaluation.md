@@ -351,7 +351,7 @@ Mastra's standalone memory processing APIs make this more plausible than wrappin
 
 Mastra's composite storage architecture is a genuine modularity strength. Its framework data can be split into domains and backed by different stores such as LibSQL, Postgres, MongoDB, and other adapters.
 
-That does **not** make Mastra storage a good replacement for `src/persistence/state-store.ts`.
+That does **not** make Mastra storage a good replacement for `../../src/core/persistence`.
 
 Ember's `StateStore` participates in canonical revision, writer-lease, recovery, currentness, and reintegration behavior. A generic Mastra memory/workflow store does not know those semantics and should not be taught them merely to reduce persistence code.
 
@@ -506,7 +506,7 @@ Debugging is strongest where an isolated primitive is used. It becomes harder wh
 
 No Mastra concept belongs in canonical models or semantics. `Agent`, thread/resource IDs, workflow run state, tool approval state, and Mastra storage records must not appear in canonical Ember types merely because an adapter uses them.
 
-**`src/persistence/state-store.ts`**
+**`../../src/core/persistence`**
 
 Keep canonical persistence and writer semantics Ember-owned. Mastra stores may coexist for Mastra operational artifacts but should not replace this boundary.
 

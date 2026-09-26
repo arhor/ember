@@ -6,8 +6,8 @@ import { dirname, isAbsolute, join } from "node:path";
 import type { WorkerLaunch } from "./background.ts";
 import type { ResidentServiceHost, ServiceActionResult, ServiceState } from "./resident-service.ts";
 
-import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { ValidationError } from "../errors.ts";
+import { replaceFileDurably } from "../persistence/file-replacement.ts";
 
 const LABEL = "dev.ember.telegram";
 

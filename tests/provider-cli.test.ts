@@ -14,10 +14,10 @@ import {
 import { executeCognition } from "../src/core/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
 import { validateState } from "../src/core/model.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { cloneState } from "../src/core/util.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
 import {
     captureError,
     command,

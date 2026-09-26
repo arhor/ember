@@ -14,7 +14,7 @@ import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/runtim
 import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
 import { runCommand, SystemdUserBackgroundHost } from "../../src/core/host/systemd.ts";
 import { initialState } from "../../src/core/model.ts";
-import { StateStore } from "../../src/persistence/state-store.ts";
+import { StateStore } from "../../src/core/persistence/state-store.ts";
 import {
     EpisodicRecordStore,
     scheduleWake,

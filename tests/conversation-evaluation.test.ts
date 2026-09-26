@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { loadConversationScenario, runConversationScenario } from "../eval/conversation/harness.ts";
 import { RECENT_DIALOGUE_MAX_EXCHANGES } from "../src/core/conversation-context.ts";
-import { StateStore } from "../src/persistence/state-store.ts";
+import { StateStore } from "../src/core/persistence/state-store.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "conversation", "fixtures", "conversational-coherence.json");

@@ -1,10 +1,10 @@
 import { mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
-import type { EpistemicRole, MeaningId, MeaningKind } from "../core/model.ts";
-import type { MaterializedMeaning, StateMaterialization } from "../core/state-materialization.ts";
+import type { EpistemicRole, MeaningId, MeaningKind } from "../model.ts";
+import type { MaterializedMeaning, StateMaterialization } from "../state-materialization.ts";
 
-import { PartialPublication, ValidationError } from "../core/errors.ts";
+import { PartialPublication, ValidationError } from "../errors.ts";
 import { replaceFileAtomically } from "./file-replacement.ts";
 
 const VIEW_TITLES: Record<keyof StateMaterialization["views"], string> = {

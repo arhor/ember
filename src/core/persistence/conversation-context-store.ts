@@ -7,16 +7,16 @@ import type {
     ConversationExchangeRecord,
     ConversationId,
     LegacyConversationContextDocument,
-} from "../core/conversation-context.ts";
+} from "../conversation-context.ts";
 
 import {
     RECENT_DIALOGUE_MAX_STORED_EXCHANGES,
     truncateConversationText,
     validateConversationContextDocument,
     validateLegacyConversationContextDocument,
-} from "../core/conversation-context.ts";
-import { StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { isRfc3339Utc, nowUtc } from "../core/model.ts";
+} from "../conversation-context.ts";
+import { StoreUnavailable, ValidationError } from "../errors.ts";
+import { isRfc3339Utc, nowUtc } from "../model.ts";
 import { replaceFileDurably } from "./file-replacement.ts";
 
 export type AcceptedConversationExchange = Pick<
