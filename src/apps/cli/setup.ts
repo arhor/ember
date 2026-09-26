@@ -1,13 +1,13 @@
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
-import type { BootstrapEvent } from "../../app/bootstrap.ts";
 import type { SetupCompositionOverrides } from "../../composition/setup.ts";
+import type { BootstrapEvent } from "../../core/app/bootstrap.ts";
 import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
 
-import { bootstrapContinuity, prepareConfiguredRun } from "../../app/bootstrap.ts";
 import { composeCliSurface } from "../../composition/cli.ts";
 import { composeSetupDependencies } from "../../composition/setup.ts";
+import { bootstrapContinuity, prepareConfiguredRun } from "../../core/app/bootstrap.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { createSetupDiagnostics } from "../../host/setup-diagnostics.ts";
 import { defaultSetupConfigPath, loadSetupConfig } from "../../host/setup.ts";

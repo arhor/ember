@@ -1,6 +1,6 @@
 import type { EmberCompositionConfig, EmberCompositionOverrides } from "./ember.ts";
 
-import { createEmberApplication } from "../app/application.ts";
+import { createEmberApplication } from "../core/app/application.ts";
 import { composeEmberApplication } from "./ember.ts";
 
 export function composeCliSurface(config: EmberCompositionConfig, overrides: EmberCompositionOverrides = {}) {

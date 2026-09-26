@@ -4,8 +4,8 @@ import type { AiExecutionRequest, AiExecutionResult } from "../../src/core/ai/co
 import type { MeaningId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
 
-import { createEmberApplication } from "../../src/app/application.ts";
 import { composeEmberApplication } from "../../src/composition/ember.ts";
+import { createEmberApplication } from "../../src/core/app/application.ts";
 import { ProviderError, ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { rememberFact } from "../../src/core/semantics.ts";

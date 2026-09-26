@@ -7,8 +7,8 @@ import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts"
 import type { ConversationMembershipIntent } from "../src/core/interaction-contract.ts";
 import type { EmberState } from "../src/core/model.ts";
 
-import { executeCognition } from "../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { executeCognition } from "../src/core/app/cognition-execution.ts";
 import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";

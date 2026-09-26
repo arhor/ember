@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { EmberApplication, InteractionEvent } from "../../app/contract.ts";
+import type { EmberApplication, InteractionEvent } from "../../core/app/contract.ts";
 
 import { composeCliSurface } from "../../composition/cli.ts";
 import { initialState } from "../../core/model.ts";
@@ -135,7 +135,7 @@ test("CLI setup should keep proposal occurrence separate from explicit local con
         statePath,
         provider: { kind: "process", command: "unused", arguments: [], timeoutSeconds: 1 },
     });
-    let request: import("../../app/contract.ts").TrustedHostSetupRequest | undefined;
+    let request: import("../../core/app/contract.ts").TrustedHostSetupRequest | undefined;
     let output = "";
     const application = {
         async interact() {

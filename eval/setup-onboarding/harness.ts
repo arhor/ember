@@ -1,18 +1,18 @@
 import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { SetupConfig } from "../../src/app/bootstrap.ts";
-import type { RunCognitionOptions } from "../../src/app/cognition-execution.ts";
+import type { SetupConfig } from "../../src/core/app/bootstrap.ts";
+import type { RunCognitionOptions } from "../../src/core/app/cognition-execution.ts";
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
 import type { MemoryProposalGenerator } from "../../src/memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-evaluator.ts";
 
-import { executeCognition as runCoreCognition } from "../../src/app/cognition-execution.ts";
-import { prepareCognition } from "../../src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { setupMain } from "../../src/apps/cli/setup.ts";
 import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
+import { executeCognition as runCoreCognition } from "../../src/core/app/cognition-execution.ts";
+import { prepareCognition } from "../../src/core/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../../src/core/app/post-turn.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";

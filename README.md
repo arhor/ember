@@ -47,7 +47,7 @@ verification, recovery, and trusted-host setup.
 
 The production tree is organized by ownership:
 
-- `src/app/` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
+- `src/core/app` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
   and execution coordination, post-turn work, bootstrap decisions, and application-level use cases;
 - `src/composition/` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
   capability selection, and concrete surface services;

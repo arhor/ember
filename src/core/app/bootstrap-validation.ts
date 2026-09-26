@@ -1,5 +1,5 @@
-import { ValidationError } from "../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN } from "../core/model.ts";
+import { ValidationError } from "../errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN } from "../model.ts";
 
 export function validateSetupProvider(value: Record<string, unknown>): void {
     const noCommandKind = value.kind === "ollama" || value.kind === "deepseek";

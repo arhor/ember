@@ -4,9 +4,9 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { executeCognition } from "../../src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { createClaudeCodeExecutor } from "../../src/core/ai/claude-code.ts";
+import { executeCognition } from "../../src/core/app/cognition-execution.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";

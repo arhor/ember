@@ -90,7 +90,7 @@ composition root for one Ember application instance. It creates the repositories
 selects the configured cognition executor and control helpers, supplies capability
 selection, and returns `EmberApplicationDependencies`.
 
-[`src/app/application.ts`](../../src/app/application.ts) then turns those dependencies
+[`../../src/core/app`](../../src/core/app/application.ts) then turns those dependencies
 into the transport-neutral `EmberApplication`. That factory is the only production
 entry point for an ordinary user interaction.
 
@@ -100,7 +100,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
 
 1. **The surface maps transport input.**
    The adapter creates an
-   [`InteractionEvent`](../../src/app/contract.ts) with principal, scope, logical
+   [`InteractionEvent`](../../src/core/app/contract.ts) with principal, scope, logical
    surface, text, provenance, and optional transport occurrence/destination metadata.
    CLI uses `local_cli` with `explicit_local_argument`; Telegram uses
    `telegram_bot` with `configured_surface_mapping`.
@@ -117,13 +117,13 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
    record and must not create another cognition.
 
 4. **Ember prepares cognition.**
-   [`prepareCognition`](../../src/app/cognition-preparation.ts) resolves Ember-owned
+   [`prepareCognition`](../../src/core/app/cognition-preparation.ts) resolves Ember-owned
    conversation membership, recent dialogue, onboarding work, and the
    least-sufficient semantic projection. Transport message IDs and provider sessions do
    not become conversation identity or canonical memory.
 
 5. **The application executes the prepared cognition.**
-   [`executePreparedCognition`](../../src/app/cognition-execution.ts) records accepted
+   [`executePreparedCognition`](../../src/core/app/cognition-execution.ts) records accepted
    user evidence and cognition lifecycle state, then calls the Ember-owned
    [`AiExecutor`](../../src/core/ai/contract.ts).
 
@@ -140,7 +140,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
    before any transport send.
 
 8. **Post-turn work is application-owned and fallible.**
-   [`runPostTurnFollowUps`](../../src/app/post-turn.ts) may evaluate onboarding
+   [`runPostTurnFollowUps`](../../src/core/app/post-turn.ts) may evaluate onboarding
    progress and generate memory proposals. Failures are diagnostics; they do not erase
    an already completed cognition or pretend that delivery succeeded.
 
@@ -186,7 +186,7 @@ Machine bootstrap is not a second cognition architecture.
 When plain `ember` runs with no default setup record,
 [`firstRun`](../../src/apps/cli/setup.ts) asks only for the choices required to
 create or restore continuity and select a cognition provider. It then calls
-[`bootstrapContinuity`](../../src/app/bootstrap.ts), which verifies cognition and
+[`bootstrapContinuity`](../../src/core/app/bootstrap.ts), which verifies cognition and
 activates the continuity. After successful activation, the same process continues into
 `runConfigured`, composes the ordinary CLI application, and consumes the first real
 user message through `runCliSurface -> EmberApplication.interact`.
@@ -210,7 +210,7 @@ For a local CLI conversation whose configuration exposes a trusted-host setup ca
    result;
 2. the CLI asks the user for a separate explicit local `yes`;
 3. the adapter builds a
-   [`TrustedHostSetupRequest`](../../src/app/contract.ts) containing the principal,
+   [`TrustedHostSetupRequest`](../../src/core/app/contract.ts) containing the principal,
    scope, proposal occurrence, and attributable confirmation;
 4. `../../src/apps` validates that request, selects the host-specific
    resident adapter, and calls the existing Telegram setup workflow;

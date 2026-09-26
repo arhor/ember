@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import type { DeliveryObservation, InteractionEvent, InteractionResult } from "./contract.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { newId } from "../core/model.ts";
+import { ValidationError } from "../errors.ts";
+import { newId } from "../model.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";
 
 const cliEvent: InteractionEvent = {

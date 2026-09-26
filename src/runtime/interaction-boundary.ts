@@ -3,7 +3,7 @@ import type { Writable } from "node:stream";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-import type { CognitionRepositories } from "../app/cognition-execution.ts";
+import type { CognitionRepositories } from "../core/app/cognition-execution.ts";
 import type {
     DeliveryReconciliationResult,
     DeliveryReconciliationStatus,
@@ -12,7 +12,7 @@ import type {
 } from "../core/interaction-contract.ts";
 import type { CognitionId, EvidenceId } from "../core/model.ts";
 
-import { findCognition } from "../app/cognition-execution.ts";
+import { findCognition } from "../core/app/cognition-execution.ts";
 import { StoreUnavailable, ValidationError } from "../core/errors.ts";
 import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc, nowUtc } from "../core/model.ts";

@@ -6,8 +6,8 @@ import test from "node:test";
 
 import type { AiExecutor } from "../src/core/ai/contract.ts";
 
-import { createEmberApplication } from "../src/app/application.ts";
 import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/core/app/application.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import {

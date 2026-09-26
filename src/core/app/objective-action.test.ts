@@ -3,16 +3,16 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { CapabilityJsonValue } from "../capabilities/execution.ts";
+import type { CapabilityJsonValue } from "../../capabilities/execution.ts";
 
-import { tempDir } from "../../tests/support.ts";
-import { actionProposalConfirmation, ActionProposalStore } from "../capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
+import { tempDir } from "../../../tests/support.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
-} from "../integrations/google-calendar/create.ts";
-import { DurableObjectiveStore } from "../objectives/durable-objective.ts";
+} from "../../integrations/google-calendar/create.ts";
+import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
 import { ObjectiveActionCoordinator } from "./objective-action.ts";
 
 const config = {

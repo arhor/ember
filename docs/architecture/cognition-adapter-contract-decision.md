@@ -54,7 +54,7 @@ This decision is based on current repository-owned production and evaluation evi
 - issue #46 and `src/providers/codex.ts`, which established the first production one-shot cognition adapter;
 - issue #90 and `src/providers/cursor.ts`, which deliberately added Cursor as a separate thin adapter without pre-committing #92;
 - `src/providers/contract.ts`, the already-shared Ember-owned request/result/invocation seam;
-- `src/app/cognition-execution.ts`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
+- `../../src/core/app`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
 - `docs/architecture/cognition-backend-replacement-evaluation.md`, including the September 1, 2026 Codex-to-Cursor live replacement evidence; and
 - ADR 0001, ADR 0003, ADR 0004, and ADR 0005, which constrain continuity, projection, authority, and failure semantics independently of backend implementation.
 

@@ -5,7 +5,6 @@ import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluat
 import type { StateStoreOptions } from "../persistence/state-store.ts";
 import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
-import { ObjectiveActionCoordinator } from "../app/objective-action.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
 import { ProactiveContactStore } from "../core/agency/proactive-contact-store.ts";
 import { createCodexLanguageModel } from "../core/ai/codex.ts";
@@ -17,6 +16,7 @@ import { createOllamaLanguageModel } from "../core/ai/ollama.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../core/ai/onboarding-progress.ts";
 import { createProcessLanguageModel } from "../core/ai/process.ts";
 import { createProcessProvider } from "../core/ai/providers/process.ts";
+import { ObjectiveActionCoordinator } from "../core/app/objective-action.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../integrations/google-calendar/create.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../integrations/google-calendar/read.ts";
 import { createProviderMemoryProposalGenerator } from "../memory/provider-memory-proposal-generator.ts";

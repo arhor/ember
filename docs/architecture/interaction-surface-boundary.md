@@ -38,7 +38,7 @@ privacy, and delivery distinctions executable across both current surfaces.
 
 ## Boundary
 
-`src/app/contract.ts` and `src/app/application.ts` expose the one supported
+`../../src/core/app` and `../../src/core/app` expose the one supported
 surface-neutral ordinary-interaction seam. Executable/bootstrap code composes that
 application through `src/composition/cli.ts` or `src/composition/telegram.ts` before
 entering the concrete adapter; ordinary surface modules receive the application and do
@@ -318,7 +318,7 @@ remain Ember-owned inputs.
 
 ## Executable acceptance scenarios
 
-The focused tests in `src/app/application.test.ts` instantiate the issue #85 transport
+The focused tests in `../../src/core/app` instantiate the issue #85 transport
 semantics through the public application contract. `../../src/apps`
 exercises those rules through the concrete Telegram adapter.
 `tests/cross-surface-semantics.test.ts` validates the same

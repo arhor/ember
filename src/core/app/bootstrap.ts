@@ -1,14 +1,14 @@
-import type { AiExecutor } from "../core/ai/contract.ts";
-import type { EmberState } from "../core/model.ts";
-import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
-import type { StateStore } from "../persistence/state-store.ts";
+import type { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
+import type { StateStore } from "../../persistence/state-store.ts";
+import type { AiExecutor } from "../ai/contract.ts";
+import type { EmberState } from "../model.ts";
 
-import { validateAiExecutionResult } from "../core/ai/contract.ts";
-import { ProviderError, ValidationError } from "../core/errors.ts";
-import { initialState, newId, nowUtc } from "../core/model.ts";
-import { createOnboardingWork } from "../core/onboarding-work.ts";
-import { buildProjection } from "../core/projection.ts";
-import { startRuntime } from "../core/runtime-episode.ts";
+import { validateAiExecutionResult } from "../ai/contract.ts";
+import { ProviderError, ValidationError } from "../errors.ts";
+import { initialState, newId, nowUtc } from "../model.ts";
+import { createOnboardingWork } from "../onboarding-work.ts";
+import { buildProjection } from "../projection.ts";
+import { startRuntime } from "../runtime-episode.ts";
 import { safeText, validateSetupProvider } from "./bootstrap-validation.ts";
 
 export type SetupIntent = "create-new" | "restore-existing" | "use-existing";

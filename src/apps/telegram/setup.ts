@@ -11,7 +11,7 @@ import { createInterface } from "node:readline/promises";
 import { ReadStream, WriteStream } from "node:tty";
 import { fileURLToPath } from "node:url";
 
-import type { SetupConfig } from "../../app/bootstrap.ts";
+import type { SetupConfig } from "../../core/app/bootstrap.ts";
 import type { ResidentServiceHost } from "../../host/resident-service.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./config.ts";
 

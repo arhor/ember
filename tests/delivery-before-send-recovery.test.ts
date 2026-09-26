@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createEmberApplication } from "../src/app/application.ts";
 import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { createEmberApplication } from "../src/core/app/application.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../src/runtime/interaction-boundary.ts";

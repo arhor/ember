@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { test } from "node:test";
 
-import type { SetupConfig } from "../../app/bootstrap.ts";
+import type { SetupConfig } from "../../core/app/bootstrap.ts";
 import type { TelegramSetupBinding, TelegramSetupDependencies, TelegramSetupIo } from "./setup.ts";
 
 import { SystemdTelegramResidentHost } from "../../host/systemd.ts";

@@ -4,10 +4,10 @@ import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "n
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { EmberApplication } from "../../app/contract.ts";
-import type { SurfaceRepositories } from "../../app/surface-repositories.ts";
 import type { ContactAttentionDecisionRecord } from "../../core/agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactIntentRecord } from "../../core/agency/proactive-contact-store.ts";
+import type { EmberApplication } from "../../core/app/contract.ts";
+import type { SurfaceRepositories } from "../../core/app/surface-repositories.ts";
 import type { CognitionId, EmberState } from "../../core/model.ts";
 
 type TelegramRepositories = SurfaceRepositories;

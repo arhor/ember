@@ -1,7 +1,7 @@
-import type { EmberApplicationDependencies } from "../composition/ember.ts";
-import type { ExternalOccurrenceMetadata, PrincipalAssertionProvenance } from "../core/interaction-contract.ts";
-import type { CognitionId, CognitionStatus, EmberState } from "../core/model.ts";
-import type { InteractionRepositories, SurfaceDelivery } from "../runtime/interaction-boundary.ts";
+import type { EmberApplicationDependencies } from "../../composition/ember.ts";
+import type { InteractionRepositories, SurfaceDelivery } from "../../runtime/interaction-boundary.ts";
+import type { ExternalOccurrenceMetadata, PrincipalAssertionProvenance } from "../interaction-contract.ts";
+import type { CognitionId, CognitionStatus, EmberState } from "../model.ts";
 import type { RunCognitionOptions } from "./cognition-execution.ts";
 import type { PreparedCognition } from "./cognition-preparation.ts";
 import type {
@@ -12,12 +12,12 @@ import type {
     TransportSend,
 } from "./contract.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { newId } from "../core/model.ts";
-import { findRuntime } from "../core/projection.ts";
-import { startRuntime, stopRuntime, stopRuntimeAfterFailure } from "../core/runtime-episode.ts";
-import { requirePrincipal } from "../core/semantics.ts";
-import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../runtime/interaction-boundary.ts";
+import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
+import { ValidationError } from "../errors.ts";
+import { newId } from "../model.ts";
+import { findRuntime } from "../projection.ts";
+import { startRuntime, stopRuntime, stopRuntimeAfterFailure } from "../runtime-episode.ts";
+import { requirePrincipal } from "../semantics.ts";
 import { executePreparedCognition, findCognition, validateCognitionInvocation } from "./cognition-execution.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 import { validateDeliveryObservation, validateInteractionEvent } from "./contract.ts";

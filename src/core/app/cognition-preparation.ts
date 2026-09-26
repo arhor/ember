@@ -3,17 +3,17 @@ import type {
     ConversationContextDocument,
     ConversationId,
     ConversationMembershipResolution,
-} from "../core/conversation-context.ts";
-import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
-import type { CognitionPurpose, EmberState, MeaningId, RuntimeId } from "../core/model.ts";
-import type { OnboardingWorkDocument, ProjectedOnboardingWork } from "../core/onboarding-work.ts";
-import type { Projection } from "../core/projection.ts";
+} from "../conversation-context.ts";
+import type { ConversationMembershipIntent } from "../interaction-contract.ts";
+import type { CognitionPurpose, EmberState, MeaningId, RuntimeId } from "../model.ts";
+import type { OnboardingWorkDocument, ProjectedOnboardingWork } from "../onboarding-work.ts";
+import type { Projection } from "../projection.ts";
 
-import { selectRecentConversationContext } from "../core/conversation-context.ts";
-import { ValidationError } from "../core/errors.ts";
-import { nowUtc } from "../core/model.ts";
-import { projectOnboardingWork } from "../core/onboarding-work.ts";
-import { buildProjection } from "../core/projection.ts";
+import { selectRecentConversationContext } from "../conversation-context.ts";
+import { ValidationError } from "../errors.ts";
+import { nowUtc } from "../model.ts";
+import { projectOnboardingWork } from "../onboarding-work.ts";
+import { buildProjection } from "../projection.ts";
 
 export interface CognitionPreparationOptions {
     runtimeId: RuntimeId;

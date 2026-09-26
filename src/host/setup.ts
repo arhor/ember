@@ -2,9 +2,9 @@ import { lstat, readFile, realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
-import type { SetupConfig } from "../app/bootstrap.ts";
+import type { SetupConfig } from "../core/app/bootstrap.ts";
 
-import { safeText, validateSetupProvider } from "../app/bootstrap-validation.ts";
+import { safeText, validateSetupProvider } from "../core/app/bootstrap-validation.ts";
 import { ValidationError } from "../core/errors.ts";
 import { isRfc3339Utc, nowUtc } from "../core/model.ts";
 import { exactKeys, isObject } from "../core/util.ts";

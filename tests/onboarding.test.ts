@@ -4,14 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { RunCognitionOptions } from "../src/app/cognition-execution.ts";
+import type { RunCognitionOptions } from "../src/core/app/cognition-execution.ts";
 import type { MemoryProposalGenerator } from "../src/memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../src/onboarding/progress-evaluator.ts";
 
-import { executeCognition as runCoreCognition } from "../src/app/cognition-execution.ts";
-import { prepareCognition } from "../src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
+import { executeCognition as runCoreCognition } from "../src/core/app/cognition-execution.ts";
+import { prepareCognition } from "../src/core/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../src/core/app/post-turn.ts";
 import { initialState } from "../src/core/model.ts";
 import {
     applyOnboardingProgressDecision,

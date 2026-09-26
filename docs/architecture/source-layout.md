@@ -37,12 +37,12 @@ requires them.
 
 ## Application and composition
 
-`src/app/contract.ts` defines the transport-neutral
+`../../src/core/app` defines the transport-neutral
 `InteractionEvent`, `EmberApplication`, delivery callback, and typed trusted-host
 setup handoff shapes. It must not expose Telegram objects, CLI streams, AI SDK types,
 filesystem paths, or concrete store implementations.
 
-`src/app/application.ts` is the only production coordinator for an ordinary user
+`../../src/core/app` is the only production coordinator for an ordinary user
 interaction. It owns the writer lease and runtime episode around admission, cognition,
 post-turn work, and delivery reconciliation.
 

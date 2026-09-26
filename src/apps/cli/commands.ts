@@ -1,6 +1,6 @@
 import type { Writable } from "node:stream";
 
-import type { SurfaceRepositories } from "../../app/surface-repositories.ts";
+import type { SurfaceRepositories } from "../../core/app/surface-repositories.ts";
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { CliSurfaceConfig } from "./surface.ts";
 

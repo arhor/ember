@@ -3,13 +3,13 @@ import type {
     DeliveryReconciliationResult,
     ExternalOccurrenceMetadata,
     PrincipalAssertionProvenance,
-} from "../core/interaction-contract.ts";
-import type { CognitionId, CognitionPurpose, CognitionStatus, MeaningId } from "../core/model.ts";
+} from "../interaction-contract.ts";
+import type { CognitionId, CognitionPurpose, CognitionStatus, MeaningId } from "../model.ts";
 
-import { ValidationError } from "../core/errors.ts";
-import { PRINCIPAL_ASSERTION_PROVENANCE } from "../core/interaction-contract.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc } from "../core/model.ts";
-import { exactKeys, isNotBlankString, isObject } from "../core/util.ts";
+import { ValidationError } from "../errors.ts";
+import { PRINCIPAL_ASSERTION_PROVENANCE } from "../interaction-contract.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc } from "../model.ts";
+import { exactKeys, isNotBlankString, isObject } from "../util.ts";
 
 // No Telegram/CLI transport object, AI SDK type, filesystem path, or concrete store may appear here; see docs/architecture/canonical-application-flow.md §5.
 export interface InteractionEvent {

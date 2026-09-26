@@ -9,10 +9,10 @@ import type {
     MemoryProposalGenerationRequest,
 } from "../../src/memory/memory-proposal-generation.ts";
 
-import { executeCognition } from "../../src/app/cognition-execution.ts";
-import { prepareCognition } from "../../src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../../src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
+import { executeCognition } from "../../src/core/app/cognition-execution.ts";
+import { prepareCognition } from "../../src/core/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../../src/core/app/post-turn.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";

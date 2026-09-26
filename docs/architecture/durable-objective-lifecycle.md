@@ -19,7 +19,7 @@ multi-episode objective epic [#235](https://github.com/arhor/ember/issues/235). 
 #237 now selects the minimal persistence schema described below without selecting a
 scheduler or workflow engine. Issue
 [#238](https://github.com/arhor/ember/issues/238) composes that schema with the
-durable action ledger through `src/app/objective-action.ts`.
+durable action ledger through `../../src/core/app`.
 
 This design specializes existing architecture and, as of issue
 [#237](https://github.com/arhor/ember/issues/237), has a minimal executable

@@ -1,8 +1,11 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { CapabilityExecutionLedger } from "../capabilities/execution.ts";
-import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../core/ai/contract.ts";
-import type { ConversationMembershipIntent } from "../core/interaction-contract.ts";
+import type { CapabilityExecutionLedger } from "../../capabilities/execution.ts";
+import type { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
+import type { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
+import type { StateStore } from "../../persistence/state-store.ts";
+import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
+import type { ConversationMembershipIntent } from "../interaction-contract.ts";
 import type {
     CognitionEpisode,
     CognitionId,
@@ -11,20 +14,17 @@ import type {
     EmberState,
     MeaningId,
     RuntimeId,
-} from "../core/model.ts";
-import type { ConversationContextStore } from "../persistence/conversation-context-store.ts";
-import type { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
-import type { StateStore } from "../persistence/state-store.ts";
+} from "../model.ts";
 import type { PreparedCognition } from "./cognition-preparation.ts";
 
-import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../core/ai/contract.ts";
-import { selectRecentConversationContext } from "../core/conversation-context.ts";
-import { ProviderError, StaleRevision, ValidationError } from "../core/errors.ts";
-import { agentActor, newId, nowUtc } from "../core/model.ts";
-import { projectOnboardingWork } from "../core/onboarding-work.ts";
-import { buildProjection, findRuntime } from "../core/projection.ts";
-import { requirePrincipal, userEvidence } from "../core/semantics.ts";
-import { cloneState } from "../core/util.ts";
+import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS } from "../ai/contract.ts";
+import { selectRecentConversationContext } from "../conversation-context.ts";
+import { ProviderError, StaleRevision, ValidationError } from "../errors.ts";
+import { agentActor, newId, nowUtc } from "../model.ts";
+import { projectOnboardingWork } from "../onboarding-work.ts";
+import { buildProjection, findRuntime } from "../projection.ts";
+import { requirePrincipal, userEvidence } from "../semantics.ts";
+import { cloneState } from "../util.ts";
 import { prepareCognition } from "./cognition-preparation.ts";
 
 export interface RunCognitionOptions {
