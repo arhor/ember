@@ -18,8 +18,8 @@ import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
 import { SystemdTelegramResidentHost } from "../../src/host/systemd.ts";
 import { OnboardingWorkStore } from "../../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
-import { setupMain } from "../../src/surfaces/cli/setup.ts";
-import { runTelegramSetup } from "../../src/surfaces/telegram/setup.ts";
+import { setupMain } from "../../src/apps/cli/setup.ts";
+import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
 import { exactKeys, isObject } from "../../src/util.ts";
 
 export type SetupOnboardingFlow = "fresh-create" | "restore-existing";

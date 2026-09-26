@@ -13,7 +13,7 @@ import { validateState } from "../src/core/model.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { parseArgs } from "../src/surfaces/cli/index.ts";
+import { parseArgs } from "../src/apps/cli/index.ts";
 import { cloneState } from "../src/util.ts";
 import {
     captureError,

@@ -9,7 +9,7 @@ import {
     runTelegramPolling,
     telegramResidentLaunch,
     verifyTelegramLongPollingReady,
-} from "../src/surfaces/telegram/index.ts";
+} from "../src/apps/telegram/index.ts";
 
 interface TelegramCliArgs {
     command:

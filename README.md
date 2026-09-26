@@ -60,7 +60,7 @@ The production tree is organized by ownership:
 - `src/persistence/` owns durable filesystem-backed repositories and materializations;
 - `src/integrations/` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
 - `src/host/` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
-- `src/surfaces/` owns concrete interaction transports. CLI and Telegram receive an already composed
+- `src/apps` owns concrete interaction transports. CLI and Telegram receive an already composed
   `EmberApplication` for ordinary conversation and keep transport-specific admission and delivery behavior;
 - `eval/` contains evaluation harnesses rather than production runtime code;
 - narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under

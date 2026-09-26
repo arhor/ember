@@ -11,7 +11,7 @@ import type {
     ProactiveContactHandoffRevalidator,
     TelegramSurfaceConfig,
     TelegramUpdate,
-} from "../src/surfaces/telegram/index.ts";
+} from "../src/apps/telegram/index.ts";
 
 import { decideConfiguredProactiveContactHandoff } from "../src/agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../src/agency/proactive-contact-store.ts";
@@ -25,7 +25,7 @@ import {
     createTelegramApi,
     deliverTelegramMessage,
     loadTelegramSurfaceConfig,
-} from "../src/surfaces/telegram/index.ts";
+} from "../src/apps/telegram/index.ts";
 import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,

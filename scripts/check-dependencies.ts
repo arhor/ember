@@ -7,17 +7,17 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = resolve(root, "src");
 const surfaceAiExceptions = new Set<string>();
 const surfacePersistenceExceptions = new Set([
-    "surfaces/cli/google-calendar-setup.ts",
-    "surfaces/cli/main.ts",
-    "surfaces/telegram/setup.ts",
+    "apps/cli/google-calendar-setup.ts",
+    "apps/cli/main.ts",
+    "apps/telegram/setup.ts",
 ]);
 const surfaceBootstrapAndCommandModules = new Set([
-    "surfaces/cli/main.ts",
-    "surfaces/cli/setup.ts",
-    "surfaces/cli/google-calendar-setup.ts",
-    "surfaces/cli/commands.ts",
-    "surfaces/telegram/config.ts",
-    "surfaces/telegram/setup.ts",
+    "apps/cli/main.ts",
+    "apps/cli/setup.ts",
+    "apps/cli/google-calendar-setup.ts",
+    "apps/cli/commands.ts",
+    "apps/telegram/config.ts",
+    "apps/telegram/setup.ts",
 ]);
 
 export function dependencyViolations(owner: string, source: string): string[] {
@@ -36,10 +36,10 @@ export function dependencyViolations(owner: string, source: string): string[] {
         }
         const specifier = reference.specifier;
         const target = resolvedOwner(owner, specifier);
-        if (owner.startsWith("core/") && target?.startsWith("surfaces/"))
+        if (owner.startsWith("core/") && target?.startsWith("apps/"))
             reject(specifier, "core must not import a concrete surface");
 
-        if (owner.startsWith("surfaces/")) {
+        if (owner.startsWith("apps/")) {
             if (!surfaceAiExceptions.has(owner) && isAiSdkImport(specifier, target))
                 reject(specifier, "surface-owned modules must not import AI SDK infrastructure");
             if (!surfacePersistenceExceptions.has(owner) && target?.match(/^persistence\/.+-store\.ts$/))
@@ -47,7 +47,7 @@ export function dependencyViolations(owner: string, source: string): string[] {
         }
 
         if (
-            (owner.startsWith("surfaces/cli/") || owner.startsWith("surfaces/telegram/")) &&
+            (owner.startsWith("apps/cli/") || owner.startsWith("apps/telegram/")) &&
             !surfaceBootstrapAndCommandModules.has(owner)
         ) {
             if (target === "app/application.ts" || target?.startsWith("composition/"))
@@ -66,7 +66,7 @@ export function dependencyViolations(owner: string, source: string): string[] {
         if (owner.startsWith("ai/") && target === "core/semantics.ts")
             reject(specifier, "AI infrastructure must not own canonical semantic mutation");
 
-        if (owner.startsWith("app/") && target?.startsWith("surfaces/"))
+        if (owner.startsWith("app/") && target?.startsWith("apps/"))
             reject(specifier, "application orchestration must not import concrete surfaces");
         if (/^(?:app|core|agency|capabilities|delegation|memory|objectives|onboarding|runtime)\//.test(owner)) {
             if (target === "host/systemd.ts" || target === "host/launchd.ts")

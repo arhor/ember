@@ -99,7 +99,7 @@ The currently supported principal-provenance classes are deliberately narrow:
 - `configured_surface_mapping` for a surface whose account/chat identity has already
   been mapped by deployment policy to the supported local principal.
 
-The production CLI conversation in `src/surfaces/cli/surface.ts` invokes
+The production CLI conversation in `../../src/apps` invokes
 `EmberApplication.interact` for ordinary cognition and `:ask --explain`, so its asserted principal is
 represented with `explicit_local_argument` rather than existing only as an implicit
 caller convention. The Telegram adapter uses `configured_surface_mapping` only after
@@ -278,7 +278,7 @@ chat/message/thread identifiers remain operational metadata and cannot replace E
 principal, scope, lineage, memory, or authority semantics.
 
 Concrete surface mechanics live outside this shared boundary under
-`src/surfaces/cli/surface.ts` and `src/surfaces/telegram/surface.ts`. Telegram-specific
+`../../src/apps` and `../../src/apps`. Telegram-specific
 Bot API long polling, token-file authentication, private chat mapping, concrete
 `sendMessage` delivery, and systemd supervision additionally involve
 `bin/ember-telegram.ts`, the Telegram runbook, and ADR 0008. These modules do not
@@ -319,7 +319,7 @@ remain Ember-owned inputs.
 ## Executable acceptance scenarios
 
 The focused tests in `src/app/application.test.ts` instantiate the issue #85 transport
-semantics through the public application contract. `src/surfaces/telegram/surface.test.ts`
+semantics through the public application contract. `../../src/apps`
 exercises those rules through the concrete Telegram adapter.
 `tests/cross-surface-semantics.test.ts` validates the same
 principal/privacy/delivery invariants across both real logical surfaces.

@@ -10,7 +10,7 @@ import { invokeProvider } from "../src/ai/providers/process.ts";
 import { ProviderError, ValidationError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
-import { parseArgs } from "../src/surfaces/cli/index.ts";
+import { parseArgs } from "../src/apps/cli/index.ts";
 import { emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 const OVERSIZED_TIMEOUT = MAX_AI_TIMEOUT_SECONDS + 1;

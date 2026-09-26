@@ -18,7 +18,7 @@ import { startRuntime } from "../src/core/runtime-episode.ts";
 import { rememberPreference } from "../src/core/semantics.ts";
 import { codexEnvironment } from "../src/host/codex-environment.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { parseArgs } from "../src/surfaces/cli/index.ts";
+import { parseArgs } from "../src/apps/cli/index.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const SCRIPTED_CODEX = join(ROOT, "tests", "fixtures", "providers", "scripted-codex.ts");

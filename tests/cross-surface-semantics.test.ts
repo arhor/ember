@@ -6,7 +6,7 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import type { AiExecutor, AiExecutionRequest } from "../src/ai/contract.ts";
-import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/surfaces/telegram/index.ts";
+import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/apps/telegram/index.ts";
 
 import { composeCliSurface } from "../src/composition/cli.ts";
 import { initialState } from "../src/core/model.ts";
@@ -17,9 +17,9 @@ import { MemoryProposalGenerationStore } from "../src/persistence/memory-proposa
 import { OnboardingWorkStore } from "../src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
-import { main as cliMain } from "../src/surfaces/cli/index.ts";
-import { runCliSurface } from "../src/surfaces/cli/surface.ts";
-import { TELEGRAM_SURFACE_ID } from "../src/surfaces/telegram/index.ts";
+import { main as cliMain } from "../src/apps/cli/index.ts";
+import { runCliSurface } from "../src/apps/cli/surface.ts";
+import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";
@@ -144,13 +144,13 @@ test("production foreground and resident entrypoints should preserve the canonic
     // Given
     const [cliExecutable, cliBootstrap, cliConfiguredBootstrap, telegramExecutable] = await Promise.all([
         readFile(new URL("../bin/ember.ts", import.meta.url), "utf8"),
-        readFile(new URL("../src/surfaces/cli/main.ts", import.meta.url), "utf8"),
-        readFile(new URL("../src/surfaces/cli/setup.ts", import.meta.url), "utf8"),
+        readFile(new URL("../src/apps/cli/main.ts", import.meta.url), "utf8"),
+        readFile(new URL("../src/apps/cli/setup.ts", import.meta.url), "utf8"),
         readFile(new URL("../bin/ember-telegram.ts", import.meta.url), "utf8"),
     ]);
 
     // Then
-    assert.equal(cliExecutable.includes('import { main } from "../src/surfaces/cli/index.ts";'), true);
+    assert.equal(cliExecutable.includes('import { main } from "../src/apps/cli/index.ts";'), true);
     assert.equal(cliExecutable.includes("process.exitCode = await main();"), true);
     assert.equal(cliBootstrap.split("composeCliSurface(").length - 1, 1);
     assert.equal(cliBootstrap.split("runCliSurface(").length - 1, 1);

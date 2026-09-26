@@ -2,7 +2,7 @@
 summary: "Issue #200 evaluation of Telegram Bot API libraries for Ember, selecting node-telegram-bot-api v2 as a thin transport primitive while keeping acknowledgement, replay, delivery uncertainty, reconciliation, and runtime semantics Ember-owned."
 read_when:
   - "Choosing, upgrading, or replacing the Telegram Bot API library used by Ember"
-  - "Changing src/surfaces/telegram.ts polling, delivery, error, webhook, or shutdown behavior"
+  - "Changing src/apps/telegram.ts polling, delivery, error, webhook, or shutdown behavior"
   - "Deciding which Telegram mechanics may be delegated to a dependency without moving Ember semantics into a framework"
 role: design
 discovery_status: current
@@ -154,7 +154,7 @@ The GitHub project has a large historical ecosystem, but popularity cannot compe
 
 ## Exact migration boundary
 
-The migration should make `src/surfaces/telegram.ts` visibly thinner while refusing to outsource policy disguised as convenience.
+The migration should make `../../src/apps` visibly thinner while refusing to outsource policy disguised as convenience.
 
 ### Delete and use library primitives
 
@@ -300,7 +300,7 @@ Mitigations:
 
 - pin **exactly `2.1.0`** for the first migration;
 - do not follow prerelease tags automatically;
-- keep all package types and configuration inside `src/surfaces/telegram.ts` or a Telegram-local transport module;
+- keep all package types and configuration inside `../../src/apps` or a Telegram-local transport module;
 - cover the replacement seam with Ember-owned behavioral tests rather than library-specific snapshots;
 - re-evaluate upgrades against the error/retry/polling contract, not only changelog features.
 

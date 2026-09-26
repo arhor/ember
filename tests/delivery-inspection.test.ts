@@ -9,7 +9,7 @@ import { createEmberApplication } from "../src/app/application.ts";
 import { composeEmberApplication } from "../src/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
-import { main as cliMain } from "../src/surfaces/cli/index.ts";
+import { main as cliMain } from "../src/apps/cli/index.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

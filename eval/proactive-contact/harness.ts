@@ -7,7 +7,7 @@ import type {
     ProactiveContactIntentSnapshot,
 } from "../../src/agency/proactive-contact-attention-policy.ts";
 import type { CognitionId, EvidenceId, MeaningId } from "../../src/core/model.ts";
-import type { TelegramSurfaceConfig } from "../../src/surfaces/telegram/index.ts";
+import type { TelegramSurfaceConfig } from "../../src/apps/telegram/index.ts";
 
 import { decideUserInterruption } from "../../src/agency/interruption-decision.ts";
 import { decideProactiveContactAttention } from "../../src/agency/proactive-contact-attention-policy.ts";
@@ -21,7 +21,7 @@ import { startRuntime } from "../../src/core/runtime-episode.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
 import { StateStore } from "../../src/persistence/state-store.ts";
 import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
-import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/surfaces/telegram/index.ts";
+import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
 import { contentDigest, exactKeys, isObject } from "../../src/util.ts";
 
 const CASE_IDS = [

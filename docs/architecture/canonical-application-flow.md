@@ -42,19 +42,19 @@ does that before the adapter starts.
 ### Foreground CLI
 
 The executable entry point is [`bin/ember.ts`](../../bin/ember.ts), which delegates to
-the CLI module under [`src/surfaces/cli/`](../../src/surfaces/cli/).
+the CLI module under [`../../src/apps`](../../src/apps/cli/).
 
 For an already configured continuity, the path is:
 
 ```text
 bin/ember.ts
-  -> surfaces/cli/main.ts
-  -> surfaces/cli/setup.ts::setupRunMain
+  -> apps/cli/main.ts
+  -> apps/cli/setup.ts::setupRunMain
   -> app/bootstrap.ts::prepareConfiguredRun
   -> composition/cli.ts::composeCliSurface
   -> composition/ember.ts::composeEmberApplication
   -> app/application.ts::createEmberApplication
-  -> surfaces/cli/surface.ts::runCliSurface
+  -> apps/cli/surface.ts::runCliSurface
   -> EmberApplication.interact(...)
 ```
 
@@ -73,7 +73,7 @@ bin/ember-telegram.ts
   -> composition/telegram.ts::composeTelegramSurface
   -> composition/ember.ts::composeEmberApplication
   -> app/application.ts::createEmberApplication
-  -> surfaces/telegram/surface.ts::runTelegramPolling
+  -> apps/telegram/surface.ts::runTelegramPolling
   -> processTelegramUpdate
   -> EmberApplication.interact(...)
 ```
@@ -184,7 +184,7 @@ is a substitute for Ember continuity.
 Machine bootstrap is not a second cognition architecture.
 
 When plain `ember` runs with no default setup record,
-[`firstRun`](../../src/surfaces/cli/setup.ts) asks only for the choices required to
+[`firstRun`](../../src/apps/cli/setup.ts) asks only for the choices required to
 create or restore continuity and select a cognition provider. It then calls
 [`bootstrapContinuity`](../../src/app/bootstrap.ts), which verifies cognition and
 activates the continuity. After successful activation, the same process continues into
@@ -212,7 +212,7 @@ For a local CLI conversation whose configuration exposes a trusted-host setup ca
 3. the adapter builds a
    [`TrustedHostSetupRequest`](../../src/app/contract.ts) containing the principal,
    scope, proposal occurrence, and attributable confirmation;
-4. `src/surfaces/cli/setup.ts` validates that request, selects the host-specific
+4. `../../src/apps` validates that request, selects the host-specific
    resident adapter, and calls the existing Telegram setup workflow;
 5. bot-token entry and machine mutation stay on the trusted local host.
 
@@ -245,7 +245,7 @@ src/composition/*
         +--> src/host/*
         |
         v
-src/surfaces/* receive the composed application and perform transport work
+src/apps/* receive the composed application and perform transport work
 ```
 
 The important negative rules are enforced in

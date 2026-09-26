@@ -2,7 +2,7 @@
 summary: "Current source-layout rules for application composition, AI execution, host boundaries, thin conversational adapters, CLI routing, and enforced inward dependencies."
 read_when:
   - "Adding, moving, or reorganizing production code under src/"
-  - "Adding or changing an interaction surface under src/surfaces/"
+  - "Adding or changing an interaction surface under src/apps/"
   - "Deciding whether code belongs to application coordination, composition, AI mechanics, runtime operations, persistence, integrations, host adapters, or transport"
   - "Changing dependency rules enforced by scripts/check-dependencies.ts"
 role: design
@@ -28,7 +28,7 @@ src/
   persistence/   filesystem-backed repositories and materializations
   integrations/  external capability/protocol adapters such as Calendar and MCP
   host/          subprocess and service-manager mechanics such as systemd and launchd
-  surfaces/      CLI, Telegram, and future concrete interaction transports
+  apps/      CLI, Telegram, and future concrete interaction transports
 ```
 
 These directories are not independently versioned packages. Ember remains one npm
@@ -78,7 +78,7 @@ canonical persistence or semantic state directly.
 Concrete ways for a principal to interact with Ember live under one surface namespace:
 
 ```text
-src/surfaces/
+src/apps/
   cli/
     index.ts
     main.ts
@@ -103,7 +103,7 @@ memory, context policy, provider selection, cognition execution, or application
 composition.
 
 A new concrete interaction surface should normally become another
-`src/surfaces/<surface>/` sibling. Do not add a generic surface registry, plugin
+`../../src/apps` sibling. Do not add a generic surface registry, plugin
 framework, or event bus merely because multiple surfaces exist.
 
 ## CLI placement
@@ -121,7 +121,7 @@ The CLI-specific split is:
 
 Explicit operator commands may depend on repositories or application/host operations
 when that is the command's actual responsibility. Their co-location under
-`surfaces/cli/` does not make those operations part of the ordinary conversational
+`apps/cli/` does not make those operations part of the ordinary conversational
 adapter.
 
 The ordinary conversational path is stricter: it receives the composed application
@@ -129,7 +129,7 @@ and calls `EmberApplication.interact`.
 
 ## Telegram placement
 
-Telegram-specific Bot API integration lives under `src/surfaces/telegram/`.
+Telegram-specific Bot API integration lives under `../../src/apps`.
 
 - `config.ts` parses and validates machine transport configuration;
 - `setup.ts` owns the existing trusted-host Telegram setup workflow;

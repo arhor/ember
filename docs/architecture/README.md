@@ -92,7 +92,7 @@ Current architecture material:
   share the representation-neutral semantic boundary, evaluates L0-L3 provenance and
   Pi-class storage choices, and keeps graph adoption gated on issue #240 evidence.
 - [Source Layout and Surface Placement](source-layout.md) records the current
-  `src/surfaces/<surface>/` grouping, the distinction between conversational CLI
+  `../../src/apps` grouping, the distinction between conversational CLI
   mechanics and operator/application commands, and the intended inward dependency
   direction for concrete surfaces.
 - [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete
