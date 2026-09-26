@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../../../src/apps/telegram/index.ts";
 
 import { processTelegramUpdate } from "../../../src/apps/telegram/index.ts";
-import { composeTelegramSurface } from "../../../src/composition/telegram.ts";
+import { composeTelegramSurface } from "../../../src/core/composition/telegram.ts";
 import { SurfaceDeliveryFailure } from "../../../src/runtime/interaction-boundary.ts";
 
 const ROOT = resolve(import.meta.dirname, "../../..");

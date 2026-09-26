@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createFileBackedRepositoriesForState } from "../../composition/ember.ts";
 import { StateStore } from "../../persistence/state-store.ts";
+import { createFileBackedRepositoriesForState } from "../composition/ember.ts";
 import { initialState } from "../model.ts";
 import { createOnboardingWork } from "../onboarding-work.ts";
 import { startRuntime } from "../runtime-episode.ts";

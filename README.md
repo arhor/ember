@@ -49,7 +49,7 @@ The production tree is organized by ownership:
 
 - `src/core/app` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
   and execution coordination, post-turn work, bootstrap decisions, and application-level use cases;
-- `src/composition/` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
+- `src/core/composition` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
   capability selection, and concrete surface services;
 - `src/core/ai` owns the Ember AI execution contract, Vercel AI SDK execution mechanics, bounded provider/model bridges,
   structured control generation, and generic process compatibility mechanics;

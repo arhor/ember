@@ -85,7 +85,7 @@ executable composition boundary.
 
 ### Shared composition root
 
-[`src/composition/ember.ts`](../../src/composition/ember.ts) is the production
+[`../../src/core/composition`](../../src/core/composition/ember.ts) is the production
 composition root for one Ember application instance. It creates the repositories,
 selects the configured cognition executor and control helpers, supplies capability
 selection, and returns `EmberApplicationDependencies`.

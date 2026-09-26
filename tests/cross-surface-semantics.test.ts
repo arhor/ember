@@ -11,7 +11,7 @@ import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts"
 import { main as cliMain } from "../src/apps/cli/index.ts";
 import { runCliSurface } from "../src/apps/cli/surface.ts";
 import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
-import { composeCliSurface } from "../src/composition/cli.ts";
+import { composeCliSurface } from "../src/core/composition/cli.ts";
 import { initialState } from "../src/core/model.ts";
 import { createOnboardingWork } from "../src/core/onboarding-work.ts";
 import { rememberFact } from "../src/core/semantics.ts";

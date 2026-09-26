@@ -4,8 +4,8 @@ import type { AiExecutionRequest, AiExecutionResult } from "../../src/core/ai/co
 import type { EmberState, RuntimeId } from "../../src/core/model.ts";
 import type { Projection } from "../../src/core/projection.ts";
 
-import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { executeCognition } from "../../src/core/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
 import { initialState, validateState } from "../../src/core/model.ts";
 import { inspectionView } from "../../src/core/projection.ts";
 import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";

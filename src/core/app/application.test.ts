@@ -4,15 +4,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { AiExecutionRequest } from "../ai/contract.ts";
+import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { InteractionEvent } from "./contract.ts";
 
-import { composeEmberApplication } from "../../composition/ember.ts";
 import { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "../../persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import { InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
+import { composeEmberApplication } from "../composition/ember.ts";
 import { ProviderError } from "../errors.ts";
 import { initialState } from "../model.ts";
 import { createOnboardingWork } from "../onboarding-work.ts";

@@ -6,8 +6,8 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import { main as cliMain } from "../src/apps/cli/index.ts";
-import { composeEmberApplication } from "../src/composition/ember.ts";
 import { createEmberApplication } from "../src/core/app/application.ts";
+import { composeEmberApplication } from "../src/core/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 

@@ -1,5 +1,5 @@
-import type { EmberApplicationDependencies } from "../../composition/ember.ts";
 import type { InteractionRepositories, SurfaceDelivery } from "../../runtime/interaction-boundary.ts";
+import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { ExternalOccurrenceMetadata, PrincipalAssertionProvenance } from "../interaction-contract.ts";
 import type { CognitionId, CognitionStatus, EmberState } from "../model.ts";
 import type { RunCognitionOptions } from "./cognition-execution.ts";

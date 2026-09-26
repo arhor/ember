@@ -8,7 +8,7 @@ import {
     telegramResidentLaunch,
     verifyTelegramLongPollingReady,
 } from "../src/apps/telegram/index.ts";
-import { composeTelegramSurface } from "../src/composition/telegram.ts";
+import { composeTelegramSurface } from "../src/core/composition/telegram.ts";
 import { ValidationError } from "../src/core/errors.ts";
 
 interface TelegramCliArgs {

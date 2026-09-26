@@ -7,12 +7,12 @@ import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
 import { parseArgs } from "../src/apps/cli/index.ts";
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { createCodexLanguageModel } from "../src/core/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../src/core/ai/onboarding-progress.ts";
 import { buildCodexPrompt, invokeCodexProvider } from "../src/core/ai/providers/codex.ts";
 import { executeCognition } from "../src/core/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { buildProjection } from "../src/core/projection.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";

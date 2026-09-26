@@ -7,7 +7,7 @@ import test from "node:test";
 
 import type { EmberApplication, InteractionEvent } from "../../core/app/contract.ts";
 
-import { composeCliSurface } from "../../composition/cli.ts";
+import { composeCliSurface } from "../../core/composition/cli.ts";
 import { initialState } from "../../core/model.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 import { runCliSurface } from "./surface.ts";

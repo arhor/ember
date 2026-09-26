@@ -10,12 +10,12 @@ import type {
 import type { CognitionId, EvidenceId, MeaningId } from "../../src/core/model.ts";
 
 import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
-import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
-import { composeTelegramSurface } from "../../src/composition/telegram.ts";
 import { decideUserInterruption } from "../../src/core/agency/interruption-decision.ts";
 import { decideProactiveContactAttention } from "../../src/core/agency/proactive-contact-attention-policy.ts";
 import { ProactiveContactStore } from "../../src/core/agency/proactive-contact-store.ts";
 import { executeCognition } from "../../src/core/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
+import { composeTelegramSurface } from "../../src/core/composition/telegram.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";

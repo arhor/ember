@@ -6,12 +6,12 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import type { CliSurfaceConfig } from "../src/apps/cli/index.ts";
-import type { EmberCompositionOverrides, EmberProviderKind } from "../src/composition/ember.ts";
+import type { EmberCompositionOverrides, EmberProviderKind } from "../src/core/composition/ember.ts";
 
 import { setupGoogleCalendarMain } from "../src/apps/cli/google-calendar-setup.ts";
 import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/apps/cli/index.ts";
-import { composeCliSurface } from "../src/composition/cli.ts";
 import { actionProposalConfirmation, ActionProposalStore } from "../src/core/capabilities/action-proposal.ts";
+import { composeCliSurface } from "../src/core/composition/cli.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";

@@ -1,4 +1,4 @@
-import type { EmberApplicationDependencies } from "../../composition/ember.ts";
+import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { CognitionId, EmberState } from "../model.ts";
 interface PostTurnDiagnostics {
     memoryProposalFailure: string | null;

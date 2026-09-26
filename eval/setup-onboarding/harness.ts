@@ -9,10 +9,10 @@ import type { OnboardingProgressEvaluator } from "../../src/onboarding/progress-
 
 import { setupMain } from "../../src/apps/cli/setup.ts";
 import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
-import { createFileBackedRepositoriesForState } from "../../src/composition/ember.ts";
 import { executeCognition as runCoreCognition } from "../../src/core/app/cognition-execution.ts";
 import { prepareCognition } from "../../src/core/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../src/core/app/post-turn.ts";
+import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";

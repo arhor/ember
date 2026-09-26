@@ -7,9 +7,9 @@ import type { SpecialistEpisodeRecord } from "../src/delegation/codex-specialist
 import type { CommandRunner } from "../src/host/systemd.ts";
 import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
 
-import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { runCognitionOpportunity } from "../src/core/agency/cognition-opportunity.ts";
 import { executeCognition } from "../src/core/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
 import { ConcurrentWriter } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";

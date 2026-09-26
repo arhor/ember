@@ -40,7 +40,7 @@ privacy, and delivery distinctions executable across both current surfaces.
 
 `../../src/core/app` and `../../src/core/app` expose the one supported
 surface-neutral ordinary-interaction seam. Executable/bootstrap code composes that
-application through `src/composition/cli.ts` or `src/composition/telegram.ts` before
+application through `../../src/core/composition` or `../../src/core/composition` before
 entering the concrete adapter; ordinary surface modules receive the application and do
 not construct providers, stores, or cognition orchestration themselves.
 `src/runtime/interaction-boundary.ts` retains the focused operational ledger and

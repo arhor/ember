@@ -46,15 +46,15 @@ filesystem paths, or concrete store implementations.
 interaction. It owns the writer lease and runtime episode around admission, cognition,
 post-turn work, and delivery reconciliation.
 
-`src/composition/ember.ts` is the production dependency composition root. It creates
+`../../src/core/composition` is the production dependency composition root. It creates
 repositories, the configured `AiExecutor`, structured control helpers, capability
 selection, and the other collaborators required by the application.
 
 Surface-specific composition is intentionally tiny:
 
-- `src/composition/cli.ts` adapts validated CLI/bootstrap configuration into one
+- `../../src/core/composition` adapts validated CLI/bootstrap configuration into one
   composed application plus repositories needed by explicit operator commands;
-- `src/composition/telegram.ts` adapts validated Telegram configuration into the same
+- `../../src/core/composition` adapts validated Telegram configuration into the same
   application dependencies.
 
 Composition belongs to executable/bootstrap plumbing, not to ordinary conversational
