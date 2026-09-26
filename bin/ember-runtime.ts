@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import type { SpecialistEpisodeSpec } from "../src/core/delegation/codex-specialist.ts";
 import type { SystemdHostConfig } from "../src/core/host/systemd.ts";
-import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
+import type { EpisodicRuntimeConfig } from "../src/core/runtime/episodic-runtime.ts";
 
 import { installSystemdUnit, renderSystemdService, SystemdUserBackgroundHost } from "../src/core/host/systemd.ts";
 import {
@@ -15,7 +15,7 @@ import {
     runWakeWorker,
     scheduleWake,
     startSpecialistEpisode,
-} from "../src/runtime/episodic-runtime.ts";
+} from "../src/core/runtime/episodic-runtime.ts";
 
 if (import.meta.main) {
     const controller = new AbortController();

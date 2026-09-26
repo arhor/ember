@@ -1,7 +1,7 @@
-import type { InteractionRepositories, SurfaceDelivery } from "../../runtime/interaction-boundary.ts";
 import type { EmberApplicationDependencies } from "../composition/ember.ts";
 import type { ExternalOccurrenceMetadata, PrincipalAssertionProvenance } from "../interaction-contract.ts";
 import type { CognitionId, CognitionStatus, EmberState } from "../model.ts";
+import type { InteractionRepositories, SurfaceDelivery } from "../runtime/interaction-boundary.ts";
 import type { RunCognitionOptions } from "./cognition-execution.ts";
 import type { PreparedCognition } from "./cognition-preparation.ts";
 import type {
@@ -12,11 +12,11 @@ import type {
     TransportSend,
 } from "./contract.ts";
 
-import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../runtime/interaction-boundary.ts";
 import { ValidationError } from "../errors.ts";
 import { newId } from "../model.ts";
 import { findRuntime } from "../projection.ts";
 import { startRuntime, stopRuntime, stopRuntimeAfterFailure } from "../runtime-episode.ts";
+import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../runtime/interaction-boundary.ts";
 import { requirePrincipal } from "../semantics.ts";
 import { executePreparedCognition, findCognition, validateCognitionInvocation } from "./cognition-execution.ts";
 import { prepareCognition } from "./cognition-preparation.ts";

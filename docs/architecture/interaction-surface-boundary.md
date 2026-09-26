@@ -43,7 +43,7 @@ surface-neutral ordinary-interaction seam. Executable/bootstrap code composes th
 application through `../../src/core/composition` or `../../src/core/composition` before
 entering the concrete adapter; ordinary surface modules receive the application and do
 not construct providers, stores, or cognition orchestration themselves.
-`src/runtime/interaction-boundary.ts` retains the focused operational ledger and
+`../../src/core/runtime` retains the focused operational ledger and
 delivery-reconciliation mechanics used by the application boundary.
 
 The complete executable path is documented in

@@ -39,7 +39,7 @@ This evaluation was performed on **2026-09-07** against:
 - Ember's current [Design Principles](../principles.md), accepted architecture decisions, and [Architecture Acceptance Scenarios](acceptance-scenarios.md);
 - the then-current one-shot cognition contract (now `../../src/core/ai`) and the historical [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist boundary and [Specialist Result Reintegration](specialist-result-reintegration.md);
-- the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `src/runtime/episodic-runtime.ts`;
+- the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `../../src/core/runtime`;
 - Mastra's stable `@mastra/core@1.64.0` release published on 2026-09-04, while repository `main` already identified itself as `1.65.0-alpha.7` during this review;
 - Mastra's public Apache-2.0 repository and first-party documentation/blog material linked in [Sources](#sources).
 
@@ -530,7 +530,7 @@ Mastra MCP client/server mechanics could reduce transport/discovery boilerplate 
 
 **Future long-running operational coordination**
 
-A `DurableExecutionPort` could eventually replace custom suspend/retry/checkpoint plumbing for a specific multi-step operation. It should not replace the accepted runtime topology globally. `src/runtime/episodic-runtime.ts` remains simpler for current one-shot wakes and systemd-supervised specialist episodes.
+A `DurableExecutionPort` could eventually replace custom suspend/retry/checkpoint plumbing for a specific multi-step operation. It should not replace the accepted runtime topology globally. `../../src/core/runtime` remains simpler for current one-shot wakes and systemd-supervised specialist episodes.
 
 **Evaluation tooling**
 

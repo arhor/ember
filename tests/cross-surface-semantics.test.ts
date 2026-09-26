@@ -18,8 +18,8 @@ import { ConversationContextStore } from "../src/core/persistence/conversation-c
 import { MemoryProposalGenerationStore } from "../src/core/persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
 import { StateStore } from "../src/core/persistence/state-store.ts";
+import { InteractionLedgerStore } from "../src/core/runtime/interaction-boundary.ts";
 import { rememberFact } from "../src/core/semantics.ts";
-import { InteractionLedgerStore } from "../src/runtime/interaction-boundary.ts";
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";

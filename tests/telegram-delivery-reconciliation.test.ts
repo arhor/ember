@@ -20,8 +20,8 @@ import { createEmberApplication } from "../src/core/app/application.ts";
 import { composeEmberApplication } from "../src/core/composition/ember.ts";
 import { initialState } from "../src/core/model.ts";
 import { StateStore } from "../src/core/persistence/state-store.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/core/runtime/interaction-boundary.ts";
 import { rememberFact } from "../src/core/semantics.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/runtime/interaction-boundary.ts";
 import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,

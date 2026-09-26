@@ -9,7 +9,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import type { SpecialistEpisodeRecord } from "../../src/core/delegation/codex-specialist.ts";
 import type { SystemdHostConfig } from "../../src/core/host/systemd.ts";
-import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/runtime/episodic-runtime.ts";
+import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/core/runtime/episodic-runtime.ts";
 
 import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
 import { runCommand, SystemdUserBackgroundHost } from "../../src/core/host/systemd.ts";
@@ -21,7 +21,7 @@ import {
     specialistJobId,
     startSpecialistEpisode,
     wakeJobId,
-} from "../../src/runtime/episodic-runtime.ts";
+} from "../../src/core/runtime/episodic-runtime.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const PRINCIPAL = "live-runtime-smoke-user";

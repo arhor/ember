@@ -28,10 +28,10 @@ import {
 import { MemoryProposalGenerationStore } from "../../core/persistence/memory-proposal-generation-store.ts";
 import { StateStore } from "../../core/persistence/state-store.ts";
 import { explanationView, inspectionView } from "../../core/projection.ts";
+import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../core/runtime/interaction-boundary.ts";
 import { supersede } from "../../core/semantics.ts";
 import { buildStateMaterialization } from "../../core/state-materialization.ts";
 import { assertUnreachable, cloneState } from "../../core/util.ts";
-import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
 import { Commands, CommandSpecs } from "./model.ts";
 import { setupMain, setupRunMain } from "./setup.ts";

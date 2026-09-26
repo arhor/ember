@@ -14,7 +14,7 @@ import {
     InteractionLedgerStore,
     interactionLedgerInspectionView,
     reconcileSurfaceDelivery,
-} from "../src/runtime/interaction-boundary.ts";
+} from "../src/core/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

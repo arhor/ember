@@ -112,7 +112,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
 
 3. **The interaction ledger establishes occurrence identity.**
    The application calls
-   [`InteractionLedgerStore.acceptInbound`](../../src/runtime/interaction-boundary.ts).
+   [`InteractionLedgerStore.acceptInbound`](../../src/core/runtime/interaction-boundary.ts).
    A new occurrence receives one planned cognition ID. A replay reuses the established
    record and must not create another cognition.
 

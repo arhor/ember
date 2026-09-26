@@ -5,7 +5,7 @@ import test from "node:test";
 
 import type { SpecialistEpisodeRecord } from "../src/core/delegation/codex-specialist.ts";
 import type { CommandRunner } from "../src/core/host/systemd.ts";
-import type { EpisodicRuntimeConfig } from "../src/runtime/episodic-runtime.ts";
+import type { EpisodicRuntimeConfig } from "../src/core/runtime/episodic-runtime.ts";
 
 import { runCognitionOpportunity } from "../src/core/agency/cognition-opportunity.ts";
 import { executeCognition } from "../src/core/app/cognition-execution.ts";
@@ -23,7 +23,7 @@ import {
     runWakeWorker,
     scheduleWake,
     startSpecialistEpisode,
-} from "../src/runtime/episodic-runtime.ts";
+} from "../src/core/runtime/episodic-runtime.ts";
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const OBSERVED_AT = "2026-09-04T16:00:00Z";

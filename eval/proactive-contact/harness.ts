@@ -20,9 +20,9 @@ import { ValidationError } from "../../src/core/errors.ts";
 import { initialState } from "../../src/core/model.ts";
 import { StateStore } from "../../src/core/persistence/state-store.ts";
 import { startRuntime } from "../../src/core/runtime-episode.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/core/runtime/interaction-boundary.ts";
 import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
 import { contentDigest, exactKeys, isObject } from "../../src/core/util.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/runtime/interaction-boundary.ts";
 
 const CASE_IDS = [
     "useful-contact",

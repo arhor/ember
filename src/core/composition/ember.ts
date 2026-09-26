@@ -1,11 +1,10 @@
-import type { InteractionRepositories } from "../../runtime/interaction-boundary.ts";
 import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
 import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 import type { StateStoreOptions } from "../persistence/state-store.ts";
+import type { InteractionRepositories } from "../runtime/interaction-boundary.ts";
 
-import { InteractionLedgerStore } from "../../runtime/interaction-boundary.ts";
 import { ProactiveContactStore } from "../agency/proactive-contact-store.ts";
 import { createCodexLanguageModel } from "../ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../ai/cognition.ts";
@@ -27,6 +26,7 @@ import { ConversationContextStore } from "../persistence/conversation-context-st
 import { MemoryProposalGenerationStore } from "../persistence/memory-proposal-generation-store.ts";
 import { OnboardingWorkStore } from "../persistence/onboarding-work-store.ts";
 import { StateStore } from "../persistence/state-store.ts";
+import { InteractionLedgerStore } from "../runtime/interaction-boundary.ts";
 import { providerLabel } from "./provider-label.ts";
 
 export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";

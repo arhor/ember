@@ -146,7 +146,7 @@ application architectures.
 
 ## Runtime and host placement
 
-`src/runtime/` contains operational mechanisms that are shared by application flows
+`../../src/core/runtime` contains operational mechanisms that are shared by application flows
 without owning transport or provider construction. In particular,
 `runtime/interaction-boundary.ts` owns occurrence/delivery ledger mechanics and
 delivery reconciliation.
