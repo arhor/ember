@@ -27,7 +27,7 @@ import type { ProviderFailureCategory } from "../errors.ts";
 import type { CognitionId } from "../model.ts";
 import type { AiExecutor, AiStreamObserver } from "./contract.ts";
 
-import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
+import { createCapabilityExecutionFirewall } from "../capabilities/execution.ts";
 import { ProviderError } from "../errors.ts";
 import { isObject } from "../util.ts";
 import { AI_EXECUTION_CONTRACT_VERSION, MAX_AI_TIMEOUT_SECONDS, validateAiExecutionResult } from "./contract.ts";

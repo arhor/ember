@@ -4,7 +4,7 @@ import type { SurfaceRepositories } from "../../core/app/surface-repositories.ts
 import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
 import type { CliSurfaceConfig } from "./surface.ts";
 
-import { actionProposalConfirmation } from "../../capabilities/action-proposal.ts";
+import { actionProposalConfirmation } from "../../core/capabilities/action-proposal.ts";
 import { EmberError, ValidationError } from "../../core/errors.ts";
 import { nowUtc } from "../../core/model.ts";
 import { startRuntime, stopRuntime } from "../../core/runtime-episode.ts";

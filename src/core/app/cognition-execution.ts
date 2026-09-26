@@ -1,10 +1,10 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { CapabilityExecutionLedger } from "../../capabilities/execution.ts";
 import type { ConversationContextStore } from "../../persistence/conversation-context-store.ts";
 import type { OnboardingWorkStore } from "../../persistence/onboarding-work-store.ts";
 import type { StateStore } from "../../persistence/state-store.ts";
 import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
+import type { CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { ConversationMembershipIntent } from "../interaction-contract.ts";
 import type {
     CognitionEpisode,

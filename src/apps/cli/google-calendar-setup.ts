@@ -6,7 +6,7 @@ import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import type { GoogleCalendarConfig } from "../../integrations/google-calendar/read.ts";
 import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
-import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
+import { createCapabilityExecutionFirewall } from "../../core/capabilities/execution.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { loadSetupConfig } from "../../host/setup.ts";
 import {

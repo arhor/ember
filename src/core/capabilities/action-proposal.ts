@@ -4,11 +4,11 @@ import { dirname } from "node:path";
 
 import type { CapabilityAuthorityDecision, CapabilityContext, CapabilityJsonValue } from "./execution.ts";
 
-import { StoreUnavailable, ValidationError } from "../core/errors.ts";
-import { isRfc3339Utc } from "../core/model.ts";
-import { exactKeys, isNotBlankString, isObject } from "../core/util.ts";
-import { replaceFileDurably } from "../persistence/file-replacement.ts";
-import { StateStore } from "../persistence/state-store.ts";
+import { replaceFileDurably } from "../../persistence/file-replacement.ts";
+import { StateStore } from "../../persistence/state-store.ts";
+import { StoreUnavailable, ValidationError } from "../errors.ts";
+import { isRfc3339Utc } from "../model.ts";
+import { exactKeys, isNotBlankString, isObject } from "../util.ts";
 
 export type ActionProposalStatus =
     | "pending"

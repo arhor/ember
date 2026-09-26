@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { CapabilityBinding, CapabilityContext } from "./execution.ts";
 
-import { newId } from "../core/model.ts";
+import { newId } from "../model.ts";
 import { createCapabilityExecutionFirewall, createCapabilityExecutionLedger } from "./execution.ts";
 
 const AUTHORIZED = {

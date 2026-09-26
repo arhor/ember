@@ -5,10 +5,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { CapabilityJsonValue } from "../../src/capabilities/execution.ts";
+import type { CapabilityJsonValue } from "../../src/core/capabilities/execution.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../src/core/capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/execution.ts";
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,

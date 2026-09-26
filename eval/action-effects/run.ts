@@ -4,8 +4,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../src/core/capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/execution.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "../../src/integrations/google-calendar/create.ts";
 import {
     loadGoogleCalendarConfig,

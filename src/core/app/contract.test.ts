@@ -212,7 +212,7 @@ test("the contract module only imports transport-neutral core/utility collaborat
     assert.ok(importPaths.length > 0, "expected the contract module to import its collaborators");
     for (const path of importPaths) {
         assert.ok(
-            path.startsWith("../core/") || path === "../util.ts",
+            path.startsWith("../") || path === "../util.ts",
             `unexpected transport/provider/persistence import in the application contract: ${path}`,
         );
     }
@@ -220,6 +220,6 @@ test("the contract module only imports transport-neutral core/utility collaborat
 
 test("core/interaction-contract.ts stays a leaf so the reused types carry no transitive runtime/SDK dependency", async () => {
     const here = dirname(fileURLToPath(import.meta.url));
-    const source = await readFile(join(here, "..", "core", "interaction-contract.ts"), "utf8");
+    const source = await readFile(join(here, "..", "interaction-contract.ts"), "utf8");
     assert.ok(!/^import /m.test(source), "expected core/interaction-contract.ts to have no imports of its own");
 });

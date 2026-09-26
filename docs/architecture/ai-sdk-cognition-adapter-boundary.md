@@ -308,6 +308,6 @@ failure, repeated-call occurrence blocking, bounded result reintegration, final
 `usedMeaningIds` validation, canonical-state isolation, and tool lifecycle observations
 that deliberately omit tool inputs, outputs, and SDK call IDs.
 
-`src/capabilities/execution.test.ts` separately pins cancellation truthfulness before
+`../../src/core/capabilities` separately pins cancellation truthfulness before
 and after an execution attempt begins. That ledger remains the authority for effect
 uncertainty even when inference lifecycle observations are also collected.

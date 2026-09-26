@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { CapabilityBinding, CapabilityContext, CapabilityJsonValue } from "../../capabilities/execution.ts";
+import type { CapabilityBinding, CapabilityContext, CapabilityJsonValue } from "../../core/capabilities/execution.ts";
 
-import { CapabilityExecutionFailure } from "../../capabilities/execution.ts";
+import { CapabilityExecutionFailure } from "../../core/capabilities/execution.ts";
 import { ValidationError } from "../../core/errors.ts";
 import { ASCII_CONTROL_CHARACTER_PATTERN, isRfc3339Utc } from "../../core/model.ts";
 import { exactKeys, isObject } from "../../core/util.ts";

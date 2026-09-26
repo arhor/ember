@@ -1,4 +1,4 @@
-import type { CognitionId } from "../core/model.ts";
+import type { CognitionId } from "../model.ts";
 
 export const MAX_CAPABILITY_OUTPUT_BYTES = 8 * 1024;
 

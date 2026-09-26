@@ -4,14 +4,14 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { CapabilityBinding } from "../src/capabilities/execution.ts";
 import type { InferenceEvidence } from "../src/core/ai/cognition.ts";
+import type { CapabilityBinding } from "../src/core/capabilities/execution.ts";
 
-import { createCapabilityExecutionLedger } from "../src/capabilities/execution.ts";
-import { createLocalLookupCapability } from "../src/capabilities/local-lookup.ts";
 import { createFileBackedRepositoriesForState } from "../src/composition/ember.ts";
 import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
 import { findCognition, executeCognition } from "../src/core/app/cognition-execution.ts";
+import { createCapabilityExecutionLedger } from "../src/core/capabilities/execution.ts";
+import { createLocalLookupCapability } from "../src/core/capabilities/local-lookup.ts";
 import { startRuntime } from "../src/core/runtime-episode.ts";
 import { StateStore } from "../src/persistence/state-store.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";

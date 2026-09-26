@@ -10,8 +10,8 @@ import type { EmberCompositionOverrides, EmberProviderKind } from "../src/compos
 
 import { setupGoogleCalendarMain } from "../src/apps/cli/google-calendar-setup.ts";
 import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/apps/cli/index.ts";
-import { actionProposalConfirmation, ActionProposalStore } from "../src/capabilities/action-proposal.ts";
 import { composeCliSurface } from "../src/composition/cli.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../src/core/capabilities/action-proposal.ts";
 import { ProviderError } from "../src/core/errors.ts";
 import { DurabilityUncertain } from "../src/core/errors.ts";
 import { initialState } from "../src/core/model.ts";

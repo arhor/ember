@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
-import type { CapabilityExecutionEvidence } from "../../src/capabilities/execution.ts";
+import type { CapabilityExecutionEvidence } from "../../src/core/capabilities/execution.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../src/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../src/capabilities/execution.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../src/core/capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/execution.ts";
 import { ValidationError } from "../../src/core/errors.ts";
 import { exactKeys, isObject } from "../../src/core/util.ts";
 import {

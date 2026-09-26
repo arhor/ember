@@ -1,4 +1,4 @@
-import type { CapabilityBinding, CapabilityExecutionLedger } from "../../capabilities/execution.ts";
+import type { CapabilityBinding, CapabilityExecutionLedger } from "../capabilities/execution.ts";
 import type { CognitionId, MeaningId } from "../model.ts";
 import type { Projection } from "../projection.ts";
 

@@ -47,7 +47,7 @@ model produces final AiExecutionResult
 Ember validateAiExecutionResult
 ```
 
-`src/capabilities/execution.ts` owns the capability contract and firewall. Application
+`../../src/core/capabilities` owns the capability contract and firewall. Application
 composition owns the selection policy, and runtime resolves that policy before invoking
 AI execution. `../../src/core/ai` receives only the selected bindings for that call and
 adapts them to AI SDK `tool` and `generateText` mechanics. AI SDK `Tool`, tool-call,
@@ -160,7 +160,7 @@ expression evidence, not AI SDK tool calls, messages, response IDs, step objects
 
 ## Deterministic local proof
 
-`src/capabilities/local-lookup.ts` is the first real capability behind the seam. It
+`../../src/core/capabilities` is the first real capability behind the seam. It
 looks up one explicitly allowed key from local deterministic data. It is intentionally
 small: the purpose is to exercise the real execution firewall without adding shell,
 filesystem, network, MCP, or product behavior.
@@ -178,7 +178,7 @@ production `createAiSdkCognitionExecutor` and application cognition path. It pro
 - capability success cannot bypass final `usedMeaningIds` validation; and
 - provider, tool-call, and capability execution metadata do not enter canonical state.
 
-`src/capabilities/execution.test.ts` directly exercises the cancellation boundary,
+`../../src/core/capabilities` directly exercises the cancellation boundary,
 including safe cancellation before execution and truthful uncertainty after execution
 has begun.
 
