@@ -3,7 +3,7 @@ import { readFile, realpath, unlink } from "node:fs/promises";
 import { createServer } from "node:http";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
-import type { GoogleCalendarConfig } from "../../integrations/google-calendar/read.ts";
+import type { GoogleCalendarConfig } from "../../core/integrations/google-calendar/read.ts";
 import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
 import { createCapabilityExecutionFirewall } from "../../core/capabilities/execution.ts";
@@ -14,7 +14,7 @@ import {
     GOOGLE_OAUTH_TOKEN_ENDPOINT,
     createGoogleCalendarCapability,
     loadGoogleCalendarConfig,
-} from "../../integrations/google-calendar/read.ts";
+} from "../../core/integrations/google-calendar/read.ts";
 import { replaceFileDurably } from "../../persistence/file-replacement.ts";
 import { StateStore } from "../../persistence/state-store.ts";
 

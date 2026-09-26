@@ -58,7 +58,7 @@ The production tree is organized by ownership:
 - `src/runtime/` owns focused operational runtime mechanics such as the interaction ledger, delivery reconciliation, and
   episodic unattended execution;
 - `src/persistence/` owns durable filesystem-backed repositories and materializations;
-- `src/integrations/` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
+- `src/core/integrations` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
 - `src/core/host` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
 - `src/apps` owns concrete interaction transports. CLI and Telegram receive an already composed
   `EmberApplication` for ordinary conversation and keep transport-specific admission and delivery behavior;

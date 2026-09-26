@@ -5,8 +5,6 @@ import type { InteractionRepositories } from "../../runtime/interaction-boundary
 import type { ClaudeCodeProviderOptions } from "../ai/claude-code.ts";
 import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "../ai/contract.ts";
 
-import { selectApprovedGoogleCalendarEventCapability } from "../../integrations/google-calendar/create.ts";
-import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../../integrations/google-calendar/read.ts";
 import { createProviderMemoryProposalGenerator } from "../../memory/provider-memory-proposal-generator.ts";
 import { DurableObjectiveStore } from "../../objectives/durable-objective.ts";
 import { createProviderOnboardingProgressEvaluator } from "../../onboarding/progress-evaluator.ts";
@@ -27,6 +25,8 @@ import { createProcessLanguageModel } from "../ai/process.ts";
 import { createProcessProvider } from "../ai/providers/process.ts";
 import { ObjectiveActionCoordinator } from "../app/objective-action.ts";
 import { ActionProposalStore } from "../capabilities/action-proposal.ts";
+import { selectApprovedGoogleCalendarEventCapability } from "../integrations/google-calendar/create.ts";
+import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "../integrations/google-calendar/read.ts";
 import { providerLabel } from "./provider-label.ts";
 
 export type EmberProviderKind = "process" | "codex" | "cursor" | "claude-code" | "ollama" | "deepseek";

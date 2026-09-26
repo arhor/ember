@@ -273,7 +273,7 @@ attempt are safely retryable `not_started` failures. Malformed 2xx responses aft
 submission produce `outcome_unknown` in both the durable action ledger and capability
 evidence.
 
-Deterministic coverage lives in `src/integrations/google-calendar/create.test.ts`.
+Deterministic coverage lives in `../../src/core/integrations`.
 The opt-in real smoke requires a refresh token granted the
 `https://www.googleapis.com/auth/calendar.events` scope and runs with:
 

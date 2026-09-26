@@ -12,8 +12,8 @@ import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/e
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
-} from "../../src/integrations/google-calendar/create.ts";
-import { loadGoogleCalendarConfig } from "../../src/integrations/google-calendar/read.ts";
+} from "../../src/core/integrations/google-calendar/create.ts";
+import { loadGoogleCalendarConfig } from "../../src/core/integrations/google-calendar/read.ts";
 
 if (process.env.EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE !== "1") {
     process.stdout.write("skipped: set EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE=1 and documented event variables\n");

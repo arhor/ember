@@ -3,9 +3,9 @@ import type { MCPClient, MCPTransport, MCPTransportCloseOptions, MCPTransportSen
 import { createMCPClient } from "@ai-sdk/mcp";
 import { Experimental_StdioMCPTransport } from "@ai-sdk/mcp/mcp-stdio";
 
-import type { CapabilityBinding, CapabilityJsonValue } from "../../core/capabilities/execution.ts";
+import type { CapabilityBinding, CapabilityJsonValue } from "../../capabilities/execution.ts";
 
-import { CapabilityExecutionFailure } from "../../core/capabilities/execution.ts";
+import { CapabilityExecutionFailure } from "../../capabilities/execution.ts";
 
 const DEFAULT_INITIALIZATION_TIMEOUT_MS = 2_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
