@@ -4,17 +4,17 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor } from "../../core/ai/contract.ts";
-import type { EmberApplication } from "../../core/app/contract.ts";
+import type { AiExecutor } from "../../../packages/core/src/ai/contract.ts";
+import type { EmberApplication } from "../../../packages/core/src/app/contract.ts";
 import type { TelegramSurfaceConfig } from "./config.ts";
 import type { TelegramUpdate } from "./surface.ts";
 
 import { processTelegramUpdate, runTelegramPolling } from "../../../tests/support-telegram-surface.ts";
-import { initialState } from "../../core/model.ts";
-import { createOnboardingWork } from "../../core/onboarding-work.ts";
-import { OnboardingWorkStore } from "../../core/persistence/onboarding-work-store.ts";
-import { StateStore } from "../../core/persistence/state-store.ts";
-import { SurfaceDeliveryFailure } from "../../core/runtime/interaction-boundary.ts";
+import { initialState } from "../../../packages/core/src/model.ts";
+import { createOnboardingWork } from "../../../packages/core/src/onboarding-work.ts";
+import { OnboardingWorkStore } from "../../../packages/core/src/persistence/onboarding-work-store.ts";
+import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
+import { SurfaceDeliveryFailure } from "../../../packages/core/src/runtime/interaction-boundary.ts";
 import {
     TELEGRAM_SURFACE_ID,
     createTelegramApi,

@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 
 import type { LongitudinalScenario } from "../longitudinal/harness.ts";
 
-import { ASCII_CONTROL_CHARACTERS_PATTERN } from "../../src/core/model.ts";
+import { ASCII_CONTROL_CHARACTERS_PATTERN } from "../../packages/core/src/model.ts";
 
 type ScenarioAction = LongitudinalScenario["setup"][number];
 type ScenarioEpisode = LongitudinalScenario["episodes"][number];

@@ -71,14 +71,14 @@ state through a richer retrieval representation.
 The current implementation reinforces the failure classification rather than
 contradicting it.
 
-`src/core/projection.ts` validates canonical state and then iterates `state.meanings`
+`../../packages/core/src/projection.ts` validates canonical state and then iterates `state.meanings`
 directly. For ordinary cognition it selects current facts and preferences in the
 active scope, live commitments in that scope, and relationship meaning for the local
 principal. The longitudinal ambient facts that reproduce SEL-01 satisfy those broad
 membership predicates, so they are admitted even though the scenario oracle marks
 them irrelevant to the present purpose.
 
-`../../src/core/persistence` reads the complete canonical document, validates it,
+`../../packages/core/src/persistence` reads the complete canonical document, validates it,
 and returns the resulting state. The longitudinal restart scenarios demonstrate that
 relevant state, provenance, currentness, and truthful gaps remain available after
 persistence/reload. Nothing in the current failure corpus shows a relevant meaning

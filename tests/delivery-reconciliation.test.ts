@@ -4,17 +4,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor } from "../src/core/ai/contract.ts";
+import type { AiExecutor } from "../packages/core/src/ai/contract.ts";
 
-import { createEmberApplication } from "../src/core/app/application.ts";
-import { composeEmberApplication, createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
-import { initialState } from "../src/core/model.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
+import { createEmberApplication } from "../packages/core/src/app/application.ts";
+import { composeEmberApplication, createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 import {
     InteractionLedgerStore,
     interactionLedgerInspectionView,
     reconcileSurfaceDelivery,
-} from "../src/core/runtime/interaction-boundary.ts";
+} from "../packages/core/src/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

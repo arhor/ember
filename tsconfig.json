@@ -12,7 +12,7 @@
     "exactOptionalPropertyTypes": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true,
+    "rewriteRelativeImportExtensions": false,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "types": ["node"]

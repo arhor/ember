@@ -1,16 +1,16 @@
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
-import type { BootstrapEvent } from "../../core/app/bootstrap.ts";
-import type { SetupCompositionOverrides } from "../../core/composition/setup.ts";
+import type { BootstrapEvent } from "../../../packages/core/src/app/bootstrap.ts";
+import type { SetupCompositionOverrides } from "../../../packages/core/src/composition/setup.ts";
 import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
 
-import { bootstrapContinuity, prepareConfiguredRun } from "../../core/app/bootstrap.ts";
-import { composeCliSurface } from "../../core/composition/cli.ts";
-import { composeSetupDependencies } from "../../core/composition/setup.ts";
-import { ValidationError } from "../../core/errors.ts";
-import { createSetupDiagnostics } from "../../core/host/setup-diagnostics.ts";
-import { defaultSetupConfigPath, loadSetupConfig } from "../../core/host/setup.ts";
+import { bootstrapContinuity, prepareConfiguredRun } from "../../../packages/core/src/app/bootstrap.ts";
+import { composeCliSurface } from "../../../packages/core/src/composition/cli.ts";
+import { composeSetupDependencies } from "../../../packages/core/src/composition/setup.ts";
+import { ValidationError } from "../../../packages/core/src/errors.ts";
+import { createSetupDiagnostics } from "../../../packages/core/src/host/setup-diagnostics.ts";
+import { defaultSetupConfigPath, loadSetupConfig } from "../../../packages/core/src/host/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
@@ -185,7 +185,7 @@ async function runConfigured(
                 )
                     throw new ValidationError("Telegram setup requires attributable local confirmation");
                 const { runTelegramSetup } = await import("../telegram/setup.ts");
-                const { telegramResidentHost } = await import("../../core/host/telegram-resident-host.ts");
+                const { telegramResidentHost } = await import("../../../packages/core/src/host/telegram-resident-host.ts");
                 const setup = await loadSetupConfig(args.mode === "default" ? defaultSetupConfigPath() : args.config);
                 if (!setup) throw new ValidationError("setup configuration is unavailable");
                 let residentHost;

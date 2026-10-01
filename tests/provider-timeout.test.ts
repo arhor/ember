@@ -4,13 +4,13 @@ import { PassThrough } from "node:stream";
 import test from "node:test";
 
 import { parseArgs } from "../src/apps/cli/index.ts";
-import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "../src/core/ai/contract.ts";
-import { createProcessLanguageModel } from "../src/core/ai/process.ts";
-import { invokeProvider } from "../src/core/ai/providers/process.ts";
-import { ProviderError, ValidationError } from "../src/core/errors.ts";
-import { buildProjection } from "../src/core/projection.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
+import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../packages/core/src/ai/contract.ts";
+import { createProcessLanguageModel } from "../packages/core/src/ai/process.ts";
+import { invokeProvider } from "../packages/core/src/ai/providers/process.ts";
+import { ProviderError, ValidationError } from "../packages/core/src/errors.ts";
+import { buildProjection } from "../packages/core/src/projection.ts";
+import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 const OVERSIZED_TIMEOUT = MAX_AI_TIMEOUT_SECONDS + 1;

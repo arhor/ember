@@ -6,18 +6,18 @@ import { PassThrough } from "node:stream";
 import test from "node:test";
 
 import { parseArgs } from "../src/apps/cli/index.ts";
-import { validateAiExecutionResult } from "../src/core/ai/contract.ts";
+import { validateAiExecutionResult } from "../packages/core/src/ai/contract.ts";
 import {
     createProcessProvider as createTestProcessProvider,
     invokeProvider,
-} from "../src/core/ai/providers/process.ts";
-import { executeCognition } from "../src/core/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
-import { validateState } from "../src/core/model.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { buildProjection } from "../src/core/projection.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
-import { cloneState } from "../src/core/util.ts";
+} from "../packages/core/src/ai/providers/process.ts";
+import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import { validateState } from "../packages/core/src/model.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { buildProjection } from "../packages/core/src/projection.ts";
+import { startRuntime } from "../packages/core/src/runtime-episode.ts";
+import { cloneState } from "../packages/core/src/util.ts";
 import {
     captureError,
     command,

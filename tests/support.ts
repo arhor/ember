@@ -3,7 +3,7 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { initialState } from "../src/core/model.ts";
+import { initialState } from "../packages/core/src/model.ts";
 import {
     attachDetail,
     rememberEpisode,
@@ -11,7 +11,7 @@ import {
     rememberPreference,
     rememberRelationship,
     undertake,
-} from "../src/core/semantics.ts";
+} from "../packages/core/src/semantics.ts";
 
 export const PRINCIPAL = "user-1";
 export const SCOPE = "project:ember/docs";

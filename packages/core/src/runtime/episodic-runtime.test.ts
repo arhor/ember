@@ -5,8 +5,8 @@ import test from "node:test";
 
 import type { EpisodicRuntimeConfig } from "./episodic-runtime.ts";
 
-import { FakeBackgroundHost } from "../../../tests/fake-background-host.ts";
-import { ROOT, PRINCIPAL, SCOPE, tempDir } from "../../../tests/support.ts";
+import { FakeBackgroundHost } from "../../../../tests/fake-background-host.ts";
+import { ROOT, PRINCIPAL, SCOPE, tempDir } from "../../../../tests/support.ts";
 import { createSpecialistEpisode } from "../delegation/codex-specialist.ts";
 import { initialState } from "../model.ts";
 import { StateStore } from "../persistence/state-store.ts";

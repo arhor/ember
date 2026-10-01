@@ -23,7 +23,7 @@ boundaries:
 durable evidence -> proposed memory -> deterministic adoption policy -> canonical meaning
 ```
 
-This document and `src/core/memory-proposal.ts` define the first arrow, the proposal
+This document and `../../packages/core/src/memory-proposal.ts` define the first arrow, the proposal
 lifecycle, and issue #222's deterministic adoption policy. Issue #223 may later use
 structured AI SDK output to produce candidate syntax, but provider and SDK types do
 not participate in this contract.
@@ -159,7 +159,7 @@ their existing explicit transition boundary rather than memory proposal superses
 
 ## Deterministic coverage
 
-`src/core/memory-proposal.test.ts` covers non-mutating valid assessment and resolution,
+`../../packages/core/src/memory-proposal.test.ts` covers non-mutating valid assessment and resolution,
 missing and duplicate evidence, cross-scope evidence, unsupported commitment formation,
 adoption, duplicate/conflict rejection, confidence rejection, exact-slot supersession,
 no-op supersession, repeatable deterministic materialization, stale revisions and

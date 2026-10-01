@@ -3,20 +3,20 @@ import { readFile, realpath, unlink } from "node:fs/promises";
 import { createServer } from "node:http";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
-import type { GoogleCalendarConfig } from "../../core/integrations/google-calendar/read.ts";
+import type { GoogleCalendarConfig } from "../../../packages/core/src/integrations/google-calendar/read.ts";
 import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
-import { createCapabilityExecutionFirewall } from "../../core/capabilities/execution.ts";
-import { ValidationError } from "../../core/errors.ts";
-import { loadSetupConfig } from "../../core/host/setup.ts";
+import { createCapabilityExecutionFirewall } from "../../../packages/core/src/capabilities/execution.ts";
+import { ValidationError } from "../../../packages/core/src/errors.ts";
+import { loadSetupConfig } from "../../../packages/core/src/host/setup.ts";
 import {
     GOOGLE_CALENDAR_SCOPE,
     GOOGLE_OAUTH_TOKEN_ENDPOINT,
     createGoogleCalendarCapability,
     loadGoogleCalendarConfig,
-} from "../../core/integrations/google-calendar/read.ts";
-import { replaceFileDurably } from "../../core/persistence/file-replacement.ts";
-import { StateStore } from "../../core/persistence/state-store.ts";
+} from "../../../packages/core/src/integrations/google-calendar/read.ts";
+import { replaceFileDurably } from "../../../packages/core/src/persistence/file-replacement.ts";
+import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 

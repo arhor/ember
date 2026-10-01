@@ -7,7 +7,7 @@ import type { AiExecutor } from "../ai/contract.ts";
 import type { MemoryProposalGenerator } from "../memory/memory-proposal-generation.ts";
 import type { OnboardingProgressEvaluator } from "../onboarding/progress-evaluator.ts";
 
-import { emptyRequest } from "../../../tests/support.ts";
+import { emptyRequest } from "../../../../tests/support.ts";
 import { composeEmberApplication } from "./ember.ts";
 
 const statePath = join("/tmp", "ember-composition-test", "state.json");

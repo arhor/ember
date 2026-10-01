@@ -7,21 +7,21 @@ import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { SpecialistEpisodeRecord } from "../../src/core/delegation/codex-specialist.ts";
-import type { SystemdHostConfig } from "../../src/core/host/systemd.ts";
-import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../src/core/runtime/episodic-runtime.ts";
+import type { SpecialistEpisodeRecord } from "../../packages/core/src/delegation/codex-specialist.ts";
+import type { SystemdHostConfig } from "../../packages/core/src/host/systemd.ts";
+import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../packages/core/src/runtime/episodic-runtime.ts";
 
-import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
-import { runCommand, SystemdUserBackgroundHost } from "../../src/core/host/systemd.ts";
-import { initialState } from "../../src/core/model.ts";
-import { StateStore } from "../../src/core/persistence/state-store.ts";
+import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../packages/core/src/delegation/codex-specialist.ts";
+import { runCommand, SystemdUserBackgroundHost } from "../../packages/core/src/host/systemd.ts";
+import { initialState } from "../../packages/core/src/model.ts";
+import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
 import {
     EpisodicRecordStore,
     scheduleWake,
     specialistJobId,
     startSpecialistEpisode,
     wakeJobId,
-} from "../../src/core/runtime/episodic-runtime.ts";
+} from "../../packages/core/src/runtime/episodic-runtime.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const PRINCIPAL = "live-runtime-smoke-user";

@@ -4,14 +4,14 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createCodexLanguageModel } from "../../src/core/ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../../src/core/ai/cognition.ts";
-import { executeCognition } from "../../src/core/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
-import { initialState } from "../../src/core/model.ts";
-import { StateStore } from "../../src/core/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
-import { rememberFact, rememberPreference, rememberRelationship } from "../../src/core/semantics.ts";
+import { createCodexLanguageModel } from "../../packages/core/src/ai/codex.ts";
+import { createAiSdkCognitionExecutor } from "../../packages/core/src/ai/cognition.ts";
+import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
+import { initialState } from "../../packages/core/src/model.ts";
+import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
+import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
+import { rememberFact, rememberPreference, rememberRelationship } from "../../packages/core/src/semantics.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = `relationship:${PRINCIPAL}`;

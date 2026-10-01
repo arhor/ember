@@ -6,20 +6,20 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/apps/telegram/index.ts";
-import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts";
+import type { AiExecutor, AiExecutionRequest } from "../packages/core/src/ai/contract.ts";
 
 import { main as cliMain } from "../src/apps/cli/index.ts";
 import { runCliSurface } from "../src/apps/cli/surface.ts";
 import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
-import { composeCliSurface } from "../src/core/composition/cli.ts";
-import { initialState } from "../src/core/model.ts";
-import { createOnboardingWork } from "../src/core/onboarding-work.ts";
-import { ConversationContextStore } from "../src/core/persistence/conversation-context-store.ts";
-import { MemoryProposalGenerationStore } from "../src/core/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { InteractionLedgerStore } from "../src/core/runtime/interaction-boundary.ts";
-import { rememberFact } from "../src/core/semantics.ts";
+import { composeCliSurface } from "../packages/core/src/composition/cli.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { createOnboardingWork } from "../packages/core/src/onboarding-work.ts";
+import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../packages/core/src/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { InteractionLedgerStore } from "../packages/core/src/runtime/interaction-boundary.ts";
+import { rememberFact } from "../packages/core/src/semantics.ts";
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { validateConversationContextDocument } from "../src/core/conversation-context.ts";
+import { validateConversationContextDocument } from "../packages/core/src/conversation-context.ts";
 
 test("conversation sidecar rejects an active trajectory whose id belongs to another owner", () => {
     assert.throws(

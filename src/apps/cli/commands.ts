@@ -1,13 +1,13 @@
 import type { Writable } from "node:stream";
 
-import type { SurfaceRepositories } from "../../core/app/surface-repositories.ts";
-import type { EmberState, MeaningId, RuntimeId } from "../../core/model.ts";
+import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.ts";
+import type { EmberState, MeaningId, RuntimeId } from "@ember/core/model.ts";
 import type { CliSurfaceConfig } from "./surface.ts";
 
-import { actionProposalConfirmation } from "../../core/capabilities/action-proposal.ts";
-import { EmberError, ValidationError } from "../../core/errors.ts";
-import { nowUtc } from "../../core/model.ts";
-import { startRuntime, stopRuntime } from "../../core/runtime-episode.ts";
+import { actionProposalConfirmation } from "@ember/core/capabilities/action-proposal.ts";
+import { EmberError, ValidationError } from "@ember/core/errors.ts";
+import { nowUtc } from "@ember/core/model.ts";
+import { startRuntime, stopRuntime } from "@ember/core/runtime-episode.ts";
 import {
     attachDetail,
     rememberEpisode,
@@ -17,8 +17,8 @@ import {
     supersede,
     undertake,
     withholdDetail,
-} from "../../core/semantics.ts";
-import { cloneState } from "../../core/util.ts";
+} from "@ember/core/semantics.ts";
+import { cloneState } from "@ember/core/util.ts";
 
 type CliStateRepository = SurfaceRepositories["state"];
 

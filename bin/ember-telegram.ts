@@ -8,8 +8,8 @@ import {
     telegramResidentLaunch,
     verifyTelegramLongPollingReady,
 } from "../src/apps/telegram/index.ts";
-import { composeTelegramSurface } from "../src/core/composition/telegram.ts";
-import { ValidationError } from "../src/core/errors.ts";
+import { composeTelegramSurface } from "../packages/core/src/composition/telegram.ts";
+import { ValidationError } from "../packages/core/src/errors.ts";
 
 interface TelegramCliArgs {
     command:
@@ -30,7 +30,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
         const args = parseArgs(argv);
         const config = await loadTelegramSurfaceConfig(args.config);
         if (args.command === "render-unit" || args.command.startsWith("service-")) {
-            const { telegramResidentHost } = await import("../src/core/host/telegram-resident-host.ts");
+            const { telegramResidentHost } = await import("../packages/core/src/host/telegram-resident-host.ts");
             const host = await telegramResidentHost();
             if (args.command === "render-unit") {
                 process.stdout.write(host.render(telegramResidentLaunch(config, args.config)));

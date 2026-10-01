@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 import type { EndogenousRestartScenarioKind } from "../../../eval/endogenous-restart/harness.ts";
-import type { CognitionOpportunityEvaluator } from "../../../src/core/agency/cognition-opportunity.ts";
-import type { EmberState, MeaningId } from "../../../src/core/model.ts";
+import type { CognitionOpportunityEvaluator } from "../../../packages/core/src/agency/cognition-opportunity.ts";
+import type { EmberState, MeaningId } from "../../../packages/core/src/model.ts";
 
-import { runCognitionOpportunity } from "../../../src/core/agency/cognition-opportunity.ts";
-import { createCodexOpportunityEvaluator } from "../../../src/core/ai/codex-opportunity.ts";
-import { initialState } from "../../../src/core/model.ts";
-import { StateStore } from "../../../src/core/persistence/state-store.ts";
-import { inspectionView } from "../../../src/core/projection.ts";
-import { startRuntime, stopRuntime } from "../../../src/core/runtime-episode.ts";
-import { rememberFact, supersede, transitionCommitment, undertake } from "../../../src/core/semantics.ts";
+import { runCognitionOpportunity } from "../../../packages/core/src/agency/cognition-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../../../packages/core/src/ai/codex-opportunity.ts";
+import { initialState } from "../../../packages/core/src/model.ts";
+import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
+import { inspectionView } from "../../../packages/core/src/projection.ts";
+import { startRuntime, stopRuntime } from "../../../packages/core/src/runtime-episode.ts";
+import { rememberFact, supersede, transitionCommitment, undertake } from "../../../packages/core/src/semantics.ts";
 
 const [
     phase,

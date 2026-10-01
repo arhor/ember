@@ -5,7 +5,7 @@ import test from "node:test";
 
 import type { SpecialistEpisodeRecord, SpecialistReport } from "./codex-specialist.ts";
 
-import { tempDir } from "../../../tests/support.ts";
+import { tempDir } from "../../../../tests/support.ts";
 import { initialState } from "../model.ts";
 import { StateStore } from "../persistence/state-store.ts";
 import { createSpecialistEpisode, reconcileInterruptedSpecialist } from "./codex-specialist.ts";

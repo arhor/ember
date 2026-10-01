@@ -11,13 +11,13 @@ import { createInterface } from "node:readline/promises";
 import { ReadStream, WriteStream } from "node:tty";
 import { fileURLToPath } from "node:url";
 
-import type { SetupConfig } from "../../core/app/bootstrap.ts";
-import type { ResidentServiceHost } from "../../core/host/resident-service.ts";
+import type { SetupConfig } from "../../../packages/core/src/app/bootstrap.ts";
+import type { ResidentServiceHost } from "../../../packages/core/src/host/resident-service.ts";
 import type { TelegramProviderConfig, TelegramSurfaceConfig } from "./config.ts";
 
-import { ValidationError } from "../../core/errors.ts";
-import { replaceFileDurably } from "../../core/persistence/file-replacement.ts";
-import { InteractionLedgerStore } from "../../core/runtime/interaction-boundary.ts";
+import { ValidationError } from "../../../packages/core/src/errors.ts";
+import { replaceFileDurably } from "../../../packages/core/src/persistence/file-replacement.ts";
+import { InteractionLedgerStore } from "../../../packages/core/src/runtime/interaction-boundary.ts";
 import { telegramResidentLaunch } from "./config.ts";
 import { createTelegramApi, validateTelegramToken, verifyTelegramLongPollingReady } from "./surface.ts";
 

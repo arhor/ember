@@ -5,11 +5,11 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { EmberApplication, InteractionEvent } from "../../core/app/contract.ts";
+import type { EmberApplication, InteractionEvent } from "../../../packages/core/src/app/contract.ts";
 
-import { composeCliSurface } from "../../core/composition/cli.ts";
-import { initialState } from "../../core/model.ts";
-import { StateStore } from "../../core/persistence/state-store.ts";
+import { composeCliSurface } from "../../../packages/core/src/composition/cli.ts";
+import { initialState } from "../../../packages/core/src/model.ts";
+import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
 import { runCliSurface } from "./surface.ts";
 
 test("CLI surface should deliver through an injected application when reading ordinary input", async (t) => {
@@ -135,7 +135,7 @@ test("CLI setup should keep proposal occurrence separate from explicit local con
         statePath,
         provider: { kind: "process", command: "unused", arguments: [], timeoutSeconds: 1 },
     });
-    let request: import("../../core/app/contract.ts").TrustedHostSetupRequest | undefined;
+    let request: import("../../../packages/core/src/app/contract.ts").TrustedHostSetupRequest | undefined;
     let output = "";
     const application = {
         async interact() {

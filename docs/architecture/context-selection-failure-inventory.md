@@ -39,7 +39,7 @@ The executable evidence comes from the longitudinal harness and scenario corpus:
 - `eval/longitudinal/fixtures/provenance-pressure.json`;
 - `eval/longitudinal/fixtures/degraded-context-pressure.json`;
 - `eval/longitudinal/context-harm.ts` and its regression tests;
-- the current `src/core/projection.ts` selection implementation.
+- the current `../../packages/core/src/projection.ts` selection implementation.
 
 ## Executive finding
 

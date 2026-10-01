@@ -6,22 +6,22 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import type { CliSurfaceConfig } from "../src/apps/cli/index.ts";
-import type { EmberCompositionOverrides, EmberProviderKind } from "../src/core/composition/ember.ts";
+import type { EmberCompositionOverrides, EmberProviderKind } from "../packages/core/src/composition/ember.ts";
 
 import { setupGoogleCalendarMain } from "../src/apps/cli/google-calendar-setup.ts";
 import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/apps/cli/index.ts";
-import { actionProposalConfirmation, ActionProposalStore } from "../src/core/capabilities/action-proposal.ts";
-import { composeCliSurface } from "../src/core/composition/cli.ts";
-import { ProviderError } from "../src/core/errors.ts";
-import { DurabilityUncertain } from "../src/core/errors.ts";
-import { loadSetupConfig } from "../src/core/host/setup.ts";
-import { initialState } from "../src/core/model.ts";
-import { createOnboardingWork } from "../src/core/onboarding-work.ts";
-import { ConversationContextStore } from "../src/core/persistence/conversation-context-store.ts";
-import { MemoryProposalGenerationStore } from "../src/core/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../packages/core/src/capabilities/action-proposal.ts";
+import { composeCliSurface } from "../packages/core/src/composition/cli.ts";
+import { ProviderError } from "../packages/core/src/errors.ts";
+import { DurabilityUncertain } from "../packages/core/src/errors.ts";
+import { loadSetupConfig } from "../packages/core/src/host/setup.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { createOnboardingWork } from "../packages/core/src/onboarding-work.ts";
+import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "../packages/core/src/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { captureError, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };

@@ -4,26 +4,26 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { RunCognitionOptions } from "../src/core/app/cognition-execution.ts";
-import type { MemoryProposalGenerator } from "../src/core/memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "../src/core/onboarding/progress-evaluator.ts";
+import type { RunCognitionOptions } from "../packages/core/src/app/cognition-execution.ts";
+import type { MemoryProposalGenerator } from "../packages/core/src/memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "../packages/core/src/onboarding/progress-evaluator.ts";
 
-import { executeCognition as runCoreCognition } from "../src/core/app/cognition-execution.ts";
-import { prepareCognition } from "../src/core/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../src/core/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
-import { createProviderMemoryProposalGenerator } from "../src/core/memory/provider-memory-proposal-generator.ts";
-import { initialState } from "../src/core/model.ts";
+import { executeCognition as runCoreCognition } from "../packages/core/src/app/cognition-execution.ts";
+import { prepareCognition } from "../packages/core/src/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../packages/core/src/app/post-turn.ts";
+import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import { createProviderMemoryProposalGenerator } from "../packages/core/src/memory/provider-memory-proposal-generator.ts";
+import { initialState } from "../packages/core/src/model.ts";
 import {
     applyOnboardingProgressDecision,
     createOnboardingWork,
     validateOnboardingProgressDecision,
     validateOnboardingWork,
-} from "../src/core/onboarding-work.ts";
-import { createProviderOnboardingProgressEvaluator } from "../src/core/onboarding/progress-evaluator.ts";
-import { OnboardingWorkStore } from "../src/core/persistence/onboarding-work-store.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
+} from "../packages/core/src/onboarding-work.ts";
+import { createProviderOnboardingProgressEvaluator } from "../packages/core/src/onboarding/progress-evaluator.ts";
+import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { startRuntime, stopRuntime } from "../packages/core/src/runtime-episode.ts";
 
 async function executeCognition(
     repositories: ReturnType<typeof createFileBackedRepositoriesForState>,

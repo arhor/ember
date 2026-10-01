@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { test } from "node:test";
 
-import type { SetupConfig } from "../../core/app/bootstrap.ts";
+import type { SetupConfig } from "../../../packages/core/src/app/bootstrap.ts";
 import type { TelegramSetupBinding, TelegramSetupDependencies, TelegramSetupIo } from "./setup.ts";
 
-import { SystemdTelegramResidentHost } from "../../core/host/systemd.ts";
+import { SystemdTelegramResidentHost } from "../../../packages/core/src/host/systemd.ts";
 import { runTelegramSetup as runTelegramSetupWithResident } from "./setup.ts";
 
 const SERVICE_DEFINITION_PATH = join(homedir(), ".config", "systemd", "user", "ember-telegram.service");

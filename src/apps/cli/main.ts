@@ -14,24 +14,24 @@ import type {
     SetupGoogleCalendarArgs,
 } from "./model.ts";
 
-import { proactiveContactInspectionView, ProactiveContactStore } from "../../core/agency/proactive-contact-store.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "../../core/ai/contract.ts";
-import { composeCliSurface } from "../../core/composition/cli.ts";
-import { EmberError, ValidationError } from "../../core/errors.ts";
-import { assessMemoryProposal, resolveMemoryProposal } from "../../core/memory-proposal.ts";
-import { initialState } from "../../core/model.ts";
+import { proactiveContactInspectionView, ProactiveContactStore } from "../../../packages/core/src/agency/proactive-contact-store.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "../../../packages/core/src/ai/contract.ts";
+import { composeCliSurface } from "../../../packages/core/src/composition/cli.ts";
+import { EmberError, ValidationError } from "../../../packages/core/src/errors.ts";
+import { assessMemoryProposal, resolveMemoryProposal } from "../../../packages/core/src/memory-proposal.ts";
+import { initialState } from "../../../packages/core/src/model.ts";
 import {
     inspectMarkdownStateEdits,
     publishMarkdownStateViews,
     readMarkdownStateViews,
-} from "../../core/persistence/markdown-state-materializer.ts";
-import { MemoryProposalGenerationStore } from "../../core/persistence/memory-proposal-generation-store.ts";
-import { StateStore } from "../../core/persistence/state-store.ts";
-import { explanationView, inspectionView } from "../../core/projection.ts";
-import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../core/runtime/interaction-boundary.ts";
-import { supersede } from "../../core/semantics.ts";
-import { buildStateMaterialization } from "../../core/state-materialization.ts";
-import { assertUnreachable, cloneState } from "../../core/util.ts";
+} from "../../../packages/core/src/persistence/markdown-state-materializer.ts";
+import { MemoryProposalGenerationStore } from "../../../packages/core/src/persistence/memory-proposal-generation-store.ts";
+import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
+import { explanationView, inspectionView } from "../../../packages/core/src/projection.ts";
+import { interactionLedgerInspectionView, InteractionLedgerStore } from "../../../packages/core/src/runtime/interaction-boundary.ts";
+import { supersede } from "../../../packages/core/src/semantics.ts";
+import { buildStateMaterialization } from "../../../packages/core/src/state-materialization.ts";
+import { assertUnreachable, cloneState } from "../../../packages/core/src/util.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
 import { Commands, CommandSpecs } from "./model.ts";
 import { setupMain, setupRunMain } from "./setup.ts";

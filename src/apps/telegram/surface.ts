@@ -4,22 +4,22 @@ import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "n
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { ContactAttentionDecisionRecord } from "../../core/agency/proactive-contact-attention-policy.ts";
-import type { ProactiveContactIntentRecord } from "../../core/agency/proactive-contact-store.ts";
-import type { EmberApplication } from "../../core/app/contract.ts";
-import type { SurfaceRepositories } from "../../core/app/surface-repositories.ts";
-import type { CognitionId, EmberState } from "../../core/model.ts";
+import type { ContactAttentionDecisionRecord } from "../../../packages/core/src/agency/proactive-contact-attention-policy.ts";
+import type { ProactiveContactIntentRecord } from "../../../packages/core/src/agency/proactive-contact-store.ts";
+import type { EmberApplication } from "../../../packages/core/src/app/contract.ts";
+import type { SurfaceRepositories } from "../../../packages/core/src/app/surface-repositories.ts";
+import type { CognitionId, EmberState } from "../../../packages/core/src/model.ts";
 
 type TelegramRepositories = SurfaceRepositories;
 
 import {
     decideConfiguredProactiveContactHandoff,
     loadConfiguredProactiveContactPolicy,
-} from "../../core/agency/configured-proactive-contact-policy.ts";
-import { ValidationError } from "../../core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../core/model.ts";
-import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../core/runtime/interaction-boundary.ts";
-import { isObject } from "../../core/util.ts";
+} from "../../../packages/core/src/agency/configured-proactive-contact-policy.ts";
+import { ValidationError } from "../../../packages/core/src/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "../../../packages/core/src/model.ts";
+import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "../../../packages/core/src/runtime/interaction-boundary.ts";
+import { isObject } from "../../../packages/core/src/util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";

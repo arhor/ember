@@ -6,10 +6,10 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import { main as cliMain } from "../src/apps/cli/index.ts";
-import { createEmberApplication } from "../src/core/app/application.ts";
-import { composeEmberApplication } from "../src/core/composition/ember.ts";
-import { initialState } from "../src/core/model.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
+import { createEmberApplication } from "../packages/core/src/app/application.ts";
+import { composeEmberApplication } from "../packages/core/src/composition/ember.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

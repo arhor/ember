@@ -1,4 +1,4 @@
-import type { EvidenceId, Meaning, MeaningId } from "../../src/core/model.ts";
+import type { EvidenceId, Meaning, MeaningId } from "../../packages/core/src/model.ts";
 import type { SemanticEvidenceDescriptor, SemanticMemoryExport, SemanticMemoryReader } from "./semantic-export.ts";
 
 export const GRAPH_MEMORY_PROTOTYPE_VERSION = 2;

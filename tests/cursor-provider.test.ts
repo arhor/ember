@@ -7,14 +7,14 @@ import { PassThrough } from "node:stream";
 import test from "node:test";
 
 import { parseArgs } from "../src/apps/cli/index.ts";
-import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
-import { createCursorLanguageModel } from "../src/core/ai/cursor.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../src/core/ai/onboarding-progress.ts";
-import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../src/core/ai/providers/cursor.ts";
-import { ProviderError } from "../src/core/errors.ts";
-import { buildProjection } from "../src/core/projection.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
-import { rememberPreference } from "../src/core/semantics.ts";
+import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
+import { createCursorLanguageModel } from "../packages/core/src/ai/cursor.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "../packages/core/src/ai/onboarding-progress.ts";
+import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../packages/core/src/ai/providers/cursor.ts";
+import { ProviderError } from "../packages/core/src/errors.ts";
+import { buildProjection } from "../packages/core/src/projection.ts";
+import { startRuntime } from "../packages/core/src/runtime-episode.ts";
+import { rememberPreference } from "../packages/core/src/semantics.ts";
 import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const SCRIPTED_CURSOR = join(ROOT, "tests", "fixtures", "providers", "scripted-cursor.ts");

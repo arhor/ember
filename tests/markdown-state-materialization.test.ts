@@ -3,16 +3,16 @@ import { chmod, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import { PartialPublication } from "../src/core/errors.ts";
-import { validateState } from "../src/core/model.ts";
+import { PartialPublication } from "../packages/core/src/errors.ts";
+import { validateState } from "../packages/core/src/model.ts";
 import {
     publishMarkdownStateViews,
     renderMarkdownStateViews,
-} from "../src/core/persistence/markdown-state-materializer.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { supersede, userEvidence } from "../src/core/semantics.ts";
-import { buildStateMaterialization } from "../src/core/state-materialization.ts";
-import { cloneState } from "../src/core/util.ts";
+} from "../packages/core/src/persistence/markdown-state-materializer.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { supersede, userEvidence } from "../packages/core/src/semantics.ts";
+import { buildStateMaterialization } from "../packages/core/src/state-materialization.ts";
+import { cloneState } from "../packages/core/src/util.ts";
 import { command, populatedState, PRINCIPAL, RELATIONSHIP_SCOPE, SCOPE, tempDir } from "./support.ts";
 
 test("Markdown v1 is deterministic and carries stable semantic and evidence references", () => {
@@ -400,7 +400,7 @@ test("materialized edits cannot change identity, provenance, scope, or historica
     supersede(state, PRINCIPAL, ids.preference, "New current preference", { reason: "changed" });
     const rendered = renderMarkdownStateViews(buildStateMaterialization(state, { principal: PRINCIPAL, scope: SCOPE }));
     rendered["USER.md"] = rendered["USER.md"].replace("Prefer concise architectural rationale", "Rewrite history");
-    const { inspectMarkdownStateEdits } = await import("../src/core/persistence/markdown-state-materializer.ts");
+    const { inspectMarkdownStateEdits } = await import("../packages/core/src/persistence/markdown-state-materializer.ts");
     assert.throws(
         () =>
             inspectMarkdownStateEdits(

@@ -3,19 +3,19 @@ import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor, AiExecutionRequest } from "../src/core/ai/contract.ts";
-import type { ConversationMembershipIntent } from "../src/core/interaction-contract.ts";
-import type { EmberState } from "../src/core/model.ts";
+import type { AiExecutor, AiExecutionRequest } from "../packages/core/src/ai/contract.ts";
+import type { ConversationMembershipIntent } from "../packages/core/src/interaction-contract.ts";
+import type { EmberState } from "../packages/core/src/model.ts";
 
-import { executeCognition } from "../src/core/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
-import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../src/core/conversation-context.ts";
-import { ProviderError } from "../src/core/errors.ts";
-import { initialState } from "../src/core/model.ts";
-import { ConversationContextStore } from "../src/core/persistence/conversation-context-store.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../src/core/runtime-episode.ts";
-import { rememberFact } from "../src/core/semantics.ts";
+import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../packages/core/src/conversation-context.ts";
+import { ProviderError } from "../packages/core/src/errors.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { startRuntime, stopRuntime } from "../packages/core/src/runtime-episode.ts";
+import { rememberFact } from "../packages/core/src/semantics.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 interface Fixture {

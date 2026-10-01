@@ -5,20 +5,20 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import type { CapabilityContext } from "../src/core/capabilities/execution.ts";
-import type { McpCapabilityPolicy, McpCapabilitySource } from "../src/core/integrations/mcp/ai-sdk.ts";
+import type { CapabilityContext } from "../packages/core/src/capabilities/execution.ts";
+import type { McpCapabilityPolicy, McpCapabilitySource } from "../packages/core/src/integrations/mcp/ai-sdk.ts";
 
-import { createAiSdkCognitionExecutor } from "../src/core/ai/cognition.ts";
-import { findCognition, executeCognition } from "../src/core/app/cognition-execution.ts";
+import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
+import { findCognition, executeCognition } from "../packages/core/src/app/cognition-execution.ts";
 import {
     createCapabilityExecutionFirewall,
     createCapabilityExecutionLedger,
-} from "../src/core/capabilities/execution.ts";
-import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
-import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../src/core/integrations/mcp/ai-sdk.ts";
-import { newId } from "../src/core/model.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
+} from "../packages/core/src/capabilities/execution.ts";
+import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../packages/core/src/integrations/mcp/ai-sdk.ts";
+import { newId } from "../packages/core/src/model.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const MCP_FIXTURE = fileURLToPath(new URL("./fixtures/mcp-server.ts", import.meta.url));

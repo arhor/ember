@@ -37,9 +37,9 @@ In short: **Ember owns meaning; Mastra may own selected mechanics.**
 This evaluation was performed on **2026-09-07** against:
 
 - Ember's current [Design Principles](../principles.md), accepted architecture decisions, and [Architecture Acceptance Scenarios](acceptance-scenarios.md);
-- the then-current one-shot cognition contract (now `../../src/core/ai`) and the historical [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
+- the then-current one-shot cognition contract (now `../../packages/core/src/ai`) and the historical [Cognition Adapter Contract Decision](cognition-adapter-contract-decision.md);
 - the current specialist boundary and [Specialist Result Reintegration](specialist-result-reintegration.md);
-- the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `../../src/core/runtime`;
+- the current [Long-Lived Runtime Requirements](long-lived-runtime-requirements.md), ADR 0007 episodic runtime decision, and `../../packages/core/src/runtime`;
 - Mastra's stable `@mastra/core@1.64.0` release published on 2026-09-04, while repository `main` already identified itself as `1.65.0-alpha.7` during this review;
 - Mastra's public Apache-2.0 repository and first-party documentation/blog material linked in [Sources](#sources).
 
@@ -72,7 +72,7 @@ This evaluation does **not** claim a measured install size, idle RSS, or Raspber
 | Observational Memory                                         | observer/reflector compression and standalone memory processing                                       |                                                         **2** | Interesting derived context-compression mechanism if outputs remain rebuildable and provenance-linked                                                            | **Spike later as context compressor**             |
 | Storage domains/adapters                                     | memory, workflow, observability, scores, schedules, MCP and other domains across LibSQL/Postgres/etc. | **3** for canonical Ember; **2** for Mastra operational state | Good persistence machinery for Mastra-owned artifacts; schema and lifecycle remain Mastra-specific                                                               | **Use only behind owning primitive**              |
 | Supervisor / subagents / `agent.network()`                   | routing and delegation among Mastra agents                                                            |                                                         **3** | Conflicts with Ember-owned responsibility, authority, currentness, cancellation uncertainty, and reintegration                                                   | **Avoid for Ember delegation**                    |
-| ACP/A2A/coding-agent transports                              | protocol and harness integrations                                                                     |                                                         **2** | Potential transport beneath `../../src/core/delegation`; does not supply Ember delegation meaning                                                                | **Revisit when current adapter lacks capability** |
+| ACP/A2A/coding-agent transports                              | protocol and harness integrations                                                                     |                                                         **2** | Potential transport beneath `../../packages/core/src/delegation`; does not supply Ember delegation meaning                                                                | **Revisit when current adapter lacks capability** |
 | Observability                                                | tracing, exporters, OpenTelemetry-compatible integrations                                             |                                                         **2** | Execution telemetry is non-canonical and naturally replaceable if Ember IDs remain attributes                                                                    | **Strong candidate**                              |
 | Scorers/evals                                                | rule/model/statistical scorers, datasets/experiments, Vitest integration                              |                                                         **2** | Useful evaluation mechanics; acceptance scenarios and semantic oracles remain repository-owned                                                                   | **Candidate**                                     |
 | Mastra Server / Studio / hosted platform                     | HTTP runtime, Studio, hosted deploy/storage/observability                                             |                                                     **4** now | Ember already has explicit CLI/surface/runtime ownership; hosted control plane is not needed for the first topology                                              | **Do not adopt now**                              |
@@ -351,7 +351,7 @@ Mastra's standalone memory processing APIs make this more plausible than wrappin
 
 Mastra's composite storage architecture is a genuine modularity strength. Its framework data can be split into domains and backed by different stores such as LibSQL, Postgres, MongoDB, and other adapters.
 
-That does **not** make Mastra storage a good replacement for `../../src/core/persistence`.
+That does **not** make Mastra storage a good replacement for `../../packages/core/src/persistence`.
 
 Ember's `StateStore` participates in canonical revision, writer-lease, recovery, currentness, and reintegration behavior. A generic Mastra memory/workflow store does not know those semantics and should not be taught them merely to reduce persistence code.
 
@@ -506,19 +506,19 @@ Debugging is strongest where an isolated primitive is used. It becomes harder wh
 
 No Mastra concept belongs in canonical models or semantics. `Agent`, thread/resource IDs, workflow run state, tool approval state, and Mastra storage records must not appear in canonical Ember types merely because an adapter uses them.
 
-**`../../src/core/persistence`**
+**`../../packages/core/src/persistence`**
 
 Keep canonical persistence and writer semantics Ember-owned. Mastra stores may coexist for Mastra operational artifacts but should not replace this boundary.
 
-**`../../src/core/delegation` semantic contracts**
+**`../../packages/core/src/delegation` semantic contracts**
 
 Keep responsibility, authority, currentness, cancellation uncertainty, specialist evidence, and reintegration unchanged. Protocol implementation may evolve beneath them later.
 
 ### Plausible places to become thinner
 
-**`../../src/core/ai`**
+**`../../packages/core/src/ai`**
 
-A new direct-model adapter could use Mastra Model Router beneath the Ember-owned `AiExecutor` seam. The current production stack already shares AI SDK execution mechanics while keeping Codex/Cursor CLI protocol bridges under `../../src/core/ai`; another toolkit would need a concrete gap rather than aesthetic uniformity.
+A new direct-model adapter could use Mastra Model Router beneath the Ember-owned `AiExecutor` seam. The current production stack already shares AI SDK execution mechanics while keeping Codex/Cursor CLI protocol bridges under `../../packages/core/src/ai`; another toolkit would need a concrete gap rather than aesthetic uniformity.
 
 **Future tool-capability execution**
 
@@ -530,7 +530,7 @@ Mastra MCP client/server mechanics could reduce transport/discovery boilerplate 
 
 **Future long-running operational coordination**
 
-A `DurableExecutionPort` could eventually replace custom suspend/retry/checkpoint plumbing for a specific multi-step operation. It should not replace the accepted runtime topology globally. `../../src/core/runtime` remains simpler for current one-shot wakes and systemd-supervised specialist episodes.
+A `DurableExecutionPort` could eventually replace custom suspend/retry/checkpoint plumbing for a specific multi-step operation. It should not replace the accepted runtime topology globally. `../../packages/core/src/runtime` remains simpler for current one-shot wakes and systemd-supervised specialist episodes.
 
 **Evaluation tooling**
 

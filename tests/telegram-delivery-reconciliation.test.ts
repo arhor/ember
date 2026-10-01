@@ -9,19 +9,19 @@ import type {
     TelegramSurfaceConfig,
     TelegramUpdate,
 } from "../src/apps/telegram/index.ts";
-import type { ConfiguredProactiveContactPolicy } from "../src/core/agency/configured-proactive-contact-policy.ts";
-import type { ContactAttentionDecisionRecord } from "../src/core/agency/proactive-contact-attention-policy.ts";
-import type { AiExecutor } from "../src/core/ai/contract.ts";
+import type { ConfiguredProactiveContactPolicy } from "../packages/core/src/agency/configured-proactive-contact-policy.ts";
+import type { ContactAttentionDecisionRecord } from "../packages/core/src/agency/proactive-contact-attention-policy.ts";
+import type { AiExecutor } from "../packages/core/src/ai/contract.ts";
 
 import { createTelegramApi, deliverTelegramMessage, loadTelegramSurfaceConfig } from "../src/apps/telegram/index.ts";
-import { decideConfiguredProactiveContactHandoff } from "../src/core/agency/configured-proactive-contact-policy.ts";
-import { ProactiveContactStore } from "../src/core/agency/proactive-contact-store.ts";
-import { createEmberApplication } from "../src/core/app/application.ts";
-import { composeEmberApplication } from "../src/core/composition/ember.ts";
-import { initialState } from "../src/core/model.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../src/core/runtime/interaction-boundary.ts";
-import { rememberFact } from "../src/core/semantics.ts";
+import { decideConfiguredProactiveContactHandoff } from "../packages/core/src/agency/configured-proactive-contact-policy.ts";
+import { ProactiveContactStore } from "../packages/core/src/agency/proactive-contact-store.ts";
+import { createEmberApplication } from "../packages/core/src/app/application.ts";
+import { composeEmberApplication } from "../packages/core/src/composition/ember.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../packages/core/src/runtime/interaction-boundary.ts";
+import { rememberFact } from "../packages/core/src/semantics.ts";
 import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,

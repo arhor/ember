@@ -1,16 +1,16 @@
 import { readFile } from "node:fs/promises";
 
-import type { AiExecutionRequest, AiExecutionResult } from "../../src/core/ai/contract.ts";
-import type { MeaningId } from "../../src/core/model.ts";
-import type { Projection } from "../../src/core/projection.ts";
+import type { AiExecutionRequest, AiExecutionResult } from "../../packages/core/src/ai/contract.ts";
+import type { MeaningId } from "../../packages/core/src/model.ts";
+import type { Projection } from "../../packages/core/src/projection.ts";
 
-import { createEmberApplication } from "../../src/core/app/application.ts";
-import { composeEmberApplication } from "../../src/core/composition/ember.ts";
-import { ProviderError, ValidationError } from "../../src/core/errors.ts";
-import { initialState, isRfc3339Utc } from "../../src/core/model.ts";
-import { StateStore } from "../../src/core/persistence/state-store.ts";
-import { rememberFact } from "../../src/core/semantics.ts";
-import { exactKeys, isObject } from "../../src/core/util.ts";
+import { createEmberApplication } from "../../packages/core/src/app/application.ts";
+import { composeEmberApplication } from "../../packages/core/src/composition/ember.ts";
+import { ProviderError, ValidationError } from "../../packages/core/src/errors.ts";
+import { initialState, isRfc3339Utc } from "../../packages/core/src/model.ts";
+import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
+import { rememberFact } from "../../packages/core/src/semantics.ts";
+import { exactKeys, isObject } from "../../packages/core/src/util.ts";
 
 export interface ConversationEpisode {
     id: string;

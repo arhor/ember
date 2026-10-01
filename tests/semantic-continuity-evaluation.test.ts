@@ -3,7 +3,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import type { HarnessProvider } from "../eval/longitudinal/harness.ts";
-import type { ProjectedMeaning } from "../src/core/projection.ts";
+import type { ProjectedMeaning } from "../packages/core/src/projection.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";

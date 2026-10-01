@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutionResult } from "../src/core/ai/contract.ts";
-import type { EvidenceId } from "../src/core/model.ts";
-import type { ProjectedMeaning } from "../src/core/projection.ts";
+import type { AiExecutionResult } from "../packages/core/src/ai/contract.ts";
+import type { EvidenceId } from "../packages/core/src/model.ts";
+import type { ProjectedMeaning } from "../packages/core/src/projection.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { initialState, validateState } from "../src/core/model.ts";
-import { findEvidence, findMeaning, rememberDelegatedReport } from "../src/core/semantics.ts";
+import { initialState, validateState } from "../packages/core/src/model.ts";
+import { findEvidence, findMeaning, rememberDelegatedReport } from "../packages/core/src/semantics.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "provenance-pressure.json");

@@ -54,7 +54,7 @@ This decision is based on current repository-owned production and evaluation evi
 - issue #46 and `src/providers/codex.ts`, which established the first production one-shot cognition adapter;
 - issue #90 and `src/providers/cursor.ts`, which deliberately added Cursor as a separate thin adapter without pre-committing #92;
 - `src/providers/contract.ts`, the already-shared Ember-owned request/result/invocation seam;
-- `../../src/core/app`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
+- `../../packages/core/src/app`, which consumes a `ProviderInvoker` without transferring continuity or canonical-state ownership to the backend;
 - `docs/architecture/cognition-backend-replacement-evaluation.md`, including the September 1, 2026 Codex-to-Cursor live replacement evidence; and
 - ADR 0001, ADR 0003, ADR 0004, and ADR 0005, which constrain continuity, projection, authority, and failure semantics independently of backend implementation.
 
@@ -161,7 +161,7 @@ A helper capable of preserving current behavior would need configuration or hook
 
 At that point the helper would own most of the lifecycle while receiving most of its meaning back through callbacks. It would reduce line duplication but increase semantic indirection and make review of provider-specific failure behavior harder.
 
-The generic `../../src/core/ai` implementation is also not evidence that it should become a superclass for Codex and Cursor. It implements Ember's simple direct JSON process contract and has different cwd, environment, output, and continuation requirements. Treating it as the base runtime would confuse a transport mechanism with a shared external-agent semantic model.
+The generic `../../packages/core/src/ai` implementation is also not evidence that it should become a superclass for Codex and Cursor. It implements Ember's simple direct JSON process contract and has different cwd, environment, output, and continuation requirements. Treating it as the base runtime would confuse a transport mechanism with a shared external-agent semantic model.
 
 ## Rejected alternatives
 

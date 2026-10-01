@@ -5,7 +5,7 @@ import test from "node:test";
 
 import type { CapabilityJsonValue } from "../../capabilities/execution.ts";
 
-import { tempDir } from "../../../../tests/support.ts";
+import { tempDir } from "../../../../../tests/support.ts";
 import { actionProposalConfirmation, ActionProposalStore } from "../../capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../capabilities/execution.ts";
 import {

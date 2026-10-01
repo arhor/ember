@@ -3,19 +3,19 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { SpecialistEpisodeRecord } from "../src/core/delegation/codex-specialist.ts";
-import type { CommandRunner } from "../src/core/host/systemd.ts";
-import type { EpisodicRuntimeConfig } from "../src/core/runtime/episodic-runtime.ts";
+import type { SpecialistEpisodeRecord } from "../packages/core/src/delegation/codex-specialist.ts";
+import type { CommandRunner } from "../packages/core/src/host/systemd.ts";
+import type { EpisodicRuntimeConfig } from "../packages/core/src/runtime/episodic-runtime.ts";
 
-import { runCognitionOpportunity } from "../src/core/agency/cognition-opportunity.ts";
-import { executeCognition } from "../src/core/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../src/core/composition/ember.ts";
-import { createSpecialistEpisode, inspectSpecialistEpisode } from "../src/core/delegation/codex-specialist.ts";
-import { ConcurrentWriter } from "../src/core/errors.ts";
-import { SystemdUserBackgroundHost } from "../src/core/host/systemd.ts";
-import { initialState } from "../src/core/model.ts";
-import { StateStore } from "../src/core/persistence/state-store.ts";
-import { startRuntime } from "../src/core/runtime-episode.ts";
+import { runCognitionOpportunity } from "../packages/core/src/agency/cognition-opportunity.ts";
+import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import { createSpecialistEpisode, inspectSpecialistEpisode } from "../packages/core/src/delegation/codex-specialist.ts";
+import { ConcurrentWriter } from "../packages/core/src/errors.ts";
+import { SystemdUserBackgroundHost } from "../packages/core/src/host/systemd.ts";
+import { initialState } from "../packages/core/src/model.ts";
+import { StateStore } from "../packages/core/src/persistence/state-store.ts";
+import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import {
     EpisodicRecordStore,
     inspectEpisodicRuntime,
@@ -23,7 +23,7 @@ import {
     runWakeWorker,
     scheduleWake,
     startSpecialistEpisode,
-} from "../src/core/runtime/episodic-runtime.ts";
+} from "../packages/core/src/runtime/episodic-runtime.ts";
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const OBSERVED_AT = "2026-09-04T16:00:00Z";

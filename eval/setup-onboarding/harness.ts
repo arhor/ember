@@ -1,26 +1,26 @@
 import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-import type { SetupConfig } from "../../src/core/app/bootstrap.ts";
-import type { RunCognitionOptions } from "../../src/core/app/cognition-execution.ts";
-import type { MemoryProposalGenerator } from "../../src/core/memory/memory-proposal-generation.ts";
-import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../src/core/model.ts";
-import type { OnboardingProgressEvaluator } from "../../src/core/onboarding/progress-evaluator.ts";
+import type { SetupConfig } from "../../packages/core/src/app/bootstrap.ts";
+import type { RunCognitionOptions } from "../../packages/core/src/app/cognition-execution.ts";
+import type { MemoryProposalGenerator } from "../../packages/core/src/memory/memory-proposal-generation.ts";
+import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../packages/core/src/model.ts";
+import type { OnboardingProgressEvaluator } from "../../packages/core/src/onboarding/progress-evaluator.ts";
 
 import { setupMain } from "../../src/apps/cli/setup.ts";
 import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
-import { executeCognition as runCoreCognition } from "../../src/core/app/cognition-execution.ts";
-import { prepareCognition } from "../../src/core/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../../src/core/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
-import { ValidationError } from "../../src/core/errors.ts";
-import { SystemdTelegramResidentHost } from "../../src/core/host/systemd.ts";
-import { initialState } from "../../src/core/model.ts";
-import { applyOnboardingProgressDecision, createOnboardingWork } from "../../src/core/onboarding-work.ts";
-import { OnboardingWorkStore } from "../../src/core/persistence/onboarding-work-store.ts";
-import { StateStore } from "../../src/core/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../src/core/runtime-episode.ts";
-import { exactKeys, isObject } from "../../src/core/util.ts";
+import { executeCognition as runCoreCognition } from "../../packages/core/src/app/cognition-execution.ts";
+import { prepareCognition } from "../../packages/core/src/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "../../packages/core/src/app/post-turn.ts";
+import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
+import { ValidationError } from "../../packages/core/src/errors.ts";
+import { SystemdTelegramResidentHost } from "../../packages/core/src/host/systemd.ts";
+import { initialState } from "../../packages/core/src/model.ts";
+import { applyOnboardingProgressDecision, createOnboardingWork } from "../../packages/core/src/onboarding-work.ts";
+import { OnboardingWorkStore } from "../../packages/core/src/persistence/onboarding-work-store.ts";
+import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
+import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
+import { exactKeys, isObject } from "../../packages/core/src/util.ts";
 
 export type SetupOnboardingFlow = "fresh-create" | "restore-existing";
 export interface SetupOnboardingScenario {

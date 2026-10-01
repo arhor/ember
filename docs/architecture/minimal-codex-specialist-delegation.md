@@ -272,7 +272,7 @@ requirements above.
 
 ## Implemented issue-60 slice
 
-`../../src/core/delegation` implements this design as a deliberately separate
+`../../packages/core/src/delegation` implements this design as a deliberately separate
 Codex-specific boundary. `createSpecialistEpisode` validates and captures the
 explicit objective, acceptance constraints, bounded context, authority envelope,
 canonical workspace path, runtime command/policy, and currentness basis.

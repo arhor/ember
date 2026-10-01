@@ -4,13 +4,13 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../src/core/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/execution.ts";
-import { selectApprovedGoogleCalendarEventCapability } from "../../src/core/integrations/google-calendar/create.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../packages/core/src/capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
+import { selectApprovedGoogleCalendarEventCapability } from "../../packages/core/src/integrations/google-calendar/create.ts";
 import {
     loadGoogleCalendarConfig,
     selectGoogleCalendarCapability,
-} from "../../src/core/integrations/google-calendar/read.ts";
+} from "../../packages/core/src/integrations/google-calendar/read.ts";
 import { loadActionEffectsScenario, runActionEffectsScenario } from "./harness.ts";
 
 const options = parse(process.argv.slice(2));

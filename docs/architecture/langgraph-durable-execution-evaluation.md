@@ -601,15 +601,15 @@ resumable execution observations. Effect truth remains Ember-owned.
 **`src/core/`** stays framework-free. No LangGraph IDs, graph schemas, node names,
 commands, interrupts, or “memory” types belong in canonical models.
 
-**`../../src/core/persistence`** keeps canonical persistence, revision checks,
+**`../../packages/core/src/persistence`** keeps canonical persistence, revision checks,
 writer lease, atomic replacement, and `DurabilityUncertain` handling. A LangGraph
 checkpointer is a second operational store, never a replacement.
 
-**`../../src/core/ai`** remains the Ember-owned cognition execution seam. LangGraph may
+**`../../packages/core/src/ai`** remains the Ember-owned cognition execution seam. LangGraph may
 orchestrate when execution is called but need not become Ember's execution abstraction.
 Provider `externalThreadId` and LangGraph `thread_id` remain unrelated opaque IDs.
 
-**`../../src/core/delegation`** keeps specialist purpose, authority, disclosure, partial/final
+**`../../packages/core/src/delegation`** keeps specialist purpose, authority, disclosure, partial/final
 observations, cancellation/effect uncertainty, currentness, and reintegration.
 Subgraphs may later implement mechanics below that boundary.
 

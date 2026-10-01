@@ -2,11 +2,11 @@
 
 import assert from "node:assert/strict";
 
-import { evaluateCognitionOpportunity } from "../../src/core/agency/cognition-opportunity.ts";
-import { createCodexOpportunityEvaluator } from "../../src/core/ai/codex-opportunity.ts";
-import { initialState } from "../../src/core/model.ts";
-import { startRuntime } from "../../src/core/runtime-episode.ts";
-import { undertake } from "../../src/core/semantics.ts";
+import { evaluateCognitionOpportunity } from "../../packages/core/src/agency/cognition-opportunity.ts";
+import { createCodexOpportunityEvaluator } from "../../packages/core/src/ai/codex-opportunity.ts";
+import { initialState } from "../../packages/core/src/model.ts";
+import { startRuntime } from "../../packages/core/src/runtime-episode.ts";
+import { undertake } from "../../packages/core/src/semantics.ts";
 
 if (process.env.EMBER_RUN_LIVE_ENDOGENOUS !== "1") {
     process.stderr.write(

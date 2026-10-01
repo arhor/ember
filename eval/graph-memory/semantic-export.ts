@@ -1,10 +1,10 @@
-import type { EmberState, Evidence, EvidenceId, Meaning, MeaningId } from "../../src/core/model.ts";
-import type { ProjectionMeaningReader } from "../../src/core/projection.ts";
-import type { StateMaterialization } from "../../src/core/state-materialization.ts";
+import type { EmberState, Evidence, EvidenceId, Meaning, MeaningId } from "../../packages/core/src/model.ts";
+import type { ProjectionMeaningReader } from "../../packages/core/src/projection.ts";
+import type { StateMaterialization } from "../../packages/core/src/state-materialization.ts";
 
-import { ValidationError } from "../../src/core/errors.ts";
-import { validateState } from "../../src/core/model.ts";
-import { cloneState } from "../../src/core/util.ts";
+import { ValidationError } from "../../packages/core/src/errors.ts";
+import { validateState } from "../../packages/core/src/model.ts";
+import { cloneState } from "../../packages/core/src/util.ts";
 
 export const SEMANTIC_MEMORY_EXPORT_VERSION = 1;
 

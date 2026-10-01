@@ -1,20 +1,20 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
-import type { CapabilityExecutionEvidence } from "../../src/core/capabilities/execution.ts";
+import type { CapabilityExecutionEvidence } from "../../packages/core/src/capabilities/execution.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../src/core/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/execution.ts";
-import { ValidationError } from "../../src/core/errors.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../packages/core/src/capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
+import { ValidationError } from "../../packages/core/src/errors.ts";
 import {
     createApprovedGoogleCalendarEventCapability,
     selectApprovedGoogleCalendarEventCapability,
-} from "../../src/core/integrations/google-calendar/create.ts";
+} from "../../packages/core/src/integrations/google-calendar/create.ts";
 import {
     createGoogleCalendarCapability,
     selectGoogleCalendarCapability,
-} from "../../src/core/integrations/google-calendar/read.ts";
-import { exactKeys, isObject } from "../../src/core/util.ts";
+} from "../../packages/core/src/integrations/google-calendar/read.ts";
+import { exactKeys, isObject } from "../../packages/core/src/util.ts";
 
 const CASES = [
     "read-only-observation",

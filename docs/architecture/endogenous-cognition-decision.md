@@ -29,7 +29,7 @@ model-written reasons into canonical memory.
 
 ## Implemented seam
 
-`../../src/core/agency` exposes a narrow evaluator contract:
+`../../packages/core/src/agency` exposes a narrow evaluator contract:
 
 ```text
 current Ember state + active runtime
@@ -122,7 +122,7 @@ at this boundary; issue #78 owns later delivery/interruption decisions.
 
 ## Deterministic scenario controls
 
-`../../src/core/agency` exercises the issue-73 CO-01/CO-02
+`../../packages/core/src/agency` exercises the issue-73 CO-01/CO-02
 counterfactual directly. Quiet state and live-concern state receive the same
 `foreground_probe`; only Ember-owned projected state differs.
 
@@ -136,7 +136,7 @@ silence scenarios without changing this evaluator contract.
 
 ## AI SDK structured evaluator
 
-Issue #198 adds `../../src/core/ai` as an in-process
+Issue #198 adds `../../packages/core/src/ai` as an in-process
 implementation of the same `CognitionOpportunityEvaluator` seam. It uses AI SDK
 `generateText` with `Output.object` and `jsonSchema`, including local schema validation,
 so the model returns the typed decision object directly instead of encoding control
@@ -155,7 +155,7 @@ for the adapter/error boundary and repository sweep.
 
 ## Codex-backed live evaluator
 
-`../../src/core/ai` provides an opt-in real-model evaluator
+`../../packages/core/src/ai` provides an opt-in real-model evaluator
 using the existing isolated Codex provider boundary.
 
 For compatibility with the one-shot provider contract it uses one fixed evaluator

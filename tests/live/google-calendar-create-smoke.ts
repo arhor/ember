@@ -5,15 +5,15 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { CapabilityJsonValue } from "../../src/core/capabilities/execution.ts";
+import type { CapabilityJsonValue } from "../../packages/core/src/capabilities/execution.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../src/core/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../src/core/capabilities/execution.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "../../packages/core/src/capabilities/action-proposal.ts";
+import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
 import {
     calendarTargetFingerprint,
     createApprovedGoogleCalendarEventCapability,
-} from "../../src/core/integrations/google-calendar/create.ts";
-import { loadGoogleCalendarConfig } from "../../src/core/integrations/google-calendar/read.ts";
+} from "../../packages/core/src/integrations/google-calendar/create.ts";
+import { loadGoogleCalendarConfig } from "../../packages/core/src/integrations/google-calendar/read.ts";
 
 if (process.env.EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE !== "1") {
     process.stdout.write("skipped: set EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE=1 and documented event variables\n");

@@ -37,24 +37,24 @@ requires them.
 
 ## Application and composition
 
-`../../src/core/app` defines the transport-neutral
+`../../packages/core/src/app` defines the transport-neutral
 `InteractionEvent`, `EmberApplication`, delivery callback, and typed trusted-host
 setup handoff shapes. It must not expose Telegram objects, CLI streams, AI SDK types,
 filesystem paths, or concrete store implementations.
 
-`../../src/core/app` is the only production coordinator for an ordinary user
+`../../packages/core/src/app` is the only production coordinator for an ordinary user
 interaction. It owns the writer lease and runtime episode around admission, cognition,
 post-turn work, and delivery reconciliation.
 
-`../../src/core/composition` is the production dependency composition root. It creates
+`../../packages/core/src/composition` is the production dependency composition root. It creates
 repositories, the configured `AiExecutor`, structured control helpers, capability
 selection, and the other collaborators required by the application.
 
 Surface-specific composition is intentionally tiny:
 
-- `../../src/core/composition` adapts validated CLI/bootstrap configuration into one
+- `../../packages/core/src/composition` adapts validated CLI/bootstrap configuration into one
   composed application plus repositories needed by explicit operator commands;
-- `../../src/core/composition` adapts validated Telegram configuration into the same
+- `../../packages/core/src/composition` adapts validated Telegram configuration into the same
   application dependencies.
 
 Composition belongs to executable/bootstrap plumbing, not to ordinary conversational
@@ -62,11 +62,11 @@ surface modules.
 
 ## AI execution
 
-`../../src/core/ai` owns the application-facing `AiExecutionRequest`,
+`../../packages/core/src/ai` owns the application-facing `AiExecutionRequest`,
 `AiExecutionResult`, `AiExecutionOptions`, and `AiExecutor` contract.
 
-`../../src/core/ai` owns the shared Vercel AI SDK ordinary cognition mechanics.
-Concrete Codex, Cursor, Claude Code, and process bridges also live under `../../src/core/ai`.
+`../../packages/core/src/ai` owns the shared Vercel AI SDK ordinary cognition mechanics.
+Concrete Codex, Cursor, Claude Code, and process bridges also live under `../../packages/core/src/ai`.
 Provider-specific process/protocol mechanics are implementation details beneath the
 Ember-owned execution contract.
 
@@ -141,18 +141,18 @@ Telegram-specific Bot API integration lives under `../../src/apps`.
 the polling adapter.
 
 Resident installation is selected through host infrastructure. Linux/systemd and
-macOS/launchd remain `../../src/core/host` concerns and do not create alternate Telegram
+macOS/launchd remain `../../packages/core/src/host` concerns and do not create alternate Telegram
 application architectures.
 
 ## Runtime and host placement
 
-`../../src/core/runtime` contains operational mechanisms that are shared by application flows
+`../../packages/core/src/runtime` contains operational mechanisms that are shared by application flows
 without owning transport or provider construction. In particular,
 `runtime/interaction-boundary.ts` owns occurrence/delivery ledger mechanics and
 delivery reconciliation.
 
-Portable semantic runtime-episode state lives in `src/core/runtime-episode.ts`.
-Platform-specific process and service-manager behavior belongs in `../../src/core/host`.
+Portable semantic runtime-episode state lives in `../../packages/core/src/runtime-episode.ts`.
+Platform-specific process and service-manager behavior belongs in `../../packages/core/src/host`.
 
 A systemd unit, launchd job, resident Telegram worker, or foreground process is an
 operational host shape around Ember. None is a canonical identity or a separate

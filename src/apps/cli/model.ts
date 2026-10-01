@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "node:stream";
 
-import type { SetupIntent } from "../../core/app/bootstrap.ts";
+import type { SetupIntent } from "../../../packages/core/src/app/bootstrap.ts";
 
 export interface CliIo {
     input: Readable;

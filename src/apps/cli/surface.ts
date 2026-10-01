@@ -2,10 +2,10 @@ import type { Readable, Writable } from "node:stream";
 
 import { createInterface } from "node:readline";
 
-import type { EmberApplication, TrustedHostSetupRequest, TrustedHostSetupResult } from "../../core/app/contract.ts";
-import type { SurfaceRepositories } from "../../core/app/surface-repositories.ts";
+import type { EmberApplication, TrustedHostSetupRequest, TrustedHostSetupResult } from "../../../packages/core/src/app/contract.ts";
+import type { SurfaceRepositories } from "../../../packages/core/src/app/surface-repositories.ts";
 
-import { EmberError, ValidationError } from "../../core/errors.ts";
+import { EmberError, ValidationError } from "../../../packages/core/src/errors.ts";
 import { loadConfiguredState, runCliCommand, splitCommand } from "./commands.ts";
 
 export interface CliSurfaceConfig {

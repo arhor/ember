@@ -34,7 +34,7 @@ and currentness.
 
 ## Boundary
 
-`../../src/core/agency` exposes `decideUserInterruption`. It is a pure,
+`../../packages/core/src/agency` exposes `decideUserInterruption`. It is a pure,
 transport-independent policy step:
 
 ```text
@@ -175,7 +175,7 @@ occurrence and delivery correlation when a secondary surface exists.
 
 ## Executable scenarios
 
-`../../src/core/agency` covers the issue contract directly:
+`../../packages/core/src/agency` covers the issue contract directly:
 
 1. **Useful interruption:** completed, current, authorized, time-sensitive internal
    reasoning may yield `deliver` while canonical state remains unchanged.

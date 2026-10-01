@@ -8,13 +8,13 @@ import { basename, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { SpecialistEpisodeSpec } from "../../src/core/delegation/codex-specialist.ts";
-import type { EpisodicRuntimeConfig, RuntimeObservation, WakeIntent } from "../../src/core/runtime/episodic-runtime.ts";
+import type { SpecialistEpisodeSpec } from "../../packages/core/src/delegation/codex-specialist.ts";
+import type { EpisodicRuntimeConfig, RuntimeObservation, WakeIntent } from "../../packages/core/src/runtime/episodic-runtime.ts";
 
-import { createSpecialistEpisode } from "../../src/core/delegation/codex-specialist.ts";
-import { initialState } from "../../src/core/model.ts";
-import { StateStore } from "../../src/core/persistence/state-store.ts";
-import { EpisodicRecordStore } from "../../src/core/runtime/episodic-runtime.ts";
+import { createSpecialistEpisode } from "../../packages/core/src/delegation/codex-specialist.ts";
+import { initialState } from "../../packages/core/src/model.ts";
+import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
+import { EpisodicRecordStore } from "../../packages/core/src/runtime/episodic-runtime.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const RUNTIME_ENTRYPOINT = resolve(ROOT, "bin/ember-runtime.ts");

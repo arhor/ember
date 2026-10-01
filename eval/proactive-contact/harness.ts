@@ -6,23 +6,23 @@ import type {
     ContactAttentionDecisionRecord,
     ContactAttentionPolicyRequest,
     ProactiveContactIntentSnapshot,
-} from "../../src/core/agency/proactive-contact-attention-policy.ts";
-import type { CognitionId, EvidenceId, MeaningId } from "../../src/core/model.ts";
+} from "../../packages/core/src/agency/proactive-contact-attention-policy.ts";
+import type { CognitionId, EvidenceId, MeaningId } from "../../packages/core/src/model.ts";
 
 import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
-import { decideUserInterruption } from "../../src/core/agency/interruption-decision.ts";
-import { decideProactiveContactAttention } from "../../src/core/agency/proactive-contact-attention-policy.ts";
-import { ProactiveContactStore } from "../../src/core/agency/proactive-contact-store.ts";
-import { executeCognition } from "../../src/core/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../src/core/composition/ember.ts";
-import { composeTelegramSurface } from "../../src/core/composition/telegram.ts";
-import { ValidationError } from "../../src/core/errors.ts";
-import { initialState } from "../../src/core/model.ts";
-import { StateStore } from "../../src/core/persistence/state-store.ts";
-import { startRuntime } from "../../src/core/runtime-episode.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../src/core/runtime/interaction-boundary.ts";
-import { findMeaning, rememberFact, supersede } from "../../src/core/semantics.ts";
-import { contentDigest, exactKeys, isObject } from "../../src/core/util.ts";
+import { decideUserInterruption } from "../../packages/core/src/agency/interruption-decision.ts";
+import { decideProactiveContactAttention } from "../../packages/core/src/agency/proactive-contact-attention-policy.ts";
+import { ProactiveContactStore } from "../../packages/core/src/agency/proactive-contact-store.ts";
+import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
+import { composeTelegramSurface } from "../../packages/core/src/composition/telegram.ts";
+import { ValidationError } from "../../packages/core/src/errors.ts";
+import { initialState } from "../../packages/core/src/model.ts";
+import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
+import { startRuntime } from "../../packages/core/src/runtime-episode.ts";
+import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../packages/core/src/runtime/interaction-boundary.ts";
+import { findMeaning, rememberFact, supersede } from "../../packages/core/src/semantics.ts";
+import { contentDigest, exactKeys, isObject } from "../../packages/core/src/util.ts";
 
 const CASE_IDS = [
     "useful-contact",

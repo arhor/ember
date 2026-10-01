@@ -52,7 +52,7 @@ AiExecutionResult
 canonical cognition episode / expression evidence
 ```
 
-The executor lives in `../../src/core/ai` behind the Ember-owned contract in `../../src/core/ai`. It accepts an injected AI SDK
+The executor lives in `../../packages/core/src/ai` behind the Ember-owned contract in `../../packages/core/src/ai`. It accepts an injected AI SDK
 `LanguageModel`, so Ember still does not choose a paid API provider, authentication
 scheme, gateway, or vendor at this boundary. The production dependency remains pinned
 to `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from `ai/test` and
@@ -95,7 +95,7 @@ For capability semantics, see
 
 ## Hosted DeepSeek provider
 
-`../../src/core/ai` composes the hosted `@ai-sdk/deepseek` package through the same
+`../../packages/core/src/ai` composes the hosted `@ai-sdk/deepseek` package through the same
 `createAiSdkCognitionExecutor`, supplying a V4 `LanguageModel` exactly like the Codex,
 Cursor, Claude Code, and Ollama adapters. Structured output, tool execution,
 cancellation, timeout handling, evidence translation, and final Ember validation are
@@ -308,6 +308,6 @@ failure, repeated-call occurrence blocking, bounded result reintegration, final
 `usedMeaningIds` validation, canonical-state isolation, and tool lifecycle observations
 that deliberately omit tool inputs, outputs, and SDK call IDs.
 
-`../../src/core/capabilities` separately pins cancellation truthfulness before
+`../../packages/core/src/capabilities` separately pins cancellation truthfulness before
 and after an execution attempt begins. That ledger remains the authority for effect
 uncertainty even when inference lifecycle observations are also collected.

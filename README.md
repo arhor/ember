@@ -47,19 +47,19 @@ verification, recovery, and trusted-host setup.
 
 The production tree is organized by ownership:
 
-- `src/core/app` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
+- `packages/core/src/app` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
   and execution coordination, post-turn work, bootstrap decisions, and application-level use cases;
-- `src/core/composition` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
+- `packages/core/src/composition` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
   capability selection, and concrete surface services;
-- `src/core/ai` owns the Ember AI execution contract, Vercel AI SDK execution mechanics, bounded provider/model bridges,
+- `packages/core/src/ai` owns the Ember AI execution contract, Vercel AI SDK execution mechanics, bounded provider/model bridges,
   structured control generation, and generic process compatibility mechanics;
 - `src/core/` owns canonical state types, semantic operations, projections, runtime-episode semantics, and shared domain
   errors;
-- `src/core/runtime` owns focused operational runtime mechanics such as the interaction ledger, delivery reconciliation, and
+- `packages/core/src/runtime` owns focused operational runtime mechanics such as the interaction ledger, delivery reconciliation, and
   episodic unattended execution;
-- `src/core/persistence` owns durable filesystem-backed repositories and materializations;
-- `src/core/integrations` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
-- `src/core/host` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
+- `packages/core/src/persistence` owns durable filesystem-backed repositories and materializations;
+- `packages/core/src/integrations` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
+- `packages/core/src/host` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
 - `src/apps` owns concrete interaction transports. CLI and Telegram receive an already composed
   `EmberApplication` for ordinary conversation and keep transport-specific admission and delivery behavior;
 - `eval/` contains evaluation harnesses rather than production runtime code;
