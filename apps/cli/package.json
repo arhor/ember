@@ -14,7 +14,8 @@
     "test": "node --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@ember/core": "workspace:*"
+    "@ember/core": "workspace:*",
+    "commander": "15.0.0"
   },
   "engines": {
     "node": ">=26.8.1 <27"

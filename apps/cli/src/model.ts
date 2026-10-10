@@ -7,13 +7,6 @@ export interface CliIo {
     error: Writable;
 }
 
-export interface CommandSpec {
-    flags: string[];
-    booleans?: string[];
-    repeatable?: string[];
-    positionals: number;
-}
-
 export const Commands = {
     SETUP: "setup",
     SETUP_GOOGLE_CALENDAR: "setup-google-calendar",
@@ -28,104 +21,6 @@ export const Commands = {
     LOCK_STATUS: "lock-status",
     QUARANTINE_STALE_LOCK: "quarantine-stale-lock",
 } as const;
-
-export const CommandSpecs = {
-    [Commands.SETUP]: {
-        flags: [
-            "--config",
-            "--state",
-            "--principal",
-            "--intent",
-            "--provider",
-            "--provider-command",
-            "--model",
-            "--provider-base-url",
-            "--provider-timeout-seconds",
-            "--accept-continuity-risk",
-            "--confirm-provider-change",
-            "--diagnostics",
-            "--help",
-        ],
-        booleans: ["--accept-continuity-risk", "--confirm-provider-change", "--diagnostics", "--help"],
-        positionals: 0,
-    },
-    [Commands.SETUP_GOOGLE_CALENDAR]: {
-        flags: [
-            "--setup-config",
-            "--config",
-            "--client-id",
-            "--client-secret-file",
-            "--refresh-token-file",
-            "--calendar-id",
-            "--calendar-label",
-            "--timezone",
-            "--scope",
-            "--surface",
-            "--disable",
-            "--reconfigure",
-        ],
-        booleans: ["--disable", "--reconfigure"],
-        repeatable: ["--surface"],
-        positionals: 0,
-    },
-    [Commands.INIT]: {
-        flags: ["--state", "--principal"],
-        positionals: 0,
-    },
-    [Commands.RUN]: {
-        flags: [
-            "--config",
-            "--state",
-            "--principal",
-            "--scope",
-            "--provider",
-            "--provider-command",
-            "--provider-arg",
-            "--codex-command",
-            "--codex-arg",
-            "--cursor-command",
-            "--cursor-arg",
-            "--provider-timeout-seconds",
-        ],
-        repeatable: ["--provider-arg", "--codex-arg", "--cursor-arg"],
-        positionals: 0,
-    },
-    [Commands.INSPECT]: {
-        flags: ["--state", "--principal", "--json"],
-        booleans: ["--json"],
-        positionals: 0,
-    },
-    [Commands.MATERIALIZE]: {
-        flags: ["--state", "--principal", "--scope", "--output"],
-        positionals: 0,
-    },
-    [Commands.APPLY_MATERIALIZED_EDITS]: {
-        flags: ["--state", "--principal", "--scope", "--input", "--approval-evidence"],
-        repeatable: ["--approval-evidence"],
-        positionals: 0,
-    },
-    [Commands.EXPLAIN]: {
-        flags: ["--state", "--principal"],
-        positionals: 1,
-    },
-    [Commands.CORRECT]: {
-        flags: ["--state", "--principal", "--text", "--reason"],
-        positionals: 1,
-    },
-    [Commands.CHECK]: {
-        flags: ["--state"],
-        positionals: 0,
-    },
-    [Commands.LOCK_STATUS]: {
-        flags: ["--state"],
-        positionals: 0,
-    },
-    [Commands.QUARANTINE_STALE_LOCK]: {
-        flags: ["--state", "--owner-token", "--confirm-quiescent"],
-        booleans: ["--confirm-quiescent"],
-        positionals: 0,
-    },
-} as Record<string, CommandSpec>;
 
 export type InitArgs = {
     command: typeof Commands.INIT;
@@ -147,7 +42,6 @@ export type SetupArgs = {
     acceptContinuityRisk: boolean;
     confirmProviderChange: boolean;
     diagnostics?: boolean;
-    help: boolean;
 };
 
 export type SetupGoogleCalendarArgs = {

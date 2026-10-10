@@ -1,5 +1,6 @@
+import type { SetupCompositionOverrides } from "@ember/core/composition/setup.ts";
+
 import { proactiveContactInspectionView, ProactiveContactStore } from "@ember/core/agency/proactive-contact-store.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "@ember/core/ai/contract.ts";
 import { composeCliSurface } from "@ember/core/composition/cli.ts";
 import { EmberError, ValidationError } from "@ember/core/errors.ts";
 import { assessMemoryProposal, resolveMemoryProposal } from "@ember/core/memory-proposal.ts";
@@ -16,6 +17,7 @@ import { interactionLedgerInspectionView, InteractionLedgerStore } from "@ember/
 import { supersede } from "@ember/core/semantics.ts";
 import { buildStateMaterialization } from "@ember/core/state-materialization.ts";
 import { assertUnreachable, cloneState } from "@ember/core/util.ts";
+import { CommanderError } from "commander";
 
 import type {
     CheckArgs,
@@ -30,64 +32,101 @@ import type {
     LockStatusArgs,
     QuarantineStaleLockArgs,
     RunArgs,
-    SetupGoogleCalendarArgs,
 } from "./model.ts";
 
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
-import { Commands, CommandSpecs } from "./model.ts";
+import { Commands } from "./model.ts";
+import { createProcessProgram } from "./process-program.ts";
 import { setupMain, setupRunMain } from "./setup.ts";
 import { runCliSurface } from "./surface.ts";
+
+export interface CliMainOverrides {
+    setupDependencies?: SetupCompositionOverrides;
+}
 
 export async function main(
     argv = process.argv.slice(2),
     io: CliIo = { input: process.stdin, output: process.stdout, error: process.stderr },
+    overrides: CliMainOverrides = {},
 ): Promise<number> {
     try {
-        const args = parseArgs(argv);
-        switch (args.command) {
-            case Commands.SETUP:
-                return await setupMain(args, io);
-            case Commands.SETUP_GOOGLE_CALENDAR:
-                return await setupGoogleCalendarMain(args, io);
-            case Commands.INIT:
-                return await onInit(args, io);
-            case Commands.RUN:
-                return await onRun(args, io);
-            case Commands.INSPECT: {
-                return await onInspect(args, io);
-            }
-            case Commands.MATERIALIZE: {
-                return await onMaterialize(args, io);
-            }
-            case Commands.APPLY_MATERIALIZED_EDITS: {
-                return await onApplyMaterializedEdits(args, io);
-            }
-            case Commands.EXPLAIN: {
-                return await onExplain(args, io);
-            }
-            case Commands.CORRECT: {
-                return await onCorrect(args, io);
-            }
-            case Commands.CHECK: {
-                return await onCheck(args, io);
-            }
-            case Commands.LOCK_STATUS: {
-                return await onLockStatus(args, io);
-            }
-            case Commands.QUARANTINE_STALE_LOCK: {
-                return await onQuarantineStaleLock(args, io);
-            }
-            default: {
-                assertUnreachable();
-            }
+        if (isDefaultInteractiveSession(argv)) {
+            return await setupRunMain(
+                {
+                    command: Commands.RUN,
+                    mode: "default",
+                    ...(argv[0] === "--diagnostics" ? { diagnostics: true } : {}),
+                },
+                io,
+            );
         }
+        const delegated = delegateArgv(argv);
+        let status = 0;
+        const program = createProcessProgram(io, delegated, async (args) => {
+            status = await execute(args, io, overrides);
+            return status;
+        });
+        await program.parseAsync(delegated, { from: "user" });
+        return status;
     } catch (error) {
+        if (error instanceof CommanderError) return error.exitCode === 0 ? 0 : 2;
         if (error instanceof EmberError || error instanceof SyntaxError || isOperationalSystemError(error)) {
             io.error.write(`ember: ${error.message}\n`);
             return 2;
         }
         throw error;
     }
+}
+
+async function execute(args: CliCommandArgs, io: CliIo, overrides: CliMainOverrides): Promise<number> {
+    switch (args.command) {
+        case Commands.SETUP:
+            return await setupMain(args, io, overrides.setupDependencies ?? {});
+        case Commands.SETUP_GOOGLE_CALENDAR:
+            return await setupGoogleCalendarMain(args, io);
+        case Commands.INIT:
+            return await onInit(args, io);
+        case Commands.RUN:
+            return await onRun(args, io);
+        case Commands.INSPECT: {
+            return await onInspect(args, io);
+        }
+        case Commands.MATERIALIZE: {
+            return await onMaterialize(args, io);
+        }
+        case Commands.APPLY_MATERIALIZED_EDITS: {
+            return await onApplyMaterializedEdits(args, io);
+        }
+        case Commands.EXPLAIN: {
+            return await onExplain(args, io);
+        }
+        case Commands.CORRECT: {
+            return await onCorrect(args, io);
+        }
+        case Commands.CHECK: {
+            return await onCheck(args, io);
+        }
+        case Commands.LOCK_STATUS: {
+            return await onLockStatus(args, io);
+        }
+        case Commands.QUARANTINE_STALE_LOCK: {
+            return await onQuarantineStaleLock(args, io);
+        }
+        default: {
+            assertUnreachable();
+        }
+    }
+}
+
+export function isDefaultInteractiveSession(argv: readonly string[]): boolean {
+    return argv.length === 0 || (argv.length === 1 && argv[0] === "--diagnostics");
+}
+
+export function delegateArgv(argv: readonly string[]): string[] {
+    if (argv[0] === "--diagnostics" && argv[1] === "setup") return ["setup", "--diagnostics", ...argv.slice(2)];
+    if (argv[0] === "--diagnostics" && argv.length === 2 && (argv[1] === "--help" || argv[1] === "-h"))
+        return [argv[1]!];
+    return [...argv];
 }
 
 async function onInit(args: InitArgs, io: CliIo) {
@@ -314,257 +353,6 @@ function renderInspection({
         }
     }
     return text;
-}
-
-type RawValue = string | string[] | boolean | undefined;
-
-export function parseArgs(argv: string[]): CliCommandArgs {
-    const defaultDiagnostics = argv[0] === "--diagnostics";
-    if (defaultDiagnostics) argv = argv.slice(1);
-    if (!argv.length) {
-        return { command: Commands.RUN, mode: "default", ...(defaultDiagnostics ? { diagnostics: true } : {}) };
-    }
-    const command = argv[0]!;
-    const spec = CommandSpecs[command];
-    if (!spec) {
-        throw new ValidationError(`unsupported command: ${command}`);
-    }
-    const allowed = new Set(spec.flags);
-    const booleans = new Set(spec.booleans ?? []);
-    const repeatable = new Set(spec.repeatable ?? []);
-    const values: Record<string, RawValue> = {};
-    const positionals: string[] = [];
-
-    for (let i = 1; i < argv.length; i++) {
-        const item = argv[i]!;
-        if (!item.startsWith("--")) {
-            positionals.push(item);
-            continue;
-        }
-        if (!allowed.has(item)) {
-            throw new ValidationError(`unsupported option for ${command}: ${item}`);
-        }
-        if (item in values && !repeatable.has(item)) {
-            throw new ValidationError(`${item} must not be repeated`);
-        }
-        if (booleans.has(item)) {
-            values[item] = true;
-            continue;
-        }
-        if (i + 1 >= argv.length) {
-            throw new ValidationError(`${item} requires a value`);
-        }
-        if (repeatable.has(item)) {
-            const current = values[item];
-            const list = Array.isArray(current) ? current : [];
-            list.push(argv[++i]!);
-            values[item] = list;
-        } else {
-            values[item] = argv[++i]!;
-        }
-    }
-    if (positionals.length !== spec.positionals) {
-        throw new ValidationError(
-            `${command} requires ${spec.positionals} positional argument${spec.positionals === 1 ? "" : "s"}`,
-        );
-    }
-
-    function required(flag: string): string {
-        const value = values[flag];
-        if (typeof value !== "string" || !value) {
-            throw new ValidationError(`${flag} is required`);
-        }
-        return value;
-    }
-
-    function optional(flag: string): string | undefined {
-        return values[flag] === undefined ? undefined : required(flag);
-    }
-
-    if (command === Commands.SETUP) {
-        const intent = optional("--intent");
-        if (
-            intent !== undefined &&
-            intent !== "create-new" &&
-            intent !== "restore-existing" &&
-            intent !== "use-existing"
-        )
-            throw new ValidationError("--intent requires create-new, restore-existing, or use-existing");
-        const provider = optional("--provider");
-        if (provider !== undefined && !["codex", "cursor", "claude-code", "ollama", "deepseek"].includes(provider))
-            throw new ValidationError("--provider supports codex, cursor, claude-code, ollama, or deepseek for setup");
-        const timeoutValue = optional("--provider-timeout-seconds");
-        const timeout = timeoutValue === undefined ? undefined : Number(timeoutValue);
-        if (timeout !== undefined && (!Number.isFinite(timeout) || timeout <= 0 || timeout > 120))
-            throw new ValidationError("setup provider timeout must be in (0, 120] seconds");
-        return {
-            command,
-            config: optional("--config"),
-            state: optional("--state"),
-            principal: optional("--principal"),
-            intent,
-            provider: provider as "codex" | "cursor" | "claude-code" | "ollama" | "deepseek" | undefined,
-            providerCommand: optional("--provider-command"),
-            model: optional("--model"),
-            providerBaseUrl: optional("--provider-base-url"),
-            providerTimeoutSeconds: timeout,
-            acceptContinuityRisk: values["--accept-continuity-risk"] === true,
-            confirmProviderChange: values["--confirm-provider-change"] === true,
-            diagnostics: defaultDiagnostics || values["--diagnostics"] === true,
-            help: values["--help"] === true,
-        };
-    }
-
-    if (command === Commands.SETUP_GOOGLE_CALENDAR) {
-        return {
-            command,
-            setupConfig: required("--setup-config"),
-            config: required("--config"),
-            clientId: optional("--client-id"),
-            clientSecretFile: optional("--client-secret-file"),
-            refreshTokenFile: optional("--refresh-token-file"),
-            calendarId: optional("--calendar-id"),
-            calendarLabel: optional("--calendar-label"),
-            timezone: optional("--timezone"),
-            scope: optional("--scope"),
-            surfaces: Array.isArray(values["--surface"]) ? values["--surface"] : [],
-            disable: values["--disable"] === true,
-            reconfigure: values["--reconfigure"] === true,
-        } satisfies SetupGoogleCalendarArgs;
-    }
-
-    if (command === "init") {
-        return { command, state: required("--state"), principal: required("--principal") };
-    }
-    if (command === "run") {
-        if (values["--config"] !== undefined) {
-            if (Object.keys(values).some((flag) => flag !== "--config" && flag !== "--scope"))
-                throw new ValidationError("configured run accepts only --config PATH and --scope SCOPE");
-            return { command, mode: "configured", config: required("--config"), scope: required("--scope") };
-        }
-        const timeout = Number(required("--provider-timeout-seconds"));
-        if (!Number.isFinite(timeout) || timeout <= 0) {
-            throw new ValidationError("--provider-timeout-seconds must be a positive finite number");
-        }
-        if (timeout > MAX_AI_TIMEOUT_SECONDS) {
-            throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_AI_TIMEOUT_SECONDS}`);
-        }
-        const provider = values["--provider"];
-        if (provider !== undefined && provider !== "codex" && provider !== "cursor") {
-            throw new ValidationError("--provider supports codex or cursor");
-        }
-        if (provider === "codex") {
-            if (
-                values["--provider-command"] !== undefined ||
-                values["--provider-arg"] !== undefined ||
-                values["--cursor-command"] !== undefined ||
-                values["--cursor-arg"] !== undefined
-            ) {
-                throw new ValidationError("process and Cursor options cannot be combined with --provider codex");
-            }
-            return {
-                command,
-                state: required("--state"),
-                principal: required("--principal"),
-                scope: required("--scope"),
-                providerKind: "codex",
-                mode: "explicit",
-                providerCommand: typeof values["--codex-command"] === "string" ? values["--codex-command"] : "codex",
-                providerArgs: Array.isArray(values["--codex-arg"]) ? (values["--codex-arg"] as string[]) : [],
-                providerTimeoutSeconds: timeout,
-            };
-        }
-        if (provider === "cursor") {
-            if (
-                values["--provider-command"] !== undefined ||
-                values["--provider-arg"] !== undefined ||
-                values["--codex-command"] !== undefined ||
-                values["--codex-arg"] !== undefined
-            ) {
-                throw new ValidationError("process and Codex options cannot be combined with --provider cursor");
-            }
-            return {
-                command,
-                state: required("--state"),
-                principal: required("--principal"),
-                scope: required("--scope"),
-                providerKind: "cursor",
-                mode: "explicit",
-                providerCommand:
-                    typeof values["--cursor-command"] === "string" ? values["--cursor-command"] : "cursor-agent",
-                providerArgs: Array.isArray(values["--cursor-arg"]) ? (values["--cursor-arg"] as string[]) : [],
-                providerTimeoutSeconds: timeout,
-            };
-        }
-        if (values["--codex-command"] !== undefined || values["--codex-arg"] !== undefined) {
-            throw new ValidationError("--codex-command and --codex-arg require --provider codex");
-        }
-        if (values["--cursor-command"] !== undefined || values["--cursor-arg"] !== undefined) {
-            throw new ValidationError("--cursor-command and --cursor-arg require --provider cursor");
-        }
-        return {
-            command,
-            state: required("--state"),
-            principal: required("--principal"),
-            scope: required("--scope"),
-            providerKind: "process",
-            mode: "explicit",
-            providerCommand: required("--provider-command"),
-            providerArgs: Array.isArray(values["--provider-arg"]) ? (values["--provider-arg"] as string[]) : [],
-            providerTimeoutSeconds: timeout,
-        };
-    }
-    if (command === "inspect") {
-        return {
-            command,
-            state: required("--state"),
-            principal: required("--principal"),
-            json: values["--json"] === true,
-        };
-    }
-    if (command === "materialize") {
-        return {
-            command,
-            state: required("--state"),
-            principal: required("--principal"),
-            scope: required("--scope"),
-            output: required("--output"),
-        };
-    }
-    if (command === "apply-materialized-edits") {
-        return {
-            command,
-            state: required("--state"),
-            principal: required("--principal"),
-            scope: required("--scope"),
-            input: required("--input"),
-            approvalEvidenceIds: Array.isArray(values["--approval-evidence"])
-                ? (values["--approval-evidence"] as string[])
-                : [],
-        };
-    }
-    if (command === "explain") {
-        return { command, state: required("--state"), principal: required("--principal"), meaningId: positionals[0]! };
-    }
-    if (command === "correct") {
-        return {
-            command,
-            state: required("--state"),
-            principal: required("--principal"),
-            meaningId: positionals[0]!,
-            text: required("--text"),
-            reason: required("--reason"),
-        };
-    }
-    if (command === "check" || command === "lock-status") {
-        return { command, state: required("--state") };
-    }
-    return {
-        command: "quarantine-stale-lock",
-        state: required("--state"),
-        ownerToken: required("--owner-token"),
-        confirmQuiescent: values["--confirm-quiescent"] === true,
-    };
 }
 
 function isOperationalSystemError(error: unknown): error is Error & { code: string } {

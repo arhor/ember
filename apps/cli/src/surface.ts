@@ -3,9 +3,11 @@ import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.t
 import type { Readable, Writable } from "node:stream";
 
 import { EmberError, ValidationError } from "@ember/core/errors.ts";
+import { CommanderError } from "commander";
 import { createInterface } from "node:readline";
 
-import { loadConfiguredState, runCliCommand, splitCommand } from "./commands.ts";
+import { executeOperatorCommand, loadConfiguredState, runLeasedOperator, splitCommand } from "./commands.ts";
+import { createSessionProgram } from "./session-program.ts";
 
 export interface CliSurfaceConfig {
     lines?: AsyncIterable<string>;
@@ -36,7 +38,6 @@ export async function runCliSurface(
     const iterator = lines[Symbol.asyncIterator]();
     for await (const line of { [Symbol.asyncIterator]: () => iterator }) {
         if (!line.trim()) continue;
-        if (line === ":quit") return 0;
         if (!line.startsWith(":")) {
             try {
                 await runOrdinaryCliInteraction(config, application, line, io);
@@ -46,18 +47,58 @@ export async function runCliSurface(
             }
             continue;
         }
-        if (line.startsWith(":ask ")) {
-            try {
-                await runExplanationCliInteraction(config, application, line, io);
-            } catch (error) {
-                if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
-                else throw error;
-            }
-            continue;
-        }
-        await runCliCommand(line, config, io, repositories);
+        if (await runSessionLine(line, config, io, application, repositories)) return 0;
     }
     return 0;
+}
+
+async function runSessionLine(
+    line: string,
+    config: CliSurfaceConfig,
+    io: CliSurfaceIo,
+    application: EmberApplication,
+    repositories: SurfaceRepositories,
+): Promise<boolean> {
+    let argv: string[] | undefined;
+    let tokenizeError: EmberError | undefined;
+    try {
+        argv = splitCommand(line.slice(1));
+    } catch (error) {
+        if (error instanceof EmberError) tokenizeError = error;
+        else throw error;
+    }
+    if (!tokenizeError && argv?.length === 1 && argv[0] === "quit") return true;
+    if (argv?.[0] === "ask" || (tokenizeError !== undefined && isAskRemainder(line.slice(1)))) {
+        try {
+            if (tokenizeError) throw tokenizeError;
+            await runSessionAsk(argv ?? [], config, application, io);
+        } catch (error) {
+            if (error instanceof CommanderError) {
+                if (error.exitCode !== 0) io.error.write(`command rejected: ${error.message}\n`);
+            } else if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
+            else throw error;
+        }
+        return false;
+    }
+    let quit = false;
+    await runLeasedOperator(config, io, repositories, async (state, runtimeId) => {
+        if (tokenizeError) throw tokenizeError;
+        const program = createSessionProgram(io, async (command) => {
+            if (command.kind === "quit") {
+                quit = true;
+                return;
+            }
+            if (command.kind === "ask") throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
+            await executeOperatorCommand(command, state, runtimeId, config, io, repositories);
+        });
+        await program.parseAsync(argv ?? [], { from: "user" });
+    });
+    return quit;
+}
+
+function isAskRemainder(remainder: string): boolean {
+    const head = remainder.trimStart();
+    return head === "ask" || /^ask(?:\s|['"])/.test(head);
 }
 
 async function runOrdinaryCliInteraction(
@@ -111,26 +152,35 @@ async function writeCliOutput(output: Writable, text: string): Promise<void> {
     });
 }
 
+async function runSessionAsk(
+    argv: string[],
+    config: CliSurfaceConfig,
+    application: EmberApplication,
+    io: CliSurfaceIo,
+) {
+    const program = createSessionProgram(io, async (command) => {
+        if (command.kind !== "ask") throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
+        await runExplanationCliInteraction(config, application, command.explainIds, command.text, io);
+    });
+    await program.parseAsync(argv, { from: "user" });
+}
+
 async function runExplanationCliInteraction(
     config: CliSurfaceConfig,
     application: EmberApplication,
-    line: string,
+    explainIds: string[],
+    text: string,
     io: CliSurfaceIo,
 ) {
-    const parts = splitCommand(line);
-    if (parts.length < 4 || parts[0] !== ":ask" || parts[1] !== "--explain")
-        throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
-    const ids = parts[2]!.split(",").filter(Boolean);
-    if (!ids.length) throw new ValidationError("at least one explanation ID is required");
     const result = await withSigintCancellation((signal) =>
         application.interact(
             {
                 kind: "message",
                 principal: config.principal,
                 scope: config.scope,
-                text: parts.slice(3).join(" "),
+                text,
                 purpose: "explain",
-                explainIds: ids,
+                explainIds,
                 surfaceId: "local_cli",
                 principalProvenance: "explicit_local_argument",
             },

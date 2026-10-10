@@ -237,7 +237,6 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         providerTimeoutSeconds: undefined,
         acceptContinuityRisk: false,
         confirmProviderChange: false,
-        help: false,
     };
     const failedCode = await setupMain(recoveryArgs, io, {
         provider: () => async () => {
@@ -279,7 +278,6 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
             providerTimeoutSeconds: undefined,
             acceptContinuityRisk: false,
             confirmProviderChange: false,
-            help: false,
         },
         io,
         { provider },
@@ -364,7 +362,6 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
             providerTimeoutSeconds: undefined,
             acceptContinuityRisk: false,
             confirmProviderChange: true,
-            help: false,
         },
         io,
         { provider },
@@ -429,7 +426,6 @@ async function restore(s: SetupOnboardingScenario, directory: string, fault?: Or
             providerTimeoutSeconds: undefined,
             acceptContinuityRisk: true,
             confirmProviderChange: false,
-            help: false,
         },
         io,
         {

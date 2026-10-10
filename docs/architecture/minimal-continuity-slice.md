@@ -326,7 +326,11 @@ Its command surface is:
   matches, and a same-host PID probe returns `ESRCH`; it renames rather than
   deletes the lock and never treats age as proof of staleness.
 
-Inside `ember run`, explicit colon commands provide the minimal promotion path:
+Inside the interactive session, a line that does not start with `:` is ordinary
+conversation. A line that starts with `:` is an operator command. One leading colon
+is removed, so both `:quit` and `: quit` address the same command, and the remainder
+is tokenized with the quote and escape rules. The session commander program then
+parses that argv. These commands are not process subcommands. The promotion path is:
 
 - `:remember relationship OWNER SCOPE TEXT`;
 - `:remember fact OWNER SLOT SCOPE TEXT`;
@@ -339,15 +343,17 @@ Inside `ember run`, explicit colon commands provide the minimal promotion path:
   available episode meta-memory evidence; then
 - `:attach-detail EPISODE_ID DETAIL`, whose foreground input is itself the one
   optional evidence occurrence for the exact detail. This command bypasses the
-  generic raw-command recorder: its parser creates that evidence occurrence
+  generic raw-command recorder: the command action creates that evidence occurrence
   directly and neither the complete command line nor `DETAIL` is copied into a
   second source record, diagnostic, or retained provider input; and
 - `:quit` for a clean full stop.
 
 Each semantic command produces exactly one appropriate source occurrence; most
 use the generic command occurrence, while `:attach-detail` uses its single detail
-occurrence instead. They are not raw hand edits. The parser may improve later,
-but these semantic operations and their validation behavior are the #23 contract.
+occurrence instead. They are not raw hand edits. Command shape belongs to the
+session program. Principal checks, one source occurrence per command, and the
+`:attach-detail` evidence rule stay in the command actions. These semantic
+operations and their validation behavior are the #23 contract.
 
 `--principal` is the explicitly asserted local principal for the interaction; the
 slice does not authenticate it. Initialization persists that identifier in the

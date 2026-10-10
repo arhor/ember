@@ -627,10 +627,13 @@ lineage keys or model-visible setup context. Moving a whole installation still r
 explicit attachment at its new location because stored bindings are absolute paths;
 setup does not infer continuity or rewrite a binding from copied directories.
 
-Setup and both run modes use the single typed CLI grammar in `Commands`/`CommandSpecs`.
-`parseArgs()` produces `SetupArgs` or `RunArgs` with an explicit `mode` discriminator,
-and ordinary dispatch passes typed arguments to the handlers. All command forms use
-the same unknown-option, duplicate-option, positional, and required-value validation.
+Setup and both run modes are commands on the process commander program.
+That program produces `SetupArgs` or `RunArgs` with an explicit `mode` discriminator,
+and dispatch passes those typed arguments to the handlers. Commander reports unknown
+commands, unknown options, duplicate options, missing required values, and help.
+`ember` with no subcommand opens the default interactive session. `--diagnostics`
+is accepted by that session and by `setup`, including when a launcher places it
+before `setup`. It is not accepted by other process commands.
 
 Choose an intent explicitly:
 

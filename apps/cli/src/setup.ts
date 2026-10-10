@@ -15,12 +15,8 @@ import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./mode
 import { runCliSurface } from "./surface.ts";
 
 export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
-    if (args.help) {
-        io.output.write(SETUP_HELP);
-        return 0;
-    }
     const result = await bootstrapForCli(args, io, dependencies);
-    if (!args.intent) io.output.write(SETUP_HELP);
+    if (!args.intent) io.output.write(setupHelpText);
     if (result === 0 && args.intent) {
         const configPath = resolve(args.config ?? defaultSetupConfigPath());
         const config = await loadSetupConfig(configPath);
@@ -36,7 +32,7 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupC
 }
 
 async function bootstrapForCli(
-    args: SetupArgs | Omit<SetupArgs, "command" | "help">,
+    args: SetupArgs | Omit<SetupArgs, "command">,
     io: CliIo,
     overrides: SetupCompositionOverrides = {},
 ) {
@@ -258,7 +254,7 @@ async function firstRun(io: CliIo, diagnostics: boolean): Promise<number> {
     }
 }
 
-const SETUP_HELP = `ember setup [--config PATH] [--state PATH]
+export const setupHelpText = `ember setup [--config PATH] [--state PATH]
 Defaults: ~/.ember/config/setup.json and ~/.ember/state/continuity.json.
 Config and state path overrides are independent; an existing config retains its state binding.
 Inspect first, then choose explicitly:

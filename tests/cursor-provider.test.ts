@@ -1,4 +1,3 @@
-import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFileSync, readdirSync } from "node:fs";
@@ -19,7 +18,16 @@ import { ProviderError } from "../packages/core/src/errors.ts";
 import { buildProjection } from "../packages/core/src/projection.ts";
 import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { rememberPreference } from "../packages/core/src/semantics.ts";
-import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
+import {
+    captureError,
+    captureProcessCommand,
+    command,
+    populatedState,
+    PRINCIPAL,
+    ROOT,
+    SCOPE,
+    tempDir,
+} from "./support.ts";
 
 const SCRIPTED_CURSOR = join(ROOT, "tests", "fixtures", "providers", "scripted-cursor.ts");
 
@@ -512,7 +520,7 @@ test("Cursor provider should preserve ambiguous cancellation when direct child e
     );
 });
 
-test("CLI parser should select Cursor with its runtime-specific arguments when requested", () => {
+test("CLI parser should select Cursor with its runtime-specific arguments when requested", async () => {
     // Given
     const arguments_ = [
         "run",
@@ -532,7 +540,7 @@ test("CLI parser should select Cursor with its runtime-specific arguments when r
         "120",
     ];
     // When
-    const parsed = parseArgs(arguments_);
+    const parsed = await captureProcessCommand(arguments_);
     // Then
     assert.deepEqual(parsed, {
         command: "run",

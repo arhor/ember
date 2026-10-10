@@ -17,105 +17,128 @@ import {
     withholdDetail,
 } from "@ember/core/semantics.ts";
 import { cloneState } from "@ember/core/util.ts";
+import { CommanderError } from "commander";
 
+import type { SessionCommand } from "./session-program.ts";
 import type { CliSurfaceConfig } from "./surface.ts";
 
 type CliStateRepository = SurfaceRepositories["state"];
+type OperatorCommand = Exclude<SessionCommand, { kind: "ask" | "quit" }>;
 
-export async function runCliCommand(
-    line: string,
+export async function runLeasedOperator(
+    config: CliSurfaceConfig,
+    io: { output: Writable; error: Writable },
+    repositories: SurfaceRepositories,
+    work: (state: EmberState, runtimeId: RuntimeId) => Promise<void>,
+) {
+    await withCliLease(repositories.state, config, async (state, runtimeId) => {
+        try {
+            await work(state, runtimeId);
+        } catch (error) {
+            if (error instanceof CommanderError) {
+                if (error.exitCode !== 0) io.error.write(`command rejected: ${error.message}\n`);
+                return;
+            }
+            if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
+            else throw error;
+        }
+    });
+}
+
+export async function executeOperatorCommand(
+    command: OperatorCommand,
+    state: EmberState,
+    runtimeId: RuntimeId,
     config: CliSurfaceConfig,
     io: { output: Writable; error: Writable },
     repositories: SurfaceRepositories,
 ) {
     const store = repositories.state;
-    await withCliLease(store, config, async (state, runtimeId) => {
-        try {
-            if (line.startsWith(":")) {
-                if (line === ":new-conversation") {
-                    const conversationId = await repositories.conversation.startFreshConversation(
-                        config.principal,
-                        config.scope,
-                    );
-                    io.output.write(`${conversationId}\n`);
-                } else if (line.startsWith(":show-action ")) {
-                    const [command, proposalId, ...extra] = splitCommand(line);
-                    if (!proposalId || extra.length) throw new ValidationError(`${command} requires PROPOSAL_ID`);
-                    const proposal = await repositories.actions.present({
-                        proposalId,
-                        principal: config.principal,
-                        scope: config.scope,
-                        surface: "local_cli",
-                        presentedAt: nowUtc(),
-                    });
-                    const presentation = proposal.presentations.at(-1)!;
-                    io.output.write(
-                        `${JSON.stringify({
-                            proposalId: proposal.proposal_id,
-                            payloadDigest: proposal.payload_digest,
-                            target: proposal.target.label,
-                            event: proposal.payload,
-                            purpose: proposal.purpose,
-                            consequence: proposal.consequence,
-                            expiresAt: proposal.expires_at,
-                            presentationId: presentation.presentation_id,
-                            approvalConfirmation: actionProposalConfirmation(proposal),
-                        })}\n`,
-                    );
-                } else if (line.startsWith(":approve-action ") || line.startsWith(":reject-action ")) {
-                    const [command, proposalId, payloadDigest, materialConfirmation, ...extra] = splitCommand(line);
-                    if (!proposalId || !payloadDigest || !materialConfirmation || extra.length)
-                        throw new ValidationError(
-                            `${command} requires PROPOSAL_ID PAYLOAD_DIGEST QUOTED_MATERIAL_CONFIRMATION`,
-                        );
-                    const actions = repositories.actions;
-                    const pending = await actions.get(proposalId);
-                    const presentation = pending?.presentations
-                        .filter(
-                            (candidate) =>
-                                candidate.principal === config.principal &&
-                                candidate.scope === config.scope &&
-                                candidate.surface === "local_cli",
-                        )
-                        .at(-1);
-                    if (!presentation)
-                        throw new ValidationError("action approval requires :show-action in this scope first");
-                    const proposal = await actions.decide({
-                        proposalId,
-                        decision: command === ":approve-action" ? "approved" : "rejected",
-                        principal: config.principal,
-                        payloadDigest,
-                        scope: config.scope,
-                        surface: "local_cli",
-                        presentationId: presentation.presentation_id,
-                        decidedAt: nowUtc(),
-                        authoritySourceId: `local_cli:${config.principal}`,
-                        materialConfirmation,
-                    });
-                    io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
-                } else if (line.startsWith(":withdraw-action ") || line.startsWith(":supersede-action ")) {
-                    const [command, proposalId, ...reason] = splitCommand(line);
-                    if (!proposalId || !reason.length)
-                        throw new ValidationError(`${command} requires PROPOSAL_ID REASON`);
-                    const proposal = await repositories.actions.invalidate({
-                        proposalId,
-                        kind: command === ":withdraw-action" ? "withdrawn" : "superseded",
-                        principal: config.principal,
-                        occurredAt: nowUtc(),
-                        authoritySourceId: `local_cli:${config.principal}`,
-                        reason: reason.join(" "),
-                    });
-                    io.output.write(`${JSON.stringify({ proposalId, status: proposal.status })}\n`);
-                } else {
-                    const result = await semanticCommand(store, state, runtimeId, config.principal, config.scope, line);
-                    io.output.write(`${result.id}\n`);
-                }
-            }
-        } catch (error) {
-            if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
-            else throw error;
+    switch (command.kind) {
+        case "new-conversation": {
+            const conversationId = await repositories.conversation.startFreshConversation(
+                config.principal,
+                config.scope,
+            );
+            io.output.write(`${conversationId}\n`);
+            return;
         }
-    });
+        case "show-action": {
+            const proposal = await repositories.actions.present({
+                proposalId: command.proposalId,
+                principal: config.principal,
+                scope: config.scope,
+                surface: "local_cli",
+                presentedAt: nowUtc(),
+            });
+            const presentation = proposal.presentations.at(-1)!;
+            io.output.write(
+                `${JSON.stringify({
+                    proposalId: proposal.proposal_id,
+                    payloadDigest: proposal.payload_digest,
+                    target: proposal.target.label,
+                    event: proposal.payload,
+                    purpose: proposal.purpose,
+                    consequence: proposal.consequence,
+                    expiresAt: proposal.expires_at,
+                    presentationId: presentation.presentation_id,
+                    approvalConfirmation: actionProposalConfirmation(proposal),
+                })}\n`,
+            );
+            return;
+        }
+        case "approve-action":
+        case "reject-action": {
+            const actions = repositories.actions;
+            const pending = await actions.get(command.proposalId);
+            const presentation = pending?.presentations
+                .filter(
+                    (candidate) =>
+                        candidate.principal === config.principal &&
+                        candidate.scope === config.scope &&
+                        candidate.surface === "local_cli",
+                )
+                .at(-1);
+            if (!presentation) throw new ValidationError("action approval requires :show-action in this scope first");
+            const proposal = await actions.decide({
+                proposalId: command.proposalId,
+                decision: command.kind === "approve-action" ? "approved" : "rejected",
+                principal: config.principal,
+                payloadDigest: command.payloadDigest,
+                scope: config.scope,
+                surface: "local_cli",
+                presentationId: presentation.presentation_id,
+                decidedAt: nowUtc(),
+                authoritySourceId: `local_cli:${config.principal}`,
+                materialConfirmation: command.materialConfirmation,
+            });
+            io.output.write(`${JSON.stringify({ proposalId: command.proposalId, status: proposal.status })}\n`);
+            return;
+        }
+        case "withdraw-action":
+        case "supersede-action": {
+            const proposal = await repositories.actions.invalidate({
+                proposalId: command.proposalId,
+                kind: command.kind === "withdraw-action" ? "withdrawn" : "superseded",
+                principal: config.principal,
+                occurredAt: nowUtc(),
+                authoritySourceId: `local_cli:${config.principal}`,
+                reason: command.reason,
+            });
+            io.output.write(`${JSON.stringify({ proposalId: command.proposalId, status: proposal.status })}\n`);
+            return;
+        }
+        case "remember-relationship":
+        case "remember-fact":
+        case "remember-episode":
+        case "prefer":
+        case "supersede":
+        case "undertake":
+        case "attach-detail":
+        case "fixture-withhold":
+            await commitSemanticCommand(store, state, runtimeId, config.principal, command, io);
+            return;
+    }
 }
 
 async function withCliLease(
@@ -157,40 +180,62 @@ export async function loadConfiguredState(store: CliStateRepository, config: Cli
     return state;
 }
 
-async function semanticCommand(
+async function commitSemanticCommand(
     store: CliStateRepository,
     state: EmberState,
     runtimeId: RuntimeId,
     principal: string,
-    scope: string,
-    line: string,
+    command: Extract<
+        OperatorCommand,
+        {
+            kind:
+                | "remember-relationship"
+                | "remember-fact"
+                | "remember-episode"
+                | "prefer"
+                | "supersede"
+                | "undertake"
+                | "attach-detail"
+                | "fixture-withhold";
+        }
+    >,
+    io: { output: Writable },
 ) {
-    const parts = splitCommand(line);
     const candidate = cloneState(state);
     let id: MeaningId | string;
-    if (parts[0] === ":remember" && parts[1] === "relationship" && parts.length >= 5)
-        id = rememberRelationship(candidate, principal, parts[2]!, parts[3]!, parts.slice(4).join(" "));
-    else if (parts[0] === ":remember" && parts[1] === "fact" && parts.length >= 6)
-        id = rememberFact(candidate, principal, parts[2]!, parts[3]!, parts[4]!, parts.slice(5).join(" "));
-    else if (parts[0] === ":prefer" && parts.length >= 5)
-        id = rememberPreference(candidate, principal, parts[1]!, parts[2]!, parts[3]!, parts.slice(4).join(" "));
-    else if (parts[0] === ":supersede" && parts.length >= 3)
-        id = supersede(candidate, principal, parts[1]!, parts.slice(2).join(" "));
-    else if (parts[0] === ":undertake" && parts.length >= 4)
-        id = undertake(candidate, principal, parts[1]!, parts[2]!, parts.slice(3).join(" "));
-    else if (parts[0] === ":remember" && parts[1] === "episode" && parts.length >= 6)
-        id = rememberEpisode(candidate, principal, parts[2]!, parts[3]!, parts[4]!, parts.slice(5).join(" "));
-    else if (parts[0] === ":attach-detail" && parts.length >= 3)
-        id = attachDetail(candidate, principal, parts[1]!, parts.slice(2).join(" "));
-    else if (parts[0] === ":fixture-withhold" && parts.length === 2) {
-        if (process.env.EMBER_ENABLE_FIXTURE_FAULTS !== "1")
-            throw new ValidationError("fixture fault command is available only to deterministic test harness");
-        id = withholdDetail(candidate, principal, parts[1]!);
-    } else throw new ValidationError("unsupported or malformed semantic command");
-    const runtime = candidate.operations.runtimeEpisodes.find((r) => r.runtimeId === runtimeId);
+    switch (command.kind) {
+        case "remember-relationship":
+            id = rememberRelationship(candidate, principal, command.owner, command.scope, command.text);
+            break;
+        case "remember-fact":
+            id = rememberFact(candidate, principal, command.owner, command.slot, command.scope, command.text);
+            break;
+        case "prefer":
+            id = rememberPreference(candidate, principal, command.owner, command.slot, command.scope, command.text);
+            break;
+        case "supersede":
+            id = supersede(candidate, principal, command.id, command.text);
+            break;
+        case "undertake":
+            id = undertake(candidate, principal, command.slot, command.scope, command.text);
+            break;
+        case "remember-episode":
+            id = rememberEpisode(candidate, principal, command.slot, command.owner, command.scope, command.summary);
+            break;
+        case "attach-detail":
+            id = attachDetail(candidate, principal, command.episodeId, command.detail);
+            break;
+        case "fixture-withhold":
+            if (process.env.EMBER_ENABLE_FIXTURE_FAULTS !== "1")
+                throw new ValidationError("fixture fault command is available only to deterministic test harness");
+            id = withholdDetail(candidate, principal, command.id);
+            break;
+    }
+    const runtime = candidate.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
     if (!runtime) throw new ValidationError(`runtime does not exist: ${runtimeId}`);
     if (runtime.cleanStopAt === null) runtime.lastDurableObservationAt = nowUtc();
-    return { state: await store.commit(state.revision, candidate), id };
+    await store.commit(state.revision, candidate);
+    io.output.write(`${id}\n`);
 }
 
 async function loadForPrincipal(store: CliStateRepository, principal: string) {

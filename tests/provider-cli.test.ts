@@ -1,4 +1,3 @@
-import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
@@ -20,6 +19,7 @@ import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { cloneState } from "../packages/core/src/util.ts";
 import {
     captureError,
+    captureProcessCommand,
     command,
     emptyRequest,
     populatedState,
@@ -607,23 +607,23 @@ test("CLI parser should reject option when flag is unknown for command", async (
     // Given
     const args = ["check", "--state", "/tmp/ember.json", "--typo", "ignored"];
     // When
-    const error = await captureError(() => parseArgs(args));
+    const error = await captureError(() => captureProcessCommand(args));
     // Then
-    assert.match(error.message, /unsupported option/);
+    assert.match(error.message, /unknown option/);
 });
 test("CLI parser should reject arguments when surplus positional is present", async () => {
     // Given
     const args = ["init", "surplus", "--state", "/tmp/ember.json", "--principal", PRINCIPAL];
     // When
-    const error = await captureError(() => parseArgs(args));
+    const error = await captureError(() => captureProcessCommand(args));
     // Then
-    assert.match(error.message, /0 positional arguments/);
+    assert.match(error.message, /too many arguments/);
 });
 test("CLI parser should reject option when singular flag is duplicated", async () => {
     // Given
     const args = ["check", "--state", "/tmp/a.json", "--state", "/tmp/b.json"];
     // When
-    const error = await captureError(() => parseArgs(args));
+    const error = await captureError(() => captureProcessCommand(args));
     // Then
     assert.match(error.message, /must not be repeated/);
 });

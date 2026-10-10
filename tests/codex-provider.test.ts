@@ -1,4 +1,3 @@
-import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -19,7 +18,16 @@ import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 import { buildProjection } from "../packages/core/src/projection.ts";
 import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { rememberPreference } from "../packages/core/src/semantics.ts";
-import { captureError, command, populatedState, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
+import {
+    captureError,
+    captureProcessCommand,
+    command,
+    populatedState,
+    PRINCIPAL,
+    ROOT,
+    SCOPE,
+    tempDir,
+} from "./support.ts";
 
 const SCRIPTED_CODEX = join(ROOT, "tests", "fixtures", "providers", "scripted-codex.ts");
 
@@ -748,7 +756,7 @@ describe("executeCognition", () => {
 });
 
 describe("CLI parser", () => {
-    test("should select the production Codex backend when the supported provider flag is used", () => {
+    test("should select the production Codex backend when the supported provider flag is used", async () => {
         // Given
         const arguments_ = [
             "run",
@@ -765,7 +773,7 @@ describe("CLI parser", () => {
         ];
 
         // When
-        const parsed = parseArgs(arguments_);
+        const parsed = await captureProcessCommand(arguments_);
 
         // Then
         assert.equal(parsed.command, "run");
@@ -782,7 +790,7 @@ describe("CLI parser", () => {
         });
     });
 
-    test("should preserve runtime-owned authentication overrides when Codex uses a non-default store", () => {
+    test("should preserve runtime-owned authentication overrides when Codex uses a non-default store", async () => {
         // Given
         const arguments_ = [
             "run",
@@ -803,7 +811,7 @@ describe("CLI parser", () => {
         ];
 
         // When
-        const parsed = parseArgs(arguments_);
+        const parsed = await captureProcessCommand(arguments_);
 
         // Then
         assert.deepEqual(parsed.providerArgs, ["-c", 'cli_auth_credentials_store="keyring"']);

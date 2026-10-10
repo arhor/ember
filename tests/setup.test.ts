@@ -1,6 +1,6 @@
 import type { CliSurfaceConfig } from "@ember/cli";
 
-import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "@ember/cli";
+import { main, runCliSurface as runCliAdapter, setupMain as runSetup } from "@ember/cli";
 import { setupGoogleCalendarMain } from "@ember/cli/google-calendar-setup.ts";
 import assert from "node:assert/strict";
 import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
@@ -23,7 +23,7 @@ import { MemoryProposalGenerationStore } from "../packages/core/src/persistence/
 import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
 import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 import { startRuntime } from "../packages/core/src/runtime-episode.ts";
-import { captureError, command, populatedState } from "./support.ts";
+import { captureError, captureProcessCommand, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
 type FixtureCliConfig = CliSurfaceConfig & {
@@ -78,7 +78,7 @@ function runCliSurface(config: FixtureCliConfig, io: Parameters<typeof runCliAda
     return runCliAdapter(config, io, services);
 }
 async function setupMain(argv, io, dependencies) {
-    const args = parseArgs(["setup", ...argv]);
+    const args = await captureProcessCommand(["setup", ...argv]);
     assert.equal(args.command, "setup");
     return await runSetup(args, io, dependencies);
 }
@@ -128,8 +128,8 @@ async function fixture(t) {
 }
 const verified = { provider: () => async () => success };
 
-test("one CLI parser produces typed setup and discriminated run arguments", () => {
-    const setup = parseArgs([
+test("one CLI parser produces typed setup and discriminated run arguments", async () => {
+    const setup = await captureProcessCommand([
         "setup",
         "--intent",
         "restore-existing",
@@ -145,15 +145,17 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     assert.equal(setup.providerTimeoutSeconds, 30);
     assert.equal(setup.acceptContinuityRisk, true);
     assert.equal(setup.diagnostics, false);
-    assert.equal(parseArgs(["setup", "--help"]).help, true);
-    assert.equal(parseArgs(["setup"]).intent, undefined);
-    assert.deepEqual(parseArgs(["run", "--config", "host.json", "--scope", "test"]), {
+    const help = capture();
+    assert.equal(await main(["setup", "--help"], help), 0);
+    assert.match(help.text(), /DEEPSEEK_API_KEY/);
+    assert.equal((await captureProcessCommand(["setup"])).intent, undefined);
+    assert.deepEqual(await captureProcessCommand(["run", "--config", "host.json", "--scope", "test"]), {
         command: "run",
         mode: "configured",
         config: "host.json",
         scope: "test",
     });
-    const explicit = parseArgs([
+    const explicit = await captureProcessCommand([
         "run",
         "--state",
         "state.json",
@@ -172,35 +174,35 @@ test("one CLI parser produces typed setup and discriminated run arguments", () =
     assert.deepEqual(explicit.providerArgs, ["--config"]);
 });
 
-test("setup parser should enable opt-in diagnostics when requested", () => {
+test("setup parser should enable opt-in diagnostics when requested", async () => {
     // Given
     const argv = ["setup", "--diagnostics"];
 
     // When
-    const setup = parseArgs(argv);
+    const setup = await captureProcessCommand(argv);
 
     // Then
     assert.equal(setup.command, "setup");
     assert.equal(setup.diagnostics, true);
 });
 
-test("CLI parser should enable diagnostics for the default first-run entry", () => {
+test("CLI parser should enable diagnostics for the default first-run entry", async () => {
     // Given
     const argv = ["--diagnostics"];
 
     // When
-    const run = parseArgs(argv);
+    const run = await captureProcessCommand(argv);
 
     // Then
     assert.deepEqual(run, { command: "run", mode: "default", diagnostics: true });
 });
 
-test("setup parser should preserve globally supplied diagnostics when npm prepends it", () => {
+test("setup parser should preserve globally supplied diagnostics when npm prepends it", async () => {
     // Given
     const argv = ["--diagnostics", "setup", "--intent", "use-existing"];
 
     // When
-    const setup = parseArgs(argv);
+    const setup = await captureProcessCommand(argv);
 
     // Then
     assert.equal(setup.command, "setup");
@@ -208,7 +210,7 @@ test("setup parser should preserve globally supplied diagnostics when npm prepen
     assert.equal(setup.diagnostics, true);
 });
 
-test("setup parser should retain Ollama model and loopback endpoint when explicitly configured", () => {
+test("setup parser should retain Ollama model and loopback endpoint when explicitly configured", async () => {
     // Given
     const argv = [
         "setup",
@@ -225,7 +227,7 @@ test("setup parser should retain Ollama model and loopback endpoint when explici
     ];
 
     // When
-    const parsed = parseArgs(argv);
+    const parsed = await captureProcessCommand(argv);
 
     // Then
     assert.equal(parsed.command, "setup");
@@ -301,7 +303,7 @@ test("setup should reject process configuration for Ollama when an endpoint is s
     assert.equal(await loadSetupConfig(f.config), null);
 });
 
-test("setup parser should retain the DeepSeek model when explicitly configured", () => {
+test("setup parser should retain the DeepSeek model when explicitly configured", async () => {
     // Given
     const argv = [
         "setup",
@@ -316,7 +318,7 @@ test("setup parser should retain the DeepSeek model when explicitly configured",
     ];
 
     // When
-    const parsed = parseArgs(argv);
+    const parsed = await captureProcessCommand(argv);
 
     // Then
     assert.equal(parsed.command, "setup");
@@ -388,12 +390,12 @@ test("setup should reject a DeepSeek provider base URL", async (t) => {
     assert.equal(await loadSetupConfig(f.config), null);
 });
 
-test("CLI should select the default foreground run when no command is supplied", () => {
+test("CLI should select the default foreground run when no command is supplied", async () => {
     // Given
     const argv: string[] = [];
 
     // When
-    const parsed = parseArgs(argv);
+    const parsed = await captureProcessCommand(argv);
 
     // Then
     assert.deepEqual(parsed, { command: "run", mode: "default" });
@@ -562,7 +564,7 @@ test("foreground ember should record an uncertain gap when the previous process 
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
-test("CLI parser should route Google Calendar setup when typed options are supplied", () => {
+test("CLI parser should route Google Calendar setup when typed options are supplied", async () => {
     // Given
     const argv = [
         "setup-google-calendar",
@@ -578,7 +580,7 @@ test("CLI parser should route Google Calendar setup when typed options are suppl
     ];
 
     // When
-    const parsed = parseArgs(argv);
+    const parsed = await captureProcessCommand(argv);
 
     // Then
     assert.deepEqual(parsed, {
@@ -598,18 +600,19 @@ test("CLI parser should route Google Calendar setup when typed options are suppl
     });
 });
 
-test("unified CLI parser rejects invalid setup and mixed configured-run options", () => {
+test("unified CLI parser rejects invalid setup and mixed configured-run options", async () => {
     for (const args of [
         ["setup", "--config"],
         ["setup", "--state", ""],
         ["setup", "extra"],
-        ["setup", "--help", "--help"],
         ["setup", "--intent", "automatic"],
         ["setup", "--provider", "unknown"],
         ["setup", "--unknown"],
         ["run", "--config", "host.json"],
         ["run", "--config", "host.json", "--scope", "test", "extra"],
         ["run", "--config", "a", "--config", "b", "--scope", "test"],
+        ["remember"],
+        ["--diagnostics", "run", "--config", "host.json", "--scope", "test"],
         ...[
             "--state",
             "--principal",
@@ -623,7 +626,32 @@ test("unified CLI parser rejects invalid setup and mixed configured-run options"
             "--provider-timeout-seconds",
         ].map((flag) => ["run", "--config", "host.json", "--scope", "test", flag, "value"]),
     ])
-        assert.throws(() => parseArgs(args), undefined, args.join(" "));
+        await assert.rejects(() => captureProcessCommand(args), undefined, args.join(" "));
+    const repeatedHelp = capture();
+    assert.equal(await main(["setup", "--help", "--help"], repeatedHelp), 0);
+    assert.match(repeatedHelp.text(), /accept-continuity-risk/);
+});
+
+test("process help and usage stay inside the injected writers and returned status", async () => {
+    const exit = process.exit;
+    let exited = false;
+    process.exit = (() => {
+        exited = true;
+        throw new Error("process.exit");
+    }) as typeof process.exit;
+    try {
+        const help = capture();
+        assert.equal(await main(["--help"], help), 0);
+        assert.match(help.text(), /create-new/);
+        assert.match(help.text(), /DEEPSEEK_API_KEY/);
+        assert.match(help.text(), /~\/\.ember\/config\/setup\.json/);
+        const usage = capture();
+        assert.equal(await main(["remember"], usage), 2);
+        assert.match(usage.text(), /unknown command 'remember'/);
+        assert.equal(exited, false);
+    } finally {
+        process.exit = exit;
+    }
 });
 
 for (const override of ["none", "config", "state"]) {
@@ -885,7 +913,7 @@ test("Google Calendar setup should retain staged token when config publication i
     const secretPath = join(f.directory, "client-secret");
     const tokenPath = join(f.directory, "refresh-token");
     await writeFile(secretPath, "client-secret", { mode: 0o600 });
-    const args = parseArgs([
+    const args = await captureProcessCommand([
         "setup-google-calendar",
         "--setup-config",
         f.config,
@@ -936,7 +964,13 @@ test("Google Calendar setup should recover binding when initial config publicati
     const setup = await loadSetupConfig(f.config);
     const configPath = join(f.directory, "calendar.json");
     await writeFile(configPath, `${JSON.stringify(calendarConfig(setup.lineageId, setup.principal, f.directory))}\n`);
-    const args = parseArgs(["setup-google-calendar", "--setup-config", f.config, "--config", configPath]);
+    const args = await captureProcessCommand([
+        "setup-google-calendar",
+        "--setup-config",
+        f.config,
+        "--config",
+        configPath,
+    ]);
     assert.equal(args.command, "setup-google-calendar");
 
     // When
@@ -1144,7 +1178,7 @@ test("Calendar setup should reject ordinary setup mutation while OAuth holds the
     let authorizeContinue!: () => void;
     const started = new Promise<void>((resolvePromise) => (authorizeStarted = resolvePromise));
     const proceed = new Promise<void>((resolvePromise) => (authorizeContinue = resolvePromise));
-    const args = calendarSetupArgs(f, join(f.directory, "calendar.json"), secretPath);
+    const args = await calendarSetupArgs(f, join(f.directory, "calendar.json"), secretPath);
     const calendarSetup = setupGoogleCalendarMain(args, capture(), {
         authorize: async () => {
             authorizeStarted();
@@ -1183,7 +1217,7 @@ test("Calendar setup should share the ordinary setup lease when setup path uses 
     await symlink(f.directory, aliasDirectory);
     const secretPath = join(f.directory, "alias-client-secret");
     await writeFile(secretPath, "secret", { mode: 0o600 });
-    const args = calendarSetupArgs(f, join(f.directory, "alias-calendar.json"), secretPath);
+    const args = await calendarSetupArgs(f, join(f.directory, "alias-calendar.json"), secretPath);
     args.setupConfig = join(aliasDirectory, "setup.json");
     let authorizeStarted!: () => void;
     let authorizeContinue!: () => void;
@@ -1246,23 +1280,23 @@ test("Calendar setup should preserve first lineage claim when config target uses
         random: (size: number) => new Uint8Array(size).fill(1),
     };
     const firstSetup = setupGoogleCalendarMain(
-        calendarSetupArgs(first, sharedConfig, firstSecret),
+        await calendarSetupArgs(first, sharedConfig, firstSecret),
         capture(),
         dependencies,
     );
     await started;
 
     // When
-    const racingFailure = await captureError(() =>
-        setupGoogleCalendarMain(calendarSetupArgs(second, aliasedConfig, secondSecret), capture(), {
+    const racingFailure = await captureError(async () =>
+        setupGoogleCalendarMain(await calendarSetupArgs(second, aliasedConfig, secondSecret), capture(), {
             ...dependencies,
             authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
         }),
     );
     authorizeContinue();
     await firstSetup;
-    const retryFailure = await captureError(() =>
-        setupGoogleCalendarMain(calendarSetupArgs(second, aliasedConfig, secondSecret), capture(), {
+    const retryFailure = await captureError(async () =>
+        setupGoogleCalendarMain(await calendarSetupArgs(second, aliasedConfig, secondSecret), capture(), {
             ...dependencies,
             authorize: async () => ({ code: "code", redirectUri: "http://127.0.0.1/callback" }),
         }),
@@ -1293,8 +1327,8 @@ function calendarConfig(lineage: string, principal: string, directory: string) {
     };
 }
 
-function calendarSetupArgs(f: Awaited<ReturnType<typeof fixture>>, configPath: string, secretPath: string) {
-    const args = parseArgs([
+async function calendarSetupArgs(f: Awaited<ReturnType<typeof fixture>>, configPath: string, secretPath: string) {
+    const args = await captureProcessCommand([
         "setup-google-calendar",
         "--setup-config",
         f.config,

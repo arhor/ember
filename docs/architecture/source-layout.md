@@ -90,8 +90,10 @@ apps/
       index.ts
       main.ts
       model.ts
+      process-program.ts
       setup.ts
       commands.ts
+      session-program.ts
       surface.ts
   telegram/
     package.json
@@ -122,10 +124,12 @@ framework, or event bus merely because multiple surfaces exist.
 
 The CLI-specific split is:
 
-- `main.ts` owns argument parsing and command dispatch;
+- `main.ts` owns process dispatch, including the default interactive session when no subcommand is present;
+- `process-program.ts` owns the process commander program: command shape, required arguments, help, and unknown-command or unknown-option failures;
 - `setup.ts` owns first-run prompts and configured-run preparation;
-- `commands.ts` owns explicit in-session operator/admin commands;
-- `surface.ts` owns ordinary readline interaction, SIGINT cancellation, local
+- `commands.ts` owns in-session operator command actions and the quote/escape tokenizer that produces argv;
+- `session-program.ts` owns the session commander program, which is not registered on the process program;
+- `surface.ts` owns ordinary readline interaction, routing a leading `:` through the session program, SIGINT cancellation, local
   occurrence provenance, and stdout delivery over an injected `EmberApplication`.
 
 Explicit operator commands may depend on repositories or application/host operations

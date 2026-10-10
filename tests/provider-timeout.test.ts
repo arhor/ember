@@ -1,4 +1,3 @@
-import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
@@ -11,7 +10,7 @@ import { invokeProvider } from "../packages/core/src/ai/providers/process.ts";
 import { ProviderError, ValidationError } from "../packages/core/src/errors.ts";
 import { buildProjection } from "../packages/core/src/projection.ts";
 import { startRuntime } from "../packages/core/src/runtime-episode.ts";
-import { emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
+import { captureError, captureProcessCommand, emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 const OVERSIZED_TIMEOUT = MAX_AI_TIMEOUT_SECONDS + 1;
 
@@ -118,7 +117,7 @@ test("process AI bridge should honor call timeout when model configuration is lo
     assert.deepEqual(error.termination, { reason: "timeout", directChildExitObserved: true });
 });
 
-test("CLI parser should reject timeout before runtime start when delay exceeds Node timer range", () => {
+test("CLI parser should reject timeout before runtime start when delay exceeds Node timer range", async () => {
     // Given
     const args = [
         "run",
@@ -134,12 +133,7 @@ test("CLI parser should reject timeout before runtime start when delay exceeds N
         String(OVERSIZED_TIMEOUT),
     ];
     // When
-    let error = null;
-    try {
-        parseArgs(args);
-    } catch (caught) {
-        error = caught;
-    }
+    const error = await captureError(() => captureProcessCommand(args));
     // Then
     assert.deepEqual([error instanceof ValidationError, /must not exceed/.test(error?.message ?? "")], [true, true]);
 });

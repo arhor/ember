@@ -1,7 +1,12 @@
+import type { CliCommandArgs } from "@ember/cli/model.ts";
+
+import { delegateArgv, isDefaultInteractiveSession } from "@ember/cli/main.ts";
+import { createProcessProgram } from "@ember/cli/process-program.ts";
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { Readable, Writable } from "node:stream";
 
 import { initialState } from "../packages/core/src/model.ts";
 import {
@@ -107,6 +112,38 @@ export async function command(
 
 export async function readJson(path: string) {
     return JSON.parse(await readFile(path, "utf8"));
+}
+
+export async function captureProcessCommand(argv: string[]): Promise<CliCommandArgs> {
+    if (isDefaultInteractiveSession(argv)) {
+        return {
+            command: "run",
+            mode: "default",
+            ...(argv[0] === "--diagnostics" ? { diagnostics: true } : {}),
+        };
+    }
+    const delegated = delegateArgv(argv);
+    let captured: CliCommandArgs | undefined;
+    const io = {
+        input: Readable.from([]),
+        output: new Writable({
+            write(_chunk, _encoding, callback) {
+                callback();
+            },
+        }),
+        error: new Writable({
+            write(_chunk, _encoding, callback) {
+                callback();
+            },
+        }),
+    };
+    const program = createProcessProgram(io, delegated, async (args) => {
+        captured = args;
+        return 0;
+    });
+    await program.parseAsync(delegated, { from: "user" });
+    if (!captured) throw new Error(`ember command produced no action: ${argv.join(" ")}`);
+    return captured;
 }
 
 export async function captureError(action: any) {
