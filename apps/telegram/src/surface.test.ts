@@ -1,20 +1,21 @@
+import type { AiExecutor } from "@ember/core/ai/contract.ts";
+import type { EmberApplication } from "@ember/core/app/contract.ts";
+
+import { initialState } from "@ember/core/model.ts";
+import { createOnboardingWork } from "@ember/core/onboarding-work.ts";
+import { OnboardingWorkStore } from "@ember/core/persistence/onboarding-work-store.ts";
+import { StateStore } from "@ember/core/persistence/state-store.ts";
+import { SurfaceDeliveryFailure } from "@ember/core/runtime/interaction-boundary.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor } from "../../../packages/core/src/ai/contract.ts";
-import type { EmberApplication } from "../../../packages/core/src/app/contract.ts";
 import type { TelegramSurfaceConfig } from "./config.ts";
 import type { TelegramUpdate } from "./surface.ts";
 
 import { processTelegramUpdate, runTelegramPolling } from "../../../tests/support-telegram-surface.ts";
-import { initialState } from "../../../packages/core/src/model.ts";
-import { createOnboardingWork } from "../../../packages/core/src/onboarding-work.ts";
-import { OnboardingWorkStore } from "../../../packages/core/src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
-import { SurfaceDeliveryFailure } from "../../../packages/core/src/runtime/interaction-boundary.ts";
 import {
     TELEGRAM_SURFACE_ID,
     createTelegramApi,
@@ -43,7 +44,7 @@ function telegramConfig(directory: string, statePath: string): TelegramSurfaceCo
         provider_timeout_seconds: 30,
         working_directory: directory,
         node_path: process.execPath,
-        surface_entrypoint: resolve("bin/ember-telegram.ts"),
+        surface_entrypoint: resolve("apps/telegram/bin/ember-telegram.ts"),
         stop_timeout_seconds: 45,
     };
 }

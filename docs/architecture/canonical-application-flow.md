@@ -1,8 +1,8 @@
 ---
-summary: "Current production path from CLI or Telegram input through the Ember application boundary, AI execution, durable state, delivery, bootstrap, and trusted-host setup."
+summary: "Current production path from CLI or Telegram input through the Ember application boundary, AI execution, durable state, delivery, and bootstrap."
 read_when:
   - "Tracing an ordinary user message through Ember from a concrete surface to durable state and delivery"
-  - "Changing application composition, cognition execution, delivery reconciliation, first-run bootstrap, or trusted-host setup"
+  - "Changing application composition, cognition execution, delivery reconciliation, or first-run bootstrap"
   - "Checking whether a surface, host adapter, provider bridge, or setup flow is bypassing the canonical application boundary"
 role: design
 discovery_status: current
@@ -41,20 +41,20 @@ does that before the adapter starts.
 
 ### Foreground CLI
 
-The executable entry point is [`bin/ember.ts`](../../bin/ember.ts), which delegates to
-the CLI module under [`../../src/apps`](../../src/apps/cli/).
+The executable entry point is [`apps/cli/bin/ember.ts`](../../apps/cli/bin/ember.ts), which delegates to
+the public module in the `@ember/cli` workspace package.
 
 For an already configured continuity, the path is:
 
 ```text
-bin/ember.ts
-  -> apps/cli/main.ts
-  -> apps/cli/setup.ts::setupRunMain
+apps/cli/bin/ember.ts
+  -> apps/cli/src/main.ts
+  -> apps/cli/src/setup.ts::setupRunMain
   -> app/bootstrap.ts::prepareConfiguredRun
   -> composition/cli.ts::composeCliSurface
   -> composition/ember.ts::composeEmberApplication
   -> app/application.ts::createEmberApplication
-  -> apps/cli/surface.ts::runCliSurface
+  -> apps/cli/src/surface.ts::runCliSurface
   -> EmberApplication.interact(...)
 ```
 
@@ -65,15 +65,15 @@ receives those collaborators. It does not choose or construct them.
 ### Telegram
 
 The resident or foreground Telegram worker starts at
-[`bin/ember-telegram.ts`](../../bin/ember-telegram.ts):
+[`apps/telegram/bin/ember-telegram.ts`](../../apps/telegram/bin/ember-telegram.ts):
 
 ```text
-bin/ember-telegram.ts
+apps/telegram/bin/ember-telegram.ts
   -> load Telegram transport config + token
-  -> composition/telegram.ts::composeTelegramSurface
+  -> apps/telegram/src/composition.ts::composeTelegramSurface
   -> composition/ember.ts::composeEmberApplication
   -> app/application.ts::createEmberApplication
-  -> apps/telegram/surface.ts::runTelegramPolling
+  -> apps/telegram/src/surface.ts::runTelegramPolling
   -> processTelegramUpdate
   -> EmberApplication.interact(...)
 ```
@@ -184,7 +184,7 @@ is a substitute for Ember continuity.
 Machine bootstrap is not a second cognition architecture.
 
 When plain `ember` runs with no default setup record,
-[`firstRun`](../../src/apps/cli/setup.ts) asks only for the choices required to
+[`firstRun`](../../apps/cli/src/setup.ts) asks only for the choices required to
 create or restore continuity and select a cognition provider. It then calls
 [`bootstrapContinuity`](../../packages/core/src/app/bootstrap.ts), which verifies cognition and
 activates the continuity. After successful activation, the same process continues into
@@ -199,53 +199,38 @@ Explicit `ember setup` and `ember run --config ... --scope ...` remain operator
 interfaces for scripted setup, recovery, nondefault configuration, and explicit scope
 selection. They do not define alternate ordinary cognition paths.
 
-## Optional Telegram setup uses a typed trusted-host handoff
+## Telegram setup is an explicit operator procedure
 
-Ordinary cognition may return the bounded `setupIntent: "telegram"` field defined by
-[`AiExecutionResult`](../../packages/core/src/ai/contract.ts). This is a proposal only.
-
-For a local CLI conversation whose configuration exposes a trusted-host setup callback:
-
-1. the application returns the typed setup intent beside the ordinary interaction
-   result;
-2. the CLI asks the user for a separate explicit local `yes`;
-3. the adapter builds a
-   [`TrustedHostSetupRequest`](../../packages/core/src/app/contract.ts) containing the principal,
-   scope, proposal occurrence, and attributable confirmation;
-4. `../../src/apps` validates that request, selects the host-specific
-   resident adapter, and calls the existing Telegram setup workflow;
-5. bot-token entry and machine mutation stay on the trusted local host.
-
-A remote Telegram conversation does not receive trusted-host mutation authority and
-does not ask the user to send a reusable token in chat. The conversation can explain
-how to continue setup locally, but model text alone never authorizes host mutation.
-
-Linux/systemd and macOS/launchd are host adapters around this setup and resident
-operation. They are not variants of Ember's application or cognition architecture.
+Telegram configuration, token storage, and resident-service installation are manual
+trusted-host operations documented in the
+[Telegram runbook](telegram-surface-runbook.md). Ordinary cognition has no setup
+intent or host-mutation callback, and the CLI package has no dependency on the
+Telegram package. Linux/systemd and macOS/launchd remain host adapters around
+resident operation rather than variants of Ember's application architecture.
 
 ## Ownership boundaries
 
 The current dependency direction is:
 
 ```text
-bin/* and bootstrap/operator plumbing
+apps/* executables and bootstrap/operator plumbing
         |
         v
-src/composition/*
+packages/core/src/composition/*
         |
-        +--> src/app/*
+        +--> packages/core/src/app/*
         |       |
-        |       +--> src/core/*
-        |       +--> src/runtime/*
+        |       +--> packages/core/src/core/*
+        |       +--> packages/core/src/runtime/*
         |       +--> injected repositories / AI contract / capabilities
         |
-        +--> src/ai/*
-        +--> src/persistence/*
-        +--> src/integrations/*
-        +--> src/host/*
+        +--> packages/core/src/ai/*
+        +--> packages/core/src/persistence/*
+        +--> packages/core/src/integrations/*
+        +--> packages/core/src/host/*
         |
         v
-src/apps/* receive the composed application and perform transport work
+apps/*/src surface modules receive the composed application and perform transport work
 ```
 
 The important negative rules are enforced in
@@ -266,4 +251,4 @@ occurrence/delivery semantics,
 [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md) for execution
 mechanics, and
 [Installation, Restore/Create, and Conversational Onboarding Semantics](setup-and-onboarding-semantics.md)
-for bootstrap and trusted-host setup semantics.
+for bootstrap semantics.

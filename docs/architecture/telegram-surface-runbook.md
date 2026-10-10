@@ -64,10 +64,9 @@ not itself a cognition retry. Telegram may replay an unacknowledged `update_id`,
 the issue #85 correlation boundary suppresses duplicate cognition and duplicate
 response delivery for that established occurrence.
 
-The Linux resident installation is owned by `../../packages/core/src/host`. The CLI setup
-entry selects that adapter when the user requests Telegram setup; Telegram setup
-supplies a host-neutral process launch and calls the injected resident host to render,
-read back, inspect, install, stop, restore, and activate the service. The adapter retains
+The Linux resident installation is owned by `../../packages/core/src/host`. The
+`@ember/telegram` executable supplies a host-neutral process launch and calls the
+resident host to render, inspect, install, stop, and activate the service. The adapter retains
 the `~/.config/systemd/user/ember-telegram.service` path, network-online ordering,
 `Restart=on-failure`, `KillMode=mixed`, bounded stop timeout, and private unit-file
 mode. The Telegram worker still enters the same application coordinator as foreground
@@ -117,34 +116,20 @@ and are not automatically projected into cognition.
 
 ## Bot setup
 
-In ordinary Ember conversation, ask to connect Telegram. Cognition may propose a typed
-setup handoff; the local CLI asks for a separate `yes` before opening the trusted-host wizard.
-From Telegram, continue on the trusted local host; never send a bot token in chat.
-The trusted-host wizard explains each mutation, reads the BotFather token through masked
-TTY input, discovers a private chat using a one-time displayed code, and asks before mapping,
-replacing drifted files, installing the unit, or starting the service. Discovery is bounded
-and does not advance Telegram's update acknowledgement offset merely to skip an earlier
-non-matching message such as `/start`. Do not paste the token into conversation. Declining
-activation retains the verified mapping and token, leaves the worker stopped, and reports the
-surface as configured and inactive.
+Telegram setup is a manual trusted-host operator procedure. Ordinary cognition and
+the CLI do not create configuration, collect a token, discover a chat, or install a
+resident service. Never send a bot token in conversation.
 
-The wizard defaults to:
+The conventional local paths are:
 
-- `~/.ember/config/telegram.json` (surface configuration version 2);
+- `~/.ember/config/telegram.json` (surface configuration version 2 or 3);
 - `~/.ember/secrets/telegram.token` (mode `0600`); and
 - `~/.config/systemd/user/ember-telegram.service`.
 
-Version 2 stores a structured `provider` block for `codex`, `cursor`, or `claude-code`, with
-the selected command, model, and timeout. Setup resolves a bare provider command through the
-trusted host's `PATH` and derives the worker entrypoint from the installed Ember package, so
-the service does not depend on the directory from which setup was invoked. Claude Code keeps
-its SDK-owned provider form and does not require a fictional process executable. On rerun,
-setup stops an active worker before private-chat discovery and explicitly restarts it after
-accepted configuration or unit drift so only one long poll owns updates and the live process
-uses the rendered files. Existing version-1 configuration, including the
-explicit `process` provider form, remains loadable and is normalized at the surface boundary.
-
-The manual procedure below remains useful for diagnosis and opt-in smoke testing.
+Version 2 stores a structured `provider` block for `codex`, `cursor`, or
+`claude-code`; version 3 may additionally bind Google Calendar configuration.
+Existing version-1 configuration, including the explicit `process` provider form,
+remains loadable and is normalized at the surface boundary.
 
 1. Create a bot with Telegram's official `@BotFather` flow and retain the bot token
    locally.
@@ -153,6 +138,7 @@ The manual procedure below remains useful for diagnosis and opt-in smoke testing
 3. Determine that private chat's numeric id from the official Bot API. Do not paste
    the bot token into a committed file, issue, shell script, or command-line URL.
 4. Create the local token/config files below.
+5. Run the preflight and install the resident service explicitly if wanted.
 
 A token-file-safe one-off way to inspect pending updates is to run Node with the token
 read at runtime rather than embedding it in the command line:
@@ -209,7 +195,7 @@ Create an uncommitted local JSON file, for example
   "provider_timeout_seconds": 120,
   "working_directory": "/ABSOLUTE/PATH/TO/ember",
   "node_path": "/ABSOLUTE/PATH/TO/node",
-  "surface_entrypoint": "/ABSOLUTE/PATH/TO/ember/bin/ember-telegram.ts",
+  "surface_entrypoint": "/ABSOLUTE/PATH/TO/ember/apps/telegram/bin/ember-telegram.ts",
   "stop_timeout_seconds": 150
 }
 ```
@@ -221,6 +207,11 @@ not depend on an interactive shell's current directory, aliases, or PATH resolut
 scope used for cognition accepted through this configured surface. Choose it
 deliberately for the information appropriate to this remote private-chat setting
 rather than copying a broader CLI/project scope automatically.
+
+Configurations created before the app workspace extraction may still point
+`surface_entrypoint` at `bin/ember-telegram.ts`. Change it to the absolute
+`apps/telegram/bin/ember-telegram.ts` path in the current checkout, then rerun
+`service-install` so the resident definition uses the package-owned executable.
 
 `chat_id`, `principal`, and `activeScope` together are local deployment policy. They
 remain in the uncommitted configuration file rather than code, test fixtures tied to a
@@ -266,8 +257,8 @@ instead use `{ "kind": "always_available", "source_id": "..." }`; otherwise the
 daily window is interpreted in UTC with an inclusive start and exclusive end. The
 worker rereads the separate policy document before every first-handoff assessment, so
 authority revocation and attention-policy changes do not require replaying the old
-admission or restarting the worker. Guided Telegram setup does not create or reference
-the opt-in policy automatically. Without it, production polling deliberately leaves an
+admission or restarting the worker. Manual Telegram configuration does not create or
+reference the opt-in policy automatically. Without it, production polling deliberately leaves an
 uncommitted proactive intent pending.
 
 Supported `provider_kind` values are `codex`, `cursor`, and `process`; this mirrors the
@@ -446,8 +437,7 @@ The agent carries the configured stop timeout as `ExitTimeOut` so admitted updat
 can drain after SIGTERM, and `Umask=077` keeps files created by the worker and its
 subprocesses private by default.
 
-Run `ember`, then request Telegram setup to install and verify the service. For an
-existing validated Telegram config, the direct host commands are:
+For an existing validated Telegram config, the direct host commands are:
 
 ```bash
 pnpm surface:telegram -- service-install --config "$HOME/.ember/config/telegram.json"
@@ -475,7 +465,7 @@ rm "$HOME/Library/LaunchAgents/dev.ember.telegram.plist"
 ```
 
 An absent-service error from `bootout` is safe to ignore when the agent is already
-unloaded. After cleanup, rerun setup or `service-install` if resident Telegram is
+unloaded. After cleanup, rerun `service-install` if resident Telegram is
 still wanted. The foreground application needs no LaunchAgent. Timed background wake
 work is not installed by this adapter; host support for that separate capability
 remains unavailable on macOS.

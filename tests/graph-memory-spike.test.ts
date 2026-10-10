@@ -14,7 +14,11 @@ import {
     semanticMemoryExportReader,
 } from "../eval/graph-memory/semantic-export.ts";
 import { renderMarkdownStateViews } from "../packages/core/src/persistence/markdown-state-materializer.ts";
-import { explanationView, selectProjectionMeanings, stateProjectionMeaningReader } from "../packages/core/src/projection.ts";
+import {
+    explanationView,
+    selectProjectionMeanings,
+    stateProjectionMeaningReader,
+} from "../packages/core/src/projection.ts";
 import { supersede } from "../packages/core/src/semantics.ts";
 import { buildStateMaterialization } from "../packages/core/src/state-materialization.ts";
 import { populatedState, PRINCIPAL, RELATIONSHIP_SCOPE, SCOPE } from "./support.ts";

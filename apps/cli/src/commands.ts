@@ -1,8 +1,6 @@
-import type { Writable } from "node:stream";
-
 import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.ts";
 import type { EmberState, MeaningId, RuntimeId } from "@ember/core/model.ts";
-import type { CliSurfaceConfig } from "./surface.ts";
+import type { Writable } from "node:stream";
 
 import { actionProposalConfirmation } from "@ember/core/capabilities/action-proposal.ts";
 import { EmberError, ValidationError } from "@ember/core/errors.ts";
@@ -19,6 +17,8 @@ import {
     withholdDetail,
 } from "@ember/core/semantics.ts";
 import { cloneState } from "@ember/core/util.ts";
+
+import type { CliSurfaceConfig } from "./surface.ts";
 
 type CliStateRepository = SurfaceRepositories["state"];
 

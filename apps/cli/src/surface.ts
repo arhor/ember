@@ -1,11 +1,10 @@
+import type { EmberApplication } from "@ember/core/app/contract.ts";
+import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.ts";
 import type { Readable, Writable } from "node:stream";
 
+import { EmberError, ValidationError } from "@ember/core/errors.ts";
 import { createInterface } from "node:readline";
 
-import type { EmberApplication, TrustedHostSetupRequest, TrustedHostSetupResult } from "../../../packages/core/src/app/contract.ts";
-import type { SurfaceRepositories } from "../../../packages/core/src/app/surface-repositories.ts";
-
-import { EmberError, ValidationError } from "../../../packages/core/src/errors.ts";
 import { loadConfiguredState, runCliCommand, splitCommand } from "./commands.ts";
 
 export interface CliSurfaceConfig {
@@ -13,7 +12,6 @@ export interface CliSurfaceConfig {
     principal: string;
     scope: string;
     expectedContinuityBinding?: { lineageId: string; establishedAt: string };
-    trustedHostSetup?: (request: TrustedHostSetupRequest) => Promise<TrustedHostSetupResult>;
 }
 
 interface CliSurfaceIo {
@@ -41,31 +39,7 @@ export async function runCliSurface(
         if (line === ":quit") return 0;
         if (!line.startsWith(":")) {
             try {
-                const result = await runOrdinaryCliInteraction(config, application, line, io);
-                if (result.setupIntent === "telegram" && !result.replayed && config.trustedHostSetup) {
-                    io.output.write("Start Telegram setup on this host? [yes/no]: ");
-                    const answer = await iterator.next();
-                    if (answer.done || answer.value.trim().toLowerCase() !== "yes") {
-                        io.output.write("Telegram setup cancelled.\n");
-                    } else {
-                        try {
-                            const setup = await config.trustedHostSetup({
-                                intent: "telegram",
-                                principal: config.principal,
-                                scope: config.scope,
-                                proposalOccurrenceId: result.occurrenceId,
-                                confirmedBy: {
-                                    principal: config.principal,
-                                    provenance: "explicit_local_prompt",
-                                    response: "yes",
-                                },
-                            });
-                            io.output.write(`Telegram setup: ${setup.status}. Resuming conversation.\n`);
-                        } catch {
-                            io.error.write("Telegram setup failed at the trusted host. Resuming conversation.\n");
-                        }
-                    }
-                }
+                await runOrdinaryCliInteraction(config, application, line, io);
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
@@ -101,7 +75,6 @@ async function runOrdinaryCliInteraction(
                 text: line,
                 surfaceId: "local_cli",
                 principalProvenance: "explicit_local_argument",
-                trustedHostSetupAvailable: config.trustedHostSetup !== undefined,
             },
             async ({ text }) => {
                 await writeCliOutput(io.output, text);

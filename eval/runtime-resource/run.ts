@@ -9,7 +9,11 @@ import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 
 import type { SpecialistEpisodeSpec } from "../../packages/core/src/delegation/codex-specialist.ts";
-import type { EpisodicRuntimeConfig, RuntimeObservation, WakeIntent } from "../../packages/core/src/runtime/episodic-runtime.ts";
+import type {
+    EpisodicRuntimeConfig,
+    RuntimeObservation,
+    WakeIntent,
+} from "../../packages/core/src/runtime/episodic-runtime.ts";
 
 import { createSpecialistEpisode } from "../../packages/core/src/delegation/codex-specialist.ts";
 import { initialState } from "../../packages/core/src/model.ts";
@@ -18,7 +22,7 @@ import { EpisodicRecordStore } from "../../packages/core/src/runtime/episodic-ru
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const RUNTIME_ENTRYPOINT = resolve(ROOT, "bin/ember-runtime.ts");
-const CLI_ENTRYPOINT = resolve(ROOT, "bin/ember.ts");
+const CLI_ENTRYPOINT = resolve(ROOT, "apps/cli/bin/ember.ts");
 const FIXTURE_CODEX = resolve(ROOT, "eval/runtime-resource/fixture-codex.ts");
 const PRINCIPAL = "resource-evaluation-user";
 const SCOPE = "eval:runtime-resource";

@@ -44,7 +44,7 @@ GitHub-hosted CPU models are not pinned. A future comparison must retain the rec
 
 The three active workloads are:
 
-1. **Foreground cognition**: `bin/ember.ts run` through the production Codex provider adapter.
+1. **Foreground cognition**: `apps/cli/bin/ember.ts run` through the production Codex provider adapter.
 2. **Endogenous wake**: `bin/ember-runtime.ts run-wake` through the production episodic wake path and Codex opportunity evaluator. The fixture returns `no_cognition`, representing the ordinary quiet wake/evaluation path rather than manufacturing follow-on cognition.
 3. **Specialist delegation**: `bin/ember-runtime.ts run-specialist` through the production specialist boundary.
 

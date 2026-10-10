@@ -16,7 +16,7 @@ try {
     const scenario = await loadLongitudinalScenario(options.scenario);
     const report = await runProcessRestartScenario(scenario, {
         statePath: join(directory, "ember.json"),
-        cliPath: resolve("bin/ember.ts"),
+        cliPath: resolve("apps/cli/bin/ember.ts"),
         cwd: resolve("."),
         codexCommand: "codex",
         codexArguments: options.codexArguments,

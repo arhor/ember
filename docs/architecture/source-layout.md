@@ -1,8 +1,8 @@
 ---
 summary: "Current source-layout rules for application composition, AI execution, host boundaries, thin conversational adapters, CLI routing, and enforced inward dependencies."
 read_when:
-  - "Adding, moving, or reorganizing production code under src/"
-  - "Adding or changing an interaction surface under src/apps/"
+  - "Adding, moving, or reorganizing production code under packages/ or apps/"
+  - "Adding or changing an interaction surface under apps/"
   - "Deciding whether code belongs to application coordination, composition, AI mechanics, runtime operations, persistence, integrations, host adapters, or transport"
   - "Changing dependency rules enforced by scripts/check-dependencies.ts"
 role: design
@@ -19,27 +19,31 @@ hidden inside a transport adapter.
 ## Production ownership map
 
 ```text
-src/
+packages/core/src/
   app/           transport-neutral application contract, use-case coordination, bootstrap
-  composition/   concrete production dependency assembly at executable/bootstrap boundaries
+  composition/   shared production dependency assembly
   ai/            Ember AI execution contract, AI SDK mechanics, model/provider bridges
-  core/          canonical state, semantics, projections, shared domain/runtime-episode rules
+  core/          canonical state and shared domain rules
   runtime/       interaction ledger, delivery reconciliation, episodic operational runtime
   persistence/   filesystem-backed repositories and materializations
   integrations/  external capability/protocol adapters such as Calendar and MCP
-  host/          subprocess and service-manager mechanics such as systemd and launchd
-  apps/      CLI, Telegram, and future concrete interaction transports
+  host/           subprocess and service-manager mechanics such as systemd and launchd
+apps/
+  cli/bin/ember.ts          CLI executable
+  cli/src/                      CLI bootstrap, commands, and conversational adapter
+  telegram/bin/ember-telegram.ts Telegram executable
+  telegram/src/                 Telegram config, composition, and transport adapter
 ```
 
-These directories are not independently versioned packages. Ember remains one npm
-package, and shared abstractions are introduced only where demonstrated ownership
-requires them.
+`@ember/core`, `@ember/cli`, and `@ember/telegram` are pnpm workspace packages.
+The apps depend inward on `@ember/core`; core never depends on an app, and one concrete
+app does not depend on another.
 
 ## Application and composition
 
 `../../packages/core/src/app` defines the transport-neutral
-`InteractionEvent`, `EmberApplication`, delivery callback, and typed trusted-host
-setup handoff shapes. It must not expose Telegram objects, CLI streams, AI SDK types,
+`InteractionEvent`, `EmberApplication`, and delivery callback shapes. It must not expose
+Telegram objects, CLI streams, AI SDK types,
 filesystem paths, or concrete store implementations.
 
 `../../packages/core/src/app` is the only production coordinator for an ordinary user
@@ -50,12 +54,12 @@ post-turn work, and delivery reconciliation.
 repositories, the configured `AiExecutor`, structured control helpers, capability
 selection, and the other collaborators required by the application.
 
-Surface-specific composition is intentionally tiny:
+Executable composition is intentionally tiny:
 
 - `../../packages/core/src/composition` adapts validated CLI/bootstrap configuration into one
   composed application plus repositories needed by explicit operator commands;
-- `../../packages/core/src/composition` adapts validated Telegram configuration into the same
-  application dependencies.
+- [`../../apps/telegram/src/composition.ts`](../../apps/telegram/src/composition.ts)
+  adapts validated Telegram configuration into the same core application dependencies.
 
 Composition belongs to executable/bootstrap plumbing, not to ordinary conversational
 surface modules.
@@ -78,22 +82,28 @@ canonical persistence or semantic state directly.
 Concrete ways for a principal to interact with Ember live under one surface namespace:
 
 ```text
-src/apps/
+apps/
   cli/
-    index.ts
-    main.ts
-    model.ts
-    setup.ts
-    commands.ts
-    surface.ts
+    package.json
+    bin/ember.ts
+    src/
+      index.ts
+      main.ts
+      model.ts
+      setup.ts
+      commands.ts
+      surface.ts
   telegram/
-    index.ts
-    config.ts
-    setup.ts
-    surface.ts
+    package.json
+    bin/ember-telegram.ts
+    src/
+      index.ts
+      config.ts
+      composition.ts
+      surface.ts
 ```
 
-Each surface directory exposes `index.ts` as its public module entrypoint. Files such
+Each app package exposes `src/index.ts` as its public module entrypoint. Files such
 as `main.ts`, `setup.ts`, and `surface.ts` are internal implementation structure.
 
 CLI and Telegram are sibling adapters over the same `EmberApplication`. They may
@@ -102,19 +112,18 @@ transport, polling, cancellation, and recovery. They do not own canonical identi
 memory, context policy, provider selection, cognition execution, or application
 composition.
 
-A new concrete interaction surface should normally become another
-`../../src/apps` sibling. Do not add a generic surface registry, plugin
+A new concrete interaction surface should normally become another `apps/*` workspace
+package. Do not add a generic surface registry, plugin
 framework, or event bus merely because multiple surfaces exist.
 
 ## CLI placement
 
-`bin/ember.ts` is the general CLI executable and imports the public CLI module.
+`apps/cli/bin/ember.ts` is the general CLI executable and imports the public CLI module.
 
 The CLI-specific split is:
 
 - `main.ts` owns argument parsing and command dispatch;
-- `setup.ts` owns first-run prompts, configured-run preparation, and trusted local
-  setup handoff;
+- `setup.ts` owns first-run prompts and configured-run preparation;
 - `commands.ts` owns explicit in-session operator/admin commands;
 - `surface.ts` owns ordinary readline interaction, SIGINT cancellation, local
   occurrence provenance, and stdout delivery over an injected `EmberApplication`.
@@ -129,15 +138,15 @@ and calls `EmberApplication.interact`.
 
 ## Telegram placement
 
-Telegram-specific Bot API integration lives under `../../src/apps`.
+Telegram-specific Bot API integration lives in `../../apps/telegram/src`.
 
 - `config.ts` parses and validates machine transport configuration;
-- `setup.ts` owns the existing trusted-host Telegram setup workflow;
+- `composition.ts` maps validated Telegram configuration into the shared core composition root;
 - `surface.ts` owns private-chat admission, long polling, transport occurrence
   evidence, Bot API delivery, and Telegram reconciliation.
 
-`bin/ember-telegram.ts` loads machine configuration and secrets, calls
-`composition/telegram.ts`, and injects the resulting application/repositories into
+`apps/telegram/bin/ember-telegram.ts` loads machine configuration and secrets, calls
+the app-local `composition.ts`, and injects the resulting application/repositories into
 the polling adapter.
 
 Resident installation is selected through host infrastructure. Linux/systemd and
@@ -161,13 +170,13 @@ ordinary interaction coordinator.
 ## Intended dependency direction
 
 ```text
-bin/*, CLI bootstrap, resident worker
+app-owned executables and bootstrap modules
               |
               v
-       src/composition/*
+packages/core/src/composition/*
         /      |       \
        v       v        v
-   src/app   src/ai   infrastructure
+ core/app   core/ai   infrastructure
       |                /   |    \
       v               v    v     v
  core/runtime   persistence integrations host

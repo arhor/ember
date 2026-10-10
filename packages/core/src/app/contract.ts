@@ -24,7 +24,6 @@ export interface InteractionEvent {
     conversationMembership?: ConversationMembershipIntent;
     purpose?: CognitionPurpose;
     explainIds?: Array<MeaningId | string>;
-    trustedHostSetupAvailable?: boolean;
 }
 
 // delivery is null when initial delivery handling did not run; cognition completion is never inferred from it.
@@ -33,7 +32,6 @@ export interface InteractionResult {
     cognitionId: CognitionId;
     cognitionStatus: CognitionStatus;
     replayed: boolean;
-    setupIntent?: "telegram" | null;
     deliveryId: string | null;
     delivery: DeliveryReconciliationResult | null;
     diagnostics: {
@@ -42,22 +40,6 @@ export interface InteractionResult {
         onboardingProgressFailure: string | null;
     };
 }
-
-export interface TrustedHostSetupRequest {
-    intent: "telegram";
-    principal: string;
-    scope: string;
-    proposalOccurrenceId: string;
-    confirmedBy: {
-        principal: string;
-        provenance: "explicit_local_prompt";
-        response: "yes";
-    };
-}
-
-export type TrustedHostSetupResult = {
-    status: "complete" | "configured_inactive" | "cancelled" | "failed" | "uncertain" | "unsupported_host";
-};
 
 export interface DeliveryAddress {
     principal: string;
@@ -97,7 +79,6 @@ const OPTIONAL_EVENT_FIELDS = [
     "conversationMembership",
     "purpose",
     "explainIds",
-    "trustedHostSetupAvailable",
 ];
 const ALLOWED_EVENT_FIELDS = new Set([...REQUIRED_EVENT_FIELDS, ...OPTIONAL_EVENT_FIELDS]);
 const EXTERNAL_OCCURRENCE_FIELDS = new Set(["occurrenceId", "messageId", "threadId", "correlationId", "occurredAt"]);
@@ -181,8 +162,6 @@ export function validateInteractionEvent(event: unknown): asserts event is Inter
         throw new ValidationError("explanation interaction requires explainIds");
     if (event.purpose !== "explain" && "explainIds" in event)
         throw new ValidationError("explainIds require explanation purpose");
-    if ("trustedHostSetupAvailable" in event && typeof event.trustedHostSetupAvailable !== "boolean")
-        throw new ValidationError("trustedHostSetupAvailable must be a boolean");
 }
 
 // Shape only, mirroring the retry invariant runtime/interaction-boundary.ts already enforces for a delivery attempt.

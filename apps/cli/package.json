@@ -1,0 +1,23 @@
+{
+  "name": "@ember/cli",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "ember": "bin/ember.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "test": "node --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@ember/core": "workspace:*"
+  },
+  "engines": {
+    "node": ">=26.8.1 <27"
+  },
+  "packageManager": "pnpm@12.6.0"
+}

@@ -1,3 +1,4 @@
+import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
@@ -5,7 +6,6 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/apps/cli/index.ts";
 import { validateAiExecutionResult } from "../packages/core/src/ai/contract.ts";
 import {
     createProcessProvider as createTestProcessProvider,

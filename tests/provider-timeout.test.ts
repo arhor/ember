@@ -1,9 +1,9 @@
+import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/apps/cli/index.ts";
 import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
 import { MAX_AI_TIMEOUT_SECONDS } from "../packages/core/src/ai/contract.ts";
 import { createProcessLanguageModel } from "../packages/core/src/ai/process.ts";

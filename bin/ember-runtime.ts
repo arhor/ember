@@ -6,7 +6,11 @@ import type { SpecialistEpisodeSpec } from "../packages/core/src/delegation/code
 import type { SystemdHostConfig } from "../packages/core/src/host/systemd.ts";
 import type { EpisodicRuntimeConfig } from "../packages/core/src/runtime/episodic-runtime.ts";
 
-import { installSystemdUnit, renderSystemdService, SystemdUserBackgroundHost } from "../packages/core/src/host/systemd.ts";
+import {
+    installSystemdUnit,
+    renderSystemdService,
+    SystemdUserBackgroundHost,
+} from "../packages/core/src/host/systemd.ts";
 import {
     inspectEpisodicRuntime,
     loadEpisodicRuntimeConfig,

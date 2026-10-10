@@ -1,3 +1,7 @@
+import type { CliSurfaceConfig } from "@ember/cli";
+
+import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "@ember/cli";
+import { setupGoogleCalendarMain } from "@ember/cli/google-calendar-setup.ts";
 import assert from "node:assert/strict";
 import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -5,11 +9,8 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { CliSurfaceConfig } from "../src/apps/cli/index.ts";
 import type { EmberCompositionOverrides, EmberProviderKind } from "../packages/core/src/composition/ember.ts";
 
-import { setupGoogleCalendarMain } from "../src/apps/cli/google-calendar-setup.ts";
-import { main, parseArgs, runCliSurface as runCliAdapter, setupMain as runSetup } from "../src/apps/cli/index.ts";
 import { actionProposalConfirmation, ActionProposalStore } from "../packages/core/src/capabilities/action-proposal.ts";
 import { composeCliSurface } from "../packages/core/src/composition/cli.ts";
 import { ProviderError } from "../packages/core/src/errors.ts";

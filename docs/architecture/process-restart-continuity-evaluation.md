@@ -55,11 +55,11 @@ All scenario content is synthetic.
 `eval/process-restart/run.ts` does not model a restart inside one
 long-lived Ember runtime. It creates a temporary canonical store and then:
 
-1. starts one `bin/ember.ts run` child process;
+1. starts one `apps/cli/bin/ember.ts run` child process;
 2. establishes the controlled durable meanings and performs one cognition;
 3. sends `:quit` and waits for that complete process to exit cleanly;
 4. inspects the durable store after the process is gone;
-5. starts a second `bin/ember.ts run` child process against the same store;
+5. starts a second `apps/cli/bin/ember.ts run` child process against the same store;
 6. performs the post-restart cognition using the production Codex adapter's
    ordinary ephemeral-thread default; and
 7. inspects the resulting canonical state and emits a sanitized evaluation report.

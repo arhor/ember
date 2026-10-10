@@ -3,7 +3,10 @@ import { isAbsolute, join } from "node:path";
 
 import type { CapabilityExecutionEvidence } from "../../packages/core/src/capabilities/execution.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../packages/core/src/capabilities/action-proposal.ts";
+import {
+    actionProposalConfirmation,
+    ActionProposalStore,
+} from "../../packages/core/src/capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
 import { ValidationError } from "../../packages/core/src/errors.ts";
 import {

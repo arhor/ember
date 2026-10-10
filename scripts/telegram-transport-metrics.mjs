@@ -27,9 +27,9 @@ if (command === "probe") {
 
 async function probe(repo) {
     const [{ runTelegramPolling }, { initialState }, { StateStore }] = await Promise.all([
-        import(pathToFileURL(join(repo, "src/apps/telegram/index.ts")).href),
-        import(pathToFileURL(join(repo, "src/core/model.ts")).href),
-        import(pathToFileURL(join(repo, "src/persistence/state-store.ts")).href),
+        import(pathToFileURL(join(repo, "apps/telegram/src/index.ts")).href),
+        import(pathToFileURL(join(repo, "packages/core/src/model.ts")).href),
+        import(pathToFileURL(join(repo, "packages/core/src/persistence/state-store.ts")).href),
     ]);
 
     const footprint = {
@@ -193,7 +193,7 @@ async function createFixture(repo, initialState, StateStore) {
             provider_timeout_seconds: 30,
             working_directory: repo,
             node_path: process.execPath,
-            surface_entrypoint: join(repo, "bin/ember-telegram.ts"),
+            surface_entrypoint: join(repo, "apps/telegram/bin/ember-telegram.ts"),
             stop_timeout_seconds: 45,
         },
         close: () => rm(directory, { recursive: true, force: true }),

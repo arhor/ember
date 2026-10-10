@@ -1,16 +1,17 @@
+import type { BootstrapEvent } from "@ember/core/app/bootstrap.ts";
+import type { SetupCompositionOverrides } from "@ember/core/composition/setup.ts";
+
+import { bootstrapContinuity, prepareConfiguredRun } from "@ember/core/app/bootstrap.ts";
+import { composeCliSurface } from "@ember/core/composition/cli.ts";
+import { composeSetupDependencies } from "@ember/core/composition/setup.ts";
+import { ValidationError } from "@ember/core/errors.ts";
+import { createSetupDiagnostics } from "@ember/core/host/setup-diagnostics.ts";
+import { defaultSetupConfigPath, loadSetupConfig } from "@ember/core/host/setup.ts";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
-import type { BootstrapEvent } from "../../../packages/core/src/app/bootstrap.ts";
-import type { SetupCompositionOverrides } from "../../../packages/core/src/composition/setup.ts";
 import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
 
-import { bootstrapContinuity, prepareConfiguredRun } from "../../../packages/core/src/app/bootstrap.ts";
-import { composeCliSurface } from "../../../packages/core/src/composition/cli.ts";
-import { composeSetupDependencies } from "../../../packages/core/src/composition/setup.ts";
-import { ValidationError } from "../../../packages/core/src/errors.ts";
-import { createSetupDiagnostics } from "../../../packages/core/src/host/setup-diagnostics.ts";
-import { defaultSetupConfigPath, loadSetupConfig } from "../../../packages/core/src/host/setup.ts";
 import { runCliSurface } from "./surface.ts";
 
 export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
@@ -173,32 +174,6 @@ async function runConfigured(
                 ? {}
                 : { expectedContinuityBinding: config.expectedContinuityBinding }),
             ...(lines === undefined ? {} : { lines }),
-            trustedHostSetup: async (request) => {
-                if (
-                    request.intent !== "telegram" ||
-                    request.principal !== config.principal ||
-                    request.scope !== config.scope ||
-                    !request.proposalOccurrenceId ||
-                    request.confirmedBy.principal !== config.principal ||
-                    request.confirmedBy.provenance !== "explicit_local_prompt" ||
-                    request.confirmedBy.response !== "yes"
-                )
-                    throw new ValidationError("Telegram setup requires attributable local confirmation");
-                const { runTelegramSetup } = await import("../telegram/setup.ts");
-                const { telegramResidentHost } = await import("../../../packages/core/src/host/telegram-resident-host.ts");
-                const setup = await loadSetupConfig(args.mode === "default" ? defaultSetupConfigPath() : args.config);
-                if (!setup) throw new ValidationError("setup configuration is unavailable");
-                let residentHost;
-                try {
-                    residentHost = await telegramResidentHost();
-                } catch (error) {
-                    if (error instanceof ValidationError) return { status: "unsupported_host" };
-                    throw error;
-                }
-                return await runTelegramSetup({ setup, scope: config.scope }, io, {
-                    residentHost,
-                });
-            },
         },
         io,
         services,

@@ -99,7 +99,7 @@ The currently supported principal-provenance classes are deliberately narrow:
 - `configured_surface_mapping` for a surface whose account/chat identity has already
   been mapped by deployment policy to the supported local principal.
 
-The production CLI conversation in `../../src/apps` invokes
+The production CLI conversation in `../../apps` invokes
 `EmberApplication.interact` for ordinary cognition and `:ask --explain`, so its asserted principal is
 represented with `explicit_local_argument` rather than existing only as an implicit
 caller convention. The Telegram adapter uses `configured_surface_mapping` only after
@@ -277,11 +277,10 @@ already-established occurrence rather than reaching cognition twice. Telegram
 chat/message/thread identifiers remain operational metadata and cannot replace Ember
 principal, scope, lineage, memory, or authority semantics.
 
-Concrete surface mechanics live outside this shared boundary under
-`../../src/apps` and `../../src/apps`. Telegram-specific
+Concrete surface mechanics live outside this shared boundary under the `@ember/cli` and `@ember/telegram` workspace packages. Telegram-specific
 Bot API long polling, token-file authentication, private chat mapping, concrete
 `sendMessage` delivery, and systemd supervision additionally involve
-`bin/ember-telegram.ts`, the Telegram runbook, and ADR 0008. These modules do not
+`apps/telegram/bin/ember-telegram.ts`, the Telegram runbook, and ADR 0008. These modules do not
 redefine occurrence identity, cognition surface context, ordinary context selection,
 or the delivery lifecycle.
 
@@ -319,7 +318,7 @@ remain Ember-owned inputs.
 ## Executable acceptance scenarios
 
 The focused tests in `../../packages/core/src/app` instantiate the issue #85 transport
-semantics through the public application contract. `../../src/apps`
+semantics through the public application contract. `../../apps`
 exercises those rules through the concrete Telegram adapter.
 `tests/cross-surface-semantics.test.ts` validates the same
 principal/privacy/delivery invariants across both real logical surfaces.

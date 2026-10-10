@@ -72,8 +72,8 @@ the retry observes current lineage ownership instead of overwriting a stale snap
 
 ## Reproduce and inspect
 
-Start configured CLI conversation with the bound scope, or regenerate Telegram setup
-after calendar configuration so its v3 config references the calendar config. Ask for
+Start configured CLI conversation with the bound scope, or update the manual Telegram
+v3 config after calendar configuration so it references the calendar config. Ask for
 events in an explicit interval no longer than 31 days. A successful empty interval is
 an `observed` result with an empty event list. Pagination is reported as truncation.
 The CLI reloads the Calendar config at each cognition boundary, so disablement or

@@ -9,7 +9,10 @@ import type { EmberState } from "../packages/core/src/model.ts";
 
 import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "../packages/core/src/conversation-context.ts";
+import {
+    RECENT_DIALOGUE_MAX_EXCHANGES,
+    RECENT_DIALOGUE_MAX_TURN_BYTES,
+} from "../packages/core/src/conversation-context.ts";
 import { ProviderError } from "../packages/core/src/errors.ts";
 import { initialState } from "../packages/core/src/model.ts";
 import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";

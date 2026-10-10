@@ -1,7 +1,10 @@
+import type { TelegramSurfaceConfig } from "@ember/telegram";
+
+import { reconcileTelegramProactiveContacts as reconcileContacts } from "@ember/telegram";
+import { composeTelegramSurface } from "@ember/telegram";
 import { readFile } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
-import type { TelegramSurfaceConfig } from "../../src/apps/telegram/index.ts";
 import type {
     ContactAttentionDecisionRecord,
     ContactAttentionPolicyRequest,
@@ -9,18 +12,19 @@ import type {
 } from "../../packages/core/src/agency/proactive-contact-attention-policy.ts";
 import type { CognitionId, EvidenceId, MeaningId } from "../../packages/core/src/model.ts";
 
-import { reconcileTelegramProactiveContacts as reconcileContacts } from "../../src/apps/telegram/index.ts";
 import { decideUserInterruption } from "../../packages/core/src/agency/interruption-decision.ts";
 import { decideProactiveContactAttention } from "../../packages/core/src/agency/proactive-contact-attention-policy.ts";
 import { ProactiveContactStore } from "../../packages/core/src/agency/proactive-contact-store.ts";
 import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
 import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { composeTelegramSurface } from "../../packages/core/src/composition/telegram.ts";
 import { ValidationError } from "../../packages/core/src/errors.ts";
 import { initialState } from "../../packages/core/src/model.ts";
 import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
 import { startRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../../packages/core/src/runtime/interaction-boundary.ts";
+import {
+    InteractionLedgerStore,
+    SurfaceDeliveryFailure,
+} from "../../packages/core/src/runtime/interaction-boundary.ts";
 import { findMeaning, rememberFact, supersede } from "../../packages/core/src/semantics.ts";
 import { contentDigest, exactKeys, isObject } from "../../packages/core/src/util.ts";
 

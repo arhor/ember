@@ -2,19 +2,16 @@
   "name": "@arhor/ember",
   "version": "0.0.0",
   "private": true,
-  "bin": {
-    "ember": "bin/ember.ts"
-  },
   "type": "module",
   "scripts": {
     "check": "pnpm fmt:check && pnpm lint && tsc -p tsconfig.json && pnpm test:types && pnpm check:dependencies && node scripts/docs-discovery.ts check",
     "check:dependencies": "node scripts/check-dependencies.ts",
-    "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
+    "test": "node --test \"apps/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
-    "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\"",
-    "serve": "node --env-file-if-exists=.env.local bin/ember.ts --diagnostics",
+    "test:types": "tsd --typings packages/core/src/model.ts --files \"packages/core/src/**/*.test-d.ts\"",
+    "serve": "node --env-file-if-exists=.env.local apps/cli/bin/ember.ts --diagnostics",
     "runtime:episodic": "node --env-file-if-exists=.env.local bin/ember-runtime.ts",
-    "surface:telegram": "node --env-file-if-exists=.env.local bin/ember-telegram.ts",
+    "surface:telegram": "node --env-file-if-exists=.env.local apps/telegram/bin/ember-telegram.ts",
     "smoke:codex": "node tests/live/codex-smoke.ts",
     "smoke:cursor": "node tests/live/cursor-smoke.ts",
     "smoke:claude": "node tests/live/claude-code-smoke.ts",
@@ -52,14 +49,11 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
-    "@ai-sdk/deepseek": "3.0.39",
-    "@ai-sdk/mcp": "2.0.45",
-    "@ai-sdk/provider": "4.0.10",
+    "@ember/cli": "workspace:*",
     "@ember/core": "workspace:*",
+    "@ember/telegram": "workspace:*",
     "ai": "7.0.93",
-    "ai-sdk-ollama": "^4.2.0",
-    "ai-sdk-provider-claude-code": "4.3.1",
-    "node-telegram-bot-api": "2.1.0"
+    "ai-sdk-provider-claude-code": "4.3.1"
   },
   "devDependencies": {
     "@types/node": "26.4.1",

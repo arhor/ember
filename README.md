@@ -20,7 +20,7 @@ pnpm test
 Run Ember from source:
 
 ```sh
-node bin/ember.ts
+node apps/cli/bin/ember.ts
 ```
 
 With no default setup record, plain `ember` asks whether to create a new continuity or restore an existing one, verifies the
@@ -32,8 +32,8 @@ Provider authentication remains owned by the selected provider runtime. Authenti
 Explicit setup and nondefault runs remain available for scripting, recovery, or alternate configuration:
 
 ```sh
-node bin/ember.ts setup --intent create-new --principal user-1 --provider codex
-node bin/ember.ts run --config PATH --scope SCOPE
+node apps/cli/bin/ember.ts setup --intent create-new --principal user-1 --provider codex
+node apps/cli/bin/ember.ts run --config PATH --scope SCOPE
 ```
 
 The application home separates machine configuration (`~/.ember/config/`) from continuity state (`~/.ember/state/`).
@@ -41,7 +41,8 @@ A resident service is optional. Foreground CLI conversation does not require sys
 
 See [Canonical Ember Application Flow](docs/architecture/canonical-application-flow.md) for the complete ordinary message
 path and [Setup and Onboarding](docs/architecture/setup-and-onboarding-semantics.md) for create/restore, provider
-verification, recovery, and trusted-host setup.
+verification, and recovery. Telegram configuration is a manual operator procedure documented in the
+[Telegram surface runbook](docs/architecture/telegram-surface-runbook.md).
 
 ## Repository layout
 
@@ -53,15 +54,16 @@ The production tree is organized by ownership:
   capability selection, and concrete surface services;
 - `packages/core/src/ai` owns the Ember AI execution contract, Vercel AI SDK execution mechanics, bounded provider/model bridges,
   structured control generation, and generic process compatibility mechanics;
-- `src/core/` owns canonical state types, semantic operations, projections, runtime-episode semantics, and shared domain
+- `packages/core/src/core/` owns canonical state types, semantic operations, projections, runtime-episode semantics, and shared domain
   errors;
 - `packages/core/src/runtime` owns focused operational runtime mechanics such as the interaction ledger, delivery reconciliation, and
   episodic unattended execution;
 - `packages/core/src/persistence` owns durable filesystem-backed repositories and materializations;
 - `packages/core/src/integrations` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
 - `packages/core/src/host` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
-- `src/apps` owns concrete interaction transports. CLI and Telegram receive an already composed
-  `EmberApplication` for ordinary conversation and keep transport-specific admission and delivery behavior;
+- `apps/cli` and `apps/telegram` are self-contained workspace applications that own their executables,
+  package dependencies, and concrete interaction transports. Their conversational adapters receive an already composed
+  `EmberApplication` and keep transport-specific admission and delivery behavior;
 - `eval/` contains evaluation harnesses rather than production runtime code;
 - narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under
   `tests/`.

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
+import type { TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
+
+import { processTelegramUpdate } from "@ember/telegram";
+import { composeTelegramSurface } from "@ember/telegram";
 import { resolve } from "node:path";
 
-import type { TelegramSurfaceConfig, TelegramUpdate } from "../../../src/apps/telegram/index.ts";
-
-import { processTelegramUpdate } from "../../../src/apps/telegram/index.ts";
-import { composeTelegramSurface } from "../../../packages/core/src/composition/telegram.ts";
 import { SurfaceDeliveryFailure } from "../../../packages/core/src/runtime/interaction-boundary.ts";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
@@ -51,7 +51,7 @@ const config: TelegramSurfaceConfig = {
     provider_timeout_seconds: 2,
     working_directory: ROOT,
     node_path: process.execPath,
-    surface_entrypoint: resolve(ROOT, "bin/ember-telegram.ts"),
+    surface_entrypoint: resolve(ROOT, "apps/telegram/bin/ember-telegram.ts"),
     stop_timeout_seconds: 45,
 };
 

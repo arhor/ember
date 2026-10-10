@@ -77,7 +77,7 @@ export function createCodexLanguageModel({
                 command,
                 args,
                 {
-                    prompt: request === null ? structuredPrompt(options) : buildCodexPrompt(request, true),
+                    prompt: request === null ? structuredPrompt(options) : buildCodexPrompt(request),
                     schema: options.responseFormat!.type === "json" ? options.responseFormat!.schema : undefined,
                 },
                 {

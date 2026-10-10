@@ -1,3 +1,4 @@
+import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFileSync, readdirSync } from "node:fs";
@@ -6,11 +7,14 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { parseArgs } from "../src/apps/cli/index.ts";
 import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
 import { createCursorLanguageModel } from "../packages/core/src/ai/cursor.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../packages/core/src/ai/onboarding-progress.ts";
-import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "../packages/core/src/ai/providers/cursor.ts";
+import {
+    buildCursorPrompt,
+    cursorEnvironment,
+    invokeCursorProvider,
+} from "../packages/core/src/ai/providers/cursor.ts";
 import { ProviderError } from "../packages/core/src/errors.ts";
 import { buildProjection } from "../packages/core/src/projection.ts";
 import { startRuntime } from "../packages/core/src/runtime-episode.ts";

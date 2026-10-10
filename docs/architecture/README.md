@@ -27,7 +27,7 @@ Current architecture material:
 - [Canonical Ember Application Flow](canonical-application-flow.md) describes the
   implemented production path shared by CLI and Telegram, including executable
   composition, application coordination, AI execution, durable delivery, first-run
-  bootstrap, and typed trusted-host setup.
+  bootstrap, and manual Telegram operator boundaries.
 - [Cross-Cutting Research Synthesis and Ember Design Directions](design-directions.md)
   is the canonical synthesis of the completed concern-driven research programme.
 - [Ember Architecture Decisions](decisions/README.md) records the accepted
@@ -92,7 +92,7 @@ Current architecture material:
   share the representation-neutral semantic boundary, evaluates L0-L3 provenance and
   Pi-class storage choices, and keeps graph adoption gated on issue #240 evidence.
 - [Source Layout and Surface Placement](source-layout.md) records the current
-  `../../src/apps` grouping, the distinction between conversational CLI
+  `../../apps` workspace grouping, the distinction between conversational CLI
   mechanics and operator/application commands, and the intended inward dependency
   direction for concrete surfaces.
 - [Telegram Surface Runbook](telegram-surface-runbook.md) records issue #86's concrete

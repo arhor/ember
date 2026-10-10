@@ -400,7 +400,8 @@ test("materialized edits cannot change identity, provenance, scope, or historica
     supersede(state, PRINCIPAL, ids.preference, "New current preference", { reason: "changed" });
     const rendered = renderMarkdownStateViews(buildStateMaterialization(state, { principal: PRINCIPAL, scope: SCOPE }));
     rendered["USER.md"] = rendered["USER.md"].replace("Prefer concise architectural rationale", "Rewrite history");
-    const { inspectMarkdownStateEdits } = await import("../packages/core/src/persistence/markdown-state-materializer.ts");
+    const { inspectMarkdownStateEdits } =
+        await import("../packages/core/src/persistence/markdown-state-materializer.ts");
     assert.throws(
         () =>
             inspectMarkdownStateEdits(

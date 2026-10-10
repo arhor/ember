@@ -1,3 +1,4 @@
+import { parseArgs } from "@ember/cli";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -6,7 +7,6 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
-import { parseArgs } from "../src/apps/cli/index.ts";
 import { createCodexLanguageModel } from "../packages/core/src/ai/codex.ts";
 import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
 import { createAiSdkOnboardingProgressEvaluator } from "../packages/core/src/ai/onboarding-progress.ts";

@@ -72,7 +72,7 @@ export function createCursorLanguageModel({
             const parsed = await invokeCursorStructured(
                 command,
                 args,
-                request === null ? structuredPrompt(options) : buildCursorPrompt(request, true),
+                request === null ? structuredPrompt(options) : buildCursorPrompt(request),
                 {
                     ...adapterOptions,
                     timeoutSeconds,

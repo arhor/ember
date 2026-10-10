@@ -1,3 +1,8 @@
+import type { TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
+
+import { main as cliMain } from "@ember/cli";
+import { runCliSurface } from "@ember/cli/surface.ts";
+import { TELEGRAM_SURFACE_ID } from "@ember/telegram";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -5,12 +10,8 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { TelegramSurfaceConfig, TelegramUpdate } from "../src/apps/telegram/index.ts";
 import type { AiExecutor, AiExecutionRequest } from "../packages/core/src/ai/contract.ts";
 
-import { main as cliMain } from "../src/apps/cli/index.ts";
-import { runCliSurface } from "../src/apps/cli/surface.ts";
-import { TELEGRAM_SURFACE_ID } from "../src/apps/telegram/index.ts";
 import { composeCliSurface } from "../packages/core/src/composition/cli.ts";
 import { initialState } from "../packages/core/src/model.ts";
 import { createOnboardingWork } from "../packages/core/src/onboarding-work.ts";
@@ -43,7 +44,7 @@ function telegramConfig(directory: string, statePath: string): TelegramSurfaceCo
         provider_timeout_seconds: 30,
         working_directory: directory,
         node_path: process.execPath,
-        surface_entrypoint: resolve("bin/ember-telegram.ts"),
+        surface_entrypoint: resolve("apps/telegram/bin/ember-telegram.ts"),
         stop_timeout_seconds: 45,
     };
 }
@@ -143,14 +144,14 @@ function memoryOutput(chunks: string[]) {
 test("production foreground and resident entrypoints should preserve the canonical composed surface route", async () => {
     // Given
     const [cliExecutable, cliBootstrap, cliConfiguredBootstrap, telegramExecutable] = await Promise.all([
-        readFile(new URL("../bin/ember.ts", import.meta.url), "utf8"),
-        readFile(new URL("../src/apps/cli/main.ts", import.meta.url), "utf8"),
-        readFile(new URL("../src/apps/cli/setup.ts", import.meta.url), "utf8"),
-        readFile(new URL("../bin/ember-telegram.ts", import.meta.url), "utf8"),
+        readFile(new URL("../apps/cli/bin/ember.ts", import.meta.url), "utf8"),
+        readFile(new URL("../apps/cli/src/main.ts", import.meta.url), "utf8"),
+        readFile(new URL("../apps/cli/src/setup.ts", import.meta.url), "utf8"),
+        readFile(new URL("../apps/telegram/bin/ember-telegram.ts", import.meta.url), "utf8"),
     ]);
 
     // Then
-    assert.equal(cliExecutable.includes('import { main } from "../src/apps/cli/index.ts";'), true);
+    assert.equal(cliExecutable.includes('import { main } from "../src/index.ts";'), true);
     assert.equal(cliExecutable.includes("process.exitCode = await main();"), true);
     assert.equal(cliBootstrap.split("composeCliSurface(").length - 1, 1);
     assert.equal(cliBootstrap.split("runCliSurface(").length - 1, 1);

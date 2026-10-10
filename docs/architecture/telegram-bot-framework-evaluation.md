@@ -2,7 +2,7 @@
 summary: "Issue #200 evaluation of Telegram Bot API libraries for Ember, selecting node-telegram-bot-api v2 as a thin transport primitive while keeping acknowledgement, replay, delivery uncertainty, reconciliation, and runtime semantics Ember-owned."
 read_when:
   - "Choosing, upgrading, or replacing the Telegram Bot API library used by Ember"
-  - "Changing src/apps/telegram.ts polling, delivery, error, webhook, or shutdown behavior"
+  - "Changing apps/telegram/src.ts polling, delivery, error, webhook, or shutdown behavior"
   - "Deciding which Telegram mechanics may be delegated to a dependency without moving Ember semantics into a framework"
 role: design
 discovery_status: current

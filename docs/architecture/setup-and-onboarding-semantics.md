@@ -3,7 +3,7 @@ summary: "Setup semantics and typed bootstrap CLI with separate config/state, ex
 read_when:
   - "Implementing or changing ember setup, machine provisioning, restore/create behavior, provider bootstrap, onboarding, or setup recovery"
   - "Deciding whether setup state belongs to the host, Ember continuity, ordinary memory, or temporary operational work"
-  - "Changing secret entry, typed host mutations, rerunnable setup sections, or behavior on an already configured machine"
+  - "Changing rerunnable setup sections or behavior on an already configured machine"
   - "Running ember setup, plain foreground ember, or configured conversation; selecting a cognition provider or recovering interrupted bootstrap"
 role: design
 discovery_status: current
@@ -12,7 +12,7 @@ discovery_status: current
 # Installation, Restore/Create, and Conversational Onboarding Semantics
 
 > Status: current setup/onboarding contract from epic #250, including the implemented
-> default first-run conversation entry and the typed trusted-host Telegram setup handoff.
+> default first-run conversation entry.
 >
 > Machine bootstrap and optional host mutation surround the same ordinary application
 > path documented in [Canonical Ember Application Flow](canonical-application-flow.md);
@@ -602,7 +602,7 @@ erased.
 
 ## Implemented machine bootstrap (#253)
 
-`node bin/ember.ts setup` (or `ember setup` after linking the package) inspects the
+`node apps/cli/bin/ember.ts setup` (or `ember setup` after linking the package) inspects the
 machine without selecting an intent, invoking cognition, or writing files. It reports
 configuration presence, whether the selected continuity store loads, and the last probe
 and continuity-operation results. Corrupt/unreadable state fails visibly rather than
@@ -778,7 +778,7 @@ message is emitted. Already committed continuity is never rolled back by setup.
 
 Configured conversation validates the principal, lineage ID, and lineage establishment
 time together after acquiring the canonical state write lease and before starting a
-runtime episode. The setup handoff does not rely on an earlier unlocked state read.
+runtime episode. The configured run does not rely on an earlier unlocked state read.
 
 `tests/setup.test.ts` covers fresh/configured inspection, all provider selections,
 restore attachment, reruns, failure/timeout/cancellation, malformed results, concurrent
@@ -860,48 +860,24 @@ provider change does not create a second onboarding lifecycle or hide a failed b
 decision. Explicit lower-level callers may inject
 deterministic evaluators for testing while core transition validation remains unchanged.
 
-## Implemented guided Telegram setup (#255)
+## Telegram configuration is outside conversational setup
 
-Ordinary cognition may return a typed Telegram setup proposal alongside its reply. This proposal
-has no host authority. On the configured local CLI, the user must separately answer `yes` to a
-trusted-host confirmation before the existing wizard runs. The handoff carries the principal and scope,
-records the interaction occurrence only as the proposal source, and attributes the separate `yes`
-to that configured principal through an explicit local prompt. The proposal occurrence is not
-confirmation evidence; the bot token is entered only through the wizard’s masked local input. A remote Telegram proposal instead receives a bounded instruction
-to continue on the trusted local host. The conversation never requests or carries the token.
-After completion, cancellation, or a recoverable failure, the CLI resumes its input loop over the
-same configured principal, scope, continuity binding, and conversation sidecar. Unsupported resident
-hosts report `unsupported_host` before the wizard touches a secret or machine file. CLI and Telegram
-interactions each reload current state and create one lease-bounded runtime episode for their actual
-work, preserving the sequential recovery model.
+The CLI bootstrap configures Ember continuity and cognition only. It does not depend
+on the Telegram app, emit a Telegram setup intent, collect a bot token, discover a
+chat mapping, or mutate a resident service. Telegram token storage, surface
+configuration, preflight, and service installation are explicit operator procedures
+owned by the `@ember/telegram` package and documented in the
+[Telegram surface runbook](telegram-surface-runbook.md).
 
-The wizard owns masked BotFather-token entry, mode-`0600` storage, bot/webhook preflight,
-short-code private-chat discovery, explicit mapping confirmation, configuration/unit drift
-confirmation, host-selected systemd or launchd service calls, and ledger-correlated round-trip
-observation. It derives principal, state path, provider, and scope from the verified setup
-binding. Its per-stage result keeps storage, preflight, mapping, rendering, installation,
-activation, and bounded polling for correlated delivery truth separate. Provider executables
-for Codex and Cursor are resolved through `PATH` without a shell; Claude Code retains its
-SDK-owned runtime representation. The worker entrypoint and working directory come from the
-installed package location rather than the caller's current directory. An already-active
-Telegram worker is explicitly stopped before mapping discovery and restarted after changed
-configuration or unit files are installed, preventing competing long polls and stale process
-configuration. Mapping discovery polls for a bounded interval without advancing Telegram's
-acknowledgement offset, so an earlier pending message such as `/start` cannot cause immediate
-failure and is not silently consumed by setup. Declining final service activation leaves a
-previously active worker stopped and returns truthful `configured_inactive` state.
-
-The guided flow writes Telegram surface configuration version 2 with a structured provider
-block. The Telegram loader continues to accept and normalize version 1, including its
-explicit process-provider representation. Neither representation stores the bot token.
+This keeps machine mutation outside ordinary cognition and keeps `@ember/cli` and
+`@ember/telegram` as sibling apps over the same `@ember/core` application boundary.
 
 ## Implemented validation (#256)
 
 The [setup and onboarding end-to-end validation](setup-onboarding-validation.md) exercises
-fresh creation, restoration, progressive onboarding, provider replacement, guided
-Telegram setup, restart recovery, provenance, and secret containment through production
-boundaries. It emits a sanitized version-1 report for future scorecard aggregation and
-keeps real-provider and real-Telegram operation as a separate opt-in clean-host smoke.
+fresh creation, restoration, progressive onboarding, provider replacement, restart
+recovery, and provenance through production boundaries. It emits a sanitized
+version-1 report for future scorecard aggregation.
 
 The implementation may refine representations, but any representation that violates the
 ownership and truthfulness boundaries above requires an explicit architecture change

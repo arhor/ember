@@ -6,7 +6,12 @@ import type { EmberState } from "../packages/core/src/model.ts";
 
 import { buildCodexPrompt } from "../packages/core/src/ai/providers/codex.ts";
 import { buildCursorPrompt } from "../packages/core/src/ai/providers/cursor.ts";
-import { agentActor, initialState, normalizeLegacyIdentityRepresentation, validateState } from "../packages/core/src/model.ts";
+import {
+    agentActor,
+    initialState,
+    normalizeLegacyIdentityRepresentation,
+    validateState,
+} from "../packages/core/src/model.ts";
 import { rememberInference, supersede, userEvidence } from "../packages/core/src/semantics.ts";
 
 const PRINCIPAL = "user-1";

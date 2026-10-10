@@ -11,7 +11,10 @@ import type { SpecialistEpisodeRecord } from "../../packages/core/src/delegation
 import type { SystemdHostConfig } from "../../packages/core/src/host/systemd.ts";
 import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../packages/core/src/runtime/episodic-runtime.ts";
 
-import { createSpecialistEpisode, inspectSpecialistEpisode } from "../../packages/core/src/delegation/codex-specialist.ts";
+import {
+    createSpecialistEpisode,
+    inspectSpecialistEpisode,
+} from "../../packages/core/src/delegation/codex-specialist.ts";
 import { runCommand, SystemdUserBackgroundHost } from "../../packages/core/src/host/systemd.ts";
 import { initialState } from "../../packages/core/src/model.ts";
 import { StateStore } from "../../packages/core/src/persistence/state-store.ts";

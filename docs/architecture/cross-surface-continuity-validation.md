@@ -132,7 +132,7 @@ For the cleanest surface-only proof, configure Telegram's provider as the reposi
 Use one local state path, principal, and active scope for the whole procedure. Initialize only when starting from a fresh state:
 
 ```bash
-node bin/ember.ts init \
+node apps/cli/bin/ember.ts init \
   --state "$STATE" \
   --principal "$PRINCIPAL"
 ```
@@ -140,7 +140,7 @@ node bin/ember.ts init \
 Start CLI cognition using the same active scope that the Telegram configuration will map:
 
 ```bash
-node bin/ember.ts run \
+node apps/cli/bin/ember.ts run \
   --state "$STATE" \
   --principal "$PRINCIPAL" \
   --scope "$SCOPE" \
@@ -163,7 +163,7 @@ CLI live checkpoint
 Record a local inspection snapshot:
 
 ```bash
-node bin/ember.ts inspect --state "$STATE" --principal "$PRINCIPAL" --json > /tmp/ember-before-telegram.json
+node apps/cli/bin/ember.ts inspect --state "$STATE" --principal "$PRINCIPAL" --json > /tmp/ember-before-telegram.json
 ```
 
 Note the lineage id and the controlled meaning ids. Do not copy unrelated private memory into a test report.
@@ -173,8 +173,8 @@ Note the lineage id and the controlled meaning ids. Do not copy unrelated privat
 Point the Telegram configuration at the same `$STATE`, `$PRINCIPAL`, and `$SCOPE`. Verify long polling before serving:
 
 ```bash
-node bin/ember-telegram.ts check --config "$TELEGRAM_CONFIG"
-node bin/ember-telegram.ts serve --config "$TELEGRAM_CONFIG"
+node apps/telegram/bin/ember-telegram.ts check --config "$TELEGRAM_CONFIG"
+node apps/telegram/bin/ember-telegram.ts serve --config "$TELEGRAM_CONFIG"
 ```
 
 Send a unique ordinary message such as:
@@ -192,7 +192,7 @@ Start `serve` again from a new process and send another unique checkpoint. This 
 Stop the worker cleanly, then inspect the same state again:
 
 ```bash
-node bin/ember.ts inspect --state "$STATE" --principal "$PRINCIPAL" --json > /tmp/ember-after-telegram.json
+node apps/cli/bin/ember.ts inspect --state "$STATE" --principal "$PRINCIPAL" --json > /tmp/ember-after-telegram.json
 ```
 
 The lineage and controlled current meanings should match the pre-Telegram snapshot. The interaction section should now contain Telegram occurrences/deliveries with configured principal provenance and transport-local ids, while those ids remain absent from canonical meanings.
@@ -202,7 +202,7 @@ The lineage and controlled current meanings should match the pre-Telegram snapsh
 Start a fresh CLI process on the same state and scope using a fresh provider process or a deliberately fresh real-provider invocation:
 
 ```bash
-node bin/ember.ts run \
+node apps/cli/bin/ember.ts run \
   --state "$STATE" \
   --principal "$PRINCIPAL" \
   --scope "$SCOPE" \

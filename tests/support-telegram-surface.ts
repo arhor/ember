@@ -1,13 +1,14 @@
-import type { TelegramSurfaceConfig } from "../src/apps/telegram/config.ts";
-import type { EmberCompositionOverrides } from "../packages/core/src/composition/ember.ts";
+import type { TelegramSurfaceConfig } from "@ember/telegram/config.ts";
 
+import { composeTelegramSurface } from "@ember/telegram";
 import {
     processTelegramUpdate as processUpdate,
     reconcileTelegramDeliveries as reconcileDeliveries,
     reconcileTelegramProactiveContacts as reconcileContacts,
     runTelegramPolling as runPolling,
-} from "../src/apps/telegram/surface.ts";
-import { composeTelegramSurface } from "../packages/core/src/composition/telegram.ts";
+} from "@ember/telegram/surface.ts";
+
+import type { EmberCompositionOverrides } from "../packages/core/src/composition/ember.ts";
 
 type UpdateOptions = Partial<Parameters<typeof processUpdate>[3]> & EmberCompositionOverrides;
 type PollOptions = Partial<Parameters<typeof runPolling>[2]> & EmberCompositionOverrides;

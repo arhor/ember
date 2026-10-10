@@ -4,20 +4,22 @@ import { fileURLToPath } from "node:url";
 import { createScanner, SyntaxKind } from "typescript/unstable/ast";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const sourceRoot = resolve(root, "src");
+const sourceRoots = [
+    { directory: resolve(root, "packages/core/src"), ownerPrefix: "" },
+    { directory: resolve(root, "apps/cli/src"), ownerPrefix: "apps/cli" },
+    { directory: resolve(root, "apps/cli/bin"), ownerPrefix: "apps/cli/bin" },
+    { directory: resolve(root, "apps/telegram/src"), ownerPrefix: "apps/telegram" },
+    { directory: resolve(root, "apps/telegram/bin"), ownerPrefix: "apps/telegram/bin" },
+];
 const surfaceAiExceptions = new Set<string>();
-const surfacePersistenceExceptions = new Set([
-    "apps/cli/google-calendar-setup.ts",
-    "apps/cli/main.ts",
-    "apps/telegram/setup.ts",
-]);
+const surfacePersistenceExceptions = new Set(["apps/cli/google-calendar-setup.ts", "apps/cli/main.ts"]);
 const surfaceBootstrapAndCommandModules = new Set([
     "apps/cli/main.ts",
     "apps/cli/setup.ts",
     "apps/cli/google-calendar-setup.ts",
     "apps/cli/commands.ts",
     "apps/telegram/config.ts",
-    "apps/telegram/setup.ts",
+    "apps/telegram/composition.ts",
 ]);
 
 export function dependencyViolations(owner: string, source: string): string[] {
@@ -36,8 +38,13 @@ export function dependencyViolations(owner: string, source: string): string[] {
         }
         const specifier = reference.specifier;
         const target = resolvedOwner(owner, specifier);
-        if (owner.startsWith("core/") && target?.startsWith("apps/"))
-            reject(specifier, "core must not import a concrete surface");
+        if (!owner.startsWith("apps/") && target?.startsWith("apps/"))
+            reject(specifier, "core package modules must not import a concrete surface");
+        if (
+            (owner.startsWith("apps/cli/") && target?.startsWith("apps/telegram/")) ||
+            (owner.startsWith("apps/telegram/") && target?.startsWith("apps/cli/"))
+        )
+            reject(specifier, "one concrete app must not import another concrete app");
 
         if (owner.startsWith("apps/")) {
             if (!surfaceAiExceptions.has(owner) && isAiSdkImport(specifier, target))
@@ -85,10 +92,13 @@ export function dependencyViolations(owner: string, source: string): string[] {
 
 async function main() {
     const violations: string[] = [];
-    for (const file of await sourceFiles(sourceRoot)) {
-        const owner = relative(sourceRoot, file).replaceAll("\\", "/");
-        if (owner.endsWith(".test.ts") || owner.endsWith(".test-d.ts")) continue;
-        violations.push(...dependencyViolations(owner, await readFile(file, "utf8")));
+    for (const sourceRoot of sourceRoots) {
+        for (const file of await sourceFiles(sourceRoot.directory)) {
+            const relativeOwner = relative(sourceRoot.directory, file).replaceAll("\\", "/");
+            const owner = sourceRoot.ownerPrefix ? `${sourceRoot.ownerPrefix}/${relativeOwner}` : relativeOwner;
+            if (owner.endsWith(".test.ts") || owner.endsWith(".test-d.ts")) continue;
+            violations.push(...dependencyViolations(owner, await readFile(file, "utf8")));
+        }
     }
     if (!violations.length) return;
     process.stderr.write(`Dependency boundary violations:\n${violations.map((item) => `- ${item}`).join("\n")}\n`);
@@ -109,8 +119,14 @@ function isAiSdkImport(specifier: string, target: string | null) {
 }
 
 function resolvedOwner(owner: string, specifier: string) {
+    if (specifier === "@ember/core") return "index.ts";
+    if (specifier.startsWith("@ember/core/")) return specifier.slice("@ember/core/".length);
+    if (specifier === "@ember/cli") return "apps/cli/index.ts";
+    if (specifier.startsWith("@ember/cli/")) return `apps/cli/${specifier.slice("@ember/cli/".length)}`;
+    if (specifier === "@ember/telegram") return "apps/telegram/index.ts";
+    if (specifier.startsWith("@ember/telegram/")) return `apps/telegram/${specifier.slice("@ember/telegram/".length)}`;
     if (!specifier.startsWith(".")) return null;
-    const target = relative(sourceRoot, resolve(dirname(resolve(sourceRoot, owner)), specifier)).replaceAll("\\", "/");
+    const target = resolve("/", dirname(owner), specifier).slice(1).replaceAll("\\", "/");
     return target.startsWith("../") ? null : target;
 }
 

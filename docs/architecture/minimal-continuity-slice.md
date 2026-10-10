@@ -295,9 +295,9 @@ replacement, not surface diversity.
 
 The command examples below use `ember`. In a repository checkout, install the
 locked development toolchain with `pnpm install`; the exact source entry point is the
-Node-shebang-bearing `bin/ember.ts`. Node.js 26 executes that erasable TypeScript
-directly without transpilation, and `node bin/ember.ts` is the portable direct
-invocation. The `package.json` bin mapping makes the shorter name available after
+Node-shebang-bearing `apps/cli/bin/ember.ts`. Node.js 26 executes that erasable TypeScript
+directly without transpilation, and `node apps/cli/bin/ember.ts` is the portable direct
+invocation. The `@ember/cli` package bin mapping makes `ember` available after
 an optional link or install.
 Its command surface is:
 

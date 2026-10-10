@@ -1,8 +1,9 @@
-import type { TelegramSurfaceConfig } from "../../../../src/apps/telegram/config.ts";
-import type { EmberCompositionOverrides } from "./ember.ts";
+import type { EmberCompositionOverrides } from "@ember/core/composition/ember.ts";
 
-import { createEmberApplication } from "../app/application.ts";
-import { composeEmberApplication } from "./ember.ts";
+import { createEmberApplication } from "@ember/core/app/application.ts";
+import { composeEmberApplication } from "@ember/core/composition/ember.ts";
+
+import type { TelegramSurfaceConfig } from "./config.ts";
 
 export function composeTelegramSurface(config: TelegramSurfaceConfig, overrides: EmberCompositionOverrides = {}) {
     const dependencies = composeEmberApplication(

@@ -1,4 +1,9 @@
-import type { BackgroundHost, HostJobState, HostObservation, WorkerLaunch } from "../packages/core/src/host/background.ts";
+import type {
+    BackgroundHost,
+    HostJobState,
+    HostObservation,
+    WorkerLaunch,
+} from "../packages/core/src/host/background.ts";
 
 export class FakeBackgroundHost implements BackgroundHost {
     readonly calls: Array<

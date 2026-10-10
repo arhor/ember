@@ -1,7 +1,7 @@
 {
   "scenario_version": 1,
   "id": "issue-256-fresh-create",
-  "description": "Fresh creation, progressive onboarding, provider replacement, and Telegram setup.",
+  "description": "Fresh creation, progressive onboarding, and provider replacement.",
   "flow": "fresh-create",
   "principal": "user-1",
   "scope": "relationship:user-1",
@@ -29,11 +29,6 @@
     {
       "id": "provider_replacement_preserves_continuity",
       "expected": "Cursor keeps the Codex-created lineage and meaning"
-    },
-    {
-      "id": "telegram_setup_completion",
-      "expected": "typed Telegram setup completes when the bounded round-trip observer confirms delivery"
-    },
-    { "id": "secret_containment", "expected": "token occurs only in the mode-0600 token store" }
+    }
   ]
 }

@@ -7,7 +7,10 @@ import { join } from "node:path";
 
 import type { CapabilityJsonValue } from "../../packages/core/src/capabilities/execution.ts";
 
-import { actionProposalConfirmation, ActionProposalStore } from "../../packages/core/src/capabilities/action-proposal.ts";
+import {
+    actionProposalConfirmation,
+    ActionProposalStore,
+} from "../../packages/core/src/capabilities/action-proposal.ts";
 import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
 import {
     calendarTargetFingerprint,

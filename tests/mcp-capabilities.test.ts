@@ -15,7 +15,10 @@ import {
     createCapabilityExecutionLedger,
 } from "../packages/core/src/capabilities/execution.ts";
 import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "../packages/core/src/integrations/mcp/ai-sdk.ts";
+import {
+    openAiSdkMcpStdioCapabilitySource,
+    McpCapabilitySourceError,
+} from "../packages/core/src/integrations/mcp/ai-sdk.ts";
 import { newId } from "../packages/core/src/model.ts";
 import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 import { startRuntime } from "../packages/core/src/runtime-episode.ts";

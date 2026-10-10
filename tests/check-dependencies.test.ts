@@ -121,3 +121,24 @@ test("dependency checker should reject AI and persistence imports after CLI boot
     assert.match(violations[0]!, /must not import AI SDK infrastructure/);
     assert.match(violations[1]!, /must not import concrete canonical persistence/);
 });
+
+test("dependency checker should resolve workspace package imports", () => {
+    assert.equal(
+        dependencyViolations(
+            "apps/cli/surface.ts",
+            'import { composeEmberApplication } from "@ember/core/composition/ember.ts";',
+        ).length,
+        1,
+    );
+    assert.equal(
+        dependencyViolations("ai/cognition.ts", 'import { runCliSurface } from "@ember/cli/surface.ts";').length,
+        1,
+    );
+});
+
+test("dependency checker should reject direct dependencies between concrete apps", () => {
+    assert.equal(
+        dependencyViolations("apps/cli/setup.ts", 'import { runTelegramPolling } from "@ember/telegram";').length,
+        1,
+    );
+});

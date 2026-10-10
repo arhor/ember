@@ -1,19 +1,16 @@
+import type { ProactiveContactHandoffRevalidator, TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
+
+import { createTelegramApi, deliverTelegramMessage, loadTelegramSurfaceConfig } from "@ember/telegram";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type {
-    ProactiveContactHandoffRevalidator,
-    TelegramSurfaceConfig,
-    TelegramUpdate,
-} from "../src/apps/telegram/index.ts";
 import type { ConfiguredProactiveContactPolicy } from "../packages/core/src/agency/configured-proactive-contact-policy.ts";
 import type { ContactAttentionDecisionRecord } from "../packages/core/src/agency/proactive-contact-attention-policy.ts";
 import type { AiExecutor } from "../packages/core/src/ai/contract.ts";
 
-import { createTelegramApi, deliverTelegramMessage, loadTelegramSurfaceConfig } from "../src/apps/telegram/index.ts";
 import { decideConfiguredProactiveContactHandoff } from "../packages/core/src/agency/configured-proactive-contact-policy.ts";
 import { ProactiveContactStore } from "../packages/core/src/agency/proactive-contact-store.ts";
 import { createEmberApplication } from "../packages/core/src/app/application.ts";
@@ -48,7 +45,7 @@ function telegramConfig(directory: string, statePath: string): TelegramSurfaceCo
         provider_timeout_seconds: 30,
         working_directory: directory,
         node_path: process.execPath,
-        surface_entrypoint: resolve("bin/ember-telegram.ts"),
+        surface_entrypoint: resolve("apps/telegram/bin/ember-telegram.ts"),
         stop_timeout_seconds: 45,
     };
 }

@@ -1,8 +1,8 @@
 ---
-summary: "Issue #256 deterministic end-to-end evidence and opt-in clean-host smoke procedure for setup, restore/create, onboarding, provider replacement, and Telegram setup."
+summary: "Issue #256 deterministic end-to-end evidence and opt-in clean-host smoke procedure for setup, restore/create, onboarding, and provider replacement."
 read_when:
   - "Running or interpreting the setup/onboarding end-to-end evaluation"
-  - "Validating fresh creation, restoration, onboarding recovery, provider replacement, or guided Telegram setup"
+  - "Validating fresh creation, restoration, onboarding recovery, or provider replacement"
   - "Using setup/onboarding evidence as an input to a behavioral-health scorecard"
 role: guide
 discovery_status: current
@@ -26,8 +26,7 @@ npm run eval:setup-onboarding -- --report /absolute/new/report.json
 
 The version-1 fixtures cover `fresh-create` and `restore-existing`. The harness invokes
 the production setup, canonical state, ordinary cognition, memory-proposal, onboarding,
-projection, and Telegram setup boundaries with deterministic provider, Bot API, and
-systemd substitutes. Each run uses isolated application paths. A report path must not
+and projection boundaries with deterministic provider substitutes. Each run uses isolated application paths. A report path must not
 already exist and is created with mode `0600`.
 
 Each assertion identifies its `ember` or `host` responsibility. The per-scenario and
@@ -46,22 +45,16 @@ store and its onboarding sidecar from an old-host directory that also contains p
 Telegram, and secret files. It then proves those unselected host-local files do not appear
 downstream; production setup receives a continuity-store path and does not itself filter or
 import a host directory. Negative tests demonstrate that
-lineage replacement, newborn onboarding on restore, non-provenanced memory, and token
-leakage fail named assertions. The fresh flow also makes provider verification fail before
+lineage replacement, newborn onboarding on restore, and non-provenanced memory fail named
+assertions. The fresh flow also makes provider verification fail before
 canonical creation, verifies that canonical state and onboarding activation remain absent,
 retries through setup, and proves that the pending lineage candidate is neither replaced nor
 duplicated. Its process-restart boundary releases the writer lease,
 constructs a fresh store, reacquires the lease, and reloads durable state before resuming.
 
-The deterministic Telegram assertion proves that the trusted-host wizard completes every
-typed stage when its bounded round-trip observation seam reports correlated delivery. The
-production ledger correlation algorithm has separate transport tests; this scenario does
-not independently replay a Telegram worker update and therefore does not claim to test that
-algorithm.
-
-The suite is deterministic and network-, credential-, and systemd-independent. It proves
+The suite is deterministic and network-, credential-, and service-manager-independent. It proves
 Ember's boundary behavior against faithful substitutes; it cannot prove that a particular
-host login, provider release, network, BotFather token, Telegram account, or user manager
+host login, provider release, network, or user manager
 works at a later time.
 
 ## Opt-in clean-host smoke
@@ -83,10 +76,7 @@ codex`. Confirm failed authentication creates no lineage, then authenticate and 
 --accept-continuity-risk`. Verify setup does not change bundle bytes and no new
    onboarding record appears. After conversation, compare structural identities and
    provenance; do not use a familiar-sounding reply as proof.
-6. Optionally create a fresh bot with BotFather and ask Ember to connect Telegram and confirm the local handoff. Confirm the
-   private mapping code, install the user service, send one message, receive one reply,
-   and inspect correlated delivery evidence. Verify the token occurs only in
-   `~/.ember/secrets/telegram.token`, whose mode is `0600`, and redact it immediately from
-   terminal capture if it was exposed accidentally.
+6. Validate Telegram separately through the manual procedure in the
+   [Telegram surface runbook](telegram-surface-runbook.md).
 7. Stop the test services and remove the disposable account or host according to local
    policy. Never commit the smoke report or credentials.

@@ -1,3 +1,4 @@
+import { main as cliMain } from "@ember/cli";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -5,7 +6,6 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import { main as cliMain } from "../src/apps/cli/index.ts";
 import { createEmberApplication } from "../packages/core/src/app/application.ts";
 import { composeEmberApplication } from "../packages/core/src/composition/ember.ts";
 import { initialState } from "../packages/core/src/model.ts";

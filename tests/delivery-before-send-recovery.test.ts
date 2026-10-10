@@ -5,7 +5,10 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { createEmberApplication } from "../packages/core/src/app/application.ts";
-import { composeEmberApplication, createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
+import {
+    composeEmberApplication,
+    createFileBackedRepositoriesForState,
+} from "../packages/core/src/composition/ember.ts";
 import { initialState } from "../packages/core/src/model.ts";
 import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 import { InteractionLedgerStore, reconcileSurfaceDelivery } from "../packages/core/src/runtime/interaction-boundary.ts";

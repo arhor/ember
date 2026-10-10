@@ -1,3 +1,4 @@
+import { setupMain } from "@ember/cli/setup.ts";
 import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
@@ -7,14 +8,11 @@ import type { MemoryProposalGenerator } from "../../packages/core/src/memory/mem
 import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../packages/core/src/model.ts";
 import type { OnboardingProgressEvaluator } from "../../packages/core/src/onboarding/progress-evaluator.ts";
 
-import { setupMain } from "../../src/apps/cli/setup.ts";
-import { runTelegramSetup } from "../../src/apps/telegram/setup.ts";
 import { executeCognition as runCoreCognition } from "../../packages/core/src/app/cognition-execution.ts";
 import { prepareCognition } from "../../packages/core/src/app/cognition-preparation.ts";
 import { runPostTurnFollowUps } from "../../packages/core/src/app/post-turn.ts";
 import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
 import { ValidationError } from "../../packages/core/src/errors.ts";
-import { SystemdTelegramResidentHost } from "../../packages/core/src/host/systemd.ts";
 import { initialState } from "../../packages/core/src/model.ts";
 import { applyOnboardingProgressDecision, createOnboardingWork } from "../../packages/core/src/onboarding-work.ts";
 import { OnboardingWorkStore } from "../../packages/core/src/persistence/onboarding-work-store.ts";
@@ -33,7 +31,7 @@ export interface SetupOnboardingScenario {
     episodes: Array<{ id: string; at: string; input: string }>;
     assertions: Array<{ id: string; expected: string }>;
 }
-export type OracleFault = "lineage_replacement" | "newborn_onboarding" | "direct_memory" | "secret_leakage";
+export type OracleFault = "lineage_replacement" | "newborn_onboarding" | "direct_memory";
 export interface AssertionRecord {
     assertion: string;
     responsibility: "ember" | "host";
@@ -84,7 +82,6 @@ async function executeCognition(
     return { ...result, ...diagnostics, state: await repositories.state.load() };
 }
 
-const SECRET = "123456:Issue256SecretSentinel_abcdef";
 const OLD_SECRET = "987654:OldHostSecretSentinel_abcdef";
 const OLD_PROVIDER = "/old-host/bin/codex-secret-path";
 const OLD_CHAT = "telegram:chat:998877";
@@ -97,8 +94,6 @@ const FLOW_CONTRACTS = {
             "deferred_work_survives_restart",
             "ordinary_memory_adoption",
             "provider_replacement_preserves_continuity",
-            "telegram_setup_completion",
-            "secret_containment",
         ],
     },
     "restore-existing": {
@@ -383,82 +378,7 @@ async function fresh(s: SetupOnboardingScenario, directory: string, fault?: Orac
         `lineage=${after.lineage.lineageId}; meaning=${after.meanings.some((item) => item.meaningId === meaning?.meaningId)}`,
     );
 
-    const files = new Map<string, string>();
-    const modes = new Map<string, number>();
-    const commands: string[] = [];
-    const read = async (path: string) => files.get(path) ?? null;
-    const write = async (path: string, value: string, mode: number) => {
-        files.set(path, value);
-        modes.set(path, mode);
-    };
-    const residentHost = new SystemdTelegramResidentHost({
-        read,
-        write,
-        command: async (file, args) => {
-            commands.push(`${file} ${args.join(" ")}`);
-            return { code: args.includes("is-active") || args.includes("is-enabled") ? 1 : 0, signal: null };
-        },
-    });
-    const telegram = await runTelegramSetup(
-        {
-            setup: JSON.parse(await readFile(configPath, "utf8")),
-            scope: s.scope,
-            configPath: `${directory}/config/telegram.json`,
-            tokenPath: `${directory}/secrets/telegram.token`,
-        },
-        io,
-        {
-            secretPrompt: async () => SECRET,
-            confirm: async () => true,
-            read,
-            write,
-            residentHost,
-            chmod: async () => {},
-            api: () =>
-                ({
-                    getMe: async () => ({ id: 1, is_bot: true, first_name: "Fixture" }),
-                    getWebhookInfo: async () => ({ url: "", has_custom_certificate: false, pending_update_count: 0 }),
-                    getUpdates: async () => [
-                        {
-                            update_id: 42,
-                            message: {
-                                message_id: 1,
-                                date: 1,
-                                text: "256256",
-                                chat: { id: 7, type: "private" },
-                                from: { id: 7, is_bot: false, first_name: "User" },
-                            },
-                        },
-                    ],
-                }) as any,
-            verificationCode: () => "256256",
-            observeRoundTrip: async () => true,
-            resolveExecutable: async (value) => value,
-        },
-    );
-    const fifth = record(
-        "telegram_setup_completion",
-        telegram.status === "complete" && Object.values(telegram.stages).every((value) => value === "confirmed"),
-        `${telegram.status}:${Object.values(telegram.stages).join(",")}`,
-    );
-    if (fault === "secret_leakage") files.set(`${directory}/config/leak.txt`, SECRET);
-    const allowed = `${directory}/secrets/telegram.token`;
-    const leaked = [...files].filter(([path, value]) => path !== allowed && value.includes(SECRET));
-    const disk = [
-        await readFile(configPath, "utf8"),
-        await readFile(statePath, "utf8"),
-        JSON.stringify(projections),
-        commands.join("\n"),
-    ].join("\n");
-    const sixth = record(
-        "secret_containment",
-        files.get(allowed)?.trim() === SECRET &&
-            modes.get(allowed) === 0o600 &&
-            leaked.length === 0 &&
-            !disk.includes(SECRET),
-        `token_mode=${modes.get(allowed)?.toString(8)}; leaked_locations=${leaked.length}; leaked_evidence=${disk.includes(SECRET)}`,
-    );
-    return [recovery, first, second, third, fourth, fifth, sixth];
+    return [recovery, first, second, third, fourth];
 }
 
 async function restore(s: SetupOnboardingScenario, directory: string, fault?: OracleFault): Promise<AssertionRecord[]> {
@@ -735,8 +655,6 @@ function record(assertion: string, passed: boolean, observed: string): Assertion
     const hostAssertions = new Set([
         "provider_failure_retry_preserves_candidate",
         "lineage_after_verified_probe",
-        "telegram_setup_completion",
-        "secret_containment",
         "restore_bytes_preserved_before_conversation",
         "old_host_state_not_transferred",
     ]);

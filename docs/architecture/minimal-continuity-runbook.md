@@ -33,8 +33,8 @@ pnpm check
 pnpm test
 ```
 
-`node bin/ember.ts` is the exact direct-source entry point. Node.js 26 executes
-the erasable TypeScript without a loader or build step. The shorter `ember` name
+`node apps/cli/bin/ember.ts` is the exact direct-source entry point. Node.js 26 executes
+the erasable TypeScript without a loader or build step. The `ember` command
 is available after an optional package link or install.
 
 ## Initialize and inspect a store
@@ -43,12 +43,12 @@ Use an explicit local state path, principal, scope, direct provider command, and
 positive finite timeout:
 
 ```sh
-node bin/ember.ts init \
+node apps/cli/bin/ember.ts init \
   --state /tmp/ember-continuity.json \
   --principal user-1
 
-node bin/ember.ts check --state /tmp/ember-continuity.json
-node bin/ember.ts inspect \
+node apps/cli/bin/ember.ts check --state /tmp/ember-continuity.json
+node apps/cli/bin/ember.ts inspect \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --json
@@ -67,7 +67,7 @@ The repository fixture lives outside Node's default `test/` discovery tree so
 and waits on its stdin.
 
 ```sh
-node bin/ember.ts run \
+node apps/cli/bin/ember.ts run \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --scope project:ember/docs \
@@ -85,7 +85,7 @@ projection in a new process:
 probe_dir=$(mktemp -d)
 state_path="$probe_dir/ember.json"
 provider_path="$(command -v node)"
-run=(node bin/ember.ts run
+run=(node apps/cli/bin/ember.ts run
   --state "$state_path"
   --principal user-1
   --scope project:ember/docs
@@ -93,7 +93,7 @@ run=(node bin/ember.ts run
   --provider-arg tests/fixtures/providers/scripted-provider.ts
   --provider-timeout-seconds 2)
 
-node bin/ember.ts init \
+node apps/cli/bin/ember.ts init \
   --state "$state_path" --principal user-1
 
 printf '%s\n' \
@@ -104,7 +104,7 @@ printf '%s\n' \
   ':remember episode first-continuity-experiment relationship:user-1 relationship:user-1 The first continuity experiment received a nickname' \
   ':quit' | "${run[@]}"
 
-node bin/ember.ts inspect \
+node apps/cli/bin/ember.ts inspect \
   --state "$state_path" --principal user-1 --json > "$probe_dir/before.json"
 preference_a=$(node --input-type=module -e '
   import {readFileSync} from "node:fs";
@@ -139,7 +139,7 @@ printf ':fixture-withhold %s\n:quit\n' "$detail_id" | \
 # Let real elapsed time pass if desired, then start a wholly new CLI/provider pair.
 printf ':ask --explain %s,%s,%s Continue from durable state and explain the unavailable nickname\n:quit\n' \
   "$fact_id" "$preference_a" "$episode_id" | "${run[@]}"
-node bin/ember.ts inspect \
+node apps/cli/bin/ember.ts inspect \
   --state "$state_path" --principal user-1 --json
 ```
 
@@ -160,7 +160,7 @@ malformed lock fails closed. Never delete it merely because it is old.
 Inspect without mutation:
 
 ```sh
-node bin/ember.ts lock-status --state /tmp/ember-continuity.json
+node apps/cli/bin/ember.ts lock-status --state /tmp/ember-continuity.json
 ```
 
 Only after independently establishing that no writer can be running, copy the
@@ -168,7 +168,7 @@ exact same-host owner token from `lock-status` and quarantine an apparently stal
 lock:
 
 ```sh
-node bin/ember.ts quarantine-stale-lock \
+node apps/cli/bin/ember.ts quarantine-stale-lock \
   --state /tmp/ember-continuity.json \
   --owner-token EXACT_TOKEN \
   --confirm-quiescent
@@ -218,7 +218,7 @@ Ember does not read, copy, persist, or broker the login credential:
 ```sh
 codex login status
 
-node bin/ember.ts run \
+node apps/cli/bin/ember.ts run \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --scope project:ember/docs \
@@ -234,7 +234,7 @@ pass the matching Codex overrides before `exec` and probe that same route first:
 ```sh
 codex login status -c 'cli_auth_credentials_store="keyring"'
 
-node bin/ember.ts run \
+node apps/cli/bin/ember.ts run \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --scope project:ember/docs \
@@ -323,7 +323,7 @@ runtime-owned browser login; Ember does not accept, forward, inspect, or persist
 ```sh
 cursor-agent status
 
-node bin/ember.ts run \
+node apps/cli/bin/ember.ts run \
   --state /tmp/ember-continuity.json \
   --principal user-1 \
   --scope project:ember/docs \

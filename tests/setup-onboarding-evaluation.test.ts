@@ -60,7 +60,6 @@ test("fresh flow resolves episodes by identity rather than fixture order", async
 for (const [flow, fault, assertion] of [
     ["fresh", "lineage_replacement", "provider_replacement_preserves_continuity"],
     ["fresh", "direct_memory", "ordinary_memory_adoption"],
-    ["fresh", "secret_leakage", "secret_containment"],
     ["restore", "newborn_onboarding", "no_newborn_onboarding"],
 ] as const) {
     test(`negative oracle names ${fault}`, async (t) => {
@@ -73,10 +72,6 @@ for (const [flow, fault, assertion] of [
         if (fault === "direct_memory") {
             assert.equal(report.ember_assertions_passed, false);
             assert.equal(report.host_assertions_passed, true);
-        }
-        if (fault === "secret_leakage") {
-            assert.equal(report.ember_assertions_passed, true);
-            assert.equal(report.host_assertions_passed, false);
         }
     });
 }

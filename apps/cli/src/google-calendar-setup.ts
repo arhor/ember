@@ -1,22 +1,22 @@
-import { createHash, randomBytes } from "node:crypto";
-import { readFile, realpath, unlink } from "node:fs/promises";
-import { createServer } from "node:http";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import type { GoogleCalendarConfig } from "@ember/core/integrations/google-calendar/read.ts";
 
-import type { GoogleCalendarConfig } from "../../../packages/core/src/integrations/google-calendar/read.ts";
-import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
-
-import { createCapabilityExecutionFirewall } from "../../../packages/core/src/capabilities/execution.ts";
-import { ValidationError } from "../../../packages/core/src/errors.ts";
-import { loadSetupConfig } from "../../../packages/core/src/host/setup.ts";
+import { createCapabilityExecutionFirewall } from "@ember/core/capabilities/execution.ts";
+import { ValidationError } from "@ember/core/errors.ts";
+import { loadSetupConfig } from "@ember/core/host/setup.ts";
 import {
     GOOGLE_CALENDAR_SCOPE,
     GOOGLE_OAUTH_TOKEN_ENDPOINT,
     createGoogleCalendarCapability,
     loadGoogleCalendarConfig,
-} from "../../../packages/core/src/integrations/google-calendar/read.ts";
-import { replaceFileDurably } from "../../../packages/core/src/persistence/file-replacement.ts";
-import { StateStore } from "../../../packages/core/src/persistence/state-store.ts";
+} from "@ember/core/integrations/google-calendar/read.ts";
+import { replaceFileDurably } from "@ember/core/persistence/file-replacement.ts";
+import { StateStore } from "@ember/core/persistence/state-store.ts";
+import { createHash, randomBytes } from "node:crypto";
+import { readFile, realpath, unlink } from "node:fs/promises";
+import { createServer } from "node:http";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+
+import type { CliIo, SetupGoogleCalendarArgs } from "./model.ts";
 
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 
