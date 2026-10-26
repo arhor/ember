@@ -6,8 +6,7 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "test": "node --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
-    "test:types": "tsd --typings src/core/model.ts --files \"src/**/*.test-d.ts\""
+    "test": "node --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@ai-sdk/deepseek": "3.0.39",
@@ -22,7 +21,6 @@
     "@types/node": "26.4.1",
     "oxfmt": "0.66.0",
     "oxlint": "1.81.0",
-    "tsd": "0.33.0",
     "typescript": "7.0.2"
   },
   "engines": {

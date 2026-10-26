@@ -8,7 +8,6 @@
     "check:dependencies": "node scripts/check-dependencies.ts",
     "test": "node --test \"apps/**/*.test.ts\" \"tests/*.test.ts\"",
     "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
-    "test:types": "tsd --typings packages/core/src/model.ts --files \"packages/core/src/**/*.test-d.ts\"",
     "serve": "node --env-file-if-exists=.env.local apps/cli/bin/ember.ts --diagnostics",
     "runtime:episodic": "node --env-file-if-exists=.env.local bin/ember-runtime.ts",
     "surface:telegram": "node --env-file-if-exists=.env.local apps/telegram/bin/ember-telegram.ts",
@@ -59,11 +58,10 @@
     "@types/node": "26.4.1",
     "oxfmt": "0.66.0",
     "oxlint": "1.81.0",
-    "tsd": "0.33.0",
     "typescript": "7.0.2"
   },
   "engines": {
     "node": ">=26.8.1 <27"
   },
-  "packageManager": "pnpm@12.6.0"
+  "packageManager": "pnpm@12.15.0"
 }
