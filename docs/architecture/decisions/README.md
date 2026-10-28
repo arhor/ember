@@ -187,4 +187,6 @@ number or renumber existing records. Titles use `# ADR NNNN: Title` and dates re
 native frontmatter metadata, not filename prefixes. Keep this index in numeric order.
 
 - [ADR 0039: Separate agent contracts, engine, and startup composition](0039-separate-agent-contracts-engine-and-startup-composition.md) — accepted
-- [ADR 0040: Open an empty shell and configure explicitly](0040-open-an-empty-shell-and-configure-explicitly.md) — accepted
+- [ADR 0040: Open an empty shell and configure explicitly](0040-open-an-empty-shell-and-configure-explicitly.md) — superseded by ADR 0041
+
+- [ADR 0041: Use the shell as the only CLI command interface](0041-use-the-shell-as-the-only-cli-command-interface.md) — accepted

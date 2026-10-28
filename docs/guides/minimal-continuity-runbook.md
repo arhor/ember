@@ -1,5 +1,10 @@
 # Minimal Continuity Slice Runbook
 
+> Historical experiment procedure. Its process commands and raw provider launches were
+> retired by [ADR 0041](../architecture/decisions/0041-use-the-shell-as-the-only-cli-command-interface.md).
+> Use [shell setup and recovery](setup.md) for current commands; provider fixtures now
+> compose services through test APIs. The original transcript is preserved below.
+
 This runbook operates the experiment specified by the
 [Minimal Continuity Vertical Slice](../research/archive/minimal-continuity-slice.md). It does not
 expand that design's semantic scope or its supported deployment boundary.

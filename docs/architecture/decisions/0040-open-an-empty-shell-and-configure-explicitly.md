@@ -1,10 +1,12 @@
 ---
-status: "accepted"
+status: "superseded"
 date: "2026-10-28"
 decision-makers: "Repository maintainer"
 ---
 
 # ADR 0040: Open an empty shell and configure explicitly
+
+> Superseded by [ADR 0041](0041-use-the-shell-as-the-only-cli-command-interface.md), which retains the shell and continuity safeguards and replaces process commands.
 
 ## Context
 

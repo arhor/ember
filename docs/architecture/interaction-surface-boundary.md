@@ -1,5 +1,7 @@
 # Interaction Surface Boundary
 
+CLI slash commands below are entered inside `ember`; see [shell setup](../guides/setup.md).
+
 > Decision owner: [accepted ADR 0037](decisions/0037-keep-interaction-occurrences-and-delivery-truth-transport-neutral.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 > Status: current design and executable seam from issue #85, exercised by Telegram in
@@ -232,7 +234,7 @@ reconciliation can preserve the same truth discipline across outbound gaps.
 
 ### Inspection and explanation
 
-`ember inspect --state ... --principal ...` now exposes the interaction sidecar next
+`/inspect --state ... --principal ...` now exposes the interaction sidecar next
 to canonical inspection data. The operational section makes it possible to answer:
 
 - which logical surface accepted an occurrence;
@@ -364,12 +366,12 @@ CLI/Telegram continuity validation.
 
 ## Definition-of-done mapping
 
-| Issue #87 requirement                                        | Repository outcome                                                                                                                              |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Principal assertion/resolution explicit for CLI and Telegram | Production CLI uses `explicit_local_argument`; Telegram uses `configured_surface_mapping`; both resolve to the initialized local principal.     |
-| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass ordinary projection selection.                    |
-| Least-sufficient privacy remains transport-independent       | Both surfaces use `buildProjection`; same ordinary scope yields the same selected meanings and transport metadata adds nothing.                 |
-| Attempted over-disclosure fails closed                       | Telegram may name an out-of-scope meaning ID in current input, but ordinary projection excludes the meaning and its private content.            |
-| Delivery provenance remains distinct                         | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition.   |
-| Inspection explains relevant provenance                      | `ember inspect` includes operational occurrences and deliveries with surface, principal provenance, destinations, and observed attempt results. |
-| Deployment mapping stays configurable without committed IDs  | Telegram mapping remains local configuration (`principal`, `activeScope`, `chat_id`); no real personal identifier is committed in repository.   |
+| Issue #87 requirement                                        | Repository outcome                                                                                                                            |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Principal assertion/resolution explicit for CLI and Telegram | Production CLI uses `explicit_local_argument`; Telegram uses `configured_surface_mapping`; both resolve to the initialized local principal.   |
+| Surface identity is not semantic authority                   | Matching Telegram transport identity cannot manufacture a different Ember principal or bypass ordinary projection selection.                  |
+| Least-sufficient privacy remains transport-independent       | Both surfaces use `buildProjection`; same ordinary scope yields the same selected meanings and transport metadata adds nothing.               |
+| Attempted over-disclosure fails closed                       | Telegram may name an out-of-scope meaning ID in current input, but ordinary projection excludes the meaning and its private content.          |
+| Delivery provenance remains distinct                         | Interaction ledger keeps destination, delivery intent, attempt, outcome, and optional external outbound message ID separately from cognition. |
+| Inspection explains relevant provenance                      | `/inspect` includes operational occurrences and deliveries with surface, principal provenance, destinations, and observed attempt results.    |
+| Deployment mapping stays configurable without committed IDs  | Telegram mapping remains local configuration (`principal`, `activeScope`, `chat_id`); no real personal identifier is committed in repository. |

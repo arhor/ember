@@ -38,18 +38,21 @@ Both episodes request `external_thread: fresh`. No provider thread is named for
 reuse. The post-restart prompt asks for the literal recovery value describing
 Ember cognition during downtime so the empirical observation can expose an
 invented seamless bridge rather than silently rewarding fluent continuity prose.
-All scenario content is synthetic.
+All scenario content is synthetic. Additional provider arguments are supplied through a
+local executable wrapper, preserving the configured-session interface. Setup performs a
+disposable verification probe before the measured conversation processes.
 
 ## What the runner actually restarts
 
 `eval/process-restart/run.ts` does not model a restart inside one
 long-lived Ember runtime. It creates a temporary canonical store and then:
 
-1. starts one `apps/cli/bin/ember.ts run` child process;
+1. prepares canonical fixture state and verifies a setup record through `/setup`, then
+   starts one `apps/cli/bin/ember.ts` shell child process and selects it with `/use`;
 2. establishes the controlled durable meanings and performs one cognition;
 3. sends `:quit` and waits for that complete process to exit cleanly;
 4. inspects the durable store after the process is gone;
-5. starts a second `apps/cli/bin/ember.ts run` child process against the same store;
+5. starts a second `apps/cli/bin/ember.ts` shell child process and selects the same setup;
 6. performs the post-restart cognition using the production Codex adapter's
    ordinary ephemeral-thread default; and
 7. inspects the resulting canonical state and emits a sanitized evaluation report.

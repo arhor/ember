@@ -1,5 +1,9 @@
+import { initialState } from "@ember/domain/model.ts";
 import { ASCII_CONTROL_CHARACTERS_PATTERN } from "@ember/domain/model.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { spawn } from "node:child_process";
+import { writeFile } from "node:fs/promises";
+import { resolve, dirname, join } from "node:path";
 
 import type { LongitudinalScenario } from "../longitudinal/harness.ts";
 
@@ -74,56 +78,53 @@ export async function runProcessRestartScenario(
 
     const [baselineEpisode, restartedEpisode] = scenario.episodes as [ScenarioEpisode, ScenarioEpisode];
     const baseEnvironment = options.environment ?? process.env;
-    const runArguments = (episode: ScenarioEpisode) => [
-        "run",
-        "--state",
-        options.statePath,
-        "--principal",
-        scenario.ember.principal,
-        "--scope",
-        episode.scope,
-        "--provider",
-        "codex",
-        "--codex-command",
-        options.codexCommand,
-        ...(options.codexArguments ?? []).flatMap((value) => ["--codex-arg", value]),
-        "--provider-timeout-seconds",
-        String(options.timeoutSeconds),
-    ];
-
+    const configPath = join(dirname(resolve(options.statePath)), "restart-setup.json");
+    const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+    let executable = options.codexCommand;
+    if (options.codexArguments?.length) {
+        executable = resolve(`${options.statePath}.provider.sh`);
+        await writeFile(
+            executable,
+            `#!/bin/sh\nexec ${[options.codexCommand, ...options.codexArguments].map(quote).join(" ")} "$@"\n`,
+            { mode: 0o700 },
+        );
+    }
+    await new StateStore(options.statePath).create(initialState(scenario.ember.principal, scenario.ember.initial_at));
     const initialized = await runCli(
         options,
-        ["init", "--state", options.statePath, "--principal", scenario.ember.principal],
-        "",
+        [],
+        `/setup --config ${quote(configPath)} --state ${quote(resolve(options.statePath))} --intent use-existing --provider codex --provider-command ${quote(executable)} --provider-timeout-seconds ${options.timeoutSeconds}\n/quit\n`,
         scenario.ember.initial_at,
         baseEnvironment,
     );
     requireSuccessfulProcess("initialization", initialized);
+    if (initialized.stderr) throw new Error(`process-restart setup failed: ${initialized.stderr}`);
+    const select = (episode: ScenarioEpisode) => `/use --config ${quote(configPath)} --scope ${quote(episode.scope)}`;
 
     const setupCommands = scenario.setup.map((action) => actionToCli(action, scenario.ember.principal));
     const baseline = await runCli(
         options,
-        runArguments(baselineEpisode),
-        [...setupCommands, baselineEpisode.input, ":quit", ""].join("\n"),
+        [],
+        [select(baselineEpisode), ...setupCommands, baselineEpisode.input, ":quit", ""].join("\n"),
         baselineEpisode.at,
         baseEnvironment,
     );
     requireSuccessfulProcess("baseline Ember process", baseline);
-    const aliases = parseSetupAliases(baseline.stdout, scenario.setup);
+    const aliases = parseSetupAliases(baseline.stdout.split("\n").slice(1).join("\n"), scenario.setup);
     requireExpectationAliases(baselineEpisode, aliases);
     requireExpectationAliases(restartedEpisode, aliases);
-    const baselineReply = extractRunReply(baseline.stdout, scenario.setup.length);
+    const baselineReply = extractRunReply(baseline.stdout.split("\n").slice(1).join("\n"), scenario.setup.length);
     const baselineView = await inspectState(options, scenario, baselineEpisode.at, baseEnvironment);
 
     const restarted = await runCli(
         options,
-        runArguments(restartedEpisode),
-        [restartedEpisode.input, ":quit", ""].join("\n"),
+        [],
+        [select(restartedEpisode), restartedEpisode.input, ":quit", ""].join("\n"),
         restartedEpisode.at,
         baseEnvironment,
     );
     requireSuccessfulProcess("restarted Ember process", restarted);
-    const restartedReply = extractRunReply(restarted.stdout, 0);
+    const restartedReply = extractRunReply(restarted.stdout.split("\n").slice(1).join("\n"), 0);
     const restartedView = await inspectState(options, scenario, restartedEpisode.at, baseEnvironment);
 
     const baselineRuntime = requireLast(baselineView.runtimeEpisodes, "baseline runtime evidence");
@@ -359,8 +360,8 @@ async function inspectState(
 ): Promise<InspectionSnapshot> {
     const result = await runCli(
         options,
-        ["inspect", "--state", options.statePath, "--principal", scenario.ember.principal, "--json"],
-        "",
+        [],
+        `/inspect --state ${JSON.stringify(options.statePath)} --principal ${JSON.stringify(scenario.ember.principal)} --json\n/quit\n`,
         at,
         environment,
     );

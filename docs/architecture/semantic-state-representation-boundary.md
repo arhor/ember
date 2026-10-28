@@ -1,5 +1,7 @@
 # Semantic-State Representation and Projection Boundary
 
+CLI slash commands below are entered inside `ember`; see [shell setup](../guides/setup.md).
+
 > Decision owner: [accepted ADR 0022](decisions/0022-keep-semantic-state-independent-of-encodings-and-materialized-views.md), accepted on 2026-10-27. This source retains implementation detail, procedures, examples, and dated evidence; it is not an independent owner of the extracted architectural decision.
 
 > Status: architecture contract for issues #257–#259 and the representation epic #251.
@@ -163,11 +165,11 @@ the filesystem does not receive a privileged mutation path.
 ### Markdown v1 selective round-trip updates
 
 Issue #259 implements one deliberately narrow edit grammar. A human or agent first
-runs `ember materialize`, changes only the rendered content block of a current
+runs `/materialize`, changes only the rendered content block of a current
 user-testimony `fact` or `preference` in `USER.md`, then explicitly applies the set:
 
 ```bash
-ember apply-materialized-edits \
+/apply-materialized-edits \
   --state PATH --principal PRINCIPAL --scope SCOPE --input DIRECTORY \
   --approval-evidence EVIDENCE_ID
 ```
@@ -356,7 +358,7 @@ classifies unsupported changes as drift before canonical mutation.
 The command is:
 
 ```bash
-ember materialize --state PATH --principal PRINCIPAL --scope SCOPE --output DIRECTORY
+/materialize --state PATH --principal PRINCIPAL --scope SCOPE --output DIRECTORY
 ```
 
 Before creating or replacing any view, publication resolves the canonical path and all

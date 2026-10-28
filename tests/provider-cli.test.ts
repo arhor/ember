@@ -610,7 +610,7 @@ test("CLI parser should reject option when flag is unknown for command", async (
 });
 test("CLI parser should reject arguments when surplus positional is present", async () => {
     // Given
-    const args = ["init", "surplus", "--state", "/tmp/ember.json", "--principal", PRINCIPAL];
+    const args = ["check", "surplus", "--state", "/tmp/ember.json"];
     // When
     const error = await captureError(() => captureProcessCommand(args));
     // Then

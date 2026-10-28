@@ -1,4 +1,3 @@
-import { MAX_AI_TIMEOUT_SECONDS } from "@ember/application/ai/contract.ts";
 import { ValidationError } from "@ember/domain/errors.ts";
 import { Command, InvalidArgumentError, Option } from "commander";
 
@@ -9,33 +8,29 @@ import type {
     CliIo,
     CorrectArgs,
     ExplainArgs,
-    InitArgs,
     InspectArgs,
     LockStatusArgs,
     MaterializeArgs,
     QuarantineStaleLockArgs,
-    RunArgs,
     SetupArgs,
     SetupGoogleCalendarArgs,
 } from "./model.ts";
 
 import { bindCommandIo } from "./command-io.ts";
 import { Commands } from "./model.ts";
-import { setupHelpText } from "./setup.ts";
+import { setupHelpText } from "./setup-help.ts";
 
-const repeatableFlags = new Set(["--provider-arg", "--codex-arg", "--cursor-arg", "--surface", "--approval-evidence"]);
+const repeatableFlags = new Set(["--surface", "--approval-evidence"]);
 
-export function createProcessProgram(
+export function createLocalProgram(
     io: CliIo,
     argv: readonly string[],
     dispatch: (args: CliCommandArgs) => Promise<number>,
 ): Command {
     const program = bindCommandIo(new Command(), io);
     program
-        .name("ember")
-        .description(
-            "With no subcommand, open the default interactive session. --diagnostics is accepted only by that session and by setup.",
-        )
+        .name("/")
+        .description("Local shell commands. Prefix commands with / or :.")
         .addHelpText("after", `\n${setupHelpText}`)
         .hook("preAction", (_thisCommand, actionCommand) => {
             assertSingularFlags(argv, actionCommand);
@@ -110,38 +105,6 @@ export function createProcessProgram(
         .option("--reconfigure", "reconfigure an existing calendar binding")
         .action(async (options: GoogleCalendarOptions) => {
             await dispatch(googleCalendarArgs(options));
-        });
-
-    program
-        .command(Commands.INIT)
-        .description("Initialize schema v1 continuity state")
-        .requiredOption("--state <path>", "state path", nonEmpty)
-        .requiredOption("--principal <principal>", "local principal", nonEmpty)
-        .action(async (options: { state: string; principal: string }) => {
-            await dispatch({
-                command: Commands.INIT,
-                state: options.state,
-                principal: options.principal,
-            } satisfies InitArgs);
-        });
-
-    program
-        .command(Commands.RUN)
-        .description("Open an explicit or configured interactive session")
-        .option("--config <path>", "configured-run setup path; accepts only --config and --scope", nonEmpty)
-        .option("--state <path>", "state path", nonEmpty)
-        .option("--principal <principal>", "local principal", nonEmpty)
-        .option("--scope <scope>", "active scope", nonEmpty)
-        .addOption(new Option("--provider <provider>", "codex or cursor").choices(["codex", "cursor"]))
-        .option("--provider-command <executable>", "process provider executable", nonEmpty)
-        .option("--provider-arg <arg>", "repeatable process provider argument", collect)
-        .option("--codex-command <executable>", "Codex executable", nonEmpty)
-        .option("--codex-arg <arg>", "repeatable Codex argument", collect)
-        .option("--cursor-command <executable>", "Cursor executable", nonEmpty)
-        .option("--cursor-arg <arg>", "repeatable Cursor argument", collect)
-        .option("--provider-timeout-seconds <seconds>", "provider timeout seconds", nonEmpty)
-        .action(async (options: RunOptions) => {
-            await dispatch(runArgs(options));
         });
 
     program
@@ -244,6 +207,14 @@ export function createProcessProgram(
             } satisfies QuarantineStaleLockArgs);
         });
 
+    program
+        .command("use")
+        .description("Select a verified setup for this shell")
+        .requiredOption("--config <path>", "setup configuration", nonEmpty)
+        .option("--scope <scope>", "active scope", nonEmpty)
+        .action(async (options: { config: string; scope?: string }) => {
+            await dispatch({ command: "use", ...options });
+        });
     return program;
 }
 
@@ -275,21 +246,6 @@ interface GoogleCalendarOptions {
     surface?: string[];
     disable?: boolean;
     reconfigure?: boolean;
-}
-
-interface RunOptions {
-    config?: string;
-    state?: string;
-    principal?: string;
-    scope?: string;
-    provider?: "codex" | "cursor";
-    providerCommand?: string;
-    providerArg?: string[];
-    codexCommand?: string;
-    codexArg?: string[];
-    cursorCommand?: string;
-    cursorArg?: string[];
-    providerTimeoutSeconds?: string;
 }
 
 interface ApplyOptions {
@@ -334,104 +290,6 @@ function googleCalendarArgs(options: GoogleCalendarOptions): SetupGoogleCalendar
         disable: options.disable === true,
         reconfigure: options.reconfigure === true,
     };
-}
-
-function runArgs(options: RunOptions): RunArgs {
-    if (options.config !== undefined) {
-        if (
-            present(options.state) ||
-            present(options.principal) ||
-            present(options.provider) ||
-            present(options.providerCommand) ||
-            present(options.providerArg) ||
-            present(options.codexCommand) ||
-            present(options.codexArg) ||
-            present(options.cursorCommand) ||
-            present(options.cursorArg) ||
-            present(options.providerTimeoutSeconds)
-        )
-            throw new ValidationError("configured run accepts only --config PATH and --scope SCOPE");
-        return {
-            command: Commands.RUN,
-            mode: "configured",
-            config: options.config,
-            scope: required(options.scope, "--scope"),
-        };
-    }
-    const timeout = Number(required(options.providerTimeoutSeconds, "--provider-timeout-seconds"));
-    if (!Number.isFinite(timeout) || timeout <= 0)
-        throw new ValidationError("--provider-timeout-seconds must be a positive finite number");
-    if (timeout > MAX_AI_TIMEOUT_SECONDS)
-        throw new ValidationError(`--provider-timeout-seconds must not exceed ${MAX_AI_TIMEOUT_SECONDS}`);
-    const state = required(options.state, "--state");
-    const principal = required(options.principal, "--principal");
-    const scope = required(options.scope, "--scope");
-    if (options.provider === "codex") {
-        if (
-            present(options.providerCommand) ||
-            present(options.providerArg) ||
-            present(options.cursorCommand) ||
-            present(options.cursorArg)
-        )
-            throw new ValidationError("process and Cursor options cannot be combined with --provider codex");
-        return {
-            command: Commands.RUN,
-            mode: "explicit",
-            state,
-            principal,
-            scope,
-            providerKind: "codex",
-            providerCommand: options.codexCommand ?? "codex",
-            providerArgs: options.codexArg ?? [],
-            providerTimeoutSeconds: timeout,
-        };
-    }
-    if (options.provider === "cursor") {
-        if (
-            present(options.providerCommand) ||
-            present(options.providerArg) ||
-            present(options.codexCommand) ||
-            present(options.codexArg)
-        )
-            throw new ValidationError("process and Codex options cannot be combined with --provider cursor");
-        return {
-            command: Commands.RUN,
-            mode: "explicit",
-            state,
-            principal,
-            scope,
-            providerKind: "cursor",
-            providerCommand: options.cursorCommand ?? "cursor-agent",
-            providerArgs: options.cursorArg ?? [],
-            providerTimeoutSeconds: timeout,
-        };
-    }
-    if (present(options.codexCommand) || present(options.codexArg))
-        throw new ValidationError("--codex-command and --codex-arg require --provider codex");
-    if (present(options.cursorCommand) || present(options.cursorArg))
-        throw new ValidationError("--cursor-command and --cursor-arg require --provider cursor");
-    return {
-        command: Commands.RUN,
-        mode: "explicit",
-        state,
-        principal,
-        scope,
-        providerKind: "process",
-        providerCommand: required(options.providerCommand, "--provider-command"),
-        providerArgs: options.providerArg ?? [],
-        providerTimeoutSeconds: timeout,
-    };
-}
-
-function present(value: string | string[] | undefined): boolean {
-    if (value === undefined) return false;
-    if (Array.isArray(value)) return value.length > 0;
-    return true;
-}
-
-function required(value: string | undefined, flag: string): string {
-    if (!value) throw new ValidationError(`${flag} is required`);
-    return value;
 }
 
 function nonEmpty(value: string): string {

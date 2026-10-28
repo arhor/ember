@@ -1,5 +1,7 @@
 # Durable Proactive-Contact Intent Semantics
 
+CLI slash commands below are entered inside `ember`; see [shell setup](../guides/setup.md).
+
 > Decision owner: [accepted ADR 0033](decisions/0033-represent-proactive-contact-as-durable-intent-distinct-from-delivery.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 > Implementation status — 2026-10-27: ADR 0033 preserves the full semantic contract,
@@ -323,7 +325,7 @@ fenced unattempted or definitely failed delivery into `withdrawn`; confirmed evi
 remains confirmed, and a started or uncertain attempt remains blocked as possibly
 effectful.
 
-`ember inspect` loads both sidecars. It exposes policy evidence, handoff correlation,
+`/inspect` loads both sidecars. It exposes policy evidence, handoff correlation,
 delivery state, attempts, and uncertainty while replacing retained representation
 text with availability/currentness/classification and its SHA-256 digest.
 

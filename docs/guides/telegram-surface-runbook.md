@@ -1,5 +1,7 @@
 # Telegram Surface Runbook
 
+CLI slash commands below are entered inside `ember`; see [shell setup](setup.md).
+
 > Status: current implementation/runbook from issue #86, with principal/privacy policy
 > hardened by issue #87, restart-safe delivery reconciliation added by issue #88, and
 > protocol plumbing migrated to `node-telegram-bot-api@2.1.0` by issue #207.
@@ -472,7 +474,7 @@ after verification. Normal CI remains portable and uses deterministic adapter te
 The ordinary CLI inspection command now includes operational interaction provenance:
 
 ```bash
-ember inspect \
+/inspect \
   --state "$HOME/.local/share/ember/ember.json" \
   --principal "YOUR_EMBER_PRINCIPAL" \
   --json
@@ -502,7 +504,7 @@ deterministic API/provider boundaries and require no token.
 2. Start `serve` in the foreground or start `ember-telegram.service`.
 3. Send a fresh ordinary text message from the configured private Telegram chat.
 4. Confirm that exactly one Ember response arrives in that chat.
-5. Run `ember inspect ... --json` and confirm the cognition episode exists while the
+5. Run `/inspect ... --json` and confirm the cognition episode exists while the
    Telegram update/chat/message identifiers appear only under `interactions`, not as
    canonical meanings.
 6. Confirm the Telegram interaction record reports `configured_surface_mapping`, the

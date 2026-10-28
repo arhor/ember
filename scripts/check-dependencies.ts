@@ -13,9 +13,10 @@ const sourceRoots = [
     { directory: resolve(root, "apps/telegram/bin"), ownerPrefix: "apps/telegram/bin" },
 ];
 const surfaceAiExceptions = new Set<string>();
-const surfacePersistenceExceptions = new Set(["apps/cli/google-calendar-setup.ts", "apps/cli/main.ts"]);
+const surfacePersistenceExceptions = new Set(["apps/cli/google-calendar-setup.ts", "apps/cli/local-commands.ts"]);
 const surfaceBootstrapAndCommandModules = new Set([
     "apps/cli/main.ts",
+    "apps/cli/local-commands.ts",
     "apps/cli/setup.ts",
     "apps/cli/google-calendar-setup.ts",
     "apps/cli/commands.ts",

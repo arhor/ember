@@ -7,15 +7,21 @@ import { composeSetupDependencies } from "@ember/composition/setup.ts";
 import { EmberError, ValidationError } from "@ember/domain/errors.ts";
 import { createSetupDiagnostics } from "@ember/host/setup-diagnostics.ts";
 import { defaultSetupConfigPath, loadSetupConfig } from "@ember/host/setup.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { CommanderError } from "commander";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
-import type { CliIo, ConfiguredRunArgs, DefaultRunArgs, SetupArgs } from "./model.ts";
+import type { CliMainOverrides } from "./main.ts";
+import type { CliIo, ShellOptions, SetupArgs } from "./model.ts";
 
 import { splitCommand } from "./commands.ts";
+import { loadConfiguredState } from "./commands.ts";
 import { setupGoogleCalendarMain } from "./google-calendar-setup.ts";
-import { createProcessProgram } from "./process-program.ts";
+import { executeLocalCommand } from "./local-commands.ts";
+import { createLocalProgram } from "./local-program.ts";
+import { createSessionProgram } from "./session-program.ts";
+import { setupHelpText } from "./setup-help.ts";
 import { runCliSurface } from "./surface.ts";
 
 export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
@@ -29,7 +35,7 @@ export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupC
         io.output.write(
             args.config === undefined
                 ? "Run: ember\n"
-                : `Run: ember run --config '${configPath.replaceAll("'", "'\\''")}' --scope '${scope.replaceAll("'", "'\\''")}'\n`,
+                : `Select: /use --config '${configPath.replaceAll("'", "'\\''")}' --scope '${scope.replaceAll("'", "'\\''")}'\n`,
         );
     }
     return result;
@@ -129,89 +135,135 @@ function presentBootstrapEvent(event: BootstrapEvent, io: CliIo, diagnosticsPath
     }
 }
 
-export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io: CliIo): Promise<number> {
-    if (args.mode !== "default") return await runConfigured(args, io);
+export async function setupRunMain(args: ShellOptions, io: CliIo, overrides: CliMainOverrides = {}): Promise<number> {
     const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     const iterator = lines[Symbol.asyncIterator]();
-    const conversationBoundary = { fresh: true };
+    const boundary = { fresh: true };
+    let selection: { mode: "configured"; config: string; scope: string } | { mode: "default" } = { mode: "default" };
+    let selectedPath = defaultSetupConfigPath();
+    let pending: string | undefined;
+    const localNames = createLocalProgram(io, [], async () => 0).commands.map((command) => command.name());
+    const sessionNames = createSessionProgram(io, async () => {}).commands.map((command) => command.name());
+    const isLocal = (line: string) => {
+        if (!/^[/:]/.test(line)) return false;
+        try {
+            const argv = splitCommand(line.slice(1));
+            return (
+                !sessionNames.includes(argv[0]!) ||
+                argv.some((token) => ["--help", "-h"].includes(token)) ||
+                ["quit", "new-conversation"].includes(argv[0]!)
+            );
+        } catch {
+            return true;
+        }
+    };
     try {
         while (true) {
-            const next = await iterator.next();
+            const next = pending === undefined ? await iterator.next() : { done: false, value: pending };
+            pending = undefined;
             if (next.done) return 0;
-            const line = next.value;
+            const line = next.value!;
             if (!line.trim()) continue;
-            if (line === "/quit" || line === ":quit") return 0;
-            if (line === "/help" || line === ":help") {
-                io.output.write(
-                    "/setup [options] — configure continuity and provider\n/setup google-calendar [options] — configure Calendar\n/new-conversation — start fresh on the next message\n/quit — exit\nOther session commands are available with / or : prefixes.\n",
-                );
-                continue;
-            }
-            if (line.startsWith("/setup ") || line === "/setup") {
-                try {
-                    await runInteractiveSetupCommand(line, io, args.diagnostics === true, iterator);
-                } catch (error) {
-                    if (!(error instanceof EmberError) && !(error instanceof CommanderError)) throw error;
-                    io.error.write(`setup: ${error.message}\n`);
-                }
-                continue;
-            }
-            if (line.startsWith("/") || line.startsWith(":")) {
-                const name = line.slice(1).split(/\s/)[0];
-                if (
-                    ![
-                        "remember",
-                        "prefer",
-                        "supersede",
-                        "undertake",
-                        "attach-detail",
-                        "fixture-withhold",
-                        "ask",
-                        "show-action",
-                        "approve-action",
-                        "reject-action",
-                        "withdraw-action",
-                        "supersede-action",
-                        "new-conversation",
-                        "quit",
-                        "--help",
-                    ].includes(name!)
-                ) {
-                    io.error.write("Unknown command. Use /help.\n");
-                    continue;
-                }
-                if (line === "/new-conversation" || line === ":new-conversation") {
-                    conversationBoundary.fresh = true;
-                    continue;
-                }
-            }
             try {
-                const config = await loadSetupConfig(defaultSetupConfigPath());
+                if (/^[/:]/.test(line)) {
+                    const argv = splitCommand(line.slice(1));
+                    if (argv.length === 1 && argv[0] === "quit") return 0;
+                    if (argv.length === 1 && argv[0] === "new-conversation") {
+                        boundary.fresh = true;
+                        continue;
+                    }
+                    if (argv.length === 1 && ["help", "--help", "-h"].includes(argv[0]!)) {
+                        createLocalProgram(io, [], async () => 0).outputHelp();
+                        createSessionProgram(io, async () => {}).outputHelp();
+                        continue;
+                    }
+                    if (argv[0] === "setup" && argv[1] === "google-calendar")
+                        argv.splice(0, 2, "setup-google-calendar");
+                    if (localNames.includes(argv[0]!)) {
+                        if (argv.length === 1 && argv[0] === "setup" && !(await loadSetupConfig(selectedPath))) {
+                            await interactiveSetup(
+                                io,
+                                args.diagnostics === true,
+                                iterator,
+                                selectedPath,
+                                overrides.setupDependencies,
+                            );
+                            continue;
+                        }
+                        const program = createLocalProgram(io, argv, async (command) => {
+                            if (command.command === "use") {
+                                const config = await loadSetupConfig(resolve(command.config));
+                                if (!config) throw new ValidationError("setup configuration is unavailable");
+                                const candidate = {
+                                    mode: "configured" as const,
+                                    config: resolve(command.config),
+                                    scope: command.scope ?? `relationship:${config.principal}`,
+                                };
+                                const prepared = await prepareConfiguredRun(
+                                    candidate,
+                                    composeSetupDependencies(() => {}),
+                                );
+                                const store = new StateStore(prepared.statePath);
+                                const lease = await store.acquireWriteLease();
+                                try {
+                                    await loadConfiguredState(store, prepared);
+                                } finally {
+                                    await store.releaseWriteLease(lease);
+                                }
+                                selection = candidate;
+                                selectedPath = candidate.config;
+                                boundary.fresh = true;
+                                io.output.write(`Selected ${selectedPath}; scope ${candidate.scope}\n`);
+                                return 0;
+                            }
+                            if (command.command === "setup") {
+                                command.config ??= selectedPath;
+                                command.diagnostics ||= args.diagnostics === true;
+                                return await setupMain(command, io, overrides.setupDependencies);
+                            }
+                            if (command.command === "setup-google-calendar")
+                                return await setupGoogleCalendarMain(command, io);
+                            return await executeLocalCommand(command, io);
+                        });
+                        await program.parseAsync(argv, { from: "user" });
+                        continue;
+                    }
+                    // Command help is local even when runtime configuration is broken.
+                    if (!sessionNames.includes(argv[0]!) || argv.includes("--help") || argv.includes("-h")) {
+                        await createSessionProgram(io, async () => {}).parseAsync(argv, { from: "user" });
+                        continue;
+                    }
+                }
+                const config = await loadSetupConfig(selectedPath);
                 if (!config || config.verification !== "verified" || config.continuity !== "available") {
                     io.error.write("Run /setup before sending a message, then resend your message.\n");
                     continue;
                 }
-                let setupRequested = false;
-                let setupLine = "/setup";
                 async function* conversationLines() {
                     yield line;
                     while (true) {
                         const item = await iterator.next();
                         if (item.done) return;
-                        if (item.value === "/setup" || item.value.startsWith("/setup ")) {
-                            setupRequested = true;
-                            setupLine = item.value;
+                        if (isLocal(item.value)) {
+                            pending = item.value;
                             return;
                         }
                         yield item.value;
                     }
                 }
-                const status = await runConfigured(args, io, conversationLines(), conversationBoundary);
-                if (!setupRequested) return status;
-                await runInteractiveSetupCommand(setupLine, io, args.diagnostics === true, iterator);
+                await runConfigured(selection, io, conversationLines(), boundary);
+                if (pending === undefined) return 0;
             } catch (error) {
-                if (!(error instanceof EmberError) && !(error instanceof CommanderError)) throw error;
-                io.error.write(`configuration: ${error.message}; run /setup to inspect configuration.\n`);
+                if (error instanceof CommanderError) {
+                    if (error.exitCode !== 0) io.error.write(`command rejected: ${error.message}\n`);
+                } else if (
+                    error instanceof Error &&
+                    (error instanceof EmberError ||
+                        error instanceof SyntaxError ||
+                        ("code" in error && /^E[A-Z0-9]+$/.test(String(error.code))))
+                )
+                    io.error.write(`command rejected: ${error.message}\n`);
+                else throw error;
             }
         }
     } finally {
@@ -219,27 +271,8 @@ export async function setupRunMain(args: ConfiguredRunArgs | DefaultRunArgs, io:
     }
 }
 
-async function runInteractiveSetupCommand(
-    line: string,
-    io: CliIo,
-    diagnostics: boolean,
-    iterator: AsyncIterator<string>,
-) {
-    if (line === "/setup" && !(await loadSetupConfig(defaultSetupConfigPath())))
-        return await interactiveSetup(io, diagnostics, iterator);
-    const argv = splitCommand(line.slice(1));
-    if (argv[1] === "google-calendar") argv.splice(0, 2, "setup-google-calendar");
-    const program = createProcessProgram(io, argv, async (args) => {
-        if (args.command === "setup") return await setupMain(args, io);
-        if (args.command === "setup-google-calendar") return await setupGoogleCalendarMain(args, io);
-        throw new ValidationError("expected /setup");
-    });
-    await program.parseAsync(argv, { from: "user" });
-    return 0;
-}
-
 async function runConfigured(
-    args: ConfiguredRunArgs | DefaultRunArgs,
+    args: { mode: "configured"; config: string; scope: string } | { mode: "default" },
     io: CliIo,
     lines?: AsyncIterable<string>,
     conversationBoundary = { fresh: true },
@@ -286,7 +319,13 @@ async function runConfigured(
     }
 }
 
-async function interactiveSetup(io: CliIo, diagnostics: boolean, iterator: AsyncIterator<string>): Promise<number> {
+async function interactiveSetup(
+    io: CliIo,
+    diagnostics: boolean,
+    iterator: AsyncIterator<string>,
+    configPath: string,
+    overrides: SetupCompositionOverrides = {},
+): Promise<number> {
     const ask = async (prompt: string): Promise<string> => {
         io.output.write(prompt);
         const answer = await iterator.next();
@@ -337,7 +376,7 @@ async function interactiveSetup(io: CliIo, diagnostics: boolean, iterator: Async
         throw new ValidationError("restore requires explicit acknowledgement of continuity uncertainty");
     const result = await bootstrapForCli(
         {
-            config: undefined,
+            config: configPath,
             state,
             principal,
             intent: choice === "create" ? "create-new" : "restore-existing",
@@ -351,23 +390,9 @@ async function interactiveSetup(io: CliIo, diagnostics: boolean, iterator: Async
             diagnostics,
         },
         io,
+        overrides,
     );
     return result;
 }
 
-export const setupHelpText = `ember setup [--config PATH] [--state PATH]
-Defaults: ~/.ember/config/setup.json and ~/.ember/state/continuity.json.
-Config and state path overrides are independent; an existing config retains its state binding.
-Inspect first, then choose explicitly:
-  --intent create-new --principal USER --provider codex|cursor|claude-code|ollama|deepseek
-  --intent restore-existing --state PATH --accept-continuity-risk --provider PROVIDER
-  --intent use-existing [--state PATH] [--provider PROVIDER]
-Restore attaches a local store and its sidecars; fork, snapshot age, and missing-history risks remain unresolved.
-Options: --model MODEL (required for Ollama and DeepSeek), --provider-base-url LOOPBACK_URL (Ollama only),
-  --provider-command EXECUTABLE (Codex/Cursor only),
-  --provider-timeout-seconds SECONDS (default 60, maximum 120), --confirm-provider-change, --diagnostics.
-Provider credentials stay in provider-owned login stores or DEEPSEEK_API_KEY in the environment; never pass secrets as options.
---diagnostics retains a redacted setup-probe log under ~/.ember/logs/setup/ only when verification fails.
-Rerun with the same intent or use-existing to reverify; existing continuity is never overwritten.
-Use a separate config and state path to create another lineage. Ctrl-C requests cancellation.
-`;
+export { setupHelpText } from "./setup-help.ts";

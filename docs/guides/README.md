@@ -17,7 +17,7 @@ outside repository documentation and ordinary model context.
 - [Episodic Runtime Runbook](episodic-runtime-runbook.md)
 - [Google Calendar Runbook](google-calendar-readonly-runbook.md)
 - [Longitudinal Continuity Harness](longitudinal-continuity-harness.md)
-- [Minimal Continuity Slice Runbook](minimal-continuity-runbook.md)
+- [Minimal Continuity Slice Runbook (historical)](minimal-continuity-runbook.md)
 - [Proactive-Contact and Deliberate-Silence Evaluation](proactive-contact-evaluation.md)
 - [Process-Restart Continuity Evaluation](process-restart-continuity-evaluation.md)
 - [Raspberry Pi Resource Validation](raspberry-pi-resource-validation.md)

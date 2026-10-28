@@ -1,5 +1,7 @@
 # Delivery Reconciliation Runbook
 
+CLI slash commands below are entered inside `ember`; see [shell setup](setup.md).
+
 > Status: current transport-neutral recovery policy from issue #88. Telegram maps its
 > concrete Bot API evidence into these states, but Telegram-specific error prose does
 > not define Ember delivery truth.
@@ -160,7 +162,7 @@ proactive correlation. A proactive contact may have only one ledger delivery.
 
 ## Inspection
 
-`ember inspect --json` exposes occurrence metadata, delivery intent, attempt timing,
+`/inspect --json` exposes occurrence metadata, delivery intent, attempt timing,
 outcome, retryability, retry delay, and external message IDs. A retained representation
 is rendered only as:
 

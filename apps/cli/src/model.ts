@@ -10,8 +10,6 @@ export interface CliIo {
 export const Commands = {
     SETUP: "setup",
     SETUP_GOOGLE_CALENDAR: "setup-google-calendar",
-    INIT: "init",
-    RUN: "run",
     INSPECT: "inspect",
     MATERIALIZE: "materialize",
     APPLY_MATERIALIZED_EDITS: "apply-materialized-edits",
@@ -21,12 +19,6 @@ export const Commands = {
     LOCK_STATUS: "lock-status",
     QUARANTINE_STALE_LOCK: "quarantine-stale-lock",
 } as const;
-
-export type InitArgs = {
-    command: typeof Commands.INIT;
-    state: string;
-    principal: string;
-};
 
 export type SetupArgs = {
     command: typeof Commands.SETUP;
@@ -60,32 +52,8 @@ export type SetupGoogleCalendarArgs = {
     reconfigure: boolean;
 };
 
-export type ConfiguredRunArgs = {
-    command: typeof Commands.RUN;
-    mode: "configured";
-    config: string;
-    scope: string;
-};
-
-export type DefaultRunArgs = {
-    command: typeof Commands.RUN;
-    mode: "default";
-    diagnostics?: boolean;
-};
-
-export type ExplicitRunArgs = {
-    command: typeof Commands.RUN;
-    mode: "explicit";
-    state: string;
-    principal: string;
-    scope: string;
-    providerKind: "process" | "codex" | "cursor";
-    providerCommand: string;
-    providerArgs: string[];
-    providerTimeoutSeconds: number;
-};
-
-export type RunArgs = ExplicitRunArgs | ConfiguredRunArgs | DefaultRunArgs;
+export type UseArgs = { command: "use"; config: string; scope?: string };
+export type ShellOptions = { diagnostics?: boolean };
 
 export type InspectArgs = {
     command: typeof Commands.INSPECT;
@@ -145,10 +113,9 @@ export type QuarantineStaleLockArgs = {
 };
 
 export type CliCommandArgs =
+    | UseArgs
     | SetupArgs
     | SetupGoogleCalendarArgs
-    | InitArgs
-    | RunArgs
     | InspectArgs
     | MaterializeArgs
     | ApplyMaterializedEditsArgs

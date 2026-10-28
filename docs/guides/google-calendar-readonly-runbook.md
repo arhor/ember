@@ -1,5 +1,7 @@
 # Google Calendar Runbook
 
+CLI slash commands below are entered inside `ember`; see [shell setup](setup.md).
+
 Google Calendar is optional configured capability, not canonical Ember memory. Reading
 the selected calendar has explicit standing authority; creating an event additionally
 requires a current exact durable action approval. The integration is
@@ -13,7 +15,7 @@ Create a Google OAuth installed-application client, enable Calendar API access, 
 store the client secret in a mode-0600 local file. Then run:
 
 ```sh
-ember setup-google-calendar \
+/setup google-calendar \
   --setup-config /absolute/path/setup.json \
   --config /absolute/path/google-calendar.json \
   --client-id CLIENT_ID \
@@ -100,7 +102,7 @@ blocks execution.
 
 Inspect only the non-secret config, file modes, and sanitized capability ledger in a
 test harness. Never print token files, authorization headers, raw event IDs, calendar
-addresses, or raw Google errors. Canonical `ember inspect` output must contain none of
+addresses, or raw Google errors. Canonical `/inspect` output must contain none of
 the Google configuration, event observations, or capability evidence. A calendar
 configuration whose setup lineage does not match the current projection is inactive,
 even if its principal, scope, and surface happen to match.

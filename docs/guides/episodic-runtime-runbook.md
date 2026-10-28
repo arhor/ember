@@ -1,5 +1,7 @@
 # Episodic Runtime Runbook
 
+CLI slash commands below are entered inside `ember`; see [shell setup](setup.md).
+
 > Status: current Linux/systemd host runbook for issue #94 and ADR 0007.
 >
 > This is optional host infrastructure, not Ember's ordinary application entry point.
@@ -127,7 +129,7 @@ by Codex and is merely reachable to the same configured OS user.
 Use the ordinary CLI once if the configured state does not yet exist:
 
 ```bash
-ember init \
+/setup --intent create-new --provider codex \
   --state /ABSOLUTE/PATH/ember.json \
   --principal local-user
 ```
@@ -231,9 +233,9 @@ more convenient layer:
 Canonical and lock inspection remain ordinary CLI operations:
 
 ```bash
-ember inspect --state /ABSOLUTE/PATH/ember.json --principal local-user
-ember check --state /ABSOLUTE/PATH/ember.json
-ember lock-status --state /ABSOLUTE/PATH/ember.json
+/inspect --state /ABSOLUTE/PATH/ember.json --principal local-user
+/check --state /ABSOLUTE/PATH/ember.json
+/lock-status --state /ABSOLUTE/PATH/ember.json
 ```
 
 ## Clean stop and cancellation
@@ -260,13 +262,13 @@ launch does not bypass the lock.
 
 In this first implementation a wake owns the writer lease across its bounded
 opportunity evaluator call because the current `runCognitionOpportunity` lifecycle
-requires the cooperating lease for its before/after commits. A foreground `ember run`
+requires the cooperating lease for its before/after commits. A foreground shell session
 session can therefore contend with a background wake. Contention fails closed.
 
 Do not delete a lock merely because it is old. Diagnose first:
 
 ```bash
-ember lock-status --state /ABSOLUTE/PATH/ember.json
+/lock-status --state /ABSOLUTE/PATH/ember.json
 ```
 
 Only if the result is `apparently_stale`, the recorded owner token still matches, and
@@ -274,7 +276,7 @@ you have independently established that no writer capable of using the state rem
 quarantine the stale artifact explicitly:
 
 ```bash
-ember quarantine-stale-lock \
+/quarantine-stale-lock \
   --state /ABSOLUTE/PATH/ember.json \
   --owner-token EXACT_TOKEN_FROM_LOCK_STATUS \
   --confirm-quiescent
@@ -443,7 +445,7 @@ reconciliation intentionally does not synthesize a child process-loss history.
 
 ### Stale writer lock after process death
 
-1. Run `ember lock-status` and retain the exact owner token/hostname/PID diagnosis.
+1. Run `/lock-status` and retain the exact owner token/hostname/PID diagnosis.
 2. Establish independently that the recorded same-host writer is absent and that the
    state is quiescent.
 3. Use `quarantine-stale-lock` with that exact token and `--confirm-quiescent`.

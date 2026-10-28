@@ -1,7 +1,6 @@
 import type { AiExecutor, AiExecutionRequest } from "@ember/application/ai/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
 
-import { main as cliMain } from "@ember/cli";
 import { runCliSurface } from "@ember/cli/surface.ts";
 import { composeCliSurface } from "@ember/composition/cli.ts";
 import { initialState } from "@ember/domain/model.ts";
@@ -19,6 +18,7 @@ import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
+import { fixtureMain as cliMain } from "./support.ts";
 
 const PRINCIPAL = "max";
 const SHARED_SCOPE = "surface:shared";
@@ -136,18 +136,22 @@ function memoryOutput(chunks: string[]) {
 
 test("production foreground and resident entrypoints should preserve the canonical composed surface route", async () => {
     // Given
-    const [cliExecutable, cliBootstrap, cliConfiguredBootstrap, telegramExecutable] = await Promise.all([
-        readFile(new URL("../apps/cli/bin/ember.ts", import.meta.url), "utf8"),
-        readFile(new URL("../apps/cli/src/main.ts", import.meta.url), "utf8"),
-        readFile(new URL("../apps/cli/src/setup.ts", import.meta.url), "utf8"),
-        readFile(new URL("../apps/telegram/bin/ember-telegram.ts", import.meta.url), "utf8"),
-    ]);
+    const entrypointUrls = [
+        "../apps/cli/bin/ember.ts",
+        "../apps/cli/src/main.ts",
+        "../apps/cli/src/setup.ts",
+        "../apps/telegram/bin/ember-telegram.ts",
+    ];
+    // When
+    const [cliExecutable, cliBootstrap, cliConfiguredBootstrap, telegramExecutable] = await Promise.all(
+        entrypointUrls.map((path) => readFile(new URL(path, import.meta.url), "utf8")),
+    );
 
     // Then
     assert.equal(cliExecutable.includes('import { main } from "../src/index.ts";'), true);
     assert.equal(cliExecutable.includes("process.exitCode = await main();"), true);
-    assert.equal(cliBootstrap.split("composeCliSurface(").length - 1, 1);
-    assert.equal(cliBootstrap.split("runCliSurface(").length - 1, 1);
+    assert.equal(cliBootstrap.split("composeCliSurface(").length - 1, 0);
+    assert.equal(cliBootstrap.split("runCliSurface(").length - 1, 0);
     assert.equal(/createEmberApplication|composeEmberApplication/.test(cliBootstrap), false);
 
     assert.equal(cliConfiguredBootstrap.includes("export async function setupRunMain("), true);

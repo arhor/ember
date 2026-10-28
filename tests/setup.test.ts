@@ -1,7 +1,7 @@
 import type { CliSurfaceConfig } from "@ember/cli";
 import type { EmberCompositionOverrides, EmberProviderKind } from "@ember/composition/ember.ts";
 
-import { main, runCliSurface as runCliAdapter, setupMain as runSetup } from "@ember/cli";
+import { main as shellMain, runCliSurface as runCliAdapter, setupMain as runSetup } from "@ember/cli";
 import { setupGoogleCalendarMain } from "@ember/cli/google-calendar-setup.ts";
 import { composeCliSurface } from "@ember/composition/cli.ts";
 import { ProviderError } from "@ember/domain/errors.ts";
@@ -20,6 +20,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
+import { fixtureMain as main } from "./support.ts";
 import { captureError, captureProcessCommand, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };
@@ -120,8 +121,9 @@ async function fixture(t) {
 }
 const verified = { provider: () => async () => success };
 
-test("one CLI parser produces typed setup and discriminated run arguments", async () => {
-    const setup = await captureProcessCommand([
+test("local command parser should retain explicit setup options when continuity is restored", async () => {
+    // Given
+    const argv = [
         "setup",
         "--intent",
         "restore-existing",
@@ -130,40 +132,25 @@ test("one CLI parser produces typed setup and discriminated run arguments", asyn
         "--provider-timeout-seconds",
         "30",
         "--accept-continuity-risk",
-    ]);
+    ];
+    // When
+    const setup = await captureProcessCommand(argv);
+    // Then
     assert.equal(setup.command, "setup");
     assert.equal(setup.intent, "restore-existing");
     assert.equal(setup.provider, "claude-code");
     assert.equal(setup.providerTimeoutSeconds, 30);
     assert.equal(setup.acceptContinuityRisk, true);
     assert.equal(setup.diagnostics, false);
-    const help = capture();
-    assert.equal(await main(["setup", "--help"], help), 0);
-    assert.match(help.text(), /DEEPSEEK_API_KEY/);
-    assert.equal((await captureProcessCommand(["setup"])).intent, undefined);
-    assert.deepEqual(await captureProcessCommand(["run", "--config", "host.json", "--scope", "test"]), {
-        command: "run",
-        mode: "configured",
-        config: "host.json",
-        scope: "test",
-    });
-    const explicit = await captureProcessCommand([
-        "run",
-        "--state",
-        "state.json",
-        "--principal",
-        "user",
-        "--scope",
-        "test",
-        "--provider-command",
-        "fixture",
-        "--provider-arg",
-        "--config",
-        "--provider-timeout-seconds",
-        "1",
-    ]);
-    assert.equal(explicit.mode, "explicit");
-    assert.deepEqual(explicit.providerArgs, ["--config"]);
+});
+
+test("local command parser should select configured sessions when use is supplied", async () => {
+    // Given
+    const argv = ["use", "--config", "host.json", "--scope", "test"];
+    // When
+    const selection = await captureProcessCommand(argv);
+    // Then
+    assert.deepEqual(selection, { command: "use", config: "host.json", scope: "test" });
 });
 
 test("setup parser should enable opt-in diagnostics when requested", async () => {
@@ -621,26 +608,19 @@ test("unified CLI parser rejects invalid setup and mixed configured-run options"
     assert.match(repeatedHelp.text(), /accept-continuity-risk/);
 });
 
-test("process help and usage stay inside the injected writers and returned status", async () => {
-    const exit = process.exit;
-    let exited = false;
-    process.exit = (() => {
-        exited = true;
-        throw new Error("process.exit");
-    }) as typeof process.exit;
-    try {
-        const help = capture();
-        assert.equal(await main(["--help"], help), 0);
-        assert.match(help.text(), /create-new/);
-        assert.match(help.text(), /DEEPSEEK_API_KEY/);
-        assert.match(help.text(), /~\/\.ember\/config\/setup\.json/);
-        const usage = capture();
-        assert.equal(await main(["remember"], usage), 2);
-        assert.match(usage.text(), /unknown command 'remember'/);
-        assert.equal(exited, false);
-    } finally {
-        process.exit = exit;
-    }
+test("CLI should return help and usage through injected writers when invoked without process exit", async () => {
+    // Given
+    const help = capture();
+    const usage = capture();
+    // When
+    const helpStatus = await shellMain(["--help"], help);
+    const usageStatus = await shellMain(["remember"], usage);
+    // Then
+    assert.equal(helpStatus, 0);
+    assert.match(help.text(), /\/use/);
+    assert.match(help.text(), /--diagnostics/);
+    assert.equal(usageStatus, 2);
+    assert.match(usage.text(), /removed/);
 });
 
 for (const override of ["none", "config", "state"]) {
@@ -1787,22 +1767,27 @@ test("configured CLI should ignore legacy onboarding sidecars when starting conv
 });
 
 for (const kind of ["codex", "cursor"]) {
-    test(`actual CLI setup and configured conversation use the ${kind} production adapter with a deterministic executable`, async (t) => {
+    test(`foreground shell should configure and converse through ${kind} when a deterministic executable is selected`, async (t) => {
+        // Given
         const f = await fixture(t);
         const executable = join(f.directory, `${kind}.ts`);
         await copyFile(resolve(`tests/fixtures/providers/scripted-${kind}.ts`), executable);
         await chmod(executable, 0o700);
-        const result = await command(["setup", ...f.create.slice(0, -1), kind, "--provider-command", executable]);
-        assert.equal(result.code, 0, JSON.stringify(result));
-        assert.match(result.stdout, /--scope 'relationship:user-secret-marker'/);
-        const run = await command(["run", "--config", f.config, "--scope", "relationship:user-secret-marker"], {
-            stdin: "hello\n:quit\n",
-        });
-        assert.equal(run.code, 0, run.stderr);
-        assert.match(run.stdout, new RegExp(`${kind.toUpperCase()}_CLI_RESPONSE`));
+        const setup = `/setup ${[...f.create.slice(0, -1), kind, "--provider-command", executable].map((value) => JSON.stringify(value)).join(" ")}`;
+        const select = `/use --config ${JSON.stringify(f.config)} --scope relationship:user-secret-marker`;
+        // When
+        const result = await command([], { stdin: `${setup}\n${select}\nhello\n/quit\n` });
         const before = await readFile(f.state, "utf8");
-        const rerun = await command(["setup", ...f.args, "--intent", "use-existing"]);
+        const rerun = await command([], {
+            stdin: `/setup --config ${JSON.stringify(f.config)} --intent use-existing\n/quit\n`,
+        });
+        // Then
+        assert.equal(result.code, 0, JSON.stringify(result));
+        assert.doesNotMatch(result.stderr, /command rejected/);
+        assert.match(result.stdout, /--scope 'relationship:user-secret-marker'/);
+        assert.match(result.stdout, new RegExp(`${kind.toUpperCase()}_CLI_RESPONSE`));
         assert.equal(rerun.code, 0, rerun.stderr);
+        assert.equal(rerun.stderr, "");
         assert.equal(await readFile(f.state, "utf8"), before);
     });
 }
@@ -1818,7 +1803,7 @@ test("foreground shell should keep configuration absent when help, unknown comma
     // Then
     assert.equal(result.code, 0, result.stderr);
     assert.match(result.stdout, /\/setup/);
-    assert.match(result.stderr, /Unknown command/);
+    assert.match(result.stderr, /unknown command/i);
     assert.match(result.stderr, /Run \/setup/);
     assert.doesNotMatch(result.stdout, /Create a new Ember/);
     await assert.rejects(stat(join(f.directory, ".ember", "config", "setup.json")), { code: "ENOENT" });
@@ -1928,4 +1913,28 @@ test("ordinary interaction should ignore legacy topic files and generate memory 
     }
     assert.equal(reflections, 2);
     assert.deepEqual((await store.load()).meanings, []);
+});
+
+test("foreground shell should start fresh context when the selected setup is selected again", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex-with-memory.ts"), executable);
+    await chmod(executable, 0o700);
+    const setup = `/setup ${[...f.create, "--provider-command", executable].map((value) => JSON.stringify(value)).join(" ")}`;
+    const select = `/use --config ${JSON.stringify(f.config)}`;
+    const inspect = `/inspect --state ${JSON.stringify(f.state)} --principal user-secret-marker --json`;
+    const env = { HOME: f.directory, PATH: dirname(process.execPath) };
+    // When
+    const result = await command([], {
+        env,
+        stdin: `${setup}\n${select}\nfirst\n${inspect}\nsecond\n${select}\nthird\n/quit\n`,
+    });
+    const conversation = await new ConversationContextStore(f.state).load();
+    // Then
+    assert.equal(result.code, 0, JSON.stringify(result));
+    assert.equal(result.stderr, "");
+    assert.equal(conversation.exchanges.length, 3);
+    assert.equal(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
+    assert.notEqual(conversation.exchanges[1]?.conversation_id, conversation.exchanges[2]?.conversation_id);
 });

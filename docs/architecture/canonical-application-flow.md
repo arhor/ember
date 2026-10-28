@@ -176,25 +176,25 @@ meanings:
 No provider thread, Telegram chat, systemd unit, launchd job, process ID, or SDK session
 is a substitute for Ember continuity.
 
-## Default `ember`: bootstrap around the same conversation path
+## Default `ember`: local shell before runtime initialization
 
-Machine bootstrap is not a second cognition architecture.
+Bare launch opens an empty shell without provider invocation or conversation writes.
+`/setup` performs trusted explicit configuration; `/use --config PATH [--scope SCOPE]`
+selects a verified record for this process, validating its continuity binding under lease.
+The default scope is `relationship:<principal>`. Selection failure preserves the prior
+record; successful selection makes the next message start a fresh conversation.
 
-When plain `ember` runs with no default setup record,
-[`firstRun`](../../apps/cli/src/setup.ts) asks only for the choices required to
-create or restore continuity and select a cognition provider. It then calls
-[`bootstrapContinuity`](../../packages/application/src/app/bootstrap.ts), which verifies cognition and
-activates the continuity. After successful activation, the same process continues into
-`runConfigured`, composes the ordinary CLI application, and consumes the first real
-user message through `runCliSurface -> EmberApplication.interact`.
+Help, setup, diagnostics, Markdown editing and lock recovery execute locally before
+runtime composition. They never become model messages. A runtime batch ends and closes
+its services before another local operation, then later conversational input composes
+the selected application again. Ordinary conversation membership persists across these
+batches through the shell's fresh-conversation boundary.
 
-When the default setup record already exists, plain `ember` skips first-run prompts,
-calls `prepareConfiguredRun`, composes the same CLI application, and resumes the
-configured relationship scope.
-
-Explicit `ember setup` and `ember run --config ... --scope ...` remain operator
-interfaces for scripted setup, recovery, nondefault configuration, and explicit scope
-selection. They do not define alternate ordinary cognition paths.
+Unconfigured messages suggest `/setup` and are discarded without replay. The first
+accepted message starts fresh recent context while adopted memory persists. Subsequent
+messages continue the conversation until `/new-conversation` or successful `/use`.
+Raw initialization and provider launches and all process subcommands are retired;
+piped stdin still accepts shell lines. See [ADR 0041](decisions/0041-use-the-shell-as-the-only-cli-command-interface.md).
 
 ## Telegram setup is an explicit operator procedure
 

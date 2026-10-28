@@ -1,6 +1,6 @@
 # Interactive shell and setup
 
-Decision owner: [ADR 0040](../architecture/decisions/0040-open-an-empty-shell-and-configure-explicitly.md).
+Decision owner: [ADR 0041](../architecture/decisions/0041-use-the-shell-as-the-only-cli-command-interface.md).
 
 Launch Ember to open an empty shell. Chat begins on the first message, with fresh recent
 context and retained durable identity and memory. /new-conversation starts another fresh
@@ -28,11 +28,39 @@ Use explicit flags to reconcile or change configuration:
     /setup --intent use-existing
     /setup --intent use-existing --provider codex --confirm-provider-change
 
-Process commands remain available for scripting and recovery:
+Launch `ember` first, then enter local commands:
 
-    ember setup --intent create-new --principal user-1 --provider codex
-    ember setup --intent restore-existing --state /absolute/state.json --provider codex --accept-continuity-risk
-    ember run --config /absolute/setup.json --scope relationship:user-1
+    /setup --intent create-new --principal user-1 --provider codex
+    /setup --intent restore-existing --state /absolute/state.json --provider codex --accept-continuity-risk
+    /use --config /absolute/setup.json --scope relationship:user-1
+
+`/use` selects a verified setup for this process. Omitted scope defaults to
+`relationship:<principal>`. Failed selection preserves the prior setup; success starts
+fresh context on the next message. `/setup` targets the selected config unless
+`--config` explicitly overrides it. Configuring another path does not select it.
+Raw `init`, `run`, and all process subcommands have been removed. Startup accepts
+only standalone `--help`/`-h` or `--diagnostics`.
+
+## Diagnostics, editing and recovery
+
+Use `/inspect --state PATH --principal USER [--json]`, `/explain ID --state PATH
+--principal USER`, or `/correct ID --state PATH --principal USER --text TEXT --reason
+REASON`. `/supersede` and `/ask --explain` remain distinct session operations.
+
+`/materialize --state PATH --principal USER --scope SCOPE --output DIRECTORY` exports
+Markdown. `/apply-materialized-edits --state PATH --principal USER --scope SCOPE
+--input DIRECTORY --approval-evidence ID` imports edits with one distinct attributable
+approval evidence ID per edit. Existing evidence and currentness checks still apply.
+
+`/check --state PATH`, `/lock-status --state PATH`, and `/quarantine-stale-lock --state
+PATH --owner-token TOKEN --confirm-quiescent` work without a ready provider or selected
+setup. Never quarantine a lock until its previous owner is known to be quiescent.
+All local commands accept colon aliases; `/help` lists commands and command-specific
+`--help` prints their options without initializing a runtime.
+
+Piped stdin remains supported; send the same slash commands as terminal input.
+A handled command error prints a diagnostic and the shell continues. Final status 0
+means the shell exited normally, not that every submitted command succeeded.
 
 Default configuration is ~/.ember/config/setup.json; default continuity is
 ~/.ember/state/continuity.json. Never enter reusable credentials into chat.

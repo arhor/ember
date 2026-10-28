@@ -19,3 +19,5 @@ export function bindCommandIo(
     });
     return command;
 }
+
+export { Command, Option, InvalidArgumentError } from "commander";

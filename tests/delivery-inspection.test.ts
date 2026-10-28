@@ -1,5 +1,4 @@
 import { createEmberApplication } from "@ember/application/app/application.ts";
-import { main as cliMain } from "@ember/cli";
 import { composeEmberApplication } from "@ember/composition/ember.ts";
 import { initialState } from "@ember/domain/model.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
@@ -9,6 +8,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
+
+import { fixtureMain as cliMain } from "./support.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";
