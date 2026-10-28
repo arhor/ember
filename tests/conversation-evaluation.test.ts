@@ -1,10 +1,10 @@
+import { RECENT_DIALOGUE_MAX_EXCHANGES } from "@ember/domain/conversation-context.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
 import { loadConversationScenario, runConversationScenario } from "../eval/conversation/harness.ts";
-import { RECENT_DIALOGUE_MAX_EXCHANGES } from "../packages/core/src/conversation-context.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "conversation", "fixtures", "conversational-coherence.json");

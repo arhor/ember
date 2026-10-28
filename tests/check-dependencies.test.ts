@@ -126,12 +126,13 @@ test("dependency checker should resolve workspace package imports", () => {
     assert.equal(
         dependencyViolations(
             "apps/cli/surface.ts",
-            'import { composeEmberApplication } from "@ember/core/composition/ember.ts";',
+            'import { composeEmberApplication } from "@ember/composition/ember.ts";',
         ).length,
         1,
     );
     assert.equal(
-        dependencyViolations("ai/cognition.ts", 'import { runCliSurface } from "@ember/cli/surface.ts";').length,
+        dependencyViolations("packages/ai-sdk/cognition.ts", 'import { runCliSurface } from "@ember/cli/surface.ts";')
+            .length,
         1,
     );
 });
@@ -141,4 +142,68 @@ test("dependency checker should reject direct dependencies between concrete apps
         dependencyViolations("apps/cli/setup.ts", 'import { runTelegramPolling } from "@ember/telegram";').length,
         1,
     );
+});
+
+test("dependency checker should reject outward imports when new packages use infrastructure", () => {
+    // Given
+    const cases = [
+        ["packages/engine/default-agent.ts", "@ember/persistence"],
+        ["packages/application/application.ts", "@ember/composition"],
+        ["packages/domain/model.ts", "@ember/engine"],
+        ["packages/engine/default-agent.ts", "../../core/src/model.ts"],
+        ["packages/engine/default-agent.ts", "@ember/telegram"],
+        ["apps/cli/surface.ts", "@ember/composition"],
+        ["apps/telegram/surface.ts", "@ember/persistence"],
+    ] as const;
+
+    // When
+    const results = cases.map(([owner, target]) => dependencyViolations(owner, `import { value } from "${target}";`));
+
+    // Then
+    for (const result of results) assert.ok(result.length > 0);
+});
+
+test("dependency checker should allow inward imports when adapters implement consumer contracts", () => {
+    // Given
+    const cases = [
+        ["packages/engine/default-agent.ts", "@ember/agent"],
+        ["packages/persistence/state-store.ts", "@ember/application/repositories.ts"],
+        ["packages/ai-sdk/cognition.ts", "@ember/application/cognition.ts"],
+        ["packages/composition/ember.ts", "@ember/persistence"],
+        ["packages/domain/projection.ts", "./model.ts"],
+        ["packages/application/application.ts", "@ember/domain/model.ts"],
+    ] as const;
+
+    // When
+    const results = cases.flatMap(([owner, target]) =>
+        dependencyViolations(owner, `import type { Value } from "${target}";`),
+    );
+
+    // Then
+    assert.deepEqual(results, []);
+});
+
+test("dependency checker should reject SDK coupling when generic packages import provider machinery", () => {
+    // Given
+    const owners = [
+        "packages/agent/types.ts",
+        "packages/engine/executor.ts",
+        "packages/domain/model.ts",
+        "packages/application/contract.ts",
+    ];
+
+    // When
+    const results = owners.map((owner) => dependencyViolations(owner, 'import type { ModelMessage } from "ai";'));
+
+    // Then
+    for (const result of results) assert.ok(result.length > 0);
+});
+
+test("dependency checker should reject retired core imports when root entry points reference them", () => {
+    // Given
+    const source = 'import { legacy } from "@ember/core/model.ts";';
+    // When
+    const violations = dependencyViolations("bin/ember-runtime.ts", source);
+    // Then
+    assert.ok(violations.some((message) => message.includes("legacy core is retired")));
 });

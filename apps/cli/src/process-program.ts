@@ -1,5 +1,5 @@
-import { MAX_AI_TIMEOUT_SECONDS } from "@ember/core/ai/contract.ts";
-import { ValidationError } from "@ember/core/errors.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "@ember/application/ai/contract.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
 import { Command, InvalidArgumentError, Option } from "commander";
 
 import type {

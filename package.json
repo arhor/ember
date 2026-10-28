@@ -6,7 +6,7 @@
   "scripts": {
     "check": "pnpm fmt:check && pnpm lint && tsc -p tsconfig.json && pnpm test:types && pnpm check:dependencies",
     "check:dependencies": "node scripts/check-dependencies.ts",
-    "test": "node --test \"apps/**/*.test.ts\" \"tests/*.test.ts\"",
+    "test": "node --test \"packages/**/*.test.ts\" \"apps/**/*.test.ts\" \"tests/*.test.ts\"",
     "serve": "node --env-file-if-exists=.env.local apps/cli/bin/ember.ts --diagnostics",
     "runtime:episodic": "node --env-file-if-exists=.env.local bin/ember-runtime.ts",
     "surface:telegram": "node --env-file-if-exists=.env.local apps/telegram/bin/ember-telegram.ts",
@@ -44,11 +44,21 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "test:types": "tsc -p packages/agent/tsconfig.test.json"
   },
   "dependencies": {
+    "@ember/agent": "workspace:*",
+    "@ember/ai-sdk": "workspace:*",
+    "@ember/application": "workspace:*",
     "@ember/cli": "workspace:*",
-    "@ember/core": "workspace:*",
+    "@ember/composition": "workspace:*",
+    "@ember/domain": "workspace:*",
+    "@ember/engine": "workspace:*",
+    "@ember/google-calendar": "workspace:*",
+    "@ember/host": "workspace:*",
+    "@ember/mcp": "workspace:*",
+    "@ember/persistence": "workspace:*",
     "@ember/telegram": "workspace:*",
     "ai": "7.0.153",
     "ai-sdk-provider-claude-code": "4.3.1"

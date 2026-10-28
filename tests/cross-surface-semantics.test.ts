@@ -1,7 +1,17 @@
+import type { AiExecutor, AiExecutionRequest } from "@ember/application/ai/contract.ts";
 import type { TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
 
 import { main as cliMain } from "@ember/cli";
 import { runCliSurface } from "@ember/cli/surface.ts";
+import { composeCliSurface } from "@ember/composition/cli.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
+import { rememberFact } from "@ember/domain/semantics.ts";
+import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 import { TELEGRAM_SURFACE_ID } from "@ember/telegram";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -10,17 +20,6 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { AiExecutor, AiExecutionRequest } from "../packages/core/src/ai/contract.ts";
-
-import { composeCliSurface } from "../packages/core/src/composition/cli.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { createOnboardingWork } from "../packages/core/src/onboarding-work.ts";
-import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";
-import { MemoryProposalGenerationStore } from "../packages/core/src/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { InteractionLedgerStore } from "../packages/core/src/runtime/interaction-boundary.ts";
-import { rememberFact } from "../packages/core/src/semantics.ts";
 import { processTelegramUpdate, runTelegramPolling } from "./support-telegram-surface.ts";
 
 const PRINCIPAL = "max";

@@ -1,0 +1,548 @@
+import type { AiExecutor, AiStreamObserver } from "@ember/application/ai/contract.ts";
+import type { ProviderFailureCategory } from "@ember/domain/errors.ts";
+import type { CognitionId } from "@ember/domain/model.ts";
+import type { CallWarning, LanguageModel, LanguageModelUsage } from "ai";
+
+import {
+    AI_EXECUTION_CONTRACT_VERSION,
+    MAX_AI_TIMEOUT_SECONDS,
+    validateAiExecutionResult,
+} from "@ember/application/ai/contract.ts";
+import { createCapabilityExecutionFirewall } from "@ember/domain/capabilities/execution.ts";
+import { ProviderError } from "@ember/domain/errors.ts";
+import { isObject } from "@ember/domain/util.ts";
+import {
+    AISDKError,
+    APICallError,
+    generateText,
+    InvalidResponseDataError,
+    InvalidToolInputError,
+    isStepCount,
+    JSONParseError,
+    jsonSchema,
+    MissingToolResultsError,
+    NoContentGeneratedError,
+    NoObjectGeneratedError,
+    NoOutputGeneratedError,
+    NoSuchToolError,
+    Output,
+    RetryError,
+    streamText,
+    tool,
+    ToolCallRepairError,
+    ToolChoiceViolationError,
+    TypeValidationError,
+} from "ai";
+
+interface AiSdkProviderOutput {
+    contractVersion: 1;
+    reply: string;
+    usedMeaningIds: string[];
+}
+
+export type InferenceFinishReason =
+    | "stop"
+    | "length"
+    | "content-filter"
+    | "tool-calls"
+    | "error"
+    | "other"
+    | "interrupted";
+
+export interface InferenceUsageEvidence {
+    inputTokens?: number;
+    inputNoCacheTokens?: number;
+    inputCacheReadTokens?: number;
+    inputCacheWriteTokens?: number;
+    outputTokens?: number;
+    outputTextTokens?: number;
+    outputReasoningTokens?: number;
+    totalTokens?: number;
+}
+
+export type InferenceWarningEvidence =
+    | { type: "unsupported" | "compatibility"; feature: string }
+    | { type: "deprecated"; setting: string }
+    | { type: "other" };
+
+export type InferenceFailureCategory = ProviderFailureCategory;
+
+export type InferenceEvidence =
+    | {
+          kind: "inference_started";
+          cognitionId: CognitionId;
+          provider: string;
+          modelId: string;
+          retryLimit: number;
+      }
+    | {
+          kind: "model_step_completed";
+          cognitionId: CognitionId;
+          stepNumber: number;
+          provider: string;
+          modelId: string;
+          responseModelId?: string;
+          finishReason: InferenceFinishReason;
+          rawFinishReason?: string;
+          usage: InferenceUsageEvidence;
+          warnings: InferenceWarningEvidence[];
+      }
+    | {
+          kind: "tool_dispatch_started";
+          cognitionId: CognitionId;
+          capability: string;
+      }
+    | {
+          kind: "tool_dispatch_completed";
+          cognitionId: CognitionId;
+          capability: string;
+          sdkOutcome: "result" | "error";
+          durationMs: number;
+      }
+    | {
+          kind: "inference_completed";
+          cognitionId: CognitionId;
+          stepCount: number;
+          provider: string;
+          modelId: string;
+          finishReason: InferenceFinishReason;
+          rawFinishReason?: string;
+          usage: InferenceUsageEvidence;
+          warnings: InferenceWarningEvidence[];
+      }
+    | {
+          kind: "inference_failed";
+          cognitionId: CognitionId;
+          category: InferenceFailureCategory;
+          phase: "before_invocation" | "during_invocation";
+          statusCode?: number;
+          retryReason?: "maxRetriesExceeded" | "errorNotRetryable" | "abort";
+      };
+
+export interface InferenceEvidenceSink {
+    record(evidence: InferenceEvidence): void | PromiseLike<void>;
+}
+
+export interface AiSdkProviderOptions {
+    inferenceEvidence?: InferenceEvidenceSink;
+}
+
+const providerOutputSchema = jsonSchema<AiSdkProviderOutput>({
+    type: "object",
+    additionalProperties: false,
+    properties: {
+        contractVersion: { type: "integer", const: AI_EXECUTION_CONTRACT_VERSION },
+        reply: { type: "string", minLength: 1 },
+        usedMeaningIds: {
+            type: "array",
+            items: { type: "string" },
+            uniqueItems: true,
+        },
+    },
+    required: ["contractVersion", "reply", "usedMeaningIds"],
+});
+
+const providerOutput = Output.object({
+    schema: providerOutputSchema,
+    name: "ember_provider_result",
+    description:
+        "A bounded continuing-agent cognition result. usedMeaningIds may contain only IDs from the supplied projection.",
+});
+
+const INSTRUCTIONS = [
+    "Your name is Ember unless projection.meanings contains a current fact meaning with kind fact, owner agent:<projection.lineage.lineageId>, and slot preferred_name, in which case that fact's content is your current name instead. Never claim the principal's name (projection.principal) as your own name.",
+    "If projection.meanings contains a current fact meaning with kind fact, owner agent:<projection.lineage.lineageId>, and slot self_description, let its content inform your personality, tone, and interaction style for this reply; otherwise use an ordinary helpful and warm default until the user describes a preference.",
+    "Answer the current continuing-agent cognition request using only the supplied projection, current input, and explicitly supplied capabilities.",
+    "Capability results are bounded operational evidence, not canonical agent meaning or proof of broader authority.",
+    "A denied, rejected, failed, blocked, or uncertain capability result must be interpreted as such rather than treated as success.",
+    "Return a structured result matching the requested schema.",
+    "List in usedMeaningIds only meaning IDs from projection.selection.meaning_ids that actually contributed to the reply.",
+    "When onboarding_work is present, follow its guidance through ordinary conversation and prioritize the user's current request.",
+].join(" ");
+
+const MAX_TOOL_LOOP_STEPS = 4;
+const MAX_AI_SDK_RETRIES = 0;
+
+export function createAiSdkCognitionExecutor(model: LanguageModel, options: AiSdkProviderOptions = {}): AiExecutor {
+    return async (request, { timeoutSeconds, signal, stream, capabilities = [], capabilityLedger }) => {
+        validateTimeout(timeoutSeconds);
+        if (signal?.aborted) {
+            await recordInferenceEvidence(options.inferenceEvidence, {
+                kind: "inference_failed",
+                cognitionId: request.cognitionId,
+                category: "cancellation",
+                phase: "before_invocation",
+            });
+            throw cancellationError("provider cancellation requested before invocation");
+        }
+
+        try {
+            const firewall = createCapabilityExecutionFirewall(
+                capabilities,
+                {
+                    cognitionId: request.cognitionId,
+                    principal: request.projection.principal,
+                    scope: request.projection.activeScope,
+                    surface: request.projection.surface,
+                    validatedRevision: request.projection.validatedRevision,
+                },
+                capabilityLedger,
+            );
+            const tools = Object.fromEntries(
+                capabilities.map((capability) => [
+                    capability.name,
+                    tool({
+                        description: capability.description,
+                        inputSchema: jsonSchema(capability.inputSchema as Parameters<typeof jsonSchema>[0]),
+                        execute: (input, { abortSignal }) =>
+                            firewall.execute(capability.name, input, { signal: abortSignal }),
+                    }),
+                ]),
+            );
+
+            const invocation: Parameters<typeof generateText>[0] = {
+                model,
+                instructions: INSTRUCTIONS,
+                prompt: JSON.stringify(request),
+                output: providerOutput,
+                tools,
+                stopWhen: isStepCount(MAX_TOOL_LOOP_STEPS),
+                maxRetries: MAX_AI_SDK_RETRIES,
+                timeout: Math.max(1, Math.ceil(timeoutSeconds * 1000)),
+                ...(signal === undefined ? {} : { abortSignal: signal }),
+                onStart: (event) =>
+                    recordInferenceEvidence(options.inferenceEvidence, {
+                        kind: "inference_started",
+                        cognitionId: request.cognitionId,
+                        provider: event.provider,
+                        modelId: event.modelId,
+                        retryLimit: event.maxRetries,
+                    }),
+                onStepEnd: (event) =>
+                    recordInferenceEvidence(options.inferenceEvidence, {
+                        kind: "model_step_completed",
+                        cognitionId: request.cognitionId,
+                        stepNumber: event.stepNumber,
+                        provider: event.model.provider,
+                        modelId: event.model.modelId,
+                        ...(event.response.modelId ? { responseModelId: event.response.modelId } : {}),
+                        finishReason: event.finishReason,
+                        ...(event.rawFinishReason ? { rawFinishReason: event.rawFinishReason } : {}),
+                        usage: usageEvidence(event.usage),
+                        warnings: warningEvidence(event.warnings),
+                    }),
+                onToolExecutionStart: (event) =>
+                    recordInferenceEvidence(options.inferenceEvidence, {
+                        kind: "tool_dispatch_started",
+                        cognitionId: request.cognitionId,
+                        capability: event.toolCall.toolName,
+                    }),
+                onToolExecutionEnd: (event) =>
+                    recordInferenceEvidence(options.inferenceEvidence, {
+                        kind: "tool_dispatch_completed",
+                        cognitionId: request.cognitionId,
+                        capability: event.toolCall.toolName,
+                        sdkOutcome: event.toolOutput.type === "tool-error" ? "error" : "result",
+                        durationMs: Math.max(0, Math.round(event.toolExecutionMs)),
+                    }),
+                onEnd: (event) =>
+                    recordInferenceEvidence(options.inferenceEvidence, {
+                        kind: "inference_completed",
+                        cognitionId: request.cognitionId,
+                        stepCount: event.steps.length,
+                        provider: event.model.provider,
+                        modelId: event.model.modelId,
+                        finishReason: event.finishReason,
+                        ...(event.rawFinishReason ? { rawFinishReason: event.rawFinishReason } : {}),
+                        usage: usageEvidence(event.usage),
+                        warnings: warningEvidence(event.warnings),
+                    }),
+            };
+
+            let candidate: unknown;
+            let providerMetadata: unknown;
+            if (stream === undefined) {
+                const result = await generateText(invocation);
+                candidate = result.output;
+                providerMetadata = result.providerMetadata;
+            } else {
+                const result = await invokeStreaming(invocation, stream, signal);
+                candidate = result.candidate;
+                providerMetadata = result.providerMetadata;
+            }
+            if (isObject(candidate) && "operational" in candidate)
+                throw new ProviderError("model-authored output cannot contain operational evidence");
+            validateAiExecutionResult(candidate, new Set(request.projection.selection.meaning_ids));
+            const externalThreadId = externalThreadIdFromProviderMetadata(providerMetadata);
+            const executionResult =
+                externalThreadId === undefined ? candidate : { ...candidate, operational: { externalThreadId } };
+            validateAiExecutionResult(executionResult, new Set(request.projection.selection.meaning_ids));
+            return executionResult;
+        } catch (error) {
+            if (error instanceof ProviderError) {
+                throw error;
+            }
+            const translated = translateAiSdkFailure(error, signal);
+            await recordInferenceEvidence(options.inferenceEvidence, {
+                kind: "inference_failed",
+                cognitionId: request.cognitionId,
+                category: translated.category,
+                phase: "during_invocation",
+                ...(translated.statusCode === undefined ? {} : { statusCode: translated.statusCode }),
+                ...(translated.retryReason === undefined ? {} : { retryReason: translated.retryReason }),
+            });
+            throw translated.error;
+        }
+    };
+}
+
+async function invokeStreaming(
+    invocation: Parameters<typeof generateText>[0],
+    observer: AiStreamObserver,
+    signal?: AbortSignal,
+): Promise<{ candidate: unknown; providerMetadata: unknown }> {
+    let streamFailure: unknown;
+    let streamAborted = false;
+    const result = streamText({
+        ...invocation,
+        onAbort: () => {
+            streamAborted = true;
+        },
+        onError: ({ error }) => {
+            streamFailure ??= error;
+        },
+    });
+    let previousText: string | undefined;
+    for await (const partialOutput of result.partialOutputStream) {
+        const text = (partialOutput as Partial<AiSdkProviderOutput>).reply;
+        if (typeof text !== "string" || text.length === 0 || text === previousText) {
+            continue;
+        }
+        previousText = text;
+        await recordAiStreamObservation(observer, text);
+    }
+    if (streamAborted && signal?.aborted) {
+        throw signal.reason ?? new DOMException("provider invocation aborted", "AbortError");
+    }
+    if (streamFailure !== undefined) {
+        throw streamFailure;
+    }
+    return { candidate: await result.output, providerMetadata: await result.providerMetadata };
+}
+
+function externalThreadIdFromProviderMetadata(metadata: unknown): string | undefined {
+    if (!isObject(metadata)) return undefined;
+    for (const provider of [metadata.codex, metadata.cursor]) {
+        if (isObject(provider) && typeof provider.externalThreadId === "string") return provider.externalThreadId;
+    }
+    return undefined;
+}
+
+function validateTimeout(timeoutSeconds: number) {
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
+        throw new ProviderError("provider timeout must be a positive finite number");
+    if (timeoutSeconds > MAX_AI_TIMEOUT_SECONDS)
+        throw new ProviderError(`provider timeout must not exceed ${MAX_AI_TIMEOUT_SECONDS} seconds`);
+}
+
+function translateAiSdkFailure(
+    error: unknown,
+    signal?: AbortSignal,
+): {
+    error: ProviderError;
+    category: InferenceFailureCategory;
+    statusCode?: number;
+    retryReason?: "maxRetriesExceeded" | "errorNotRetryable" | "abort";
+} {
+    if (isTimeoutFailure(error)) {
+        return {
+            error: new ProviderError("provider timed out", { outcome: "timed_out", category: "timeout" }),
+            category: "timeout",
+        };
+    }
+
+    if (isCancellationFailure(error, signal)) {
+        return {
+            error: cancellationError("provider cancellation requested during invocation"),
+            category: "cancellation",
+        };
+    }
+
+    if (APICallError.isInstance(error)) {
+        const status = error.statusCode;
+        return {
+            error: new ProviderError(
+                status === undefined
+                    ? "AI SDK provider API call failed"
+                    : `AI SDK provider API call failed (HTTP ${status})`,
+                {
+                    cause: error,
+                    category: "provider_api",
+                    ...(status === undefined ? {} : { statusCode: status }),
+                },
+            ),
+            category: "provider_api",
+            ...(status === undefined ? {} : { statusCode: status }),
+        };
+    }
+
+    if (RetryError.isInstance(error)) {
+        const status = APICallError.isInstance(error.lastError) ? error.lastError.statusCode : undefined;
+        return {
+            error: new ProviderError("AI SDK provider request exhausted its retry policy", {
+                cause: error.lastError,
+                category: "retry_exhausted",
+                ...(status === undefined ? {} : { statusCode: status }),
+            }),
+            category: "retry_exhausted",
+            retryReason: error.reason,
+            ...(status === undefined ? {} : { statusCode: status }),
+        };
+    }
+
+    if (
+        NoOutputGeneratedError.isInstance(error) ||
+        NoObjectGeneratedError.isInstance(error) ||
+        NoContentGeneratedError.isInstance(error) ||
+        TypeValidationError.isInstance(error) ||
+        JSONParseError.isInstance(error) ||
+        InvalidResponseDataError.isInstance(error)
+    ) {
+        return {
+            error: new ProviderError("AI SDK provider produced invalid structured output", {
+                category: "invalid_output",
+            }),
+            category: "invalid_output",
+        };
+    }
+
+    if (
+        InvalidToolInputError.isInstance(error) ||
+        NoSuchToolError.isInstance(error) ||
+        ToolCallRepairError.isInstance(error) ||
+        ToolChoiceViolationError.isInstance(error) ||
+        MissingToolResultsError.isInstance(error)
+    ) {
+        return {
+            error: new ProviderError("AI SDK rejected an invalid tool call", { category: "invalid_tool_call" }),
+            category: "invalid_tool_call",
+        };
+    }
+
+    if (AISDKError.isInstance(error)) {
+        return {
+            error: new ProviderError("AI SDK provider failed", { cause: error, category: "unknown" }),
+            category: "unknown",
+        };
+    }
+
+    return {
+        error: new ProviderError(`AI SDK provider failed: ${errorMessage(error)}`, {
+            cause: error,
+            category: "unknown",
+        }),
+        category: "unknown",
+    };
+}
+
+function cancellationError(message: string) {
+    return new ProviderError(message, {
+        outcome: "cancellation_requested",
+        termination: { reason: "explicit_cancellation", directChildExitObserved: false },
+        category: "cancellation",
+    });
+}
+
+function isTimeoutFailure(error: unknown): boolean {
+    if (error instanceof DOMException && error.code === DOMException.TIMEOUT_ERR) {
+        return true;
+    }
+    if (RetryError.isInstance(error) && error.lastError !== error) {
+        return isTimeoutFailure(error.lastError);
+    }
+    if (AISDKError.isInstance(error) && error.cause !== error) {
+        return isTimeoutFailure(error.cause);
+    }
+    return false;
+}
+
+function isCancellationFailure(error: unknown, signal?: AbortSignal): boolean {
+    if (!signal?.aborted) {
+        return false;
+    }
+    if (error === signal.reason) {
+        return true;
+    }
+    if (error instanceof DOMException && error.code === DOMException.ABORT_ERR) {
+        return true;
+    }
+    if (RetryError.isInstance(error)) {
+        if (error.reason === "abort") {
+            return true;
+        }
+        if (error.lastError !== error) {
+            return isCancellationFailure(error.lastError, signal);
+        }
+    }
+    if (AISDKError.isInstance(error) && error.cause !== error) {
+        return isCancellationFailure(error.cause, signal);
+    }
+    return false;
+}
+
+function usageEvidence(usage: LanguageModelUsage): InferenceUsageEvidence {
+    return {
+        ...(usage.inputTokens === undefined ? {} : { inputTokens: usage.inputTokens }),
+        ...(usage.inputTokenDetails.noCacheTokens === undefined
+            ? {}
+            : { inputNoCacheTokens: usage.inputTokenDetails.noCacheTokens }),
+        ...(usage.inputTokenDetails.cacheReadTokens === undefined
+            ? {}
+            : { inputCacheReadTokens: usage.inputTokenDetails.cacheReadTokens }),
+        ...(usage.inputTokenDetails.cacheWriteTokens === undefined
+            ? {}
+            : { inputCacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens }),
+        ...(usage.outputTokens === undefined ? {} : { outputTokens: usage.outputTokens }),
+        ...(usage.outputTokenDetails.textTokens === undefined
+            ? {}
+            : { outputTextTokens: usage.outputTokenDetails.textTokens }),
+        ...(usage.outputTokenDetails.reasoningTokens === undefined
+            ? {}
+            : { outputReasoningTokens: usage.outputTokenDetails.reasoningTokens }),
+        ...(usage.totalTokens === undefined ? {} : { totalTokens: usage.totalTokens }),
+    };
+}
+
+function warningEvidence(warnings: readonly CallWarning[] | undefined): InferenceWarningEvidence[] {
+    return (warnings ?? []).map((warning) => {
+        switch (warning.type) {
+            case "unsupported":
+            case "compatibility":
+                return { type: warning.type, feature: warning.feature };
+            case "deprecated":
+                return { type: warning.type, setting: warning.setting };
+            case "other":
+                return { type: warning.type };
+        }
+    });
+}
+
+async function recordInferenceEvidence(sink: InferenceEvidenceSink | undefined, evidence: InferenceEvidence) {
+    try {
+        await sink?.record(evidence);
+    } catch {
+        // Diagnostics must not change cognition semantics or provider outcomes.
+    }
+}
+
+async function recordAiStreamObservation(observer: AiStreamObserver, text: string) {
+    try {
+        await observer.observe({ kind: "provisional_text_snapshot", text });
+    } catch {
+        // Provisional presentation failures must not change final cognition semantics.
+    }
+}
+
+function errorMessage(error: unknown) {
+    return error instanceof Error ? error.message : String(error);
+}

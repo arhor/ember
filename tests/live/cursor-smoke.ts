@@ -1,17 +1,16 @@
 #!/usr/bin/env node
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { createCursorLanguageModel } from "@ember/ai-sdk/cursor.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { rememberFact, rememberPreference, rememberRelationship } from "@ember/domain/semantics.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-import { createAiSdkCognitionExecutor } from "../../packages/core/src/ai/cognition.ts";
-import { createCursorLanguageModel } from "../../packages/core/src/ai/cursor.ts";
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { rememberFact, rememberPreference, rememberRelationship } from "../../packages/core/src/semantics.ts";
 
 const principal = "user-1";
 const scope = `relationship:${principal}`;

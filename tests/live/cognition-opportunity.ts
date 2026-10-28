@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
+import { createCodexOpportunityEvaluator } from "@ember/ai-sdk/codex-opportunity.ts";
+import { evaluateCognitionOpportunity } from "@ember/application/agency/cognition-opportunity.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { undertake } from "@ember/domain/semantics.ts";
 import assert from "node:assert/strict";
-
-import { evaluateCognitionOpportunity } from "../../packages/core/src/agency/cognition-opportunity.ts";
-import { createCodexOpportunityEvaluator } from "../../packages/core/src/ai/codex-opportunity.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { startRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { undertake } from "../../packages/core/src/semantics.ts";
 
 if (process.env.EMBER_RUN_LIVE_ENDOGENOUS !== "1") {
     process.stderr.write(

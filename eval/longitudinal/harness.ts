@@ -1,15 +1,12 @@
-import { readFile } from "node:fs/promises";
+import type { AiExecutionRequest, AiExecutionResult } from "@ember/application/ai/contract.ts";
+import type { EmberState, RuntimeId } from "@ember/domain/model.ts";
+import type { Projection } from "@ember/domain/projection.ts";
 
-import type { AiExecutionRequest, AiExecutionResult } from "../../packages/core/src/ai/contract.ts";
-import type { EmberState, RuntimeId } from "../../packages/core/src/model.ts";
-import type { Projection } from "../../packages/core/src/projection.ts";
-
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { initialState, validateState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { inspectionView } from "../../packages/core/src/projection.ts";
-import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState, validateState } from "@ember/domain/model.ts";
+import { inspectionView } from "@ember/domain/projection.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
 import {
     attachDetail,
     rememberDelegatedReport,
@@ -23,7 +20,9 @@ import {
     supersede,
     undertake,
     withholdDetail,
-} from "../../packages/core/src/semantics.ts";
+} from "@ember/domain/semantics.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { readFile } from "node:fs/promises";
 
 type ThreadControl = { mode: "fresh" } | { mode: "reuse"; episode: string };
 

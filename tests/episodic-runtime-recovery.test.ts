@@ -1,21 +1,11 @@
-import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import test from "node:test";
+import type { SpecialistEpisodeRecord } from "@ember/ai-sdk/codex-specialist.ts";
+import type { EpisodicRuntimeConfig } from "@ember/composition/runtime/episodic-runtime.ts";
+import type { CommandRunner } from "@ember/host/systemd.ts";
 
-import type { SpecialistEpisodeRecord } from "../packages/core/src/delegation/codex-specialist.ts";
-import type { CommandRunner } from "../packages/core/src/host/systemd.ts";
-import type { EpisodicRuntimeConfig } from "../packages/core/src/runtime/episodic-runtime.ts";
-
-import { runCognitionOpportunity } from "../packages/core/src/agency/cognition-opportunity.ts";
-import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { createSpecialistEpisode, inspectSpecialistEpisode } from "../packages/core/src/delegation/codex-specialist.ts";
-import { ConcurrentWriter } from "../packages/core/src/errors.ts";
-import { SystemdUserBackgroundHost } from "../packages/core/src/host/systemd.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
+import { createSpecialistEpisode, inspectSpecialistEpisode } from "@ember/ai-sdk/codex-specialist.ts";
+import { runCognitionOpportunity } from "@ember/application/agency/cognition-opportunity.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
 import {
     EpisodicRecordStore,
     inspectEpisodicRuntime,
@@ -23,7 +13,17 @@ import {
     runWakeWorker,
     scheduleWake,
     startSpecialistEpisode,
-} from "../packages/core/src/runtime/episodic-runtime.ts";
+} from "@ember/composition/runtime/episodic-runtime.ts";
+import { ConcurrentWriter } from "@ember/domain/errors.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { SystemdUserBackgroundHost } from "@ember/host/systemd.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import test from "node:test";
+
 import { captureError, PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 const OBSERVED_AT = "2026-09-04T16:00:00Z";

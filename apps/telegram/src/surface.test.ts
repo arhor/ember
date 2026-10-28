@@ -1,11 +1,11 @@
-import type { AiExecutor } from "@ember/core/ai/contract.ts";
-import type { EmberApplication } from "@ember/core/app/contract.ts";
+import type { AiExecutor } from "@ember/application/ai/contract.ts";
+import type { EmberApplication } from "@ember/application/app/contract.ts";
 
-import { initialState } from "@ember/core/model.ts";
-import { createOnboardingWork } from "@ember/core/onboarding-work.ts";
-import { OnboardingWorkStore } from "@ember/core/persistence/onboarding-work-store.ts";
-import { StateStore } from "@ember/core/persistence/state-store.ts";
-import { SurfaceDeliveryFailure } from "@ember/core/runtime/interaction-boundary.ts";
+import { SurfaceDeliveryFailure } from "@ember/application/runtime/interaction-boundary.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
+import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";

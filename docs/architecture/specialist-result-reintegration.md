@@ -20,7 +20,7 @@ The governing constraints remain [ADR 0002](decisions/0002-preserve-persistent-m
 
 ## Production decision path
 
-`../../packages/core/src/delegation` layers the issue-65 decision over the
+`../../packages/application/src/delegation` layers the issue-65 decision over the
 existing version-3 specialist episode record:
 
 1. **Hold the current canonical revision.** The caller supplies a `StateStore` and
@@ -172,7 +172,7 @@ outward action still requires its own current ADR-0004 authority check.
 
 ## Deterministic acceptance coverage
 
-`../../packages/core/src/delegation` covers:
+`../../packages/application/src/delegation` covers:
 
 - stale canonical Ember revision with no episode mutation;
 - current success withheld until a reasoned Ember acceptance;

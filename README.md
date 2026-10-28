@@ -46,32 +46,20 @@ verification, and recovery. Telegram configuration is a manual operator procedur
 
 ## Repository layout
 
-The production tree is organized by ownership:
+The workspace separates reusable agent contracts (`agent`), execution (`engine`), Ember
+semantics (`domain`), use-case coordination (`application`), filesystem adapters
+(`persistence`), providers (`ai-sdk`), capabilities (`mcp`, `google-calendar`), host
+infrastructure (`host`), and startup assembly (`composition`). CLI and Telegram are
+sibling applications over the same engine-backed Ember application.
 
-- `packages/core/src/app` owns the transport-neutral application contract, ordinary interaction coordination, cognition preparation
-  and execution coordination, post-turn work, bootstrap decisions, and application-level use cases;
-- `packages/core/src/composition` is the executable/bootstrap composition layer that assembles repositories, cognition execution,
-  capability selection, and concrete surface services;
-- `packages/core/src/ai` owns the Ember AI execution contract, Vercel AI SDK execution mechanics, bounded provider/model bridges,
-  structured control generation, and generic process compatibility mechanics;
-- `packages/core/src/core/` owns canonical state types, semantic operations, projections, runtime-episode semantics, and shared domain
-  errors;
-- `packages/core/src/runtime` owns focused operational runtime mechanics such as the interaction ledger, delivery reconciliation, and
-  episodic unattended execution;
-- `packages/core/src/persistence` owns durable filesystem-backed repositories and materializations;
-- `packages/core/src/integrations` owns concrete external capability and protocol adapters such as Google Calendar and MCP;
-- `packages/core/src/host` owns host/process/service-manager mechanics such as subprocess lifecycle, systemd, and launchd;
-- `apps/cli` and `apps/telegram` are self-contained workspace applications that own their executables,
-  package dependencies, and concrete interaction transports. Their conversational adapters receive an already composed
-  `EmberApplication` and keep transport-specific admission and delivery behavior;
-- `eval/` contains evaluation harnesses rather than production runtime code;
-- narrow module tests live beside the module they exercise, while cross-cutting acceptance and integration tests live under
-  `tests/`.
+Extensions register at startup through typed factories, hooks, events and cleanup.
+`scripts/check-dependencies.ts` enforces inward package dependencies. Root tests include
+package-local suites and cross-cutting tests; deterministic fixtures remain separate
+from live-provider evaluations.
 
-Conversational surfaces must not privately compose the production application, providers, AI SDK infrastructure, or
-canonical persistence. `scripts/check-dependencies.ts` enforces the high-value dependency rules in `pnpm check`.
-
-See [Source Layout and Surface Placement](docs/architecture/source-layout.md) for placement rules and dependency direction.
+See [Source Layout and Surface Placement](docs/architecture/source-layout.md) for the
+ownership map and [ADR 0039](docs/architecture/decisions/0039-separate-agent-contracts-engine-and-startup-composition.md)
+for the migration decision.
 
 ## Design and architecture
 

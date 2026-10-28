@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { invokeCodexProvider } from "@ember/ai-sdk/providers/codex.ts";
+import { invokeCursorProvider } from "@ember/ai-sdk/providers/cursor.ts";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,8 +9,6 @@ import { isAbsolute, join, resolve } from "node:path";
 
 import type { HarnessProvider } from "./harness.ts";
 
-import { invokeCodexProvider } from "../../packages/core/src/ai/providers/codex.ts";
-import { invokeCursorProvider } from "../../packages/core/src/ai/providers/cursor.ts";
 import { codexArgumentEvidence } from "./codex-argument-evidence.ts";
 import { loadLongitudinalScenario, runLongitudinalScenario } from "./harness.ts";
 

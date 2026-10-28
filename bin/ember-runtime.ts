@@ -1,16 +1,9 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
+import type { SpecialistEpisodeSpec } from "@ember/ai-sdk/codex-specialist.ts";
+import type { EpisodicRuntimeConfig } from "@ember/composition/runtime/episodic-runtime.ts";
+import type { SystemdHostConfig } from "@ember/host/systemd.ts";
 
-import type { SpecialistEpisodeSpec } from "../packages/core/src/delegation/codex-specialist.ts";
-import type { SystemdHostConfig } from "../packages/core/src/host/systemd.ts";
-import type { EpisodicRuntimeConfig } from "../packages/core/src/runtime/episodic-runtime.ts";
-
-import {
-    installSystemdUnit,
-    renderSystemdService,
-    SystemdUserBackgroundHost,
-} from "../packages/core/src/host/systemd.ts";
 import {
     inspectEpisodicRuntime,
     loadEpisodicRuntimeConfig,
@@ -19,7 +12,9 @@ import {
     runWakeWorker,
     scheduleWake,
     startSpecialistEpisode,
-} from "../packages/core/src/runtime/episodic-runtime.ts";
+} from "@ember/composition/runtime/episodic-runtime.ts";
+import { installSystemdUnit, renderSystemdService, SystemdUserBackgroundHost } from "@ember/host/systemd.ts";
+import { readFile } from "node:fs/promises";
 
 if (import.meta.main) {
     const controller = new AbortController();

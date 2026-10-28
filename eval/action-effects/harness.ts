@@ -1,23 +1,16 @@
-import { readFile } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import type { CapabilityExecutionEvidence } from "@ember/domain/capabilities/execution.ts";
 
-import type { CapabilityExecutionEvidence } from "../../packages/core/src/capabilities/execution.ts";
-
-import {
-    actionProposalConfirmation,
-    ActionProposalStore,
-} from "../../packages/core/src/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
-import { ValidationError } from "../../packages/core/src/errors.ts";
+import { createCapabilityExecutionFirewall } from "@ember/domain/capabilities/execution.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { exactKeys, isObject } from "@ember/domain/util.ts";
 import {
     createApprovedGoogleCalendarEventCapability,
     selectApprovedGoogleCalendarEventCapability,
-} from "../../packages/core/src/integrations/google-calendar/create.ts";
-import {
-    createGoogleCalendarCapability,
-    selectGoogleCalendarCapability,
-} from "../../packages/core/src/integrations/google-calendar/read.ts";
-import { exactKeys, isObject } from "../../packages/core/src/util.ts";
+} from "@ember/google-calendar/create.ts";
+import { createGoogleCalendarCapability, selectGoogleCalendarCapability } from "@ember/google-calendar/read.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "@ember/persistence/capabilities/action-proposal.ts";
+import { readFile } from "node:fs/promises";
+import { isAbsolute, join } from "node:path";
 
 const CASES = [
     "read-only-observation",

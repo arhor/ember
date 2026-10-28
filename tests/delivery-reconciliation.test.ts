@@ -1,23 +1,19 @@
+import type { AiExecutor } from "@ember/application/ai/contract.ts";
+
+import { createEmberApplication } from "@ember/application/app/application.ts";
+import {
+    interactionLedgerInspectionView,
+    reconcileSurfaceDelivery,
+} from "@ember/application/runtime/interaction-boundary.ts";
+import { composeEmberApplication, createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-
-import type { AiExecutor } from "../packages/core/src/ai/contract.ts";
-
-import { createEmberApplication } from "../packages/core/src/app/application.ts";
-import {
-    composeEmberApplication,
-    createFileBackedRepositoriesForState,
-} from "../packages/core/src/composition/ember.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import {
-    InteractionLedgerStore,
-    interactionLedgerInspectionView,
-    reconcileSurfaceDelivery,
-} from "../packages/core/src/runtime/interaction-boundary.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

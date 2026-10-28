@@ -1,8 +1,8 @@
-import type { EmberApplication } from "@ember/core/app/contract.ts";
-import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.ts";
+import type { EmberApplication } from "@ember/application/app/contract.ts";
+import type { SurfaceRepositories } from "@ember/application/app/surface-repositories.ts";
 import type { Readable, Writable } from "node:stream";
 
-import { EmberError, ValidationError } from "@ember/core/errors.ts";
+import { EmberError, ValidationError } from "@ember/domain/errors.ts";
 import { CommanderError } from "commander";
 import { createInterface } from "node:readline";
 

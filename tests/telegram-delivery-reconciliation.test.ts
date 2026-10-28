@@ -1,5 +1,17 @@
+import type { AiExecutor } from "@ember/application/ai/contract.ts";
+import type { ConfiguredProactiveContactPolicy } from "@ember/composition/agency/configured-proactive-contact-policy.ts";
+import type { ContactAttentionDecisionRecord } from "@ember/domain/agency/proactive-contact-attention-policy.ts";
 import type { ProactiveContactHandoffRevalidator, TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
 
+import { createEmberApplication } from "@ember/application/app/application.ts";
+import { SurfaceDeliveryFailure } from "@ember/application/runtime/interaction-boundary.ts";
+import { decideConfiguredProactiveContactHandoff } from "@ember/composition/agency/configured-proactive-contact-policy.ts";
+import { composeEmberApplication } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { rememberFact } from "@ember/domain/semantics.ts";
+import { ProactiveContactStore } from "@ember/persistence/agency/proactive-contact-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 import { createTelegramApi, deliverTelegramMessage, loadTelegramSurfaceConfig } from "@ember/telegram";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -7,18 +19,6 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 
-import type { ConfiguredProactiveContactPolicy } from "../packages/core/src/agency/configured-proactive-contact-policy.ts";
-import type { ContactAttentionDecisionRecord } from "../packages/core/src/agency/proactive-contact-attention-policy.ts";
-import type { AiExecutor } from "../packages/core/src/ai/contract.ts";
-
-import { decideConfiguredProactiveContactHandoff } from "../packages/core/src/agency/configured-proactive-contact-policy.ts";
-import { ProactiveContactStore } from "../packages/core/src/agency/proactive-contact-store.ts";
-import { createEmberApplication } from "../packages/core/src/app/application.ts";
-import { composeEmberApplication } from "../packages/core/src/composition/ember.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { InteractionLedgerStore, SurfaceDeliveryFailure } from "../packages/core/src/runtime/interaction-boundary.ts";
-import { rememberFact } from "../packages/core/src/semantics.ts";
 import {
     processTelegramUpdate,
     reconcileTelegramDeliveries,

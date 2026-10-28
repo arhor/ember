@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import type { TelegramSurfaceConfig, TelegramUpdate } from "@ember/telegram";
 
+import { SurfaceDeliveryFailure } from "@ember/application/runtime/interaction-boundary.ts";
 import { processTelegramUpdate } from "@ember/telegram";
 import { composeTelegramSurface } from "@ember/telegram";
 import { resolve } from "node:path";
-
-import { SurfaceDeliveryFailure } from "../../../packages/core/src/runtime/interaction-boundary.ts";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
 const PROVIDER = resolve(import.meta.dirname, "../providers/scripted-provider.ts");

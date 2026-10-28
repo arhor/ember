@@ -2,13 +2,7 @@ import type { CliCommandArgs } from "@ember/cli/model.ts";
 
 import { delegateArgv, isDefaultInteractiveSession } from "@ember/cli/main.ts";
 import { createProcessProgram } from "@ember/cli/process-program.ts";
-import { spawn } from "node:child_process";
-import { mkdtemp, readFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { Readable, Writable } from "node:stream";
-
-import { initialState } from "../packages/core/src/model.ts";
+import { initialState } from "@ember/domain/model.ts";
 import {
     attachDetail,
     rememberEpisode,
@@ -16,7 +10,12 @@ import {
     rememberPreference,
     rememberRelationship,
     undertake,
-} from "../packages/core/src/semantics.ts";
+} from "@ember/domain/semantics.ts";
+import { spawn } from "node:child_process";
+import { mkdtemp, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { Readable, Writable } from "node:stream";
 
 export const PRINCIPAL = "user-1";
 export const SCOPE = "project:ember/docs";

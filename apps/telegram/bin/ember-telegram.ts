@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ValidationError } from "@ember/core/errors.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
 
 import {
     composeTelegramSurface,
@@ -31,7 +31,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
         const args = parseArgs(argv);
         const config = await loadTelegramSurfaceConfig(args.config);
         if (args.command === "render-unit" || args.command.startsWith("service-")) {
-            const { telegramResidentHost } = await import("@ember/core/host/telegram-resident-host.ts");
+            const { telegramResidentHost } = await import("@ember/host/telegram-resident-host.ts");
             const host = await telegramResidentHost();
             if (args.command === "render-unit") {
                 process.stdout.write(host.render(telegramResidentLaunch(config, args.config)));
@@ -95,6 +95,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
             process.stdout.write("Telegram surface stopped\n");
             return 0;
         } finally {
+            await services.close();
             process.off("SIGINT", stop);
             process.off("SIGTERM", stop);
         }

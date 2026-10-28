@@ -1,24 +1,23 @@
-import { readFile } from "node:fs/promises";
-
-import type { AiExecutionRequest } from "../../packages/core/src/ai/contract.ts";
-import type { MemoryProposalCandidate } from "../../packages/core/src/memory-proposal.ts";
+import type { AiExecutionRequest } from "@ember/application/ai/contract.ts";
 import type {
     MemoryProposalGenerationOutcome,
     MemoryProposalGenerator,
     MemoryProposalGenerationRequest,
-} from "../../packages/core/src/memory/memory-proposal-generation.ts";
-import type { Meaning, MeaningId, RuntimeId } from "../../packages/core/src/model.ts";
+} from "@ember/application/memory/memory-proposal-generation.ts";
+import type { MemoryProposalCandidate } from "@ember/domain/memory-proposal.ts";
+import type { Meaning, MeaningId, RuntimeId } from "@ember/domain/model.ts";
 
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { prepareCognition } from "../../packages/core/src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../../packages/core/src/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { ValidationError } from "../../packages/core/src/errors.ts";
-import { initialState, isRfc3339Utc } from "../../packages/core/src/model.ts";
-import { MemoryProposalGenerationStore } from "../../packages/core/src/persistence/memory-proposal-generation-store.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { exactKeys, isObject } from "../../packages/core/src/util.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { prepareCognition } from "@ember/application/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "@ember/application/app/post-turn.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { initialState, isRfc3339Utc } from "@ember/domain/model.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { exactKeys, isObject } from "@ember/domain/util.ts";
+import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { readFile } from "node:fs/promises";
 
 export type ExpectedDecision = "adopted" | "rejected" | "invalid" | "no_proposal";
 

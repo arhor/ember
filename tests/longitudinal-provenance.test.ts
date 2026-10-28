@@ -1,14 +1,14 @@
+import type { AiExecutionResult } from "@ember/application/ai/contract.ts";
+import type { EvidenceId } from "@ember/domain/model.ts";
+import type { ProjectedMeaning } from "@ember/domain/projection.ts";
+
+import { initialState, validateState } from "@ember/domain/model.ts";
+import { findEvidence, findMeaning, rememberDelegatedReport } from "@ember/domain/semantics.ts";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutionResult } from "../packages/core/src/ai/contract.ts";
-import type { EvidenceId } from "../packages/core/src/model.ts";
-import type { ProjectedMeaning } from "../packages/core/src/projection.ts";
-
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { initialState, validateState } from "../packages/core/src/model.ts";
-import { findEvidence, findMeaning, rememberDelegatedReport } from "../packages/core/src/semantics.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "provenance-pressure.json");

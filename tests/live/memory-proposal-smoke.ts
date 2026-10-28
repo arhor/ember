@@ -1,19 +1,18 @@
 #!/usr/bin/env node
+import { createAiSdkMemoryProposalGenerator } from "@ember/ai-sdk/memory-proposals.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { prepareCognition } from "@ember/application/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "@ember/application/app/post-turn.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-import { createAiSdkMemoryProposalGenerator } from "../../packages/core/src/ai/memory-proposals.ts";
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { prepareCognition } from "../../packages/core/src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../../packages/core/src/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { MemoryProposalGenerationStore } from "../../packages/core/src/persistence/memory-proposal-generation-store.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime } from "../../packages/core/src/runtime-episode.ts";
 
 if (process.env.EMBER_RUN_LIVE_MEMORY_PROPOSAL !== "1") {
     process.stdout.write("skipped: set EMBER_RUN_LIVE_MEMORY_PROPOSAL=1 to run the live memory-proposal smoke\n");

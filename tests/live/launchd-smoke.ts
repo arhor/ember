@@ -1,3 +1,4 @@
+import { renderLaunchAgent } from "@ember/host/launchd.ts";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -5,8 +6,6 @@ import { access, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-
-import { renderLaunchAgent } from "../../packages/core/src/host/launchd.ts";
 
 const run = promisify(execFile);
 

@@ -1,16 +1,15 @@
 #!/usr/bin/env node
+import { createClaudeCodeExecutor } from "@ember/ai-sdk/claude-code.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { rememberFact, rememberPreference, rememberRelationship } from "@ember/domain/semantics.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-import { createClaudeCodeExecutor } from "../../packages/core/src/ai/claude-code.ts";
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { rememberFact, rememberPreference, rememberRelationship } from "../../packages/core/src/semantics.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = `relationship:${PRINCIPAL}`;

@@ -1,3 +1,7 @@
+import { explanationView, selectProjectionMeanings, stateProjectionMeaningReader } from "@ember/domain/projection.ts";
+import { supersede } from "@ember/domain/semantics.ts";
+import { buildStateMaterialization } from "@ember/domain/state-materialization.ts";
+import { renderMarkdownStateViews } from "@ember/persistence/persistence/markdown-state-materializer.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -13,14 +17,6 @@ import {
     querySemanticMemory,
     semanticMemoryExportReader,
 } from "../eval/graph-memory/semantic-export.ts";
-import { renderMarkdownStateViews } from "../packages/core/src/persistence/markdown-state-materializer.ts";
-import {
-    explanationView,
-    selectProjectionMeanings,
-    stateProjectionMeaningReader,
-} from "../packages/core/src/projection.ts";
-import { supersede } from "../packages/core/src/semantics.ts";
-import { buildStateMaterialization } from "../packages/core/src/state-materialization.ts";
 import { populatedState, PRINCIPAL, RELATIONSHIP_SCOPE, SCOPE } from "./support.ts";
 
 test("semantic export preserves Markdown v1 while graph uses the same representation-neutral query seam", () => {

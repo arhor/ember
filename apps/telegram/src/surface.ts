@@ -1,8 +1,8 @@
-import type { ContactAttentionDecisionRecord } from "@ember/core/agency/proactive-contact-attention-policy.ts";
-import type { ProactiveContactIntentRecord } from "@ember/core/agency/proactive-contact-store.ts";
-import type { EmberApplication } from "@ember/core/app/contract.ts";
-import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.ts";
-import type { CognitionId, EmberState } from "@ember/core/model.ts";
+import type { EmberApplication } from "@ember/application/app/contract.ts";
+import type { SurfaceRepositories } from "@ember/application/app/surface-repositories.ts";
+import type { ProactiveContactIntentRecord } from "@ember/application/ports/agency/proactive-contact-store.ts";
+import type { ContactAttentionDecisionRecord } from "@ember/domain/agency/proactive-contact-attention-policy.ts";
+import type { CognitionId, EmberState } from "@ember/domain/model.ts";
 import type { TransportOptions, Update } from "node-telegram-bot-api";
 
 import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "node-telegram-bot-api";
@@ -11,14 +11,10 @@ import { isAbsolute } from "node:path";
 
 type TelegramRepositories = SurfaceRepositories;
 
-import {
-    decideConfiguredProactiveContactHandoff,
-    loadConfiguredProactiveContactPolicy,
-} from "@ember/core/agency/configured-proactive-contact-policy.ts";
-import { ValidationError } from "@ember/core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "@ember/core/model.ts";
-import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "@ember/core/runtime/interaction-boundary.ts";
-import { isObject } from "@ember/core/util.ts";
+import { reconcileSurfaceDelivery, SurfaceDeliveryFailure } from "@ember/application/runtime/interaction-boundary.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN, nowUtc } from "@ember/domain/model.ts";
+import { isObject } from "@ember/domain/util.ts";
 
 export const TELEGRAM_SURFACE_ID = "telegram_bot";
 export const TELEGRAM_BOT_API_VERSION = "10.3";
@@ -480,24 +476,14 @@ export async function runTelegramPolling(
 
     let offset: number | undefined;
     let acceptedCount = 0;
-    const configuredRevalidator = config.proactive_contact_policy_path
-        ? async (state: EmberState, intent: ProactiveContactIntentRecord, consideredAt: string) =>
-              decideConfiguredProactiveContactHandoff({
-                  state,
-                  statePath: config.state_path,
-                  intent,
-                  consideredAt,
-                  surfaceId: TELEGRAM_SURFACE_ID,
-                  policy: await loadConfiguredProactiveContactPolicy(config.proactive_contact_policy_path!),
-              })
-        : undefined;
-    const proactiveRevalidator = revalidateProactiveContact ?? configuredRevalidator;
     while (!signal?.aborted) {
         await reconcileTelegramDeliveries(config, api, { signal, repositories });
         await reconcileTelegramProactiveContacts(config, api, {
             signal,
             repositories,
-            ...(proactiveRevalidator === undefined ? {} : { revalidateBeforeHandoff: proactiveRevalidator }),
+            ...(revalidateProactiveContact === undefined
+                ? {}
+                : { revalidateBeforeHandoff: revalidateProactiveContact }),
         });
         if (signal?.aborted) return;
 

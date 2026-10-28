@@ -1,15 +1,14 @@
+import { createEmberApplication } from "@ember/application/app/application.ts";
 import { main as cliMain } from "@ember/cli";
+import { composeEmberApplication } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
-
-import { createEmberApplication } from "../packages/core/src/app/application.ts";
-import { composeEmberApplication } from "../packages/core/src/composition/ember.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
 
 const PRINCIPAL = "max";
 const SCOPE = "private";

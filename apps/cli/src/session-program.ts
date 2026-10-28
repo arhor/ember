@@ -1,6 +1,6 @@
 import type { Writable } from "node:stream";
 
-import { ValidationError } from "@ember/core/errors.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
 import { Command } from "commander";
 
 import { bindCommandIo } from "./command-io.ts";

@@ -166,12 +166,39 @@ importers:
 
   .:
     dependencies:
+      '@ember/agent':
+        specifier: workspace:*
+        version: link:packages/agent
+      '@ember/ai-sdk':
+        specifier: workspace:*
+        version: link:packages/ai-sdk
+      '@ember/application':
+        specifier: workspace:*
+        version: link:packages/application
       '@ember/cli':
         specifier: workspace:*
         version: link:apps/cli
-      '@ember/core':
+      '@ember/composition':
         specifier: workspace:*
-        version: link:packages/core
+        version: link:packages/composition
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:packages/domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:packages/engine
+      '@ember/google-calendar':
+        specifier: workspace:*
+        version: link:packages/google-calendar
+      '@ember/host':
+        specifier: workspace:*
+        version: link:packages/host
+      '@ember/mcp':
+        specifier: workspace:*
+        version: link:packages/mcp
+      '@ember/persistence':
+        specifier: workspace:*
+        version: link:packages/persistence
       '@ember/telegram':
         specifier: workspace:*
         version: link:apps/telegram
@@ -197,45 +224,50 @@ importers:
 
   apps/cli:
     dependencies:
-      '@ember/core':
+      '@ember/application':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/application
+      '@ember/composition':
+        specifier: workspace:*
+        version: link:../../packages/composition
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@ember/google-calendar':
+        specifier: workspace:*
+        version: link:../../packages/google-calendar
+      '@ember/host':
+        specifier: workspace:*
+        version: link:../../packages/host
+      '@ember/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
       commander:
         specifier: 15.0.0
         version: 15.0.0
 
   apps/telegram:
     dependencies:
-      '@ember/core':
+      '@ember/application':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/application
+      '@ember/composition':
+        specifier: workspace:*
+        version: link:../../packages/composition
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@ember/host':
+        specifier: workspace:*
+        version: link:../../packages/host
+      '@ember/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
       node-telegram-bot-api:
         specifier: 2.1.0
         version: 2.1.0
 
-  packages/core:
-    dependencies:
-      '@ai-sdk/deepseek':
-        specifier: 3.0.39
-        version: 3.0.39(zod@4.6.5)
-      '@ai-sdk/mcp':
-        specifier: 2.0.45
-        version: 2.0.45(zod@4.6.5)
-      '@ai-sdk/provider':
-        specifier: 4.0.10
-        version: 4.0.10
-      ai:
-        specifier: 7.0.153
-        version: 7.0.153(zod@4.6.5)
-      ai-sdk-ollama:
-        specifier: ^4.2.0
-        version: 4.3.0(ai@7.0.153(zod@4.6.5))(zod@4.6.5)
-      ai-sdk-provider-claude-code:
-        specifier: 4.3.1
-        version: 4.3.1(@anthropic-ai/sdk@0.128.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.30.1(supports-color@7.2.0)(zod@4.6.5))(zod@4.6.5)
-      node-telegram-bot-api:
-        specifier: 2.1.0
-        version: 2.1.0
+  packages/agent:
     devDependencies:
       '@types/node':
         specifier: 26.4.1
@@ -250,11 +282,237 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
-  packages/core-new:
+  packages/ai-sdk:
     dependencies:
+      '@ai-sdk/deepseek':
+        specifier: 3.0.39
+        version: 3.0.39(zod@4.6.5)
+      '@ai-sdk/provider':
+        specifier: 4.0.10
+        version: 4.0.10
+      '@ember/application':
+        specifier: workspace:*
+        version: link:../application
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:../engine
       ai:
         specifier: 7.0.153
         version: 7.0.153(zod@4.6.5)
+      ai-sdk-ollama:
+        specifier: ^4.2.0
+        version: 4.3.0(ai@7.0.153(zod@4.6.5))(zod@4.6.5)
+      ai-sdk-provider-claude-code:
+        specifier: 4.3.1
+        version: 4.3.1(@anthropic-ai/sdk@0.128.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.30.1(supports-color@7.2.0)(zod@4.6.5))(zod@4.6.5)
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/application:
+    dependencies:
+      '@ember/agent':
+        specifier: workspace:*
+        version: link:../agent
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/composition:
+    dependencies:
+      '@ember/agent':
+        specifier: workspace:*
+        version: link:../agent
+      '@ember/ai-sdk':
+        specifier: workspace:*
+        version: link:../ai-sdk
+      '@ember/application':
+        specifier: workspace:*
+        version: link:../application
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@ember/google-calendar':
+        specifier: workspace:*
+        version: link:../google-calendar
+      '@ember/host':
+        specifier: workspace:*
+        version: link:../host
+      '@ember/mcp':
+        specifier: workspace:*
+        version: link:../mcp
+      '@ember/persistence':
+        specifier: workspace:*
+        version: link:../persistence
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/domain:
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/engine:
+    dependencies:
+      '@ember/agent':
+        specifier: workspace:*
+        version: link:../agent
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/google-calendar:
+    dependencies:
+      '@ember/application':
+        specifier: workspace:*
+        version: link:../application
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/host:
+    dependencies:
+      '@ember/application':
+        specifier: workspace:*
+        version: link:../application
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/mcp:
+    dependencies:
+      '@ai-sdk/mcp':
+        specifier: 2.0.45
+        version: 2.0.45(zod@4.6.5)
+      '@ember/application':
+        specifier: workspace:*
+        version: link:../application
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
+      oxfmt:
+        specifier: 0.66.0
+        version: 0.66.0
+      oxlint:
+        specifier: 1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  packages/persistence:
+    dependencies:
+      '@ember/agent':
+        specifier: workspace:*
+        version: link:../agent
+      '@ember/application':
+        specifier: workspace:*
+        version: link:../application
+      '@ember/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@ember/engine':
+        specifier: workspace:*
+        version: link:../engine
     devDependencies:
       '@types/node':
         specifier: 26.4.1
@@ -1566,7 +1824,7 @@ snapshots:
   ai-sdk-ollama@4.3.0(ai@7.0.153(zod@4.6.5))(zod@4.6.5):
     dependencies:
       '@ai-sdk/provider': 4.0.10
-      '@ai-sdk/provider-utils': 5.0.47(zod@4.6.5)
+      '@ai-sdk/provider-utils': 5.0.68(zod@4.6.5)
       ai: 7.0.153(zod@4.6.5)
       jsonrepair: 3.15.0
       ollama: 0.6.3

@@ -1,22 +1,18 @@
 #!/usr/bin/env node
 
+import type { CapabilityJsonValue } from "@ember/domain/capabilities/execution.ts";
+
+import { createCapabilityExecutionFirewall } from "@ember/domain/capabilities/execution.ts";
+import {
+    calendarTargetFingerprint,
+    createApprovedGoogleCalendarEventCapability,
+} from "@ember/google-calendar/create.ts";
+import { loadGoogleCalendarConfig } from "@ember/google-calendar/read.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "@ember/persistence/capabilities/action-proposal.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-import type { CapabilityJsonValue } from "../../packages/core/src/capabilities/execution.ts";
-
-import {
-    actionProposalConfirmation,
-    ActionProposalStore,
-} from "../../packages/core/src/capabilities/action-proposal.ts";
-import { createCapabilityExecutionFirewall } from "../../packages/core/src/capabilities/execution.ts";
-import {
-    calendarTargetFingerprint,
-    createApprovedGoogleCalendarEventCapability,
-} from "../../packages/core/src/integrations/google-calendar/create.ts";
-import { loadGoogleCalendarConfig } from "../../packages/core/src/integrations/google-calendar/read.ts";
 
 if (process.env.EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE !== "1") {
     process.stdout.write("skipped: set EMBER_RUN_LIVE_GOOGLE_CALENDAR_CREATE=1 and documented event variables\n");

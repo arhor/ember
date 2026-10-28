@@ -1,12 +1,12 @@
+import { ValidationError } from "@ember/domain/errors.ts";
+import { agentActor, newId, validateState } from "@ember/domain/model.ts";
+import { buildProjection, inspectionView } from "@ember/domain/projection.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { findMeaning, supersede, userEvidence, withholdDetail } from "@ember/domain/semantics.ts";
+import { cloneState } from "@ember/domain/util.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ValidationError } from "../packages/core/src/errors.ts";
-import { agentActor, newId, validateState } from "../packages/core/src/model.ts";
-import { buildProjection, inspectionView } from "../packages/core/src/projection.ts";
-import { startRuntime, stopRuntime } from "../packages/core/src/runtime-episode.ts";
-import { findMeaning, supersede, userEvidence, withholdDetail } from "../packages/core/src/semantics.ts";
-import { cloneState } from "../packages/core/src/util.ts";
 import { captureError, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 test("commitment should preserve user request and agent adoption when created", () => {

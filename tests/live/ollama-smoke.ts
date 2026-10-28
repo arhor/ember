@@ -1,17 +1,16 @@
 #!/usr/bin/env node
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { createOllamaLanguageModel } from "@ember/ai-sdk/ollama.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { rememberFact, rememberRelationship } from "@ember/domain/semantics.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-import { createAiSdkCognitionExecutor } from "../../packages/core/src/ai/cognition.ts";
-import { createOllamaLanguageModel } from "../../packages/core/src/ai/ollama.ts";
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { rememberFact, rememberRelationship } from "../../packages/core/src/semantics.ts";
 
 const model = process.env.EMBER_OLLAMA_MODEL;
 if (!model) throw new Error("set EMBER_OLLAMA_MODEL to a local Ollama model before running this smoke test");

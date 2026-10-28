@@ -33,3 +33,4 @@ for evidence, experiments and unresolved questions. Historical designs are archi
 - [Semantic-State Representation and Projection Boundary](semantic-state-representation-boundary.md) — implementation reference under ADR 0022
 - [Source Layout and Surface Placement](source-layout.md) — implementation reference under ADR 0015
 - [Specialist Result Reintegration](specialist-result-reintegration.md) — implementation reference under ADR 0028
+- [Modular package migration](modular-package-migration.md) — implementation inventory under ADR 0039

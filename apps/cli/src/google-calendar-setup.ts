@@ -1,16 +1,16 @@
-import type { GoogleCalendarConfig } from "@ember/core/integrations/google-calendar/read.ts";
+import type { GoogleCalendarConfig } from "@ember/google-calendar/read.ts";
 
-import { createCapabilityExecutionFirewall } from "@ember/core/capabilities/execution.ts";
-import { ValidationError } from "@ember/core/errors.ts";
-import { loadSetupConfig } from "@ember/core/host/setup.ts";
+import { createCapabilityExecutionFirewall } from "@ember/domain/capabilities/execution.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
 import {
     GOOGLE_CALENDAR_SCOPE,
     GOOGLE_OAUTH_TOKEN_ENDPOINT,
     createGoogleCalendarCapability,
     loadGoogleCalendarConfig,
-} from "@ember/core/integrations/google-calendar/read.ts";
-import { replaceFileDurably } from "@ember/core/persistence/file-replacement.ts";
-import { StateStore } from "@ember/core/persistence/state-store.ts";
+} from "@ember/google-calendar/read.ts";
+import { loadSetupConfig } from "@ember/host/setup.ts";
+import { replaceFileDurably } from "@ember/persistence/persistence/file-replacement.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { createHash, randomBytes } from "node:crypto";
 import { readFile, realpath, unlink } from "node:fs/promises";
 import { createServer } from "node:http";

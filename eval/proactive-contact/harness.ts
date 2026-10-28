@@ -1,32 +1,28 @@
-import type { TelegramSurfaceConfig } from "@ember/telegram";
-
-import { reconcileTelegramProactiveContacts as reconcileContacts } from "@ember/telegram";
-import { composeTelegramSurface } from "@ember/telegram";
-import { readFile } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
-
 import type {
     ContactAttentionDecisionRecord,
     ContactAttentionPolicyRequest,
     ProactiveContactIntentSnapshot,
-} from "../../packages/core/src/agency/proactive-contact-attention-policy.ts";
-import type { CognitionId, EvidenceId, MeaningId } from "../../packages/core/src/model.ts";
+} from "@ember/domain/agency/proactive-contact-attention-policy.ts";
+import type { CognitionId, EvidenceId, MeaningId } from "@ember/domain/model.ts";
+import type { TelegramSurfaceConfig } from "@ember/telegram";
 
-import { decideUserInterruption } from "../../packages/core/src/agency/interruption-decision.ts";
-import { decideProactiveContactAttention } from "../../packages/core/src/agency/proactive-contact-attention-policy.ts";
-import { ProactiveContactStore } from "../../packages/core/src/agency/proactive-contact-store.ts";
-import { executeCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { ValidationError } from "../../packages/core/src/errors.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime } from "../../packages/core/src/runtime-episode.ts";
-import {
-    InteractionLedgerStore,
-    SurfaceDeliveryFailure,
-} from "../../packages/core/src/runtime/interaction-boundary.ts";
-import { findMeaning, rememberFact, supersede } from "../../packages/core/src/semantics.ts";
-import { contentDigest, exactKeys, isObject } from "../../packages/core/src/util.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { SurfaceDeliveryFailure } from "@ember/application/runtime/interaction-boundary.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { decideUserInterruption } from "@ember/domain/agency/interruption-decision.ts";
+import { decideProactiveContactAttention } from "@ember/domain/agency/proactive-contact-attention-policy.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { findMeaning, rememberFact, supersede } from "@ember/domain/semantics.ts";
+import { contentDigest, exactKeys, isObject } from "@ember/domain/util.ts";
+import { ProactiveContactStore } from "@ember/persistence/agency/proactive-contact-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
+import { reconcileTelegramProactiveContacts as reconcileContacts } from "@ember/telegram";
+import { composeTelegramSurface } from "@ember/telegram";
+import { readFile } from "node:fs/promises";
+import { isAbsolute, join } from "node:path";
 
 const CASE_IDS = [
     "useful-contact",

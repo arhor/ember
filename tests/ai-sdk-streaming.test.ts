@@ -1,3 +1,13 @@
+import type { AiExecutor, AiStreamObservation, AiStreamObserver } from "@ember/application/ai/contract.ts";
+import type { CapabilityBinding } from "@ember/domain/capabilities/execution.ts";
+
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { findCognition, executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { createCapabilityExecutionLedger } from "@ember/domain/capabilities/execution.ts";
+import { createLocalLookupCapability } from "@ember/domain/capabilities/local-lookup.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
@@ -5,16 +15,6 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor, AiStreamObservation, AiStreamObserver } from "../packages/core/src/ai/contract.ts";
-import type { CapabilityBinding } from "../packages/core/src/capabilities/execution.ts";
-
-import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
-import { findCognition, executeCognition } from "../packages/core/src/app/cognition-execution.ts";
-import { createCapabilityExecutionLedger } from "../packages/core/src/capabilities/execution.ts";
-import { createLocalLookupCapability } from "../packages/core/src/capabilities/local-lookup.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const USAGE = {

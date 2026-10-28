@@ -1,9 +1,9 @@
-import type { WorkerLaunch } from "@ember/core/host/background.ts";
+import type { WorkerLaunch } from "@ember/host/background.ts";
 
-import { MAX_AI_TIMEOUT_SECONDS } from "@ember/core/ai/contract.ts";
-import { ValidationError } from "@ember/core/errors.ts";
-import { ASCII_CONTROL_CHARACTER_PATTERN } from "@ember/core/model.ts";
-import { exactKeys, isObject } from "@ember/core/util.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "@ember/application/ai/contract.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { ASCII_CONTROL_CHARACTER_PATTERN } from "@ember/domain/model.ts";
+import { exactKeys, isObject } from "@ember/domain/util.ts";
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 

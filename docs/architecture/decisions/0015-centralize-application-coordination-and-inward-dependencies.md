@@ -117,3 +117,11 @@ Source ownership is transferred to this accepted ADR. Implementation paths and
 ongoing verification constraints describe the existing system; no runtime work,
 dependency change, or package reorganization is introduced by acceptance. Historical
 approval attribution not recorded in the original sources remains unknown.
+
+### Amendment — 2026-10-28
+
+[ADR 0039](0039-separate-agent-contracts-engine-and-startup-composition.md) amends the
+package placement and ordinary interaction interface for the maintainer-approved modular
+migration. Its reusable engine and startup extensions replace the earlier package/framework
+non-goals within that scope. The single Ember application owner, inward dependencies,
+writer lifecycle, continuity and delivery guarantees in this record remain binding.

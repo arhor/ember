@@ -1,22 +1,26 @@
-import type { SetupCompositionOverrides } from "@ember/core/composition/setup.ts";
+import type { SetupCompositionOverrides } from "@ember/composition/setup.ts";
 
-import { proactiveContactInspectionView, ProactiveContactStore } from "@ember/core/agency/proactive-contact-store.ts";
-import { composeCliSurface } from "@ember/core/composition/cli.ts";
-import { EmberError, ValidationError } from "@ember/core/errors.ts";
-import { assessMemoryProposal, resolveMemoryProposal } from "@ember/core/memory-proposal.ts";
-import { initialState } from "@ember/core/model.ts";
+import { interactionLedgerInspectionView } from "@ember/application/runtime/interaction-boundary.ts";
+import { composeCliSurface } from "@ember/composition/cli.ts";
+import { EmberError, ValidationError } from "@ember/domain/errors.ts";
+import { assessMemoryProposal, resolveMemoryProposal } from "@ember/domain/memory-proposal.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { explanationView, inspectionView } from "@ember/domain/projection.ts";
+import { supersede } from "@ember/domain/semantics.ts";
+import { buildStateMaterialization } from "@ember/domain/state-materialization.ts";
+import { assertUnreachable, cloneState } from "@ember/domain/util.ts";
+import {
+    proactiveContactInspectionView,
+    ProactiveContactStore,
+} from "@ember/persistence/agency/proactive-contact-store.ts";
 import {
     inspectMarkdownStateEdits,
     publishMarkdownStateViews,
     readMarkdownStateViews,
-} from "@ember/core/persistence/markdown-state-materializer.ts";
-import { MemoryProposalGenerationStore } from "@ember/core/persistence/memory-proposal-generation-store.ts";
-import { StateStore } from "@ember/core/persistence/state-store.ts";
-import { explanationView, inspectionView } from "@ember/core/projection.ts";
-import { interactionLedgerInspectionView, InteractionLedgerStore } from "@ember/core/runtime/interaction-boundary.ts";
-import { supersede } from "@ember/core/semantics.ts";
-import { buildStateMaterialization } from "@ember/core/state-materialization.ts";
-import { assertUnreachable, cloneState } from "@ember/core/util.ts";
+} from "@ember/persistence/persistence/markdown-state-materializer.ts";
+import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 import { CommanderError } from "commander";
 
 import type {
@@ -146,14 +150,18 @@ async function onRun(args: RunArgs, io: CliIo) {
             timeoutSeconds: args.providerTimeoutSeconds,
         },
     });
-    return await runCliSurface(
-        {
-            principal: args.principal,
-            scope: args.scope,
-        },
-        io,
-        services,
-    );
+    try {
+        return await runCliSurface(
+            {
+                principal: args.principal,
+                scope: args.scope,
+            },
+            io,
+            services,
+        );
+    } finally {
+        await services.close();
+    }
 }
 
 async function onInspect(args: InspectArgs, io: CliIo) {

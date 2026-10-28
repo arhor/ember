@@ -2,7 +2,11 @@
 
 > Decision owner: [accepted ADR 0015](decisions/0015-centralize-application-coordination-and-inward-dependencies.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
 
-This document describes the implemented production architecture after epic
+Package placement follows [ADR 0039](decisions/0039-separate-agent-contracts-engine-and-startup-composition.md).
+The generic engine wraps the Ember application; session/run bookkeeping remains separate
+from occurrence, cognition and delivery evidence.
+
+This document preserves the ordinary application guarantees established after epic
 [#303](https://github.com/arhor/ember/issues/303). The migration proposal that led to
 this shape is preserved in Git history and the closed child issues; it is not a second
 supported architecture.
@@ -14,6 +18,9 @@ CLI / Telegram transport
         |
         v
 surface adapter maps transport input
+        |
+        v
+startup-composed engine records generic execution
         |
         v
 EmberApplication.interact(InteractionEvent, TransportSend)
@@ -77,12 +84,12 @@ executable composition boundary.
 
 ### Shared composition root
 
-[`../../packages/core/src/composition`](../../packages/core/src/composition/ember.ts) is the production
+[`../../packages/composition/src`](../../packages/composition/src/ember.ts) is the production
 composition root for one Ember application instance. It creates the repositories,
 selects the configured cognition executor and control helpers, supplies capability
 selection, and returns `EmberApplicationDependencies`.
 
-[`../../packages/core/src/app`](../../packages/core/src/app/application.ts) then turns those dependencies
+[`../../packages/application/src/app`](../../packages/application/src/app/application.ts) then turns those dependencies
 into the transport-neutral `EmberApplication`. That factory is the only production
 entry point for an ordinary user interaction.
 
@@ -92,7 +99,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
 
 1. **The surface maps transport input.**
    The adapter creates an
-   [`InteractionEvent`](../../packages/core/src/app/contract.ts) with principal, scope, logical
+   [`InteractionEvent`](../../packages/application/src/app/contract.ts) with principal, scope, logical
    surface, text, provenance, and optional transport occurrence/destination metadata.
    CLI uses `local_cli` with `explicit_local_argument`; Telegram uses
    `telegram_bot` with `configured_surface_mapping`.
@@ -104,24 +111,24 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
 
 3. **The interaction ledger establishes occurrence identity.**
    The application calls
-   [`InteractionLedgerStore.acceptInbound`](../../packages/core/src/runtime/interaction-boundary.ts).
+   [`InteractionLedgerStore.acceptInbound`](../../packages/application/src/runtime/interaction-boundary.ts).
    A new occurrence receives one planned cognition ID. A replay reuses the established
    record and must not create another cognition.
 
 4. **Ember prepares cognition.**
-   [`prepareCognition`](../../packages/core/src/app/cognition-preparation.ts) resolves Ember-owned
+   [`prepareCognition`](../../packages/application/src/app/cognition-preparation.ts) resolves Ember-owned
    conversation membership, recent dialogue, onboarding work, and the
    least-sufficient semantic projection. Transport message IDs and provider sessions do
    not become conversation identity or canonical memory.
 
 5. **The application executes the prepared cognition.**
-   [`executePreparedCognition`](../../packages/core/src/app/cognition-execution.ts) records accepted
+   [`executePreparedCognition`](../../packages/application/src/app/cognition-execution.ts) records accepted
    user evidence and cognition lifecycle state, then calls the Ember-owned
-   [`AiExecutor`](../../packages/core/src/ai/contract.ts).
+   [`AiExecutor`](../../packages/application/src/ai/contract.ts).
 
 6. **AI mechanics stay below the Ember contract.**
    Production Codex, Cursor, process, and Claude Code execution are composed under
-   [`../../packages/core/src/ai`](../../packages/core/src/ai/). The ordinary production stack uses Vercel AI SDK
+   [`../../packages/ai-sdk/src`](../../packages/ai-sdk/src/). The ordinary production stack uses Vercel AI SDK
    mechanics behind `AiExecutor`. Selected capabilities are passed per call and are
    still authorized by Ember before execution.
 
@@ -132,7 +139,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
    before any transport send.
 
 8. **Post-turn work is application-owned and fallible.**
-   [`runPostTurnFollowUps`](../../packages/core/src/app/post-turn.ts) may evaluate onboarding
+   [`runPostTurnFollowUps`](../../packages/application/src/app/post-turn.ts) may evaluate onboarding
    progress and generate memory proposals. Failures are diagnostics; they do not erase
    an already completed cognition or pretend that delivery succeeded.
 
@@ -178,7 +185,7 @@ Machine bootstrap is not a second cognition architecture.
 When plain `ember` runs with no default setup record,
 [`firstRun`](../../apps/cli/src/setup.ts) asks only for the choices required to
 create or restore continuity and select a cognition provider. It then calls
-[`bootstrapContinuity`](../../packages/core/src/app/bootstrap.ts), which verifies cognition and
+[`bootstrapContinuity`](../../packages/application/src/app/bootstrap.ts), which verifies cognition and
 activates the continuity. After successful activation, the same process continues into
 `runConfigured`, composes the ordinary CLI application, and consumes the first real
 user message through `runCliSurface -> EmberApplication.interact`.
@@ -208,18 +215,18 @@ The current dependency direction is:
 apps/* executables and bootstrap/operator plumbing
         |
         v
-packages/core/src/composition/*
+packages/composition/src/*
         |
-        +--> packages/core/src/app/*
+        +--> packages/application/src/app/*
         |       |
-        |       +--> packages/core/src/core/*
-        |       +--> packages/core/src/runtime/*
+        |       +--> packages/domain/src/*
+        |       +--> packages/application/src/runtime/*
         |       +--> injected repositories / AI contract / capabilities
         |
-        +--> packages/core/src/ai/*
-        +--> packages/core/src/persistence/*
-        +--> packages/core/src/integrations/*
-        +--> packages/core/src/host/*
+        +--> packages/ai-sdk/src/*
+        +--> packages/persistence/src/persistence/*
+        +--> packages/google-calendar/src/*
+        +--> packages/host/src/*
         |
         v
 apps/*/src surface modules receive the composed application and perform transport work

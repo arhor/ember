@@ -1,15 +1,15 @@
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { createProcessLanguageModel } from "@ember/ai-sdk/process.ts";
+import { invokeProvider } from "@ember/ai-sdk/providers/process.ts";
+import { MAX_AI_TIMEOUT_SECONDS } from "@ember/application/ai/contract.ts";
+import { ProviderError, ValidationError } from "@ember/domain/errors.ts";
+import { buildProjection } from "@ember/domain/projection.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
-import { MAX_AI_TIMEOUT_SECONDS } from "../packages/core/src/ai/contract.ts";
-import { createProcessLanguageModel } from "../packages/core/src/ai/process.ts";
-import { invokeProvider } from "../packages/core/src/ai/providers/process.ts";
-import { ProviderError, ValidationError } from "../packages/core/src/errors.ts";
-import { buildProjection } from "../packages/core/src/projection.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { captureError, captureProcessCommand, emptyRequest, populatedState, PRINCIPAL, SCOPE } from "./support.ts";
 
 const OVERSIZED_TIMEOUT = MAX_AI_TIMEOUT_SECONDS + 1;

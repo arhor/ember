@@ -1,8 +1,8 @@
-import type { EmberApplication, InteractionEvent } from "@ember/core/app/contract.ts";
+import type { EmberApplication, InteractionEvent } from "@ember/application/app/contract.ts";
 
-import { composeCliSurface } from "@ember/core/composition/cli.ts";
-import { initialState } from "@ember/core/model.ts";
-import { StateStore } from "@ember/core/persistence/state-store.ts";
+import { composeCliSurface } from "@ember/composition/cli.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";

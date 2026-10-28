@@ -1,3 +1,17 @@
+import type { CapabilityContext } from "@ember/domain/capabilities/execution.ts";
+import type { McpCapabilityPolicy, McpCapabilitySource } from "@ember/mcp/ai-sdk.ts";
+
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { findCognition, executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import {
+    createCapabilityExecutionFirewall,
+    createCapabilityExecutionLedger,
+} from "@ember/domain/capabilities/execution.ts";
+import { newId } from "@ember/domain/model.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { openAiSdkMcpStdioCapabilitySource, McpCapabilitySourceError } from "@ember/mcp/ai-sdk.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { readFile, rm } from "node:fs/promises";
@@ -5,23 +19,6 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import type { CapabilityContext } from "../packages/core/src/capabilities/execution.ts";
-import type { McpCapabilityPolicy, McpCapabilitySource } from "../packages/core/src/integrations/mcp/ai-sdk.ts";
-
-import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
-import { findCognition, executeCognition } from "../packages/core/src/app/cognition-execution.ts";
-import {
-    createCapabilityExecutionFirewall,
-    createCapabilityExecutionLedger,
-} from "../packages/core/src/capabilities/execution.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import {
-    openAiSdkMcpStdioCapabilitySource,
-    McpCapabilitySourceError,
-} from "../packages/core/src/integrations/mcp/ai-sdk.ts";
-import { newId } from "../packages/core/src/model.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { populatedState, PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 const MCP_FIXTURE = fileURLToPath(new URL("./fixtures/mcp-server.ts", import.meta.url));

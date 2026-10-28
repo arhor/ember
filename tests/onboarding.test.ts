@@ -1,29 +1,28 @@
-import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import test from "node:test";
+import type { RunCognitionOptions } from "@ember/application/app/cognition-execution.ts";
+import type { MemoryProposalGenerator } from "@ember/application/memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "@ember/application/onboarding/progress-evaluator.ts";
 
-import type { RunCognitionOptions } from "../packages/core/src/app/cognition-execution.ts";
-import type { MemoryProposalGenerator } from "../packages/core/src/memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "../packages/core/src/onboarding/progress-evaluator.ts";
-
-import { executeCognition as runCoreCognition } from "../packages/core/src/app/cognition-execution.ts";
-import { prepareCognition } from "../packages/core/src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../packages/core/src/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { createProviderMemoryProposalGenerator } from "../packages/core/src/memory/provider-memory-proposal-generator.ts";
-import { initialState } from "../packages/core/src/model.ts";
+import { executeCognition as runCoreCognition } from "@ember/application/app/cognition-execution.ts";
+import { prepareCognition } from "@ember/application/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "@ember/application/app/post-turn.ts";
+import { createProviderMemoryProposalGenerator } from "@ember/application/memory/provider-memory-proposal-generator.ts";
+import { createProviderOnboardingProgressEvaluator } from "@ember/application/onboarding/progress-evaluator.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { initialState } from "@ember/domain/model.ts";
 import {
     applyOnboardingProgressDecision,
     createOnboardingWork,
     validateOnboardingProgressDecision,
     validateOnboardingWork,
-} from "../packages/core/src/onboarding-work.ts";
-import { createProviderOnboardingProgressEvaluator } from "../packages/core/src/onboarding/progress-evaluator.ts";
-import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../packages/core/src/runtime-episode.ts";
+} from "@ember/domain/onboarding-work.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
 
 async function executeCognition(
     repositories: ReturnType<typeof createFileBackedRepositoriesForState>,

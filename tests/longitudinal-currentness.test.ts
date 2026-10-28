@@ -1,8 +1,8 @@
+import type { AiExecutionResult } from "@ember/application/ai/contract.ts";
+
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
-
-import type { AiExecutionResult } from "../packages/core/src/ai/contract.ts";
 
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
 import { ROOT, tempDir } from "./support.ts";

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
+import { invokeCodexProvider } from "@ember/ai-sdk/providers/codex.ts";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
 import type { ConversationProvider } from "./harness.ts";
 
-import { invokeCodexProvider } from "../../packages/core/src/ai/providers/codex.ts";
 import { loadConversationScenario, runConversationScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));

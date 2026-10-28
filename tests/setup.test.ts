@@ -1,7 +1,20 @@
 import type { CliSurfaceConfig } from "@ember/cli";
+import type { EmberCompositionOverrides, EmberProviderKind } from "@ember/composition/ember.ts";
 
 import { main, runCliSurface as runCliAdapter, setupMain as runSetup } from "@ember/cli";
 import { setupGoogleCalendarMain } from "@ember/cli/google-calendar-setup.ts";
+import { composeCliSurface } from "@ember/composition/cli.ts";
+import { ProviderError } from "@ember/domain/errors.ts";
+import { DurabilityUncertain } from "@ember/domain/errors.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { loadSetupConfig } from "@ember/host/setup.ts";
+import { actionProposalConfirmation, ActionProposalStore } from "@ember/persistence/capabilities/action-proposal.ts";
+import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
+import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
+import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -9,20 +22,6 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import test from "node:test";
 
-import type { EmberCompositionOverrides, EmberProviderKind } from "../packages/core/src/composition/ember.ts";
-
-import { actionProposalConfirmation, ActionProposalStore } from "../packages/core/src/capabilities/action-proposal.ts";
-import { composeCliSurface } from "../packages/core/src/composition/cli.ts";
-import { ProviderError } from "../packages/core/src/errors.ts";
-import { DurabilityUncertain } from "../packages/core/src/errors.ts";
-import { loadSetupConfig } from "../packages/core/src/host/setup.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { createOnboardingWork } from "../packages/core/src/onboarding-work.ts";
-import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";
-import { MemoryProposalGenerationStore } from "../packages/core/src/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "../packages/core/src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
 import { captureError, captureProcessCommand, command, populatedState } from "./support.ts";
 
 const success = { contractVersion: 1, reply: "PROBE_REPLY_NOT_RETAINED", usedMeaningIds: [] };

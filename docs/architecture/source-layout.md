@@ -1,222 +1,66 @@
 # Source Layout and Surface Placement
 
-> Decision owner: [accepted ADR 0015](decisions/0015-centralize-application-coordination-and-inward-dependencies.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
+Decision owners: [ADR 0039](decisions/0039-separate-agent-contracts-engine-and-startup-composition.md)
+and the preserved application guarantees in [ADR 0015](decisions/0015-centralize-application-coordination-and-inward-dependencies.md).
 
-Directory placement is an ownership statement. The current layout is designed so that
-an ordinary interaction can be traced from an executable through composition into one
-application boundary without finding provider construction or canonical persistence
-hidden inside a transport adapter.
+## Package ownership
 
-## Production ownership map
+| Package                         | Responsibility                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| `@ember/agent`                  | Provider-free agent, interaction, actor, surface, session and run contracts                |
+| `@ember/engine`                 | Generic lifecycle, repository ports, in-memory defaults, startup plugins, hooks and events |
+| `@ember/domain`                 | Canonical state, identity, projection, memory, onboarding, objectives and authority rules  |
+| `@ember/application`            | Ember coordination and consumer-owned repository/cognition interfaces                      |
+| `@ember/persistence`            | Filesystem repositories, interaction ledger, materialization and engine sidecars           |
+| `@ember/ai-sdk`                 | Cognition, structured controls, provider bridges and provider process protocols            |
+| `@ember/mcp`                    | MCP capability source and lifecycle                                                        |
+| `@ember/google-calendar`        | Calendar capabilities                                                                      |
+| `@ember/host`                   | Host process and service-manager infrastructure                                            |
+| `@ember/composition`            | Production assembly, configuration mapping, setup and episodic execution                   |
+| `@ember/cli`, `@ember/telegram` | Sibling surfaces, executables and explicit operator commands                               |
 
-```text
-packages/core/src/
-  app/           transport-neutral application contract, use-case coordination, bootstrap
-  composition/   shared production dependency assembly
-  ai/            Ember AI execution contract, AI SDK mechanics, model/provider bridges
-  core/          canonical state and shared domain rules
-  runtime/       interaction ledger, delivery reconciliation, episodic operational runtime
-  persistence/   filesystem-backed repositories and materializations
-  integrations/  external capability/protocol adapters such as Calendar and MCP
-  host/           subprocess and service-manager mechanics such as systemd and launchd
-apps/
-  cli/bin/ember.ts          CLI executable
-  cli/src/                      CLI bootstrap, commands, and conversational adapter
-  telegram/bin/ember-telegram.ts Telegram executable
-  telegram/src/                 Telegram config, composition, and transport adapter
-```
+The retired `@ember/core` package has no compatibility layer. Historical documents and
+ADRs retain their original source paths as provenance; current implementation references
+use the owners above.
 
-`@ember/core`, `@ember/cli`, and `@ember/telegram` are pnpm workspace packages.
-The apps depend inward on `@ember/core`; core never depends on an app, and one concrete
-app does not depend on another.
+## Execution and composition
 
-## Application and composition
+Ordinary conversational adapters receive `EmberApplication`; they map transport input,
+principal provenance, occurrence metadata and delivery observations. CLI streams and
+Telegram objects stay outside agent contracts, domain rules and application policy.
 
-`../../packages/core/src/app` defines the transport-neutral
-`InteractionEvent`, `EmberApplication`, and delivery callback shapes. It must not expose
-Telegram objects, CLI streams, AI SDK types,
-filesystem paths, or concrete store implementations.
+Production composition registers collaborators at startup and creates an engine-backed
+application. Generic runs record execution independently from canonical cognition,
+occurrence identity and delivery. Engine session/run sidecars never become agent identity
+or canonical memory. Mandatory authority, replay and continuity checks remain explicit
+application steps. The application retains its writer lease through ordinary coordination
+and releases it in an outer `finally`.
 
-`../../packages/core/src/app` is the only production coordinator for an ordinary user
-interaction. It owns the writer lease and runtime episode around admission, cognition,
-post-turn work, and delivery reconciliation.
+Plugins register explicit typed collaborators, hooks, observers and cleanup before startup.
+Registration closes when startup begins. Setup validates dependencies and singleton
+conflicts; cleanup runs in reverse order. Observers report diagnostics and do not change
+execution outcomes. See the exported `EngineBuilder` and adapter plugin factories.
 
-`../../packages/core/src/composition` is the production dependency composition root. It creates
-repositories, the configured `AiExecutor`, structured control helpers, capability
-selection, and the other collaborators required by the application.
+## Dependency direction
 
-Executable composition is intentionally tiny:
+Agent contracts have no third-party runtime dependency. Engine depends on agent contracts.
+Domain rules depend on neither engine nor adapters. Application depends on domain and
+generic execution contracts; adapters implement application-owned ports. Composition
+connects concrete implementations. Concrete apps do not import each other, and ordinary
+surface modules do not construct providers or canonical stores.
 
-- `../../packages/core/src/composition` adapts validated CLI/bootstrap configuration into one
-  composed application plus repositories needed by explicit operator commands;
-- [`../../apps/telegram/src/composition.ts`](../../apps/telegram/src/composition.ts)
-  adapts validated Telegram configuration into the same core application dependencies.
-
-Composition belongs to executable/bootstrap plumbing, not to ordinary conversational
-surface modules.
-
-## AI execution
-
-`../../packages/core/src/ai` owns the application-facing `AiExecutionRequest`,
-`AiExecutionResult`, `AiExecutionOptions`, and `AiExecutor` contract.
-
-`../../packages/core/src/ai` owns the shared Vercel AI SDK ordinary cognition mechanics.
-Concrete Codex, Cursor, Claude Code, and process bridges also live under `../../packages/core/src/ai`.
-Provider-specific process/protocol mechanics are implementation details beneath the
-Ember-owned execution contract.
-
-Semantic modules do not import AI SDK runtime types. AI infrastructure does not mutate
-canonical persistence or semantic state directly.
-
-## Interaction surfaces
-
-Concrete ways for a principal to interact with Ember live under one surface namespace:
-
-```text
-apps/
-  cli/
-    package.json
-    bin/ember.ts
-    src/
-      index.ts
-      main.ts
-      model.ts
-      process-program.ts
-      setup.ts
-      commands.ts
-      session-program.ts
-      surface.ts
-  telegram/
-    package.json
-    bin/ember-telegram.ts
-    src/
-      index.ts
-      config.ts
-      composition.ts
-      surface.ts
-```
-
-Each app package exposes `src/index.ts` as its public module entrypoint. Files such
-as `main.ts`, `setup.ts`, and `surface.ts` are internal implementation structure.
-
-CLI and Telegram are sibling adapters over the same `EmberApplication`. They may
-differ in input parsing, principal-provenance evidence, occurrence metadata, delivery
-transport, polling, cancellation, and recovery. They do not own canonical identity,
-memory, context policy, provider selection, cognition execution, or application
-composition.
-
-A new concrete interaction surface should normally become another `apps/*` workspace
-package. Do not add a generic surface registry, plugin
-framework, or event bus merely because multiple surfaces exist.
-
-## CLI placement
-
-`apps/cli/bin/ember.ts` is the general CLI executable and imports the public CLI module.
-
-The CLI-specific split is:
-
-- `main.ts` owns process dispatch, including the default interactive session when no subcommand is present;
-- `process-program.ts` owns the process commander program: command shape, required arguments, help, and unknown-command or unknown-option failures;
-- `setup.ts` owns first-run prompts and configured-run preparation;
-- `commands.ts` owns in-session operator command actions and the quote/escape tokenizer that produces argv;
-- `session-program.ts` owns the session commander program, which is not registered on the process program;
-- `surface.ts` owns ordinary readline interaction, routing a leading `:` through the session program, SIGINT cancellation, local
-  occurrence provenance, and stdout delivery over an injected `EmberApplication`.
-
-Explicit operator commands may depend on repositories or application/host operations
-when that is the command's actual responsibility. Their co-location under
-`apps/cli/` does not make those operations part of the ordinary conversational
-adapter.
-
-The ordinary conversational path is stricter: it receives the composed application
-and calls `EmberApplication.interact`.
-
-## Telegram placement
-
-Telegram-specific Bot API integration lives in `../../apps/telegram/src`.
-
-- `config.ts` parses and validates machine transport configuration;
-- `composition.ts` maps validated Telegram configuration into the shared core composition root;
-- `surface.ts` owns private-chat admission, long polling, transport occurrence
-  evidence, Bot API delivery, and Telegram reconciliation.
-
-`apps/telegram/bin/ember-telegram.ts` loads machine configuration and secrets, calls
-the app-local `composition.ts`, and injects the resulting application/repositories into
-the polling adapter.
-
-Resident installation is selected through host infrastructure. Linux/systemd and
-macOS/launchd remain `../../packages/core/src/host` concerns and do not create alternate Telegram
-application architectures.
-
-## Runtime and host placement
-
-`../../packages/core/src/runtime` contains operational mechanisms that are shared by application flows
-without owning transport or provider construction. In particular,
-`runtime/interaction-boundary.ts` owns occurrence/delivery ledger mechanics and
-delivery reconciliation.
-
-Portable semantic runtime-episode state lives in `../../packages/core/src/runtime-episode.ts`.
-Platform-specific process and service-manager behavior belongs in `../../packages/core/src/host`.
-
-A systemd unit, launchd job, resident Telegram worker, or foreground process is an
-operational host shape around Ember. None is a canonical identity or a separate
-ordinary interaction coordinator.
-
-## Intended dependency direction
-
-```text
-app-owned executables and bootstrap modules
-              |
-              v
-packages/core/src/composition/*
-        /      |       \
-       v       v        v
- core/app   core/ai   infrastructure
-      |                /   |    \
-      v               v    v     v
- core/runtime   persistence integrations host
-      ^
-      |
-surfaces receive EmberApplication and map transport only
-```
-
-The exact graph is intentionally not a framework-wide DI system. The important rule is
-that construction points are explicit and ordinary transports do not rediscover
-dependencies privately.
-
-## Enforced boundaries
-
-`scripts/check-dependencies.ts` is part of `pnpm check`. It inspects production
-TypeScript imports, including static dynamic imports, and enforces the highest-value
-ownership rules.
-
-Among other checks:
-
-- `core/` cannot import concrete surfaces;
-- application orchestration cannot import concrete surfaces;
-- ordinary CLI/Telegram conversational modules cannot import the application factory
-  or `composition/`;
-- ordinary conversational modules cannot construct providers, AI infrastructure, or
-  canonical persistence;
-- semantic owners cannot import AI SDK mechanics;
-- AI infrastructure cannot own canonical persistence or semantic mutation;
-- application and semantic modules cannot own systemd or launchd adapters.
-
-Exceptions are narrow and explicit for real bootstrap, setup, recovery, or operator
-responsibilities. Adding a new file under a surface does not inherit an exception.
+`scripts/check-dependencies.ts` scans production package/app code and root entry points.
+It enforces the package graph, SDK isolation, surface boundaries and retired-core rejection.
+Narrow bootstrap/operator exceptions describe actual responsibilities rather than granting
+an entire surface infrastructure access.
 
 ## Tests and evaluations
 
-Tests that primarily exercise one module should live beside that module. Cross-cutting
-acceptance and integration tests belong under `tests/`.
+Module tests live beside their owner; cross-cutting acceptance tests live in `tests/`.
+The root test command includes packages, apps and integration tests. Root checks cover
+package/app source and explicit contract type tests as well as deterministic dependency enforcement.
+Evaluation harnesses under `eval/` may construct controlled fixtures; they are not
+production entry points. Live-provider observations remain separate from deterministic
+migration verification.
 
-The canonical cross-surface regression lives in
-`tests/cross-surface-semantics.test.ts`. It is intentionally allowed to assemble
-fixtures directly because tests and evaluations are not production conversational
-surfaces.
-
-Evaluation harnesses live under `eval/` and may construct application dependencies
-for controlled experiments. They must not be mistaken for production entry points.
-
-For the executable message path, see
-[Canonical Ember Application Flow](canonical-application-flow.md).
+See [Canonical Ember Application Flow](canonical-application-flow.md) for message ordering.

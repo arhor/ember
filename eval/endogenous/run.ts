@@ -1,19 +1,18 @@
 #!/usr/bin/env node
 
-import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
-
 import type {
     EvaluationBackend,
     SelectivityAttentionControl,
-} from "../../packages/core/src/agency/endogenous-selectivity-evaluation.ts";
+} from "@ember/application/agency/endogenous-selectivity-evaluation.ts";
 
+import { createCodexOpportunityEvaluator } from "@ember/ai-sdk/codex-opportunity.ts";
 import {
     parseSelectivityWorkload,
     runEndogenousSelectivityEvaluation,
     scriptedSelectivityEvaluator,
-} from "../../packages/core/src/agency/endogenous-selectivity-evaluation.ts";
-import { createCodexOpportunityEvaluator } from "../../packages/core/src/ai/codex-opportunity.ts";
+} from "@ember/application/agency/endogenous-selectivity-evaluation.ts";
+import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 
 const cli = parseArguments(process.argv.slice(2));
 const raw = await readFile(new URL("./fixtures/selectivity-workload.json", import.meta.url), "utf8");

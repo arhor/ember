@@ -1,13 +1,13 @@
+import type { AiExecutionResult } from "@ember/application/ai/contract.ts";
+import type { ProjectedMeaning } from "@ember/domain/projection.ts";
+
+import { initialState } from "@ember/domain/model.ts";
+import { attachDetail, rememberEpisode, withholdDetail } from "@ember/domain/semantics.ts";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutionResult } from "../packages/core/src/ai/contract.ts";
-import type { ProjectedMeaning } from "../packages/core/src/projection.ts";
-
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { attachDetail, rememberEpisode, withholdDetail } from "../packages/core/src/semantics.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "degraded-context-pressure.json");

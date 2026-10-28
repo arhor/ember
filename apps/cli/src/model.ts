@@ -1,4 +1,4 @@
-import type { SetupIntent } from "@ember/core/app/bootstrap.ts";
+import type { SetupIntent } from "@ember/application/app/bootstrap.ts";
 import type { Readable, Writable } from "node:stream";
 
 export interface CliIo {

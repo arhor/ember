@@ -1,24 +1,21 @@
+import type { AiExecutor, AiExecutionRequest } from "@ember/application/ai/contract.ts";
+import type { ConversationMembershipIntent } from "@ember/domain/interaction-contract.ts";
+import type { EmberState } from "@ember/domain/model.ts";
+
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { RECENT_DIALOGUE_MAX_EXCHANGES, RECENT_DIALOGUE_MAX_TURN_BYTES } from "@ember/domain/conversation-context.ts";
+import { ProviderError } from "@ember/domain/errors.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { rememberFact } from "@ember/domain/semantics.ts";
+import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutor, AiExecutionRequest } from "../packages/core/src/ai/contract.ts";
-import type { ConversationMembershipIntent } from "../packages/core/src/interaction-contract.ts";
-import type { EmberState } from "../packages/core/src/model.ts";
-
-import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import {
-    RECENT_DIALOGUE_MAX_EXCHANGES,
-    RECENT_DIALOGUE_MAX_TURN_BYTES,
-} from "../packages/core/src/conversation-context.ts";
-import { ProviderError } from "../packages/core/src/errors.ts";
-import { initialState } from "../packages/core/src/model.ts";
-import { ConversationContextStore } from "../packages/core/src/persistence/conversation-context-store.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../packages/core/src/runtime-episode.ts";
-import { rememberFact } from "../packages/core/src/semantics.ts";
 import { PRINCIPAL, SCOPE, tempDir } from "./support.ts";
 
 interface Fixture {

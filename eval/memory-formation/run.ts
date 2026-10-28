@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
+import { createAiSdkMemoryProposalGenerator } from "@ember/ai-sdk/memory-proposals.ts";
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { createAiSdkMemoryProposalGenerator } from "../../packages/core/src/ai/memory-proposals.ts";
 import { loadMemoryFormationScenario, runMemoryFormationScenario } from "./harness.ts";
 
 const options = parseArguments(process.argv.slice(2));

@@ -31,12 +31,12 @@ privacy, and delivery distinctions executable across both current surfaces.
 
 ## Boundary
 
-`../../packages/core/src/app` and `../../packages/core/src/app` expose the one supported
+`../../packages/application/src/app` and `../../packages/application/src/app` expose the one supported
 surface-neutral ordinary-interaction seam. Executable/bootstrap code composes that
-application through `../../packages/core/src/composition` or `../../packages/core/src/composition` before
+application through `../../packages/composition/src` or `../../packages/composition/src` before
 entering the concrete adapter; ordinary surface modules receive the application and do
 not construct providers, stores, or cognition orchestration themselves.
-`../../packages/core/src/runtime` retains the focused operational ledger and
+`../../packages/application/src/runtime` retains the focused operational ledger and
 delivery-reconciliation mechanics used by the application boundary.
 
 The complete executable path is documented in
@@ -310,7 +310,7 @@ remain Ember-owned inputs.
 
 ## Executable acceptance scenarios
 
-The focused tests in `../../packages/core/src/app` instantiate the issue #85 transport
+The focused tests in `../../packages/application/src/app` instantiate the issue #85 transport
 semantics through the public application contract. `../../apps`
 exercises those rules through the concrete Telegram adapter.
 `tests/cross-surface-semantics.test.ts` validates the same

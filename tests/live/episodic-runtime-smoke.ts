@@ -1,30 +1,26 @@
 #!/usr/bin/env node
 
-import assert from "node:assert/strict";
-import { constants } from "node:fs";
-import { access, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { delimiter, join, resolve } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
+import type { SpecialistEpisodeRecord } from "@ember/ai-sdk/codex-specialist.ts";
+import type { EpisodicRuntimeConfig, RuntimeObservation } from "@ember/composition/runtime/episodic-runtime.ts";
+import type { SystemdHostConfig } from "@ember/host/systemd.ts";
 
-import type { SpecialistEpisodeRecord } from "../../packages/core/src/delegation/codex-specialist.ts";
-import type { SystemdHostConfig } from "../../packages/core/src/host/systemd.ts";
-import type { EpisodicRuntimeConfig, RuntimeObservation } from "../../packages/core/src/runtime/episodic-runtime.ts";
-
-import {
-    createSpecialistEpisode,
-    inspectSpecialistEpisode,
-} from "../../packages/core/src/delegation/codex-specialist.ts";
-import { runCommand, SystemdUserBackgroundHost } from "../../packages/core/src/host/systemd.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
+import { createSpecialistEpisode, inspectSpecialistEpisode } from "@ember/ai-sdk/codex-specialist.ts";
 import {
     EpisodicRecordStore,
     scheduleWake,
     specialistJobId,
     startSpecialistEpisode,
     wakeJobId,
-} from "../../packages/core/src/runtime/episodic-runtime.ts";
+} from "@ember/composition/runtime/episodic-runtime.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { runCommand, SystemdUserBackgroundHost } from "@ember/host/systemd.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
+import assert from "node:assert/strict";
+import { constants } from "node:fs";
+import { access, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { delimiter, join, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const PRINCIPAL = "live-runtime-smoke-user";

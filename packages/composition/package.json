@@ -1,0 +1,32 @@
+{
+  "name": "@ember/composition",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "test": "node --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@ember/agent": "workspace:*",
+    "@ember/ai-sdk": "workspace:*",
+    "@ember/application": "workspace:*",
+    "@ember/domain": "workspace:*",
+    "@ember/engine": "workspace:*",
+    "@ember/google-calendar": "workspace:*",
+    "@ember/host": "workspace:*",
+    "@ember/mcp": "workspace:*",
+    "@ember/persistence": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.1",
+    "oxfmt": "0.66.0",
+    "oxlint": "1.81.0",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=26.8.1 <27"
+  },
+  "packageManager": "pnpm@12.6.0"
+}

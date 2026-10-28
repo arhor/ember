@@ -55,7 +55,7 @@ not itself a cognition retry. Telegram may replay an unacknowledged `update_id`,
 the issue #85 correlation boundary suppresses duplicate cognition and duplicate
 response delivery for that established occurrence.
 
-The Linux resident installation is owned by `../../packages/core/src/host`. The
+The Linux resident installation is owned by `../../packages/host/src`. The
 `@ember/telegram` executable supplies a host-neutral process launch and calls the
 resident host to render, inspect, install, stop, and activate the service. The adapter retains
 the `~/.config/systemd/user/ember-telegram.service` path, network-online ordering,

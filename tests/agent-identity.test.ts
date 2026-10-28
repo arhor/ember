@@ -1,18 +1,12 @@
+import type { AiExecutionRequest } from "@ember/application/ai/contract.ts";
+import type { EmberState } from "@ember/domain/model.ts";
+
+import { buildCodexPrompt } from "@ember/ai-sdk/providers/codex.ts";
+import { buildCursorPrompt } from "@ember/ai-sdk/providers/cursor.ts";
+import { agentActor, initialState, normalizeLegacyIdentityRepresentation, validateState } from "@ember/domain/model.ts";
+import { rememberInference, supersede, userEvidence } from "@ember/domain/semantics.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
-
-import type { AiExecutionRequest } from "../packages/core/src/ai/contract.ts";
-import type { EmberState } from "../packages/core/src/model.ts";
-
-import { buildCodexPrompt } from "../packages/core/src/ai/providers/codex.ts";
-import { buildCursorPrompt } from "../packages/core/src/ai/providers/cursor.ts";
-import {
-    agentActor,
-    initialState,
-    normalizeLegacyIdentityRepresentation,
-    validateState,
-} from "../packages/core/src/model.ts";
-import { rememberInference, supersede, userEvidence } from "../packages/core/src/semantics.ts";
 
 const PRINCIPAL = "user-1";
 const SCOPE = "relationship:user-1";

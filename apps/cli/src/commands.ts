@@ -1,11 +1,10 @@
-import type { SurfaceRepositories } from "@ember/core/app/surface-repositories.ts";
-import type { EmberState, MeaningId, RuntimeId } from "@ember/core/model.ts";
+import type { SurfaceRepositories } from "@ember/application/app/surface-repositories.ts";
+import type { EmberState, MeaningId, RuntimeId } from "@ember/domain/model.ts";
 import type { Writable } from "node:stream";
 
-import { actionProposalConfirmation } from "@ember/core/capabilities/action-proposal.ts";
-import { EmberError, ValidationError } from "@ember/core/errors.ts";
-import { nowUtc } from "@ember/core/model.ts";
-import { startRuntime, stopRuntime } from "@ember/core/runtime-episode.ts";
+import { EmberError, ValidationError } from "@ember/domain/errors.ts";
+import { nowUtc } from "@ember/domain/model.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
 import {
     attachDetail,
     rememberEpisode,
@@ -15,8 +14,9 @@ import {
     supersede,
     undertake,
     withholdDetail,
-} from "@ember/core/semantics.ts";
-import { cloneState } from "@ember/core/util.ts";
+} from "@ember/domain/semantics.ts";
+import { cloneState } from "@ember/domain/util.ts";
+import { actionProposalConfirmation } from "@ember/persistence/capabilities/action-proposal.ts";
 import { CommanderError } from "commander";
 
 import type { SessionCommand } from "./session-program.ts";

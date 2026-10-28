@@ -21,7 +21,7 @@ model-written reasons into canonical memory.
 
 ## Implemented seam
 
-`../../packages/core/src/agency` exposes a narrow evaluator contract:
+`../../packages/application/src/agency` exposes a narrow evaluator contract:
 
 ```text
 current Ember state + active runtime
@@ -114,7 +114,7 @@ at this boundary; issue #78 owns later delivery/interruption decisions.
 
 ## Deterministic scenario controls
 
-`../../packages/core/src/agency` exercises the issue-73 CO-01/CO-02
+`../../packages/application/src/agency` exercises the issue-73 CO-01/CO-02
 counterfactual directly. Quiet state and live-concern state receive the same
 `foreground_probe`; only Ember-owned projected state differs.
 
@@ -128,7 +128,7 @@ silence scenarios without changing this evaluator contract.
 
 ## AI SDK structured evaluator
 
-Issue #198 adds `../../packages/core/src/ai` as an in-process
+Issue #198 adds `../../packages/ai-sdk/src` as an in-process
 implementation of the same `CognitionOpportunityEvaluator` seam. It uses AI SDK
 `generateText` with `Output.object` and `jsonSchema`, including local schema validation,
 so the model returns the typed decision object directly instead of encoding control
@@ -149,7 +149,7 @@ for the adapter/error boundary and repository sweep.
 
 > Historical protocol description: the exact-token path below describes the earlier
 > evaluator, before the #315 structured-control migration. Current
-> [Codex opportunity implementation](../../packages/core/src/ai/codex-opportunity.ts)
+> [Codex opportunity implementation](../../packages/ai-sdk/src/codex-opportunity.ts)
 > delegates to the typed AI SDK opportunity evaluator under
 > [accepted ADR 0017](decisions/0017-use-typed-structured-output-for-control-decisions.md)
 > and [ADR 0029](decisions/0029-persist-topic-free-cognition-decisions-and-explicit-silence.md).

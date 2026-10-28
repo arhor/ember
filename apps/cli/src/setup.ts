@@ -1,12 +1,12 @@
-import type { BootstrapEvent } from "@ember/core/app/bootstrap.ts";
-import type { SetupCompositionOverrides } from "@ember/core/composition/setup.ts";
+import type { BootstrapEvent } from "@ember/application/app/bootstrap.ts";
+import type { SetupCompositionOverrides } from "@ember/composition/setup.ts";
 
-import { bootstrapContinuity, prepareConfiguredRun } from "@ember/core/app/bootstrap.ts";
-import { composeCliSurface } from "@ember/core/composition/cli.ts";
-import { composeSetupDependencies } from "@ember/core/composition/setup.ts";
-import { ValidationError } from "@ember/core/errors.ts";
-import { createSetupDiagnostics } from "@ember/core/host/setup-diagnostics.ts";
-import { defaultSetupConfigPath, loadSetupConfig } from "@ember/core/host/setup.ts";
+import { bootstrapContinuity, prepareConfiguredRun } from "@ember/application/app/bootstrap.ts";
+import { composeCliSurface } from "@ember/composition/cli.ts";
+import { composeSetupDependencies } from "@ember/composition/setup.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { createSetupDiagnostics } from "@ember/host/setup-diagnostics.ts";
+import { defaultSetupConfigPath, loadSetupConfig } from "@ember/host/setup.ts";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
@@ -162,18 +162,22 @@ async function runConfigured(
             ? {}
             : { googleCalendarConfigPath: config.googleCalendarConfigPath }),
     });
-    return await runCliSurface(
-        {
-            principal: config.principal,
-            scope: config.scope,
-            ...(config.expectedContinuityBinding === undefined
-                ? {}
-                : { expectedContinuityBinding: config.expectedContinuityBinding }),
-            ...(lines === undefined ? {} : { lines }),
-        },
-        io,
-        services,
-    );
+    try {
+        return await runCliSurface(
+            {
+                principal: config.principal,
+                scope: config.scope,
+                ...(config.expectedContinuityBinding === undefined
+                    ? {}
+                    : { expectedContinuityBinding: config.expectedContinuityBinding }),
+                ...(lines === undefined ? {} : { lines }),
+            },
+            io,
+            services,
+        );
+    } finally {
+        await services.close();
+    }
 }
 
 async function firstRun(io: CliIo, diagnostics: boolean): Promise<number> {

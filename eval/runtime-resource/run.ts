@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 
+import type { SpecialistEpisodeSpec } from "@ember/ai-sdk/codex-specialist.ts";
+import type {
+    EpisodicRuntimeConfig,
+    RuntimeObservation,
+    WakeIntent,
+} from "@ember/composition/runtime/episodic-runtime.ts";
+
+import { createSpecialistEpisode } from "@ember/ai-sdk/codex-specialist.ts";
+import { EpisodicRecordStore } from "@ember/composition/runtime/episodic-runtime.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -7,18 +18,6 @@ import { arch, cpus, platform, release, tmpdir, totalmem } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
-
-import type { SpecialistEpisodeSpec } from "../../packages/core/src/delegation/codex-specialist.ts";
-import type {
-    EpisodicRuntimeConfig,
-    RuntimeObservation,
-    WakeIntent,
-} from "../../packages/core/src/runtime/episodic-runtime.ts";
-
-import { createSpecialistEpisode } from "../../packages/core/src/delegation/codex-specialist.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { EpisodicRecordStore } from "../../packages/core/src/runtime/episodic-runtime.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const RUNTIME_ENTRYPOINT = resolve(ROOT, "bin/ember-runtime.ts");

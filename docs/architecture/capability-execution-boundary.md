@@ -38,9 +38,9 @@ model produces final AiExecutionResult
 Ember validateAiExecutionResult
 ```
 
-`../../packages/core/src/capabilities` owns the capability contract and firewall. Application
+`../../packages/domain/src/capabilities` owns the capability contract and firewall. Application
 composition owns the selection policy, and runtime resolves that policy before invoking
-AI execution. `../../packages/core/src/ai` receives only the selected bindings for that call and
+AI execution. `../../packages/ai-sdk/src` receives only the selected bindings for that call and
 adapts them to AI SDK `tool` and `generateText` mechanics. AI SDK `Tool`, tool-call,
 message, step, approval, and result types are not domain contracts and are not stored in
 canonical Ember state.
@@ -151,7 +151,7 @@ expression evidence, not AI SDK tool calls, messages, response IDs, step objects
 
 ## Deterministic local proof
 
-`../../packages/core/src/capabilities` is the first real capability behind the seam. It
+`../../packages/domain/src/capabilities` is the first real capability behind the seam. It
 looks up one explicitly allowed key from local deterministic data. It is intentionally
 small: the purpose is to exercise the real execution firewall without adding shell,
 filesystem, network, MCP, or product behavior.
@@ -169,7 +169,7 @@ production `createAiSdkCognitionExecutor` and application cognition path. It pro
 - capability success cannot bypass final `usedMeaningIds` validation; and
 - provider, tool-call, and capability execution metadata do not enter canonical state.
 
-`../../packages/core/src/capabilities` directly exercises the cancellation boundary,
+`../../packages/domain/src/capabilities` directly exercises the cancellation boundary,
 including safe cancellation before execution and truthful uncertainty after execution
 has begun.
 
@@ -264,7 +264,7 @@ attempt are safely retryable `not_started` failures. Malformed 2xx responses aft
 submission produce `outcome_unknown` in both the durable action ledger and capability
 evidence.
 
-Deterministic coverage lives in `../../packages/core/src/integrations`.
+Deterministic coverage lives in `../../packages/google-calendar/src`.
 The opt-in real smoke requires a refresh token granted the
 `https://www.googleapis.com/auth/calendar.events` scope and runs with:
 

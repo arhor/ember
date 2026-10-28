@@ -5,7 +5,8 @@ import { createScanner, SyntaxKind } from "typescript/unstable/ast";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoots = [
-    { directory: resolve(root, "packages/core/src"), ownerPrefix: "" },
+    { directory: resolve(root, "bin"), ownerPrefix: "bin" },
+    { directory: resolve(root, "scripts"), ownerPrefix: "scripts" },
     { directory: resolve(root, "apps/cli/src"), ownerPrefix: "apps/cli" },
     { directory: resolve(root, "apps/cli/bin"), ownerPrefix: "apps/cli/bin" },
     { directory: resolve(root, "apps/telegram/src"), ownerPrefix: "apps/telegram" },
@@ -21,6 +22,30 @@ const surfaceBootstrapAndCommandModules = new Set([
     "apps/telegram/config.ts",
     "apps/telegram/composition.ts",
 ]);
+
+// Consumer-owned contracts keep infrastructure dependencies pointing inward.
+const packageDependencies: Record<string, readonly string[]> = {
+    agent: [],
+    engine: ["agent"],
+    domain: [],
+    application: ["agent", "engine", "domain"],
+    persistence: ["agent", "engine", "domain", "application"],
+    "ai-sdk": ["agent", "engine", "domain", "application"],
+    mcp: ["agent", "engine", "domain", "application"],
+    "google-calendar": ["agent", "engine", "domain", "application"],
+    host: ["agent", "engine", "domain", "application"],
+    composition: [
+        "agent",
+        "engine",
+        "domain",
+        "application",
+        "persistence",
+        "ai-sdk",
+        "mcp",
+        "google-calendar",
+        "host",
+    ],
+};
 
 export function dependencyViolations(owner: string, source: string): string[] {
     const violations: string[] = [];
@@ -38,7 +63,30 @@ export function dependencyViolations(owner: string, source: string): string[] {
         }
         const specifier = reference.specifier;
         const target = resolvedOwner(owner, specifier);
-        if (!owner.startsWith("apps/") && target?.startsWith("apps/"))
+        const ownerPackage = owner.match(/^packages\/([^/]+)\//)?.[1];
+        const targetPackage = target?.match(/^packages\/([^/]+)\//)?.[1];
+        if (ownerPackage) {
+            const allowed = packageDependencies[ownerPackage];
+            if (targetPackage === "core") reject(specifier, "extracted packages must not depend on legacy core");
+            else if (targetPackage && targetPackage !== ownerPackage && (!allowed || !allowed.includes(targetPackage)))
+                reject(specifier, "package dependency must point inward through consumer-owned contracts");
+            if (ownerPackage === "agent" && !specifier.startsWith("."))
+                reject(specifier, "agent contracts must not import runtime or external packages");
+            if (["engine", "domain", "application"].includes(ownerPackage) && isAiSdkImport(specifier, target))
+                reject(
+                    specifier,
+                    "generic execution and domain/application contracts must not import AI SDK infrastructure",
+                );
+        }
+        if (owner.startsWith("apps/") && !owner.includes("/bin/") && !surfaceBootstrapAndCommandModules.has(owner)) {
+            if (
+                targetPackage &&
+                ["composition", "persistence", "ai-sdk", "host", "mcp", "google-calendar"].includes(targetPackage)
+            )
+                reject(specifier, "conversational adapters must receive composed collaborators");
+        }
+        if (targetPackage === "core" && !ownerPackage) reject(specifier, "legacy core is retired");
+        if (ownerPackage && target?.startsWith("apps/"))
             reject(specifier, "core package modules must not import a concrete surface");
         if (
             (owner.startsWith("apps/cli/") && target?.startsWith("apps/telegram/")) ||
@@ -92,7 +140,13 @@ export function dependencyViolations(owner: string, source: string): string[] {
 
 async function main() {
     const violations: string[] = [];
-    for (const sourceRoot of sourceRoots) {
+    const packageRoots = (await readdir(resolve(root, "packages"), { withFileTypes: true }))
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => ({
+            directory: resolve(root, "packages", entry.name, "src"),
+            ownerPrefix: `packages/${entry.name}`,
+        }));
+    for (const sourceRoot of [...sourceRoots, ...packageRoots]) {
         for (const file of await sourceFiles(sourceRoot.directory)) {
             const relativeOwner = relative(sourceRoot.directory, file).replaceAll("\\", "/");
             const owner = sourceRoot.ownerPrefix ? `${sourceRoot.ownerPrefix}/${relativeOwner}` : relativeOwner;
@@ -114,18 +168,24 @@ function isAiSdkImport(specifier: string, target: string | null) {
         specifier === "ai" ||
         specifier.startsWith("ai/") ||
         specifier.startsWith("@ai-sdk/") ||
+        specifier.startsWith("ai-sdk-") ||
+        target?.startsWith("packages/ai-sdk/") ||
         (target?.startsWith("ai/") && target !== "ai/contract.ts")
     );
 }
 
 function resolvedOwner(owner: string, specifier: string) {
-    if (specifier === "@ember/core") return "index.ts";
-    if (specifier.startsWith("@ember/core/")) return specifier.slice("@ember/core/".length);
     if (specifier === "@ember/cli") return "apps/cli/index.ts";
     if (specifier.startsWith("@ember/cli/")) return `apps/cli/${specifier.slice("@ember/cli/".length)}`;
     if (specifier === "@ember/telegram") return "apps/telegram/index.ts";
     if (specifier.startsWith("@ember/telegram/")) return `apps/telegram/${specifier.slice("@ember/telegram/".length)}`;
+    const workspace = specifier.match(/^@ember\/([^/]+)(?:\/(.*))?$/);
+    if (workspace) return `packages/${workspace[1]}/${workspace[2] ?? "index.ts"}`;
     if (!specifier.startsWith(".")) return null;
+    if (owner.startsWith("packages/")) {
+        const physical = resolve("/", dirname(owner.replace(/^(packages\/[^/]+)\//, "$1/src/")), specifier);
+        return physical.slice(1).replace(/^(packages\/[^/]+)\/src\//, "$1/");
+    }
     const target = resolve("/", dirname(owner), specifier).slice(1).replaceAll("\\", "/");
     return target.startsWith("../") ? null : target;
 }

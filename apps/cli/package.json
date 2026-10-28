@@ -14,7 +14,12 @@
     "test": "node --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@ember/core": "workspace:*",
+    "@ember/application": "workspace:*",
+    "@ember/composition": "workspace:*",
+    "@ember/domain": "workspace:*",
+    "@ember/google-calendar": "workspace:*",
+    "@ember/host": "workspace:*",
+    "@ember/persistence": "workspace:*",
     "commander": "15.0.0"
   },
   "engines": {

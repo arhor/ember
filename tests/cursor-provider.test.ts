@@ -1,3 +1,11 @@
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { createCursorLanguageModel } from "@ember/ai-sdk/cursor.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "@ember/ai-sdk/onboarding-progress.ts";
+import { buildCursorPrompt, cursorEnvironment, invokeCursorProvider } from "@ember/ai-sdk/providers/cursor.ts";
+import { ProviderError } from "@ember/domain/errors.ts";
+import { buildProjection } from "@ember/domain/projection.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { rememberPreference } from "@ember/domain/semantics.ts";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFileSync, readdirSync } from "node:fs";
@@ -6,18 +14,6 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
-import { createCursorLanguageModel } from "../packages/core/src/ai/cursor.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../packages/core/src/ai/onboarding-progress.ts";
-import {
-    buildCursorPrompt,
-    cursorEnvironment,
-    invokeCursorProvider,
-} from "../packages/core/src/ai/providers/cursor.ts";
-import { ProviderError } from "../packages/core/src/errors.ts";
-import { buildProjection } from "../packages/core/src/projection.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
-import { rememberPreference } from "../packages/core/src/semantics.ts";
 import {
     captureError,
     captureProcessCommand,

@@ -28,8 +28,8 @@ if (command === "probe") {
 async function probe(repo) {
     const [{ runTelegramPolling }, { initialState }, { StateStore }] = await Promise.all([
         import(pathToFileURL(join(repo, "apps/telegram/src/index.ts")).href),
-        import(pathToFileURL(join(repo, "packages/core/src/model.ts")).href),
-        import(pathToFileURL(join(repo, "packages/core/src/persistence/state-store.ts")).href),
+        import(pathToFileURL(join(repo, "@ember/domain/model.ts")).href),
+        import(pathToFileURL(join(repo, "@ember/persistence/persistence/state-store.ts")).href),
     ]);
 
     const footprint = {

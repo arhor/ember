@@ -1,12 +1,12 @@
+import type { EpisodicRuntimeConfig, WakeIntent } from "@ember/composition/runtime/episodic-runtime.ts";
+
+import { EpisodicRecordStore } from "@ember/composition/runtime/episodic-runtime.ts";
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { EpisodicRuntimeConfig, WakeIntent } from "../packages/core/src/runtime/episodic-runtime.ts";
-
 import { main } from "../bin/ember-runtime.ts";
-import { EpisodicRecordStore } from "../packages/core/src/runtime/episodic-runtime.ts";
 import { PRINCIPAL, ROOT, SCOPE, tempDir } from "./support.ts";
 
 test("run-wake dispatch does not require systemd configuration", async () => {

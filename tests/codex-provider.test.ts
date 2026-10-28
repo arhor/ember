@@ -1,3 +1,15 @@
+import { createCodexLanguageModel } from "@ember/ai-sdk/codex.ts";
+import { createAiSdkCognitionExecutor } from "@ember/ai-sdk/cognition.ts";
+import { createAiSdkOnboardingProgressEvaluator } from "@ember/ai-sdk/onboarding-progress.ts";
+import { buildCodexPrompt, invokeCodexProvider } from "@ember/ai-sdk/providers/codex.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { ProviderError } from "@ember/domain/errors.ts";
+import { buildProjection } from "@ember/domain/projection.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { rememberPreference } from "@ember/domain/semantics.ts";
+import { codexEnvironment } from "@ember/host/codex-environment.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -6,18 +18,6 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, test } from "node:test";
 
-import { createCodexLanguageModel } from "../packages/core/src/ai/codex.ts";
-import { createAiSdkCognitionExecutor } from "../packages/core/src/ai/cognition.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "../packages/core/src/ai/onboarding-progress.ts";
-import { buildCodexPrompt, invokeCodexProvider } from "../packages/core/src/ai/providers/codex.ts";
-import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { ProviderError } from "../packages/core/src/errors.ts";
-import { codexEnvironment } from "../packages/core/src/host/codex-environment.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { buildProjection } from "../packages/core/src/projection.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
-import { rememberPreference } from "../packages/core/src/semantics.ts";
 import {
     captureError,
     captureProcessCommand,

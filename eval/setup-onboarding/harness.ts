@@ -1,24 +1,23 @@
+import type { SetupConfig } from "@ember/application/app/bootstrap.ts";
+import type { RunCognitionOptions } from "@ember/application/app/cognition-execution.ts";
+import type { MemoryProposalGenerator } from "@ember/application/memory/memory-proposal-generation.ts";
+import type { OnboardingProgressEvaluator } from "@ember/application/onboarding/progress-evaluator.ts";
+import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "@ember/domain/model.ts";
+
+import { executeCognition as runCoreCognition } from "@ember/application/app/cognition-execution.ts";
+import { prepareCognition } from "@ember/application/app/cognition-preparation.ts";
+import { runPostTurnFollowUps } from "@ember/application/app/post-turn.ts";
 import { setupMain } from "@ember/cli/setup.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { ValidationError } from "@ember/domain/errors.ts";
+import { initialState } from "@ember/domain/model.ts";
+import { applyOnboardingProgressDecision, createOnboardingWork } from "@ember/domain/onboarding-work.ts";
+import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
+import { exactKeys, isObject } from "@ember/domain/util.ts";
+import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
-
-import type { SetupConfig } from "../../packages/core/src/app/bootstrap.ts";
-import type { RunCognitionOptions } from "../../packages/core/src/app/cognition-execution.ts";
-import type { MemoryProposalGenerator } from "../../packages/core/src/memory/memory-proposal-generation.ts";
-import type { EmberState, EvidenceId, MeaningId, RuntimeId } from "../../packages/core/src/model.ts";
-import type { OnboardingProgressEvaluator } from "../../packages/core/src/onboarding/progress-evaluator.ts";
-
-import { executeCognition as runCoreCognition } from "../../packages/core/src/app/cognition-execution.ts";
-import { prepareCognition } from "../../packages/core/src/app/cognition-preparation.ts";
-import { runPostTurnFollowUps } from "../../packages/core/src/app/post-turn.ts";
-import { createFileBackedRepositoriesForState } from "../../packages/core/src/composition/ember.ts";
-import { ValidationError } from "../../packages/core/src/errors.ts";
-import { initialState } from "../../packages/core/src/model.ts";
-import { applyOnboardingProgressDecision, createOnboardingWork } from "../../packages/core/src/onboarding-work.ts";
-import { OnboardingWorkStore } from "../../packages/core/src/persistence/onboarding-work-store.ts";
-import { StateStore } from "../../packages/core/src/persistence/state-store.ts";
-import { startRuntime, stopRuntime } from "../../packages/core/src/runtime-episode.ts";
-import { exactKeys, isObject } from "../../packages/core/src/util.ts";
 
 export type SetupOnboardingFlow = "fresh-create" | "restore-existing";
 export interface SetupOnboardingScenario {

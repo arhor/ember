@@ -185,3 +185,5 @@ that folder and `NNNN-title-with-dashes.md` names, such as
 across all statuses, with at least four zero-padded digits. Never reuse a retired
 number or renumber existing records. Titles use `# ADR NNNN: Title` and dates remain
 native frontmatter metadata, not filename prefixes. Keep this index in numeric order.
+
+- [ADR 0039: Separate agent contracts, engine, and startup composition](0039-separate-agent-contracts-engine-and-startup-composition.md) — accepted

@@ -1,3 +1,12 @@
+import { createProcessProvider as createTestProcessProvider, invokeProvider } from "@ember/ai-sdk/providers/process.ts";
+import { validateAiExecutionResult } from "@ember/application/ai/contract.ts";
+import { executeCognition } from "@ember/application/app/cognition-execution.ts";
+import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
+import { validateState } from "@ember/domain/model.ts";
+import { buildProjection } from "@ember/domain/projection.ts";
+import { startRuntime } from "@ember/domain/runtime-episode.ts";
+import { cloneState } from "@ember/domain/util.ts";
+import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
@@ -5,18 +14,6 @@ import { join, matchesGlob } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { validateAiExecutionResult } from "../packages/core/src/ai/contract.ts";
-import {
-    createProcessProvider as createTestProcessProvider,
-    invokeProvider,
-} from "../packages/core/src/ai/providers/process.ts";
-import { executeCognition } from "../packages/core/src/app/cognition-execution.ts";
-import { createFileBackedRepositoriesForState } from "../packages/core/src/composition/ember.ts";
-import { validateState } from "../packages/core/src/model.ts";
-import { StateStore } from "../packages/core/src/persistence/state-store.ts";
-import { buildProjection } from "../packages/core/src/projection.ts";
-import { startRuntime } from "../packages/core/src/runtime-episode.ts";
-import { cloneState } from "../packages/core/src/util.ts";
 import {
     captureError,
     captureProcessCommand,

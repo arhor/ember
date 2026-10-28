@@ -1,11 +1,11 @@
+import type { AiExecutionResult } from "@ember/application/ai/contract.ts";
+
+import { buildCodexArguments } from "@ember/ai-sdk/providers/codex.ts";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { AiExecutionResult } from "../packages/core/src/ai/contract.ts";
-
 import { loadLongitudinalScenario, runLongitudinalScenario } from "../eval/longitudinal/harness.ts";
-import { buildCodexArguments } from "../packages/core/src/ai/providers/codex.ts";
 import { ROOT, tempDir } from "./support.ts";
 
 const SCENARIO = join(ROOT, "eval", "longitudinal", "fixtures", "restart-thread-continuity.json");

@@ -1,7 +1,6 @@
+import { validateConversationContextDocument } from "@ember/domain/conversation-context.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
-
-import { validateConversationContextDocument } from "../packages/core/src/conversation-context.ts";
 
 test("conversation sidecar rejects an active trajectory whose id belongs to another owner", () => {
     assert.throws(

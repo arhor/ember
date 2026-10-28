@@ -1,15 +1,12 @@
 import type { ClaudeCodeSettings } from "ai-sdk-provider-claude-code";
 
+import { createClaudeCodeExecutor, createClaudeCodeExecutorWithDependencies } from "@ember/ai-sdk/claude-code.ts";
+import { ProviderError } from "@ember/domain/errors.ts";
 import { createAuthenticationError } from "ai-sdk-provider-claude-code";
 import { MockLanguageModelV3 } from "ai/test";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import {
-    createClaudeCodeExecutor,
-    createClaudeCodeExecutorWithDependencies,
-} from "../packages/core/src/ai/claude-code.ts";
-import { ProviderError } from "../packages/core/src/errors.ts";
 import { captureError, emptyRequest } from "./support.ts";
 
 function generated(value: unknown) {
