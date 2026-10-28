@@ -1,5 +1,4 @@
 import type { AiExecutor } from "@ember/application/ai/contract.ts";
-import type { OnboardingWorkStore } from "@ember/application/ports/persistence/onboarding-work-store.ts";
 import type { StateStore } from "@ember/application/ports/persistence/state-store.ts";
 import type { EmberState } from "@ember/domain/model.ts";
 
@@ -7,7 +6,6 @@ import { validateAiExecutionResult } from "@ember/application/ai/contract.ts";
 import { safeText, validateSetupProvider } from "@ember/application/app/bootstrap-validation.ts";
 import { ProviderError, ValidationError } from "@ember/domain/errors.ts";
 import { initialState, newId, nowUtc } from "@ember/domain/model.ts";
-import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { buildProjection } from "@ember/domain/projection.ts";
 import { startRuntime } from "@ember/domain/runtime-episode.ts";
 
@@ -107,7 +105,6 @@ export interface BootstrapDependencies {
     loadConfig(path: string): Promise<SetupConfig | null>;
     persistConfig(path: string, config: SetupConfig): Promise<void>;
     createStateStore(path: string): Pick<StateStore, "load" | "create" | "acquireWriteLease" | "releaseWriteLease">;
-    createOnboardingStore(path: string): Pick<OnboardingWorkStore, "load" | "save">;
     provider(config: SetupProvider): AiExecutor;
     loadGoogleCalendarConfig(path: string): Promise<{ setup_lineage_id: string } | null>;
     signal?: AbortSignal;
@@ -316,43 +313,11 @@ export async function bootstrapContinuity(args: SetupRequest, dependencies: Boot
             return 2;
         }
         try {
-            const onboardingStore = dependencies.createOnboardingStore(statePath);
-            if (!state && intent === "create-new") {
-                const work = await onboardingStore.load();
-                if (work === null) {
-                    await onboardingStore.save(
-                        createOnboardingWork(
-                            candidate.lineage.lineageId,
-                            principal,
-                            `relationship:${principal}`,
-                            nowUtc(),
-                            "pending_activation",
-                        ),
-                    );
-                } else if (
-                    work.lineage_id !== candidate.lineage.lineageId ||
-                    work.principal !== principal ||
-                    work.status !== "pending_activation"
-                ) {
-                    throw new ValidationError("onboarding activation evidence conflicts with the intended new lineage");
-                }
-            }
             if (!state) {
                 continuityMutationStarted = true;
                 await store.create(candidate);
             }
             assertBinding(config, await store.load());
-            const pendingOnboarding = await onboardingStore.load();
-            if (
-                config.intent === "create-new" &&
-                pendingOnboarding?.status === "pending_activation" &&
-                pendingOnboarding.lineage_id === config.lineageId &&
-                pendingOnboarding.principal === principal
-            ) {
-                pendingOnboarding.status = "active";
-                pendingOnboarding.updated_at = nowUtc();
-                await onboardingStore.save(pendingOnboarding);
-            }
             config.continuity = "available";
             await persistObserved();
         } catch {
@@ -401,8 +366,6 @@ export async function prepareConfiguredRun(
     if (!config || config.verification !== "verified" || config.continuity !== "available")
         throw new ValidationError("setup has not verified cognition and continuity; rerun ember setup first");
     const scope = args.mode === "default" ? `relationship:${config.principal}` : args.scope;
-    if ((await dependencies.createOnboardingStore(config.statePath).load())?.status === "pending_activation")
-        throw new ValidationError("new-lineage onboarding activation is incomplete; rerun ember setup first");
     const googleCalendarConfig =
         config.version === 2
             ? await dependencies.loadGoogleCalendarConfig(config.googleCalendarConfigPath!)

@@ -2,7 +2,6 @@ import { executeCognition, executePreparedCognition } from "@ember/application/a
 import { prepareCognition } from "@ember/application/app/cognition-preparation.ts";
 import { createFileBackedRepositoriesForState } from "@ember/composition/ember.ts";
 import { initialState } from "@ember/domain/model.ts";
-import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { startRuntime } from "@ember/domain/runtime-episode.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
@@ -153,9 +152,7 @@ test("incoherent prepared cognition is rejected before provider or persistence s
         const started = startRuntime(loaded, "max", "private", { timestamp: "2026-09-22T08:01:00Z" });
         const state = await store.commit(loaded.revision, started.state);
         const repositories = createFileBackedRepositoriesForState(store);
-        await repositories.onboarding.save(
-            createOnboardingWork(state.lineage.lineageId, "max", "private", "2026-09-22T08:01:00Z"),
-        );
+
         const preparation = await prepareCognition(repositories, state, {
             runtimeId: started.runtimeId,
             principal: "max",
@@ -188,8 +185,6 @@ test("incoherent prepared cognition is rejected before provider or persistence s
             (value: typeof preparation) => (value.projection.lineage.lineageId = "lineage-other"),
             (value: typeof preparation) => (value.projection.recoveryAccount.gapKind = "known_clean_stop_interval"),
             (value: typeof preparation) => value.projection.selection.explicit_explain_ids.push("meaning-other"),
-            (value: typeof preparation) => (value.onboardingWork!.guidance = "mismatched"),
-            (value: typeof preparation) => (value.onboardingDocument!.scope = "other"),
         ];
         for (const mutate of invalidPreparations) {
             const invalid = structuredClone(preparation);

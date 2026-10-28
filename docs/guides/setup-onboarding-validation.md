@@ -1,5 +1,11 @@
 # Setup and Onboarding End-to-End Validation
 
+> Historical reference. Automatic first-run setup and onboarding were removed by
+> [ADR 0040](../architecture/decisions/0040-open-an-empty-shell-and-configure-explicitly.md). See
+> [Interactive shell and setup](setup.md) for current procedures. The original
+> procedures and dated evidence below describe the former implementation. Its topic-state
+> evaluation runner is retired.
+
 This document records the current evidence for issue #256 and the setup/onboarding epic
 #250. The deterministic suite is the repeatable acceptance gate; the clean-host procedure
 below is optional operational evidence.

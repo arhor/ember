@@ -46,7 +46,6 @@ export type TelegramUpdateOutcome =
           cognitionId: CognitionId;
           providerFailure: string | null;
           memoryProposalFailure: string | null;
-          onboardingProgressFailure: string | null;
           deliveryFailure: "failed" | "uncertain" | null;
       };
 
@@ -249,7 +248,6 @@ export async function processTelegramUpdate(
         cognitionId: result.cognitionId,
         providerFailure: result.diagnostics.providerFailure,
         memoryProposalFailure: result.diagnostics.memoryProposalFailure,
-        onboardingProgressFailure: result.diagnostics.onboardingProgressFailure,
         deliveryFailure:
             result.delivery?.status === "blocked_uncertain"
                 ? "uncertain"

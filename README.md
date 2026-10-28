@@ -23,9 +23,9 @@ Run Ember from source:
 node apps/cli/bin/ember.ts
 ```
 
-With no default setup record, plain `ember` asks whether to create a new continuity or restore an existing one, verifies the
-selected cognition provider, activates the continuity, and then continues directly into ordinary conversation. On later
-runs, plain `ember` loads the same configured continuity and relationship scope.
+Every launch opens an empty chat shell. The first message starts a fresh conversation while
+preserving durable identity and memory. If configuration is needed, enter /setup explicitly,
+then resend your message. /help lists commands and /quit exits.
 
 Provider authentication remains owned by the selected provider runtime. Authenticate there first when required.
 
@@ -40,7 +40,7 @@ The application home separates machine configuration (`~/.ember/config/`) from c
 A resident service is optional. Foreground CLI conversation does not require systemd, launchd, or another daemon.
 
 See [Canonical Ember Application Flow](docs/architecture/canonical-application-flow.md) for the complete ordinary message
-path and [Setup and Onboarding](docs/guides/setup-and-onboarding.md) for create/restore, provider
+path and [Interactive shell and setup](docs/guides/setup.md) for create/restore, provider
 verification, and recovery. Telegram configuration is a manual operator procedure documented in the
 [Telegram surface runbook](docs/guides/telegram-surface-runbook.md).
 
@@ -70,7 +70,7 @@ for the migration decision.
 - [Source layout and surface placement](docs/architecture/source-layout.md)
 - [Interaction surface boundary](docs/architecture/interaction-surface-boundary.md)
 - [AI SDK cognition adapter boundary](docs/architecture/ai-sdk-cognition-adapter-boundary.md)
-- [Setup and onboarding semantics](docs/guides/setup-and-onboarding.md)
+- [Interactive shell and setup](docs/guides/setup.md)
 - [Architecture acceptance scenarios](docs/architecture/acceptance-scenarios.md)
 - [Cross-cutting design directions](docs/research/design-directions.md)
 - [TypeScript runtime decision](docs/architecture/decisions/0006-adopt-typescript-on-nodejs-26.md)

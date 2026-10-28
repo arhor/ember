@@ -13,6 +13,7 @@ export interface CliSurfaceConfig {
     lines?: AsyncIterable<string>;
     principal: string;
     scope: string;
+    conversationBoundary?: { fresh: boolean };
     expectedContinuityBinding?: { lineageId: string; establishedAt: string };
 }
 
@@ -36,18 +37,34 @@ export async function runCliSurface(
     }
     const lines = config.lines ?? createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
     const iterator = lines[Symbol.asyncIterator]();
+    const boundary = config.conversationBoundary ?? { fresh: true };
     for await (const line of { [Symbol.asyncIterator]: () => iterator }) {
         if (!line.trim()) continue;
-        if (!line.startsWith(":")) {
+        if (!line.startsWith(":") && !line.startsWith("/")) {
             try {
-                await runOrdinaryCliInteraction(config, application, line, io);
+                await runOrdinaryCliInteraction(config, application, line, io, boundary.fresh);
+                boundary.fresh = false;
             } catch (error) {
                 if (error instanceof EmberError) io.error.write(`command rejected: ${error.message}\n`);
                 else throw error;
             }
             continue;
         }
-        if (await runSessionLine(line, config, io, application, repositories)) return 0;
+        let argv: string[] = [];
+        try {
+            argv = splitCommand(line.slice(1));
+        } catch {
+            /* Report through the command parser below. */
+        }
+        if (argv.length === 1 && argv[0] === "help") {
+            createSessionProgram(io, async () => {}).outputHelp();
+            continue;
+        }
+        if (argv.length === 1 && argv[0] === "new-conversation") {
+            boundary.fresh = true;
+            continue;
+        }
+        if (await runSessionLine(line, config, io, application, repositories, boundary)) return 0;
     }
     return 0;
 }
@@ -58,6 +75,7 @@ async function runSessionLine(
     io: CliSurfaceIo,
     application: EmberApplication,
     repositories: SurfaceRepositories,
+    boundary: { fresh: boolean },
 ): Promise<boolean> {
     let argv: string[] | undefined;
     let tokenizeError: EmberError | undefined;
@@ -71,7 +89,8 @@ async function runSessionLine(
     if (argv?.[0] === "ask" || (tokenizeError !== undefined && isAskRemainder(line.slice(1)))) {
         try {
             if (tokenizeError) throw tokenizeError;
-            await runSessionAsk(argv ?? [], config, application, io);
+            await runSessionAsk(argv ?? [], config, application, io, boundary.fresh);
+            boundary.fresh = false;
         } catch (error) {
             if (error instanceof CommanderError) {
                 if (error.exitCode !== 0) io.error.write(`command rejected: ${error.message}\n`);
@@ -106,10 +125,14 @@ async function runOrdinaryCliInteraction(
     application: EmberApplication,
     line: string,
     io: CliSurfaceIo,
+    freshConversation = false,
 ) {
     const result = await withSigintCancellation((signal) =>
         application.interact(
             {
+                ...(freshConversation
+                    ? { conversationMembership: { action: "fresh" as const, basis: "explicit_boundary" as const } }
+                    : {}),
                 kind: "message",
                 principal: config.principal,
                 scope: config.scope,
@@ -127,8 +150,6 @@ async function runOrdinaryCliInteraction(
     if (result.diagnostics.providerFailure) io.error.write(`provider: ${result.diagnostics.providerFailure}\n`);
     if (result.diagnostics.memoryProposalFailure)
         io.error.write(`memory proposal: ${result.diagnostics.memoryProposalFailure}\n`);
-    if (result.diagnostics.onboardingProgressFailure)
-        io.error.write(`onboarding progress: ${result.diagnostics.onboardingProgressFailure}\n`);
     return result;
 }
 
@@ -157,10 +178,18 @@ async function runSessionAsk(
     config: CliSurfaceConfig,
     application: EmberApplication,
     io: CliSurfaceIo,
+    freshConversation = false,
 ) {
     const program = createSessionProgram(io, async (command) => {
         if (command.kind !== "ask") throw new ValidationError("expected :ask --explain ID[,ID...] TEXT");
-        await runExplanationCliInteraction(config, application, command.explainIds, command.text, io);
+        await runExplanationCliInteraction(
+            config,
+            application,
+            command.explainIds,
+            command.text,
+            io,
+            freshConversation,
+        );
     });
     await program.parseAsync(argv, { from: "user" });
 }
@@ -171,10 +200,14 @@ async function runExplanationCliInteraction(
     explainIds: string[],
     text: string,
     io: CliSurfaceIo,
+    freshConversation = false,
 ) {
     const result = await withSigintCancellation((signal) =>
         application.interact(
             {
+                ...(freshConversation
+                    ? { conversationMembership: { action: "fresh" as const, basis: "explicit_boundary" as const } }
+                    : {}),
                 kind: "message",
                 principal: config.principal,
                 scope: config.scope,

@@ -37,7 +37,6 @@ export interface InteractionResult {
     diagnostics: {
         providerFailure: string | null;
         memoryProposalFailure: string | null;
-        onboardingProgressFailure: string | null;
     };
 }
 

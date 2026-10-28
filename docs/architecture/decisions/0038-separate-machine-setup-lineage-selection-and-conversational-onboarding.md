@@ -1,10 +1,12 @@
 ---
-status: "accepted"
+status: "superseded"
 date: "2026-10-27"
 decision-makers: "Repository maintainer"
 ---
 
 # ADR 0038: Separate machine setup, lineage selection, and conversational onboarding
+
+Superseded by [ADR 0040](0040-open-an-empty-shell-and-configure-explicitly.md) on 2026-10-28. The text below is historical.
 
 Migration record from [setup-and-onboarding-semantics](../../guides/setup-and-onboarding.md). This accepted ADR owns the architectural decision; source documents retain supporting references.
 The migration records existing architectural contracts without inventing their original

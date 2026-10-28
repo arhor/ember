@@ -36,7 +36,7 @@ test("CLI surface should deliver through an injected application when reading or
                 {},
             );
             return {
-                diagnostics: { providerFailure: null, memoryProposalFailure: null, onboardingProgressFailure: null },
+                diagnostics: { providerFailure: null, memoryProposalFailure: null },
             };
         },
     } as EmberApplication;
@@ -82,7 +82,7 @@ test("CLI surface should end the session when quit has a space after the colon",
         async interact() {
             interactions += 1;
             return {
-                diagnostics: { providerFailure: null, memoryProposalFailure: null, onboardingProgressFailure: null },
+                diagnostics: { providerFailure: null, memoryProposalFailure: null },
             };
         },
     } as EmberApplication;
@@ -202,3 +202,54 @@ function silentIo(
         }),
     };
 }
+
+test("CLI surface should create conversation boundaries lazily when messages follow launch and reset commands", async (t) => {
+    // Given
+    const directory = await mkdtemp(join(tmpdir(), "ember-cli-boundaries-"));
+    t.after(() => rm(directory, { recursive: true, force: true }));
+    const statePath = join(directory, "state.json");
+    await new StateStore(statePath).create(initialState("principal"));
+    const services = composeCliSurface({
+        statePath,
+        provider: { kind: "process", command: "unused", arguments: [], timeoutSeconds: 1 },
+    });
+    t.after(() => services.close());
+    const events: InteractionEvent[] = [];
+    const application = {
+        async interact(event) {
+            events.push(event);
+            return { diagnostics: { providerFailure: null, memoryProposalFailure: null } };
+        },
+    } as EmberApplication;
+
+    // When
+    await runCliSurface(
+        {
+            principal: "principal",
+            scope: "private",
+            lines: readableLines([
+                "/help",
+                "/unknown",
+                "/ask",
+                "first",
+                "second",
+                "/new-conversation",
+                "third",
+                "/quit",
+            ]),
+        },
+        silentIo(Readable.from([])),
+        { application, repositories: services.repositories },
+    );
+
+    // Then
+    assert.deepEqual(
+        events.map((event) => event.text),
+        ["first", "second", "third"],
+    );
+    assert.deepEqual(
+        events.map((event) => event.conversationMembership),
+        [{ action: "fresh", basis: "explicit_boundary" }, undefined, { action: "fresh", basis: "explicit_boundary" }],
+    );
+    assert.equal((await services.repositories.conversation.load()).exchanges.length, 0);
+});

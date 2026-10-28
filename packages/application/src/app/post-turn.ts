@@ -3,21 +3,17 @@ import type { CognitionId, EmberState } from "@ember/domain/model.ts";
 import type { EmberApplicationDependencies } from "./dependencies.ts";
 interface PostTurnDiagnostics {
     memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
 }
 import type { PreparedCognition } from "@ember/application/app/cognition-preparation.ts";
 
-import { findCognition } from "@ember/application/app/cognition-execution.ts";
 import { generateAndAdoptConversationMemories } from "@ember/application/memory/memory-proposal-generation.ts";
 import { selectRecentConversationContext } from "@ember/domain/conversation-context.ts";
-import { nowUtc } from "@ember/domain/model.ts";
-import { applyOnboardingProgressDecision } from "@ember/domain/onboarding-work.ts";
 
 /** Runs fallible application follow-ups after cognition and its delivery intent are durable. */
 export async function runPostTurnFollowUps(
     repositories: Pick<
         EmberApplicationDependencies["repositories"],
-        "state" | "conversation" | "onboarding" | "memoryProposalGenerations"
+        "state" | "conversation" | "memoryProposalGenerations"
     >,
     postTurn: EmberApplicationDependencies["postTurn"],
     state: EmberState,
@@ -29,28 +25,6 @@ export async function runPostTurnFollowUps(
         text: string;
     },
 ): Promise<PostTurnDiagnostics> {
-    const cognition = findCognition(state, options.cognitionId);
-    let onboardingProgressFailure: string | null = null;
-    if (preparation.onboardingDocument?.status === "active" && postTurn.onboardingProgressEvaluator !== undefined) {
-        try {
-            const decision = await postTurn.onboardingProgressEvaluator({
-                projection: preparation.projection,
-                onboardingWork: preparation.onboardingWork!,
-                input: options.text,
-            });
-            await repositories.onboarding.save(
-                applyOnboardingProgressDecision(
-                    preparation.onboardingDocument,
-                    decision,
-                    cognition.inputEvidenceId,
-                    nowUtc(),
-                ),
-            );
-        } catch (error) {
-            onboardingProgressFailure = error instanceof Error ? error.message : String(error);
-        }
-    }
-
     let memoryProposalFailure: string | null = null;
     if (postTurn.memoryProposalGenerator !== undefined) {
         try {
@@ -79,5 +53,5 @@ export async function runPostTurnFollowUps(
         }
     }
 
-    return { memoryProposalFailure, onboardingProgressFailure };
+    return { memoryProposalFailure };
 }

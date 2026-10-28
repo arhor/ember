@@ -6,13 +6,10 @@ import type {
 } from "@ember/domain/conversation-context.ts";
 import type { ConversationMembershipIntent } from "@ember/domain/interaction-contract.ts";
 import type { CognitionPurpose, EmberState, MeaningId, RuntimeId } from "@ember/domain/model.ts";
-import type { OnboardingWorkDocument, ProjectedOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import type { Projection } from "@ember/domain/projection.ts";
 
 import { selectRecentConversationContext } from "@ember/domain/conversation-context.ts";
-import { ValidationError } from "@ember/domain/errors.ts";
 import { nowUtc } from "@ember/domain/model.ts";
-import { projectOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { buildProjection } from "@ember/domain/projection.ts";
 
 export interface CognitionPreparationOptions {
@@ -30,20 +27,15 @@ export interface PreparedCognition {
     projection: Projection;
     conversationId: ConversationId;
     conversationMembership: ConversationMembershipResolution;
-    onboardingDocument: OnboardingWorkDocument | null;
-    onboardingWork?: ProjectedOnboardingWork;
     startedAt: string;
 }
 
-/** Narrow application port for resolving conversation and onboarding context. */
+/** Narrow application port for resolving conversation context. */
 export interface CognitionPreparationRepositories {
     conversation: {
         load(): Promise<ConversationContextDocument>;
         activeConversation(principal: string, scope: string): Promise<ActiveConversationTrajectory | null>;
         startFreshConversation(principal: string, scope: string, startedAt: string): Promise<ConversationId>;
-    };
-    onboarding: {
-        load(): Promise<OnboardingWorkDocument | null>;
     };
 }
 
@@ -79,16 +71,6 @@ export async function prepareCognition(
         conversationId: resolved.conversationId,
         membership: resolved.membership,
     });
-    const loadedOnboardingDocument = purpose === "ordinary" ? await repositories.onboarding.load() : null;
-    if (
-        loadedOnboardingDocument !== null &&
-        (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
-            loadedOnboardingDocument.principal !== principal)
-    ) {
-        throw new ValidationError("onboarding work does not match current continuity and principal");
-    }
-    const onboardingDocument = loadedOnboardingDocument?.scope === scope ? loadedOnboardingDocument : null;
-    const onboardingWork = projectOnboardingWork(onboardingDocument);
     const projection = buildProjection(state, {
         principal,
         scope,
@@ -99,14 +81,11 @@ export async function prepareCognition(
         purpose,
         explainIds,
         conversationContext,
-        ...(onboardingWork === undefined ? {} : { onboardingWork }),
     });
     return {
         projection,
         conversationId: resolved.conversationId,
         conversationMembership: resolved.membership,
-        onboardingDocument,
-        ...(onboardingWork === undefined ? {} : { onboardingWork }),
         startedAt,
     };
 }

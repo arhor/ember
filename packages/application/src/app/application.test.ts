@@ -6,10 +6,8 @@ import { createEmberApplication } from "@ember/application/app/application.ts";
 import { composeEmberApplication } from "@ember/composition/ember.ts";
 import { ProviderError } from "@ember/domain/errors.ts";
 import { initialState } from "@ember/domain/model.ts";
-import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
 import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 import assert from "node:assert/strict";
 import { access, mkdtemp, rm } from "node:fs/promises";
@@ -90,18 +88,13 @@ test("CLI- and Telegram-shaped requests follow the same application coordinator 
     }
 });
 
-test("application interaction should form memory without evaluating onboarding when onboarding is absent", async () => {
+test("application interaction should form memory when an ordinary turn completes", async () => {
     // Given
     const fixture = await applicationFixture();
     let memoryGenerations = 0;
-    let onboardingEvaluations = 0;
     fixture.dependencies.postTurn.memoryProposalGenerator = async () => {
         memoryGenerations += 1;
         return { contractVersion: 1, candidates: [] };
-    };
-    fixture.dependencies.postTurn.onboardingProgressEvaluator = async () => {
-        onboardingEvaluations += 1;
-        return { decision_version: 1, updates: [] };
     };
 
     try {
@@ -114,7 +107,6 @@ test("application interaction should form memory without evaluating onboarding w
         // Then
         assert.equal(result.cognitionStatus, "completed");
         assert.equal(memoryGenerations, 1);
-        assert.equal(onboardingEvaluations, 0);
         assert.equal((await fixture.dependencies.repositories.memoryProposalGenerations.load()).generations.length, 1);
     } finally {
         await fixture.close();
@@ -134,15 +126,10 @@ test("the coordinator uses independently supplied persistence collaborators", as
             {
                 executor: async () => ({ contractVersion: 1, reply: "reply", usedMeaningIds: [] }),
                 memoryProposalGenerator: async () => ({ contractVersion: 1, candidates: [] }),
-                onboardingProgressEvaluator: async () => ({
-                    decision_version: 1,
-                    updates: [{ topic: "forms_of_address", action: "resolve", basis: "same" }],
-                }),
             },
         );
         const conversation = new ConversationContextStore(join(directory, "dialogue"));
         const interactions = new InteractionLedgerStore(join(directory, "delivery"));
-        const onboarding = new OnboardingWorkStore(join(directory, "onboarding"));
         const memoryProposalGenerations = new MemoryProposalGenerationStore(join(directory, "memory"));
         const dependencies: EmberApplicationDependencies = {
             ...composed,
@@ -163,10 +150,7 @@ test("the coordinator uses independently supplied persistence collaborators", as
                     startDeliveryAttempt: interactions.startDeliveryAttempt.bind(interactions),
                     finishDeliveryAttempt: interactions.finishDeliveryAttempt.bind(interactions),
                 },
-                onboarding: {
-                    load: onboarding.load.bind(onboarding),
-                    save: onboarding.save.bind(onboarding),
-                },
+
                 memoryProposalGenerations: {
                     append: memoryProposalGenerations.append.bind(memoryProposalGenerations),
                     complete: memoryProposalGenerations.complete.bind(memoryProposalGenerations),
@@ -174,9 +158,6 @@ test("the coordinator uses independently supplied persistence collaborators", as
             },
         };
         await dependencies.repositories.state.create(state);
-        await dependencies.repositories.onboarding.save(
-            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, SCOPE, "2026-09-21T20:00:00Z"),
-        );
 
         const result = await createEmberApplication(dependencies).interact(
             event("local_cli", "explicit_local_argument"),
@@ -186,7 +167,6 @@ test("the coordinator uses independently supplied persistence collaborators", as
         assert.equal(result.cognitionStatus, "completed");
         assert.equal((await conversation.load()).exchanges.length, 1);
         assert.equal((await interactions.load()).deliveries.length, 1);
-        assert.equal((await onboarding.load())?.topics[0]?.status, "resolved");
         assert.equal((await memoryProposalGenerations.load()).generations.length, 1);
         await assert.rejects(access(`${statePath}.conversation.json`));
         await assert.rejects(access(`${statePath}.interactions.json`));
@@ -222,7 +202,6 @@ for (const expected of [
             assert.deepEqual(result.diagnostics, {
                 providerFailure: null,
                 memoryProposalFailure: null,
-                onboardingProgressFailure: null,
             });
             const state = await fixture.dependencies.repositories.state.load();
             assert.equal(state.operations.runtimeEpisodes.at(-1)?.stopReason, "application_delivery_failure");
@@ -273,16 +252,9 @@ test("application interaction should preserve successful cognition when post-tur
     // Given
     const fixture = await applicationFixture();
     try {
-        fixture.dependencies.postTurn.onboardingProgressEvaluator = async () => {
-            throw new Error("progress unavailable");
-        };
         fixture.dependencies.postTurn.memoryProposalGenerator = async () => {
             throw new Error("reflection unavailable");
         };
-        const state = await fixture.dependencies.repositories.state.load();
-        await fixture.dependencies.repositories.onboarding.save(
-            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, SCOPE, "2026-09-22T10:00:00Z"),
-        );
         let delivered = false;
 
         // When
@@ -298,7 +270,6 @@ test("application interaction should preserve successful cognition when post-tur
         assert.deepEqual(result.diagnostics, {
             providerFailure: null,
             memoryProposalFailure: "reflection unavailable",
-            onboardingProgressFailure: "progress unavailable",
         });
         const completed = await fixture.dependencies.repositories.state.load();
         assert.equal(completed.operations.cognitionEpisodes.at(-1)?.status, "completed");

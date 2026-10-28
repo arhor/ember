@@ -1,8 +1,14 @@
 # Setup and Onboarding Guide
 
+> Historical reference. Automatic first-run setup and onboarding were removed by
+> [ADR 0040](../architecture/decisions/0040-open-an-empty-shell-and-configure-explicitly.md). See
+> [Interactive shell and setup](setup.md) for current procedures. The original
+> procedures and dated evidence below describe the former implementation. Its topic-state
+> evaluation runner is retired.
+
 > Decision owner: [accepted ADR 0038](../architecture/decisions/0038-separate-machine-setup-lineage-selection-and-conversational-onboarding.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
-> Status: current setup/onboarding contract from epic #250, including the implemented
+> Historical status: setup/onboarding contract from epic #250, including the implemented
 > default first-run conversation entry.
 >
 > Machine bootstrap and optional host mutation surround the same ordinary application

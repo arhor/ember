@@ -34,7 +34,6 @@ export class SurfaceDeliveryFailure extends Error {
     readonly retryable: boolean;
     readonly retryAfterSeconds: number | null;
     memoryProposalFailure: string | null = null;
-    onboardingProgressFailure: string | null = null;
 
     constructor(
         message: string,
@@ -62,15 +61,8 @@ export class SurfaceDeliveryFailure extends Error {
         this.retryAfterSeconds = retryAfterSeconds;
     }
 
-    withCognitionDiagnostics({
-        memoryProposalFailure,
-        onboardingProgressFailure,
-    }: {
-        memoryProposalFailure: string | null;
-        onboardingProgressFailure: string | null;
-    }) {
+    withCognitionDiagnostics({ memoryProposalFailure }: { memoryProposalFailure: string | null }) {
         this.memoryProposalFailure = memoryProposalFailure;
-        this.onboardingProgressFailure = onboardingProgressFailure;
         return this;
     }
 }

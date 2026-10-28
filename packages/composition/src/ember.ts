@@ -3,7 +3,6 @@ import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "@ember/
 import type { InteractionResult } from "@ember/application/app/contract.ts";
 import type { EmberInteraction } from "@ember/application/app/engine-application.ts";
 import type { MemoryProposalGenerator } from "@ember/application/memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "@ember/application/onboarding/progress-evaluator.ts";
 import type { EnginePlugin } from "@ember/engine";
 import type { StateStoreOptions } from "@ember/persistence/persistence/state-store.ts";
 
@@ -13,14 +12,12 @@ import { createCursorLanguageModel } from "@ember/ai-sdk/cursor.ts";
 import { createDeepSeekLanguageModel } from "@ember/ai-sdk/deepseek.ts";
 import { createAiSdkMemoryProposalGenerator } from "@ember/ai-sdk/memory-proposals.ts";
 import { createOllamaLanguageModel } from "@ember/ai-sdk/ollama.ts";
-import { createAiSdkOnboardingProgressEvaluator } from "@ember/ai-sdk/onboarding-progress.ts";
 import { createCognitionPlugin } from "@ember/ai-sdk/plugin.ts";
 import { createProcessLanguageModel } from "@ember/ai-sdk/process.ts";
 import { createProcessProvider } from "@ember/ai-sdk/providers/process.ts";
 import { createEngineApplication } from "@ember/application/app/engine-application.ts";
 import { ObjectiveActionCoordinator } from "@ember/application/app/objective-action.ts";
 import { createProviderMemoryProposalGenerator } from "@ember/application/memory/provider-memory-proposal-generator.ts";
-import { createProviderOnboardingProgressEvaluator } from "@ember/application/onboarding/progress-evaluator.ts";
 import { selectApprovedGoogleCalendarEventCapability } from "@ember/google-calendar/create.ts";
 import { createGoogleCalendarPlugin } from "@ember/google-calendar/plugin.ts";
 import { loadGoogleCalendarConfig, selectGoogleCalendarCapability } from "@ember/google-calendar/read.ts";
@@ -30,7 +27,6 @@ import { FileSessionRepository, FileRunRepository } from "@ember/persistence/eng
 import { DurableObjectiveStore } from "@ember/persistence/objectives/durable-objective.ts";
 import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 
@@ -57,7 +53,6 @@ export interface EmberCompositionOverrides {
     executor?: AiExecutor;
     memoryProposalGenerator?: MemoryProposalGenerator;
     memoryProposalProviderLabel?: string;
-    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
     stateStoreOptions?: StateStoreOptions;
     claudeProviderFactory?: (options: ClaudeCodeProviderOptions) => AiExecutor;
     selectCapabilities?: CapabilitySelector;
@@ -83,7 +78,6 @@ export function composeEmberApplication(
     const controls: Partial<ReturnType<typeof createConfiguredControlHelpers>> =
         overrides.executor === undefined ? createConfiguredControlHelpers(config) : {};
     const memoryProposalGenerator = overrides.memoryProposalGenerator ?? controls.memoryProposalGenerator;
-    const onboardingProgressEvaluator = overrides.onboardingProgressEvaluator ?? controls.onboardingProgressEvaluator;
     return {
         admission: {
             ...(config.expectedContinuityBinding === undefined
@@ -105,14 +99,12 @@ export function composeEmberApplication(
             ...(overrides.memoryProposalProviderLabel === undefined
                 ? {}
                 : { memoryProposalProviderLabel: overrides.memoryProposalProviderLabel }),
-            ...(onboardingProgressEvaluator === undefined ? {} : { onboardingProgressEvaluator }),
         },
     };
 }
 
 function createConfiguredControlHelpers(config: EmberCompositionConfig): {
     memoryProposalGenerator?: MemoryProposalGenerator;
-    onboardingProgressEvaluator?: OnboardingProgressEvaluator;
 } {
     const timeoutSeconds = config.provider.timeoutSeconds;
     const adapter = { command: config.provider.command!, arguments_: config.provider.arguments!, timeoutSeconds };
@@ -121,7 +113,6 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
             config.provider.kind === "codex" ? createCodexLanguageModel(adapter) : createCursorLanguageModel(adapter);
         return {
             memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
-            onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
         };
     }
     if (config.provider.kind === "claude-code") {
@@ -133,12 +124,6 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
                     createAiSdkMemoryProposalGenerator(model, { timeoutSeconds })(request),
                 );
             },
-            onboardingProgressEvaluator: async (request) => {
-                const { createClaudeCodeModelAccess } = await import("@ember/ai-sdk/claude-code.ts");
-                return createClaudeCodeModelAccess(options)((model) =>
-                    createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds)(request),
-                );
-            },
         };
     }
     if (config.provider.kind === "ollama") {
@@ -148,14 +133,12 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
         });
         return {
             memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
-            onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
         };
     }
     if (config.provider.kind === "deepseek") {
         const model = createDeepSeekLanguageModel({ model: config.provider.model! });
         return {
             memoryProposalGenerator: createAiSdkMemoryProposalGenerator(model, { timeoutSeconds }),
-            onboardingProgressEvaluator: createAiSdkOnboardingProgressEvaluator(model, timeoutSeconds),
         };
     }
 
@@ -165,7 +148,6 @@ function createConfiguredControlHelpers(config: EmberCompositionConfig): {
     });
     return {
         memoryProposalGenerator: createProviderMemoryProposalGenerator(executor, timeoutSeconds),
-        onboardingProgressEvaluator: createProviderOnboardingProgressEvaluator(executor, timeoutSeconds),
     };
 }
 
@@ -192,7 +174,6 @@ export function createFileBackedRepositoriesForState(state: StateStore) {
         state,
         conversation: new ConversationContextStore(state.path),
         interactions: new InteractionLedgerStore(state.path),
-        onboarding: new OnboardingWorkStore(state.path),
         memoryProposalGenerations: new MemoryProposalGenerationStore(state.path),
     };
 }

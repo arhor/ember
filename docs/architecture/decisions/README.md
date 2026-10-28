@@ -137,7 +137,7 @@ broader reusable acceptance catalogue for evaluating those later choices.
 - [ADR 0035: Keep durable objectives independent of execution episodes](0035-keep-durable-objectives-independent-of-execution-episodes.md) — accepted
 - [ADR 0036: Defer LangGraph until a measured bounded execution gap earns it](0036-defer-langgraph-until-a-measured-bounded-execution-gap-earns-it.md) — accepted
 - [ADR 0037: Keep interaction occurrences and delivery truth transport-neutral](0037-keep-interaction-occurrences-and-delivery-truth-transport-neutral.md) — accepted
-- [ADR 0038: Separate machine setup, lineage selection, and conversational onboarding](0038-separate-machine-setup-lineage-selection-and-conversational-onboarding.md) — accepted
+- [ADR 0038: Separate machine setup, lineage selection, and conversational onboarding](0038-separate-machine-setup-lineage-selection-and-conversational-onboarding.md) — superseded by ADR 0040
 
 ## Accepted application and cognition decisions (M05)
 
@@ -173,7 +173,7 @@ broader reusable acceptance catalogue for evaluating those later choices.
 - [ADR 0035: Keep durable objectives independent of execution episodes](0035-keep-durable-objectives-independent-of-execution-episodes.md) — accepted
 - [ADR 0036: Defer LangGraph until a measured bounded execution gap earns it](0036-defer-langgraph-until-a-measured-bounded-execution-gap-earns-it.md) — accepted
 - [ADR 0037: Keep interaction occurrences and delivery truth transport-neutral](0037-keep-interaction-occurrences-and-delivery-truth-transport-neutral.md) — accepted
-- [ADR 0038: Separate machine setup, lineage selection, and conversational onboarding](0038-separate-machine-setup-lineage-selection-and-conversational-onboarding.md) — accepted
+- [ADR 0038: Separate machine setup, lineage selection, and conversational onboarding](0038-separate-machine-setup-lineage-selection-and-conversational-onboarding.md) — superseded by ADR 0040
 
 ADR 0033 retains an acknowledged open implementation obligation for durable contact-decision/no_contact history; see M08-F02 in the [migration plan](../../research/archive/adr-migration-plan.md). Accepted semantics do not imply that missing ledger already exists.
 
@@ -187,3 +187,4 @@ number or renumber existing records. Titles use `# ADR NNNN: Title` and dates re
 native frontmatter metadata, not filename prefixes. Keep this index in numeric order.
 
 - [ADR 0039: Separate agent contracts, engine, and startup composition](0039-separate-agent-contracts-engine-and-startup-composition.md) — accepted
+- [ADR 0040: Open an empty shell and configure explicitly](0040-open-an-empty-shell-and-configure-explicitly.md) — accepted

@@ -5,11 +5,9 @@ import { main as cliMain } from "@ember/cli";
 import { runCliSurface } from "@ember/cli/surface.ts";
 import { composeCliSurface } from "@ember/composition/cli.ts";
 import { initialState } from "@ember/domain/model.ts";
-import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { rememberFact } from "@ember/domain/semantics.ts";
 import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { InteractionLedgerStore } from "@ember/persistence/runtime/interaction-ledger.ts";
 import { TELEGRAM_SURFACE_ID } from "@ember/telegram";
@@ -105,7 +103,7 @@ async function runLocalSurface(
     store: StateStore,
     provider: AiExecutor,
     output: string[],
-    followUps: { memory: number; onboarding: number },
+    followUps: { memory: number },
 ) {
     const services = composeCliSurface(
         {
@@ -117,10 +115,6 @@ async function runLocalSurface(
             memoryProposalGenerator: async () => {
                 followUps.memory += 1;
                 return { contractVersion: 1, candidates: [] };
-            },
-            onboardingProgressEvaluator: async () => {
-                followUps.onboarding += 1;
-                return { decision_version: 1, updates: [] };
             },
         },
     );
@@ -176,11 +170,7 @@ test("canonical flow should preserve shared semantics through real CLI and Teleg
         const cliRequests: AiExecutionRequest[] = [];
         const telegramRequests: AiExecutionRequest[] = [];
         const cliOutput: string[] = [];
-        const followUps = { memory: 0, onboarding: 0 };
-        const state = await f.store.load();
-        await new OnboardingWorkStore(f.statePath).save(
-            createOnboardingWork(state.lineage.lineageId, PRINCIPAL, SHARED_SCOPE, "2026-09-01T00:00:00.000Z"),
-        );
+        const followUps = { memory: 0 };
 
         // When
         const cliStatus = await runLocalSurface(f.store, captureProvider(cliRequests), cliOutput, followUps);
@@ -210,10 +200,7 @@ test("canonical flow should preserve shared semantics through real CLI and Teleg
                     followUps.memory += 1;
                     return { contractVersion: 1, candidates: [] };
                 },
-                onboardingProgressEvaluator: async () => {
-                    followUps.onboarding += 1;
-                    return { decision_version: 1, updates: [] };
-                },
+
                 maxAcceptedUpdates: 1,
                 onOutcome: (outcome) => outcomes.push(outcome),
             },
@@ -238,7 +225,7 @@ test("canonical flow should preserve shared semantics through real CLI and Teleg
         assert.equal(sends, 1);
         assert.equal(cliRequests.length, 1);
         assert.equal(telegramRequests.length, 1);
-        assert.deepEqual(followUps, { memory: 2, onboarding: 2 });
+        assert.deepEqual(followUps, { memory: 2 });
         const completed = await f.store.load();
         assert.equal(completed.operations.cognitionEpisodes.length, 2);
         assert.ok(completed.operations.cognitionEpisodes.every((episode) => episode.status === "completed"));
@@ -246,9 +233,6 @@ test("canonical flow should preserve shared semantics through real CLI and Teleg
         assert.ok(completed.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
         assert.equal((await new ConversationContextStore(f.statePath).load()).exchanges.length, 2);
         assert.equal((await new MemoryProposalGenerationStore(f.statePath).load()).generations.length, 2);
-        assert.ok(
-            (await new OnboardingWorkStore(f.statePath).load())?.topics.every((topic) => topic.status === "open"),
-        );
 
         const cliProjection = cliRequests[0]!.projection;
         const telegramProjection = telegramRequests[0]!.projection;

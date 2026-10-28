@@ -141,7 +141,6 @@ async function interact(
             diagnostics: {
                 providerFailure: result.providerFailure,
                 memoryProposalFailure: result.memoryProposalFailure,
-                onboardingProgressFailure: result.onboardingProgressFailure,
             },
         };
     } finally {
@@ -173,14 +172,13 @@ interface InteractionExecutionOptions extends Omit<RunCognitionOptions, "cogniti
         state: EmberState,
         cognitionId: CognitionId,
         preparation: PreparedCognition,
-    ) => Promise<{ memoryProposalFailure: string | null; onboardingProgressFailure: string | null }>;
+    ) => Promise<{ memoryProposalFailure: string | null }>;
 }
 
 interface InteractionExecutionResult {
     state: EmberState;
     providerFailure: string | null;
     memoryProposalFailure: string | null;
-    onboardingProgressFailure: string | null;
     cognitionId: CognitionId;
     cognitionStatus: CognitionStatus;
     occurrenceId: string;
@@ -232,7 +230,6 @@ async function executeInteraction(
                     ? null
                     : `transport replay suppressed; existing cognition status is ${existing.status}`,
             memoryProposalFailure: null,
-            onboardingProgressFailure: null,
             cognitionId,
             cognitionStatus: existing.status,
             occurrenceId: accepted.record.occurrence_id,
@@ -291,9 +288,8 @@ async function executeInteraction(
     const committed = await executePreparedCognition(repositories, cognitionState, cognitionOptions);
     let deliveryId: string | null = null;
     let delivery = null;
-    let postTurnDiagnostics: { memoryProposalFailure: string | null; onboardingProgressFailure: string | null } = {
+    let postTurnDiagnostics: { memoryProposalFailure: string | null } = {
         memoryProposalFailure: null,
-        onboardingProgressFailure: null,
     };
     if (committed.expressionText !== null) {
         const cognition = findCognition(committed.state, cognitionId);

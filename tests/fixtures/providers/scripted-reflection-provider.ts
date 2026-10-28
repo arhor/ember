@@ -17,16 +17,6 @@ if (request.projection.surface === "memory_proposal_reflection") {
     } catch {}
     await writeFile(counterPath, String(count + 1));
     reply = JSON.stringify({ contractVersion: 1, candidates: [] });
-} else if (request.input.text.includes('"current_user_input"')) {
-    reply = JSON.stringify({
-        decision_version: 1,
-        updates: [
-            { topic: "forms_of_address", action: "resolve", basis: "Finish onboarding" },
-            { topic: "agent_personality", action: "decline", basis: "Finish onboarding" },
-            { topic: "expectations", action: "resolve", basis: "Finish onboarding" },
-            { topic: "optional_capabilities", action: "decline", basis: "Finish onboarding" },
-        ],
-    });
 }
 
 process.stdout.write(JSON.stringify({ contractVersion: 1, reply, usedMeaningIds: [] }));

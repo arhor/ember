@@ -198,7 +198,7 @@ test("cognition completion can be represented with delivery left unresolved", ()
         replayed: false,
         deliveryId: null,
         delivery: null,
-        diagnostics: { providerFailure: null, memoryProposalFailure: null, onboardingProgressFailure: null },
+        diagnostics: { providerFailure: null, memoryProposalFailure: null },
     };
     assert.equal(result.cognitionStatus, "completed");
     assert.equal(result.delivery, null);

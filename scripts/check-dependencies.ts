@@ -50,7 +50,7 @@ const packageDependencies: Record<string, readonly string[]> = {
 export function dependencyViolations(owner: string, source: string): string[] {
     const violations: string[] = [];
     if (
-        /^(?:app|core|agency|capabilities|delegation|memory|objectives|onboarding|runtime)\//.test(owner) &&
+        /^(?:app|core|agency|capabilities|delegation|memory|objectives|runtime)\//.test(owner) &&
         /systemd|systemctl|launchctl|raspberry/i.test(source)
     )
         violations.push(
@@ -123,7 +123,7 @@ export function dependencyViolations(owner: string, source: string): string[] {
 
         if (owner.startsWith("app/") && target?.startsWith("apps/"))
             reject(specifier, "application orchestration must not import concrete surfaces");
-        if (/^(?:app|core|agency|capabilities|delegation|memory|objectives|onboarding|runtime)\//.test(owner)) {
+        if (/^(?:app|core|agency|capabilities|delegation|memory|objectives|runtime)\//.test(owner)) {
             if (target === "host/systemd.ts" || target === "host/launchd.ts")
                 reject(
                     specifier,
@@ -160,7 +160,7 @@ async function main() {
 }
 
 function isSemanticOwner(owner: string) {
-    return /^(?:core|agency|capabilities|delegation|memory|objectives|onboarding)\//.test(owner);
+    return /^(?:core|agency|capabilities|delegation|memory|objectives)\//.test(owner);
 }
 
 function isAiSdkImport(specifier: string, target: string | null) {

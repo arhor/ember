@@ -1,7 +1,6 @@
 import type { ClaudeCodeProviderOptions } from "@ember/ai-sdk/claude-code.ts";
 import type { AiExecutor } from "@ember/application/ai/contract.ts";
 import type { MemoryProposalGenerator } from "@ember/application/memory/memory-proposal-generation.ts";
-import type { OnboardingProgressEvaluator } from "@ember/application/onboarding/progress-evaluator.ts";
 
 import { composeEmberApplication } from "@ember/composition/ember.ts";
 import assert from "node:assert/strict";
@@ -29,7 +28,6 @@ test("the composition root derives all application repositories from one state p
     assert.equal(dependencies.repositories.state.path, statePath);
     assert.equal(dependencies.repositories.conversation.path, `${statePath}.conversation.json`);
     assert.equal(dependencies.repositories.interactions.path, `${statePath}.interactions.json`);
-    assert.equal(dependencies.repositories.onboarding.path, `${statePath}.onboarding.json`);
     assert.equal(dependencies.repositories.memoryProposalGenerations.path, `${statePath}.memory-proposals.json`);
     assert.equal(dependencies.repositories.actions.path, `${statePath}.actions.json`);
     assert.equal(dependencies.repositories.objectives.path, `${statePath}.objectives.json`);
@@ -38,10 +36,7 @@ test("the composition root derives all application repositories from one state p
 
 test("tests can supply deterministic application collaborators without process configuration", () => {
     const memoryProposalGenerator: MemoryProposalGenerator = async () => ({ contractVersion: 1, candidates: [] });
-    const onboardingProgressEvaluator: OnboardingProgressEvaluator = async () => ({
-        contractVersion: 1,
-        outcomes: [],
-    });
+
     const dependencies = composeEmberApplication(
         {
             statePath,
@@ -57,7 +52,6 @@ test("tests can supply deterministic application collaborators without process c
             executor: providerStub,
             memoryProposalGenerator,
             memoryProposalProviderLabel: "fixture-memory-provider",
-            onboardingProgressEvaluator,
             stateStoreOptions: {
                 hostname: "test-host",
                 pid: 42,
@@ -74,7 +68,6 @@ test("tests can supply deterministic application collaborators without process c
     assert.equal(dependencies.cognition.timeoutSeconds, 17);
     assert.equal(dependencies.postTurn.memoryProposalGenerator, memoryProposalGenerator);
     assert.equal(dependencies.postTurn.memoryProposalProviderLabel, "fixture-memory-provider");
-    assert.equal(dependencies.postTurn.onboardingProgressEvaluator, onboardingProgressEvaluator);
     assert.deepEqual(dependencies.admission.expectedContinuityBinding, {
         lineageId: "lineage-1",
         establishedAt: "2026-09-21T00:00:00Z",

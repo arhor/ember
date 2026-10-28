@@ -15,7 +15,6 @@ import {
     resolveSetupPath,
     writeConfig,
 } from "@ember/host/setup.ts";
-import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 
 export interface SetupCompositionOverrides {
@@ -36,7 +35,6 @@ export function composeSetupDependencies(
         loadConfig: loadSetupConfig,
         persistConfig: overrides.persistConfig ?? writeConfig,
         createStateStore: (path) => new StateStore(path),
-        createOnboardingStore: (path) => new OnboardingWorkStore(path),
         provider: overrides.provider ?? setupProvider,
         loadGoogleCalendarConfig,
         ...(overrides.signal ? { signal: overrides.signal } : {}),

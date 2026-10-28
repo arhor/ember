@@ -114,7 +114,7 @@ function requireMeaning(
     return meaning;
 }
 
-test("CLI -> Telegram -> CLI preserves one agent-owned conversation across process restart", async () => {
+test("cross-surface interaction should preserve durable identity with fresh CLI context when restarted", async () => {
     const directory = await tempDir();
     try {
         const statePath = join(directory, "ember.json");
@@ -304,7 +304,10 @@ test("CLI -> Telegram -> CLI preserves one agent-owned conversation across proce
         assert.equal(telegramProjectionText.includes("update:891"), false);
         const conversationIds = requests.map((request) => request.projection.conversation_context?.conversation_id);
         assert.ok(conversationIds[0]);
-        assert.equal(new Set(conversationIds).size, 1);
+        assert.equal(new Set(conversationIds).size, 2);
+        assert.equal(conversationIds[0], conversationIds[1]);
+        assert.equal(conversationIds[1], conversationIds[2]);
+        assert.notEqual(conversationIds[2], conversationIds[3]);
         assert.deepEqual(
             requests.map((request) =>
                 request.projection.conversation_context.turns
@@ -318,11 +321,7 @@ test("CLI -> Telegram -> CLI preserves one agent-owned conversation across proce
                     [CLI_OPENING, "local_cli"],
                     [TELEGRAM_CONFIRMED, "telegram_bot"],
                 ],
-                [
-                    [CLI_OPENING, "local_cli"],
-                    [TELEGRAM_CONFIRMED, "telegram_bot"],
-                    [TELEGRAM_UNCERTAIN, "telegram_bot"],
-                ],
+                [],
             ],
         );
 

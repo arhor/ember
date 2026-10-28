@@ -7,13 +7,11 @@ import { composeCliSurface } from "@ember/composition/cli.ts";
 import { ProviderError } from "@ember/domain/errors.ts";
 import { DurabilityUncertain } from "@ember/domain/errors.ts";
 import { initialState } from "@ember/domain/model.ts";
-import { createOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { startRuntime } from "@ember/domain/runtime-episode.ts";
 import { loadSetupConfig } from "@ember/host/setup.ts";
 import { actionProposalConfirmation, ActionProposalStore } from "@ember/persistence/capabilities/action-proposal.ts";
 import { ConversationContextStore } from "@ember/persistence/persistence/conversation-context-store.ts";
 import { MemoryProposalGenerationStore } from "@ember/persistence/persistence/memory-proposal-generation-store.ts";
-import { OnboardingWorkStore } from "@ember/persistence/persistence/onboarding-work-store.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import assert from "node:assert/strict";
 import { chmod, copyFile, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
@@ -35,10 +33,7 @@ type FixtureCliConfig = CliSurfaceConfig & {
     googleCalendarConfigPath?: string;
 } & Pick<
         EmberCompositionOverrides,
-        | "memoryProposalGenerator"
-        | "memoryProposalProviderLabel"
-        | "onboardingProgressEvaluator"
-        | "claudeProviderFactory"
+        "memoryProposalGenerator" | "memoryProposalProviderLabel" | "claudeProviderFactory"
     >;
 
 function runCliSurface(config: FixtureCliConfig, io: Parameters<typeof runCliAdapter>[1]) {
@@ -66,9 +61,7 @@ function runCliSurface(config: FixtureCliConfig, io: Parameters<typeof runCliAda
             ...(config.memoryProposalProviderLabel === undefined
                 ? {}
                 : { memoryProposalProviderLabel: config.memoryProposalProviderLabel }),
-            ...(config.onboardingProgressEvaluator === undefined
-                ? {}
-                : { onboardingProgressEvaluator: config.onboardingProgressEvaluator }),
+
             ...(config.claudeProviderFactory === undefined
                 ? {}
                 : { claudeProviderFactory: config.claudeProviderFactory }),
@@ -400,7 +393,7 @@ test("CLI should select the default foreground run when no command is supplied",
     assert.deepEqual(parsed, { command: "run", mode: "default" });
 });
 
-test("foreground ember should require an explicit continuity choice when no configuration exists", async (t) => {
+test("foreground ember should remain empty when launched without configuration", async (t) => {
     // Given
     const f = await fixture(t);
 
@@ -408,9 +401,9 @@ test("foreground ember should require an explicit continuity choice when no conf
     const run = await command([], { env: { HOME: f.directory }, stdin: ":quit\n" });
 
     // Then
-    assert.equal(run.code, 2);
-    assert.match(run.stdout, /Create a new Ember or restore existing continuity/);
-    assert.match(run.stderr, /choose create or restore/);
+    assert.equal(run.code, 0);
+    assert.equal(run.stdout, "");
+    assert.equal(run.stderr, "");
     await assert.rejects(stat(join(f.directory, ".ember", "state", "continuity.json")), { code: "ENOENT" });
 });
 
@@ -428,7 +421,7 @@ test("foreground ember should attach existing continuity when restore is chosen"
     // When
     const run = await command([], {
         env,
-        stdin: `restore\n${restoredStatePath}\ncodex\n${executable}\nyes\nhello\n:quit\n`,
+        stdin: `/setup\nrestore\n${restoredStatePath}\ncodex\n${executable}\nyes\nhello\n:quit\n`,
     });
 
     // Then
@@ -441,7 +434,7 @@ test("foreground ember should attach existing continuity when restore is chosen"
     assert.equal(config?.statePath, await realpath(restoredStatePath));
 });
 
-test("foreground ember should enter ordinary onboarding on first run and resume it later", async (t) => {
+test("foreground ember should configure explicitly and start fresh conversations when launched", async (t) => {
     // Given
     const f = await fixture(t);
     const executable = join(f.directory, "codex.ts");
@@ -451,25 +444,22 @@ test("foreground ember should enter ordinary onboarding on first run and resume 
     const statePath = join(f.directory, ".ember", "state", "continuity.json");
 
     // When
-    const first = await command([], { env, stdin: `create\nuser\ncodex\n${executable}\nhello\n:quit\n` });
+    const first = await command([], { env, stdin: `/setup\ncreate\nuser\ncodex\n${executable}\nhello\n:quit\n` });
     const second = await command([], { env, stdin: "continue\n:quit\n" });
 
     // Then
     assert.equal(first.code, 0, JSON.stringify(first));
     assert.equal(second.code, 0, JSON.stringify(second));
-    assert.match(first.stdout, /Machine setup is ready.*Say hello/s);
+    assert.match(first.stdout, /Ready for ordinary conversation/);
     assert.match(first.stdout, /CODEX_CLI_RESPONSE/);
     assert.doesNotMatch(second.stdout, /Create a new Ember or restore/);
     assert.match(second.stdout, /CODEX_CLI_RESPONSE/);
-    const state = await new StateStore(statePath).load();
     const conversation = await new ConversationContextStore(statePath).load();
-    const onboarding = await new OnboardingWorkStore(statePath).load();
     assert.equal(conversation.exchanges.length, 2);
-    assert.equal(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
-    assert.equal(onboarding?.lineage_id, state.lineage.lineageId);
+    assert.notEqual(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
 });
 
-test("foreground ember should continue one conversation across clean process exits without a service manager", async (t) => {
+test("foreground ember should preserve continuity with fresh conversations across clean process exits", async (t) => {
     // Given
     const f = await fixture(t);
     const executable = join(f.directory, "codex.ts");
@@ -510,7 +500,7 @@ test("foreground ember should continue one conversation across clean process exi
         (await loadSetupConfig(join(f.directory, ".ember", "config", "setup.json")))?.lineageId,
     );
     assert.equal(conversation.exchanges.length, 2);
-    assert.equal(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
+    assert.notEqual(conversation.exchanges[0]?.conversation_id, conversation.exchanges[1]?.conversation_id);
     assert.equal(conversation.exchanges[0]?.scope, "relationship:user");
     assert.equal(state.operations.runtimeEpisodes.length, 2);
     assert.ok(state.operations.runtimeEpisodes.every((episode) => episode.cleanStopAt !== null));
@@ -742,9 +732,7 @@ for (const kind of ["codex", "cursor", "claude-code"]) {
         assert.equal(config.lineageId, state.lineage.lineageId);
         assert.deepEqual(state.meanings, []);
         assert.deepEqual(state.operations.cognitionEpisodes, []);
-        const onboarding = JSON.parse(await readFile(`${f.state}.onboarding.json`, "utf8"));
-        assert.equal(onboarding.lineage_id, state.lineage.lineageId);
-        assert.equal(onboarding.status, "active");
+        await assert.rejects(stat(`${f.state}.onboarding.json`), { code: "ENOENT" });
         assert.equal((await stat(f.config)).mode & 0o777, 0o600);
         assert.doesNotMatch(await readFile(f.state, "utf8"), /provider|PROBE_REPLY|setup.json/);
         assert.doesNotMatch(await readFile(f.config, "utf8"), /PROBE_REPLY/);
@@ -1095,9 +1083,6 @@ test("ordinary CLI conversation preserves the configured memory proposal provide
     const f = await fixture(t);
     const state = initialState("user");
     await new StateStore(f.state).create(state);
-    await new OnboardingWorkStore(f.state).save(
-        createOnboardingWork(state.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
-    );
 
     await runCliSurface(
         {
@@ -1629,16 +1614,14 @@ test("configured CLI rejects a replacement lineage inside the application-owned 
     assert.deepEqual(await store.lockStatus(), { status: "absent" });
 });
 
-test("CLI should continue automatic memory reflection when onboarding closes", async (t) => {
+test("CLI should generate ordinary memories when processing successive messages", async (t) => {
     // Given
     const f = await fixture(t);
     const state = initialState("user");
     await new StateStore(f.state).create(state);
-    await new OnboardingWorkStore(f.state).save(
-        createOnboardingWork(state.lineage.lineageId, "user", "relationship:user", "2026-01-01T00:00:00.000Z"),
-    );
+
     const counter = join(f.directory, "reflection-count.txt");
-    const io = capture("Finish onboarding\nSecond ordinary turn\n:quit\n");
+    const io = capture("First ordinary turn\nSecond ordinary turn\n:quit\n");
 
     // When
     assert.equal(
@@ -1650,7 +1633,7 @@ test("CLI should continue automatic memory reflection when onboarding closes", a
                 providerKind: "process",
                 providerCommand: process.execPath,
                 providerArgs: [
-                    resolve("tests/fixtures/providers/scripted-onboarding-provider.ts"),
+                    resolve("tests/fixtures/providers/scripted-reflection-provider.ts"),
                     "--reflection-counter",
                     counter,
                 ],
@@ -1662,7 +1645,6 @@ test("CLI should continue automatic memory reflection when onboarding closes", a
     );
 
     // Then
-    assert.equal((await new OnboardingWorkStore(f.state).load())?.status, "closed");
     assert.equal(await readFile(counter, "utf8"), "2");
     assert.equal(io.text().match(/PRIMARY_RESPONSE/g)?.length, 2);
     const runtimes = (await new StateStore(f.state).load()).operations.runtimeEpisodes;
@@ -1790,21 +1772,18 @@ test("restart reconciles a matching committed lineage after an interrupted activ
     assert.equal(await readFile(f.state, "utf8"), before);
 });
 
-test("restart activates matching pending onboarding work after continuity was committed", async (t) => {
+test("configured CLI should ignore legacy onboarding sidecars when starting conversation", async (t) => {
+    // Given
     const f = await fixture(t);
     await setupMain(f.create, capture(), verified);
-    const onboardingPath = `${f.state}.onboarding.json`;
-    const onboarding = JSON.parse(await readFile(onboardingPath, "utf8"));
-    onboarding.status = "pending_activation";
-    await writeFile(onboardingPath, JSON.stringify(onboarding));
-    const config = await loadSetupConfig(f.config);
-    config.continuity = "available";
-    await writeFile(f.config, JSON.stringify(config));
-
-    assert.equal(await main(["run", "--config", f.config, "--scope", "test"], capture()), 2);
-    assert.equal(await setupMain([...f.args, "--intent", "use-existing"], capture(), verified), 0);
-    assert.equal(JSON.parse(await readFile(onboardingPath, "utf8")).status, "active");
-    assert.equal((await loadSetupConfig(f.config)).continuity, "available");
+    const path = `${f.state}.onboarding.json`;
+    const legacy = '{"status":"pending_activation","malformed":true}';
+    await writeFile(path, legacy);
+    // When
+    const status = await main(["run", "--config", f.config, "--scope", "test"], capture());
+    // Then
+    assert.equal(status, 0);
+    assert.equal(await readFile(path, "utf8"), legacy);
 });
 
 for (const kind of ["codex", "cursor"]) {
@@ -1827,3 +1806,126 @@ for (const kind of ["codex", "cursor"]) {
         assert.equal(await readFile(f.state, "utf8"), before);
     });
 }
+
+test("foreground shell should keep configuration absent when help, unknown commands and unconfigured messages are entered", async (t) => {
+    // Given
+    const f = await fixture(t);
+    // When
+    const result = await command([], {
+        env: { HOME: f.directory },
+        stdin: "/help\n/unknown\nhello\n/quit\n",
+    });
+    // Then
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stdout, /\/setup/);
+    assert.match(result.stderr, /Unknown command/);
+    assert.match(result.stderr, /Run \/setup/);
+    assert.doesNotMatch(result.stdout, /Create a new Ember/);
+    await assert.rejects(stat(join(f.directory, ".ember", "config", "setup.json")), { code: "ENOENT" });
+    await assert.rejects(stat(join(f.directory, ".ember", "state", "continuity.json")), { code: "ENOENT" });
+});
+
+test("foreground shell should accept messages after explicit setup when an earlier setup is cancelled", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    // When
+    const result = await command([], {
+        env: { HOME: f.directory, PATH: dirname(process.execPath) },
+        stdin: `/setup\n/cancel\n/help\n/setup\ncreate\nuser\ncodex\n${executable}\nhello\n/quit\n`,
+    });
+    // Then
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stderr, /setup cancelled/);
+    assert.match(result.stdout, /CODEX_CLI_RESPONSE/);
+    const path = join(f.directory, ".ember", "state", "continuity.json");
+    assert.equal((await new ConversationContextStore(path).load()).exchanges.length, 1);
+    await assert.rejects(stat(`${path}.onboarding.json`), { code: "ENOENT" });
+});
+
+test("foreground shell should avoid conversation and runtime writes when a configured launch contains only local shell commands", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    const env = { HOME: f.directory, PATH: dirname(process.execPath) };
+    const setup = await command(
+        [
+            "setup",
+            "--intent",
+            "create-new",
+            "--principal",
+            "user",
+            "--provider",
+            "codex",
+            "--provider-command",
+            executable,
+        ],
+        { env },
+    );
+    assert.equal(setup.code, 0, setup.stderr);
+    const path = join(f.directory, ".ember", "state", "continuity.json");
+    const before = await readFile(path, "utf8");
+    // When
+    const result = await command([], { env, stdin: "/help\n/new-conversation\n/quit\n" });
+    // Then
+    assert.equal(result.code, 0, result.stderr);
+    assert.equal(await readFile(path, "utf8"), before);
+    await assert.rejects(stat(`${path}.conversation.json`), { code: "ENOENT" });
+});
+
+test("foreground shell should retain its conversation when setup inspection and rejected changes precede another message", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const executable = join(f.directory, "codex.ts");
+    await copyFile(resolve("tests/fixtures/providers/scripted-codex.ts"), executable);
+    await chmod(executable, 0o700);
+    // When
+    const result = await command([], {
+        env: { HOME: f.directory, PATH: dirname(process.execPath) },
+        stdin: `/setup\ncreate\nuser\ncodex\n${executable}\nfirst\n/setup\n/setup --invalid\n/setup --intent use-existing\nsecond\n/quit\n`,
+    });
+    // Then
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stderr, /unknown option/);
+    const path = join(f.directory, ".ember", "state", "continuity.json");
+    const { exchanges } = await new ConversationContextStore(path).load();
+    assert.equal(exchanges.length, 2);
+    assert.equal(exchanges[0]?.conversation_id, exchanges[1]?.conversation_id);
+});
+
+test("ordinary interaction should ignore legacy topic files and generate memory when sidecar contents are invalid or pending", async (t) => {
+    // Given
+    const f = await fixture(t);
+    const store = new StateStore(f.state);
+    await store.create(initialState("user"));
+    let reflections = 0;
+    const services = composeCliSurface(
+        {
+            statePath: f.state,
+            provider: { kind: "process", command: "unused", arguments: [], timeoutSeconds: 1 },
+        },
+        {
+            executor: async (request) => {
+                assert.equal("onboarding_work" in request.projection, false);
+                return { contractVersion: 1, reply: "ordinary reply", usedMeaningIds: [] };
+            },
+            memoryProposalGenerator: async () => {
+                reflections += 1;
+                return { contractVersion: 1, candidates: [] };
+            },
+        },
+    );
+    t.after(() => services.close());
+    // When / Then
+    for (const legacy of ["invalid JSON", '{"status":"pending_activation","lineage_id":"unrelated"}']) {
+        await writeFile(`${f.state}.onboarding.json`, legacy);
+        assert.equal(await runCliAdapter({ principal: "user", scope: "test" }, capture("hello\n/quit\n"), services), 0);
+        assert.equal(await readFile(`${f.state}.onboarding.json`, "utf8"), legacy);
+    }
+    assert.equal(reflections, 2);
+    assert.deepEqual((await store.load()).meanings, []);
+});

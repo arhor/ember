@@ -32,8 +32,8 @@ application-owned interaction, cognition, post-turn, and delivery coordination
 Ember-owned durable state + sidecars
 ```
 
-Concrete surfaces do not construct cognition providers, canonical stores, memory or
-onboarding helpers, or the application coordinator. Executable/bootstrap composition
+Concrete surfaces do not construct cognition providers, canonical stores, memory
+helpers, or the application coordinator. Executable/bootstrap composition
 does that before the adapter starts.
 
 ## Production entry points and composition
@@ -117,7 +117,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
 
 4. **Ember prepares cognition.**
    [`prepareCognition`](../../packages/application/src/app/cognition-preparation.ts) resolves Ember-owned
-   conversation membership, recent dialogue, onboarding work, and the
+   conversation membership, recent dialogue, and the
    least-sufficient semantic projection. Transport message IDs and provider sessions do
    not become conversation identity or canonical memory.
 
@@ -139,8 +139,7 @@ The same sequence applies to an admitted CLI line and an admitted Telegram messa
    before any transport send.
 
 8. **Post-turn work is application-owned and fallible.**
-   [`runPostTurnFollowUps`](../../packages/application/src/app/post-turn.ts) may evaluate onboarding
-   progress and generate memory proposals. Failures are diagnostics; they do not erase
+   [`runPostTurnFollowUps`](../../packages/application/src/app/post-turn.ts) generates ordinary memory proposals. Failures are diagnostics; they do not erase
    an already completed cognition or pretend that delivery succeeded.
 
 9. **The surface performs delivery through the application contract.**
@@ -171,7 +170,6 @@ meanings:
 | Canonical continuity and semantic evidence | `StateStore` and core semantics | Ember-owned meaning and lifecycle                                                 |
 | Conversation trajectory                    | `ConversationContextStore`      | Short-lived dialogue membership and retained turns                                |
 | Transport occurrence and delivery          | `InteractionLedgerStore`        | Admission, replay identity, retained delivery intent, attempts, and outcomes      |
-| Onboarding work                            | `OnboardingWorkStore`           | Progressive onboarding work bound to continuity/principal/scope                   |
 | Memory proposal generation                 | `MemoryProposalGenerationStore` | Proposal-generation evidence, not automatic canonical memory                      |
 | Provider/runtime observations              | AI/runtime evidence             | Operational facts that do not become identity or semantic authority by themselves |
 

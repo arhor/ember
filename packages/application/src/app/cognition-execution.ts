@@ -1,7 +1,6 @@
 import type { AiExecutionRequest, AiExecutor, CapabilitySelector } from "@ember/application/ai/contract.ts";
 import type { PreparedCognition } from "@ember/application/app/cognition-preparation.ts";
 import type { ConversationContextStore } from "@ember/application/ports/persistence/conversation-context-store.ts";
-import type { OnboardingWorkStore } from "@ember/application/ports/persistence/onboarding-work-store.ts";
 import type { StateStore } from "@ember/application/ports/persistence/state-store.ts";
 import type { CapabilityExecutionLedger } from "@ember/domain/capabilities/execution.ts";
 import type { ConversationMembershipIntent } from "@ember/domain/interaction-contract.ts";
@@ -20,7 +19,6 @@ import { prepareCognition } from "@ember/application/app/cognition-preparation.t
 import { selectRecentConversationContext } from "@ember/domain/conversation-context.ts";
 import { ProviderError, StaleRevision, ValidationError } from "@ember/domain/errors.ts";
 import { agentActor, newId, nowUtc } from "@ember/domain/model.ts";
-import { projectOnboardingWork } from "@ember/domain/onboarding-work.ts";
 import { buildProjection, findRuntime } from "@ember/domain/projection.ts";
 import { requirePrincipal, userEvidence } from "@ember/domain/semantics.ts";
 import { cloneState } from "@ember/domain/util.ts";
@@ -51,7 +49,6 @@ export interface CognitionRepositories {
         ConversationContextStore,
         "load" | "activeConversation" | "startFreshConversation" | "recordAcceptedInput" | "recordCommittedExpression"
     >;
-    onboarding: Pick<OnboardingWorkStore, "load">;
 }
 
 export async function executeCognition(
@@ -325,7 +322,7 @@ async function validatePreparation(
         RunCognitionOptions,
         "runtimeId" | "principal" | "scope" | "surface" | "text" | "purpose" | "explainIds" | "conversationMembership"
     >,
-    repositories: Pick<CognitionRepositories, "conversation" | "onboarding">,
+    repositories: Pick<CognitionRepositories, "conversation">,
 ) {
     const projection = preparation.projection;
     const runtime = findRuntime(state, expected.runtimeId);
@@ -364,30 +361,6 @@ async function validatePreparation(
         conversationId: preparation.conversationId,
         membership: preparation.conversationMembership,
     });
-    const loadedOnboardingDocument = purpose === "ordinary" ? await repositories.onboarding.load() : null;
-    if (
-        loadedOnboardingDocument !== null &&
-        (loadedOnboardingDocument.lineage_id !== state.lineage.lineageId ||
-            loadedOnboardingDocument.principal !== expected.principal)
-    ) {
-        throw new ValidationError("current onboarding work does not match the current continuity and principal");
-    }
-    const selectedOnboardingDocument =
-        loadedOnboardingDocument?.scope === expected.scope ? loadedOnboardingDocument : null;
-    if (
-        purpose !== "ordinary"
-            ? preparation.onboardingDocument !== null || preparation.onboardingWork !== undefined
-            : preparation.onboardingDocument !== null &&
-              (preparation.onboardingDocument.lineage_id !== state.lineage.lineageId ||
-                  preparation.onboardingDocument.principal !== expected.principal ||
-                  preparation.onboardingDocument.scope !== expected.scope)
-    ) {
-        throw new ValidationError("prepared cognition onboarding document does not match the current interaction");
-    }
-    if (!isDeepStrictEqual(preparation.onboardingDocument, selectedOnboardingDocument)) {
-        throw new ValidationError("prepared cognition onboarding document is not the current repository snapshot");
-    }
-    const expectedOnboardingWork = projectOnboardingWork(preparation.onboardingDocument);
     const rebuilt = buildProjection(state, {
         principal: expected.principal,
         scope: expected.scope,
@@ -398,15 +371,7 @@ async function validatePreparation(
         purpose,
         explainIds: expected.explainIds ?? [],
         conversationContext: conversationContext,
-        ...(expectedOnboardingWork === undefined ? {} : { onboardingWork: expectedOnboardingWork }),
     });
-    if (
-        preparation.onboardingWork === undefined
-            ? expectedOnboardingWork !== undefined
-            : !isDeepStrictEqual(preparation.onboardingWork, expectedOnboardingWork)
-    ) {
-        throw new ValidationError("prepared cognition onboarding work does not match its document");
-    }
     if (
         !isDeepStrictEqual(conversationContext, selectedConversationContext) ||
         projection.current_time !== preparation.startedAt ||
