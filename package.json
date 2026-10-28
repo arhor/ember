@@ -4,10 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "pnpm fmt:check && pnpm lint && tsc -p tsconfig.json && pnpm test:types && pnpm check:dependencies && node scripts/docs-discovery.ts check",
+    "check": "pnpm fmt:check && pnpm lint && tsc -p tsconfig.json && pnpm test:types && pnpm check:dependencies",
     "check:dependencies": "node scripts/check-dependencies.ts",
     "test": "node --test \"apps/**/*.test.ts\" \"tests/*.test.ts\"",
-    "test:docs": "node --test \"tests/docs-discovery*.test.ts\"",
     "serve": "node --env-file-if-exists=.env.local apps/cli/bin/ember.ts --diagnostics",
     "runtime:episodic": "node --env-file-if-exists=.env.local bin/ember-runtime.ts",
     "surface:telegram": "node --env-file-if-exists=.env.local apps/telegram/bin/ember-telegram.ts",

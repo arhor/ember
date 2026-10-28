@@ -1,16 +1,8 @@
----
-summary: "Issue #198 boundary for using Vercel AI SDK structured output to represent typed model-control decisions without transferring Ember decision semantics or provenance authority to the SDK."
-read_when:
-  - "Changing AI SDK-backed cognition opportunity evaluation or another typed model-control decision"
-  - "Deciding whether a model control result belongs in AiExecutionResult or a narrower typed Ember contract"
-  - "Replacing prompt-level exact-token or JSON control protocols with structured generation"
-role: design
-discovery_status: current
----
-
 # AI SDK Structured Control Boundary
 
-> Status: current implementation boundary for issue #198. This extends the
+> Decision owner: [accepted ADR 0017](decisions/0017-use-typed-structured-output-for-control-decisions.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
+
+> Status: implementation reference for issue #198 under ADR 0017. This extends the
 > [Endogenous Cognition Decision Boundary](endogenous-cognition-decision.md) without
 > changing its semantic contract.
 
@@ -33,7 +25,8 @@ does not turn `AiExecutionResult` into an arbitrary schema carrier. The existing
 `CognitionOpportunityEvaluator` is the Ember-owned control boundary.
 
 `../../packages/core/src/ai` adds one implementation of that boundary
-for in-process AI SDK `LanguageModel`s. AI SDK 7.0.93 owns the mechanical structured
+for in-process AI SDK `LanguageModel`s. The adoption-era AI SDK 7.0.93 implementation
+(current manifest: 7.0.153 as inspected on 2026-10-27) owns the mechanical structured
 output step through `generateText` + `Output.object` + `jsonSchema`.
 
 ## Structured syntax versus Ember semantics

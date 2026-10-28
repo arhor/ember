@@ -1,14 +1,6 @@
----
-summary: "Issue #232 semantics for durable, proposal-specific human approval correlated across turns, surfaces, and process restarts without relying on provider or tool state."
-read_when:
-  - "Implementing or changing approval requests for consequential actions or disclosures"
-  - "Correlating a human approval or rejection with an action proposal across conversation turns, surfaces, or process restarts"
-  - "Deciding whether an approved proposal is still current enough to execute"
-role: design
-discovery_status: current
----
-
 # Durable Action Proposal and Approval Correlation
+
+> Decision owner: [accepted ADR 0026](decisions/0026-bind-approval-to-one-attributable-and-still-current-action-proposal.md), accepted on 2026-10-27. This source retains detailed implementation contracts, procedures, scenarios, evidence, and anchors; the extracted architectural decision is owned by that ADR.
 
 ## Purpose
 

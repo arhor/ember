@@ -1,14 +1,6 @@
----
-summary: "Issue #204 production design for subscription-backed Claude Code cognition through Vercel AI SDK and ai-sdk-provider-claude-code while Ember keeps semantic ownership."
-read_when:
-  - "Changing the Claude Code cognition provider or its isolation/authentication policy"
-  - "Reviewing how subscription-backed agent runtimes can fit behind Ember's Vercel AI SDK boundary"
-  - "Investigating Claude Code cancellation, session, tool, MCP, skill, or customization leakage"
-role: design
-discovery_status: current
----
-
 # Claude Code cognition through Vercel AI SDK
+
+> Decision owner: [accepted ADR 0018](decisions/0018-isolate-claude-code-cognition-behind-its-ai-sdk-provider.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
 
 ## Decision
 
@@ -17,11 +9,15 @@ production `AiExecutor` through **Vercel AI SDK 7** and the community
 `ai-sdk-provider-claude-code` package. Ember does not own a Claude-specific process
 runner, CLI parser, JSONL protocol, retry loop, or structured-output transport.
 
-The dependency versions pinned by the implementation are:
+The dependency versions recorded in the original adoption evidence were:
 
 - `ai@7.0.93`;
 - `ai-sdk-provider-claude-code@4.3.1`; and
 - the provider's exact `@anthropic-ai/claude-agent-sdk@0.3.263` dependency.
+
+The manifests inspected on 2026-10-27 pin `ai@7.0.153` and
+`ai-sdk-provider-claude-code@4.3.1`. The historical transitive version above is not
+a new dependency constraint. No live behavior was re-evaluated for migration.
 
 The community provider is not an Anthropic or Vercel package. Its value here is narrow:
 it maps the official Claude Agent SDK/Claude Code runtime onto AI SDK's language-model

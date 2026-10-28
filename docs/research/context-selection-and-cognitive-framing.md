@@ -1,19 +1,10 @@
----
-summary: "Canonical semantics for selecting bounded cognitive projections while preserving scope, permission, provenance, currentness, uncertainty, and authority."
-read_when:
-  - "Changing what persistent or external information participates in a model or specialist context"
-  - "Designing compaction, reconstruction, least-sufficient context, privacy boundaries, or behavior when relevant information is omitted"
-role: research
-discovery_status: current
----
-
 # Context Selection and Cognitive Framing Semantics
 
 This note addresses issue #5 and follows the concern-driven research discipline defined in issue #10.
 
 It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md) and [Memory and Remembering Semantics](memory-and-remembering.md). Their conclusions are active constraints rather than background. Context selection must preserve continuity without making model-visible state the owner of identity, and it must preserve memory semantics without turning retrieval, repetition, summarization, or prompt presence into new authority.
 
-The full Deep Research artifact behind this synthesis is preserved as [source material](source-material/context-selection-and-cognitive-framing-deep-research.md). It is non-canonical and retains research-session citation markers for provenance. A separate [portable evidence map](context-selection-and-cognitive-framing-references.md) provides durable references for the principal evidence behind this note.
+The full Deep Research artifact behind this synthesis is preserved as [source material](archive/context-selection-and-cognitive-framing-deep-research.md). It is non-canonical and retains research-session citation markers for provenance. A separate [portable evidence map](context-selection-and-cognitive-framing-references.md) provides durable references for the principal evidence behind this note.
 
 This note deliberately stays at the semantic level. It does not choose prompt templates, token budgets, context schemas, vector databases, embedding providers, retrieval algorithms, rerankers, caches, compaction algorithms, provider adapters, persistence technology, process architecture, or implementation language.
 

@@ -1,14 +1,6 @@
----
-summary: "Issue #95 evidence-earned repeated-projection attention control that defers duplicate endogenous cognition before evaluator invocation without inventing scheduler cadence."
-read_when:
-  - "Changing issue #95 endogenous attention, repeated cognition, or evaluator-cost controls"
-  - "Deciding when an unchanged endogenous concern may be reconsidered"
-  - "Deriving issue #80 runtime requirements from repeated-projection suppression"
-role: design
-discovery_status: current
----
-
 # Endogenous Attention Control
+
+> Decision owner: [accepted ADR 0031](decisions/0031-defer-repeated-cognition-over-unchanged-projected-grounding.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 > Status: current issue #95 design. This control is intentionally narrower than a
 > generic rate limit, budget, scheduler, cooldown, or motivational score.

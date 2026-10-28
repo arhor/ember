@@ -1,14 +1,6 @@
----
-summary: "Current issue-65 design for reintegrating Codex specialist results against current Ember state while preserving provenance, effect uncertainty, authority, evidential correlation, and crash-consistent inspection."
-read_when:
-  - "Changing how a specialist report is accepted, qualified, rejected, withheld, or allowed to influence canonical Ember meaning"
-  - "Inspecting specialist currentness, authority, partial or failed results, ambiguous effects, duplicate evidence, or reintegration decisions after restart"
-  - "Reviewing AS-DEL-00, AS-DEL-02, AS-DEL-03, or AS-DEL-06 against the production specialist boundary"
-role: design
-discovery_status: current
----
-
 # Specialist Result Reintegration
+
+> Decision owner: [accepted ADR 0028](decisions/0028-reintegrate-specialist-results-through-a-currentness-and-provenance-gate.md), accepted on 2026-10-27. This source retains detailed implementation contracts, procedures, scenarios, evidence, and anchors; the extracted architectural decision is owned by that ADR.
 
 > Status: current companion design for issue #65. This note completes the final
 > semantic step of the [minimal Codex specialist-delegation boundary](minimal-codex-specialist-delegation.md)

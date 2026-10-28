@@ -1,19 +1,10 @@
----
-summary: "Canonical semantics for what makes later Ember the same continuing agent across restarts, interfaces, model changes, partial loss, and legitimate evolution."
-read_when:
-  - "Changing restart, resume, migration, model replacement, or identity-continuity behavior"
-  - "Deciding whether remembered history, relationships, commitments, or self-understanding still belong to the same continuing Ember"
-role: research
-discovery_status: current
----
-
 # Continuity and Identity Semantics
 
 This note addresses issue #3 and follows the concern-driven research discipline defined in issue #10.
 
 It distills the validated conclusions from the continuity and identity research phase into Ember-facing semantics. It deliberately avoids implementation language: no classes, event types, schemas, storage layouts, runtime APIs, package boundaries, prompt-file structures, or persistence technologies are proposed here.
 
-The full Deep Research artifact behind this synthesis is preserved as [source material](source-material/continuity-and-identity-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance.
+The full Deep Research artifact behind this synthesis is preserved as [source material](archive/continuity-and-identity-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance.
 
 ## Working definition
 

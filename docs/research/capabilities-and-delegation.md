@@ -1,20 +1,10 @@
----
-summary: "Canonical semantics separating direct action, bounded capability use, and delegation, including runtime ownership, delegation envelopes, context disclosure, provenance, and reintegration."
-read_when:
-  - "Deciding whether work should be performed directly, through a bounded capability, or delegated to a specialist"
-  - "Changing specialist context, runtime ownership, delegation continuity, result verification, or reintegration"
-  - "Deciding what information may be disclosed to a delegate or what authority can cross a delegation boundary"
-role: research
-discovery_status: current
----
-
 # Capabilities and Delegation Semantics
 
 This note addresses issue #6 and follows the concern-driven research discipline defined in issue #10.
 
 It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md), [Memory and Remembering Semantics](memory-and-remembering.md), and [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md). Their conclusions are active constraints rather than background. Delegation must preserve Ember's continuity without making a specialist runtime part of her identity, preserve memory provenance without turning reports into direct experience, and preserve least-sufficient-context boundaries without assuming that Ember's own cognitive projection is appropriate for a delegate.
 
-The Deep Research artifact behind this synthesis is preserved as [source material](source-material/capabilities-and-delegation-deep-research.md). It is non-canonical. A separate [portable evidence map](capabilities-and-delegation-references.md) maps the principal evidence-labelled conclusions below to durable papers, protocol specifications, runtime documentation, repositories, and inherited Ember research.
+The Deep Research artifact behind this synthesis is preserved as [source material](archive/capabilities-and-delegation-deep-research.md). It is non-canonical. A separate [portable evidence map](capabilities-and-delegation-references.md) maps the principal evidence-labelled conclusions below to durable papers, protocol specifications, runtime documentation, repositories, and inherited Ember research.
 
 This note deliberately stays at the semantic level. It does not choose a Codex adapter, ACP versus MCP versus a native integration, process topology, RPC or transport formats, task or event schemas, thread persistence representation, queues, retry algorithms, approval UI, permission policy, databases, package structure, or implementation language.
 

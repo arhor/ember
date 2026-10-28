@@ -1,16 +1,11 @@
 ---
-summary: "Accepted issue #86 implementation decision adding one systemd-supervised resident Telegram long-poll transport worker while keeping canonical Ember work episodic, lease-bounded, and independent of transport process identity."
-read_when:
-  - "Implementing or reviewing a continuously open messaging transport under Ember's episodic runtime topology"
-  - "Deciding whether a Telegram poller, resident transport worker, restart policy, or surface process may own canonical Ember state or continuity"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-09-05"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0008: Add a systemd-Supervised Resident Telegram Transport Worker Without Making It Ember's Runtime Owner
 
-- **Status:** Accepted
-- **Date:** 2026-09-05
 - **Decision class:** Implementation/runtime topology extension
 - **Origin:** [Issue #86](https://github.com/arhor/ember/issues/86)
 - **Parent epic:** [Issue #52](https://github.com/arhor/ember/issues/52)
@@ -251,3 +246,44 @@ Revisit this decision when:
   the current narrow surface boundary; or
 - the selected protocol client starts imposing polling/retry/runtime ownership that
   cannot be disabled without recreating a larger local adapter.
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+Telegram needs resident transport polling without moving canonical work, identity, authority or provider ownership into that worker. See the [original context](#context) for rationale and evidence.
+
+## Implementation Plan
+
+- **Affected paths:** [apps/telegram/src/surface.ts](../../../apps/telegram/src/surface.ts); [apps/telegram/src/composition.ts](../../../apps/telegram/src/composition.ts); [apps/telegram/bin/ember-telegram.ts](../../../apps/telegram/bin/ember-telegram.ts); [packages/core/src/runtime/interaction-boundary.ts](../../../packages/core/src/runtime/interaction-boundary.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Keep polling transport-owned and work episodic; preserve the existing protocol-client amendment, explicit private-chat mapping, bounded delivery and no uncertain automatic resend. Do not create another Telegram framework/client decision or transfer ownership from ADR 0007.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `apps/telegram/src/surface.test.ts`; `tests/cross-surface-semantics.test.ts`; `tests/telegram-delivery-reconciliation.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

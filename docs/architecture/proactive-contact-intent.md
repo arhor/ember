@@ -1,14 +1,14 @@
----
-summary: "Issue #226 contract for durable, surface-independent proactive-contact intent identity, evidence, lifecycle, restart reconciliation, deduplication, and separation from delivery truth."
-read_when:
-  - "Creating or changing the durable intent produced when endogenous cognition concludes that the principal should be contacted"
-  - "Bridging proactive contact through attention policy into a messaging delivery without conflating intent, handoff, attempt, and delivery"
-  - "Reconciling deferred, handed-off, duplicated, superseded, or uncertain proactive contact after restart"
-role: design
-discovery_status: current
----
-
 # Durable Proactive-Contact Intent Semantics
+
+> Decision owner: [accepted ADR 0033](decisions/0033-represent-proactive-contact-as-durable-intent-distinct-from-delivery.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
+
+> Implementation status — 2026-10-27: ADR 0033 preserves the full semantic contract,
+> including the durable contact-decision/no_contact lifecycle required below. The
+> current intent store implements intent, policy, handoff and delivery observations;
+> it does not yet implement that separate decision ledger. Missing decision records
+> therefore cannot establish deliberate silence. The maintainer acknowledged this
+> gap as open follow-up M08-F02 in the [migration plan](../research/archive/adr-migration-plan.md).
+> Acceptance of the documentation does not complete or verify that runtime work.
 
 ## Purpose
 
@@ -26,7 +26,7 @@ The governing distinction is:
 
 This follows ADR 0005's separation of semantic occurrence, representation, delivery,
 external effect, and current applicability. It also preserves the existing
-[endogenous interruption decision](endogenous-interruption-decision.md): internal
+[endogenous interruption decision](decisions/0032-separate-completed-cognition-from-permission-to-interrupt.md): internal
 cognition may conclude that no contact is appropriate, and even a warranted contact
 must pass later authority, attention, and currentness policy before handoff.
 
@@ -206,7 +206,7 @@ matches the proactive intent's digest. The handoff records:
 - the policy/currentness revision that permitted handoff; and
 - ownership transfer time and actor.
 
-After this point the [delivery reconciliation runbook](delivery-reconciliation-runbook.md)
+After this point the [delivery reconciliation runbook](../guides/delivery-reconciliation-runbook.md)
 governs attempts and transport truth. In particular:
 
 - `handed_off` is not `started`;
@@ -331,7 +331,7 @@ text with availability/currentness/classification and its SHA-256 digest.
 
 - The [endogenous cognition decision](endogenous-cognition-decision.md) decides
   whether internal cognition is worthwhile; it does not create contact intent.
-- The [endogenous interruption decision](endogenous-interruption-decision.md)
+- The [endogenous interruption decision](decisions/0032-separate-completed-cognition-from-permission-to-interrupt.md)
   supplies the current transport-independent policy vocabulary for deciding whether
   completed cognition may surface. A non-null candidate can feed intent creation;
   its `deliver`, `defer`, and `suppress` results are the pure precursor to later

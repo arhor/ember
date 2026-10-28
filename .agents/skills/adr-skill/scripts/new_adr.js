@@ -3,7 +3,7 @@
  * Create a new ADR markdown file using repo conventions and a template.
  *
  * Design goals:
- * - Safe defaults (auto-detect adr directory + numbering)
+ * - Canonical Ember directory and next numeric index
  * - No external deps
  * - Works even if the repo has no ADRs yet
  */
@@ -38,7 +38,7 @@ function parseArgs(argv) {
     title: null,
     status: 'proposed',
     template: 'simple', // simple | madr
-    strategy: 'auto', // auto | date | slug
+    strategy: 'number', // auto | number (both numeric)
     deciders: '',
     consulted: '',
     informed: '',
@@ -78,17 +78,17 @@ function parseArgs(argv) {
           '',
           'Options:',
           '  --repo-root <path>     Repo root (default: .)',
-          '  --dir <path>           ADR directory (default: auto-detect, else adr/)',
+          '  --dir <path>           ADR directory (default: docs/architecture/decisions/)',
           '  --no-create-dir        Do not create ADR directory if missing',
           '  --status <value>       ADR status (default: proposed)',
           '  --template simple|madr Template (default: simple)',
-          '  --strategy auto|date|slug  Filename strategy (default: auto)',
+          '  --strategy auto|number  Filename strategy (default: number)',
           '  --deciders "a,b"      Deciders list',
           '  --consulted "a,b"     Consulted experts (RACI)',
           '  --informed "a,b"      Informed stakeholders (RACI)',
           '  --technical-story <x>  Issue/ticket/PR link or short ref',
           '  --chosen-option <x>    MADR template: chosen option label',
-          '  --update-index         Update adr/README.md (or existing index)',
+          '  --update-index         Update the canonical ADR README index',
           '  --index-file <path>    Override index file (relative to repo root unless absolute)',
           '  --json                 Output machine-readable JSON (default: off)',
           '',
@@ -104,29 +104,10 @@ function parseArgs(argv) {
 
   if (!['simple', 'madr'].includes(out.template))
     die(`Invalid --template: ${out.template}`);
-  if (!['auto', 'date', 'slug'].includes(out.strategy))
+  if (!['auto', 'number'].includes(out.strategy))
     die(`Invalid --strategy: ${out.strategy}`);
 
   return out;
-}
-
-function detectAdrDir(repoRoot) {
-  const candidates = [
-    path.join(repoRoot, 'contributing', 'decisions'),
-    path.join(repoRoot, 'docs', 'decisions'),
-    path.join(repoRoot, 'adr'),
-    path.join(repoRoot, 'docs', 'adr'),
-    path.join(repoRoot, 'docs', 'adrs'),
-    path.join(repoRoot, 'decisions'),
-  ];
-  for (const p of candidates) {
-    try {
-      if (fs.statSync(p).isDirectory()) return p;
-    } catch {
-      // ignore
-    }
-  }
-  return null;
 }
 
 function listMdFiles(dir) {
@@ -141,13 +122,21 @@ function listMdFiles(dir) {
     .map(e => e.name);
 }
 
-function detectStrategy(adrDir) {
-  const md = listMdFiles(adrDir);
-  for (const name of md) {
-    if (/^\d{4}-\d{2}-\d{2}-/.test(name)) return 'date';
+function nextNumber(adrDir) {
+  const seen = new Set();
+  let maximum = 0;
+  for (const name of listMdFiles(adrDir)) {
+    if (/^\d{4}-\d{2}-\d{2}-/.test(name)) continue;
+    const match = /^(\d{4,})-.+\.md$/i.exec(name);
+    if (!match) continue;
+    const number = Number(match[1]);
+    if (!Number.isSafeInteger(number) || number < 1 || seen.has(number))
+      die(`Invalid or duplicate ADR number: ${name}`);
+    seen.add(number);
+    maximum = Math.max(maximum, number);
   }
-  if (md.length > 0) return 'slug';
-  return 'date';
+  if (!Number.isSafeInteger(maximum + 1)) die('ADR number exceeds safe integer range');
+  return String(maximum + 1).padStart(4, '0');
 }
 
 function todayISO() {
@@ -279,9 +268,21 @@ function updateIndex(indexFile, { relLink, title, status, date }) {
   }
   const entryLine = `- [${title}](${relLink}) (${status}, ${date})`;
 
+  const number = Number(path.basename(relLink).split('-')[0]);
+  const higher = lines.findIndex(line => {
+    const match = /\]\((?:[^)]*\/)?(\d{4,})-[^)]*\)/.exec(line);
+    return match && Number(match[1]) > number;
+  });
+  if (higher !== -1) {
+    lines.splice(higher, 0, entryLine);
+    fs.writeFileSync(indexFile, `${lines.join('\n')}\n`, 'utf8');
+    return true;
+  }
+
   // Prefer inserting under "## ADRs" if it exists, otherwise append at EOF.
   const r = insertIndexEntryUnderHeading(lines, /^##\s+ADRs\s*$/i, entryLine);
-  const nextLines = r.inserted ? r.lines : [...lines, entryLine];
+  const needsGap = lines.length && lines[lines.length - 1].trim() && !/^[-*]\s+/.test(lines[lines.length - 1]);
+  const nextLines = r.inserted ? r.lines : [...lines, ...(needsGap ? [''] : []), entryLine];
 
   let next = nextLines.join('\n');
   if (hadTrailingNewline) next += '\n';
@@ -299,41 +300,19 @@ function main() {
 
   let adrDir;
   if (args.dir) adrDir = path.resolve(repoRoot, args.dir);
-  else adrDir = detectAdrDir(repoRoot) || path.join(repoRoot, 'adr');
+  else adrDir = path.join(repoRoot, 'docs', 'architecture', 'decisions');
 
   if (!fs.existsSync(adrDir)) {
     if (args.noCreateDir) die(`ADR directory does not exist: ${adrDir}`);
     fs.mkdirSync(adrDir, { recursive: true });
   }
 
-  let strategy = args.strategy;
-  if (strategy === 'auto') strategy = detectStrategy(adrDir);
-
+  const strategy = 'number';
   const title = String(args.title).trim();
   const slug = slugify(title);
-
   const today = todayISO();
-
-  let filename;
-  if (strategy === 'date') {
-    filename = `${today}-${slug}.md`;
-  } else {
-    filename = `${slug}.md`;
-  }
-
-  let out = path.join(adrDir, filename);
-  if (fs.existsSync(out)) {
-    if (strategy === 'date') die(`ADR already exists: ${out}`);
-    let i = 2;
-    while (true) {
-      const candidate = path.join(adrDir, `${slug}-${i}.md`);
-      if (!fs.existsSync(candidate)) {
-        out = candidate;
-        break;
-      }
-      i++;
-    }
-  }
+  const number = nextNumber(adrDir);
+  const out = path.join(adrDir, `${number}-${slug}.md`);
 
   const deciders = String(args.deciders || '')
     .split(',')
@@ -354,7 +333,7 @@ function main() {
 
   const raw = loadTemplate(args.template);
   const rendered = renderTemplate(raw, {
-    title,
+    title: `ADR ${number}: ${title}`,
     status: String(args.status).trim(),
     date: today,
     deciders,
@@ -364,7 +343,7 @@ function main() {
     chosenOption: String(args.chosenOption || '').trim(),
   });
 
-  fs.writeFileSync(out, `${rendered.trimEnd()}\n`, 'utf8');
+  fs.writeFileSync(out, `${rendered.trimEnd()}\n`, { encoding: 'utf8', flag: 'wx' });
 
   let updatedIndexPath = null;
   let indexChanged = false;

@@ -1,19 +1,10 @@
----
-summary: "Portable evidence map supporting canonical delegation semantics with runtime contracts, protocols, multi-agent research, failure analyses, and privacy evidence."
-read_when:
-  - "Checking evidence behind direct-action, capability-use, or delegation boundaries and runtime ownership"
-  - "Challenging specialist-context, provenance, verification, privacy, or delegation-continuity conclusions"
-role: evidence
-discovery_status: current
----
-
 # Capabilities and Delegation Evidence Map
 
 This document is the portable evidence companion to [Capabilities and Delegation Semantics](capabilities-and-delegation.md).
 
 The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the originating Deep Research session.
 
-The preserved [Deep Research artifact](source-material/capabilities-and-delegation-deep-research.md) contains the broader research narrative and runtime evidence. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
+The preserved [Deep Research artifact](archive/capabilities-and-delegation-deep-research.md) contains the broader research narrative and runtime evidence. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
 
 This map deliberately does not duplicate the full bibliographies from the preceding phases. They remain inherited inputs:
 

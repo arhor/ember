@@ -1,14 +1,6 @@
----
-summary: "Issue #190 boundary for importing MCP tool mechanics through Vercel AI SDK while preserving Ember-owned capability identity, authority, effect truth, and canonical state."
-read_when:
-  - "Adding or changing an MCP capability source, transport, server configuration, or MCP tool mapping"
-  - "Reasoning about MCP discovery, trust, authority, retries, cancellation, disconnects, or tool-result evidence"
-  - "Replacing @ai-sdk/mcp while preserving Ember capability semantics"
-role: design
-discovery_status: current
----
-
 # MCP Capability Source Boundary
+
+> Decision owner: [accepted ADR 0025](decisions/0025-map-mcp-tools-explicitly-into-bounded-ember-capabilities.md), accepted on 2026-10-27. This source retains detailed implementation contracts, procedures, scenarios, evidence, and anchors; the extracted architectural decision is owned by that ADR.
 
 ## Proven boundary
 
@@ -38,8 +30,10 @@ or canonical state.
 
 ## Package and runtime decision
 
-The first implementation pins `@ai-sdk/mcp` at `2.0.45` beside the already pinned
-`ai@7.0.93`. The package declares Node.js 22 or newer; Ember continues to run and
+The original adoption evidence used `@ai-sdk/mcp@2.0.45` alongside `ai@7.0.93`.
+Manifests inspected for migration on 2026-10-27 use MCP 2.0.45 and AI 7.0.153;
+the older AI patch is historical evidence, not a new dependency constraint.
+The package declares Node.js 22 or newer; Ember continues to run and
 validate on its Node.js 26.8.1 / TypeScript 7.0.2 baseline.
 
 `openAiSdkMcpStdioCapabilitySource` uses the package's `createMCPClient` and

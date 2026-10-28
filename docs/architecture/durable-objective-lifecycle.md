@@ -1,14 +1,6 @@
----
-summary: "Issue #236 semantic lifecycle for Ember-owned durable objectives, multi-episode progress evidence, restart currentness, next-step ownership, and cancellation without implied rollback."
-read_when:
-  - "Creating, advancing, resuming, completing, abandoning, or cancelling work that may span multiple runtime episodes"
-  - "Associating checkpoints, partial results, blockers, uncertain outcomes, approvals, or external effects with a durable objective"
-  - "Deciding whether a provider session, specialist attempt, workflow runtime, or process may own objective continuity or choose the next step"
-role: design
-discovery_status: current
----
-
 # Durable Objective Lifecycle and Ownership Semantics
+
+> Decision owner: [accepted ADR 0035](decisions/0035-keep-durable-objectives-independent-of-execution-episodes.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 ## Purpose
 

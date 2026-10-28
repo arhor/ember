@@ -1,19 +1,10 @@
----
-summary: "Portable evidence map supporting canonical memory and remembering semantics with durable sources for currentness, provenance, updating, forgetting, and memory safety."
-read_when:
-  - "Checking the evidence behind a memory, currentness, or provenance conclusion without reconstructing the full research session"
-  - "Challenging claims about corrections, historical evidence, prospective memory, forgetting, or persistent memory corruption"
-role: evidence
-discovery_status: current
----
-
 # Memory and Remembering Evidence Map
 
 This document is the portable evidence companion to [Memory and Remembering Semantics](memory-and-remembering.md).
 
 The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the original ChatGPT Deep Research session.
 
-The preserved [Deep Research artifact](source-material/memory-and-remembering-deep-research.md) contains the full research narrative and original ChatGPT-local citation markers. Those markers are intentionally retained as provenance but do not resolve on GitHub. The references below provide portable links for the principal sources behind the validated conclusions.
+The preserved [Deep Research artifact](archive/memory-and-remembering-deep-research.md) contains the full research narrative and original ChatGPT-local citation markers. Those markers are intentionally retained as provenance but do not resolve on GitHub. The references below provide portable links for the principal sources behind the validated conclusions.
 
 This is not intended to reproduce every source consulted during Deep Research. It records the sources that materially support, challenge, or sharpen the canonical memory conclusions.
 

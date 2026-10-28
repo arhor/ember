@@ -1,20 +1,15 @@
 ---
-summary: "Accepted implementation decision adopting TypeScript on Node.js 26 with native ESM, direct erasable TypeScript execution, explicit runtime validation, and a deliberately minimal npm toolchain."
-read_when:
-  - "Changing Ember's implementation language, Node.js release line, TypeScript execution model, package manager, or core development toolchain"
-  - "Reviewing whether a runtime-specific API, dependency, build stage, lint/format tool, or capability restriction belongs in Ember"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-08-30"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0006: Adopt TypeScript on Node.js 26 as Ember's Implementation Runtime
 
-- **Status:** Accepted
-- **Date:** 2026-08-30
 - **Decision class:** Implementation/runtime, representation-level
 - **Origin:** [Issue #39](https://github.com/arhor/ember/issues/39)
 - **Parent milestone:** [Issue #37](https://github.com/arhor/ember/issues/37)
-- **Evidence:** [Issue #38](https://github.com/arhor/ember/issues/38) and the [TypeScript runtime evaluation](../typescript-runtime-evaluation.md)
+- **Evidence:** [Issue #38](https://github.com/arhor/ember/issues/38) and the [TypeScript runtime evaluation](../../research/typescript-runtime-evaluation.md)
 - **Semantic baseline:** ADRs [0001](0001-continuity-belongs-to-ember.md), [0002](0002-preserve-persistent-meaning.md), [0003](0003-use-least-sufficient-permitted-projections.md), [0004](0004-separate-capability-from-authority.md), and [0005](0005-distinguish-operational-continuity.md)
 
 ## Context and decision boundary
@@ -332,15 +327,56 @@ Those questions remain governed by their own evidence and ADRs 0001-0005.
 
 ## Traceability
 
-| Canonical source                                                                                                               | Decision basis                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Issue #37](https://github.com/arhor/ember/issues/37)                                                                          | Defines the experiment -> decision -> adoption sequence and requires the runtime choice to remain subordinate to Ember semantics.                          |
-| [Issue #38](https://github.com/arhor/ember/issues/38) and [TypeScript runtime evaluation](../typescript-runtime-evaluation.md) | Provide the comparative language, compatibility, tooling, diagnostics, resource, npm, permission, CI, and migration evidence used here.                    |
-| [Minimal Continuity Vertical Slice](../minimal-continuity-slice.md)                                                            | Supplies the executable control workload whose semantics the selected stack must preserve.                                                                 |
-| [Architecture Acceptance Scenarios](../acceptance-scenarios.md)                                                                | Remain the representation-neutral oracle for implementation changes, including issue #40 adoption.                                                         |
-| [ADR 0001](0001-continuity-belongs-to-ember.md)                                                                                | Keeps Ember continuity independent of runtime, process, model, or other operational locus.                                                                 |
-| [ADR 0002](0002-preserve-persistent-meaning.md)                                                                                | Requires runtime validation and durable provenance/currentness semantics that static typing cannot replace.                                                |
-| [ADR 0003](0003-use-least-sufficient-permitted-projections.md)                                                                 | Makes typed state/projection separation useful while keeping projection meaning representation-neutral.                                                    |
-| [ADR 0004](0004-separate-capability-from-authority.md)                                                                         | Places Node ambient capability and any future sandbox below live semantic authority.                                                                       |
-| [ADR 0005](0005-distinguish-operational-continuity.md)                                                                         | Requires process, timeout, restart, delivery, effect, and recovery behaviour to preserve operational distinctions independently of runtime implementation. |
-| [Documentation discovery contract](../../documentation-discovery.md)                                                           | Requires this ADR to be discoverable as a current decision without allowing metadata or file order to create semantic authority.                           |
+| Canonical source                                                                                                                                             | Decision basis                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Issue #37](https://github.com/arhor/ember/issues/37)                                                                                                        | Defines the experiment -> decision -> adoption sequence and requires the runtime choice to remain subordinate to Ember semantics.                          |
+| [Issue #38](https://github.com/arhor/ember/issues/38) and [TypeScript runtime evaluation](../../research/typescript-runtime-evaluation.md)                   | Provide the comparative language, compatibility, tooling, diagnostics, resource, npm, permission, CI, and migration evidence used here.                    |
+| [Minimal Continuity Vertical Slice](../../research/archive/minimal-continuity-slice.md)                                                                      | Supplies the executable control workload whose semantics the selected stack must preserve.                                                                 |
+| [Architecture Acceptance Scenarios](../acceptance-scenarios.md)                                                                                              | Remain the representation-neutral oracle for implementation changes, including issue #40 adoption.                                                         |
+| [ADR 0001](0001-continuity-belongs-to-ember.md)                                                                                                              | Keeps Ember continuity independent of runtime, process, model, or other operational locus.                                                                 |
+| [ADR 0002](0002-preserve-persistent-meaning.md)                                                                                                              | Requires runtime validation and durable provenance/currentness semantics that static typing cannot replace.                                                |
+| [ADR 0003](0003-use-least-sufficient-permitted-projections.md)                                                                                               | Makes typed state/projection separation useful while keeping projection meaning representation-neutral.                                                    |
+| [ADR 0004](0004-separate-capability-from-authority.md)                                                                                                       | Places Node ambient capability and any future sandbox below live semantic authority.                                                                       |
+| [ADR 0005](0005-distinguish-operational-continuity.md)                                                                                                       | Requires process, timeout, restart, delivery, effect, and recovery behaviour to preserve operational distinctions independently of runtime implementation. |
+| `documentation-discovery.md` (removed; see [cleanup record](0014-use-native-adrs-and-retire-documentation-catalogue.md#legacy-document-removal--2026-10-28)) | Requires this ADR to be discoverable as a current decision without allowing metadata or file order to create semantic authority.                           |
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+The representation experiment selected direct TypeScript on Node.js 26 to strengthen explicit boundaries without adding a transpilation or alternate semantic model. See the [original context](#context-and-decision-boundary) for rationale and evidence.
+
+## Implementation Plan
+
+- **Affected paths:** [package.json](../../../package.json); [.nvmrc](../../../.nvmrc); [tsconfig.json](../../../tsconfig.json); [packages/core/src/model.ts](../../../packages/core/src/model.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Follow the runtime/module/dependency policy already recorded; pnpm replaces only the old npm choice under ADR 0009, while catalogue retirement under ADR 0014 removes discovery-specific checks. Current lint/format rules come from root instructions and installed toolchain; the original initial-adoption non-selection is historical, not permission to ignore them.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `tests/model-store.test.ts`; `tests/longitudinal-acceptance.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

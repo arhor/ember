@@ -1,14 +1,6 @@
----
-summary: "Issue #257 representation-neutral boundary between canonical semantic state, persistence encodings, human-readable materialized views, and cognition projections."
-read_when:
-  - "Adding or changing filesystem views of Ember identity, self, user, relationship, or memory state"
-  - "Designing import, edit, regeneration, drift detection, or migration for a semantic-state representation"
-  - "Evaluating whether Markdown, graph, or multi-resolution memory mechanics preserve stable Ember meaning"
-role: design
-discovery_status: current
----
-
 # Semantic-State Representation and Projection Boundary
+
+> Decision owner: [accepted ADR 0022](decisions/0022-keep-semantic-state-independent-of-encodings-and-materialized-views.md), accepted on 2026-10-27. This source retains implementation detail, procedures, examples, and dated evidence; it is not an independent owner of the extracted architectural decision.
 
 > Status: architecture contract for issues #257–#259 and the representation epic #251.
 
@@ -389,9 +381,9 @@ Those choices may change without weakening the invariants above.
 - [ADR 0003](decisions/0003-use-least-sufficient-permitted-projections.md) governs the
   separate cognition projection and prevents filesystem convenience from bypassing
   purpose- and recipient-bounded selection.
-- [Memory proposal semantics](memory-proposal-semantics.md) provides the existing
+- [Memory proposal semantics](decisions/0019-require-evidence-backed-proposals-and-deterministic-memory-adoption.md) provides the existing
   non-canonical proposal and deterministic adoption model for compatible edits.
-- [Minimal continuity slice](minimal-continuity-slice.md) demonstrates the current
+- [Minimal continuity slice](../research/archive/minimal-continuity-slice.md) demonstrates the current
   validated writer, durable-state, stable-ID, explicit-operation, and read-only
   projection boundaries that representations must preserve.
 - [Issue #251](https://github.com/arhor/ember/issues/251) defines the representation

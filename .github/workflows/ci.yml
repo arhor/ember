@@ -42,10 +42,3 @@ jobs:
 
       - name: Run deterministic endogenous selectivity evaluation
         run: pnpm eval:endogenous
-
-      - name: Exercise documentation discovery projections
-        run: |
-          node scripts/docs-discovery.ts list > /tmp/docs-default.txt
-          node scripts/docs-discovery.ts list --deep > /tmp/docs-deep.txt
-          node scripts/docs-discovery.ts list --all > /tmp/docs-all.txt
-          node scripts/docs-discovery.ts list --headings docs/architecture/design-directions.md docs/research/memory-and-remembering.md > /tmp/docs-headings.txt

@@ -17,14 +17,14 @@ function die(msg) {
 function parseArgs(argv) {
   const out = {
     repoRoot: '.',
-    dir: 'adr',
+    dir: 'docs/architecture/decisions',
     forceIndex: false,
     indexFile: null,
     firstTitle: 'Adopt architecture decision records',
     firstStatus: 'accepted',
     deciders: '',
     technicalStory: '',
-    strategy: 'date',
+    strategy: 'number',
     json: false,
   };
 
@@ -52,12 +52,12 @@ function parseArgs(argv) {
           '',
           'Options:',
           '  --repo-root <path>     Repo root (default: .)',
-          '  --dir <path>           ADR directory (default: adr)',
+          '  --dir <path>           ADR directory (default: docs/architecture/decisions)',
           '  --index-file <path>    Override index file path (relative to repo root unless absolute)',
           '  --force-index          Overwrite index file if it exists',
           '  --first-title <text>   Title for initial ADR',
           '  --first-status <text>  Status for initial ADR (default: accepted)',
-          '  --strategy date|slug|auto  Filename strategy for initial ADR (default: date)',
+          '  --strategy auto|number  Filename strategy (default: number)',
           '  --json                 Output machine-readable JSON (default: off)',
           '',
         ].join('\n'),
@@ -68,7 +68,7 @@ function parseArgs(argv) {
     }
   }
 
-  if (!['auto', 'date', 'slug'].includes(out.strategy))
+  if (!['auto', 'number'].includes(out.strategy))
     die(`Invalid --strategy: ${out.strategy}`);
   return out;
 }
@@ -122,7 +122,7 @@ date: ${date}
 decision-makers: ${deciderLine}
 ---
 
-# ${title}
+# ADR 0001: ${title}
 
 ## Context and Problem Statement
 
@@ -139,7 +139,7 @@ We need a lightweight, version-controlled way to capture decisions where the cod
 Adopt Architecture Decision Records (ADRs) using the MADR 4.0 format, stored in \`${adrDir}/\`.
 
 Conventions:
-- One ADR per file, named \`YYYY-MM-DD-title-with-dashes.md\`
+- One ADR per file, named \`NNNN-title-with-dashes.md\`
 - New ADRs start as \`proposed\`, move to \`accepted\` or \`rejected\`
 - Superseded ADRs link to their replacement
 - ADRs are written to be self-contained — a coding agent should be able to read one and implement the decision without further context
@@ -151,6 +151,18 @@ Conventions:
 * Good, because the team builds a shared decision log that prevents relitigating settled questions
 * Bad, because writing ADRs takes time — though a good ADR saves more time than it costs
 * Neutral, because ADRs require periodic review to mark outdated decisions as deprecated or superseded
+
+## Implementation Plan
+
+- **Affected paths:** \`${adrDir}/\` and its README index.
+- **Dependencies:** none; use the repository Node environment and Markdown records.
+- **Patterns to follow:** native metadata, sequential numbered filenames and numeric index order.
+- **Patterns to avoid:** implicit unrecorded architectural choices or reusing record numbers.
+
+### Verification
+
+- [ ] The initial record is 0001 and is linked from the index.
+- [ ] The next generated record uses 0002 without changing this decision.
 
 ## Alternatives Considered
 
@@ -197,6 +209,9 @@ function main() {
   const adrDir = path.resolve(repoRoot, args.dir);
   fs.mkdirSync(adrDir, { recursive: true });
 
+  if (fs.readdirSync(adrDir).some(name => /\.md$/i.test(name) && !/^(README|index)\.md$/i.test(name)))
+    die('ADR folder already contains records; use new_adr.js to add the next record');
+
   const indexFile = args.indexFile
     ? path.isAbsolute(args.indexFile)
       ? args.indexFile
@@ -222,16 +237,10 @@ function main() {
     adrDir: args.dir,
   });
 
-  // Determine filename using same logic as new_adr.js
-  const strategy = args.strategy === 'auto' ? 'date' : args.strategy;
-  let firstAdrFilename;
-  if (strategy === 'date') {
-    firstAdrFilename = `${today}-${slugify(args.firstTitle)}.md`;
-  } else {
-    firstAdrFilename = `${slugify(args.firstTitle)}.md`;
-  }
+  const strategy = 'number';
+  const firstAdrFilename = `0001-${slugify(args.firstTitle)}.md`;
   const firstAdrPath = path.join(adrDir, firstAdrFilename);
-  fs.writeFileSync(firstAdrPath, `${firstAdrContent.trimEnd()}\n`, 'utf8');
+  fs.writeFileSync(firstAdrPath, `${firstAdrContent.trimEnd()}\n`, { encoding: 'utf8', flag: 'wx' });
 
   // Update index
   const relLink = toPosix(path.relative(path.dirname(indexFile), firstAdrPath));

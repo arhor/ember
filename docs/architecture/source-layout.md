@@ -1,15 +1,6 @@
----
-summary: "Current source-layout rules for application composition, AI execution, host boundaries, thin conversational adapters, CLI routing, and enforced inward dependencies."
-read_when:
-  - "Adding, moving, or reorganizing production code under packages/ or apps/"
-  - "Adding or changing an interaction surface under apps/"
-  - "Deciding whether code belongs to application coordination, composition, AI mechanics, runtime operations, persistence, integrations, host adapters, or transport"
-  - "Changing dependency rules enforced by scripts/check-dependencies.ts"
-role: design
-discovery_status: current
----
-
 # Source Layout and Surface Placement
+
+> Decision owner: [accepted ADR 0015](decisions/0015-centralize-application-coordination-and-inward-dependencies.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
 
 Directory placement is an ownership statement. The current layout is designed so that
 an ordinary interaction can be traced from an executable through composition into one

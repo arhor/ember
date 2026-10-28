@@ -1,19 +1,10 @@
----
-summary: "Canonical semantics for sessions, surfaces, concurrent interactions, long-running work, delivery and retry, downtime, recovery, and partial failure around one continuing Ember."
-read_when:
-  - "Changing restart or recovery, session, surface, transport, or multi-interface behavior"
-  - "Designing long-running work, retries, duplicate delivery, concurrent interaction, downtime gaps, or resumption/currentness reconciliation"
-role: research
-discovery_status: current
----
-
 # Operational Model, Sessions, and Surfaces Semantics
 
 This note addresses issue #8 and follows the concern-driven research discipline defined in issue #10.
 
 It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md), [Memory and Remembering Semantics](memory-and-remembering.md), [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md), [Capabilities and Delegation Semantics](capabilities-and-delegation.md), [Action, Authority, and Permission Semantics](action-authority-and-permission.md), and [Endogenous Agency and Self-Initiated Behavior Semantics](endogenous-agency-and-self-initiated-behavior.md). Their conclusions are active constraints rather than background.
 
-The original research report behind this synthesis is preserved as [source material](source-material/operational-model-sessions-and-surfaces-deep-research.md). It is non-canonical. A separate [portable evidence map](operational-model-sessions-and-surfaces-references.md) maps the principal evidence-labelled conclusions below to durable distributed-systems, durable-work, HCI, runtime, and inherited Ember sources.
+The original research report behind this synthesis is preserved as [source material](archive/operational-model-sessions-and-surfaces-deep-research.md). It is non-canonical. A separate [portable evidence map](operational-model-sessions-and-surfaces-references.md) maps the principal evidence-labelled conclusions below to durable distributed-systems, durable-work, HCI, runtime, and inherited Ember sources.
 
 This note deliberately stays at the semantic level. It does not choose a daemon architecture, queue, event schema, IPC mechanism, actor model, process topology, synchronization primitive, transaction model, persistence technology, transport protocol, status enum, session identifier design, deduplication key, or implementation language.
 
@@ -195,7 +186,7 @@ The first can remain true while the second is uncertain.
 
 This matters for shared household devices, group channels, forwarded or bridged messages, and one user appearing through multiple identities.
 
-Current OpenClaw behaviour explicitly exposes identity linking across channels and warns that collapsing direct-message contexts among several humans can leak private information. See [R1](operational-model-sessions-and-surfaces-references.md#r1-openclaw-session-surface-and-runtime-behaviour). Shared-device HCI provides independent evidence that account and person identity frequently diverge in household settings. See [R14](operational-model-sessions-and-surfaces-references.md#r14-shared-device-and-family-identity-pressure).
+Current OpenClaw behaviour explicitly exposes identity linking across channels and warns that collapsing direct-message contexts among several humans can leak private information. See [R1](operational-model-sessions-and-surfaces-references.md#r1-openclaw-session-surface-and-runtime-behaviour). Shared-device HCI provides independent evidence that account and person identity frequently diverge in household settings. See [R14](operational-model-sessions-and-surfaces-references.md#r14-famidata-hub-and-shared-device-identity-pressure).
 
 > **[J] Cross-surface continuity may preserve Ember's full memory of a relationship while narrowing what can legitimately be disclosed on the current surface.**
 
@@ -420,7 +411,7 @@ A semantic reconstruction may need to establish:
 
 These are semantic questions rather than a recovery pipeline.
 
-HCI research on interrupted task resumption supports the narrower claim that useful resumption depends on recovering goals and relevant state rather than merely having chronology. See [R9](operational-model-sessions-and-surfaces-references.md#r9-trafton-et-al-resumption-goals) and [R10](operational-model-sessions-and-surfaces-references.md#r10-deline-and-parnin-task-resumption-cues).
+HCI research on interrupted task resumption supports the narrower claim that useful resumption depends on recovering goals and relevant state rather than merely having chronology. See [R9](operational-model-sessions-and-surfaces-references.md#r9-trafton-et-al-resumption-goals) and [R10](operational-model-sessions-and-surfaces-references.md#r10-parnin-and-deline-task-resumption-cues).
 
 > **[E -> J] Resumption benefits from recovering purpose and relevant context. Complete transcript replay is neither necessary nor sufficient for semantic recovery.**
 

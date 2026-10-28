@@ -1,17 +1,9 @@
----
-summary: "Issue #216 representation-neutral semantics for Ember-owned conversational turns and bounded short-lived dialogue context across surfaces, restarts, and provider replacement."
-read_when:
-  - "Changing how recent dialogue, conversational turns, local references, or topic continuation participate in cognition"
-  - "Changing cross-surface or restart conversation continuity without promoting transcripts into canonical memory"
-  - "Deciding whether provider, session, thread, transport, or delivery identifiers may define conversational continuity"
-role: design
-discovery_status: current
----
-
 # Ember-Owned Conversation Context and Turn Semantics
 
-> Status: current semantic design for issue #216 and implementation boundary for
-> issues #217 through #219.
+> Detailed conversation reference; the semantic decision and fifteen governing invariants are owned by [accepted ADR 0013](decisions/0013-keep-conversation-identity-and-context-ember-owned.md) as of 2026-10-27. Detailed explanations and existing anchors are retained for traceability; this document is not an independent decision owner.
+
+> Status: supporting reference for issue #216 and implementation/evaluation work in
+> issues #217 through #219. Consult ADR 0013 for the governing semantic decision.
 
 ## Purpose
 
@@ -526,4 +518,4 @@ to the later roadmap work that earns it through actual pressure.
 | [ADR 0003](decisions/0003-use-least-sufficient-permitted-projections.md)                                    | Cognition receives sufficient rather than maximal permitted projections; selection includes deliberate exclusion.                                                                           |
 | [Operational Model, Sessions, and Surfaces](../research/operational-model-sessions-and-surfaces.md)         | Conversation follows semantic discourse continuity rather than session, transport, or surface identity.                                                                                     |
 | [Interaction Surface Boundary](interaction-surface-boundary.md)                                             | Principal provenance, semantic occurrence/replay, cognition, expression, and delivery remain distinct.                                                                                      |
-| [Minimal Continuity Vertical Slice](minimal-continuity-slice.md)                                            | The current executable slice is provider-session-independent but intentionally drops reply payload; #215 now requires a short-lived Ember-owned dialogue layer beyond that earlier fixture. |
+| [Minimal Continuity Vertical Slice](../research/archive/minimal-continuity-slice.md)                        | The current executable slice is provider-session-independent but intentionally drops reply payload; #215 now requires a short-lived Ember-owned dialogue layer beyond that earlier fixture. |

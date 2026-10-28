@@ -1,18 +1,11 @@
----
-summary: "Issue #218 implementation contract for durable Ember-owned conversation trajectories across CLI, Telegram, process restarts, provider replacement, and explicit fresh-conversation boundaries."
-read_when:
-  - "Changing how conversation context continues across CLI, Telegram, runtime restart, or provider replacement"
-  - "Changing conversation IDs, active trajectory persistence, fresh-conversation reset, or migration of the conversation sidecar"
-  - "Debugging why recent dialogue did or did not participate in cognition after a surface or process boundary"
-role: design
-discovery_status: current
----
-
 # Cross-Surface Conversation Continuity
 
+> Decision owner: [accepted ADR 0021](decisions/0021-persist-conversation-trajectories-independently-of-surfaces.md), accepted on 2026-10-27. This source retains implementation detail, procedures, examples, and dated evidence; it is not an independent owner of the extracted architectural decision.
+
 > Status: current executable implementation contract for issue #218. The governing
-> conversation semantics remain in
-> [Conversation Context and Turn Semantics](conversation-context-turn-semantics.md).
+> conversation semantics are owned by
+> [ADR 0013](decisions/0013-keep-conversation-identity-and-context-ember-owned.md);
+> [the conversation reference](conversation-context-turn-semantics.md) retains detailed explanations.
 
 ## Purpose
 

@@ -1,16 +1,11 @@
 ---
-summary: "Accepted decision that the continuing agent's lineage is independent of the Ember product/runtime, models, prompts, sessions, surfaces, processes, transports, and specialist runtimes."
-read_when:
-  - "Changing restart, resume, migration, provider replacement, backup, restore, fork, or identity-continuity behavior"
-  - "Deciding whether the Ember runtime/product name, an operational locus, or copied state can own or establish the continuing agent's identity"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-08-29"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0001: Continuity Belongs to the Continuing Agent, Not an Operational Locus or Product Name
 
-- **Status:** Accepted
-- **Date:** 2026-08-29
 - **Decision class:** Semantic, representation-neutral
 - **Origin:** [Issue #20](https://github.com/arhor/ember/issues/20)
 
@@ -131,11 +126,58 @@ not implicitly accepted implementation work.
 | Canonical source                                                                                                                                               | Decision basis                                                                                                                           |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | [Vision: purpose](../../vision.md#purpose) and [principles: replaceable cognition providers](../../principles.md#3-models-are-replaceable-cognition-providers) | Establish the project-level requirement that Ember, rather than a model or transcript, owns continuity.                                  |
-| [Design directions: semantic spine](../design-directions.md#the-semantic-spine)                                                                                | Places one continuing Ember around temporary cognitive, operational, and interaction loci.                                               |
-| [Design directions: ADR candidate 1](../design-directions.md#adr-candidate-1-continuity-belongs-to-ember-not-an-operational-locus)                             | Records the synthesis-level candidate and its **[C + J]** evidence posture.                                                              |
+| [Design directions: semantic spine](../../research/design-directions.md#the-semantic-spine)                                                                    | Places one continuing Ember around temporary cognitive, operational, and interaction loci.                                               |
+| [Design directions: ADR candidate 1](../../research/design-directions.md#adr-candidate-1-continuity-belongs-to-ember-not-an-operational-locus)                 | Records the synthesis-level candidate and its **[C + J]** evidence posture.                                                              |
 | [Continuity working definition](../../research/continuity-and-identity.md#working-definition)                                                                  | Defines legitimate succession through lineage, constitutive commitments, owned history, relationships, commitments, and coherent change. |
 | [Continuity dimensions](../../research/continuity-and-identity.md#continuity-dimensions-for-later-evaluation)                                                  | Distinguishes lineage integrity, degradation, behavioural recognisability, and epistemic restraint.                                      |
 | [Continuity open questions](../../research/continuity-and-identity.md#open-questions)                                                                          | Keeps model replacement, fork/restore, identity revision, and forgetting tensions open.                                                  |
 | [Context reconstruction](../../research/context-selection-and-cognitive-framing.md#reconstruction-after-interruption-or-restart)                               | Requires recovery of the current situation rather than an old prompt-shaped snapshot.                                                    |
 | [Delegation: specialist continuity](../../research/capabilities-and-delegation.md#specialist-continuity-and-thread-reuse)                                      | Separates Ember continuity, delegated-objective continuity, and specialist-thread continuity.                                            |
 | [Operational central conclusion](../../research/operational-model-sessions-and-surfaces.md#central-conclusion)                                                 | Establishes sessions, surfaces, transports, processes, and specialist runtimes as temporary operational loci.                            |
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+Temporary providers/processes/surfaces and product naming cannot own the continuing lineage; preserve explicit gaps and unresolved fork/restore identity. See the [original context](#context-and-problem) for rationale and evidence.
+
+## Consequences
+
+The [original consequences and architectural constraints](#consequences-and-architectural-constraints)
+remain governing. Implementations must preserve them while the unresolved representation
+questions remain open; the linked deterministic tests verify selected traces only.
+
+## Implementation Plan
+
+- **Affected paths:** [packages/core/src/model.ts](../../../packages/core/src/model.ts); [packages/core/src/semantics.ts](../../../packages/core/src/semantics.ts); [packages/core/src/app/bootstrap.ts](../../../packages/core/src/app/bootstrap.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Use lineage-derived stable actors independently of preferred name/provider/session; keep identity-level revision and restore ambiguity explicit.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `tests/agent-identity.test.ts`; `tests/longitudinal-acceptance.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

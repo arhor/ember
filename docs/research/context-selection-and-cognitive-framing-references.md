@@ -1,19 +1,10 @@
----
-summary: "Portable evidence map supporting canonical context-selection semantics with long-context, retrieval, compaction, privacy, security, and cognitive-framing sources."
-read_when:
-  - "Checking evidence behind context selection, omission, compaction, reconstruction, or least-sufficient projection conclusions"
-  - "Challenging privacy, disclosure, authority-preservation, or long-context assumptions in the canonical context research"
-role: evidence
-discovery_status: current
----
-
 # Context Selection and Cognitive Framing Evidence Map
 
 This document is the portable evidence companion to [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md).
 
 The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]** remain inspectable outside the originating Deep Research session.
 
-The preserved [Deep Research artifact](source-material/context-selection-and-cognitive-framing-deep-research.md) contains the full research narrative and its evidence ledger. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
+The preserved [Deep Research artifact](archive/context-selection-and-cognitive-framing-deep-research.md) contains the full research narrative and its evidence ledger. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
 
 This map deliberately does not duplicate the full continuity and memory bibliographies. Their evidence maps remain inherited inputs:
 

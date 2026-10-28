@@ -1,16 +1,11 @@
 ---
-summary: "Accepted implementation decision replacing npm with pnpm as Ember's package manager while leaving ADR 0006's language, runtime, and toolchain-minimalism decisions unchanged."
-read_when:
-  - "Changing Ember's package manager, lockfile, or dependency-installation tooling"
-  - "Reviewing which package manager a script, CI step, runbook, or contributor command should invoke"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-09-25"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0009: Adopt pnpm as Ember's Package Manager
 
-- **Status:** Accepted
-- **Date:** 2026-09-25
 - **Decision class:** Implementation/toolchain, representation-level
 - **Semantic baseline:** ADRs [0001](0001-continuity-belongs-to-ember.md) through [0005](0005-distinguish-operational-continuity.md)
 - **Implementation baseline:** [ADR 0006](0006-adopt-typescript-on-nodejs-26.md)
@@ -70,3 +65,45 @@ check` / `npm test` command block are superseded by this ADR; the rest of ADR
   written, not current operating instructions.
 - Contributor-facing instructions, runbooks, and repository scripts are updated to
   invoke pnpm as part of adopting this decision.
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+The package-manager decision replaces only ADR 0006’s npm choice so dependency ownership and reproducible installs use pnpm without reopening runtime semantics. See the [original context](#context-and-decision-boundary) for rationale and evidence.
+
+## Implementation Plan
+
+- **Affected paths:** [package.json](../../../package.json); [pnpm-lock.yaml](../../../pnpm-lock.yaml); [pnpm-workspace.yaml](../../../pnpm-workspace.yaml); [.github/workflows/ci.yml](../../../.github/workflows/ci.yml).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Use the manifest-pinned package manager and workspace dependency declarations; keep dated npm experiment commands historical and current contributor scripts in pnpm form. Preserve the partial supersession scope rather than marking all of ADR 0006 superseded.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Current root manifest declares a pinned pnpm version, pnpm lockfile exists,
+      and CI uses pnpm; no package-manager or dependency file is changed by reconciliation.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

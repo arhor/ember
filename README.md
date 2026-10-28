@@ -40,9 +40,9 @@ The application home separates machine configuration (`~/.ember/config/`) from c
 A resident service is optional. Foreground CLI conversation does not require systemd, launchd, or another daemon.
 
 See [Canonical Ember Application Flow](docs/architecture/canonical-application-flow.md) for the complete ordinary message
-path and [Setup and Onboarding](docs/architecture/setup-and-onboarding-semantics.md) for create/restore, provider
+path and [Setup and Onboarding](docs/guides/setup-and-onboarding.md) for create/restore, provider
 verification, and recovery. Telegram configuration is a manual operator procedure documented in the
-[Telegram surface runbook](docs/architecture/telegram-surface-runbook.md).
+[Telegram surface runbook](docs/guides/telegram-surface-runbook.md).
 
 ## Repository layout
 
@@ -82,12 +82,13 @@ See [Source Layout and Surface Placement](docs/architecture/source-layout.md) fo
 - [Source layout and surface placement](docs/architecture/source-layout.md)
 - [Interaction surface boundary](docs/architecture/interaction-surface-boundary.md)
 - [AI SDK cognition adapter boundary](docs/architecture/ai-sdk-cognition-adapter-boundary.md)
-- [Setup and onboarding semantics](docs/architecture/setup-and-onboarding-semantics.md)
+- [Setup and onboarding semantics](docs/guides/setup-and-onboarding.md)
 - [Architecture acceptance scenarios](docs/architecture/acceptance-scenarios.md)
-- [Cross-cutting design directions](docs/architecture/design-directions.md)
+- [Cross-cutting design directions](docs/research/design-directions.md)
 - [TypeScript runtime decision](docs/architecture/decisions/0006-adopt-typescript-on-nodejs-26.md)
 - [Architecture research](docs/research/README.md)
 
 Older research, evaluations, and explicitly historical documents may preserve source paths or architecture names that were
 accurate when those artifacts were produced. Current implementation work should begin with the canonical flow and current
-discovery metadata above.
+[documentation navigation](docs/README.md) and the
+[accepted ADR index](docs/architecture/decisions/README.md).

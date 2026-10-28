@@ -1,14 +1,6 @@
----
-summary: "Issue #223 implementation boundary for model-backed, evidence-bounded memory proposal generation, deterministic adoption, and durable generation outcomes."
-read_when:
-  - "Changing how ordinary conversation yields memory proposals or no-proposal outcomes"
-  - "Changing the AI SDK memory-proposal generator, its bounded evidence projection, or failure classification"
-  - "Inspecting why a generated memory proposal was adopted, rejected, invalid, or unavailable"
-role: design
-discovery_status: current
----
-
 # Conversation Memory Proposal Generation
+
+> Decision owner: [accepted ADR 0020](decisions/0020-generate-memory-candidates-from-bounded-durable-conversation-evidence.md), accepted on 2026-10-27. This source retains implementation detail, procedures, examples, and dated evidence; it is not an independent owner of the extracted architectural decision.
 
 ## Boundary
 
@@ -27,13 +19,17 @@ durable recent conversation projection
 `buildMemoryProposalGenerationProjection` admits only turns whose evidence still
 exists in the requested scope. Available user-command evidence may ground a proposal.
 Ember expression turns may provide bounded dialogue context, but cannot be cited as
-user testimony. The only current meanings disclosed are current user-testimony facts
-and preferences in the same scope, because those are the v1 correction targets.
+user testimony. Existing meaning context includes same-scope current user-owned
+user-testimony facts/preferences and current Ember-owned inferred facts, with explicit
+epistemic role and the lineage-derived agent actor. Only the testimony facts/preferences
+are v1 correction targets: inferred context does not permit inferred-fact supersession
+or become new grounding evidence. This wording was reconciled to the existing selector
+under ADR 0020; no runtime filter changed.
 
 The projection contains no provider session, hidden transcript, unavailable payload,
 out-of-scope meaning, or canonical state wholesale. Generated source evidence IDs are
-checked against the disclosed grounding set before ordinary proposal assessment, so a
-model cannot cite other reachable state merely by guessing its ID.
+checked against the disclosed grounding set after ordinary proposal assessment and
+before adoption, so a model cannot cite other reachable state merely by guessing its ID.
 
 ## Generation and adoption
 

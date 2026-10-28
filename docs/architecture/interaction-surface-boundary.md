@@ -1,13 +1,6 @@
----
-summary: "Current interaction boundary for principal-aware CLI/Telegram input, least-sufficient cross-surface context, transport occurrence correlation, and delivery provenance without making surface metadata semantic authority or canonical memory."
-read_when:
-  - "Adding or changing an interaction surface such as CLI or messaging"
-  - "Changing transport replay deduplication, surface principal provenance, cross-surface privacy, context scope, inspection, or delivery attempt/outcome semantics"
-role: design
-discovery_status: current
----
-
 # Interaction Surface Boundary
+
+> Decision owner: [accepted ADR 0037](decisions/0037-keep-interaction-occurrences-and-delivery-truth-transport-neutral.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 > Status: current design and executable seam from issue #85, exercised by Telegram in
 > issue #86, hardened across CLI and Telegram by issue #87, and extended with
@@ -25,7 +18,7 @@ This boundary applies the existing semantics from ADR 0001, ADR 0003, ADR 0004, 
 0005, [Operational Model, Sessions, and Surfaces](../research/operational-model-sessions-and-surfaces.md),
 and the existing AS-OPS-01/02/05/06 acceptance scenarios. It also consumes the
 transport-independent interruption decision from
-[Endogenous User Interruption Decision](endogenous-interruption-decision.md): a
+[Endogenous User Interruption Decision](decisions/0032-separate-completed-cognition-from-permission-to-interrupt.md): a
 `deliver` decision permits a later delivery attempt, but cognition completion and
 user delivery remain separate facts.
 
@@ -192,7 +185,7 @@ Each attempt has an observed outcome:
 
 `confirmed` is still transport evidence. It does not prove that a human read or
 understood the expression. Issue #88 adds the transport-neutral restart/retry policy
-documented in [Delivery Reconciliation Runbook](delivery-reconciliation-runbook.md).
+documented in [Delivery Reconciliation Runbook](../guides/delivery-reconciliation-runbook.md).
 Only definite retryable failure permits resend; `uncertain` remains blocked.
 
 The production CLI uses the same lifecycle as Telegram. A local output write creates a

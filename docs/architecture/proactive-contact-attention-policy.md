@@ -1,14 +1,6 @@
----
-summary: "Issue #227 Ember-owned gate for currentness, authority, quiet-window, duplicate, and surface-eligibility decisions before proactive contact handoff."
-read_when:
-  - "Changing whether a pending or deferred proactive-contact intent may interrupt the principal"
-  - "Adding quiet periods, duplicate suppression, currentness revalidation, or surface selection for proactive contact"
-  - "Bridging a proactive-contact intent into delivery without moving interruption policy into Telegram or another transport"
-role: design
-discovery_status: current
----
-
 # Proactive-Contact Attention Policy
+
+> Decision owner: [accepted ADR 0034](decisions/0034-revalidate-authority-and-attention-before-proactive-handoff.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 ## Purpose
 
@@ -240,7 +232,7 @@ transport implementation.
 
 ## Relationship to adjacent work
 
-- The [endogenous interruption decision](endogenous-interruption-decision.md)
+- The [endogenous interruption decision](decisions/0032-separate-completed-cognition-from-permission-to-interrupt.md)
   decides whether completed internal cognition supplies a contact candidate. A
   warranted candidate becomes one durable intent before this policy runs.
 - The [proactive-contact intent contract](proactive-contact-intent.md) owns stable
@@ -261,7 +253,7 @@ transport implementation.
   window, durable occurrence identity, canonical grounding, and successfully
   preflighted logical surface. An absent policy remains fail-safe, and direct
   lower-level reconciliation still requires an explicit revalidator.
-- The [delivery reconciliation runbook](delivery-reconciliation-runbook.md) owns
+- The [delivery reconciliation runbook](../guides/delivery-reconciliation-runbook.md) owns
   delivery uncertainty, retries, acknowledgement, and recovery after handoff.
 
 This policy does not define setup UX for the opt-in policy document, a notification

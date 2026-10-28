@@ -1,19 +1,11 @@
----
-summary: "Current implementation and evaluation boundary for deciding whether topic-free opportunities deserve cognition, using bounded Ember state and inspectable outcome evidence without persisting model-written motives."
-read_when:
-  - "Implementing or reviewing issue #74's endogenous cognition decision path"
-  - "Evaluating cognition, defer, or no-cognition outcomes from a topic-free opportunity"
-  - "Changing a model-backed endogenous decision evaluator or its deterministic scenario controls"
-role: design
-discovery_status: current
----
-
 # Endogenous Cognition Decision Boundary
+
+> Decision owner: [accepted ADR 0029](decisions/0029-persist-topic-free-cognition-decisions-and-explicit-silence.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 > Status: current implementation/evaluation design for issue #74, beneath the
 > [bounded cognition-opportunity boundary](cognition-opportunity.md). Durable
 > lifecycle semantics added by issue #75 are defined in
-> [First-Class Endogenous Silence Lifecycle](endogenous-silence-lifecycle.md).
+> [First-Class Endogenous Silence Lifecycle](decisions/0029-persist-topic-free-cognition-decisions-and-explicit-silence.md).
 
 ## Purpose
 
@@ -113,7 +105,7 @@ question under test.
 `runCognitionOpportunity`, added by issue #75, uses the same evaluator request but
 persists the attempt before evaluator execution and then persists either a validated
 `decided` outcome or an operational terminal status. See
-[endogenous-silence-lifecycle.md](endogenous-silence-lifecycle.md) for the lifecycle,
+[endogenous-silence-lifecycle.md](decisions/0029-persist-topic-free-cognition-decisions-and-explicit-silence.md) for the lifecycle,
 restart behavior, inspection, and metrics.
 
 Neither form creates `user_command` evidence or an ordinary cognition episode merely
@@ -155,23 +147,21 @@ for the adapter/error boundary and repository sweep.
 
 ## Codex-backed live evaluator
 
-`../../packages/core/src/ai` provides an opt-in real-model evaluator
-using the existing isolated Codex provider boundary.
+> Historical protocol description: the exact-token path below describes the earlier
+> evaluator, before the #315 structured-control migration. Current
+> [Codex opportunity implementation](../../packages/core/src/ai/codex-opportunity.ts)
+> delegates to the typed AI SDK opportunity evaluator under
+> [accepted ADR 0017](decisions/0017-use-typed-structured-output-for-control-decisions.md)
+> and [ADR 0029](decisions/0029-persist-topic-free-cognition-decisions-and-explicit-silence.md).
+> It does not currently parse exact decision tokens from an ordinary cognition reply.
 
-For compatibility with the one-shot provider contract it uses one fixed evaluator
-instruction as `input.text` and `Projection.current_input` _inside the adapter_.
-That text is invariant across opportunities and only asks the provider to choose
-`cognition`, `defer`, or `no_cognition` from projected state. It contains no scheduler
-topic, concern name, or scenario-specific answer.
-
-The actual opportunity mechanism remains absent from the provider request. Existing
-`usedMeaningIds` becomes the evaluator's selected grounding IDs, and the core
-opportunity boundary applies its stricter outcome validation.
-
-The exact-token reply protocol here is an external-runtime compatibility mechanism,
-not the shared opportunity contract. Issue #198 deliberately leaves this Codex path
-available alongside the AI SDK structured implementation rather than making
-`AiExecutionResult` generic or leaking AI SDK schema types into it.
+The earlier isolated Codex provider path used a fixed evaluator instruction as
+`input.text` and `Projection.current_input` inside the adapter. That invariant text
+contained no scheduler topic, concern name or scenario-specific answer. The opportunity
+mechanism stayed absent and usedMeaningIds supplied grounding for stricter domain
+validation. That compatibility representation is retained as history, not as another
+currently supported control protocol. The current bridge supplies typed structured
+output and leaves projection membership/grounding semantics with Ember.
 
 ### Reproduction
 

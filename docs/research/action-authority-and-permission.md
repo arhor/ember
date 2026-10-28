@@ -1,20 +1,10 @@
----
-summary: "Canonical semantics for capability versus legitimate authority, standing grants, permission and consent, disclosure, changed circumstances, delegation, and fresh authorization."
-read_when:
-  - "Changing when Ember may perform an external action without fresh user approval"
-  - "Handling standing authority, revocation, changed circumstances, third-party effects, disclosure, or delegated authority"
-  - "Reviewing whether technical capability is being mistaken for permission"
-role: research
-discovery_status: current
----
-
 # Action, Authority, and Permission Semantics
 
 This note addresses issue #7 and follows the concern-driven research discipline defined in issue #10.
 
 It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md), [Memory and Remembering Semantics](memory-and-remembering.md), [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md), and [Capabilities and Delegation Semantics](capabilities-and-delegation.md). Their conclusions are active constraints rather than background.
 
-The Deep Research artifact behind this synthesis is preserved as [source material](source-material/action-authority-and-permission-deep-research.md). It is non-canonical. A separate [portable evidence map](action-authority-and-permission-references.md) maps the principal evidence-labelled conclusions below to durable papers, security references, official runtime documentation, repository snapshots, and inherited Ember research.
+The Deep Research artifact behind this synthesis is preserved as [source material](archive/action-authority-and-permission-deep-research.md). It is non-canonical. A separate [portable evidence map](action-authority-and-permission-references.md) maps the principal evidence-labelled conclusions below to durable papers, security references, official runtime documentation, repository snapshots, and inherited Ember research.
 
 This note deliberately stays at the semantic level. It does not choose permission enums, policy DSLs, approval APIs, authorization databases, risk formulas, capability-token representations, prompt shapes, concrete approval UX, event models, process topology, storage technology, or implementation language.
 

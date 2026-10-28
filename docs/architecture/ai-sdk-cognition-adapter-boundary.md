@@ -1,14 +1,6 @@
----
-summary: "Issues #186, #188, #189, and #197 implementation boundary for Vercel AI SDK model invocation, structured output, bounded tool mechanics, lifecycle evidence, and error translation beneath Ember-owned cognition and capability semantics."
-read_when:
-  - "Changing the Vercel AI SDK cognition adapter or adding a direct in-process model provider"
-  - "Changing AI SDK tool-loop mechanics, capability selection, retries, timeout behavior, lifecycle evidence, or types allowed across the adapter boundary"
-  - "Replacing Vercel AI SDK with another model toolkit while preserving Ember cognition and capability semantics"
-role: design
-discovery_status: current
----
-
 # AI SDK Cognition Adapter Boundary
+
+> Decision owner: [accepted ADR 0016](decisions/0016-use-ai-sdk-beneath-an-ember-owned-cognition-seam.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
 
 ## Proven implementation
 
@@ -54,15 +46,15 @@ canonical cognition episode / expression evidence
 
 The executor lives in `../../packages/core/src/ai` behind the Ember-owned contract in `../../packages/core/src/ai`. It accepts an injected AI SDK
 `LanguageModel`, so Ember still does not choose a paid API provider, authentication
-scheme, gateway, or vendor at this boundary. The production dependency remains pinned
-to `ai@7.0.93`; deterministic tests use `MockLanguageModelV3` from `ai/test` and
-require no network access.
+scheme, gateway, or vendor at this boundary. Adoption-era evidence used
+`ai@7.0.93`; the manifest inspected on 2026-10-27 pins `ai@7.0.153`.
+Deterministic tests use `MockLanguageModelV3` from `ai/test` and require no network access.
 
 ## Local Ollama provider
 
 Issue [#357](https://github.com/arhor/ember/issues/357) composes an already-running
 local Ollama server through `ai-sdk-ollama@4.2.0`, whose `ai@^7.0.66` peer range covers
-Ember's pinned AI SDK 7.0.93. The adapter supplies a V4 `LanguageModel` to the same
+the adoption-era AI SDK 7.0.93 baseline (the migration-time manifest pins 7.0.153). The adapter supplies a V4 `LanguageModel` to the same
 executor, so structured output, streaming, bounded tool execution, cancellation,
 timeout handling, evidence translation, and final Ember validation remain unchanged.
 
@@ -214,14 +206,18 @@ observational SDK behavior, not canonical Ember event ordering.
 
 ## Failure, cancellation, timeout, and retries
 
-The adapter translates supported AI SDK failures immediately into Ember-owned
-`ProviderError` semantics. AI SDK classes do not escape through `AiExecutionResult`, the
-evidence sink, or `ProviderError.cause`.
+The adapter translates supported AI SDK failures into Ember-owned `ProviderError`
+semantics. Raw SDK error objects do not become `AiExecutionResult` or normalized
+inference evidence. Some API/retry/unknown failures retain the SDK error as an
+in-memory `ProviderError.cause`; Claude authentication classification inspects such
+causes. Output/evidence redaction does not imply complete in-memory cause isolation.
+This clarification records the existing implementation, not a change to cause handling.
 
 The current translation uses AI SDK's supported `.isInstance()` guards for API-call,
 retry, no-output/object, type/JSON/response validation, and invalid-tool-call failures.
 `APICallError` contributes only a safe HTTP status to evidence; request bodies, URLs,
-response bodies, and provider error text are not retained. Structured-output failures
+response bodies, and provider error text are not retained in that normalized evidence.
+Structured-output failures
 such as `NoObjectGeneratedError` become Ember `failed` outcomes with
 `invalid_output` evidence, while the independent `validateAiExecutionResult` check remains
 the final semantic provenance authority.

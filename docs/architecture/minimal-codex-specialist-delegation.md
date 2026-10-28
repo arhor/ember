@@ -1,14 +1,6 @@
----
-summary: "Current design for one bounded Codex specialist work episode, separating Ember-owned purpose, disclosure, authority, evidence, lifecycle, and reintegration from Codex-owned local execution."
-read_when:
-  - "Implementing or reviewing Ember's first bounded specialist delegation to Codex"
-  - "Defining specialist episode inputs, lifecycle evidence, cancellation, approval handling, or result reintegration"
-  - "Checking how specialist-delegation scenarios AS-DEL-00 through AS-DEL-08 constrain a concrete runtime boundary"
-role: design
-discovery_status: current
----
-
 # Minimal Codex Specialist-Delegation Boundary
+
+> Decision owner: [accepted ADR 0027](decisions/0027-delegate-bounded-specialist-episodes-with-explicit-context-and-authority.md), accepted on 2026-10-27. This source retains detailed implementation contracts, procedures, scenarios, evidence, and anchors; the extracted architectural decision is owned by that ADR.
 
 > Status: current design for issue #59 and implementation input to issue #60.
 
@@ -30,9 +22,12 @@ runtime failover.
 The representation-neutral constraints remain [ADRs 0003–0005](decisions/README.md)
 and the [specialist-delegation acceptance subset](acceptance-scenarios.md#delegation-and-responsibility).
 This document selects a narrow implementation boundary beneath those constraints;
-it does not create another semantic decision. No subordinate ADR is warranted:
-the Codex-specific episode representation is local and revisable, not a durable
-cross-cutting choice.
+it does not create another semantic decision. The original design treated the
+Codex-specific episode representation as local and revisable and therefore did not
+request a subordinate ADR. During the approved documentation migration, ADR 0027
+consolidates the durable ownership, disclosure, authority and recovery constraints
+from this design and its companion note. It does not freeze the local schema or
+introduce a second semantic model; ADR 0012 still owns the exec integration choice.
 
 ## Ownership boundary
 
@@ -232,6 +227,23 @@ operation Ember is not authorized to initiate. Approval handling therefore recor
 the contemplated action, target, purpose, disclosures, recoverability, affected
 principals, prior effects, and requested scope. Ember approves only inside live
 attributable authority; otherwise it narrows, blocks, or seeks meaningful approval.
+
+## Expansion request and report representation
+
+The consolidated authority/context companion supplied these existing implementation
+fields. `expansion_requests` is always present in a valid report (empty when unused).
+Each request has a kind of `additional_context`, `additional_authority`, or
+`additional_capability`, plus `request`, `purpose`, `consequence`, and
+`requires_decision_from`. The last field names the legitimate decision boundary;
+it is neither an approval UI nor permission to expand the envelope automatically.
+
+The record attributes report claims with `sourceRole: specialist_report`,
+`source: codex_specialist`, and the Ember `episode_id`. Summary, artifact/check/effect
+claims and expansion requests retain that specialist provenance until separate Ember
+verification actually occurs. Opaque thread identity stays operational metadata.
+Report `known_effects`/`possible_effects` remain inside the attributed report instead
+of being copied into boundary-owned top-level effect conclusions. These exact fields
+are implementation detail under accepted ADR 0027, not new semantic authority.
 
 ## Acceptance-scenario responsibility map
 

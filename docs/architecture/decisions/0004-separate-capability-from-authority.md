@@ -1,16 +1,11 @@
 ---
-summary: "Accepted decision separating technical capability from live attributable authority and forbidding authority amplification through context, trust, delegation, or reachability."
-read_when:
-  - "Changing when Ember or a specialist may act, disclose information, use credentials, or rely on standing permission"
-  - "Reviewing authority propagation, revocation, changed circumstances, nested delegation, or consequential external effects"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-08-29"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0004: Capability and Authority Are Independent, and Authority Cannot Self-Amplify
 
-- **Status:** Accepted
-- **Date:** 2026-08-29
 - **Decision class:** Semantic, representation-neutral
 - **Origin:** [Issue #20](https://github.com/arhor/ember/issues/20)
 
@@ -123,8 +118,8 @@ remain explicit experiments.
 | Canonical source                                                                                                                                                         | Decision basis                                                                                             |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | [Principles: bound model judgment](../../principles.md#7-bound-model-judgment-with-explicit-rules)                                                                       | Establishes that permissions, lifecycle, eligibility, and invariants bound model interpretation.           |
-| [Design directions: authority](../design-directions.md#authority-broad-autonomy-inside-a-real-envelope-no-silent-expansion)                                              | Synthesises broad autonomy inside valid authority and conservative expansion.                              |
-| [Design directions: ADR candidate 4](../design-directions.md#adr-candidate-4-capability-and-authority-are-independent-and-authority-cannot-self-amplify)                 | Records the synthesis-level security invariant and its **[L + C + J]** basis.                              |
+| [Design directions: authority](../../research/design-directions.md#authority-broad-autonomy-inside-a-real-envelope-no-silent-expansion)                                  | Synthesises broad autonomy inside valid authority and conservative expansion.                              |
+| [Design directions: ADR candidate 4](../../research/design-directions.md#adr-candidate-4-capability-and-authority-are-independent-and-authority-cannot-self-amplify)     | Records the synthesis-level security invariant and its **[L + C + J]** basis.                              |
 | [Authority central conclusion](../../research/action-authority-and-permission.md#central-conclusion)                                                                     | Defines bounded, predictable autonomy rather than unrestricted action or ritual confirmation.              |
 | [Security invariants](../../research/action-authority-and-permission.md#security-invariants)                                                                             | Separates capability, authority, disclosure, delegation, currentness, and conflict.                        |
 | [Scope and material expansion](../../research/action-authority-and-permission.md#scope-and-material-expansion)                                                           | Identifies the dimensions whose change can expose a new decision.                                          |
@@ -133,3 +128,50 @@ remain explicit experiments.
 | [Delegation approvals](../../research/capabilities-and-delegation.md#approvals) and [nested delegation](../../research/capabilities-and-delegation.md#nested-delegation) | Prevents specialist requests or broader subordinate capability from expanding authority.                   |
 | [Motivation versus authority](../../research/endogenous-agency-and-self-initiated-behavior.md#motivation-versus-authority)                                               | Keeps self-initiated reasons separate from permission for external effects.                                |
 | [Operational currentness](../../research/operational-model-sessions-and-surfaces.md#concurrency-is-primarily-a-currentness-problem)                                      | Requires re-establishing mutable authority premises before consequential reliance when change is material. |
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+Technical credentials, runtime permission or motivation cannot establish the legitimate current decision-space for outward action or disclosure. See the [original context](#context-and-problem) for rationale and evidence.
+
+## Consequences
+
+The [original consequences and architectural constraints](#consequences-and-architectural-constraints)
+remain governing. Implementations must preserve them while the unresolved representation
+questions remain open; the linked deterministic tests verify selected traces only.
+
+## Implementation Plan
+
+- **Affected paths:** [packages/core/src/capabilities/execution.ts](../../../packages/core/src/capabilities/execution.ts); [packages/core/src/capabilities/action-proposal.ts](../../../packages/core/src/capabilities/action-proposal.ts); [packages/core/src/delegation/codex-specialist.ts](../../../packages/core/src/delegation/codex-specialist.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Evaluate attributable current authority independently of capability; preserve expiry/revocation/material-change and affected-principal limits. Tests cover selected current mechanisms, not a universal multi-principal authority implementation.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `packages/core/src/capabilities/execution.test.ts`; `tests/action-effects-evaluation.test.ts`; `packages/core/src/delegation/codex-specialist.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

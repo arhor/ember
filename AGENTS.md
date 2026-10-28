@@ -10,13 +10,16 @@ Before running Node.js, pnpm, or other repository tooling, run `nvm use` from th
 
 ## Documentation
 
-Ember keeps durable repository knowledge under `docs/` with explicit discovery metadata.
+Ember keeps durable repository knowledge under `docs/`. Start at
+[documentation navigation](docs/README.md) and consult relevant sources before
+making implementation decisions. Use the repository `adr-skill` to consult and
+maintain architectural decisions in `docs/architecture/decisions/`.
 
-For coding, design, review, research, or documentation work that may depend on or change Ember's durable semantics, architecture, decisions, acceptance scenarios, research conclusions, repository guidance, or other documented contracts, use the `ember-documentation` skill before making implementation decisions.
-
-The skill defines how to discover, read, create, update, and validate repository documentation. Keep the detailed workflow there rather than duplicating the documentation tree or discovery contract here.
-
-If the skill is unavailable in the current agent environment, follow `docs/documentation-discovery-guide.md` and `docs/documentation-discovery.md` directly.
+Accepted ADRs govern their stated scope; proposed records are proposals. Preserve
+historical and superseded labels and follow replacement links. Keep research,
+evidence, guides, and acceptance scenarios in their own documents. Update the
+owning source when durable knowledge changes, and maintain directory indexes when
+adding or moving documentation. No catalogue routing metadata is required.
 
 ## Linting and formatting
 

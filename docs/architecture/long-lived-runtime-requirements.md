@@ -1,13 +1,3 @@
----
-summary: "Issue #80 requirements for Ember's eventual long-lived runtime, derived from implemented endogenous cognition, specialist delegation, continuity, recovery, locking, and resource evidence without selecting a service topology."
-read_when:
-  - "Comparing foreground, externally triggered, daemon, or supervised-service runtime topologies for issue #81"
-  - "Implementing or reviewing unattended wake-up, long-running specialist work ownership, restart recovery, shutdown, locking, status, or runtime configuration"
-  - "Checking which long-lived capabilities are actually earned by issues #48, #50, #79, and #95 before adding service machinery"
-role: design
-discovery_status: current
----
-
 # Long-Lived Runtime Requirements
 
 > Status: current requirements artifact for issue #80. This document derives the

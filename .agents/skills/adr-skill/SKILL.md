@@ -7,6 +7,17 @@ metadata:
 
 # ADR Skill
 
+## Ember repository conventions
+
+Use `docs/architecture/decisions/` and its `README.md` index. Every ADR filename is
+`NNNN-title-with-dashes.md` (for example `0039-choose-database.md`), with a title of
+`# ADR NNNN: Choose database`. Allocate one more than the largest existing numeric
+prefix across all statuses, starting at 0001 and zero-padding to at least four digits.
+Never fill gaps, reuse deprecated/superseded numbers, renumber existing records, or
+switch to date/slug-only filenames. Keep index entries in numeric order. Dates stay
+in native frontmatter. The helpers default to this folder and numbered strategy;
+their local CommonJS package boundary supports execution in Ember's ESM repository.
+
 ## Philosophy
 
 ADRs created with this skill are **executable specifications for coding agents**. A human approves the decision; an agent implements it. The ADR must contain everything the agent needs to write correct code without asking follow-up questions.
@@ -58,7 +69,7 @@ Every ADR goes through four phases. Do not skip phases.
 
 Before asking any questions, gather context from the repo:
 
-1. **Find existing ADRs.** Check `contributing/decisions/`, `docs/decisions/`, `adr/`, `docs/adr/`, `decisions/` for existing records. Read them. Note:
+1. **Find existing ADRs.** Read `docs/architecture/decisions/README.md` and its existing numbered records. Read them. Note:
    - Existing conventions (directory, naming, template style)
    - Decisions that relate to or constrain the current one
    - Any ADRs this new decision might supersede
@@ -116,13 +127,10 @@ Do NOT proceed to Phase 2 until the human confirms the summary.
 
 ### Phase 2: Draft the ADR
 
-1. **Choose the ADR directory.**
-   - If one exists (found in Phase 0), use it.
-   - If none exists, create `contributing/decisions/` (if `contributing/` exists), `docs/decisions/` (MADR default), or `adr/` (simpler repos).
-
-2. **Choose a filename strategy.**
-   - If existing ADRs use date prefixes (`YYYY-MM-DD-...`), continue that.
-   - Otherwise use slug-only filenames (`choose-database.md`).
+1. **Use `docs/architecture/decisions/`.** Keep its README index current.
+2. **Allocate the next numbered filename.** Follow the repository convention above;
+   `0038-...` is followed by `0039-...`, regardless of status or gaps. For manual
+   authoring inspect every existing prefix before choosing the next number.
 
 3. **Choose a template.**
    - Use `assets/templates/adr-simple.md` for straightforward decisions (one clear winner, minimal tradeoffs).
@@ -176,7 +184,7 @@ Agents should read existing ADRs **before implementing changes** in a codebase t
 
 ### How to Consult ADRs
 
-1. **Find the ADR directory.** Check `contributing/decisions/`, `docs/decisions/`, `adr/`, `docs/adr/`, `decisions/`. Also check for an index file (`README.md` or `index.md`).
+1. **Find the ADR directory.** Use `docs/architecture/decisions/` and read its `README.md` index.
 
 2. **Scan titles and statuses.** Read the index or list filenames. Focus on `accepted` ADRs — these are active decisions.
 
@@ -209,7 +217,7 @@ When implementing code guided by an ADR, add a comment referencing it:
 
 ```typescript
 // ADR: Using better-sqlite3 for test database
-// See: docs/decisions/2025-06-15-use-sqlite-for-test-database.md
+// See: docs/architecture/decisions/0039-use-sqlite-for-test-database.md
 import Database from 'better-sqlite3';
 ```
 
@@ -238,7 +246,7 @@ Keep these lightweight — one comment at the entry point, not on every line. Th
 After an ADR is accepted:
 
 1. **Create implementation tasks.** Each item in the Implementation Plan and each follow-up in Consequences should become a trackable task (issue, ticket, or TODO).
-2. **Reference the ADR in PRs.** Link to the ADR in PR descriptions, e.g. "Implements `contributing/decisions/2025-06-15-use-sqlite-for-test-database.md`."
+2. **Reference the ADR in PRs.** Link to the ADR in PR descriptions, e.g. "Implements `docs/architecture/decisions/0039-use-sqlite-for-test-database.md`."
 3. **Add code references.** Add ADR path comments at key implementation points.
 4. **Check verification criteria.** Once implementation is complete, walk through the Verification checkboxes. Update the ADR with results in `## More Information`.
 5. **Revisit when triggers fire.** If the ADR specified revisit conditions ("if X happens, reconsider"), monitor for those conditions.
@@ -250,7 +258,7 @@ If the repo has an ADR index/log file (often `README.md` or `index.md` in the AD
 Preferred: let `scripts/new_adr.js --update-index` do it. Otherwise:
 
 - Add a bullet entry for the new ADR.
-- Keep ordering consistent (numeric if numbered; date or alpha if slugs).
+- Keep ordering numeric across the numbered records.
 
 ### Bootstrap
 
@@ -262,21 +270,10 @@ node /path/to/adr-skill/scripts/bootstrap_adr.js
 
 This creates the directory, an index file, and a filled-out first ADR ("Adopt architecture decision records") with real content explaining why the team is using ADRs. Use `--json` for machine-readable output. Use `--dir` to override the directory name.
 
-### Categories (Large Projects)
+### Organization
 
-For repos with many ADRs, organize by subdirectory:
-
-```
-docs/decisions/
-  backend/
-    2025-06-15-use-postgres.md
-  frontend/
-    2025-06-20-use-react.md
-  infrastructure/
-    2025-07-01-use-terraform.md
-```
-
-Date prefixes are local to each category. Choose a categorization scheme early (by layer, by domain, by team) and document it in the index.
+Keep Ember's sequence flat in `docs/architecture/decisions/`; use the index for
+navigation rather than introducing per-category numbering or alternate ADR folders.
 
 ## Resources
 
@@ -314,11 +311,12 @@ node /path/to/adr-skill/scripts/new_adr.js --title "Choose database" --template 
 node /path/to/adr-skill/scripts/new_adr.js --title "Choose database" --status proposed --update-index
 
 # Bootstrap a new repo
-node /path/to/adr-skill/scripts/bootstrap_adr.js --dir docs/decisions
+node /path/to/adr-skill/scripts/bootstrap_adr.js
 ```
 
 Notes:
 
-- Scripts auto-detect ADR directory and filename strategy.
-- Use `--dir` and `--strategy` to override.
+- Creation and bootstrap default to `docs/architecture/decisions/` and numbered filenames.
+- `--dir` exists for explicitly requested external fixtures; Ember records use the canonical folder.
+- `--strategy auto` and `--strategy number` both use numeric prefixes.
 - Use `--json` to emit machine-readable output.

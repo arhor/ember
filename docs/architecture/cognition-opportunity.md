@@ -1,14 +1,6 @@
----
-summary: "Current design for a topic-free cognition opportunity that exposes bounded current Ember state without turning wake-up mechanism into motive, user input, or a scheduler-owned topic."
-read_when:
-  - "Implementing or reviewing topic-free endogenous cognition opportunities, wake-ups, idle pulses, or the decision to remain silent"
-  - "Changing the boundary between runtime wake-up mechanisms, bounded state projection, and endogenous cognition"
-  - "Implementing issue #74 or evaluating AS-AGY-01 and AS-AGY-02 against an executable opportunity boundary"
-role: design
-discovery_status: current
----
-
 # Bounded Cognition-Opportunity Boundary
+
+> Decision owner: [accepted ADR 0029](decisions/0029-persist-topic-free-cognition-decisions-and-explicit-silence.md), accepted on 2026-10-27. This source retains detailed implementation references, procedures, scenarios, evidence, and anchors; that ADR owns the extracted architectural decision.
 
 > Status: current design for issue #73 and implementation input to issue #74.
 

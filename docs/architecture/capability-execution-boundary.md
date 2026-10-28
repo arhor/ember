@@ -1,15 +1,6 @@
----
-summary: "Issue #189 design for Ember-owned model-facing capability selection, authority checks, bounded execution evidence, occurrence control, and AI SDK tool-loop mechanics."
-read_when:
-  - "Adding or changing a model-visible capability, tool source, or capability executor"
-  - "Changing authority, approval, argument constraints, retries, cancellation, timeout, or effect evidence around model tool calls"
-  - "Replacing AI SDK tool mechanics or adding MCP behind Ember capability semantics"
-  - "Changing the approved Google Calendar event creation capability or its durable effect evidence"
-role: design
-discovery_status: current
----
-
 # Capability Execution Boundary
+
+> Decision owner: [accepted ADR 0024](decisions/0024-enforce-capability-authority-and-effect-evidence-in-an-ember-firewall.md), accepted on 2026-10-27. This source retains detailed implementation contracts, procedures, scenarios, evidence, and anchors; the extracted architectural decision is owned by that ADR.
 
 ## Proven boundary
 

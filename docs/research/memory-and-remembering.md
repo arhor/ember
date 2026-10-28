@@ -1,19 +1,10 @@
----
-summary: "Canonical semantics for persistent remembered meaning, including provenance, ownership, scope, currentness, correction, supersession, forgetting, and historical evidence."
-read_when:
-  - "Changing how remembered information is promoted, corrected, superseded, forgotten, scoped, or attributed"
-  - "Designing current-versus-historical belief, preference, relationship, commitment, or provenance behavior"
-role: research
-discovery_status: current
----
-
 # Memory and Remembering Semantics
 
 This note addresses issue #4 and follows the concern-driven research discipline defined in issue #10.
 
 It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md). The continuity conclusions are treated as active constraints rather than background: memory must support autobiographical ownership, relationship and commitment continuity, adaptive coherence, corrective integrity, epistemic restraint, and degraded-but-truthful continuity after partial loss.
 
-The full Deep Research artifact behind this synthesis is preserved as [source material](source-material/memory-and-remembering-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance. A separate [portable evidence map](memory-and-remembering-references.md) provides durable references for the principal evidence behind this note.
+The full Deep Research artifact behind this synthesis is preserved as [source material](archive/memory-and-remembering-deep-research.md). It is non-canonical and retains the ChatGPT-local citation markers from the original Markdown export for provenance. A separate [portable evidence map](memory-and-remembering-references.md) provides durable references for the principal evidence behind this note.
 
 This note deliberately stays at the semantic level. It does not choose memory classes, database tables, embeddings, vector search, event types, storage schemas, Markdown layouts, retrieval APIs, caches, prompt architecture, background jobs, or event sourcing.
 

@@ -1,17 +1,8 @@
----
-summary: "Portable evidence map supporting canonical operational semantics with agent-runtime, distributed-systems, durable-work, HCI, and cross-device sources."
-read_when:
-  - "Checking evidence behind restart, recovery, session, surface, retry, delivery, or long-running-work conclusions"
-  - "Challenging currentness, duplicate-delivery, downtime, partial-observability, or cross-surface assumptions"
-role: evidence
-discovery_status: current
----
-
 # Operational Model, Sessions, and Surfaces - Portable Evidence Map
 
 This companion maps the evidence-labelled conclusions in [Operational Model, Sessions, and Surfaces Semantics](operational-model-sessions-and-surfaces.md) to sources that remain usable outside the originating ChatGPT session.
 
-The canonical Ember-facing synthesis is the semantic note. The preserved [source research](source-material/operational-model-sessions-and-surfaces-deep-research.md) retains the broader narrative. This file is the portable layer: it records durable paper, DOI, official documentation, repository snapshot, and inherited Ember links and states what each source does and does not support.
+The canonical Ember-facing synthesis is the semantic note. The preserved [source research](archive/operational-model-sessions-and-surfaces-deep-research.md) retains the broader narrative. This file is the portable layer: it records durable paper, DOI, official documentation, repository snapshot, and inherited Ember links and states what each source does and does not support.
 
 Fast-moving runtime behaviour was rechecked on **2026-08-29**. Repository snapshots observed that day:
 

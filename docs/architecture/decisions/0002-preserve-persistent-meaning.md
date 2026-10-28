@@ -1,16 +1,11 @@
 ---
-summary: "Accepted decision that persistent meaning preserves provenance, ownership, scope, temporal applicability, currentness, uncertainty, supersession, and lifecycle."
-read_when:
-  - "Changing how Ember stores, promotes, corrects, supersedes, forgets, or interprets durable meaning"
-  - "Separating evidence, memory, current belief, commitment, and temporary context in an implementation"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-08-29"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0002: Persistent Meaning Preserves Provenance, Scope, Currentness, and Lifecycle
 
-- **Status:** Accepted
-- **Date:** 2026-08-29
 - **Decision class:** Semantic, representation-neutral
 - **Origin:** [Issue #20](https://github.com/arhor/ember/issues/20)
 
@@ -120,8 +115,8 @@ decisions.
 | Canonical source                                                                                                                                                                            | Decision basis                                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [Principles: history, memory, and context](../../principles.md#5-raw-history-is-evidence-not-memory) and [provenance](../../principles.md#6-provenance-travels-with-remembered-information) | Establish the project-level separation and accountability requirements for retained meaning.                                                     |
-| [Design directions: memory](../design-directions.md#memory-preserve-accountable-meaning-not-merely-retained-text)                                                                           | Synthesises accountable meaning, evidence lineage, lifecycle, and prospective state.                                                             |
-| [Design directions: ADR candidate 2](../design-directions.md#adr-candidate-2-persistent-meaning-preserves-provenance-scope-currentness-and-lifecycle)                                       | Records the synthesis-level candidate and its **[E + C + J]** basis.                                                                             |
+| [Design directions: memory](../../research/design-directions.md#memory-preserve-accountable-meaning-not-merely-retained-text)                                                               | Synthesises accountable meaning, evidence lineage, lifecycle, and prospective state.                                                             |
+| [Design directions: ADR candidate 2](../../research/design-directions.md#adr-candidate-2-persistent-meaning-preserves-provenance-scope-currentness-and-lifecycle)                           | Records the synthesis-level candidate and its **[E + C + J]** basis.                                                                             |
 | [Memory working definition](../../research/memory-and-remembering.md#working-definition)                                                                                                    | Defines remembering as durable availability with ownership, provenance, scope, temporal and lifecycle status, corrigibility, and forgettability. |
 | [Correction, contradiction, and supersession](../../research/memory-and-remembering.md#correction-contradiction-and-supersession)                                                           | Requires historical and current truth, conflicting sources, and changed interpretation to remain distinguishable.                                |
 | [Forgetting](../../research/memory-and-remembering.md#forgetting-is-part-of-correct-remembering)                                                                                            | Establishes selective forgetting, derivative deletion, and privacy-respecting continuity damage.                                                 |
@@ -129,3 +124,50 @@ decisions.
 | [Commitments and prospective memory](../../research/memory-and-remembering.md#commitments-and-prospective-memory)                                                                           | Separates the historical promise from its current normative force and lifecycle.                                                                 |
 | [Endogenous motivational currentness](../../research/endogenous-agency-and-self-initiated-behavior.md#motivational-currentness-and-lifecycle)                                               | Applies current, dormant, satisfied, cancelled, superseded, and historical status to continuing reasons.                                         |
 | [Operational temporal distinctions](../../research/operational-model-sessions-and-surfaces.md#occurrence-time-observation-time-and-applicability-time-may-differ)                           | Extends occurrence, observation, and applicability time across delayed and out-of-order delivery.                                                |
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+Durable meaning must retain provenance, owner, scope, currentness, lifecycle and truthful gaps rather than treating every retained statement as current truth. See the [original context](#context-and-problem) for rationale and evidence.
+
+## Consequences
+
+The [original consequences and architectural constraints](#consequences-and-architectural-constraints)
+remain governing. Implementations must preserve them while the unresolved representation
+questions remain open; the linked deterministic tests verify selected traces only.
+
+## Implementation Plan
+
+- **Affected paths:** [packages/core/src/model.ts](../../../packages/core/src/model.ts); [packages/core/src/semantics.ts](../../../packages/core/src/semantics.ts); [packages/core/src/memory-proposal.ts](../../../packages/core/src/memory-proposal.ts); [packages/core/src/persistence/state-store.ts](../../../packages/core/src/persistence/state-store.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Retain evidence lineage and reciprocal correction/supersession; do not promote derived summaries or repeated evidence into independent support. General privacy deletion/derivative repair remains an unimplemented semantic requirement, not verified by the narrower optional-detail fixture.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `tests/model-store.test.ts`; `packages/core/src/memory-proposal.test.ts`; `tests/longitudinal-provenance.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

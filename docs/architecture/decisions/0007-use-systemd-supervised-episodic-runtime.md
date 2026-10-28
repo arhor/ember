@@ -1,17 +1,11 @@
 ---
-summary: "Accepted implementation decision using a systemd user manager to supervise episodic Ember workers and one-shot wake activation on Linux, without a permanently resident Ember daemon."
-read_when:
-  - "Implementing or reviewing Ember's long-lived runtime topology, unattended wake-up, specialist process ownership, startup, shutdown, or recovery"
-  - "Deciding whether Ember needs a resident daemon, systemd units, transient workers, timers, or a runtime IPC/control plane"
-  - "Deploying Ember as an always-available local agent on a Linux systemd host"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-09-03"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0007: Use a systemd-Supervised Episodic Runtime Before a Resident Ember Daemon
 
-- **Status:** Accepted
-- **Date:** 2026-09-03
 - **Decision class:** Implementation/runtime topology
 - **Origin:** [Issue #81](https://github.com/arhor/ember/issues/81)
 - **Parent epic:** [Issue #51](https://github.com/arhor/ember/issues/51)
@@ -534,3 +528,44 @@ Re-evaluate this ADR when one or more of the following becomes concrete:
 A revisit may select a resident Ember service, another supervisor, or a different
 local topology. It must preserve ADRs 0001-0005 and must not reinterpret process
 continuity as Ember continuity.
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+Unattended opportunities and bounded work need supervision/recovery without making a permanently resident process the owner of Ember continuity. See the [original context](#context) for rationale and evidence.
+
+## Implementation Plan
+
+- **Affected paths:** [packages/core/src/runtime/episodic-runtime.ts](../../../packages/core/src/runtime/episodic-runtime.ts); [packages/core/src/host/systemd.ts](../../../packages/core/src/host/systemd.ts); [bin/ember-runtime.ts](../../../bin/ember-runtime.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Follow the existing issue-94 implementation handoff, durable wake intents, short canonical writer leases, no automatic replay and truthful shutdown. Host-specific deployment/lingering probes remain opt-in; deterministic tests do not prove every Linux deployment or macOS equivalence.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `packages/core/src/runtime/episodic-runtime.test.ts`; `packages/core/src/host/systemd.test.ts`; `tests/episodic-runtime-recovery.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

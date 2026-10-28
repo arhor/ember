@@ -1,14 +1,6 @@
----
-summary: "Current production path from CLI or Telegram input through the Ember application boundary, AI execution, durable state, delivery, and bootstrap."
-read_when:
-  - "Tracing an ordinary user message through Ember from a concrete surface to durable state and delivery"
-  - "Changing application composition, cognition execution, delivery reconciliation, or first-run bootstrap"
-  - "Checking whether a surface, host adapter, provider bridge, or setup flow is bypassing the canonical application boundary"
-role: design
-discovery_status: current
----
-
 # Canonical Ember Application Flow
+
+> Decision owner: [accepted ADR 0015](decisions/0015-centralize-application-coordination-and-inward-dependencies.md), accepted on 2026-10-27. This document retains implementation detail, procedures, and dated evidence; it is not an independent decision owner.
 
 This document describes the implemented production architecture after epic
 [#303](https://github.com/arhor/ember/issues/303). The migration proposal that led to
@@ -203,7 +195,7 @@ selection. They do not define alternate ordinary cognition paths.
 
 Telegram configuration, token storage, and resident-service installation are manual
 trusted-host operations documented in the
-[Telegram runbook](telegram-surface-runbook.md). Ordinary cognition has no setup
+[Telegram runbook](../guides/telegram-surface-runbook.md). Ordinary cognition has no setup
 intent or host-mutation callback, and the CLI package has no dependency on the
 Telegram package. Linux/systemd and macOS/launchd remain host adapters around
 resident operation rather than variants of Ember's application architecture.
@@ -250,5 +242,5 @@ See [Source Layout and Surface Placement](source-layout.md) for file-placement r
 occurrence/delivery semantics,
 [AI SDK Cognition Adapter Boundary](ai-sdk-cognition-adapter-boundary.md) for execution
 mechanics, and
-[Installation, Restore/Create, and Conversational Onboarding Semantics](setup-and-onboarding-semantics.md)
+[Installation, Restore/Create, and Conversational Onboarding Semantics](../guides/setup-and-onboarding.md)
 for bootstrap semantics.

@@ -1,19 +1,10 @@
----
-summary: "Portable evidence map supporting canonical authority semantics with security, HCI, privacy, multi-principal, human-factors, and runtime sources."
-read_when:
-  - "Checking evidence behind standing authority, fresh approval, revocation, disclosure, or changed-circumstance conclusions"
-  - "Challenging capability-versus-authority, delegated-authority, consent, or confirmation-fatigue assumptions"
-role: evidence
-discovery_status: current
----
-
 # Action, Authority, and Permission Evidence Map
 
 This document is the portable evidence companion to [Action, Authority, and Permission Semantics](action-authority-and-permission.md).
 
 The semantic note remains the canonical Ember-facing synthesis. This companion exists so that evidence labels such as **[E]**, **[C]**, **[J]**, **[H]**, and **[L]**, plus security-invariant claims, remain inspectable outside the originating Deep Research session.
 
-The preserved [Deep Research artifact](source-material/action-authority-and-permission-deep-research.md) contains the broader research narrative and evidence ledger. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
+The preserved [Deep Research artifact](archive/action-authority-and-permission-deep-research.md) contains the broader research narrative and evidence ledger. Research-session citation markers are provenance rather than a portable bibliography; the durable sources below are intended to remain usable from the repository alone.
 
 This map deliberately does not duplicate the full bibliographies from the preceding phases. They remain inherited inputs:
 

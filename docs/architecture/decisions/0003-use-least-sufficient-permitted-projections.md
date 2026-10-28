@@ -1,16 +1,11 @@
 ---
-summary: "Accepted decision that cognition and delegation receive purpose-bounded, least-sufficient permitted projections rather than canonical state wholesale."
-read_when:
-  - "Changing context selection, prompt construction, disclosure, compaction, reconstruction, or delegated specialist context"
-  - "Reviewing whether context inclusion, omission, or transformation preserves provenance, scope, privacy, and authority"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-08-29"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0003: Cognition and Delegation Receive Least Sufficient Permitted Projections
 
-- **Status:** Accepted
-- **Date:** 2026-08-29
 - **Decision class:** Semantic, representation-neutral
 - **Origin:** [Issue #20](https://github.com/arhor/ember/issues/20)
 
@@ -118,8 +113,8 @@ This decision does not choose:
 | Canonical source                                                                                                                                                                                        | Decision basis                                                                                     |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | [Vision: central design hypothesis](../../vision.md#central-design-hypothesis) and [principles: delegation](../../principles.md#9-delegation-is-capability-not-hierarchy)                               | Establish composition with specialists without absorbing their identity or runtime ownership.      |
-| [Design directions: context](../design-directions.md#context-project-meaning-into-cognition-without-promoting-it)                                                                                       | Establishes sufficient, selective, currentness-aware, provenance-preserving projection.            |
-| [Design directions: ADR candidate 3](../design-directions.md#adr-candidate-3-context-and-delegation-use-least-sufficient-permitted-projections)                                                         | Records the synthesis-level candidate and its **[E + C + J]** basis.                               |
+| [Design directions: context](../../research/design-directions.md#context-project-meaning-into-cognition-without-promoting-it)                                                                           | Establishes sufficient, selective, currentness-aware, provenance-preserving projection.            |
+| [Design directions: ADR candidate 3](../../research/design-directions.md#adr-candidate-3-context-and-delegation-use-least-sufficient-permitted-projections)                                             | Records the synthesis-level candidate and its **[E + C + J]** basis.                               |
 | [Context working definitions](../../research/context-selection-and-cognitive-framing.md#working-definitions)                                                                                            | Defines context and cognitive framing as temporary purpose- and situation-bounded projection.      |
 | [Selection includes exclusion](../../research/context-selection-and-cognitive-framing.md#selection-includes-deliberate-exclusion)                                                                       | Establishes that true, remembered information may be wrong to expose.                              |
 | [Delegated cognition and least sufficient context](../../research/context-selection-and-cognitive-framing.md#delegated-cognition-and-least-sufficient-context)                                          | Defines permission-before-compression and sufficiency-before-minimality.                           |
@@ -127,3 +122,50 @@ This decision does not choose:
 | [Delegation working definitions](../../research/capabilities-and-delegation.md#working-definitions)                                                                                                     | Defines material discretion, runtime ownership, and Ember's delegation envelope.                   |
 | [Delegated context](../../research/capabilities-and-delegation.md#delegated-context) and [delegated evidence](../../research/capabilities-and-delegation.md#delegated-evidence-and-epistemic-ownership) | Preserves least sufficient disclosure and specialist provenance without autobiographical transfer. |
 | [Authority: access is not disclosure](../../research/action-authority-and-permission.md#access-is-not-disclosure-authority)                                                                             | Makes disclosure recipient- and purpose-sensitive rather than a consequence of access.             |
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+One cognition or delegate needs sufficient permitted context while excluding stale, wrong-scope or private material; available state is not automatically disclosable. See the [original context](#context-and-problem) for rationale and evidence.
+
+## Consequences
+
+The [original consequences and architectural constraints](#consequences-and-architectural-constraints)
+remain governing. Implementations must preserve them while the unresolved representation
+questions remain open; the linked deterministic tests verify selected traces only.
+
+## Implementation Plan
+
+- **Affected paths:** [packages/core/src/projection.ts](../../../packages/core/src/projection.ts); [packages/core/src/conversation-context.ts](../../../packages/core/src/conversation-context.ts); [packages/core/src/delegation/codex-specialist.ts](../../../packages/core/src/delegation/codex-specialist.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Build bounded projections from current Ember-owned state; disclose a new least-sufficient permitted set for delegates and preserve source attribution. Do not treat absent projection as forgetting or similarity/token count as sufficient policy.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `tests/semantics-projection.test.ts`; `tests/longitudinal-context-harm.test.ts`; `packages/core/src/delegation/codex-specialist.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

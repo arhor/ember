@@ -1,16 +1,11 @@
 ---
-summary: "Accepted decision separating continuing work, semantic occurrence, delivery, external effects, and current applicability across sessions, surfaces, retries, downtime, and recovery."
-read_when:
-  - "Changing session, surface, delivery, retry, cancellation, long-running work, downtime, or recovery behavior"
-  - "Handling duplicate occurrence, ambiguous effect, stale completion, truthful gap, or currentness reconciliation"
-role: decision
-discovery_status: current
+status: "accepted"
+date: "2026-08-29"
+decision-makers: "Repository maintainer; original decision attribution not recorded"
 ---
 
 # ADR 0005: Operational Continuity Distinguishes Work, Occurrence, Delivery, Effects, and Currentness
 
-- **Status:** Accepted
-- **Date:** 2026-08-29
 - **Decision class:** Semantic, representation-neutral
 - **Origin:** [Issue #20](https://github.com/arhor/ember/issues/20)
 
@@ -119,8 +114,8 @@ experiments.
 | Canonical source                                                                                                                                                                                         | Decision basis                                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | [Principles: interfaces do not own the agent](../../principles.md#12-interfaces-do-not-own-the-agent) and [graceful degradation](../../principles.md#14-graceful-degradation-beats-brittle-intelligence) | Establish temporary surfaces and truthful partial function as project-level constraints.                      |
-| [Design directions: operational model](../design-directions.md#operational-model-continuity-centred-reconciliation-first)                                                                                | Synthesises session independence, resumable work, occurrence/delivery, retries, gaps, and reconciliation.     |
-| [Design directions: ADR candidate 5](../design-directions.md#adr-candidate-5-operational-continuity-distinguishes-work-occurrence-delivery-and-currentness)                                              | Records the synthesis-level candidate and its **[E + C + J]** basis.                                          |
+| [Design directions: operational model](../../research/design-directions.md#operational-model-continuity-centred-reconciliation-first)                                                                    | Synthesises session independence, resumable work, occurrence/delivery, retries, gaps, and reconciliation.     |
+| [Design directions: ADR candidate 5](../../research/design-directions.md#adr-candidate-5-operational-continuity-distinguishes-work-occurrence-delivery-and-currentness)                                  | Records the synthesis-level candidate and its **[E + C + J]** basis.                                          |
 | [Operational central conclusion](../../research/operational-model-sessions-and-surfaces.md#central-conclusion)                                                                                           | Defines continuity-centred operation around temporary loci.                                                   |
 | [Long-running work](../../research/operational-model-sessions-and-surfaces.md#long-running-work-is-independent-of-interaction-lifetime)                                                                  | Makes work lifetime independent of initiating interaction and surface.                                        |
 | [Occurrence and delivery](../../research/operational-model-sessions-and-surfaces.md#semantic-occurrence-and-delivery-are-distinct)                                                                       | Prevents transport duplication from manufacturing semantic multiplication.                                    |
@@ -130,3 +125,50 @@ experiments.
 | [Delegation progress, failure, and side effects](../../research/capabilities-and-delegation.md#progress-partial-results-failure-and-side-effects)                                                        | Separates progress/control-flow signals from rollback and known effects.                                      |
 | [Context reconstruction](../../research/context-selection-and-cognitive-framing.md#reconstruction-after-interruption-or-restart)                                                                         | Requires current-situation reconstruction rather than old prompt recreation.                                  |
 | [Endogenous time and downtime](../../research/endogenous-agency-and-self-initiated-behavior.md#time-persistence-and-downtime)                                                                            | Forbids claiming cognition or experience during unavailable intervals.                                        |
+
+## Native-format implementation guidance — 2026-10-27
+
+This additive reconciliation preserves the original accepted decision, date, body
+and existing section anchors. It records concrete ongoing implementation guidance,
+not a new acceptance event or an instruction to repeat completed feature work.
+
+## Context and Problem Statement
+
+Continuing work, occurrence, transport delivery, external effects and current applicability must remain distinguishable through interruption and recovery. See the [original context](#context-and-problem) for rationale and evidence.
+
+## Consequences
+
+The [original consequences and architectural constraints](#consequences-and-architectural-constraints)
+remain governing. Implementations must preserve them while the unresolved representation
+questions remain open; the linked deterministic tests verify selected traces only.
+
+## Implementation Plan
+
+- **Affected paths:** [packages/core/src/runtime/interaction-boundary.ts](../../../packages/core/src/runtime/interaction-boundary.ts); [packages/core/src/runtime-episode.ts](../../../packages/core/src/runtime-episode.ts); [packages/core/src/objectives/durable-objective.ts](../../../packages/core/src/objectives/durable-objective.ts); [packages/core/src/delegation/specialist-reintegration.ts](../../../packages/core/src/delegation/specialist-reintegration.ts).
+- **Dependencies and configuration:** no new package, schema, configuration or runtime
+  change is introduced by this documentation reconciliation. Original ADRs and current
+  manifests/instructions retain their separate governing scopes.
+- **Patterns to follow:** Use stable occurrence identity and explicit effect/stop/awareness uncertainty; reconcile current evidence before retry or new action. Never fill downtime with experience, confuse cancellation with rollback, or provider completion with current objective success.
+- **Patterns to avoid:** interpreting these implementation references as a new
+  universal representation, silently resolving open semantic questions, or modifying
+  historical evidence to make implementation appear complete.
+- **Migration:** keep original dates/status/decision meaning and existing headings;
+  retain research/evaluation provenance and link current subordinate decisions from
+  the [ADR index](README.md). No production changes are required for this migration.
+
+### Verification
+
+- [x] Original accepted body, date, status and source/section traceability are preserved.
+- [x] Relevant existing deterministic tests pass: `tests/delivery-reconciliation.test.ts`; `tests/cross-surface-semantics.test.ts`; `tests/episodic-runtime-recovery.test.ts`; `packages/core/src/objectives/durable-objective.test.ts`.
+- [x] Verification remains bounded by the stated fixtures and unresolved questions;
+      acceptance is not misreported as complete proof of every semantic requirement.
+
+### Native-format reconciliation verification — 2026-10-27
+
+The original accepted body, date, lifecycle and section identities were preserved.
+The final deterministic run passed all 678 tests, including the focused traces above;
+this does not establish universal proof of open semantic or deployment questions.
+Metadata, required native sections, source/index traceability, local links/anchors,
+and protected-package/original-skill integrity checks passed. No package or runtime
+change was introduced. Root static checking still has the two previously recorded
+AI finish-reason errors; they are unrelated to this documentation reconciliation.

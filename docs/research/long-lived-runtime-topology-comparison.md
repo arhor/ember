@@ -1,13 +1,3 @@
----
-summary: "Comparative snapshot of long-lived runtime topology in OpenClaw, Hermes, NanoBot, and Letta, with evidence and revisit triggers relevant to Ember ADR 0007."
-read_when:
-  - "Reviewing ADR 0007 or deciding whether Ember should replace episodic systemd workers with a resident runtime"
-  - "Adding continuous interaction surfaces, resident transport/control-plane processes, or durable background execution"
-  - "Comparing external agent runtimes for process ownership, session residency, restart recovery, or persistent-agent boundaries"
-role: reference
-discovery_status: current
----
-
 # Long-Lived Runtime Topology Comparison
 
 This note preserves a focused comparison of how several reviewed agent systems arrange

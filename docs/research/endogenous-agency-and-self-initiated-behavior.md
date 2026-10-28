@@ -1,19 +1,10 @@
----
-summary: "Canonical semantics for endogenous attention and self-initiated behavior, separating wake-up opportunity from motivation and bounding initiative by currentness, resources, attention, and authority."
-read_when:
-  - "Changing proactive or background behavior that can occur without a new user request"
-  - "Designing wake-ups, deferred concerns, curiosity, standing intentions, non-action, or resource limits without turning scheduling into motivation"
-role: research
-discovery_status: current
----
-
 # Endogenous Agency and Self-Initiated Behavior Semantics
 
 This note addresses issue #2 and follows the concern-driven research discipline defined in issue #10.
 
 It builds directly on [Continuity and Identity Semantics](continuity-and-identity.md), [Memory and Remembering Semantics](memory-and-remembering.md), [Context Selection and Cognitive Framing Semantics](context-selection-and-cognitive-framing.md), [Capabilities and Delegation Semantics](capabilities-and-delegation.md), and [Action, Authority, and Permission Semantics](action-authority-and-permission.md). Their conclusions are active constraints rather than background.
 
-The Deep Research artifact behind this synthesis is preserved as [source material](source-material/endogenous-agency-and-self-initiated-behavior-deep-research.md). It is non-canonical. A separate [portable evidence map](endogenous-agency-and-self-initiated-behavior-references.md) maps the principal evidence-labelled conclusions below to durable papers, benchmarks, DOI records, current proactive-agent work, and inherited Ember research.
+The Deep Research artifact behind this synthesis is preserved as [source material](archive/endogenous-agency-and-self-initiated-behavior-deep-research.md). It is non-canonical. A separate [portable evidence map](endogenous-agency-and-self-initiated-behavior-references.md) maps the principal evidence-labelled conclusions below to durable papers, benchmarks, DOI records, current proactive-agent work, and inherited Ember research.
 
 This note deliberately stays at the semantic level. It does not choose a scheduler, heartbeat, background loop, motivational score, drive system, task queue, utility function, resource formula, prompt shape, persistence schema, process topology, or implementation language.
 
