@@ -17,7 +17,8 @@
     "@ember/google-calendar": "workspace:*",
     "@ember/host": "workspace:*",
     "@ember/mcp": "workspace:*",
-    "@ember/persistence": "workspace:*"
+    "@ember/persistence": "workspace:*",
+    "commander": "15.0.0"
   },
   "devDependencies": {
     "@types/node": "26.4.1",

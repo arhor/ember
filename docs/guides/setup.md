@@ -5,7 +5,8 @@ Decision owner: [ADR 0041](../architecture/decisions/0041-use-the-shell-as-the-o
 Launch Ember to open an empty shell. Chat begins on the first message, with fresh recent
 context and retained durable identity and memory. /new-conversation starts another fresh
 conversation on the next message. /quit exits; /help lists commands. Existing session
-commands also accept their legacy colon prefix.
+commands also accept their legacy colon prefix. See [conversation commands](conversation-commands.md)
+for shared commands, interactive suggestions, and Telegram aliases.
 
 If continuity and provider are not ready, messages suggest /setup. The message is not
 queued: configure explicitly and resend it.

@@ -1,22 +1,10 @@
 import type { SurfaceRepositories } from "@ember/application/app/surface-repositories.ts";
-import type { EmberState, MeaningId, RuntimeId } from "@ember/domain/model.ts";
+import type { EmberState, RuntimeId } from "@ember/domain/model.ts";
 import type { Writable } from "node:stream";
 
+import { executeCommand } from "@ember/application/commands/execute.ts";
 import { EmberError, ValidationError } from "@ember/domain/errors.ts";
-import { nowUtc } from "@ember/domain/model.ts";
 import { startRuntime, stopRuntime } from "@ember/domain/runtime-episode.ts";
-import {
-    attachDetail,
-    rememberEpisode,
-    rememberFact,
-    rememberPreference,
-    rememberRelationship,
-    supersede,
-    undertake,
-    withholdDetail,
-} from "@ember/domain/semantics.ts";
-import { cloneState } from "@ember/domain/util.ts";
-import { actionProposalConfirmation } from "@ember/persistence/capabilities/action-proposal.ts";
 import { CommanderError } from "commander";
 
 import type { SessionCommand } from "./session-program.ts";
@@ -53,92 +41,8 @@ export async function executeOperatorCommand(
     io: { output: Writable; error: Writable },
     repositories: SurfaceRepositories,
 ) {
-    const store = repositories.state;
-    switch (command.kind) {
-        case "new-conversation": {
-            const conversationId = await repositories.conversation.startFreshConversation(
-                config.principal,
-                config.scope,
-            );
-            io.output.write(`${conversationId}\n`);
-            return;
-        }
-        case "show-action": {
-            const proposal = await repositories.actions.present({
-                proposalId: command.proposalId,
-                principal: config.principal,
-                scope: config.scope,
-                surface: "local_cli",
-                presentedAt: nowUtc(),
-            });
-            const presentation = proposal.presentations.at(-1)!;
-            io.output.write(
-                `${JSON.stringify({
-                    proposalId: proposal.proposal_id,
-                    payloadDigest: proposal.payload_digest,
-                    target: proposal.target.label,
-                    event: proposal.payload,
-                    purpose: proposal.purpose,
-                    consequence: proposal.consequence,
-                    expiresAt: proposal.expires_at,
-                    presentationId: presentation.presentation_id,
-                    approvalConfirmation: actionProposalConfirmation(proposal),
-                })}\n`,
-            );
-            return;
-        }
-        case "approve-action":
-        case "reject-action": {
-            const actions = repositories.actions;
-            const pending = await actions.get(command.proposalId);
-            const presentation = pending?.presentations
-                .filter(
-                    (candidate) =>
-                        candidate.principal === config.principal &&
-                        candidate.scope === config.scope &&
-                        candidate.surface === "local_cli",
-                )
-                .at(-1);
-            if (!presentation) throw new ValidationError("action approval requires :show-action in this scope first");
-            const proposal = await actions.decide({
-                proposalId: command.proposalId,
-                decision: command.kind === "approve-action" ? "approved" : "rejected",
-                principal: config.principal,
-                payloadDigest: command.payloadDigest,
-                scope: config.scope,
-                surface: "local_cli",
-                presentationId: presentation.presentation_id,
-                decidedAt: nowUtc(),
-                authoritySourceId: `local_cli:${config.principal}`,
-                materialConfirmation: command.materialConfirmation,
-            });
-            io.output.write(`${JSON.stringify({ proposalId: command.proposalId, status: proposal.status })}\n`);
-            return;
-        }
-        case "withdraw-action":
-        case "supersede-action": {
-            const proposal = await repositories.actions.invalidate({
-                proposalId: command.proposalId,
-                kind: command.kind === "withdraw-action" ? "withdrawn" : "superseded",
-                principal: config.principal,
-                occurredAt: nowUtc(),
-                authoritySourceId: `local_cli:${config.principal}`,
-                reason: command.reason,
-            });
-            io.output.write(`${JSON.stringify({ proposalId: command.proposalId, status: proposal.status })}\n`);
-            return;
-        }
-        case "remember-relationship":
-        case "remember-fact":
-        case "remember-episode":
-        case "prefer":
-        case "supersede":
-        case "undertake":
-        case "attach-detail":
-        case "fixture-withhold":
-            await commitSemanticCommand(store, state, runtimeId, config.principal, command, io);
-            return;
-    }
+    const result = await executeCommand(command, state, runtimeId, { ...config, surfaceId: "local_cli" }, repositories);
+    io.output.write(result.text);
 }
 
 async function withCliLease(
@@ -180,64 +84,6 @@ export async function loadConfiguredState(store: CliStateRepository, config: Cli
     return state;
 }
 
-async function commitSemanticCommand(
-    store: CliStateRepository,
-    state: EmberState,
-    runtimeId: RuntimeId,
-    principal: string,
-    command: Extract<
-        OperatorCommand,
-        {
-            kind:
-                | "remember-relationship"
-                | "remember-fact"
-                | "remember-episode"
-                | "prefer"
-                | "supersede"
-                | "undertake"
-                | "attach-detail"
-                | "fixture-withhold";
-        }
-    >,
-    io: { output: Writable },
-) {
-    const candidate = cloneState(state);
-    let id: MeaningId | string;
-    switch (command.kind) {
-        case "remember-relationship":
-            id = rememberRelationship(candidate, principal, command.owner, command.scope, command.text);
-            break;
-        case "remember-fact":
-            id = rememberFact(candidate, principal, command.owner, command.slot, command.scope, command.text);
-            break;
-        case "prefer":
-            id = rememberPreference(candidate, principal, command.owner, command.slot, command.scope, command.text);
-            break;
-        case "supersede":
-            id = supersede(candidate, principal, command.id, command.text);
-            break;
-        case "undertake":
-            id = undertake(candidate, principal, command.slot, command.scope, command.text);
-            break;
-        case "remember-episode":
-            id = rememberEpisode(candidate, principal, command.slot, command.owner, command.scope, command.summary);
-            break;
-        case "attach-detail":
-            id = attachDetail(candidate, principal, command.episodeId, command.detail);
-            break;
-        case "fixture-withhold":
-            if (process.env.EMBER_ENABLE_FIXTURE_FAULTS !== "1")
-                throw new ValidationError("fixture fault command is available only to deterministic test harness");
-            id = withholdDetail(candidate, principal, command.id);
-            break;
-    }
-    const runtime = candidate.operations.runtimeEpisodes.find((item) => item.runtimeId === runtimeId);
-    if (!runtime) throw new ValidationError(`runtime does not exist: ${runtimeId}`);
-    if (runtime.cleanStopAt === null) runtime.lastDurableObservationAt = nowUtc();
-    await store.commit(state.revision, candidate);
-    io.output.write(`${id}\n`);
-}
-
 async function loadForPrincipal(store: CliStateRepository, principal: string) {
     const state = await store.load();
     if (principal !== state.runtimeContract.localPrincipal)
@@ -245,49 +91,4 @@ async function loadForPrincipal(store: CliStateRepository, principal: string) {
     return state;
 }
 
-export function splitCommand(line: string) {
-    const result: string[] = [];
-    let token = "";
-    let quote: "'" | '"' | null = null;
-    let escaping = false;
-    let started = false;
-    for (const char of line) {
-        if (escaping) {
-            token += char;
-            escaping = false;
-            started = true;
-            continue;
-        }
-        if (char === "\\" && quote !== "'") {
-            escaping = true;
-            started = true;
-            continue;
-        }
-        if (quote) {
-            if (char === quote) {
-                quote = null;
-                started = true;
-            } else token += char;
-            continue;
-        }
-        if (char === "'" || char === '"') {
-            quote = char;
-            started = true;
-            continue;
-        }
-        if (/\s/.test(char)) {
-            if (started) {
-                result.push(token);
-                token = "";
-                started = false;
-            }
-            continue;
-        }
-        token += char;
-        started = true;
-    }
-    if (escaping) throw new ValidationError("malformed quoted command: dangling escape");
-    if (quote) throw new ValidationError("malformed quoted command: unterminated quote");
-    if (started) result.push(token);
-    return result;
-}
+export { splitCommand } from "@ember/application/commands/tokenize.ts";

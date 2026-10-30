@@ -617,3 +617,168 @@ test("writer lease remains released while the worker waits in getUpdates", async
         await f.close();
     }
 });
+
+test("Telegram commands should mutate once without cognition when the same update is replayed", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    let sends = 0;
+    const api = readyApi({
+        sendMessage: async () => {
+            sends++;
+            return sentMessage();
+        },
+    });
+    const message = update(700, "/remember fact user:max command-test private 'Shared command'");
+    // When
+    const first = await processTelegramUpdate(f.config, api, message);
+    const replay = await processTelegramUpdate(f.config, api, message);
+    const state = await f.store.load();
+    // Then
+    assert.equal(first.kind, "processed");
+    assert.equal(replay.kind, "replayed");
+    assert.equal(sends, 1);
+    assert.equal(state.meanings.filter((meaning) => meaning.content === "Shared command").length, 1);
+    assert.equal(state.operations.cognitionEpisodes.length, 0);
+});
+
+test("Telegram commands should reject scope expansion when an explicit scope differs from configuration", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    let reply = "";
+    const api = readyApi({
+        sendMessage: async ({ text }: { text: string }) => {
+            reply = text;
+            return sentMessage();
+        },
+    });
+    // When
+    await processTelegramUpdate(f.config, api, update(701, "/remember fact user:max secret other-scope hidden"));
+    const state = await f.store.load();
+    // Then
+    assert.match(reply, /scope differs/);
+    assert.ok(!state.meanings.some((meaning) => meaning.content === "hidden"));
+    assert.equal(state.operations.cognitionEpisodes.length, 0);
+});
+
+test("Telegram commands should reject conflicting replay when the same update changes payload", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    const api = readyApi();
+    await processTelegramUpdate(f.config, api, update(702, "/help"));
+    // When
+    const attempt = processTelegramUpdate(f.config, api, update(702, "/new_conversation"));
+    // Then
+    await assert.rejects(attempt, /conflicting command replay/);
+});
+
+test("Telegram commands should retain uncertain delivery when a send loses its response", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    let sends = 0;
+    const api = readyApi({
+        sendMessage: async () => {
+            sends++;
+            throw new Error("connection lost");
+        },
+    });
+    const message = update(703, "/remember fact user:max retry private retained");
+    // When
+    const first = await processTelegramUpdate(f.config, api, message);
+    const second = await processTelegramUpdate(f.config, api, message);
+    const state = await f.store.load();
+    // Then
+    assert.ok(first.kind !== "ignored" && first.deliveryFailure === "uncertain");
+    assert.ok(second.kind !== "ignored" && second.deliveryFailure === "uncertain");
+    assert.equal(sends, 1);
+    assert.equal(state.meanings.filter((meaning) => meaning.content === "retained").length, 1);
+});
+
+test("Telegram help should bypass cognition when a command is unknown or malformed", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    const replies: string[] = [];
+    const api = readyApi({
+        sendMessage: async ({ text }: { text: string }) => {
+            replies.push(text);
+            return sentMessage();
+        },
+    });
+    // When
+    await processTelegramUpdate(f.config, api, update(704, "/unknown"));
+    await processTelegramUpdate(f.config, api, update(705, "/remember fact"));
+    await processTelegramUpdate(f.config, api, update(706, "/help"));
+    // Then
+    assert.match(replies[0]!, /unknown command/);
+    assert.match(replies[1]!, /missing required argument/);
+    assert.match(replies[2]!, /\/remember fact/);
+    assert.equal((await f.store.load()).operations.cognitionEpisodes.length, 0);
+});
+
+test("Telegram polling should keep processing when native menu registration fails", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    let menu: unknown;
+    const diagnostics: string[] = [];
+    const api = readyApi({
+        setMyCommands: async (request: unknown) => {
+            menu = request;
+            throw new Error("menu unavailable");
+        },
+        getUpdates: async () => [update(707, "/help")],
+    });
+    // When
+    await runTelegramPolling(f.config, api, {
+        maxAcceptedUpdates: 1,
+        onDiagnostic: (message) => diagnostics.push(message),
+    });
+    // Then
+    assert.deepEqual((menu as { scope: unknown }).scope, { type: "chat", chat_id: CHAT_ID });
+    assert.ok(
+        (menu as { commands: Array<{ command: string }> }).commands.some(
+            (entry) => entry.command === "new_conversation",
+        ),
+    );
+    assert.match(diagnostics[0]!, /registration failed/);
+    assert.equal((await f.store.load()).operations.cognitionEpisodes.length, 0);
+});
+
+test("Telegram polling should retry retained topic replies when the initial send was rate limited", async (t) => {
+    // Given
+    const f = await fixture();
+    t.after(f.close);
+    const topic = update(708, "/help");
+    topic.message!.message_thread_id = 17;
+    await processTelegramUpdate(
+        f.config,
+        readyApi({
+            sendMessage: async () => {
+                throw new SurfaceDeliveryFailure("rate limited", {
+                    outcome: "failed",
+                    retryable: true,
+                    retryAfterSeconds: 0,
+                });
+            },
+        }),
+        topic,
+    );
+    const destinations: Array<{ chat_id: number; message_thread_id?: number }> = [];
+    const api = readyApi({
+        sendMessage: async (request: { chat_id: number; message_thread_id?: number }) => {
+            destinations.push(request);
+            return sentMessage();
+        },
+        getUpdates: async () => [update(709, "/help")],
+    });
+    // When
+    await runTelegramPolling(f.config, api, { maxAcceptedUpdates: 1 });
+    // Then
+    assert.equal(destinations[0]?.chat_id, CHAT_ID);
+    assert.equal(destinations[0]?.message_thread_id, 17);
+    assert.equal(destinations.length, 2);
+});

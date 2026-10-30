@@ -28,6 +28,8 @@ import { requirePrincipal } from "@ember/domain/semantics.ts";
 
 import type { EmberApplicationDependencies } from "./dependencies.ts";
 
+import { validateCommandScope } from "../commands/execute.ts";
+
 /** The only production entry point for an ordinary user interaction. */
 export function createEmberApplication(dependencies: EmberApplicationDependencies): EmberApplication {
     return {
@@ -58,6 +60,12 @@ async function interact(
                 state.lineage.establishedAt !== expectedContinuity.establishedAt)
         )
             throw new ValidationError("continuity no longer matches setup binding");
+        if (event.purpose === "explain" && event.surfaceId !== "local_cli")
+            validateCommandScope(
+                { kind: "ask", explainIds: (event.explainIds ?? []).map(String), text: event.text },
+                state,
+                { principal: event.principal, scope: event.scope, surfaceId: event.surfaceId },
+            );
         const started = startRuntime(state, event.principal, event.scope);
         runtimeId = started.runtimeId;
         state = await store.commit(state.revision, started.state);

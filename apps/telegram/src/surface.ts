@@ -1,10 +1,12 @@
 import type { EmberApplication } from "@ember/application/app/contract.ts";
 import type { SurfaceRepositories } from "@ember/application/app/surface-repositories.ts";
+import type { ConversationCommandService } from "@ember/application/commands/service.ts";
 import type { ProactiveContactIntentRecord } from "@ember/application/ports/agency/proactive-contact-store.ts";
 import type { ContactAttentionDecisionRecord } from "@ember/domain/agency/proactive-contact-attention-policy.ts";
 import type { CognitionId, EmberState } from "@ember/domain/model.ts";
 import type { TransportOptions, Update } from "node-telegram-bot-api";
 
+import { telegramCommandMenu } from "@ember/application/commands/catalogue.ts";
 import { Api, NetworkError, ParseError, TelegramApiError, TimeoutError } from "node-telegram-bot-api";
 import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
@@ -43,7 +45,7 @@ export type TelegramUpdateOutcome =
     | {
           kind: "processed" | "replayed";
           updateId: number;
-          cognitionId: CognitionId;
+          cognitionId: CognitionId | null;
           providerFailure: string | null;
           memoryProposalFailure: string | null;
           deliveryFailure: "failed" | "uncertain" | null;
@@ -57,7 +59,8 @@ interface TelegramApiFactoryOptions {
 
 type TelegramDeliveryApi = Pick<Api, "sendMessage">;
 type TelegramPreflightApi = Pick<Api, "getMe" | "getWebhookInfo">;
-type TelegramPollingApi = Pick<Api, "getMe" | "getWebhookInfo" | "getUpdates" | "sendMessage">;
+type TelegramPollingApi = Pick<Api, "getMe" | "getWebhookInfo" | "getUpdates" | "sendMessage"> &
+    Partial<Pick<Api, "setMyCommands">>;
 
 export type ProactiveContactHandoffRevalidator = (
     state: EmberState,
@@ -198,15 +201,74 @@ export async function processTelegramUpdate(
     update: TelegramUpdate,
     {
         application,
+        commands,
         signal,
     }: {
         application: EmberApplication;
+        commands?: ConversationCommandService;
         signal?: AbortSignal | undefined;
     },
 ): Promise<TelegramUpdateOutcome> {
     const inbound = selectTelegramInbound(update, config);
     if (inbound === null) return { kind: "ignored", updateId: update.update_id };
 
+    if (inbound.text.startsWith("/")) {
+        if (!commands) throw new ValidationError("conversation command service is unavailable");
+        // Telegram clients may append @botname; admission already established the private chat.
+        const text = inbound.text.replace(/^(\/[^\s@]+)@[A-Za-z0-9_]+(?=\s|$)/, "$1");
+        const result = await commands.execute(
+            {
+                kind: "message",
+                text,
+                principal: config.principal,
+                scope: config.activeScope,
+                surfaceId: TELEGRAM_SURFACE_ID,
+                principalProvenance: "configured_surface_mapping",
+                externalOccurrence: inbound.externalOccurrence,
+                deliveryDestinationId: inbound.deliveryDestinationId,
+            },
+            async ({ text: reply }, options) => {
+                try {
+                    const receipt = await deliverTelegramMessage(api, inbound.chatId, reply, {
+                        messageThreadId: inbound.messageThreadId,
+                        ...(options.signal === undefined ? {} : { signal: options.signal }),
+                    });
+                    return { outcome: "confirmed", externalMessageId: receipt.externalMessageId };
+                } catch (error) {
+                    if (!(error instanceof SurfaceDeliveryFailure)) throw error;
+                    return error.outcome === "failed"
+                        ? {
+                              outcome: "failed",
+                              externalMessageId: error.externalMessageId,
+                              retryable: error.retryable,
+                              retryAfterSeconds: error.retryAfterSeconds,
+                          }
+                        : { outcome: "uncertain", externalMessageId: error.externalMessageId };
+                }
+            },
+            signal === undefined ? {} : { signal },
+        );
+        return {
+            kind: result.replayed ? "replayed" : "processed",
+            updateId: inbound.updateId,
+            cognitionId: result.cognitionId ?? null,
+            providerFailure: result.providerFailure ?? null,
+            memoryProposalFailure: result.memoryProposalFailure ?? null,
+            deliveryFailure: result.deliveryFailure,
+        };
+    }
+
+    if (commands)
+        await commands.assertOrdinaryAdmission({
+            kind: "message",
+            text: inbound.text,
+            principal: config.principal,
+            scope: config.activeScope,
+            surfaceId: TELEGRAM_SURFACE_ID,
+            principalProvenance: "configured_surface_mapping",
+            externalOccurrence: inbound.externalOccurrence,
+            deliveryDestinationId: inbound.deliveryDestinationId,
+        });
     const result = await application.interact(
         {
             kind: "message",
@@ -449,13 +511,17 @@ export async function runTelegramPolling(
     api: TelegramPollingApi,
     {
         application,
+        commands,
         repositories,
         signal,
         onOutcome,
+        onDiagnostic,
         maxAcceptedUpdates,
         revalidateProactiveContact,
     }: {
         application: EmberApplication;
+        commands?: ConversationCommandService;
+        onDiagnostic?: (message: string) => void;
         repositories: TelegramRepositories;
         signal?: AbortSignal;
         onOutcome?: (outcome: TelegramUpdateOutcome) => void;
@@ -472,9 +538,55 @@ export async function runTelegramPolling(
         throw error;
     }
 
+    if (api.setMyCommands) {
+        try {
+            await api.setMyCommands(
+                { commands: telegramCommandMenu(), scope: { type: "chat", chat_id: config.chat_id } },
+                signal,
+            );
+        } catch {
+            onDiagnostic?.("Telegram command menu registration failed; polling continues");
+        }
+    }
     let offset: number | undefined;
     let acceptedCount = 0;
     while (!signal?.aborted) {
+        if (commands)
+            await commands.reconcile(
+                {
+                    principal: config.principal,
+                    scope: config.activeScope,
+                    surfaceId: TELEGRAM_SURFACE_ID,
+                    acceptsDestination(destinationId) {
+                        try {
+                            return parseTelegramDestination(destinationId).chatId === config.chat_id;
+                        } catch {
+                            return false;
+                        }
+                    },
+                },
+                async ({ address, text }) => {
+                    const destination = parseTelegramDestination(address.destinationId);
+                    if (destination.chatId !== config.chat_id)
+                        throw new ValidationError("command destination differs from configured chat");
+                    try {
+                        const receipt = await deliverTelegramMessage(api, destination.chatId, text, {
+                            messageThreadId: destination.messageThreadId,
+                        });
+                        return { outcome: "confirmed", externalMessageId: receipt.externalMessageId };
+                    } catch (error) {
+                        if (!(error instanceof SurfaceDeliveryFailure)) throw error;
+                        return error.outcome === "failed"
+                            ? {
+                                  outcome: "failed",
+                                  externalMessageId: error.externalMessageId,
+                                  retryable: error.retryable,
+                                  retryAfterSeconds: error.retryAfterSeconds,
+                              }
+                            : { outcome: "uncertain", externalMessageId: error.externalMessageId };
+                    }
+                },
+            );
         await reconcileTelegramDeliveries(config, api, { signal, repositories });
         await reconcileTelegramProactiveContacts(config, api, {
             signal,
@@ -504,7 +616,10 @@ export async function runTelegramPolling(
 
         for (const update of updates) {
             if (signal?.aborted) return;
-            const outcome = await processTelegramUpdate(config, api, update, { application });
+            const outcome = await processTelegramUpdate(config, api, update, {
+                application,
+                ...(commands === undefined ? {} : { commands }),
+            });
             onOutcome?.(outcome);
             if (outcome.kind !== "ignored") acceptedCount += 1;
             offset = update.update_id + 1;

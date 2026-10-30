@@ -10,6 +10,11 @@ CLI slash commands below are entered inside `ember`; see [shell setup](../guides
 > ownership is recorded separately in
 > [ADR 0008](decisions/0008-add-systemd-supervised-telegram-transport-worker.md).
 
+[ADR 0042](decisions/0042-share-conversation-commands-across-surfaces.md) adds
+shared deterministic commands alongside the ordinary interaction seam. Their
+application-owned executor, private command journal, and surface-specific parsing
+are described in the [command guide](../guides/conversation-commands.md).
+
 ## Purpose
 
 A surface is a window onto one continuing Ember, not an owner of identity, memory,
@@ -252,9 +257,9 @@ provider projection.
 
 The existing explicit CLI explanation paths retain their established semantics. In
 particular, #87 does not globally reinterpret an explicitly requested explanation ID
-as ordinary surface scope selection. Telegram currently exposes only ordinary text
-cognition, not a remote `:ask --explain` command, so no transport mapping gains that
-explicit diagnostic expansion implicitly.
+as ordinary surface scope selection. ADR 0042 now also exposes remote /ask --explain commands. Those commands check
+the active principal and scope, including linked meanings, before cognition; they
+do not inherit the local diagnostic expansion.
 
 ## CLI and Telegram messaging surface
 

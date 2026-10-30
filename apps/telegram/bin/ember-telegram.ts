@@ -87,6 +87,7 @@ async function main(argv = process.argv.slice(2)): Promise<number> {
             await runTelegramPolling(config, api, {
                 ...services,
                 signal: controller.signal,
+                onDiagnostic: (message) => process.stderr.write(message + "\n"),
                 onOutcome: (outcome) => {
                     if (outcome.kind !== "ignored" && outcome.providerFailure)
                         process.stderr.write(`telegram provider: ${outcome.providerFailure}\n`);

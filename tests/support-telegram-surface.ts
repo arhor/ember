@@ -21,6 +21,7 @@ export function processTelegramUpdate(
     const services = composeTelegramSurface(config, options);
     return processUpdate(config, api, update, {
         application: options.application ?? services.application,
+        commands: options.commands ?? services.commands,
         ...(options.signal === undefined ? {} : { signal: options.signal }),
     });
 }

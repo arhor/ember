@@ -90,3 +90,10 @@ ADR review confirmed explicit interface and failure semantics, retained continui
 approval constraints, implementation boundaries, migration guidance and verifiable
 acceptance criteria. The accepted plan supplies the maintainer's approval for this
 replacement; no additional architecture or dependency decisions are introduced.
+
+### Amendment — 2026-10-29
+
+[ADR 0042](0042-share-conversation-commands-across-surfaces.md) moves conversation-command definitions and execution into shared application
+code and adds Telegram command routing and discovery. Host setup, filesystem
+operations, diagnostics, recovery, and process exit remain local. The shell-only
+process interface and setup/recovery safeguards in this record remain binding.

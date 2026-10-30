@@ -10,7 +10,6 @@ import { defaultSetupConfigPath, loadSetupConfig } from "@ember/host/setup.ts";
 import { StateStore } from "@ember/persistence/persistence/state-store.ts";
 import { CommanderError } from "commander";
 import { resolve } from "node:path";
-import { createInterface } from "node:readline";
 
 import type { CliMainOverrides } from "./main.ts";
 import type { CliIo, ShellOptions, SetupArgs } from "./model.ts";
@@ -22,6 +21,7 @@ import { executeLocalCommand } from "./local-commands.ts";
 import { createLocalProgram } from "./local-program.ts";
 import { createSessionProgram } from "./session-program.ts";
 import { setupHelpText } from "./setup-help.ts";
+import { createShellInput } from "./shell-input.ts";
 import { runCliSurface } from "./surface.ts";
 
 export async function setupMain(args: SetupArgs, io: CliIo, dependencies: SetupCompositionOverrides = {}) {
@@ -136,7 +136,11 @@ function presentBootstrapEvent(event: BootstrapEvent, io: CliIo, diagnosticsPath
 }
 
 export async function setupRunMain(args: ShellOptions, io: CliIo, overrides: CliMainOverrides = {}): Promise<number> {
-    const lines = createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
+    const lines = createShellInput({
+        input: io.input,
+        output: io.output,
+        localNames: createLocalProgram(io, [], async () => 0).commands.map((command) => command.name()),
+    });
     const iterator = lines[Symbol.asyncIterator]();
     const boundary = { fresh: true };
     let selection: { mode: "configured"; config: string; scope: string } | { mode: "default" } = { mode: "default" };
@@ -148,6 +152,7 @@ export async function setupRunMain(args: ShellOptions, io: CliIo, overrides: Cli
         if (!/^[/:]/.test(line)) return false;
         try {
             const argv = splitCommand(line.slice(1));
+            if (argv[0]) argv[0] = argv[0].replaceAll("_", "-");
             return (
                 !sessionNames.includes(argv[0]!) ||
                 argv.some((token) => ["--help", "-h"].includes(token)) ||
@@ -167,6 +172,7 @@ export async function setupRunMain(args: ShellOptions, io: CliIo, overrides: Cli
             try {
                 if (/^[/:]/.test(line)) {
                     const argv = splitCommand(line.slice(1));
+                    if (argv[0]) argv[0] = argv[0].replaceAll("_", "-");
                     if (argv.length === 1 && argv[0] === "quit") return 0;
                     if (argv.length === 1 && argv[0] === "new-conversation") {
                         boundary.fresh = true;

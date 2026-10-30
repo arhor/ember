@@ -190,3 +190,4 @@ native frontmatter metadata, not filename prefixes. Keep this index in numeric o
 - [ADR 0040: Open an empty shell and configure explicitly](0040-open-an-empty-shell-and-configure-explicitly.md) — superseded by ADR 0041
 
 - [ADR 0041: Use the shell as the only CLI command interface](0041-use-the-shell-as-the-only-cli-command-interface.md) — accepted
+- [ADR 0042: Share conversation commands across surfaces](0042-share-conversation-commands-across-surfaces.md) — accepted

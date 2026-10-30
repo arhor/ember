@@ -376,6 +376,9 @@ importers:
       '@ember/persistence':
         specifier: workspace:*
         version: link:../persistence
+      commander:
+        specifier: 15.0.0
+        version: 15.0.0
     devDependencies:
       '@types/node':
         specifier: 26.4.1

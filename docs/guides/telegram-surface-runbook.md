@@ -9,6 +9,9 @@ CLI slash commands below are entered inside `ember`; see [shell setup](setup.md)
 > [Interaction Surface Boundary](../architecture/interaction-surface-boundary.md); this document owns
 > Telegram-specific transport and deployment details only.
 
+For shared slash commands, menu discovery, and command recovery, see
+[conversation commands](conversation-commands.md).
+
 ## Supported integration
 
 Ember's first messaging surface uses the official HTTP-based Telegram Bot API through

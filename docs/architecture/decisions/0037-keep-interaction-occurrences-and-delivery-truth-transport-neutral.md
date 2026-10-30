@@ -125,3 +125,10 @@ no_contact ledger. That ledger remains open implementation work under M08-F02 in
 migration plan; this acceptance does not implement or verify it. Source paths, headings,
 procedures and dated evidence remain available. No runtime, dependency, package or
 original-skill changes are introduced by this documentation acceptance.
+
+### Amendment — 2026-10-29
+
+[ADR 0042](0042-share-conversation-commands-across-surfaces.md) adds shared deterministic conversation commands with their own admission and
+delivery journal and permits remote explanation commands constrained to the active
+principal and scope. Its explicit amendments replace this record's CLI-only
+explanation restriction; ordinary cognition and delivery guarantees remain binding.

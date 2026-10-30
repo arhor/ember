@@ -20,6 +20,8 @@ const surfaceBootstrapAndCommandModules = new Set([
     "apps/cli/setup.ts",
     "apps/cli/google-calendar-setup.ts",
     "apps/cli/commands.ts",
+    // Pure command-parser assembly; no providers or persistence are constructed here.
+    "apps/cli/session-program.ts",
     "apps/telegram/config.ts",
     "apps/telegram/composition.ts",
 ]);

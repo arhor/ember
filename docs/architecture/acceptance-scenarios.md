@@ -557,3 +557,23 @@ one-to-one partitions of the catalogue.
 | Source                              | Focused subset              |
 | ----------------------------------- | --------------------------- |
 | Specialist delegation for issue #58 | AS-DEL-00 through AS-DEL-08 |
+
+## Shared conversation commands (ADR 0042)
+
+- CLI and Telegram resolve the same conversation catalogue, including underscore
+  aliases. Local host operations and fixture commands are absent from Telegram's menu.
+- Unknown or malformed commands return deterministic diagnostics without cognition.
+- Remote scope arguments, meaning IDs, and linked explanation meanings cannot widen
+  the configured principal or active scope.
+- Action decisions require a presentation on the deciding surface and preserve
+  digest, material confirmation, expiry, and authority checks.
+- Replaying a Telegram command repeats neither a mutation nor a confirmed reply.
+  Conflicting payloads or a change between command and ordinary-message routing fail closed.
+- Interrupted completion leaves the effect explicitly uncertain and blocks rerunning.
+  Definite retryable delivery failure reuses retained reply bytes; uncertain delivery
+  never triggers blind resend.
+- Terminal slash suggestions support filtering, nested commands, arrow selection,
+  Tab insertion, Escape dismissal, and Enter submission. Piped lines remain unchanged.
+
+Executable coverage lives in the CLI input and surface tests, Telegram surface tests,
+and composition command-parser and conversation-command tests.

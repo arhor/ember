@@ -1,7 +1,11 @@
 import type { EmberApplication } from "@ember/application/app/contract.ts";
 
+import { createConversationCommandService } from "@ember/application/commands/service.ts";
+import { FileCommandJournal } from "@ember/persistence/runtime/command-journal.ts";
+
 import type { EmberCompositionConfig, EmberCompositionOverrides } from "./ember.ts";
 
+import { parseConversationCommand } from "./command-parser.ts";
 import { startEmberApplication, composeEmberApplication } from "./ember.ts";
 
 /** Lazy startup preserves synchronous assembly while all execution enters the engine. */
@@ -24,7 +28,17 @@ export function composeCliSurface(config: EmberCompositionConfig, overrides: Emb
             return (await start()).application.deliver(...args);
         },
     };
+    const commands = createConversationCommandService({
+        application,
+        repositories: dependencies.repositories,
+        journal: new FileCommandJournal(config.statePath),
+        parse: parseConversationCommand,
+        ...(dependencies.admission.expectedContinuityBinding === undefined
+            ? {}
+            : { expectedContinuityBinding: dependencies.admission.expectedContinuityBinding }),
+    });
     return {
+        commands,
         application,
         repositories: dependencies.repositories,
         async close() {

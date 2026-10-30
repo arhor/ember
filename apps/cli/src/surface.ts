@@ -4,10 +4,10 @@ import type { Readable, Writable } from "node:stream";
 
 import { EmberError, ValidationError } from "@ember/domain/errors.ts";
 import { CommanderError } from "commander";
-import { createInterface } from "node:readline";
 
 import { executeOperatorCommand, loadConfiguredState, runLeasedOperator, splitCommand } from "./commands.ts";
 import { createSessionProgram } from "./session-program.ts";
+import { createShellInput } from "./shell-input.ts";
 
 export interface CliSurfaceConfig {
     lines?: AsyncIterable<string>;
@@ -35,7 +35,7 @@ export async function runCliSurface(
     } finally {
         await store.releaseWriteLease(initialLease);
     }
-    const lines = config.lines ?? createInterface({ input: io.input, crlfDelay: Infinity, terminal: false });
+    const lines = config.lines ?? createShellInput({ input: io.input, output: io.output });
     const iterator = lines[Symbol.asyncIterator]();
     const boundary = config.conversationBoundary ?? { fresh: true };
     for await (const line of { [Symbol.asyncIterator]: () => iterator }) {
@@ -53,6 +53,7 @@ export async function runCliSurface(
         let argv: string[] = [];
         try {
             argv = splitCommand(line.slice(1));
+            if (argv[0]) argv[0] = argv[0].replaceAll("_", "-");
         } catch {
             /* Report through the command parser below. */
         }
@@ -81,6 +82,7 @@ async function runSessionLine(
     let tokenizeError: EmberError | undefined;
     try {
         argv = splitCommand(line.slice(1));
+        if (argv[0]) argv[0] = argv[0].replaceAll("_", "-");
     } catch (error) {
         if (error instanceof EmberError) tokenizeError = error;
         else throw error;

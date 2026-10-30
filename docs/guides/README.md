@@ -8,6 +8,8 @@ outside repository documentation and ordinary model context.
 
 ## Documents
 
+- [Conversation commands](conversation-commands.md)
+
 - [Authority, Approval, and Effects Evaluation](authority-approval-effects-evaluation.md)
 - [Autonomous Memory Formation Evaluation](autonomous-memory-formation-evaluation.md)
 - [Cognition-Backend Replacement Evaluation](cognition-backend-replacement-evaluation.md)
